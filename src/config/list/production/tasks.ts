@@ -15,6 +15,7 @@ import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
 import { taskKeys } from '@/hooks/queryKeys'
 import { isTabletWidth } from '@/lib/table-utils'
+import { ServiceOrderProgressBar } from '@/components/production/task/service-order-progress-bar'
 
 // Helper to check if task has pending service orders
 const hasPendingServiceOrders = (task: Task): boolean => {
@@ -173,9 +174,18 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'term',
         label: 'PRAZO',
         sortable: true,
-        width: 1.1,
+        width: 1.3,
         align: 'left',
         render: (task) => task.term,
+        format: 'date',
+      },
+      {
+        key: 'forecastDate',
+        label: 'PREVISÃO',
+        sortable: true,
+        width: 1.3,
+        align: 'left',
+        render: (task) => task.forecastDate,
         format: 'date',
       },
       {
@@ -197,10 +207,10 @@ export const tasksListConfig: ListConfig<Task> = {
         format: 'datetime',
       },
       {
-        key: 'serialNumber',
-        label: 'Nº SÉRIE',
+        key: 'identificador',
+        label: 'IDENTIFICADOR',
         sortable: true,
-        width: 1.0,
+        width: 1.2,
         align: 'left',
         render: (task) => task.serialNumber || task.truck?.plate || '-',
       },
@@ -250,11 +260,13 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'services',
         label: 'SERVIÇOS',
         sortable: false,
-        width: 2.0,
-        align: 'left',
+        width: 1.5,
+        align: 'center',
         render: (task) => {
-          if (!task.services || task.services.length === 0) return '-'
-          return task.services.map((s: any) => s.name).join(', ')
+          return React.createElement(ServiceOrderProgressBar, {
+            task,
+            compact: true,
+          })
         },
       },
       {
@@ -281,9 +293,7 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
     ],
-    defaultVisible: isTabletWidth()
-      ? ['name', 'measures', 'serialNumber', 'local', 'remainingTime']
-      : ['name', 'serialNumber', 'local', 'remainingTime'],
+    defaultVisible: ['name', 'forecastDate', 'services'],
     rowHeight: 48,
     getRowStyle: (task, isDark) => ({
       backgroundColor: getRowBackgroundColor(task, isDark),

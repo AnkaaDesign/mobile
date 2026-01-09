@@ -88,6 +88,34 @@ interface ErrorInfo {
   category: ErrorCategory;
 }
 
+// Custom error class for enhanced API errors
+class ApiError extends Error {
+  title: string;
+  _statusCode: number;
+  errors: string[];
+  category: ErrorCategory;
+  isRetryable: boolean;
+  requestId?: string;
+  originalError?: unknown;
+
+  constructor(errorInfo: ErrorInfo, requestId?: string, originalError?: unknown) {
+    super(errorInfo.message);
+    this.name = 'ApiError';
+    this.title = errorInfo.title;
+    this._statusCode = errorInfo._statusCode;
+    this.errors = errorInfo.errors;
+    this.category = errorInfo.category;
+    this.isRetryable = errorInfo.isRetryable;
+    this.requestId = requestId;
+    this.originalError = originalError;
+
+    // Maintains proper stack trace for where our error was thrown (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ApiError);
+    }
+  }
+}
+
 enum ErrorCategory {
   NETWORK = "network",
   AUTHENTICATION = "authentication",
@@ -682,16 +710,7 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Create enhanced error with additional metadata
-      const enhancedError = new Error(errorInfo.message);
-      Object.assign(enhancedError, {
-        title: errorInfo.title,
-        _statusCode: errorInfo._statusCode,
-        errors: errorInfo.errors,
-        category: errorInfo.category,
-        isRetryable: errorInfo.isRetryable,
-        requestId: requestId,
-        originalError: error,
-      });
+      const enhancedError = new ApiError(errorInfo, requestId, error);
 
       return Promise.reject(enhancedError);
     },

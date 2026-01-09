@@ -134,3 +134,55 @@ export type NotificationBatchDeleteResponse = BaseBatchResponse<{ id: string; de
 export type SeenNotificationBatchCreateResponse<T = any> = BaseBatchResponse<SeenNotification, T>;
 export type SeenNotificationBatchUpdateResponse<T = any> = BaseBatchResponse<SeenNotification, T & { id: string }>;
 export type SeenNotificationBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
+
+// =====================
+// User Notification Preference Interface
+// =====================
+
+export interface UserNotificationPreference extends BaseEntity {
+  userId: string;
+  notificationType: NOTIFICATION_TYPE;
+  eventType: string | null;
+  enabled: boolean;
+  channels: NOTIFICATION_CHANNEL[];
+  mandatoryChannels: NOTIFICATION_CHANNEL[];
+
+  // Relations
+  user?: User;
+}
+
+// =====================
+// User Notification Preference Include Types
+// =====================
+
+export interface UserNotificationPreferenceIncludes {
+  user?:
+    | boolean
+    | {
+        include?: UserIncludes;
+      };
+}
+
+// =====================
+// User Notification Preference Order By
+// =====================
+
+export interface UserNotificationPreferenceOrderBy {
+  id?: ORDER_BY_DIRECTION;
+  notificationType?: ORDER_BY_DIRECTION;
+  eventType?: ORDER_BY_DIRECTION;
+  enabled?: ORDER_BY_DIRECTION;
+  createdAt?: ORDER_BY_DIRECTION;
+  updatedAt?: ORDER_BY_DIRECTION;
+  user?: UserOrderBy;
+}
+
+// =====================
+// User Notification Preference Response Interfaces
+// =====================
+
+export type UserNotificationPreferenceGetUniqueResponse = BaseGetUniqueResponse<UserNotificationPreference>;
+export type UserNotificationPreferenceGetManyResponse = BaseGetManyResponse<UserNotificationPreference>;
+export type UserNotificationPreferenceCreateResponse = BaseCreateResponse<UserNotificationPreference>;
+export type UserNotificationPreferenceUpdateResponse = BaseUpdateResponse<UserNotificationPreference>;
+export type UserNotificationPreferenceDeleteResponse = BaseDeleteResponse;

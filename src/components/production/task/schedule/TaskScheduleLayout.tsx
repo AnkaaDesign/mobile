@@ -175,8 +175,20 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [filteredTasks, sectors])
 
   // Convert to SectionList format
-  // For team leaders: show own sector first, then others (if enabled), then undefined last
+  // Check if config has groupBySector flag (default true for backward compatibility)
+  const shouldGroupBySector = config.table.groupBySector !== false
+
   const sections: SectionData[] = useMemo(() => {
+    // If not grouping by sector, return all tasks in a single section
+    if (!shouldGroupBySector) {
+      return [{
+        title: '',
+        sectorId: 'all',
+        data: filteredTasks,
+      }]
+    }
+
+    // Original sector grouping logic
     const result: SectionData[] = []
     const otherSections: SectionData[] = []
 
@@ -227,7 +239,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
 
     return result
-  }, [tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors])
+  }, [shouldGroupBySector, filteredTasks, tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors])
 
   // Calculate display columns
   const displayColumns = useMemo(() => {
@@ -553,15 +565,17 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
             }
             renderSectionHeader={({ section }) => (
               <View style={styles.sectionContainer}>
-                {/* Section Header */}
-                <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-                  <ThemedText style={[styles.sectionTitle, { color: section.sectorId === 'undefined' ? colors.mutedForeground : colors.foreground }]}>
-                    {section.title}
-                  </ThemedText>
-                  <ThemedText style={[styles.sectionCount, { color: colors.mutedForeground }]}>
-                    {section.data.length} {section.data.length === 1 ? 'tarefa' : 'tarefas'}
-                  </ThemedText>
-                </View>
+                {/* Section Header - only show if title exists */}
+                {section.title && (
+                  <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+                    <ThemedText style={[styles.sectionTitle, { color: section.sectorId === 'undefined' ? colors.mutedForeground : colors.foreground }]}>
+                      {section.title}
+                    </ThemedText>
+                    <ThemedText style={[styles.sectionCount, { color: colors.mutedForeground }]}>
+                      {section.data.length} {section.data.length === 1 ? 'tarefa' : 'tarefas'}
+                    </ThemedText>
+                  </View>
+                )}
 
                 {/* Table Card with Header */}
                 <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -629,6 +643,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         onResetColumns={handleResetColumns}
         isOpen={columnPanelOpen}
         onClose={() => setColumnPanelOpen(false)}
+        defaultVisible={config.table.defaultVisible}
       />
 
       {/* Filter Drawer */}

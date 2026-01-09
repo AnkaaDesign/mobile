@@ -26,7 +26,8 @@ import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-
 import { formSpacing } from "@/constants/form-styles";
 import { useSectors, useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, COMMISSION_STATUS, COMMISSION_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, COMMISSION_STATUS, TRUCK_SPOT, SECTOR_PRIVILEGES, TRUCK_CATEGORY, IMPLEMENT_TYPE } from "@/constants/enums";
+import { COMMISSION_STATUS_LABELS, TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
 import { IconX } from "@tabler/icons-react-native";
 import { getFileThumbnailUrl } from "@/api-client";
 import { CustomerSelector } from "./customer-selector";
@@ -37,12 +38,27 @@ import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
 import type { Customer, Paint } from "@/types";
-import { TRUCK_SPOT } from "@/constants";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 const taskFormSchema = z.object({
   name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200, "Nome muito longo"),
   customerId: z.string().uuid("Cliente inválido").nullable().optional(),
+  invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
+  negotiatingWith: z.object({
+    name: z.string().optional(),
+    phone: z.string().optional(),
+  }).nullable().optional().refine(
+    (data) => {
+      // If negotiatingWith is provided, both name and phone should be filled or both should be empty
+      if (!data) return true;
+      const hasName = data.name && data.name.trim().length > 0;
+      const hasPhone = data.phone && data.phone.trim().length > 0;
+      return (hasName && hasPhone) || (!hasName && !hasPhone);
+    },
+    {
+      message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
+    }
+  ),
   sectorId: z.string().uuid().nullable().optional(),
   serialNumber: z.string()
     .nullable()
@@ -68,14 +84,24 @@ const taskFormSchema = z.object({
       }, {
         message: "Número do chassi deve ter exatamente 17 caracteres alfanuméricos",
       }),
+    category: z.enum(Object.values(TRUCK_CATEGORY) as [string, ...string[]]).nullable().optional(),
+    implementType: z.enum(Object.values(IMPLEMENT_TYPE) as [string, ...string[]]).nullable().optional(),
     spot: z.string().nullable().optional(),
   }).nullable().optional(),
   details: z.string().max(1000, "Detalhes muito longos (máx. 1000 caracteres)").nullable().optional(),
   entryDate: z.date().nullable().optional(),
   term: z.date().nullable().optional(),
+  forecastDate: z.date().nullable().optional(),
   generalPaintingId: z.string().uuid().nullable().optional(),
   paintIds: z.array(z.string().uuid()).optional(),
+  baseFileIds: z.array(z.string().uuid()).optional(), // Base files for artwork design
   artworkIds: z.array(z.string().uuid()).optional(), // General artwork files
+  // Financial file IDs
+  budgetIds: z.array(z.string().uuid()).optional(),
+  invoiceIds: z.array(z.string().uuid()).optional(),
+  receiptIds: z.array(z.string().uuid()).optional(),
+  reimbursementIds: z.array(z.string().uuid()).optional(),
+  invoiceReimbursementIds: z.array(z.string().uuid()).optional(),
   observation: z.object({
     description: z.string().min(1, "Descrição é obrigatória"),
     fileIds: z.array(z.string().min(1, "ID do arquivo inválido")).optional(),
@@ -216,8 +242,26 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   const isWarehouseSector = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isDesignerSector = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isLogisticSector = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isCommercialSector = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
 
-  // File upload state - initialize artwork files from existing data in edit mode
+  // File upload state - initialize base files from existing data in edit mode
+  const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.baseFiles) {
+      // Convert existing files to FilePickerItem format
+      return initialData.baseFiles.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true, // Mark as already uploaded
+        // Generate thumbnail URL for image files
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+  // Initialize artwork files from existing data in edit mode
   const [artworkFiles, setArtworkFiles] = useState<FilePickerItem[]>(() => {
     if (mode === "edit" && initialData?.artworks) {
       // Convert existing files to FilePickerItem format
@@ -246,6 +290,67 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         size: file.size,
         uploaded: true, // Mark as already uploaded
         // Generate thumbnail URL for image files
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+
+  // Financial file uploads - Initialize from existing data in edit mode
+  const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.budgets) {
+      return initialData.budgets.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true,
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+
+  const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.invoices) {
+      return initialData.invoices.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true,
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+
+  const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.receipts) {
+      return initialData.receipts.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true,
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }));
+    }
+    return [];
+  });
+
+  const [reimbursementFiles, setReimbursementFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.reimbursements) {
+      return initialData.reimbursements.map((file: any) => ({
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "file",
+        type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
+        size: file.size,
+        uploaded: true,
         thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
       }));
     }
@@ -332,22 +437,30 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   const defaultFormValues = {
     name: initialData?.name || "",
     customerId: initialData?.customerId || "",
+    invoiceToId: initialData?.invoiceToId || null,
+    negotiatingWith: initialData?.negotiatingWith || { name: "", phone: "" },
     sectorId: initialData?.sectorId || null,
     serialNumber: initialData?.serialNumber || null,
     truck: initialData?.truck ? {
       plate: initialData.truck.plate || null,
       chassisNumber: initialData.truck.chassisNumber || null,
+      category: (initialData.truck as any).category || null,
+      implementType: (initialData.truck as any).implementType || null,
       spot: (initialData.truck as any).spot || null,
     } : {
       plate: null,
       chassisNumber: null,
+      category: null,
+      implementType: null,
       spot: null,
     },
     details: initialData?.details || null,
     entryDate: initialData?.entryDate || null,
     term: initialData?.term || null,
+    forecastDate: initialData?.forecastDate || null,
     generalPaintingId: initialData?.generalPaintingId || null,
     paintIds: initialData?.paintIds || [],
+    baseFileIds: initialData?.baseFileIds || [],
     artworkIds: initialData?.artworkIds || [],
     observation: initialData?.observation || null,
     serviceOrders: initialData?.serviceOrders || initialData?.services?.map((s: any) => ({
@@ -442,8 +555,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     const hasLayoutPhotos = isLayoutOpen && layouts.back?.photoUri;
 
     // Filter only NEW files (not already uploaded)
+    const newBaseFiles = baseFiles.filter(f => !f.uploaded);
     const newArtworkFiles = artworkFiles.filter(f => !f.uploaded);
     const newObservationFiles = observationFiles.filter(f => !f.uploaded);
+    const newBudgetFiles = budgetFiles.filter(f => !f.uploaded);
+    const newInvoiceFiles = invoiceFiles.filter(f => !f.uploaded);
+    const newReceiptFiles = receiptFiles.filter(f => !f.uploaded);
+    const newReimbursementFiles = reimbursementFiles.filter(f => !f.uploaded);
 
     // Debug logging for file upload
     console.log('[TaskForm] File upload check:', {
@@ -460,9 +578,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     }
 
     // If we have NEW files to upload, convert to FormData with context for proper file organization
-    if (newArtworkFiles.length > 0 || newObservationFiles.length > 0 || hasLayoutPhotos) {
+    if (newBaseFiles.length > 0 || newArtworkFiles.length > 0 || newObservationFiles.length > 0 || newBudgetFiles.length > 0 || newInvoiceFiles.length > 0 || newReceiptFiles.length > 0 || newReimbursementFiles.length > 0 || hasLayoutPhotos) {
       // Prepare files with proper structure - only NEW files
       const files: Record<string, any[]> = {};
+
+      if (newBaseFiles.length > 0) {
+        files.baseFiles = newBaseFiles;
+      }
 
       if (newArtworkFiles.length > 0) {
         files.artworks = newArtworkFiles;
@@ -470,6 +592,22 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
       if (newObservationFiles.length > 0) {
         files.observationFiles = newObservationFiles;
+      }
+
+      if (newBudgetFiles.length > 0) {
+        files.budgetFiles = newBudgetFiles;
+      }
+
+      if (newInvoiceFiles.length > 0) {
+        files.invoiceFiles = newInvoiceFiles;
+      }
+
+      if (newReceiptFiles.length > 0) {
+        files.receiptFiles = newReceiptFiles;
+      }
+
+      if (newReimbursementFiles.length > 0) {
+        files.reimbursementFiles = newReimbursementFiles;
       }
 
       // Prepare form data (excluding files)
@@ -480,6 +618,11 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       };
 
       // Add optional fields
+      if (data.invoiceToId) formDataFields.invoiceToId = data.invoiceToId;
+      // Only include negotiatingWith if both name and phone are filled
+      if (data.negotiatingWith && data.negotiatingWith.name && data.negotiatingWith.phone) {
+        formDataFields.negotiatingWith = data.negotiatingWith;
+      }
       if (data.sectorId) formDataFields.sectorId = data.sectorId;
       if (data.serialNumber) formDataFields.serialNumber = data.serialNumber.toUpperCase();
 
@@ -493,6 +636,12 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           // Clean and uppercase chassis number
           truckData.chassisNumber = data.truck.chassisNumber.replace(/\s/g, "").toUpperCase();
         }
+        if (data.truck.category) {
+          truckData.category = data.truck.category;
+        }
+        if (data.truck.implementType) {
+          truckData.implementType = data.truck.implementType;
+        }
         if (Object.keys(truckData).length > 0) {
           formDataFields.truck = truckData;
         }
@@ -501,12 +650,24 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       if (data.details) formDataFields.details = data.details;
       if (data.entryDate) formDataFields.entryDate = data.entryDate;
       if (data.term) formDataFields.term = data.term;
+      if (data.forecastDate) formDataFields.forecastDate = data.forecastDate;
       if (data.generalPaintingId) formDataFields.generalPaintingId = data.generalPaintingId;
       if (data.status) formDataFields.status = data.status;
       if (data.commission) formDataFields.commission = data.commission;
       if (data.startedAt) formDataFields.startedAt = data.startedAt;
       if (data.finishedAt) formDataFields.finishedAt = data.finishedAt;
       if (data.paintIds && data.paintIds.length > 0) formDataFields.paintIds = data.paintIds;
+
+      // Include existing base file IDs when uploading new base files
+      // This ensures backend tracks the changes correctly in changelog
+      if (newBaseFiles.length > 0) {
+        // Get IDs of existing (already uploaded) base files
+        const existingBaseFileIds = baseFiles
+          .filter(f => f.uploaded && f.id)
+          .map(f => f.id);
+        // Always include baseFileIds (even if empty) so backend tracks the change
+        formDataFields.baseFileIds = existingBaseFileIds;
+      }
 
       // Include existing artwork IDs when uploading new artworks
       // This ensures backend tracks the changes correctly in changelog
@@ -517,6 +678,27 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           .map(f => f.id);
         // Always include artworkIds (even if empty) so backend tracks the change
         formDataFields.artworkIds = existingArtworkIds;
+      }
+
+      // Include existing financial file IDs when uploading new files
+      if (newBudgetFiles.length > 0) {
+        const existingBudgetIds = budgetFiles.filter(f => f.uploaded && f.id).map(f => f.id);
+        formDataFields.budgetIds = existingBudgetIds;
+      }
+
+      if (newInvoiceFiles.length > 0) {
+        const existingInvoiceIds = invoiceFiles.filter(f => f.uploaded && f.id).map(f => f.id);
+        formDataFields.invoiceIds = existingInvoiceIds;
+      }
+
+      if (newReceiptFiles.length > 0) {
+        const existingReceiptIds = receiptFiles.filter(f => f.uploaded && f.id).map(f => f.id);
+        formDataFields.receiptIds = existingReceiptIds;
+      }
+
+      if (newReimbursementFiles.length > 0) {
+        const existingReimbursementIds = reimbursementFiles.filter(f => f.uploaded && f.id).map(f => f.id);
+        formDataFields.reimbursementIds = existingReimbursementIds;
       }
 
       // Add observation if section is open
@@ -588,11 +770,20 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         serialNumber: data.serialNumber?.toUpperCase() || null,
       };
 
+      // Only include negotiatingWith if both name and phone are filled
+      if (cleanedData.negotiatingWith) {
+        if (!cleanedData.negotiatingWith.name || !cleanedData.negotiatingWith.phone) {
+          cleanedData.negotiatingWith = null;
+        }
+      }
+
       // Handle truck object structure
       if (data.truck) {
         cleanedData.truck = {
           plate: data.truck.plate?.toUpperCase() || null,
           chassisNumber: data.truck.chassisNumber?.replace(/\s/g, "").toUpperCase() || null,
+          category: data.truck.category || null,
+          implementType: data.truck.implementType || null,
         };
       }
 
@@ -708,6 +899,59 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </FormFieldGroup>
 
+              {/* Invoice To Customer - Disabled for financial, warehouse, designer */}
+              <FormFieldGroup label="Faturar Para (Opcional)" error={errors.invoiceToId?.message}>
+                <Controller
+                  control={form.control}
+                  name="invoiceToId"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <CustomerSelector
+                      value={value}
+                      onValueChange={onChange}
+                      disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
+                      error={error?.message}
+                      required={false}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
+
+              {/* Negotiating With - Contact Person */}
+              <SimpleFormField label="Negociando Com (Opcional)" error={errors.negotiatingWith?.name?.message || (errors.negotiatingWith as any)?.message}>
+                <Controller
+                  control={form.control}
+                  name="negotiatingWith.name"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Nome do contato"
+                      error={!!errors.negotiatingWith}
+                      editable={!isSubmitting}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              <SimpleFormField label="Telefone do Contato (Opcional)" error={errors.negotiatingWith?.phone?.message}>
+                <Controller
+                  control={form.control}
+                  name="negotiatingWith.phone"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value || ""}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Ex: (11) 99999-9999"
+                      error={!!errors.negotiatingWith}
+                      editable={!isSubmitting}
+                      keyboardType="phone-pad"
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
               {/* Serial Number */}
               <SimpleFormField label="Número de Série" error={errors.serialNumber}>
                 <Controller
@@ -731,16 +975,44 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 <Controller
                   control={form.control}
                   name="truck.plate"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      placeholder="Ex: ABC1234"
-                      autoCapitalize="characters"
-                      error={!!errors.truck?.plate}
-                    />
-                  )}
+                  render={({ field: { onChange, onBlur, value } }) => {
+                    // Format Brazilian license plate for display
+                    // Old format: ABC-1234 (3 letters + hyphen + 4 numbers)
+                    // Mercosul format: ABC-1D23 (3 letters + hyphen + 1 number + 1 letter + 2 numbers)
+                    const formatPlate = (val: string) => {
+                      const clean = val.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                      if (clean.length <= 3) {
+                        return clean;
+                      }
+
+                      // Check if it's Mercosul format (5th character is a letter)
+                      const fifthChar = clean.charAt(4);
+                      const isMercosul = fifthChar && /[A-Z]/i.test(fifthChar);
+
+                      // Format: ABC-1234 or ABC-1D23
+                      return clean.slice(0, 3) + '-' + clean.slice(3, 7);
+                    };
+
+                    const handleChange = (text: string) => {
+                      // Remove all non-alphanumeric characters, convert to uppercase
+                      const cleanValue = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                      // Limit to 7 characters (3 letters + 4 chars)
+                      const limitedValue = cleanValue.slice(0, 7);
+                      onChange(limitedValue);
+                    };
+
+                    return (
+                      <Input
+                        value={formatPlate(value || "")}
+                        onChangeText={handleChange}
+                        onBlur={onBlur}
+                        placeholder="Ex: ABC-1234 ou ABC-1D23"
+                        autoCapitalize="characters"
+                        maxLength={8}
+                        error={!!errors.truck?.plate}
+                      />
+                    );
+                  }}
                 />
               </SimpleFormField>
 
@@ -758,6 +1030,50 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                       placeholder="Ex: 9BW ZZZ37 7V T004251"
                       autoCapitalize="characters"
                       error={!!errors.truck?.chassisNumber}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              {/* Truck - Category */}
+              <SimpleFormField label="Categoria do Caminhão (Opcional)" error={errors.truck?.category}>
+                <Controller
+                  control={form.control}
+                  name="truck.category"
+                  render={({ field: { onChange, value } }) => (
+                    <Combobox
+                      value={value || ""}
+                      onValueChange={(val) => onChange(val || null)}
+                      options={Object.values(TRUCK_CATEGORY).map((category) => ({
+                        value: category,
+                        label: TRUCK_CATEGORY_LABELS[category],
+                      }))}
+                      placeholder="Selecione a categoria"
+                      searchable={false}
+                      clearable={true}
+                      disabled={isSubmitting}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+
+              {/* Truck - Implement Type */}
+              <SimpleFormField label="Tipo de Implemento (Opcional)" error={errors.truck?.implementType}>
+                <Controller
+                  control={form.control}
+                  name="truck.implementType"
+                  render={({ field: { onChange, value } }) => (
+                    <Combobox
+                      value={value || ""}
+                      onValueChange={(val) => onChange(val || null)}
+                      options={Object.values(IMPLEMENT_TYPE).map((type) => ({
+                        value: type,
+                        label: IMPLEMENT_TYPE_LABELS[type],
+                      }))}
+                      placeholder="Selecione o tipo"
+                      searchable={false}
+                      clearable={true}
+                      disabled={isSubmitting}
                     />
                   )}
                 />
@@ -785,7 +1101,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </SimpleFormField>
 
-              {/* Commission Status - Disabled for financial sector */}
+              {/* Commission Status - Hidden for financial and commercial sectors */}
+              {!isFinancialSector && !isCommercialSector && (
               <SimpleFormField label="Status de Comissão" error={errors.commission}>
                 <Controller
                   control={form.control}
@@ -800,11 +1117,12 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                       }))}
                       placeholder="Selecione o status de comissão"
                       searchable={false}
-                      disabled={isSubmitting || isFinancialSector}
+                      disabled={isSubmitting}
                     />
                   )}
                 />
               </SimpleFormField>
+              )}
 
               {/* Status (edit mode only) */}
               {mode === "edit" && (
@@ -874,6 +1192,25 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                       onChange={onChange}
                       type="datetime"
                       placeholder="Selecione o prazo"
+                      disabled={isSubmitting}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                  </View>
+                )}
+              />
+
+              {/* Forecast Date */}
+              <Controller
+                control={form.control}
+                name="forecastDate"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Data de Previsão</Label>
+                    <DatePicker
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      type="datetime"
+                      placeholder="Selecione a data de previsão"
                       disabled={isSubmitting}
                     />
                     {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
@@ -976,8 +1313,73 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
           </FormCard>
 
-          {/* Truck Layout Section - Hidden for financial and warehouse users */}
-          {!isFinancialSector && !isWarehouseSector && (
+          {/* Financial Files - Hidden for warehouse, designer, logistic, commercial users */}
+          {!isWarehouseSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
+          <FormCard title="Documentos Financeiros (Opcional)" icon="IconCurrencyDollar">
+              {/* Budget Files */}
+              <FilePicker
+                value={budgetFiles}
+                onChange={setBudgetFiles}
+                maxFiles={10}
+                label="Orçamentos"
+                placeholder="Adicionar orçamentos"
+                helperText="PDFs, imagens ou outros documentos"
+                showCamera={false}
+                showVideoCamera={false}
+                showGallery={true}
+                showFilePicker={true}
+                disabled={isSubmitting}
+              />
+
+              {/* Invoice Files */}
+              <FilePicker
+                value={invoiceFiles}
+                onChange={setInvoiceFiles}
+                maxFiles={10}
+                label="Notas Fiscais"
+                placeholder="Adicionar notas fiscais"
+                helperText="PDFs, imagens ou outros documentos"
+                showCamera={false}
+                showVideoCamera={false}
+                showGallery={true}
+                showFilePicker={true}
+                disabled={isSubmitting}
+              />
+
+              {/* Receipt Files */}
+              <FilePicker
+                value={receiptFiles}
+                onChange={setReceiptFiles}
+                maxFiles={10}
+                label="Recibos"
+                placeholder="Adicionar recibos"
+                helperText="PDFs, imagens ou outros documentos"
+                showCamera={false}
+                showVideoCamera={false}
+                showGallery={true}
+                showFilePicker={true}
+                disabled={isSubmitting}
+              />
+
+              {/* Reimbursement Files */}
+              <FilePicker
+                value={reimbursementFiles}
+                onChange={setReimbursementFiles}
+                maxFiles={10}
+                label="Reembolsos"
+                placeholder="Adicionar comprovantes de reembolso"
+                helperText="PDFs, imagens ou outros documentos"
+                showCamera={false}
+                showVideoCamera={false}
+                showGallery={true}
+                showFilePicker={true}
+                disabled={isSubmitting}
+              />
+          </FormCard>
+          )}
+
+          {/* Truck Layout Section - Hidden for financial, warehouse, and commercial users */}
+          {!isFinancialSector && !isWarehouseSector && !isCommercialSector && (
           <Card>
             <View style={[styles.collapsibleCardHeader, isLayoutOpen && styles.collapsibleCardHeaderOpen, isLayoutOpen && { borderBottomColor: colors.border }]}>
               <View style={styles.collapsibleCardTitleRow}>
@@ -1150,8 +1552,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             </FormCard>
           )}
 
-          {/* Observation Section - Only in edit mode, after layout, hidden for warehouse, financial, designer, logistic users */}
-          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && (
+          {/* Observation Section - Only in edit mode, after layout, hidden for warehouse, financial, designer, logistic, commercial users */}
+          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
             <Card>
               <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
                 <View style={styles.collapsibleCardTitleRow}>
@@ -1224,8 +1626,26 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             </Card>
           )}
 
-          {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
-          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
+          {/* Base Files - Hidden for warehouse, financial, logistic, commercial users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && !isCommercialSector && (
+            <FormCard title="Arquivos Base (Opcional)" icon="IconFile">
+                <FilePicker
+                  value={baseFiles}
+                  onChange={setBaseFiles}
+                  maxFiles={5}
+                  placeholder="Adicionar arquivos base"
+                  helperText="Arquivos usados como base para criação das artes"
+                  showCamera={false}
+                  showVideoCamera={false}
+                  showGallery={true}
+                  showFilePicker={true}
+                  disabled={isSubmitting}
+                />
+            </FormCard>
+          )}
+
+          {/* Artworks - Last section, hidden for warehouse, financial, logistic, commercial users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && !isCommercialSector && (
             <FormCard title="Artes (Opcional)" icon="IconPhotoPlus">
                 <FilePicker
                   value={artworkFiles}

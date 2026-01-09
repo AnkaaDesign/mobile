@@ -167,6 +167,62 @@ export interface ParsedDeepLink {
 }
 
 /**
+ * Custom URL parser for deep links
+ * Handles both custom schemes (ankaadesign://) and HTTPS URLs
+ */
+function parseUrl(url: string): { hostname: string | null; path: string | null; queryParams: Record<string, any> } {
+  try {
+    // Remove leading/trailing whitespace
+    url = url.trim();
+
+    // Extract query parameters first
+    const [urlWithoutQuery, queryString] = url.split('?');
+    const queryParams: Record<string, any> = {};
+
+    if (queryString) {
+      queryString.split('&').forEach(param => {
+        const [key, value] = param.split('=');
+        if (key) {
+          queryParams[decodeURIComponent(key)] = value ? decodeURIComponent(value) : '';
+        }
+      });
+    }
+
+    // Parse the main URL parts
+    // Handle custom scheme (ankaadesign://...) and HTTPS
+    const schemeMatch = urlWithoutQuery.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//);
+
+    if (schemeMatch) {
+      const scheme = schemeMatch[1];
+      const afterScheme = urlWithoutQuery.substring(schemeMatch[0].length);
+
+      // Split into hostname and path
+      const firstSlash = afterScheme.indexOf('/');
+
+      let hostname: string | null = null;
+      let path: string | null = null;
+
+      if (firstSlash === -1) {
+        // No path, just hostname (e.g., ankaadesign://notification)
+        hostname = afterScheme || null;
+      } else {
+        // Has both hostname and path
+        hostname = afterScheme.substring(0, firstSlash) || null;
+        path = afterScheme.substring(firstSlash) || null;
+      }
+
+      return { hostname, path, queryParams };
+    }
+
+    // Fallback for malformed URLs
+    return { hostname: null, path: urlWithoutQuery, queryParams };
+  } catch (error) {
+    console.error('[Deep Link] Error in parseUrl:', error);
+    return { hostname: null, path: null, queryParams: {} };
+  }
+}
+
+/**
  * Parses a deep link URL and extracts route and parameters
  *
  * Supported URL formats:
@@ -183,7 +239,7 @@ export function parseDeepLink(url: string): ParsedDeepLink {
     console.log('[Deep Link] Parsing URL:', url);
 
     // Parse the URL
-    const parsed = Linking.parse(url);
+    const parsed = parseUrl(url);
     console.log('[Deep Link] Parsed URL:', JSON.stringify(parsed, null, 2));
 
     const { hostname, path, queryParams } = parsed;

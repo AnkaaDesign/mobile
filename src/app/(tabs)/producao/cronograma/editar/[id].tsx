@@ -22,10 +22,12 @@ export default function EditScheduleScreen() {
   const { updateAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Check permissions - Only ADMIN and FINANCIAL can edit tasks
+  // Check permissions - ADMIN, FINANCIAL, COMMERCIAL, and LOGISTIC can edit tasks
   const userPrivilege = user?.sector?.privileges;
   const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+                  userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+                  userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
 
   useEffect(() => {
     // Wait for user to load

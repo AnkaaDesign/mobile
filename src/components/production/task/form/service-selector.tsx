@@ -6,7 +6,6 @@ import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
 import { useServiceMutations } from "@/hooks";
 import { serviceService } from "@/api-client";
 import type { Service } from "@/types";
@@ -185,7 +184,7 @@ export function ServiceSelector({
         style={styles.addButton}
       >
         <Icon name="plus" size={16} color={colors.foreground} />
-        <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm, color: colors.foreground }}>
+        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
           Adicionar
         </ThemedText>
       </Button>
@@ -201,32 +200,32 @@ export function ServiceSelector({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.sm,
+    gap: 8, // spacing.sm
   },
   servicesContainer: {
-    gap: spacing.sm,
+    gap: 8, // spacing.sm
   },
   serviceRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.xs,
+    gap: 4, // spacing.xs
   },
   comboboxContainer: {
     flex: 1,
   },
   actionButton: {
     minWidth: 0,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 4, // spacing.xs
     marginTop: 6,
   },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: spacing.xs,
+    marginTop: 4, // spacing.xs
   },
   error: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
+    fontSize: 12, // fontSize.xs
+    marginTop: 4, // spacing.xs
   },
 });

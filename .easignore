@@ -1,0 +1,8 @@
+# Claude Code configuration directory
+.claude
+
+# Common development files that don't need to be uploaded
+.vscode
+.idea
+*.log
+.DS_Store

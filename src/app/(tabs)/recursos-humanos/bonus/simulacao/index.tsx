@@ -60,10 +60,10 @@ export default function BonusSimulationScreen() {
   const endDate = new Date(currentPeriod.endDate);
   endDate.setHours(23, 59, 59, 999);
 
-  // Fetch current period tasks (completed, invoiced, or settled with commission)
+  // Fetch current period tasks (completed with commission)
   const { data: currentPeriodTasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
     where: {
-      status: { in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED] },
+      status: TASK_STATUS.COMPLETED,
       finishedAt: {
         gte: startDate,
         lte: endDate,

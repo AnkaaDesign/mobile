@@ -22,13 +22,26 @@ import {
   IconFileText,
   IconClipboardList,
   IconMapPin,
+  IconReceipt,
+  IconUser,
+  IconPhone,
+  IconCategory,
+  IconTool,
 } from "@tabler/icons-react-native";
+import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
 
 interface TaskInfoCardProps {
   task: Task & {
     truck?: Truck;
     customer?: {
       fantasyName: string;
+    };
+    invoiceTo?: {
+      fantasyName: string;
+    };
+    negotiatingWith?: {
+      name: string;
+      phone: string;
     };
     details?: string;
   };
@@ -59,6 +72,33 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cliente</ThemedText>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer.fantasyName}</ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Invoice To Customer */}
+        {task.invoiceTo && (
+          <View style={styles.infoItem}>
+            <IconReceipt size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Faturar Para</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.invoiceTo.fantasyName}</ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Negotiating With Contact */}
+        {task.negotiatingWith && (
+          <View style={styles.infoItem}>
+            <IconUser size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Negociando com</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.negotiatingWith.name}</ThemedText>
+              {task.negotiatingWith.phone && (
+                <ThemedText style={[styles.subtext, { color: colors.mutedForeground }]}>
+                  <IconPhone size={12} color={colors.mutedForeground} /> {task.negotiatingWith.phone}
+                </ThemedText>
+              )}
             </View>
           </View>
         )}
@@ -103,6 +143,32 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº Chassi</ThemedText>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>{formatChassis(task.truck.chassisNumber)}</ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Truck Category */}
+        {task.truck?.category && (
+          <View style={styles.infoItem}>
+            <IconCategory size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Categoria</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {TRUCK_CATEGORY_LABELS[task.truck.category as keyof typeof TRUCK_CATEGORY_LABELS]}
+              </ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Implement Type */}
+        {task.truck?.implementType && (
+          <View style={styles.infoItem}>
+            <IconTool size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Implemento</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {IMPLEMENT_TYPE_LABELS[task.truck.implementType as keyof typeof IMPLEMENT_TYPE_LABELS]}
+              </ThemedText>
             </View>
           </View>
         )}
@@ -196,6 +262,10 @@ const styles = StyleSheet.create({
   },
   monoValue: {
     fontFamily: "monospace",
+  },
+  subtext: {
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
   separator: {
     marginVertical: spacing.md,

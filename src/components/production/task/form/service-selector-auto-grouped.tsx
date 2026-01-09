@@ -6,8 +6,8 @@ import { Icon } from "@/components/ui/icon";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, SERVICE_ORDER_TYPE_LABELS, USER_STATUS } from "@/constants/enums";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, USER_STATUS } from "@/constants/enums";
+import { SERVICE_ORDER_TYPE_LABELS } from "@/constants/enum-labels";
 import { useServiceMutations } from "@/hooks";
 import { serviceService, getUsers } from "@/api-client";
 import type { Service, User } from "@/types";
@@ -227,7 +227,7 @@ export function ServiceSelectorAutoGrouped({
       {/* Add Service Button */}
       <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
         <Icon name="plus" size={16} color={colors.foreground} />
-        <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm, color: colors.foreground }}>
+        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
           Adicionar Serviço
         </ThemedText>
       </Button>
@@ -508,19 +508,19 @@ function ServiceRow({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   ungroupedSection: {
-    gap: spacing.sm,
-    paddingBottom: spacing.md,
+    gap: 8, // spacing.sm
+    paddingBottom: 16, // spacing.md
     borderBottomWidth: 1,
   },
   groupedSection: {
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   groupCard: {
-    padding: spacing.md,
-    gap: spacing.sm,
+    padding: 16, // spacing.md
+    gap: 8, // spacing.sm
     borderWidth: 1,
     borderRadius: 8,
   },
@@ -528,19 +528,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 4, // spacing.xs
   },
   groupTitle: {
-    fontSize: fontSize.sm,
+    fontSize: 14, // fontSize.sm
     fontWeight: "500",
   },
   groupCount: {
-    fontSize: fontSize.xs,
+    fontSize: 12, // fontSize.xs
   },
   serviceRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.xs,
+    gap: 4, // spacing.xs
     flexWrap: "wrap",
   },
   typeContainer: {
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     minWidth: 0,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 4, // spacing.xs
     marginTop: 0,
   },
   addButton: {
@@ -567,8 +567,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   error: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs,
+    fontSize: 12, // fontSize.xs
+    marginTop: 4, // spacing.xs
   },
 });
 

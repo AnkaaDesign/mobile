@@ -24,11 +24,22 @@
       }
     },
     "production": {
+      "channel": "production",
       "android": {
         "buildType": "app-bundle"
       },
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "cache": {
+          "key": "production-cache",
+          "cacheDefaultPaths": true,
+          "customPaths": [
+            "ios/Pods"
+          ]
+        }
+      },
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
       }
     }
   },

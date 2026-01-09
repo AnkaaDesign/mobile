@@ -559,7 +559,6 @@ export const routes = {
     root: "/producao",
     // Note: 'schedule' property name is kept for backward compatibility but routes point to 'cronograma'
     schedule: {
-      create: "/producao/cronograma/cadastrar",
       details: (id: string) => `/producao/cronograma/detalhes/${id}`,
       edit: (id: string) => `/producao/cronograma/editar/${id}`,
       list: "/producao/cronograma",
@@ -567,7 +566,8 @@ export const routes = {
     },
     agenda: {
       root: "/producao/agenda",
-      details: (id: string) => `/producao/cronograma/detalhes/${id}`,
+      create: "/producao/agenda/cadastrar",
+      details: (id: string) => `/producao/agenda/detalhes/${id}`,
     },
     serviceOrders: {
       create: "/producao/ordens-de-servico/cadastrar",

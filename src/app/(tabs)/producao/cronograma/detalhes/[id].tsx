@@ -50,6 +50,7 @@ export default function ScheduleDetailsScreen() {
   const { user } = useAuth();
   const { delete: deleteAsync } = useTaskMutations();
   const [refreshing, setRefreshing] = useState(false);
+  const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("list");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
 
@@ -84,6 +85,7 @@ export default function ScheduleDetailsScreen() {
       customer: true,
       createdBy: true,
       services: true,
+      baseFiles: true,
       artworks: true,
       budget: {
         include: {
@@ -385,6 +387,81 @@ export default function ScheduleDetailsScreen() {
 
           {/* Observations Table - Before Artworks */}
           <ObservationsTable taskId={id as string} maxHeight={400} />
+
+          {/* Base Files Section */}
+          {(task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconFile size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Arquivos Base</ThemedText>
+                  <Badge variant="secondary">
+                    {(task as any).baseFiles.length}
+                  </Badge>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  {(task as any).baseFiles.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        for (const file of (task as any).baseFiles) {
+                          try {
+                            await fileViewer.actions.downloadFile(file);
+                          } catch (_error) {
+                            console.error("Error downloading file:", _error);
+                          }
+                        }
+                        Alert.alert("Sucesso", `${(task as any).baseFiles.length} arquivos baixados`);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={16} color={colors.primaryForeground} />
+                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                        Baixar Todos
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: baseFilesViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setBaseFilesViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={baseFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: baseFilesViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setBaseFilesViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={baseFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={baseFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                  {(task as any).baseFiles.map((file: any, index: number) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode={baseFilesViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        fileViewer.actions.viewFiles((task as any).baseFiles, index);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            </Card>
+          )}
 
           {/* Artworks Section */}
           {(task as any)?.artworks && (task as any).artworks.length > 0 && (

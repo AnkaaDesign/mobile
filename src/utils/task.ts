@@ -130,9 +130,11 @@ export function isTaskCancelled(task: Task): boolean {
 
 /**
  * Check if task is on hold
+ * Note: ON_HOLD status does not exist in the API schema, so this always returns false
  */
 export function isTaskOnHold(task: Task): boolean {
-  return task.status === TASK_STATUS.ON_HOLD;
+  // return task.status === TASK_STATUS.ON_HOLD;
+  return false;
 }
 
 /**

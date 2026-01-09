@@ -38,7 +38,7 @@ export default function BonusSimulationScreen() {
   // Fetch ALL tasks in the period (no user filter)
   const { data: currentPeriodTasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
     where: {
-      status: { in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED] },
+      status: TASK_STATUS.COMPLETED,
       finishedAt: {
         gte: startDate,
         lte: endDate,

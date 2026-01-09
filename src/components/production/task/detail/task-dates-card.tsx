@@ -22,6 +22,7 @@ interface TaskDatesCardProps {
   task: Task & {
     entryDate?: Date | string;
     term?: Date | string;
+    forecastDate?: Date | string;
     createdBy?: {
       name: string;
     };
@@ -87,6 +88,19 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task }) => {
               ]}>
                 {formatDate(task.term)}
                 {isOverdue && " (Atrasado)"}
+              </ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Forecast Date */}
+        {task.forecastDate && (
+          <View style={styles.dateItem}>
+            <IconCalendarStats size={20} color={colors.mutedForeground} />
+            <View style={styles.dateText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Previsão</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {formatDate(task.forecastDate)}
               </ThemedText>
             </View>
           </View>

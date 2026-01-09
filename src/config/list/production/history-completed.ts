@@ -41,9 +41,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
       },
     },
     where: {
-      status: {
-        in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
-      },
+      status: TASK_STATUS.COMPLETED,
     },
   },
 
@@ -206,7 +204,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
-          router.push(`/producao/cronograma/detalhes/${task.id}`)
+          router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
       {
@@ -248,17 +246,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
             label: TASK_STATUS_LABELS[TASK_STATUS.COMPLETED],
             value: TASK_STATUS.COMPLETED,
           },
-          {
-            label: TASK_STATUS_LABELS[TASK_STATUS.INVOICED],
-            value: TASK_STATUS.INVOICED,
-          },
-          {
-            label: TASK_STATUS_LABELS[TASK_STATUS.SETTLED],
-            value: TASK_STATUS.SETTLED,
-          },
         ],
         placeholder: 'Selecione os status',
-        defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+        defaultValue: [TASK_STATUS.COMPLETED],
       },
       {
         key: 'customerIds',

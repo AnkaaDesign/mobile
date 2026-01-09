@@ -446,12 +446,12 @@ export function canDeletePaintProductions(user: User | null): boolean {
 
 /**
  * Can user edit/delete customers?
- * FINANCIAL and team leaders manage customers
+ * FINANCIAL, COMMERCIAL and team leaders manage customers
  */
 export function canEditCustomers(user: User | null): boolean {
   if (!user) return false;
-  // ADMIN and FINANCIAL can always edit customers
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN])) return true;
+  // ADMIN, FINANCIAL, and COMMERCIAL can always edit customers
+  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN])) return true;
   // Team leaders can also edit customers
   return isTeamLeader(user);
 }

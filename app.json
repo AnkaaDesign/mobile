@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/icon-1024.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#15803d"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -68,6 +68,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/f8f06f52-853f-4ab6-a783-181208687fa7"
     },
     "extra": {
       "router": {},

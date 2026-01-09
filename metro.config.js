@@ -53,11 +53,11 @@ config.resolver.sourceExts.push("cjs");
 // 7. Apply nativewind with minimal config first
 const { withNativeWind } = require("nativewind/metro");
 
-// Add reset cache option
-config.resetCache = true;
+// Add reset cache option (disable for production builds)
+config.resetCache = process.env.EAS_BUILD ? false : true;
 
-// Add max workers to help with bundling
-config.maxWorkers = 2;
+// Add max workers to help with bundling (increase for production)
+config.maxWorkers = process.env.EAS_BUILD ? 4 : 2;
 
 // Try the simplest possible configuration
 module.exports = withNativeWind(config, {

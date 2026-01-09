@@ -44,6 +44,8 @@ export enum SECTOR_PRIVILEGES {
   DESIGNER = "DESIGNER",
   FINANCIAL = "FINANCIAL",
   LOGISTIC = "LOGISTIC",
+  COMMERCIAL = "COMMERCIAL",
+  PLOTTING = "PLOTTING",
 }
 
 export enum USER_STATUS {
@@ -145,6 +147,7 @@ export enum TASK_STATUS {
 export enum SERVICE_ORDER_STATUS {
   PENDING = "PENDING",
   IN_PROGRESS = "IN_PROGRESS",
+  WAITING_APPROVE = "WAITING_APPROVE",
   COMPLETED = "COMPLETED",
   CANCELLED = "CANCELLED",
 }
@@ -2034,6 +2037,32 @@ export enum TRUCK_MANUFACTURER {
   VOLVO = "VOLVO",
   DAF = "DAF",
   IVECO = "IVECO",
+}
+
+/**
+ * Truck categories/types
+ * Categories define the size and configuration of the truck
+ */
+export enum TRUCK_CATEGORY {
+  MINI = 'MINI', // Mini truck (small urban delivery)
+  VUC = 'VUC', // VUC - Veículo Urbano de Carga (Urban Cargo Vehicle)
+  THREE_QUARTER = 'THREE_QUARTER', // 3/4 truck (light commercial)
+  RIGID = 'RIGID', // Toco - Rigid truck with single rear axle
+  TRUCK = 'TRUCK', // Standard truck
+  SEMI_TRAILER = 'SEMI_TRAILER', // Carreta - Semi-trailer truck
+  B_DOUBLE = 'B_DOUBLE', // Bitrem - B-Double (truck with double trailer)
+}
+
+/**
+ * Truck body/implement types
+ * Defines the type of body or implement mounted on the truck
+ */
+export enum IMPLEMENT_TYPE {
+  CORRUGATED = 'CORRUGATED', // Corrugado - Corrugated body
+  INSULATED = 'INSULATED', // Isoplastic - Insulated/refrigerated body
+  CURTAIN_SIDE = 'CURTAIN_SIDE', // Sider - Curtain-side body
+  TANK = 'TANK', // Tanque - Tank truck
+  FLATBED = 'FLATBED', // Carroceria - Open flatbed/stake body
 }
 
 /**

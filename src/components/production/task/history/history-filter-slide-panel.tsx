@@ -28,7 +28,7 @@ interface HistoryFilterSlidePanelProps {
 }
 
 // Move default status values outside component to prevent re-creation on every render
-const DEFAULT_STATUS_VALUES = [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED];
+const DEFAULT_STATUS_VALUES = [TASK_STATUS.COMPLETED];
 
 export function HistoryFilterSlidePanel({
   filters,

@@ -81,12 +81,20 @@ function FullMenuDrawerContent({
   // Filter menu items based on user privileges
   const filteredMenu = useMemo(() => {
     if (!user) return [];
-    return getFilteredMenuForUser(MENU_ITEMS, user, 'mobile');
+    const filtered = getFilteredMenuForUser(MENU_ITEMS, user, 'mobile');
+    // Sort alphabetically by title, except "Inicio" which should always be first
+    return filtered.sort((a, b) => {
+      if (a.id === 'home') return -1;
+      if (b.id === 'home') return 1;
+      return a.title.localeCompare(b.title, 'pt-BR');
+    });
   }, [user]);
 
   // Get favorite items
   const favoriteItems = useMemo(() => {
-    return filteredMenu.filter(item => favorites.includes(item.id));
+    const favorites_filtered = filteredMenu.filter(item => favorites.includes(item.id));
+    // Sort favorites alphabetically by title
+    return favorites_filtered.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
   }, [filteredMenu, favorites]);
 
   // Chevron animation

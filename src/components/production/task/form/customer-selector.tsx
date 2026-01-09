@@ -4,7 +4,6 @@ import { Combobox } from "@/components/ui/combobox";
 import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
 import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
-import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Customer } from "@/types";
 
 interface CustomerSelectorProps {
@@ -52,29 +51,29 @@ export function CustomerSelector({
   const getOptionValue = useCallback((customer: Customer) => customer.id, []);
 
   // Search function for Combobox
-  const searchCustomers = async (
+  const searchCustomers = useCallback(async (
     search: string,
     page: number = 1,
   ): Promise<{
     data: Customer[];
     hasMore: boolean;
   }> => {
-    const params: any = {
-      orderBy: { fantasyName: "asc" },
-      page: page,
-      take: 50,
-      include: { logo: true },
-    };
-
-    // Only add search filter if there's a search term
-    if (search && search.trim()) {
-      params.searchingFor = search.trim();
-    }
-
     try {
+      const params: any = {
+        orderBy: { fantasyName: "asc" },
+        page: page,
+        take: 50,
+        include: { logo: true },
+      };
+
+      // Only add search filter if there's a search term
+      if (search && search.trim()) {
+        params.searchingFor = search.trim();
+      }
+
       const response = await getCustomers(params);
-      const customers = response.data || [];
-      const hasMore = response.meta?.hasNextPage || false;
+      const customers = response?.data || [];
+      const hasMore = response?.meta?.hasNextPage || false;
 
       return {
         data: customers,
@@ -84,7 +83,7 @@ export function CustomerSelector({
       console.error('[CustomerSelector] Error fetching customers:', error);
       return { data: [], hasMore: false };
     }
-  };
+  }, []);
 
   // Custom render option with logo and metadata
   const renderOption = useCallback(
@@ -187,7 +186,7 @@ const styles = StyleSheet.create({
   optionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 16, // spacing.md
     flex: 1,
   },
   customerInfo: {
@@ -196,11 +195,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   fantasyName: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
+    fontSize: 16, // fontSize.base
+    fontWeight: "500" as any, // fontWeight.medium
   },
   selectedText: {
-    fontWeight: fontWeight.semibold as any,
+    fontWeight: "600" as any, // fontWeight.semibold
   },
   secondaryInfo: {
     flexDirection: "row",
@@ -208,9 +207,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   secondaryText: {
-    fontSize: fontSize.sm,
+    fontSize: 14, // fontSize.sm
   },
   separator: {
-    fontSize: fontSize.sm,
+    fontSize: 14, // fontSize.sm
   },
 });

@@ -3,7 +3,7 @@
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 import type { Layout, LayoutIncludes } from "./layout";
-import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER, TRUCK_SPOT } from '@/constants';
+import type { ORDER_BY_DIRECTION, TRUCK_MANUFACTURER, TRUCK_SPOT, TRUCK_CATEGORY, IMPLEMENT_TYPE } from '@/constants';
 
 // =====================
 // Main Entity Interface
@@ -15,6 +15,10 @@ export interface Truck extends BaseEntity {
   chassisNumber: string | null;
   model: string;
   manufacturer: TRUCK_MANUFACTURER;
+
+  // Truck specifications
+  category: TRUCK_CATEGORY | null;
+  implementType: IMPLEMENT_TYPE | null;
 
   // Position (using spot enum instead of coordinates)
   spot: TRUCK_SPOT | null;

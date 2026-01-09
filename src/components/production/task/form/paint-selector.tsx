@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { getPaints } from "@/api-client";
 import { useTheme } from "@/lib/theme";
-import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 import { PaintFinishPreview } from "@/components/painting/effects/paint-finish-preview";
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
   optionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 16, // spacing.md
     flex: 1,
   },
   colorPreview: {
@@ -383,11 +382,11 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   paintName: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium as any,
+    fontSize: 16, // fontSize.base
+    fontWeight: "500" as any, // fontWeight.medium
   },
   selectedText: {
-    fontWeight: fontWeight.semibold as any,
+    fontWeight: "600" as any, // fontWeight.semibold
   },
   metadataContainer: {
     flexDirection: "row",
@@ -395,9 +394,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   metadataText: {
-    fontSize: fontSize.xs,
+    fontSize: 12, // fontSize.xs
   },
   separator: {
-    fontSize: fontSize.xs,
+    fontSize: 12, // fontSize.xs
   },
 });

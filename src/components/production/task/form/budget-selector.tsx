@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, borderRadius, fontWeight } from "@/constants/design-system";
 import { IconTrash, IconCalendar, IconFileText, IconCurrencyReal } from "@tabler/icons-react-native";
 import { formatCurrency } from "@/utils";
 
@@ -204,49 +203,49 @@ BudgetSelector.displayName = "BudgetSelector";
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   headerRow: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   headerField: {
     flex: 1,
-    gap: spacing.sm,
+    gap: 8, // spacing.sm
   },
   labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
+    gap: 4, // spacing.xs
   },
   totalInput: {
-    fontWeight: fontWeight.semibold,
+    fontWeight: "600" as any, // fontWeight.semibold
   },
   itemsContainer: {
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   itemRow: {
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: 8, // spacing.sm
     alignItems: "flex-end",
   },
   itemFields: {
     flex: 1,
-    gap: spacing.md,
+    gap: 16, // spacing.md
   },
   itemField: {
-    gap: spacing.sm,
+    gap: 8, // spacing.sm
   },
   removeButton: {
-    padding: spacing.sm,
-    marginBottom: spacing.xxs,
+    padding: 8, // spacing.sm
+    marginBottom: 2, // spacing.xxs
   },
   alert: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: 16, // spacing.md
+    borderRadius: 8, // borderRadius.md
     borderWidth: 1,
   },
   alertText: {
-    fontSize: fontSize.sm,
+    fontSize: 14, // fontSize.sm
   },
 });

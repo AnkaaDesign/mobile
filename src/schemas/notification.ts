@@ -884,3 +884,228 @@ export type SeenNotificationBatchDeleteFormData = z.infer<typeof seenNotificatio
 export type SeenNotificationInclude = z.infer<typeof seenNotificationIncludeSchema>;
 export type SeenNotificationOrderBy = z.infer<typeof seenNotificationOrderBySchema>;
 export type SeenNotificationWhere = z.infer<typeof seenNotificationWhereSchema>;
+
+// =====================
+// User Notification Preference Schemas
+// =====================
+
+export const userNotificationPreferenceIncludeSchema = z
+  .object({
+    user: z
+      .union([
+        z.boolean(),
+        z.object({
+          include: z.any().optional(),
+        }),
+      ])
+      .optional(),
+  })
+  .partial();
+
+export const userNotificationPreferenceOrderBySchema = z
+  .union([
+    z.object({
+      id: orderByDirectionSchema.optional(),
+      notificationType: orderByDirectionSchema.optional(),
+      eventType: orderByDirectionSchema.optional(),
+      enabled: orderByDirectionSchema.optional(),
+      createdAt: orderByDirectionSchema.optional(),
+      updatedAt: orderByDirectionSchema.optional(),
+    }),
+    z.array(
+      z.object({
+        id: orderByDirectionSchema.optional(),
+        notificationType: orderByDirectionSchema.optional(),
+        eventType: orderByDirectionSchema.optional(),
+        enabled: orderByDirectionSchema.optional(),
+        createdAt: orderByDirectionSchema.optional(),
+        updatedAt: orderByDirectionSchema.optional(),
+      }),
+    ),
+  ])
+  .optional();
+
+export const userNotificationPreferenceWhereSchema: z.ZodType<any> = z
+  .object({
+    AND: z.array(z.lazy(() => userNotificationPreferenceWhereSchema)).optional(),
+    OR: z.array(z.lazy(() => userNotificationPreferenceWhereSchema)).optional(),
+    NOT: z.lazy(() => userNotificationPreferenceWhereSchema).optional(),
+
+    id: z
+      .union([
+        z.string(),
+        z.object({
+          equals: z.string().optional(),
+          not: z.string().optional(),
+          in: z.array(z.string()).optional(),
+          notIn: z.array(z.string()).optional(),
+        }),
+      ])
+      .optional(),
+
+    userId: z
+      .union([
+        z.string(),
+        z.object({
+          equals: z.string().optional(),
+          not: z.string().optional(),
+          in: z.array(z.string()).optional(),
+          notIn: z.array(z.string()).optional(),
+        }),
+      ])
+      .optional(),
+
+    notificationType: z
+      .union([
+        z.nativeEnum(NOTIFICATION_TYPE),
+        z.object({
+          equals: z.nativeEnum(NOTIFICATION_TYPE).optional(),
+          not: z.nativeEnum(NOTIFICATION_TYPE).optional(),
+          in: z.array(z.nativeEnum(NOTIFICATION_TYPE)).optional(),
+          notIn: z.array(z.nativeEnum(NOTIFICATION_TYPE)).optional(),
+        }),
+      ])
+      .optional(),
+
+    eventType: z
+      .union([
+        z.string(),
+        z.null(),
+        z.object({
+          equals: z.union([z.string(), z.null()]).optional(),
+          not: z.union([z.string(), z.null()]).optional(),
+          contains: z.string().optional(),
+          startsWith: z.string().optional(),
+          endsWith: z.string().optional(),
+        }),
+      ])
+      .optional(),
+
+    enabled: z
+      .union([
+        z.boolean(),
+        z.object({
+          equals: z.boolean().optional(),
+          not: z.boolean().optional(),
+        }),
+      ])
+      .optional(),
+
+    createdAt: z
+      .union([
+        z.date(),
+        z.object({
+          equals: z.date().optional(),
+          not: z.date().optional(),
+          lt: z.coerce.date().optional(),
+          lte: z.coerce.date().optional(),
+          gt: z.coerce.date().optional(),
+          gte: z.coerce.date().optional(),
+        }),
+      ])
+      .optional(),
+
+    updatedAt: z
+      .union([
+        z.date(),
+        z.object({
+          equals: z.date().optional(),
+          not: z.date().optional(),
+          lt: z.coerce.date().optional(),
+          lte: z.coerce.date().optional(),
+          gt: z.coerce.date().optional(),
+          gte: z.coerce.date().optional(),
+        }),
+      ])
+      .optional(),
+
+    user: z.lazy(() => z.any()).optional(),
+  })
+  .partial();
+
+export const userNotificationPreferenceGetManySchema = z.object({
+  page: z.coerce.number().int().min(0).default(1).optional(),
+  limit: z.coerce.number().int().positive().max(100).default(20).optional(),
+  where: userNotificationPreferenceWhereSchema.optional(),
+  orderBy: userNotificationPreferenceOrderBySchema.optional(),
+  include: userNotificationPreferenceIncludeSchema.optional(),
+});
+
+export const userNotificationPreferenceGetByIdSchema = z.object({
+  include: userNotificationPreferenceIncludeSchema.optional(),
+  id: z.string().uuid({ message: "Preferência inválida" }),
+});
+
+export const userNotificationPreferenceCreateSchema = z
+  .object({
+    userId: z.string().uuid({ message: "Usuário inválido" }),
+    notificationType: z.enum(Object.values(NOTIFICATION_TYPE) as [string, ...string[]], {
+      errorMap: () => ({ message: "tipo de notificação inválido" }),
+    }),
+    eventType: z.union([z.string(), z.null()]).optional(),
+    enabled: z.boolean().default(true),
+    channels: z
+      .array(
+        z.enum(Object.values(NOTIFICATION_CHANNEL) as [string, ...string[]], {
+          errorMap: () => ({ message: "canal de notificação inválido" }),
+        }),
+      )
+      .default([NOTIFICATION_CHANNEL.IN_APP]),
+    mandatoryChannels: z
+      .array(
+        z.enum(Object.values(NOTIFICATION_CHANNEL) as [string, ...string[]], {
+          errorMap: () => ({ message: "canal obrigatório inválido" }),
+        }),
+      )
+      .default([]),
+  })
+  .transform(toFormData);
+
+export const userNotificationPreferenceUpdateSchema = z
+  .object({
+    notificationType: z
+      .enum(Object.values(NOTIFICATION_TYPE) as [string, ...string[]], {
+        errorMap: () => ({ message: "tipo de notificação inválido" }),
+      })
+      .optional(),
+    eventType: z.union([z.string(), z.null()]).optional(),
+    enabled: z.boolean().optional(),
+    channels: z
+      .array(
+        z.enum(Object.values(NOTIFICATION_CHANNEL) as [string, ...string[]], {
+          errorMap: () => ({ message: "canal de notificação inválido" }),
+        }),
+      )
+      .optional(),
+    mandatoryChannels: z
+      .array(
+        z.enum(Object.values(NOTIFICATION_CHANNEL) as [string, ...string[]], {
+          errorMap: () => ({ message: "canal obrigatório inválido" }),
+        }),
+      )
+      .optional(),
+  })
+  .transform(toFormData);
+
+export const userNotificationPreferenceBatchUpdateSchema = z.object({
+  preferences: z
+    .array(
+      z.object({
+        type: z.string(),
+        eventType: z.string().nullable(),
+        channels: z.array(z.string()),
+      }),
+    )
+    .min(1, "Pelo menos uma preferência deve ser fornecida"),
+});
+
+// UserNotificationPreference types
+export type UserNotificationPreferenceGetManyFormData = z.infer<typeof userNotificationPreferenceGetManySchema>;
+export type UserNotificationPreferenceGetByIdFormData = z.infer<typeof userNotificationPreferenceGetByIdSchema>;
+export type UserNotificationPreferenceCreateFormData = z.infer<typeof userNotificationPreferenceCreateSchema>;
+export type UserNotificationPreferenceUpdateFormData = z.infer<typeof userNotificationPreferenceUpdateSchema>;
+export type UserNotificationPreferenceBatchUpdateFormData = z.infer<typeof userNotificationPreferenceBatchUpdateSchema>;
+
+export type UserNotificationPreferenceInclude = z.infer<typeof userNotificationPreferenceIncludeSchema>;
+export type UserNotificationPreferenceOrderBy = z.infer<typeof userNotificationPreferenceOrderBySchema>;
+export type UserNotificationPreferenceWhere = z.infer<typeof userNotificationPreferenceWhereSchema>;

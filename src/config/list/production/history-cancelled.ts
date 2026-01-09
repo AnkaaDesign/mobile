@@ -195,7 +195,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
-          router.push(`/producao/cronograma/detalhes/${task.id}`)
+          router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
       {

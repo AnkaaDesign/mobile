@@ -50,11 +50,9 @@ export const historyListConfig: ListConfig<Task> = {
       },
     },
     where: {
-      // Default: show COMPLETED, INVOICED and SETTLED for all users
+      // Default: show COMPLETED for all users
       // FINANCIAL/ADMIN can change this using the status filter
-      status: {
-        in: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
-      },
+      status: TASK_STATUS.COMPLETED,
     },
   },
 
@@ -219,7 +217,7 @@ export const historyListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
-          router.push(`/producao/cronograma/detalhes/${task.id}`)
+          router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
       {
@@ -262,20 +260,12 @@ export const historyListConfig: ListConfig<Task> = {
             value: TASK_STATUS.COMPLETED,
           },
           {
-            label: TASK_STATUS_LABELS[TASK_STATUS.INVOICED],
-            value: TASK_STATUS.INVOICED,
-          },
-          {
-            label: TASK_STATUS_LABELS[TASK_STATUS.SETTLED],
-            value: TASK_STATUS.SETTLED,
-          },
-          {
             label: TASK_STATUS_LABELS[TASK_STATUS.CANCELLED],
             value: TASK_STATUS.CANCELLED,
           },
         ],
         placeholder: 'Selecione os status',
-        defaultValue: [TASK_STATUS.COMPLETED, TASK_STATUS.INVOICED, TASK_STATUS.SETTLED],
+        defaultValue: [TASK_STATUS.COMPLETED],
         // Only FINANCIAL and ADMIN can see status filter
         canView: isFinancialOrAdmin,
       },

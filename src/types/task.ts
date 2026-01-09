@@ -24,7 +24,7 @@ export interface Task extends BaseEntity {
   name: string;
   status: TASK_STATUS;
   statusOrder: number;
-  commission: COMMISSION_STATUS;
+  commission: COMMISSION_STATUS | null;
   serialNumber: string | null;
   // Note: chassisNumber and plate are now on the Truck entity (task.truck?.chassisNumber, task.truck?.plate)
   details: string | null;
@@ -39,6 +39,12 @@ export interface Task extends BaseEntity {
   invoiceToId: string | null;
   sectorId: string | null;
   negotiatingWith: { name: string; phone: string } | null;
+  budgetIds?: string[];
+  invoiceIds?: string[];
+  receiptIds?: string[];
+  reimbursementIds?: string[];
+  reimbursementInvoiceIds?: string[];
+  baseFileIds?: string[];
   createdById: string | null;
   bonusDiscountId?: string | null;
   priority?: string | null;
@@ -58,6 +64,7 @@ export interface Task extends BaseEntity {
   receipts?: File[];
   reimbursements?: File[];
   invoiceReimbursements?: File[];
+  baseFiles?: File[]; // Files used as base for artwork design
 
   observation?: Observation;
   generalPainting?: Paint;
@@ -121,6 +128,11 @@ export interface TaskIncludes {
         include?: UserIncludes;
       };
   artworks?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
+  baseFiles?:
     | boolean
     | {
         include?: FileIncludes;
