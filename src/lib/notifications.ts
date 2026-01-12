@@ -5,9 +5,9 @@ import { Platform } from 'react-native';
 // Configure how notifications should be handled when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: false,  // Don't show alert in foreground (prevents duplicate notifications)
-    shouldPlaySound: true,   // Still play sound
-    shouldSetBadge: true,    // Still update badge
+    shouldShowAlert: true,   // Show alert in foreground (iOS needs this to display notifications)
+    shouldPlaySound: true,   // Play sound
+    shouldSetBadge: true,    // Update badge
   }),
 });
 

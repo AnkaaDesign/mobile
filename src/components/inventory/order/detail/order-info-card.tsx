@@ -18,7 +18,9 @@ import {
   IconNotes,
   IconPhone,
   IconMail,
+  IconCreditCard,
 } from "@tabler/icons-react-native";
+import { PAYMENT_METHOD_LABELS } from "@/constants";
 
 interface OrderInfoCardProps {
   order: Order;
@@ -284,6 +286,65 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
             </View>
           )}
         </View>
+
+        {/* Payment Information Section */}
+        {order.paymentMethod && (
+          <>
+            {/* Separator */}
+            <View style={[styles.separator, { backgroundColor: colors.border }]} />
+
+            <View style={styles.section}>
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Pagamento
+              </ThemedText>
+
+              {/* Payment Method */}
+              <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
+                <View style={styles.infoLabel}>
+                  <IconCreditCard size={16} color={colors.mutedForeground} />
+                  <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
+                    Método de Pagamento
+                  </ThemedText>
+                </View>
+                <Badge variant="outline" size="sm">
+                  <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                    {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
+                  </ThemedText>
+                </Badge>
+              </View>
+
+              {/* PIX Key (only when payment method is PIX) */}
+              {order.paymentMethod === "PIX" && order.paymentPix && (
+                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
+                  <View style={styles.infoLabel}>
+                    <IconCreditCard size={16} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
+                      Chave Pix
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
+                    {order.paymentPix}
+                  </ThemedText>
+                </View>
+              )}
+
+              {/* Due Days (only when payment method is BANK_SLIP) */}
+              {order.paymentMethod === "BANK_SLIP" && order.paymentDueDays && (
+                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
+                  <View style={styles.infoLabel}>
+                    <IconCalendar size={16} color={colors.mutedForeground} />
+                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
+                      Prazo de Vencimento
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
+                    {order.paymentDueDays} dias
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+          </>
+        )}
       </View>
     </Card>
   );

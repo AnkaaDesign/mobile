@@ -14,7 +14,6 @@ import type { Cut, CutIncludes } from "./cut";
 import type { Truck, TruckIncludes } from "./truck";
 import type { Bonus, BonusIncludes } from "./bonus";
 import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";
-import type { Budget, BudgetIncludes } from "./budget";
 
 // =====================
 // Task Interface
@@ -48,15 +47,11 @@ export interface Task extends BaseEntity {
   createdById: string | null;
   bonusDiscountId?: string | null;
   priority?: string | null;
-  price?: number | null; // Task price (calculated from budget items)
 
   // Relations
   sector?: Sector;
   customer?: Customer;
   invoiceTo?: Customer;
-
-  // Budget (one-to-one: price and line items)
-  budget?: Budget;
 
   // Multiple file support (array relations matching database schema)
   budgets?: File[];
@@ -97,12 +92,6 @@ export interface TaskIncludes {
     | boolean
     | {
         include?: CustomerIncludes;
-      };
-  // Budget items (for price calculation)
-  budget?:
-    | boolean
-    | {
-        include?: BudgetIncludes;
       };
 
   // Multiple file includes (array relations)
@@ -204,7 +193,6 @@ export interface TaskOrderBy {
   paintId?: ORDER_BY_DIRECTION;
   customerId?: ORDER_BY_DIRECTION;
   sectorId?: ORDER_BY_DIRECTION;
-  budgetId?: ORDER_BY_DIRECTION;
   nfeId?: ORDER_BY_DIRECTION;
   receiptId?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;

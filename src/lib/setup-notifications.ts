@@ -25,7 +25,6 @@ class GlobalMobileToastManager {
     // Don't show if the same toast was shown within the last 5 seconds
     // Increased from 3 to 5 seconds to better handle React Query retries
     if (lastShown && now - lastShown < 5000) {
-      console.log(`[TOAST DEBUG] Blocking duplicate toast: "${title}" (last shown ${now - lastShown}ms ago)`);
       return false;
     }
 

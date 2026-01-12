@@ -4,43 +4,19 @@
  * Matches web implementation patterns while adapting for React Native
  */
 
-// @ts-ignore - expo-constants may not have types in this environment
-import Constants from 'expo-constants';
+import { getCurrentApiUrl } from '../api-client';
 import type { File as AnkaaFile } from '../types';
 
 // =====================
-// API URL Resolution (FIXED)
+// API URL Resolution
 // =====================
 
 /**
- * Get the API base URL with proper priority order
- * This fixes the localhost fallback bug
+ * Get the API base URL using the centralized API client
+ * This ensures file viewer uses the same URL as the API (including fallback)
  */
 export const getApiBaseUrl = (): string => {
-  // Priority order:
-  // 1. Expo constants (from app.json extra.apiUrl) - MOST RELIABLE for production builds
-  // 2. Environment variable (for development)
-  // 3. Global variable
-  // 4. Fallback
-
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    console.log('[File Viewer] Using API URL from app.json:', Constants.expoConfig.extra.apiUrl);
-    return Constants.expoConfig.extra.apiUrl;
-  }
-
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    console.log('[File Viewer] Using API URL from env:', process.env.EXPO_PUBLIC_API_URL);
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  if (typeof (globalThis as any).__ANKAA_API_URL__ !== 'undefined') {
-    console.log('[File Viewer] Using API URL from global:', (globalThis as any).__ANKAA_API_URL__);
-    return (globalThis as any).__ANKAA_API_URL__;
-  }
-
-  // Fallback - should not reach here if properly configured
-  console.error('[File Viewer] No API_URL configured! Using fallback');
-  return 'http://192.168.0.13:3030';
+  return getCurrentApiUrl();
 };
 
 // =====================

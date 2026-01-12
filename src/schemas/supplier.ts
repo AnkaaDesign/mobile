@@ -740,6 +740,7 @@ export const supplierCreateSchema = z.object({
     }
     return val;
   }, z.array(phoneSchema).default([]).optional()),
+  pix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
   tags: z.array(z.string()).default([]),
   logoId: z.string().uuid("Logo inválido").nullable().optional(),
 });
@@ -875,6 +876,7 @@ export const supplierUpdateSchema = z.object({
 
     return val;
   }, z.array(phoneSchema).optional()),
+  pix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
   tags: z.array(z.string()).optional(),
   logoId: z.string().uuid("Logo inválido").nullable().optional(),
 });
@@ -952,5 +954,6 @@ export const mapSupplierToFormData = createMapToFormDataHelper<Supplier, Supplie
   zipCode: supplier.zipCode,
   site: supplier.site,
   phones: supplier.phones,
+  pix: supplier.pix,
   logoId: supplier.logoId,
 }));

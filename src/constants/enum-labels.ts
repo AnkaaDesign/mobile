@@ -2,6 +2,7 @@
 
 import {
   ORDER_STATUS,
+  PAYMENT_METHOD,
   USER_STATUS,
   ASSIGNMENT_TYPE,
   TASK_STATUS,
@@ -140,6 +141,12 @@ export const ORDER_STATUS_LABELS: Record<ORDER_STATUS, string> = {
   [ORDER_STATUS.PARTIALLY_RECEIVED]: "Parcialmente Recebido",
   [ORDER_STATUS.RECEIVED]: "Recebido",
   [ORDER_STATUS.CANCELLED]: "Cancelado",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PAYMENT_METHOD, string> = {
+  [PAYMENT_METHOD.PIX]: "Pix",
+  [PAYMENT_METHOD.BANK_SLIP]: "Boleto",
+  [PAYMENT_METHOD.CREDIT_CARD]: "Cartão de Crédito",
 };
 
 export const USER_STATUS_LABELS: Record<USER_STATUS, string> = {

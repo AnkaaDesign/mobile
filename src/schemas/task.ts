@@ -6,7 +6,6 @@ import type { Task } from "../types";
 import { TASK_STATUS, SERVICE_ORDER_STATUS } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
-import { budgetCreateNestedSchema } from "./budget";
 import { pricingCreateNestedSchema } from "./task-pricing";
 
 // =====================
@@ -1201,7 +1200,6 @@ export const taskCreateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    budget: budgetCreateNestedSchema.optional(), // One-to-one budget with items
     pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {
@@ -1293,7 +1291,6 @@ export const taskUpdateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    budget: budgetCreateNestedSchema.optional(), // One-to-one budget with items
     pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {

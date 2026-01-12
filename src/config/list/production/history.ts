@@ -10,8 +10,6 @@ import {
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
-import { PAINT_FINISH } from '@/constants/enums'
-import { isTabletWidth } from '@/lib/table-utils'
 
 // Helper to check if user is FINANCIAL or ADMIN
 const isFinancialOrAdmin = (user: any): boolean => {
@@ -206,9 +204,7 @@ export const historyListConfig: ListConfig<Task> = {
         render: (task) => task.observation?.description || '-',
       },
     ],
-    defaultVisible: isTabletWidth()
-      ? ['name', 'serialNumber', 'sector.name', 'finishedAt', 'commission']
-      : ['name', 'sector.name', 'finishedAt'],
+    defaultVisible: ['name', 'sector.name', 'finishedAt'],
     rowHeight: 72,
     actions: [
       {

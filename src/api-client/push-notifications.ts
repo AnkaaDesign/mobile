@@ -21,7 +21,8 @@ export interface PushTokenRegistrationResponse {
  * @returns Registration response
  */
 export async function registerPushToken(data: PushTokenRegistrationRequest) {
-  return apiClient.post<PushTokenRegistrationResponse>('/notifications/device-token', data);
+  const response = await apiClient.post<PushTokenRegistrationResponse>('/notifications/device-token', data);
+  return response;
 }
 
 /**

@@ -12,15 +12,13 @@ interface PaintPreviewProps {
   style?: ViewStyle;
 }
 
+import { getCurrentApiUrl } from "@/api-client";
+
 /**
- * Get the API base URL from environment
+ * Get the API base URL using centralized API client
  */
 function getApiBaseUrl(): string {
-  // Expo public env var
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-  return 'http://localhost:3030';
+  return getCurrentApiUrl();
 }
 
 /**

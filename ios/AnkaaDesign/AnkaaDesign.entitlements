@@ -8,6 +8,7 @@
     <array>
       <string>applinks:ankaa.live</string>
       <string>applinks:www.ankaa.live</string>
+      <string>applinks:app.ankaa.com.br</string>
     </array>
   </dict>
 </plist>

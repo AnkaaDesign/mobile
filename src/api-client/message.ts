@@ -1,46 +1,43 @@
 // packages/api-client/src/message.ts
 
 import { apiClient } from "./axiosClient";
-import type {
-  // Schema types (for parameters)
-  MessageGetManyFormData,
-  MessageGetByIdFormData,
-  MessageCreateFormData,
-  MessageUpdateFormData,
-  MessageBatchCreateFormData,
-  MessageBatchUpdateFormData,
-  MessageBatchDeleteFormData,
-  MessageQueryFormData,
-  ViewedMessageGetManyFormData,
-  ViewedMessageGetByIdFormData,
-  ViewedMessageCreateFormData,
-  ViewedMessageUpdateFormData,
-  ViewedMessageBatchCreateFormData,
-  ViewedMessageBatchUpdateFormData,
-  ViewedMessageBatchDeleteFormData,
-  ViewedMessageQueryFormData,
-} from "../schemas";
-import type {
-  // Interface types (for responses)
-  Message,
-  ViewedMessage,
-  MessageGetUniqueResponse,
-  MessageGetManyResponse,
-  MessageCreateResponse,
-  MessageUpdateResponse,
-  MessageDeleteResponse,
-  MessageBatchCreateResponse,
-  MessageBatchUpdateResponse,
-  MessageBatchDeleteResponse,
-  ViewedMessageGetUniqueResponse,
-  ViewedMessageGetManyResponse,
-  ViewedMessageCreateResponse,
-  ViewedMessageUpdateResponse,
-  ViewedMessageDeleteResponse,
-  ViewedMessageBatchCreateResponse,
-  ViewedMessageBatchUpdateResponse,
-  ViewedMessageBatchDeleteResponse,
-} from "../types";
+
+// Temporary type placeholders until Message schemas are generated
+type MessageGetManyFormData = any;
+type MessageGetByIdFormData = any;
+type MessageCreateFormData = any;
+type MessageUpdateFormData = any;
+type MessageBatchCreateFormData = any;
+type MessageBatchUpdateFormData = any;
+type MessageBatchDeleteFormData = any;
+type MessageQueryFormData = any;
+type ViewedMessageGetManyFormData = any;
+type ViewedMessageGetByIdFormData = any;
+type ViewedMessageCreateFormData = any;
+type ViewedMessageUpdateFormData = any;
+type ViewedMessageBatchCreateFormData = any;
+type ViewedMessageBatchUpdateFormData = any;
+type ViewedMessageBatchDeleteFormData = any;
+type ViewedMessageQueryFormData = any;
+
+type Message = any;
+type ViewedMessage = any;
+type MessageGetUniqueResponse = any;
+type MessageGetManyResponse = any;
+type MessageCreateResponse = any;
+type MessageUpdateResponse = any;
+type MessageDeleteResponse = any;
+type MessageBatchCreateResponse<T> = any;
+type MessageBatchUpdateResponse<T> = any;
+type MessageBatchDeleteResponse = any;
+type ViewedMessageGetUniqueResponse = any;
+type ViewedMessageGetManyResponse = any;
+type ViewedMessageCreateResponse = any;
+type ViewedMessageUpdateResponse = any;
+type ViewedMessageDeleteResponse = any;
+type ViewedMessageBatchCreateResponse<T> = any;
+type ViewedMessageBatchUpdateResponse<T> = any;
+type ViewedMessageBatchDeleteResponse = any;
 
 // =====================
 // Message Service Class
@@ -115,17 +112,51 @@ export class MessageService {
     return this.getMessages({ ...params, senderIds: [senderId] });
   }
 
-  async getUnviewedMessages(recipientId: string, params: MessageGetManyFormData = {}): Promise<MessageGetManyResponse> {
-    return this.getMessages({ ...params, recipientIds: [recipientId], unviewed: true });
+  async getUnviewedMessages(): Promise<Message[]> {
+    const response = await apiClient.get<{ success: boolean; data: Message[]; meta: { count: number } }>(`${this.basePath}/unviewed`);
+    return response.data.data;
   }
 
-  async markAsViewed(messageId: string, userId: string): Promise<ViewedMessageCreateResponse> {
-    const response = await apiClient.post<ViewedMessageCreateResponse>(`${this.basePath}/${messageId}/mark-as-viewed`, { userId });
+  async markAsViewed(messageId: string): Promise<ViewedMessageCreateResponse> {
+    const response = await apiClient.post<ViewedMessageCreateResponse>(`${this.basePath}/${messageId}/mark-viewed`);
     return response.data;
   }
 
   async markAllAsViewed(userId: string): Promise<{ count: number }> {
     const response = await apiClient.post<{ count: number }>(`${this.basePath}/mark-all-as-viewed`, { userId });
+    return response.data;
+  }
+
+  async getMessageStats(messageId: string): Promise<{
+    success: boolean;
+    data: {
+      totalViews: number;
+      uniqueViewers: number;
+      targetedUsers: number;
+      totalDismissals: number;
+    };
+    message: string;
+  }> {
+    const response = await apiClient.get(`${this.basePath}/${messageId}/stats`);
+    return response.data;
+  }
+
+  async dismissMessage(messageId: string): Promise<{
+    success: boolean;
+    data: any;
+    message: string;
+  }> {
+    const response = await apiClient.post(`${this.basePath}/${messageId}/dismiss`);
+    return response.data;
+  }
+
+  async archiveMessage(messageId: string): Promise<MessageUpdateResponse> {
+    const response = await apiClient.patch<MessageUpdateResponse>(`${this.basePath}/${messageId}/archive`);
+    return response.data;
+  }
+
+  async activateMessage(messageId: string): Promise<MessageUpdateResponse> {
+    const response = await apiClient.patch<MessageUpdateResponse>(`${this.basePath}/${messageId}/activate`);
     return response.data;
   }
 }
@@ -229,9 +260,13 @@ export const batchUpdateMessages = (data: MessageBatchUpdateFormData, params?: M
 export const batchDeleteMessages = (data: MessageBatchDeleteFormData) => messageService.batchDeleteMessages(data);
 export const getMessagesByRecipient = (recipientId: string, params?: MessageGetManyFormData) => messageService.getMessagesByRecipient(recipientId, params || {});
 export const getMessagesBySender = (senderId: string, params?: MessageGetManyFormData) => messageService.getMessagesBySender(senderId, params || {});
-export const getUnviewedMessages = (recipientId: string, params?: MessageGetManyFormData) => messageService.getUnviewedMessages(recipientId, params || {});
-export const markAsViewed = (messageId: string, userId: string) => messageService.markAsViewed(messageId, userId);
+export const getUnviewedMessages = () => messageService.getUnviewedMessages();
+export const markAsViewed = (messageId: string) => messageService.markAsViewed(messageId);
 export const markAllAsViewed = (userId: string) => messageService.markAllAsViewed(userId);
+export const getMessageStats = (messageId: string) => messageService.getMessageStats(messageId);
+export const dismissMessage = (messageId: string) => messageService.dismissMessage(messageId);
+export const archiveMessage = (messageId: string) => messageService.archiveMessage(messageId);
+export const activateMessage = (messageId: string) => messageService.activateMessage(messageId);
 
 // ViewedMessage exports
 export const getViewedMessages = (params?: ViewedMessageGetManyFormData) => viewedMessageService.getViewedMessages(params || {});

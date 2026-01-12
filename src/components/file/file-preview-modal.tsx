@@ -47,6 +47,7 @@ try {
 import { Badge } from "@/components/ui/badge";
 import type { File as AnkaaFile } from '../../types';
 import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
+import { getApiBaseUrl } from '../../utils/file-viewer-utils';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
@@ -552,7 +553,8 @@ export function FilePreviewModal({
 
   // Helper function to get proper file URL
   const getFileUrl = (file: AnkaaFile): string => {
-    const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
+    // Use getApiBaseUrl() which properly checks Constants.expoConfig.extra.apiUrl
+    const apiUrl = baseUrl || getApiBaseUrl();
 
     // Check if file has a URL property that might contain localhost
     if (file.url && typeof file.url === 'string' && file.url.startsWith('http')) {
@@ -570,7 +572,7 @@ export function FilePreviewModal({
       filename: file.filename,
       fileId: file.id,
       baseUrl,
-      globalUrl: (global as any).__ANKAA_API_URL__,
+      apiUrl,
       finalUrl: url
     });
     return url;
@@ -578,7 +580,8 @@ export function FilePreviewModal({
 
   // Helper function to get thumbnail URL
   const getFileThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium"): string => {
-    const apiUrl = baseUrl || (global as any).__ANKAA_API_URL__ || "http://localhost:3030";
+    // Use getApiBaseUrl() which properly checks Constants.expoConfig.extra.apiUrl
+    const apiUrl = baseUrl || getApiBaseUrl();
 
     console.log('🔍 [getFileThumbnailUrl] Called with:', {
       filename: file.filename,

@@ -18,6 +18,7 @@ import { getSuppliers } from '@/api-client';
 import type { Supplier } from '@/types';
 import { createOrderFormData } from '@/utils/order-form-utils';
 import { formSpacing } from '@/constants/form-styles';
+import { PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from '@/constants';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -110,6 +111,9 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         supplierId: order.supplierId || undefined,
         forecast: order.forecast ? new Date(order.forecast) : undefined,
         notes: order.notes || '',
+        paymentMethod: order.paymentMethod || undefined,
+        paymentPix: order.paymentPix || undefined,
+        paymentDueDays: order.paymentDueDays || undefined,
       });
 
       // Load existing file IDs
@@ -149,6 +153,15 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         }
         if (data.notes !== order?.notes) {
           changedData.notes = data.notes;
+        }
+        if (data.paymentMethod !== order?.paymentMethod) {
+          changedData.paymentMethod = data.paymentMethod;
+        }
+        if (data.paymentPix !== order?.paymentPix) {
+          changedData.paymentPix = data.paymentMethod === PAYMENT_METHOD.PIX ? data.paymentPix : undefined;
+        }
+        if (data.paymentDueDays !== order?.paymentDueDays) {
+          changedData.paymentDueDays = data.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? data.paymentDueDays : undefined;
         }
 
         // Check if there are new files to upload
@@ -396,6 +409,87 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               )}
             />
           </View>
+        </Card>
+
+        {/* Payment Section */}
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Pagamento</ThemedText>
+
+          <View style={styles.field}>
+            <ThemedText style={styles.label}>Método de Pagamento</ThemedText>
+            <Controller
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <Combobox
+                  value={field.value || ''}
+                  onValueChange={(val) => {
+                    field.onChange(val || undefined);
+                    // Auto-fill PIX from supplier when selecting PIX
+                    if (val === PAYMENT_METHOD.PIX && order?.supplier?.pix) {
+                      form.setValue('paymentPix', order.supplier.pix);
+                    }
+                    // Clear conditional fields when changing method
+                    if (val !== PAYMENT_METHOD.PIX) {
+                      form.setValue('paymentPix', undefined);
+                    }
+                    if (val !== PAYMENT_METHOD.BANK_SLIP) {
+                      form.setValue('paymentDueDays', undefined);
+                    }
+                  }}
+                  options={[
+                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
+                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
+                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
+                  ]}
+                  placeholder="Selecione o método de pagamento"
+                  clearable
+                />
+              )}
+            />
+          </View>
+
+          {/* PIX Key (shown when PIX is selected) */}
+          {form.watch('paymentMethod') === PAYMENT_METHOD.PIX && (
+            <View style={styles.field}>
+              <ThemedText style={styles.label}>Chave Pix</ThemedText>
+              <Controller
+                control={form.control}
+                name="paymentPix"
+                render={({ field }) => (
+                  <Input
+                    value={field.value || ''}
+                    onChangeText={field.onChange}
+                    placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                    autoCapitalize="none"
+                  />
+                )}
+              />
+            </View>
+          )}
+
+          {/* Due Days (shown when BANK_SLIP is selected) */}
+          {form.watch('paymentMethod') === PAYMENT_METHOD.BANK_SLIP && (
+            <View style={styles.field}>
+              <ThemedText style={styles.label}>Prazo de Vencimento</ThemedText>
+              <Controller
+                control={form.control}
+                name="paymentDueDays"
+                render={({ field }) => (
+                  <Combobox
+                    value={field.value?.toString() || ''}
+                    onValueChange={(val) => field.onChange(val ? Number(val) : undefined)}
+                    options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
+                      label: `${days} dias`,
+                      value: days.toString(),
+                    }))}
+                    placeholder="Selecione o prazo"
+                    clearable
+                  />
+                )}
+              />
+            </View>
+          )}
         </Card>
 
         {/* Documents Section */}

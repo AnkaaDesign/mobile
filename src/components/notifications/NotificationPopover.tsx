@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions, Linking, Text as RNText } from 'react-native';
+import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions, Linking, Text as RNText, ScrollView } from 'react-native';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -15,6 +15,8 @@ import type { Notification } from '@/types';
 import { formatNotificationTime } from '@/utils/notifications/date-utils';
 import { NOTIFICATION_TYPE } from '@/constants';
 import * as Haptics from 'expo-haptics';
+
+const isWeb = Platform.OS === 'web';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POPOVER_WIDTH = SCREEN_WIDTH - 32; // Full width with 16px padding on each side
@@ -109,11 +111,13 @@ function PopoverNotificationItem({
   onPress,
   isDark,
   colors,
+  isLast,
 }: {
   notification: Notification;
   onPress: (notification: Notification) => void;
   isDark: boolean;
   colors: any;
+  isLast: boolean;
 }) {
   const isUnread = !notification.isSeenByUser;
   const iconName = getNotificationIcon(notification.type);
@@ -127,61 +131,90 @@ function PopoverNotificationItem({
     onPress(notification);
   }, [notification, onPress]);
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [
-        styles.itemContainer,
-        {
-          backgroundColor: isUnread
-            ? isDark
-              ? extendedColors.neutral[800]
-              : extendedColors.blue[50]
-            : colors.card,
-          borderBottomColor: colors.border,
-        },
-        pressed && { opacity: 0.7 },
-      ]}
-    >
-      <View style={styles.itemContent}>
-        {/* Icon Badge */}
-        <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
-          <Icon name={iconName} size={18} color={iconColor} />
-        </View>
+  // For web: wrap body in ScrollView for long content
+  const renderBody = () => {
+    const bodyText = (
+      <Text
+        variant="small"
+        style={[styles.body, { color: colors.mutedForeground }]}
+        numberOfLines={isWeb ? undefined : 3}
+      >
+        {notification.body}
+      </Text>
+    );
 
-        {/* Content */}
-        <View style={styles.textContent}>
-          <View style={styles.headerRow}>
-            <Text
-              variant="small"
-              style={[
-                styles.title,
-                {
-                  color: colors.foreground,
-                  fontWeight: isUnread ? '600' : '400',
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {notification.title}
-            </Text>
-            {isUnread && <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />}
+    if (isWeb) {
+      return (
+        <ScrollView
+          style={styles.bodyScrollView}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+        >
+          {bodyText}
+        </ScrollView>
+      );
+    }
+    return bodyText;
+  };
+
+  return (
+    <View style={[
+      styles.itemWrapper,
+      !isLast && styles.itemSeparator,
+    ]}>
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }) => [
+          styles.itemContainer,
+          {
+            backgroundColor: isUnread
+              ? isDark
+                ? extendedColors.neutral[800]
+                : extendedColors.blue[50]
+              : colors.card,
+            borderColor: isUnread
+              ? isDark
+                ? extendedColors.blue[800]
+                : extendedColors.blue[200]
+              : colors.border,
+          },
+          pressed && { opacity: 0.7 },
+        ]}
+      >
+        <View style={styles.itemContent}>
+          {/* Icon Badge */}
+          <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
+            <Icon name={iconName} size={18} color={iconColor} />
           </View>
 
-          <Text
-            variant="small"
-            style={[styles.body, { color: colors.mutedForeground }]}
-            numberOfLines={2}
-          >
-            {notification.body}
-          </Text>
+          {/* Content */}
+          <View style={styles.textContent}>
+            <View style={styles.headerRow}>
+              <Text
+                variant="small"
+                style={[
+                  styles.title,
+                  {
+                    color: colors.foreground,
+                    fontWeight: isUnread ? '600' : '400',
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {notification.title}
+              </Text>
+              {isUnread && <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />}
+            </View>
 
-          <Text variant="xs" style={[styles.timestamp, { color: colors.mutedForeground }]}>
-            {formatNotificationTime(notification.createdAt)}
-          </Text>
+            {renderBody()}
+
+            <Text variant="xs" style={[styles.timestamp, { color: colors.mutedForeground }]}>
+              {formatNotificationTime(notification.createdAt)}
+            </Text>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -305,14 +338,15 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
 
 
   // Render notification item
-  const renderItem = useCallback(({ item }: { item: Notification }) => (
+  const renderItem = useCallback(({ item, index }: { item: Notification; index: number }) => (
     <PopoverNotificationItem
       notification={item}
       onPress={handleNotificationPress}
       isDark={isDark}
       colors={colors}
+      isLast={index === notifications.length - 1}
     />
-  ), [handleNotificationPress, isDark, colors]);
+  ), [handleNotificationPress, isDark, colors, notifications.length]);
 
   const keyExtractor = useCallback((item: Notification) => item.id, []);
 
@@ -487,6 +521,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     maxHeight: 400,
+    padding: 8,
   },
   list: {
     maxHeight: 400,
@@ -509,8 +544,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  itemContainer: {
+  itemWrapper: {
+    marginBottom: 0,
+  },
+  itemSeparator: {
+    marginBottom: 8,
+    paddingBottom: 8,
     borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+  },
+  itemContainer: {
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   itemContent: {
     flexDirection: 'row',
@@ -526,7 +572,7 @@ const styles = StyleSheet.create({
   },
   textContent: {
     flex: 1,
-    gap: 2,
+    gap: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -541,8 +587,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontSize: 12,
   },
+  bodyScrollView: {
+    maxHeight: 80,
+  },
   timestamp: {
-    marginTop: 2,
+    marginTop: 4,
     fontSize: 11,
   },
   unreadBadge: {

@@ -176,20 +176,8 @@ export const sanitizeFilename = (filename: string): string => {
 // File URLs
 // =====================
 
-export const getApiBaseUrl = (): string => {
-  // Check for global __ANKAA_API_URL__ (set by the app)
-  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
-    return (global as any).__ANKAA_API_URL__;
-  }
-
-  // Check for process.env in React Native/Expo environments
-  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // Default fallback
-  return "http://localhost:3030";
-};
+import { getApiBaseUrl } from './file-viewer-utils';
+export { getApiBaseUrl };
 
 /**
  * Normalizes a thumbnail URL to ensure it's a complete URL

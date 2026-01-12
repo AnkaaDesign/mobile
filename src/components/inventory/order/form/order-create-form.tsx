@@ -18,7 +18,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
 import { useMultiStepForm } from "@/hooks";
-import { ORDER_STATUS } from "@/constants";
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from "@/constants";
 import { formatCurrency } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -29,6 +29,7 @@ import {
 import {
   IconBox,
   IconCalendar,
+  IconCreditCard,
   IconPackage,
   IconPlus,
   IconTrash,
@@ -42,6 +43,9 @@ const orderCreateFormSchema = z.object({
   forecast: z.date().optional().nullable(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
   itemMode: z.enum(["inventory", "temporary"]).default("inventory"),
+  paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
+  paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").optional().nullable(),
+  paymentDueDays: z.number().int().positive().optional().nullable(),
 });
 
 type OrderCreateFormData = z.infer<typeof orderCreateFormSchema>;
@@ -101,6 +105,9 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       forecast: null,
       notes: "",
       itemMode: "inventory",
+      paymentMethod: null,
+      paymentPix: null,
+      paymentDueDays: null,
     },
     defaultQuantity: 1,
     defaultPrice: 0,
@@ -150,7 +157,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
 
   // Sync form data to multi-step state
   const handleFormChange = useCallback(
-    (field: keyof OrderCreateFormData, value: string | null) => {
+    (field: keyof OrderCreateFormData, value: string | number | null) => {
       form.setValue(field, value as never);
       multiStepForm.updateFormData({ [field]: value });
     },
@@ -315,6 +322,9 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         forecast: forecastDate || undefined,
         notes: multiStepForm.formData.notes || undefined,
         items: itemsData,
+        paymentMethod: multiStepForm.formData.paymentMethod || undefined,
+        paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
+        paymentDueDays: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentDueDays || undefined : undefined,
       };
 
       // Check if there are files to upload
@@ -585,6 +595,108 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     </View>
                   )}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Payment Section */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Pagamento (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Payment Method */}
+                <Controller
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field: { value } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Método de Pagamento</Label>
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => {
+                          handleFormChange("paymentMethod", val || null);
+                          // Auto-fill PIX from supplier when selecting PIX
+                          if (val === PAYMENT_METHOD.PIX && multiStepForm.formData.supplierId) {
+                            const selectedSupplier = suppliers?.data?.find(
+                              (s) => s.id === multiStepForm.formData.supplierId
+                            );
+                            if (selectedSupplier?.pix) {
+                              handleFormChange("paymentPix", selectedSupplier.pix);
+                            }
+                          }
+                          // Clear conditional fields when changing method
+                          if (val !== PAYMENT_METHOD.PIX) {
+                            handleFormChange("paymentPix", null);
+                          }
+                          if (val !== PAYMENT_METHOD.BANK_SLIP) {
+                            handleFormChange("paymentDueDays", null);
+                          }
+                        }}
+                        options={[
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
+                        ]}
+                        placeholder="Selecione o método de pagamento"
+                        disabled={isSubmitting}
+                        clearable
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* PIX Key (shown when PIX is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX && (
+                  <Controller
+                    control={form.control}
+                    name="paymentPix"
+                    render={({ field: { value }, fieldState: { error } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Chave Pix</Label>
+                        <Input
+                          value={value || ""}
+                          onChangeText={(val) => handleFormChange("paymentPix", val)}
+                          placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                          editable={!isSubmitting}
+                          autoCapitalize="none"
+                        />
+                        {error && (
+                          <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                        )}
+                        <ThemedText style={styles.helpText}>
+                          Chave Pix para pagamento do pedido
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Due Days (shown when BANK_SLIP is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP && (
+                  <Controller
+                    control={form.control}
+                    name="paymentDueDays"
+                    render={({ field: { value } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Prazo de Vencimento</Label>
+                        <Combobox
+                          value={value?.toString() || ""}
+                          onValueChange={(val) => handleFormChange("paymentDueDays", val ? Number(val) : null)}
+                          options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
+                            label: `${days} dias`,
+                            value: days.toString(),
+                          }))}
+                          placeholder="Selecione o prazo"
+                          disabled={isSubmitting}
+                          clearable
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Prazo para vencimento do boleto
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
               </CardContent>
             </Card>
 

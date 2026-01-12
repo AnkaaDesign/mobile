@@ -41,6 +41,7 @@ import {
   IconClock,
   IconHistory,
   IconClipboard,
+  IconClipboardCheck,
   IconTool,
   IconPalette,
   IconBriefcase,
@@ -180,7 +181,7 @@ const tablerIcons = [
   IconArrowLeft, IconArrowRight, IconEye, IconEyeOff, IconEdit, IconPlus, IconX, IconCheck, IconTrash,
   IconRefresh, IconSearch, IconFilter, IconSettings, IconLogout, IconPackage, IconPackages, IconUsers,
   IconUser, IconBuilding, IconBuildingFactory2, IconBuildingWarehouse, IconBrush, IconTags, IconCalendar,
-  IconClock, IconHistory, IconClipboard, IconTool, IconPalette, IconBriefcase, IconShield, IconCircleCheck,
+  IconClock, IconHistory, IconClipboard, IconClipboardCheck, IconTool, IconPalette, IconBriefcase, IconShield, IconCircleCheck,
   IconCircleX, IconAlertCircle, IconInfoCircle, IconAlertTriangle, IconArrowsSort, IconArrowUp, IconArrowDown,
   IconArchive, IconArchiveOff, IconToggleLeft, IconToggleRight, IconLayoutList, IconLayout, IconBrandApple,
   IconAward, IconFolder, IconId, IconUserCheck, IconQrcode, IconPlayerPlay, IconPlayerPause, IconChartBar,
@@ -269,6 +270,9 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   clock: IconClock,
   history: IconHistory,
   clipboard: IconClipboard,
+  "clipboard-check": IconClipboardCheck,
+  clipboardCheck: IconClipboardCheck, // camelCase version
+  task: IconClipboardCheck, // Alias for task
   tool: IconTool,
   palette: IconPalette,
   briefcase: IconBriefcase,

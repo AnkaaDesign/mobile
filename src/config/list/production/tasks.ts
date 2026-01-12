@@ -293,7 +293,7 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
     ],
-    defaultVisible: ['name', 'forecastDate', 'services'],
+    defaultVisible: ['name', 'serialNumber', 'term', 'remainingTime'],
     rowHeight: 48,
     getRowStyle: (task, isDark) => ({
       backgroundColor: getRowBackgroundColor(task, isDark),

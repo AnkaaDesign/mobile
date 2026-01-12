@@ -11,15 +11,16 @@
  * <MessageModalProvider />
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { MessageModal } from "./MessageModal";
 import { useUnviewedMessages } from "@/hooks/useUnviewedMessages";
-import { apiClient } from "@/api-client/axiosClient";
+import { useAuth } from "@/contexts/auth-context";
+import { messageService } from "@/api-client/message";
 
 interface MessageModalProviderProps {
   /**
    * User ID to fetch messages for
-   * If not provided, will attempt to get from auth context
+   * If not provided, will automatically get from auth context
    */
   userId?: string;
 
@@ -40,18 +41,55 @@ interface MessageModalProviderProps {
  * MessageModal Provider Component
  *
  * Manages the message modal state and integrates with the message API
+ * Automatically detects user from auth context if userId not provided
  */
 export function MessageModalProvider({
   userId: providedUserId,
   autoShow = true,
   debug = false,
 }: MessageModalProviderProps = {}) {
-  // You can uncomment this if you have an auth context
-  // const { user } = useAuth();
-  // const userId = providedUserId || user?.id;
+  // Get user from auth context
+  const { user } = useAuth();
 
-  // For now, use the provided userId
-  const userId = providedUserId;
+  // Use provided userId or fall back to auth context
+  const userId = providedUserId || user?.id;
+
+  // Track if we've already logged the endpoint error (to avoid spam)
+  const hasLoggedEndpointError = useRef(false);
+
+  // Memoize fetchMessages to prevent infinite loops
+  // This function reference stays stable unless userId or debug changes
+  const fetchMessages = useCallback(async () => {
+    if (!userId) {
+      return [];
+    }
+
+    try {
+      // Use messageService to fetch unviewed messages
+      const messages = await messageService.getUnviewedMessages();
+
+      if (debug && messages.length > 0) {
+        console.log("[MessageModalProvider] Fetched", messages.length, "unviewed messages");
+      }
+
+      return messages;
+    } catch (error: any) {
+      // Only log once per session to avoid console spam
+      const errorMessage = error?.message || "";
+      const isEndpointMissing = errorMessage.includes("Cannot GET") || errorMessage.includes("404");
+
+      if (!hasLoggedEndpointError.current && isEndpointMissing) {
+        hasLoggedEndpointError.current = true;
+        if (__DEV__) {
+          console.warn("[MessageModalProvider] /messages/unviewed endpoint not available");
+        }
+      } else if (debug && !isEndpointMissing) {
+        console.error("[MessageModalProvider] Failed to fetch messages:", error);
+      }
+
+      return [];
+    }
+  }, [userId, debug]);
 
   const {
     unviewedMessages,
@@ -59,39 +97,12 @@ export function MessageModalProvider({
     closeModal,
     dismissForToday,
     dontShowAgain,
-    refresh,
     isLoading,
     error,
   } = useUnviewedMessages({
     userId,
     autoShow,
-    fetchMessages: async () => {
-      if (!userId) {
-        if (debug) {
-          console.log("[MessageModalProvider] No user ID, skipping fetch");
-        }
-        return [];
-      }
-
-      try {
-        if (debug) {
-          console.log("[MessageModalProvider] Fetching unviewed messages for user:", userId);
-        }
-
-        // Call the /messages/unviewed endpoint
-        const response = await apiClient.get("/messages/unviewed");
-        const messages = response.data?.data || [];
-
-        if (debug) {
-          console.log("[MessageModalProvider] Fetched", messages.length, "unviewed messages");
-        }
-
-        return messages;
-      } catch (error) {
-        console.error("[MessageModalProvider] Failed to fetch messages:", error);
-        return [];
-      }
-    },
+    fetchMessages,
   });
 
   // Log errors in debug mode
@@ -100,14 +111,6 @@ export function MessageModalProvider({
       console.error("[MessageModalProvider] Error:", error);
     }
   }, [debug, error]);
-
-  // Refresh messages when user ID changes
-  useEffect(() => {
-    if (userId && debug) {
-      console.log("[MessageModalProvider] User ID changed, refreshing messages");
-      refresh();
-    }
-  }, [userId, debug, refresh]);
 
   // Don't render if no user ID
   if (!userId) {
@@ -155,14 +158,14 @@ export function MessageModalProvider({
           // Dismiss locally first (for immediate UI update)
           await dontShowAgain(messageId);
 
-          // Then mark as viewed on the server (permanent)
-          await apiClient.post(`/messages/${messageId}/mark-viewed`);
+          // Permanently dismiss on the server (sets dismissedAt, message never shows again)
+          await messageService.dismissMessage(messageId);
 
           if (debug) {
-            console.log("[MessageModalProvider] Successfully marked as permanently viewed");
+            console.log("[MessageModalProvider] Successfully dismissed permanently");
           }
         } catch (error) {
-          console.error("[MessageModalProvider] Failed to mark as viewed:", error);
+          console.error("[MessageModalProvider] Failed to dismiss message:", error);
           // The local state has already been updated, so the UI still reflects the change
         }
       }}
@@ -173,39 +176,30 @@ export function MessageModalProvider({
 /**
  * Auth-Aware MessageModal Provider
  *
- * This component automatically gets the user ID from your auth context.
- * Uncomment and modify the useAuth() call to match your auth context.
+ * This component automatically gets the user ID from auth context.
+ * Use this for simple integration - just add <AuthAwareMessageModal /> to your layout.
  */
-export function AuthAwareMessageModal() {
-  // Uncomment and adjust to match your auth context:
-  // const { user } = useAuth();
-
-  // For now, return null since we don't have auth context
-  // You'll need to implement this based on your auth system
-  return null;
-
-  // Once you have auth context, use:
-  // return <MessageModalProvider userId={user?.id} autoShow={true} debug={false} />;
+export function AuthAwareMessageModal({ debug = false }: { debug?: boolean } = {}) {
+  // MessageModalProvider now automatically uses auth context
+  return <MessageModalProvider autoShow={true} debug={debug} />;
 }
 
 /**
  * Example integration in _layout.tsx:
  *
  * ```tsx
- * import { MessageModalProvider } from "@/components/message/MessageModalIntegration";
+ * import { AuthAwareMessageModal } from "@/components/message/MessageModalIntegration";
  *
  * export default function RootLayout() {
- *   const { user } = useAuth(); // Get from your auth context
- *
  *   return (
- *     <ThemeProvider>
- *       <Stack>
- *         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
- *       </Stack>
- *
- *       {/* Add the MessageModal */}
- *       <MessageModalProvider userId={user?.id} />
- *     </ThemeProvider>
+ *     <AuthProvider>
+ *       <ThemeProvider>
+ *         <Stack>
+ *           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+ *         </Stack>
+ *         <AuthAwareMessageModal />
+ *       </ThemeProvider>
+ *     </AuthProvider>
  *   );
  * }
  * ```

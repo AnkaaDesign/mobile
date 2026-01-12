@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { ScrollView, Alert, StyleSheet, View, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,16 +56,20 @@ export default function SupplierEditScreen() {
       zipCode: null,
       site: null,
       phones: [],
+      pix: null,
       tags: [],
       logoId: null,
     },
   });
 
+  // Track original values for change detection
+  const originalValuesRef = useRef<SupplierUpdateFormData | null>(null);
+
   // Populate form when supplier data is loaded
   useEffect(() => {
     if (supplier?.data && !isLoading) {
       const supplierData = supplier.data;
-      form.reset({
+      const formValues: SupplierUpdateFormData = {
         fantasyName: supplierData.fantasyName,
         cnpj: supplierData.cnpj,
         corporateName: supplierData.corporateName,
@@ -79,8 +83,14 @@ export default function SupplierEditScreen() {
         zipCode: supplierData.zipCode,
         site: supplierData.site,
         phones: supplierData.phones || [],
+        pix: supplierData.pix,
         tags: supplierData.tags || [],
-      });
+      };
+      form.reset(formValues);
+      // Store original values only once
+      if (!originalValuesRef.current) {
+        originalValuesRef.current = formValues;
+      }
     }
   }, [supplier, isLoading]);
 
@@ -91,11 +101,44 @@ export default function SupplierEditScreen() {
 
     setIsSubmitting(true);
     try {
+      const original = originalValuesRef.current;
+
+      // Calculate changed fields
+      const changedFields: Partial<SupplierUpdateFormData> = {};
+
+      if (original) {
+        (Object.keys(data) as (keyof SupplierUpdateFormData)[]).forEach((key) => {
+          const newValue = data[key];
+          const oldValue = original[key];
+
+          // Special handling for arrays (phones, tags)
+          if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+            if (JSON.stringify(newValue) !== JSON.stringify(oldValue)) {
+              (changedFields as any)[key] = newValue;
+            }
+          }
+          // Simple equality check for other fields
+          else if (newValue !== oldValue) {
+            (changedFields as any)[key] = newValue;
+          }
+        });
+      } else {
+        // No original values, send all data
+        Object.assign(changedFields, data);
+      }
+
+      // If no changes, show message and return
+      if (Object.keys(changedFields).length === 0 && logoFiles.length === 0) {
+        Alert.alert("Aviso", "Nenhuma alteração detectada.");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create FormData if we have files
       if (logoFiles.length > 0) {
         const formData = new FormData();
 
-        // Add all form fields
+        // Add all form fields (needed when uploading files)
         if (data.fantasyName) formData.append("fantasyName", data.fantasyName);
         if (data.cnpj) formData.append("cnpj", data.cnpj);
         if (data.corporateName) formData.append("corporateName", data.corporateName);
@@ -108,6 +151,7 @@ export default function SupplierEditScreen() {
         if (data.state) formData.append("state", data.state);
         if (data.zipCode) formData.append("zipCode", data.zipCode);
         if (data.site) formData.append("site", data.site);
+        if (data.pix) formData.append("pix", data.pix);
 
         // Add phones as array
         data.phones?.forEach((phone, index) => {
@@ -142,8 +186,8 @@ export default function SupplierEditScreen() {
           Alert.alert("Erro", "Erro ao atualizar fornecedor");
         }
       } else {
-        // No files, send regular JSON data
-        const result = await updateAsync(data);
+        // No files, send only changed fields
+        const result = await updateAsync(changedFields);
 
         if (result?.data) {
           Alert.alert("Sucesso", "Fornecedor atualizado com sucesso!", [
@@ -468,6 +512,30 @@ export default function SupplierEditScreen() {
               name="phones"
               render={({ field: { onChange, value } }) => (
                 <PhoneManager phones={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
+
+        {/* Payment */}
+        <FormCard title="Pagamento" icon="IconCreditCard">
+          <FormFieldGroup
+            label="Chave Pix"
+            error={form.formState.errors.pix?.message}
+          >
+            <Controller
+              control={form.control}
+              name="pix"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  editable={!isSubmitting}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
               )}
             />
           </FormFieldGroup>

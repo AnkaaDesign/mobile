@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Notification } from "@/types";
 
@@ -9,6 +10,16 @@ export interface UseUnviewedMessagesOptions {
   userId?: string;
   autoShow?: boolean;
   fetchMessages?: () => Promise<Notification[]>;
+  /**
+   * Interval in milliseconds to check for new messages
+   * @default 60000 (1 minute)
+   */
+  checkInterval?: number;
+  /**
+   * Whether to refresh messages when app comes to foreground
+   * @default true
+   */
+  refreshOnFocus?: boolean;
 }
 
 export interface UseUnviewedMessagesResult {
@@ -35,16 +46,29 @@ function getTodayDate(): string {
  * Hook for managing unviewed messages and the message modal
  *
  * Features:
- * - Fetches unviewed messages
- * - Tracks which messages have been dismissed for today (local storage)
- * - Manages modal visibility
+ * - Fetches unviewed messages from API
+ * - Tracks which messages have been dismissed for today (AsyncStorage)
+ * - Manages modal visibility state
  * - Auto-shows modal on first mount if there are unviewed messages
- * - Messages dismissed today will show again tomorrow
+ * - Messages dismissed today will show again tomorrow (automatic cleanup)
+ * - Refreshes messages when app comes to foreground (AppState listener)
+ * - Periodic polling for new messages (default: 60 seconds)
+ * - Debounced refresh to prevent excessive API calls
  */
 export function useUnviewedMessages(
   options: UseUnviewedMessagesOptions = {}
 ): UseUnviewedMessagesResult {
-  const { userId, autoShow = true, fetchMessages } = options;
+  const {
+    userId,
+    autoShow = true,
+    fetchMessages,
+    checkInterval = 60000, // 1 minute default (same as web)
+    refreshOnFocus = true,
+  } = options;
+
+  // Track app state for focus detection
+  const appState = useRef(AppState.currentState);
+  const lastFetchTime = useRef<number>(0);
 
   const [messages, setMessages] = useState<Notification[]>([]);
   const [dailyDismissed, setDailyDismissed] = useState<Record<string, string>>({});
@@ -52,6 +76,7 @@ export function useUnviewedMessages(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [hasAutoShown, setHasAutoShown] = useState(false);
+  const [endpointUnavailable, setEndpointUnavailable] = useState(false);
 
   // Load and cleanup daily dismissed messages from storage
   const loadDailyDismissed = useCallback(async () => {
@@ -99,7 +124,7 @@ export function useUnviewedMessages(
 
   // Fetch messages from API
   const loadMessages = useCallback(async () => {
-    if (!fetchMessages || !userId) {
+    if (!fetchMessages || !userId || endpointUnavailable) {
       return;
     }
 
@@ -110,15 +135,27 @@ export function useUnviewedMessages(
       const fetchedMessages = await fetchMessages();
       setMessages(fetchedMessages);
 
-      console.log("[useUnviewedMessages] Loaded", fetchedMessages.length, "messages from API");
+      // Only log in development and if we actually got messages
+      if (__DEV__ && fetchedMessages.length > 0) {
+        console.log("[useUnviewedMessages] Loaded", fetchedMessages.length, "messages");
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);
-      console.error("[useUnviewedMessages] Failed to fetch messages:", error);
+
+      // Check if this is a 404 (endpoint doesn't exist) - disable polling
+      const errorMessage = error.message || "";
+      if (errorMessage.includes("Cannot GET") || errorMessage.includes("404") || errorMessage.includes("Not Found")) {
+        setEndpointUnavailable(true);
+        // Only log once in development
+        if (__DEV__) {
+          console.warn("[useUnviewedMessages] Endpoint unavailable, disabling polling");
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [fetchMessages, userId]);
+  }, [fetchMessages, userId, endpointUnavailable]);
 
   // Filter unviewed messages (exclude those dismissed today)
   const unviewedMessages = messages.filter(
@@ -192,6 +229,53 @@ export function useUnviewedMessages(
       setHasAutoShown(true);
     }
   }, [autoShow, hasAutoShown, unviewedMessages.length, isLoading]);
+
+  // Listen for app state changes (foreground/background)
+  // Refresh messages when app comes to foreground
+  useEffect(() => {
+    if (!refreshOnFocus || !userId || !fetchMessages || endpointUnavailable) {
+      return;
+    }
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      // App came to foreground from background/inactive
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        // Only refresh if enough time has passed since last fetch (debounce)
+        const now = Date.now();
+        if (now - lastFetchTime.current >= 5000) {
+          lastFetchTime.current = now;
+          loadMessages();
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [refreshOnFocus, userId, fetchMessages, loadMessages, endpointUnavailable]);
+
+  // Periodic polling for new messages (like web's 60s interval)
+  useEffect(() => {
+    // Don't poll if endpoint is unavailable or missing required params
+    if (!userId || !fetchMessages || checkInterval <= 0 || endpointUnavailable) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      lastFetchTime.current = Date.now();
+      loadMessages();
+    }, checkInterval);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [userId, fetchMessages, checkInterval, loadMessages, endpointUnavailable]);
 
   return {
     messages,

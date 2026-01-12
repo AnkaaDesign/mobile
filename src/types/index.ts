@@ -51,7 +51,6 @@ export * from "./monitoring";
 export * from "./secullum";
 // export * from "./statistics"; // Disabled - file doesn't exist
 export * from "./deployment";
-export * from "./budget";
 export * from "./commission";
 export * from "./economic-activity";
 export * from "./media";

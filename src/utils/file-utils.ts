@@ -106,28 +106,13 @@ export const getMimeTypeFromFilename = (filename: string): string => {
 };
 
 // =====================
-// API URL Utilities (from utils/file.ts)
+// API URL Utilities (centralized via axiosClient)
 // =====================
 
+import { getCurrentApiUrl } from '../api-client';
+
 export const getApiBaseUrl = (): string => {
-  // Priority 1: Check expo config (from app.json extra.apiUrl) - MOST RELIABLE for production builds
-  const Constants = require('expo-constants').default;
-  if (Constants?.expoConfig?.extra?.apiUrl) {
-    return Constants.expoConfig.extra.apiUrl;
-  }
-
-  // Priority 2: Environment variable
-  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // Priority 3: Global variable
-  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
-    return (global as any).__ANKAA_API_URL__;
-  }
-
-  // Default fallback
-  return "http://192.168.0.13:3030";
+  return getCurrentApiUrl();
 };
 
 /**

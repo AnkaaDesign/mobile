@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
+import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp, IconCreditCard } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
 import { formatBrazilianPhone } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
@@ -43,7 +43,7 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
     });
   };
 
-  const hasContactInfo = supplier.email || (supplier.phones && supplier.phones.length > 0) || supplier.site;
+  const hasContactInfo = supplier.email || (supplier.phones && supplier.phones.length > 0) || supplier.site || supplier.pix;
 
   if (!hasContactInfo) {
     return (
@@ -145,6 +145,19 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
               </ThemedText>
             </View>
           </TouchableOpacity>
+        )}
+
+        {/* Pix */}
+        {supplier.pix && (
+          <View style={styles.infoItem}>
+            <IconCreditCard size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Chave Pix</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                {supplier.pix}
+              </ThemedText>
+            </View>
+          </View>
         )}
       </View>
     </Card>

@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, moneySchema } from "./common";
 import type { Order, OrderItem, OrderSchedule } from '../types';
-import { ORDER_STATUS, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } from '../constants';
+import { ORDER_STATUS, PAYMENT_METHOD, SCHEDULE_FREQUENCY, WEEK_DAY, MONTH, MONTH_OCCURRENCE } from '../constants';
 
 // =====================
 // Order Include Schema Based on Prisma Schema (Second Level Only)
@@ -1269,6 +1269,20 @@ export const orderCreateSchema = z
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
     notes: z.string().optional(),
+    // Payment fields
+    paymentMethod: z
+      .enum(Object.values(PAYMENT_METHOD) as [string, ...string[]], {
+        errorMap: () => ({ message: "Método de pagamento inválido" }),
+      })
+      .nullable()
+      .optional(),
+    paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
+    paymentDueDays: z
+      .number()
+      .int("Prazo de vencimento deve ser um número inteiro")
+      .positive("Prazo de vencimento deve ser positivo")
+      .nullable()
+      .optional(),
     // File arrays - aligned with web
     budgetIds: z.array(z.string().uuid("Orçamento inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),
@@ -1342,6 +1356,20 @@ export const orderUpdateSchema = z
     orderRuleId: z.string().uuid({ message: "Regra de pedido inválida" }).optional(),
     ppeScheduleId: z.string().uuid({ message: "Agendamento EPI inválido" }).optional(),
     notes: z.string().optional(),
+    // Payment fields
+    paymentMethod: z
+      .enum(Object.values(PAYMENT_METHOD) as [string, ...string[]], {
+        errorMap: () => ({ message: "Método de pagamento inválido" }),
+      })
+      .nullable()
+      .optional(),
+    paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
+    paymentDueDays: z
+      .number()
+      .int("Prazo de vencimento deve ser um número inteiro")
+      .positive("Prazo de vencimento deve ser positivo")
+      .nullable()
+      .optional(),
     // File arrays - aligned with web
     budgetIds: z.array(z.string().uuid("Orçamento inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("NFe inválida")).optional(),

@@ -52,6 +52,7 @@ export default function SupplierCreateScreen() {
       zipCode: null,
       site: null,
       phones: [],
+      pix: null,
       tags: [],
       logoId: null,
     },
@@ -81,6 +82,7 @@ export default function SupplierCreateScreen() {
         if (data.state) formData.append("state", data.state);
         if (data.zipCode) formData.append("zipCode", data.zipCode);
         if (data.site) formData.append("site", data.site);
+        if (data.pix) formData.append("pix", data.pix);
 
         // Add phones as array
         data.phones?.forEach((phone: string, index: number) => {
@@ -421,6 +423,30 @@ export default function SupplierCreateScreen() {
               name="phones"
               render={({ field: { onChange, value } }) => (
                 <PhoneManager phones={value || []} onChange={onChange} />
+              )}
+            />
+          </FormFieldGroup>
+        </FormCard>
+
+        {/* Payment */}
+        <FormCard title="Pagamento" icon="IconCreditCard">
+          <FormFieldGroup
+            label="Chave Pix"
+            error={form.formState.errors.pix?.message}
+          >
+            <Controller
+              control={form.control}
+              name="pix"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  editable={!isSubmitting}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
               )}
             />
           </FormFieldGroup>

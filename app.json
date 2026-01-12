@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/icon-1024.png",
       "resizeMode": "contain",
-      "backgroundColor": "#15803d"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -22,15 +22,19 @@
       "jsEngine": "hermes",
       "associatedDomains": [
         "applinks:ankaa.live",
-        "applinks:www.ankaa.live"
-      ]
+        "applinks:www.ankaa.live",
+        "applinks:app.ankaa.com.br"
+      ],
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification", "fetch"]
+      }
     },
     "android": {
       "package": "com.ankaadesign.management",
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#15803d"
+        "backgroundColor": "#ffffff"
       },
       "intentFilters": [
         {
@@ -46,6 +50,10 @@
               "scheme": "https",
               "host": "www.ankaa.live",
               "pathPrefix": "/app"
+            },
+            {
+              "scheme": "https",
+              "host": "app.ankaa.com.br"
             }
           ],
           "category": [
@@ -85,7 +93,7 @@
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
       "apiUrl": "https://api.ankaa.live",
-      "fallbackApiUrl": "http://192.168.0.13:3030"
+      "fallbackApiUrl": "http://192.168.10.165:3030"
     }
   }
 }

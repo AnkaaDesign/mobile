@@ -1,38 +1,27 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Modal,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Platform,
   BackHandler,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  runOnJS,
-  interpolate,
-  Extrapolate,
-  FadeIn,
-  FadeOut,
-} from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { IconX, IconChevronLeft, IconChevronRight, IconEyeOff } from "@tabler/icons-react-native";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { ThemedView, ThemedText } from "@/components/ui";
 import { Button } from "@/components/ui/button";
+import { MessageBlockRenderer } from "@/components/ui/message-block-renderer";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, shadow, transitions } from "@/constants/design-system";
+import { spacing, borderRadius, shadow } from "@/constants/design-system";
+import { transformMessageContent, hasRenderableContent } from "@/utils/message-transformer";
 import type { Notification } from "@/types";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
-const SWIPE_VELOCITY_THRESHOLD = 500;
 
 export interface MessageModalProps {
   visible: boolean;
@@ -58,18 +47,13 @@ export function MessageModal({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  // Animated values for swipe gestures
-  const translateX = useSharedValue(0);
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
-
-  // Track if gesture is active
-  const isGestureActive = useSharedValue(false);
-
   // Filter out dismissed messages
   const activeMessages = messages.filter((msg) => !dismissed.has(msg.id));
   const currentMessage = activeMessages[currentIndex];
   const totalMessages = activeMessages.length;
+  const hasMultipleMessages = totalMessages > 1;
+  const isFirstMessage = currentIndex === 0;
+  const isLastMessage = currentIndex === totalMessages - 1;
 
   // Reset index when messages change
   useEffect(() => {
@@ -95,37 +79,24 @@ export function MessageModal({
     if (visible) {
       setCurrentIndex(0);
       setDismissed(new Set());
-      translateX.value = 0;
-      opacity.value = 1;
-      scale.value = 1;
     }
   }, [visible]);
 
   // Navigate to previous message
   const handlePrevious = useCallback(() => {
-    if (currentIndex > 0) {
+    if (!isFirstMessage) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setCurrentIndex((prev) => prev - 1);
-
-      // Reset animation values
-      translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-      opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
-      scale.value = withSpring(1, { damping: 20, stiffness: 150 });
     }
-  }, [currentIndex, translateX, opacity, scale]);
+  }, [isFirstMessage]);
 
   // Navigate to next message
   const handleNext = useCallback(() => {
-    if (currentIndex < totalMessages - 1) {
+    if (!isLastMessage) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setCurrentIndex((prev) => prev + 1);
-
-      // Reset animation values
-      translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-      opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
-      scale.value = withSpring(1, { damping: 20, stiffness: 150 });
     }
-  }, [currentIndex, totalMessages, translateX, opacity, scale]);
+  }, [isLastMessage]);
 
   // Close - dismiss for today only
   const handleClose = useCallback(() => {
@@ -151,64 +122,19 @@ export function MessageModal({
       setTimeout(() => {
         onClose();
       }, 300);
-    } else if (currentIndex === totalMessages - 1) {
+    } else if (isLastMessage) {
       // If we're at the last message, go to the previous one
       setCurrentIndex((prev) => Math.max(0, prev - 1));
     }
-  }, [currentMessage, totalMessages, currentIndex, onDontShowAgain, onClose]);
+    // Otherwise stay at current index (next message will slide in)
+  }, [currentMessage, totalMessages, isLastMessage, onDontShowAgain, onClose]);
 
-  // Pan gesture for swipe navigation
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      "worklet";
-      isGestureActive.value = true;
-    })
-    .onUpdate((event) => {
-      "worklet";
-      translateX.value = event.translationX;
-
-      // Scale down slightly while swiping
-      const progress = Math.abs(event.translationX) / SCREEN_WIDTH;
-      scale.value = interpolate(progress, [0, 0.5], [1, 0.95], Extrapolate.CLAMP);
-
-      // Fade out slightly while swiping
-      opacity.value = interpolate(
-        Math.abs(event.translationX),
-        [0, SCREEN_WIDTH / 2],
-        [1, 0.7],
-        Extrapolate.CLAMP
-      );
-    })
-    .onEnd((event) => {
-      "worklet";
-      isGestureActive.value = false;
-
-      const shouldNavigate =
-        Math.abs(event.translationX) > SWIPE_THRESHOLD ||
-        Math.abs(event.velocityX) > SWIPE_VELOCITY_THRESHOLD;
-
-      if (shouldNavigate) {
-        // Swipe right = previous, swipe left = next
-        if (event.translationX > 0) {
-          runOnJS(handlePrevious)();
-        } else {
-          runOnJS(handleNext)();
-        }
-      } else {
-        // Spring back to center
-        translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-        opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
-        scale.value = withSpring(1, { damping: 20, stiffness: 150 });
-      }
-    });
-
-  // Animated styles
-  const animatedCardStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: translateX.value }, { scale: scale.value }],
-      opacity: opacity.value,
-    };
-  });
+  // Format date
+  const formatDate = (date: Date | string | null | undefined) => {
+    if (!date) return "";
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return formatDistanceToNow(dateObj, { addSuffix: true, locale: ptBR });
+  };
 
   if (!currentMessage) {
     return null;
@@ -218,18 +144,14 @@ export function MessageModal({
     <Modal
       visible={visible}
       transparent
-      animationType="none"
+      animationType="fade"
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <Animated.View
-        entering={FadeIn.duration(transitions.normal)}
-        exiting={FadeOut.duration(transitions.normal)}
-        style={styles.container}
-      >
+      <View style={styles.container}>
         {/* Backdrop */}
         <TouchableOpacity
-          style={[styles.backdrop, { backgroundColor: `rgba(0, 0, 0, 0.6)` }]}
+          style={[styles.backdrop, { backgroundColor: "rgba(0, 0, 0, 0.6)" }]}
           activeOpacity={1}
           onPress={handleClose}
         />
@@ -239,164 +161,126 @@ export function MessageModal({
           style={[
             styles.contentContainer,
             {
-              paddingTop: insets.top + spacing.md,
-              paddingBottom: insets.bottom + spacing.md,
+              paddingTop: insets.top + spacing.lg,
+              paddingBottom: insets.bottom + spacing.lg,
             },
           ]}
           pointerEvents="box-none"
         >
-          {/* Close Button */}
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              style={[
-                styles.closeButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                },
-              ]}
-              onPress={handleClose}
-              activeOpacity={0.7}
-            >
-              <IconX size={24} color={colors.foreground} />
-            </TouchableOpacity>
+          <Animated.View
+            entering={FadeIn.duration(200)}
+            exiting={FadeOut.duration(150)}
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                ...shadow.lg,
+              },
+            ]}
+          >
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerContent}>
+                <ThemedText style={styles.title} numberOfLines={2}>
+                  {currentMessage.title}
+                </ThemedText>
+                {currentMessage.sentAt && (
+                  <ThemedText style={[styles.date, { color: colors.mutedForeground }]}>
+                    {formatDate(currentMessage.sentAt)}
+                  </ThemedText>
+                )}
+              </View>
 
-            {totalMessages > 1 && (
-              <View
-                style={[
-                  styles.counterBadge,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
+              {/* Close Button */}
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: colors.muted }]}
+                onPress={handleClose}
+                activeOpacity={0.7}
               >
-                <ThemedText style={styles.counterText}>
+                <IconX size={20} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Progress indicator for multiple messages */}
+            {hasMultipleMessages && (
+              <View style={styles.progressContainer}>
+                <View style={[styles.progressBar, { backgroundColor: colors.muted }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        backgroundColor: colors.primary,
+                        width: `${((currentIndex + 1) / totalMessages) * 100}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <ThemedText style={[styles.progressText, { color: colors.mutedForeground }]}>
                   {currentIndex + 1} de {totalMessages}
                 </ThemedText>
               </View>
             )}
-          </View>
 
-          {/* Message Card */}
-          <GestureDetector gesture={panGesture}>
-            <Animated.View
-              style={[animatedCardStyle, { flex: 1 }]}
-              pointerEvents="box-none"
+            {/* Message Body */}
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              showsVerticalScrollIndicator={true}
             >
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                    ...shadow.lg,
-                  },
-                ]}
-                pointerEvents="auto"
-              >
-                {/* Message Header */}
-                <View style={styles.messageHeader}>
-                  <ThemedText style={styles.messageTitle} numberOfLines={2}>
-                    {currentMessage.title}
-                  </ThemedText>
-                  {currentMessage.sentAt && (
-                    <ThemedText
-                      style={[styles.messageDate, { color: colors.mutedForeground }]}
-                    >
-                      {new Date(currentMessage.sentAt).toLocaleDateString("pt-BR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </ThemedText>
-                  )}
-                </View>
+              {/* Render structured content blocks if available */}
+              {hasRenderableContent((currentMessage as any).content) ? (
+                <MessageBlockRenderer
+                  blocks={transformMessageContent((currentMessage as any).content)}
+                />
+              ) : currentMessage.body ? (
+                <ThemedText style={styles.bodyText}>
+                  {currentMessage.body}
+                </ThemedText>
+              ) : null}
+            </ScrollView>
 
-                {/* Message Body */}
-                <ThemedView style={styles.messageBody}>
-                  <ThemedText style={styles.messageText}>
-                    {currentMessage.body}
-                  </ThemedText>
-                </ThemedView>
-
-                {/* Actions */}
-                <View style={styles.actionsContainer}>
+            {/* Footer */}
+            <View style={[styles.footer, { borderTopColor: colors.border }]}>
+              {/* Navigation buttons */}
+              {hasMultipleMessages && (
+                <View style={styles.navigationContainer}>
                   <Button
                     variant="outline"
-                    size="default"
-                    onPress={handleDontShowAgain}
-                    style={styles.actionButton}
-                    icon={<IconEyeOff size={18} color={colors.foreground} />}
+                    size="sm"
+                    onPress={handlePrevious}
+                    disabled={isFirstMessage}
+                    icon={<IconChevronLeft size={16} color={isFirstMessage ? colors.mutedForeground : colors.foreground} />}
                   >
-                    Não mostrar novamente
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onPress={handleNext}
+                    disabled={isLastMessage}
+                    iconPosition="right"
+                    icon={<IconChevronRight size={16} color={isLastMessage ? colors.mutedForeground : colors.foreground} />}
+                  >
+                    Próxima
                   </Button>
                 </View>
+              )}
 
-                {/* Navigation Arrows (for larger screens) */}
-                {totalMessages > 1 && (
-                  <View style={styles.navigationContainer}>
-                    <TouchableOpacity
-                      style={[
-                        styles.navButton,
-                        currentIndex === 0 && styles.navButtonDisabled,
-                        {
-                          backgroundColor: colors.card,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                      onPress={handlePrevious}
-                      disabled={currentIndex === 0}
-                      activeOpacity={0.7}
-                    >
-                      <IconChevronLeft
-                        size={24}
-                        color={
-                          currentIndex === 0 ? colors.mutedForeground : colors.foreground
-                        }
-                      />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[
-                        styles.navButton,
-                        currentIndex === totalMessages - 1 && styles.navButtonDisabled,
-                        {
-                          backgroundColor: colors.card,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                      onPress={handleNext}
-                      disabled={currentIndex === totalMessages - 1}
-                      activeOpacity={0.7}
-                    >
-                      <IconChevronRight
-                        size={24}
-                        color={
-                          currentIndex === totalMessages - 1
-                            ? colors.mutedForeground
-                            : colors.foreground
-                        }
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            </Animated.View>
-          </GestureDetector>
-
-          {/* Swipe Indicator */}
-          {totalMessages > 1 && (
-            <View style={styles.swipeIndicatorContainer}>
-              <ThemedText
-                style={[styles.swipeIndicator, { color: colors.mutedForeground }]}
+              {/* Don't show again button */}
+              <Button
+                variant="outline"
+                size="default"
+                onPress={handleDontShowAgain}
+                style={styles.dontShowButton}
+                icon={<IconEyeOff size={18} color={colors.foreground} />}
               >
-                Deslize para navegar entre mensagens
-              </ThemedText>
+                Não mostrar novamente
+              </Button>
             </View>
-          )}
+          </Animated.View>
         </View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -413,97 +297,85 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     justifyContent: "center",
   },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
-  },
-  closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    ...shadow.sm,
-  },
-  counterBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    ...shadow.sm,
-  },
-  counterText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
   card: {
-    flex: 1,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    padding: spacing.lg,
-    maxHeight: "80%",
+    maxHeight: "85%",
+    overflow: "hidden",
   },
-  messageHeader: {
-    marginBottom: spacing.md,
-    paddingBottom: spacing.md,
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    gap: spacing.md,
   },
-  messageTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: spacing.xs,
-    lineHeight: 32,
+  headerContent: {
+    flex: 1,
+    gap: spacing.xs,
   },
-  messageDate: {
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    lineHeight: 26,
+  },
+  date: {
     fontSize: 12,
     fontWeight: "500",
   },
-  messageBody: {
-    flex: 1,
-    marginBottom: spacing.lg,
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  messageText: {
+  progressContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: borderRadius.full,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: borderRadius.full,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  body: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  bodyContent: {
+    paddingVertical: spacing.md,
+  },
+  bodyText: {
     fontSize: 16,
     lineHeight: 24,
   },
-  actionsContainer: {
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
     gap: spacing.sm,
-  },
-  actionButton: {
-    width: "100%",
   },
   navigationContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0, 0, 0, 0.1)",
+    gap: spacing.sm,
   },
-  navButton: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    ...shadow.sm,
-  },
-  navButtonDisabled: {
-    opacity: 0.4,
-  },
-  swipeIndicatorContainer: {
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  swipeIndicator: {
-    fontSize: 12,
-    fontWeight: "500",
-    textAlign: "center",
+  dontShowButton: {
+    width: "100%",
   },
 });

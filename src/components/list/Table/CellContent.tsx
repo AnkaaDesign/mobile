@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/ui/themed-text'
 import { FileTypeIcon } from '@/components/ui/file-type-icon'
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters'
 import { getBadgeVariant, BADGE_COLORS, type BadgeVariant } from '@/constants/badge-colors'
+import { getCurrentApiUrl } from '@/api-client'
 import {
   ORDER_STATUS_LABELS,
   USER_STATUS_LABELS,
@@ -49,7 +50,7 @@ function getStatusLabel(value: string, entity?: string): string {
  * Get thumbnail URL for a file
  */
 function getFileThumbnailUrl(file: AnkaaFile, size: 'small' | 'medium' | 'large' = 'small'): string {
-  const apiUrl = (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || 'http://localhost:3030'
+  const apiUrl = getCurrentApiUrl()
 
   if (file.thumbnailUrl) {
     if (file.thumbnailUrl.startsWith('http://') || file.thumbnailUrl.startsWith('https://')) {

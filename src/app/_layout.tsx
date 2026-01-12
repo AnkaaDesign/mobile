@@ -25,10 +25,11 @@ import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, LogBox } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
 import { DeepLinkHandler } from "@/components/deep-link-handler";
+import { AuthAwareMessageModal } from "@/components/message/MessageModalIntegration";
 // Toast system removed - API client uses native Alert/ToastAndroid via setup-notifications.ts
 import NetInfo from "@react-native-community/netinfo";
 import Constants from "expo-constants";
-import { updateApiUrl } from '../api-client';
+import { updateApiUrl, initializeApiUrl, getCurrentApiUrl, getIsUsingFallback } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
 import "../../global.css";
 
@@ -96,9 +97,22 @@ setupGlobalErrorHandler();
 // Initialize API URL early - this is critical for mobile
 // Priority: app.json > environment variable > nothing
 const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+const fallbackApiUrl = Constants.expoConfig?.extra?.fallbackApiUrl || process.env.EXPO_PUBLIC_FALLBACK_API_URL;
+
 if (apiUrl) {
-  console.log("[App] Setting API URL from", Constants.expoConfig?.extra?.apiUrl ? 'app.json' : 'env', ":", apiUrl);
+  console.log("[App] Primary API URL:", apiUrl);
+  console.log("[App] Fallback API URL:", fallbackApiUrl || 'not configured');
+  // Set initial URL synchronously for immediate use
   updateApiUrl(apiUrl);
+
+  // Initialize with automatic fallback detection (async)
+  // This will test the primary URL and switch to fallback if unreachable
+  initializeApiUrl().then((selectedUrl) => {
+    const usingFallback = getIsUsingFallback();
+    console.log("[App] API URL initialized:", selectedUrl, usingFallback ? "(using fallback)" : "(using primary)");
+  }).catch((error) => {
+    console.error("[App] Failed to initialize API URL:", error);
+  });
 } else {
   console.error("[App] No API URL configured! App will not work correctly.");
 }
@@ -215,6 +229,8 @@ export default function RootLayout() {
                           <Stack.Screen name="index" options={{ headerShown: false }} />
                         </Stack>
                         <PortalHost />
+                        {/* System Messages Modal - shows unviewed messages on app load and focus */}
+                        <AuthAwareMessageModal />
                       </>
                     )}
                         </SwipeRowProvider>

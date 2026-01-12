@@ -236,9 +236,9 @@ const ALL_ROUTES = [
   { name: "recursos-humanos/ferias/listar", title: "Férias" },
   { name: "recursos-humanos/ferias/detalhes/[id]", title: "Detalhes das Férias" },
   { name: "recursos-humanos/ferias/editar/[id]", title: "Editar Férias" },
-  { name: "recursos-humanos/folha-de-pagamento/index", title: "Folha de Pagamento" },
-  { name: "recursos-humanos/folha-de-pagamento/[userId]", title: "Folha de Pagamento" },
-  { name: "recursos-humanos/folha-de-pagamento/listar", title: "Folhas de Pagamento" },
+  // { name: "recursos-humanos/folha-de-pagamento/index", title: "Folha de Pagamento" }, // Temporarily hidden for testing
+  // { name: "recursos-humanos/folha-de-pagamento/[userId]", title: "Folha de Pagamento" }, // Temporarily hidden for testing
+  // { name: "recursos-humanos/folha-de-pagamento/listar", title: "Folhas de Pagamento" }, // Temporarily hidden for testing
   { name: "recursos-humanos/niveis-de-desempenho/index", title: "Níveis de Desempenho" },
   { name: "recursos-humanos/niveis-de-desempenho/listar", title: "Níveis de Desempenho" },
   { name: "recursos-humanos/setores/listar", title: "Setores" },

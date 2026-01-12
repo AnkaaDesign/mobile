@@ -6,6 +6,7 @@ import { formatRelativeTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { getCurrentApiUrl } from "@/api-client";
 
 export type FileViewMode = "grid" | "list";
 
@@ -22,7 +23,7 @@ export interface FileItemProps {
 }
 
 const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
-  const apiUrl = baseUrl || (global as { __ANKAA_API_URL__?: string }).__ANKAA_API_URL__ || "http://localhost:3030";
+  const apiUrl = baseUrl || getCurrentApiUrl();
 
   console.log('🔍 [getThumbnailUrl] Called with:', {
     filename: file.filename,
