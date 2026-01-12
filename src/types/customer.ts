@@ -12,7 +12,6 @@ import type { EconomicActivity, EconomicActivityIncludes } from "./economic-acti
 
 export interface Customer extends BaseEntity {
   fantasyName: string;
-  name: string; // Alias for fantasyName
   cnpj: string | null;
   cpf: string | null;
   corporateName: string | null;

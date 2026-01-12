@@ -78,20 +78,10 @@ export const TaskCommissionsCard: React.FC<TaskCommissionsCardProps> = ({ commis
                     </ThemedText>
                   )}
                 </View>
+                <ThemedText style={[styles.statusText, { color: statusColors.text }]}>
+                  Status: {COMMISSION_STATUS_LABELS[commission.status]}
+                </ThemedText>
               </View>
-              <Badge
-                variant="outline"
-                style={StyleSheet.flatten([
-                  styles.statusBadge,
-                  {
-                    backgroundColor: statusColors.bg,
-                    borderColor: statusColors.text,
-                  },
-                ])}
-                textStyle={{ color: statusColors.text }}
-              >
-                {COMMISSION_STATUS_LABELS[commission.status]}
-              </Badge>
             </View>
           );
         })}
@@ -165,9 +155,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     opacity: 0.6,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  statusText: {
+    fontSize: fontSize.sm,
+    marginTop: 4,
+    fontWeight: "500",
   },
   totalRow: {
     flexDirection: "row",

@@ -35,7 +35,9 @@ type AreaId = (typeof AREAS)[number];
 type GarageId = 'B1' | 'B2' | 'B3';
 type LaneId = (typeof LANES)[number];
 
-// Individual garage configurations based on real measurements
+// Individual garage configurations with real measurements
+// All garages standardized to 20m × 35m for consistency with minimal waste
+// Lane lengths are preserved to maintain truck positioning accuracy
 const GARAGE_CONFIGS: {
   [K in GarageId]: {
     width: number;
@@ -49,50 +51,36 @@ const GARAGE_CONFIGS: {
   };
 } = {
   B1: {
-    width: 20,
-    length: 30,
-    paddingTop: 2.2, // Back margin from top
-    paddingBottom: 3.2, // Front margin from bottom
-    laneLength: 24.6,
-    laneWidth: 3,
-    laneSpacing: 0, // Will be calculated
-    lanePaddingX: 0, // Will be calculated
+    width: 20, // meters (standardized)
+    length: 35, // meters (standardized from 30m)
+    paddingTop: 3, // meters - back margin from top
+    paddingBottom: 7.4, // meters - front margin from bottom (adjusted)
+    laneLength: 24.6, // meters (preserved: 35 - 3 - 7.4)
+    laneWidth: 3, // meters
+    laneSpacing: (20 - 9) / 4, // 2.75m - equal spacing between and around lanes
+    lanePaddingX: (20 - 9) / 4, // 2.75m - padding on left/right
   },
   B2: {
-    width: 18.5,
-    length: 30.5,
-    paddingTop: 3.5, // Back margin from top
-    paddingBottom: 2.5, // Front margin from bottom
-    laneLength: 24.5,
-    laneWidth: 3,
-    laneSpacing: 0, // Will be calculated
-    lanePaddingX: 0, // Will be calculated
+    width: 20, // meters (standardized from 18.5m)
+    length: 35, // meters (standardized from 30.5m)
+    paddingTop: 3, // meters - back margin from top
+    paddingBottom: 7.5, // meters - front margin from bottom (adjusted)
+    laneLength: 24.5, // meters (preserved: 35 - 3 - 7.5)
+    laneWidth: 3, // meters
+    laneSpacing: (20 - 9) / 4, // 2.75m - equal spacing between and around lanes (standardized)
+    lanePaddingX: (20 - 9) / 4, // 2.75m - padding on left/right (standardized)
   },
   B3: {
-    width: 20,
-    length: 40,
-    paddingTop: 3, // Back margin from top
-    paddingBottom: 7, // Front margin from bottom
-    laneLength: 30,
-    laneWidth: 3,
-    laneSpacing: 0, // Will be calculated
-    lanePaddingX: 0, // Will be calculated
+    width: 20, // meters (standardized)
+    length: 35, // meters (standardized from 40m)
+    paddingTop: 3, // meters - back margin from top
+    paddingBottom: 2, // meters - front margin from bottom (reduced from 7m)
+    laneLength: 30, // meters (preserved: 35 - 3 - 2)
+    laneWidth: 3, // meters
+    laneSpacing: (20 - 9) / 4, // 2.75m - equal spacing between and around lanes
+    lanePaddingX: (20 - 9) / 4, // 2.75m - padding on left/right
   },
 };
-
-// Calculate lane spacing and padding for each garage
-// Formula: totalLaneSpace = 3 lanes * 3m = 9m
-// remainingSpace = garageWidth - 9m
-// lanePaddingX = remainingSpace / 4 (equal padding on sides and between lanes)
-// laneSpacing = lanePaddingX
-Object.keys(GARAGE_CONFIGS).forEach((key) => {
-  const config = GARAGE_CONFIGS[key as GarageId];
-  const totalLaneSpace = 3 * config.laneWidth; // 9m
-  const remainingSpace = config.width - totalLaneSpace;
-  const padding = remainingSpace / 4;
-  config.lanePaddingX = padding;
-  config.laneSpacing = padding;
-});
 
 // Shared constants for all garages
 const GARAGE_CONFIG = {

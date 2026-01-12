@@ -69,6 +69,12 @@ export default function ScheduleDetailsScreen() {
   const canViewDocuments = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
                            userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
 
+  // Check if user can view base files (admin/commercial/logistic/designer only)
+  const canViewBaseFiles = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                           userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+                           userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+                           userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+
   // Check if user can view truck layout (admin/logistic/team leaders only)
   // Team leadership is now determined by managedSector relationship
   const canViewTruckLayout = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
@@ -388,8 +394,8 @@ export default function ScheduleDetailsScreen() {
           {/* Observations Table - Before Artworks */}
           <ObservationsTable taskId={id as string} maxHeight={400} />
 
-          {/* Base Files Section */}
-          {(task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
+          {/* Base Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
+          {canViewBaseFiles && (task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>

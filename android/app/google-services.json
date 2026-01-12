@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "300039250878",
+    "project_id": "ankaa-design-management",
+    "storage_bucket": "ankaa-design-management.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300039250878:android:ad6ee4b663cf7638068fef",
+        "android_client_info": {
+          "package_name": "com.ankaadesign.management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWVj6_R9ZHMRrhsrsC-0eA0U4-O9UL7yw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

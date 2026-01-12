@@ -7,6 +7,7 @@ import { TASK_STATUS, SERVICE_ORDER_STATUS } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { budgetCreateNestedSchema } from "./budget";
+import { pricingCreateNestedSchema } from "./task-pricing";
 
 // =====================
 // Include Schema Based on Prisma Schema (Second Level Only)
@@ -232,6 +233,19 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
         .optional(),
       cutRequest: z.boolean().optional(),
       cutPlan: z.boolean().optional(),
+      pricing: z
+        .union([
+          z.boolean(),
+          z.object({
+            include: z
+              .object({
+                task: z.boolean().optional(),
+                items: z.boolean().optional(),
+              })
+              .optional(),
+          }),
+        ])
+        .optional(),
       relatedTasks: z
         .union([
           z.boolean(),
@@ -1188,6 +1202,7 @@ export const taskCreateSchema = z
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
     budget: budgetCreateNestedSchema.optional(), // One-to-one budget with items
+    pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {
@@ -1279,6 +1294,7 @@ export const taskUpdateSchema = z
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
     budget: budgetCreateNestedSchema.optional(), // One-to-one budget with items
+    pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {

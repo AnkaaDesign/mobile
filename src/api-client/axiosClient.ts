@@ -3,6 +3,7 @@
 import axios, { AxiosError } from "axios";
 import type { AxiosRequestConfig, AxiosInstance, InternalAxiosRequestConfig, CancelTokenSource, AxiosResponse } from "axios";
 import qs from "qs";
+import Constants from "expo-constants";
 import { notify } from "./notify";
 import { safeLocalStorage } from "./platform-utils";
 
@@ -144,17 +145,26 @@ interface ExtendedAxiosInstance extends AxiosInstance {
 
 // Support environment-specific API URLs
 const getApiUrl = (): string => {
-  // For React Native/Expo apps - check env first as it's most reliable
+  // Priority 1: Check expo config (from app.json extra.apiUrl)
+  if (typeof Constants !== "undefined" && Constants.expoConfig?.extra?.apiUrl) {
+    console.log('[API Client] Using API URL from app.json:', Constants.expoConfig.extra.apiUrl);
+    return Constants.expoConfig.extra.apiUrl;
+  }
+
+  // Priority 2: For React Native/Expo apps - check env
   if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    console.log('[API Client] Using API URL from env:', process.env.EXPO_PUBLIC_API_URL);
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Check for window object with API URL set (web environment or React Native with polyfill)
+  // Priority 3: Check for window object with API URL set (web environment or React Native with polyfill)
   if (typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_API_URL__) {
+    console.log('[API Client] Using API URL from global:', (globalThis as any).window.__ANKAA_API_URL__);
     return (globalThis as any).window.__ANKAA_API_URL__;
   }
 
   // Default fallback
+  console.warn('[API Client] No API URL configured, using fallback');
   return "http://localhost:3030";
 };
 

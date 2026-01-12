@@ -5,9 +5,9 @@ import { Platform } from 'react-native';
 // Configure how notifications should be handled when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
+    shouldShowAlert: false,  // Don't show alert in foreground (prevents duplicate notifications)
+    shouldPlaySound: true,   // Still play sound
+    shouldSetBadge: true,    // Still update badge
   }),
 });
 
@@ -73,20 +73,23 @@ async function setupAndroidNotificationChannels(): Promise<void> {
   try {
     // Default channel
     await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.DEFAULT, {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      name: 'Notificações Gerais',
+      description: 'Notificações padrão do aplicativo',
+      importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
+      lightColor: '#15803d',
       sound: 'default',
       enableVibrate: true,
+      showBadge: true,
     });
 
     // High priority channel for urgent notifications
     await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.HIGH_PRIORITY, {
-      name: 'High Priority',
+      name: 'Urgentes',
+      description: 'Notificações importantes e urgentes',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 500, 250, 500],
-      lightColor: '#FF0000',
+      lightColor: '#15803d',
       sound: 'default',
       enableVibrate: true,
       showBadge: true,
@@ -94,10 +97,11 @@ async function setupAndroidNotificationChannels(): Promise<void> {
 
     // Low priority channel for optional notifications
     await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.LOW_PRIORITY, {
-      name: 'Low Priority',
+      name: 'Informações',
+      description: 'Notificações informativas',
       importance: Notifications.AndroidImportance.LOW,
       vibrationPattern: [0, 100],
-      lightColor: '#00FF00',
+      lightColor: '#15803d',
       sound: undefined,
       enableVibrate: false,
       showBadge: false,

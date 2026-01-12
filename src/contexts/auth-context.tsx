@@ -315,7 +315,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (contact: string, password: string) => {
     try {
       setLoading(true);
+
+      console.log('[AUTH] Starting login attempt...');
+      console.log('[AUTH] Contact:', contact);
+      console.log('[AUTH] API URL:', (global as any).__ANKAA_API_URL__ || process.env.EXPO_PUBLIC_API_URL || 'NOT SET');
+
       const response = await apiLogin(contact, password);
+      console.log('[AUTH] Login API response received');
 
       const access_token = response.data.token;
       const userData = response.data.user;
@@ -358,7 +364,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           queryClient.setQueryData(USER_QUERY_KEYS.detail(decodedToken.sub), { data: userData });
         }
       } catch {}
-    } catch (error) {
+
+      console.log('[AUTH] Login successful!');
+    } catch (error: any) {
+      console.error('[AUTH] Login failed:', error);
+
+      // Enhanced error logging
+      const errorDetails = {
+        message: error?.message || 'Unknown error',
+        status: error?.status || error?.statusCode,
+        code: error?.code,
+        type: error?.constructor?.name,
+        isNetworkError: error?.message?.includes('Network') || error?.code === 'ERR_NETWORK',
+        isTimeout: error?.code === 'ECONNABORTED' || error?.message?.includes('timeout'),
+        apiUrl: (global as any).__ANKAA_API_URL__ || process.env.EXPO_PUBLIC_API_URL || 'NOT SET',
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+      };
+
+      console.log('[AUTH] Error details:', errorDetails);
+
+      // Show detailed alert to user
+      Alert.alert(
+        "Erro de Login - Debug Info",
+        `Mensagem: ${errorDetails.message}\n\n` +
+        `Status: ${errorDetails.status || 'N/A'}\n` +
+        `Tipo: ${errorDetails.type}\n` +
+        `Rede: ${errorDetails.isNetworkError ? 'SIM' : 'Não'}\n` +
+        `Timeout: ${errorDetails.isTimeout ? 'SIM' : 'Não'}\n` +
+        `API URL: ${errorDetails.apiUrl}\n\n` +
+        `Detalhes completos:\n${errorDetails.fullError.substring(0, 200)}`,
+        [{ text: "OK" }]
+      );
+
       await removeStoredToken();
       setAccessToken(null);
       setCachedToken(null);

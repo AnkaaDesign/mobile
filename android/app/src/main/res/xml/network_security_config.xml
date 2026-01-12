@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext (HTTP) traffic for development/testing -->
+    <!-- IMPORTANT: Remove or restrict this in production -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- More secure alternative: Only allow HTTP for specific domains/IPs -->
+    <!-- Uncomment and use this instead of base-config for production builds -->
+    <!--
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.0.13</domain>
+        <domain includeSubdomains="false">192.168.0.1</domain>
+    </domain-config>
+    -->
+</network-security-config>

@@ -27,6 +27,7 @@ import { AppStatusBar } from "@/components/app-status-bar";
 import { DeepLinkHandler } from "@/components/deep-link-handler";
 // Toast system removed - API client uses native Alert/ToastAndroid via setup-notifications.ts
 import NetInfo from "@react-native-community/netinfo";
+import Constants from "expo-constants";
 import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
 import "../../global.css";
@@ -93,9 +94,13 @@ if (__DEV__) {
 setupGlobalErrorHandler();
 
 // Initialize API URL early - this is critical for mobile
-if (process.env.EXPO_PUBLIC_API_URL) {
-  console.log("[App] Setting API URL:", process.env.EXPO_PUBLIC_API_URL);
-  updateApiUrl(process.env.EXPO_PUBLIC_API_URL);
+// Priority: app.json > environment variable > nothing
+const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
+if (apiUrl) {
+  console.log("[App] Setting API URL from", Constants.expoConfig?.extra?.apiUrl ? 'app.json' : 'env', ":", apiUrl);
+  updateApiUrl(apiUrl);
+} else {
+  console.error("[App] No API URL configured! App will not work correctly.");
 }
 
 // Setup mobile notifications for API responses

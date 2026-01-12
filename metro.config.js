@@ -26,8 +26,8 @@ config.watcher = {
 // Add blocklist to ignore .claude directory and other hidden folders
 config.resolver.blockList = [
   /\.claude/,
+  /\.claude-backup/,
   /\/\.git\//,
-  /\/\.cache\//,
 ];
 
 // 2. Let Metro know where to resolve packages from

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { runFullDiagnostics } from "@/utils/network-diagnostics";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -180,6 +181,14 @@ export default function LoginScreen() {
                     {isLoading && <LoadingSpinner size="sm" style={{ marginRight: spacing.sm }} />}
                     <ThemedText size="base" weight="semibold" style={{ color: "white" }}>
                       {isLoading ? "Fazendo login..." : "Entrar"}
+                    </ThemedText>
+                  </Button>
+
+                  {/* Network Diagnostics Button */}
+                  <Button onPress={runFullDiagnostics} disabled={isLoading} variant="outline" size="sm" style={{ width: "100%" }}>
+                    <Icon name="activity" size="sm" variant="muted" style={{ marginRight: spacing.xs }} />
+                    <ThemedText size="sm" weight="medium" variant="muted">
+                      Testar Conexão com API
                     </ThemedText>
                   </Button>
 

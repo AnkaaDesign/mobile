@@ -110,18 +110,24 @@ export const getMimeTypeFromFilename = (filename: string): string => {
 // =====================
 
 export const getApiBaseUrl = (): string => {
-  // Check for global __ANKAA_API_URL__ (set by the app)
-  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
-    return (global as any).__ANKAA_API_URL__;
+  // Priority 1: Check expo config (from app.json extra.apiUrl) - MOST RELIABLE for production builds
+  const Constants = require('expo-constants').default;
+  if (Constants?.expoConfig?.extra?.apiUrl) {
+    return Constants.expoConfig.extra.apiUrl;
   }
 
-  // Check for process.env in React Native/Expo environments
+  // Priority 2: Environment variable
   if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
+  // Priority 3: Global variable
+  if (typeof global !== "undefined" && (global as any).__ANKAA_API_URL__) {
+    return (global as any).__ANKAA_API_URL__;
+  }
+
   // Default fallback
-  return "http://localhost:3030";
+  return "http://192.168.0.13:3030";
 };
 
 /**

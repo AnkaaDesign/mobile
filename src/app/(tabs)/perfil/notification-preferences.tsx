@@ -11,6 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { notificationPreferenceService } from "@/api-client";
 import type { UserNotificationPreference } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
+import { usePushNotifications } from "@/contexts/push-notifications-context";
 
 // =====================
 // Types and Constants
@@ -28,6 +29,7 @@ interface NotificationEventPreference {
 interface NotificationPreferences {
   task: Record<string, NotificationEventPreference>;
   order: Record<string, NotificationEventPreference>;
+  service_order: Record<string, NotificationEventPreference>;
   stock: Record<string, NotificationEventPreference>;
   system: Record<string, NotificationEventPreference>;
   vacation: Record<string, NotificationEventPreference>;
@@ -116,6 +118,15 @@ const notificationSections: NotificationSection[] = [
     ],
   },
   {
+    id: "service_order",
+    title: "Ordens de Serviço",
+    icon: "✅",
+    events: [
+      { key: "created", label: "Nova Ordem de Serviço", description: "Quando uma nova ordem de serviço é criada", mandatory: true },
+      { key: "status.changed", label: "Mudança de Status", description: "Quando o status de uma ordem de serviço é alterado", mandatory: true },
+    ],
+  },
+  {
     id: "stock",
     title: "Estoque",
     icon: "📦",
@@ -199,6 +210,10 @@ const defaultPreferences: NotificationPreferences = {
     fulfilled: createDefaultPreference(false),
     cancelled: createDefaultPreference(false),
     overdue: createDefaultPreference(true),
+  },
+  service_order: {
+    created: createDefaultPreference(true),
+    "status.changed": createDefaultPreference(true),
   },
   stock: {
     low: createDefaultPreference(false),
@@ -309,6 +324,7 @@ function PreferenceRow({
 export default function NotificationPreferencesScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { expoPushToken, isRegistered, registerToken } = usePushNotifications();
 
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences>(defaultPreferences);
@@ -464,6 +480,26 @@ export default function NotificationPreferencesScreen() {
     Alert.alert("Cancelado", "Alterações descartadas");
   };
 
+  const handleTestPushRegistration = async () => {
+    try {
+      console.log('[DEBUG] Manual push token registration triggered');
+      console.log('[DEBUG] Current token:', expoPushToken || 'None');
+      console.log('[DEBUG] Is registered:', isRegistered);
+
+      await registerToken();
+
+      Alert.alert(
+        "Registro de Push",
+        `Status: ${isRegistered ? 'Registrado' : 'Não Registrado'}\n` +
+        `Token: ${expoPushToken ? expoPushToken.substring(0, 30) + '...' : 'Nenhum'}\n\n` +
+        `Verifique os logs do console para mais detalhes.`
+      );
+    } catch (error: any) {
+      console.error('[DEBUG] Error during manual registration:', error);
+      Alert.alert("Erro", `Falha ao registrar token de push: ${error.message}`);
+    }
+  };
+
   const hasChanges = JSON.stringify(preferences) !== JSON.stringify(originalPreferences);
 
   if (isLoading) {
@@ -583,6 +619,17 @@ export default function NotificationPreferencesScreen() {
             style={styles.actionButton}
           >
             <ThemedText>Restaurar Padrão</ThemedText>
+          </Button>
+
+          {/* Debug: Push Token Registration */}
+          <Button
+            variant="outline"
+            onPress={handleTestPushRegistration}
+            style={[styles.actionButton, { borderColor: '#3b82f6' }]}
+          >
+            <ThemedText style={{ color: '#3b82f6' }}>
+              🔔 Debug: Testar Registro Push
+            </ThemedText>
           </Button>
         </View>
       </ScrollView>

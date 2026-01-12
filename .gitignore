@@ -68,3 +68,4 @@ BUILD_*.md
 STYLESHEETFIX_*.md
 FIX_*.md
 *.sh
+.claude/

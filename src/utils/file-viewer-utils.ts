@@ -18,29 +18,29 @@ import type { File as AnkaaFile } from '../types';
  */
 export const getApiBaseUrl = (): string => {
   // Priority order:
-  // 1. Environment variable (CORRECT for Expo!)
-  // 2. Expo constants
-  // 3. Development fallback with network IP
-  // 4. Production fallback
-
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
+  // 1. Expo constants (from app.json extra.apiUrl) - MOST RELIABLE for production builds
+  // 2. Environment variable (for development)
+  // 3. Global variable
+  // 4. Fallback
 
   if (Constants.expoConfig?.extra?.apiUrl) {
+    console.log('[File Viewer] Using API URL from app.json:', Constants.expoConfig.extra.apiUrl);
     return Constants.expoConfig.extra.apiUrl;
   }
 
-  // In development, use network IP instead of localhost
-  if (__DEV__) {
-    // You can also set this in .env as EXPO_PUBLIC_API_URL
-    console.warn('[File Viewer] No API_URL configured, using development fallback');
-    return 'http://192.168.0.10:3030'; // Update this to your dev machine IP
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    console.log('[File Viewer] Using API URL from env:', process.env.EXPO_PUBLIC_API_URL);
+    return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Production fallback (should never reach here if env vars are set)
-  console.error('[File Viewer] No API_URL configured! Using production fallback');
-  return 'https://api.ankaa.live';
+  if (typeof (globalThis as any).__ANKAA_API_URL__ !== 'undefined') {
+    console.log('[File Viewer] Using API URL from global:', (globalThis as any).__ANKAA_API_URL__);
+    return (globalThis as any).__ANKAA_API_URL__;
+  }
+
+  // Fallback - should not reach here if properly configured
+  console.error('[File Viewer] No API_URL configured! Using fallback');
+  return 'http://192.168.0.13:3030';
 };
 
 // =====================
