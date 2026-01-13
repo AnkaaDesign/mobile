@@ -140,7 +140,7 @@ export function formatNotificationDate(notification: Notification): string {
     return `${daysAgo} ${daysAgo === 1 ? "dia" : "dias"} atrás`;
   }
 
-  return dateUtils.formatDate(notification.createdAt, "dd/MM/yyyy");
+  return dateUtils.formatDate(notification.createdAt);
 }
 
 /**
@@ -300,6 +300,6 @@ export function calculateNotificationStats(notifications: Notification[]) {
  */
 export function formatSeenNotificationInfo(seen: SeenNotification): string {
   const userName = seen.user?.name || "Usuário desconhecido";
-  const seenDate = dateUtils.formatDate(seen.seenAt, "dd/MM/yyyy HH:mm");
+  const seenDate = dateUtils.formatDateTime(seen.seenAt);
   return `Visto por ${userName} em ${seenDate}`;
 }

@@ -41,6 +41,17 @@ export const formatDateTime = (date: Date | string | null | undefined, _locale: 
   return formatted.replace(',', ' -');
 };
 
+export const formatDateShort = (date: Date | string | null | undefined, _locale: string = "pt-BR"): string => {
+  if (!date) return "-";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "Data inválida";
+
+  return new Intl.DateTimeFormat(_locale, {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(d);
+};
+
 export const formatTime = (date: Date | string, _locale: string = "pt-BR"): string => {
   const d = typeof date === "string" ? new Date(date) : date;
   if (isNaN(d.getTime())) return "Hora inválida";
@@ -766,6 +777,7 @@ export const getDifferenceInDays = getDaysBetween;
 export const dateUtils = {
   // Formatting
   formatDate,
+  formatDateShort,
   formatDateTime,
   formatTime,
   formatDateLong,

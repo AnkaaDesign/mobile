@@ -143,154 +143,36 @@ interface ExtendedAxiosInstance extends AxiosInstance {
 // Configuration
 // =====================
 
-// Track which URL is currently active (primary domain or fallback local network)
+// Track the current API URL (managed by NetworkContext)
 let currentApiUrl: string | null = null;
-let isUsingFallback = false;
 
-// Get the primary API URL (domain)
-const getPrimaryApiUrl = (): string => {
-  // Priority 1: Check expo config (from app.json extra.apiUrl)
-  if (typeof Constants !== "undefined" && Constants.expoConfig?.extra?.apiUrl) {
-    return Constants.expoConfig.extra.apiUrl;
-  }
-
-  // Priority 2: For React Native/Expo apps - check env
-  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
-
-  // Priority 3: Check for window object with API URL set
+// Get the default API URL from configuration
+// Priority: window global > expo config > env variable > default
+const getDefaultApiUrl = (): string => {
+  // Priority 1: Check for dynamically set URL (from NetworkContext)
   if (typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_API_URL__) {
     return (globalThis as any).window.__ANKAA_API_URL__;
   }
 
-  return "http://localhost:3030";
+  // Priority 2: Check expo config (from app.json extra.apiUrl)
+  if (typeof Constants !== "undefined" && Constants.expoConfig?.extra?.apiUrl) {
+    return Constants.expoConfig.extra.apiUrl;
+  }
+
+  // Priority 3: For React Native/Expo apps - check env
+  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  return "https://api.ankaadesign.com.br";
 };
 
-// Get the fallback API URL (local network)
-const getFallbackApiUrl = (): string | null => {
-  // Check expo config for fallback URL
-  if (typeof Constants !== "undefined" && Constants.expoConfig?.extra?.fallbackApiUrl) {
-    return Constants.expoConfig.extra.fallbackApiUrl;
-  }
-
-  // Check environment variable for fallback
-  if (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_FALLBACK_API_URL) {
-    return process.env.EXPO_PUBLIC_FALLBACK_API_URL;
-  }
-
-  return null;
-};
-
-// Test if a URL is reachable
-const testUrlReachability = async (url: string, timeout = 5000): Promise<boolean> => {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    const response = await fetch(`${url}/`, {
-      method: 'HEAD',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    return response.ok || response.status < 500;
-  } catch {
-    return false;
-  }
-};
-
-// Initialize API URL with fallback support
-const initializeApiUrl = async (): Promise<string> => {
-  if (currentApiUrl) {
-    return currentApiUrl;
-  }
-
-  const primaryUrl = getPrimaryApiUrl();
-  const fallbackUrl = getFallbackApiUrl();
-
-  // Test primary URL first
-  const primaryReachable = await testUrlReachability(primaryUrl);
-
-  if (primaryReachable) {
-    currentApiUrl = primaryUrl;
-    isUsingFallback = false;
-    return currentApiUrl;
-  }
-
-  // If primary fails and fallback exists, try fallback
-  if (fallbackUrl) {
-    const fallbackReachable = await testUrlReachability(fallbackUrl);
-
-    if (fallbackReachable) {
-      currentApiUrl = fallbackUrl;
-      isUsingFallback = true;
-      return currentApiUrl;
-    }
-  }
-
-  // Default to primary URL even if unreachable (will fail on actual requests)
-  currentApiUrl = primaryUrl;
-  isUsingFallback = false;
-  return currentApiUrl;
-};
-
-// Synchronous getter for API URL (uses cached value or primary as default)
+// Synchronous getter for API URL (uses cached value or default)
 const getApiUrl = (): string => {
   if (currentApiUrl) {
     return currentApiUrl;
   }
-  return getPrimaryApiUrl();
-};
-
-// Switch to fallback URL (called on network errors)
-const switchToFallback = async (): Promise<boolean> => {
-  const fallbackUrl = getFallbackApiUrl();
-
-  if (!fallbackUrl || isUsingFallback) {
-    return false;
-  }
-
-  const fallbackReachable = await testUrlReachability(fallbackUrl);
-
-  if (fallbackReachable) {
-    currentApiUrl = fallbackUrl;
-    isUsingFallback = true;
-
-    // Update singleton instance if exists
-    if (singletonInstance) {
-      singletonInstance.defaults.baseURL = fallbackUrl;
-    }
-
-    return true;
-  }
-
-  return false;
-};
-
-// Switch back to primary URL (can be called to retry primary)
-const switchToPrimary = async (): Promise<boolean> => {
-  const primaryUrl = getPrimaryApiUrl();
-
-  if (!isUsingFallback) {
-    return true;
-  }
-
-  const primaryReachable = await testUrlReachability(primaryUrl);
-
-  if (primaryReachable) {
-    currentApiUrl = primaryUrl;
-    isUsingFallback = false;
-
-    // Update singleton instance if exists
-    if (singletonInstance) {
-      singletonInstance.defaults.baseURL = primaryUrl;
-    }
-
-    return true;
-  }
-
-  return false;
+  return getDefaultApiUrl();
 };
 
 const DEFAULT_CONFIG: ApiClientConfig = {
@@ -764,32 +646,9 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         cancelTokens.delete(requestId);
       }
 
-      // Check if this is a network error and we can try fallback URL
-      const isNetworkError = !error.response || error.code === "ECONNABORTED" || error.message === "Network Error";
-      const hasNotTriedFallback = !(config as any).__triedFallback;
-
-      if (isNetworkError && hasNotTriedFallback && config) {
-        // Try to switch to fallback URL
-        const switched = await switchToFallback();
-
-        if (switched) {
-          // Mark that we've tried fallback to prevent infinite loop
-          (config as any).__triedFallback = true;
-
-          // Update config to use new base URL
-          config.baseURL = currentApiUrl!;
-
-          // Create new cancel token for retry
-          const newCancelToken = axios.CancelToken.source();
-          config.cancelToken = newCancelToken.token;
-          if (requestId) {
-            cancelTokens.set(requestId, newCancelToken);
-          }
-
-          // Retry the request with fallback URL
-          return client.request(config);
-        }
-      }
+      // NOTE: Network-based URL switching is now handled centrally by NetworkContext.
+      // The base URL is automatically updated when network connectivity changes.
+      // No per-call fallback logic is needed here.
 
       // Handle retry logic
       if (config && metadata && shouldRetry(error, metadata.retryCount, finalConfig.retryAttempts)) {
@@ -1216,11 +1075,12 @@ export const apiClient = new Proxy({} as ExtendedAxiosInstance, {
 export { axios };
 
 // Verification function for debugging - returns info instead of logging
+// NOTE: isUsingFallback is now always false as URL switching is handled by NetworkContext
 export const verifyApiClient = (): { exists: boolean; baseURL: string | undefined; isUsingFallback: boolean } => {
   return {
     exists: !!apiClient,
     baseURL: apiClient?.defaults?.baseURL,
-    isUsingFallback,
+    isUsingFallback: false, // URL switching is now managed by NetworkContext
   };
 };
 
@@ -1303,11 +1163,17 @@ export const getAuthErrorHandler = (): ((error: { statusCode: number; message: s
 };
 
 // Update the API URL dynamically
+// This is called by NetworkContext when connectivity changes
 export const updateApiUrl = (url: string): void => {
+  // Update the cached URL
+  currentApiUrl = url;
+
+  // Update the global window reference
   if (typeof (globalThis as any).window !== "undefined") {
     (globalThis as any).window.__ANKAA_API_URL__ = url;
   }
 
+  // Update the axios instance if it exists
   if (singletonInstance) {
     singletonInstance.defaults.baseURL = url;
   } else {
@@ -1371,33 +1237,28 @@ export const getIsLoggingOut = (): boolean => {
 };
 
 // =====================
-// API URL Fallback Functions
+// API URL Functions
 // =====================
 
-// Initialize API URL with automatic fallback detection
-export { initializeApiUrl };
-
-// Switch to fallback URL (local network)
-export { switchToFallback };
-
-// Switch back to primary URL (domain)
-export { switchToPrimary };
-
-// Check if currently using fallback URL
-export const getIsUsingFallback = (): boolean => {
-  return isUsingFallback;
-};
-
 // Get current API URL
+// NOTE: URL switching is now managed by NetworkContext based on connectivity.
+// Use updateApiUrl() to change the base URL.
 export const getCurrentApiUrl = (): string => {
-  return currentApiUrl || getPrimaryApiUrl();
+  return currentApiUrl || getDefaultApiUrl();
 };
 
-// Get primary API URL (domain)
-export { getPrimaryApiUrl };
+// Alias for backwards compatibility - redirects to getCurrentApiUrl
+// @deprecated Use getCurrentApiUrl instead
+export const initializeApiUrl = async (): Promise<string> => {
+  return getCurrentApiUrl();
+};
 
-// Get fallback API URL (local network)
-export { getFallbackApiUrl };
+// @deprecated - URL switching is now managed by NetworkContext
+// These functions are kept for backwards compatibility but are no-ops
+export const getIsUsingFallback = (): boolean => {
+  // Always return false - fallback detection is now handled by NetworkContext
+  return false;
+};
 
 // =====================
 // Enhanced HTTP Methods with Better Type Support

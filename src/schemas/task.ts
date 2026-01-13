@@ -6,7 +6,7 @@ import type { Task } from "../types";
 import { TASK_STATUS, SERVICE_ORDER_STATUS } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
-import { pricingCreateNestedSchema } from "./task-pricing";
+import { taskPricingCreateNestedSchema } from "./task-pricing";
 
 // =====================
 // Include Schema Based on Prisma Schema (Second Level Only)
@@ -1090,6 +1090,7 @@ const taskObservationCreateSchema = z.object({
 
 // ServiceOrder schema without taskId (will be auto-linked)
 const taskServiceOrderCreateSchema = z.object({
+  id: z.string().uuid().optional(), // For existing service orders (updates)
   status: z
     .enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]], {
       errorMap: () => ({ message: "status inválido" }),
@@ -1097,6 +1098,8 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_STATUS.PENDING),
   statusOrder: z.number().int().min(1).max(4).default(1).optional(),
   description: z.string().min(3, { message: "Mínimo de 3 caracteres" }).max(400, { message: "Máximo de 40 caracteres atingido" }),
+  assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
+  observation: z.string().nullable().optional(), // For rejection/approval notes
   startedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
 });
@@ -1200,7 +1203,7 @@ export const taskCreateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
+    pricing: taskPricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {
@@ -1291,7 +1294,7 @@ export const taskUpdateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    pricing: pricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
+    pricing: taskPricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {

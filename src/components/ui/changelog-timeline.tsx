@@ -29,6 +29,7 @@ import {
   CUT_ORIGIN_LABELS,
   AIRBRUSHING_STATUS_LABELS,
   PAINT_FINISH_LABELS,
+  SERVICE_ORDER_STATUS_LABELS,
 } from "@/constants/enum-labels";
 import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
 import { getApiBaseUrl } from "@/utils/file";
@@ -980,8 +981,99 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt as Date)}</ThemedText>
                           </View>
 
-                          {/* Changes */}
-                          {firstChange.action !== (CHANGE_ACTION.CREATE as any) && changelogGroup.length > 0 && (
+                          {/* SERVICE_ORDER UPDATE - Special handling to group related changes */}
+                          {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action === (CHANGE_ACTION.UPDATE as any) && (() => {
+                            // Group related field changes intelligently for service orders
+                            const statusChange = changelogGroup.find(c => c.field === 'status');
+                            const timestampChanges = changelogGroup.filter(c =>
+                              ['startedAt', 'finishedAt', 'approvedAt', 'completedAt'].includes(c.field || '')
+                            );
+                            const userChanges = changelogGroup.filter(c =>
+                              ['startedById', 'completedById', 'approvedById'].includes(c.field || '')
+                            );
+                            const otherChanges = changelogGroup.filter(c =>
+                              c.field &&
+                              !['status', 'statusOrder', 'startedAt', 'finishedAt', 'approvedAt', 'completedAt', 'startedById', 'completedById', 'approvedById'].includes(c.field)
+                            );
+
+                            // Build a summary of the status change
+                            let statusSummary: { title: string; timestamp?: string; user?: string } | null = null;
+
+                            if (statusChange) {
+                              const newStatus = statusChange.newValue;
+                              const oldStatus = statusChange.oldValue;
+                              const newStatusLabel = SERVICE_ORDER_STATUS_LABELS[newStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || newStatus;
+                              const oldStatusLabel = SERVICE_ORDER_STATUS_LABELS[oldStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || oldStatus;
+
+                              statusSummary = {
+                                title: `Status: ${oldStatusLabel} → ${newStatusLabel}`,
+                              };
+
+                              // Add timestamp if available
+                              const relevantTimestamp = timestampChanges.find(c => {
+                                if (newStatus === 'IN_PROGRESS' && c.field === 'startedAt') return true;
+                                if (newStatus === 'COMPLETED' && (c.field === 'finishedAt' || c.field === 'completedAt')) return true;
+                                if (newStatus === 'WAITING_APPROVE' && c.field === 'approvedAt') return true;
+                                return false;
+                              });
+                              if (relevantTimestamp?.newValue) {
+                                const date = new Date(relevantTimestamp.newValue);
+                                statusSummary.timestamp = date.toLocaleDateString('pt-BR') + ' - ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                              }
+
+                              // Add user info if available
+                              const relevantUser = userChanges.find(c => {
+                                if (newStatus === 'IN_PROGRESS' && c.field === 'startedById') return true;
+                                if (newStatus === 'COMPLETED' && c.field === 'completedById') return true;
+                                if (newStatus === 'WAITING_APPROVE' && c.field === 'approvedById') return true;
+                                return false;
+                              });
+                              if (relevantUser?.newValue && entityDetails?.users) {
+                                statusSummary.user = entityDetails.users.get(relevantUser.newValue)?.name;
+                              }
+                            }
+
+                            return (
+                              <View style={styles.changesContainer}>
+                                {/* Status change summary */}
+                                {statusSummary && (
+                                  <View style={StyleSheet.flatten([styles.statusSummary, { backgroundColor: colors.muted + '30' }])}>
+                                    <ThemedText style={StyleSheet.flatten([styles.statusTitle, { color: colors.foreground }])}>{statusSummary.title}</ThemedText>
+                                    {statusSummary.timestamp && (
+                                      <View style={styles.statusDetail}>
+                                        <IconClock size={12} color={colors.mutedForeground} />
+                                        <ThemedText style={StyleSheet.flatten([styles.statusDetailText, { color: colors.mutedForeground }])}>{statusSummary.timestamp}</ThemedText>
+                                      </View>
+                                    )}
+                                    {statusSummary.user && (
+                                      <View style={styles.statusDetail}>
+                                        <IconUser size={12} color={colors.mutedForeground} />
+                                        <ThemedText style={StyleSheet.flatten([styles.statusDetailText, { color: colors.mutedForeground }])}>Por: {statusSummary.user}</ThemedText>
+                                      </View>
+                                    )}
+                                  </View>
+                                )}
+
+                                {/* Other field changes */}
+                                {otherChanges.length > 0 && otherChanges.map((changelog) => (
+                                  <View key={changelog.id} style={styles.changeItem}>
+                                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field, entityType)}: </ThemedText>
+                                    <View style={styles.inlineValues}>
+                                      <ThemedText style={{ color: colors.destructive, textDecorationLine: 'line-through', marginRight: 8 }}>
+                                        {formatFieldValue(changelog.oldValue, changelog.field, entityType) || 'Nenhum'}
+                                      </ThemedText>
+                                      <ThemedText style={{ color: '#22c55e' }}>
+                                        {formatFieldValue(changelog.newValue, changelog.field, entityType) || 'Nenhum'}
+                                      </ThemedText>
+                                    </View>
+                                  </View>
+                                ))}
+                              </View>
+                            );
+                          })()}
+
+                          {/* Changes (generic) */}
+                          {entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action !== (CHANGE_ACTION.CREATE as any) && changelogGroup.length > 0 && (
                             <View style={styles.changesContainer}>
                               {changelogGroup
                                 .filter((changelog) => {
@@ -1424,6 +1516,30 @@ const styles = StyleSheet.create({
   },
   changeItem: {
     gap: spacing.xs,
+  },
+  // Service Order status summary styles
+  statusSummary: {
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+  },
+  statusTitle: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+  },
+  statusDetail: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  statusDetailText: {
+    fontSize: fontSize.sm,
+  },
+  inlineValues: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   fieldLabel: {
     fontSize: fontSize.sm,

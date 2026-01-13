@@ -127,6 +127,8 @@ import {
   STATISTICS_GROUP_BY,
   STATISTICS_METRIC,
   STATISTICS_PERIOD,
+  TASK_PRICING_STATUS,
+  RESCHEDULE_REASON,
 } from "./enums";
 
 // =====================
@@ -367,6 +369,8 @@ export const NOTIFICATION_TYPE_LABELS: Record<NOTIFICATION_TYPE, string> = {
   [NOTIFICATION_TYPE.WARNING]: "Advertência",
   [NOTIFICATION_TYPE.STOCK]: "Estoque",
   [NOTIFICATION_TYPE.GENERAL]: "Geral",
+  [NOTIFICATION_TYPE.SERVICE_ORDER]: "Ordem de Serviço",
+  [NOTIFICATION_TYPE.CUT]: "Recorte",
 };
 
 export const NOTIFICATION_ACTION_TYPE_LABELS: Record<NOTIFICATION_ACTION_TYPE, string> = {
@@ -378,6 +382,7 @@ export const NOTIFICATION_ACTION_TYPE_LABELS: Record<NOTIFICATION_ACTION_TYPE, s
   [NOTIFICATION_ACTION_TYPE.TASK_UPDATED]: "Tarefa Atualizada",
   [NOTIFICATION_ACTION_TYPE.VIEW_ORDER]: "Ver Pedido",
   [NOTIFICATION_ACTION_TYPE.VIEW_REPORT]: "Ver Relatório",
+  [NOTIFICATION_ACTION_TYPE.VIEW_SERVICE_ORDER]: "Ver Ordem de Serviço",
   [NOTIFICATION_ACTION_TYPE.ACKNOWLEDGE]: "Confirmar",
   [NOTIFICATION_ACTION_TYPE.DISMISS]: "Dispensar",
 };
@@ -394,6 +399,9 @@ export const NOTIFICATION_CHANNEL_LABELS: Record<NOTIFICATION_CHANNEL, string> =
   [NOTIFICATION_CHANNEL.SMS]: "SMS",
   [NOTIFICATION_CHANNEL.PUSH]: "Push",
   [NOTIFICATION_CHANNEL.IN_APP]: "No Aplicativo",
+  [NOTIFICATION_CHANNEL.MOBILE_PUSH]: "Push Mobile",
+  [NOTIFICATION_CHANNEL.DESKTOP_PUSH]: "Push Desktop",
+  [NOTIFICATION_CHANNEL.WHATSAPP]: "WhatsApp",
 };
 
 // =====================
@@ -1828,4 +1836,31 @@ export const STATISTICS_PERIOD_LABELS: Record<STATISTICS_PERIOD, string> = {
   [STATISTICS_PERIOD.THIS_MONTH]: "Este Mês",
   [STATISTICS_PERIOD.THIS_QUARTER]: "Este Trimestre",
   [STATISTICS_PERIOD.THIS_YEAR]: "Este Ano",
+};
+
+// =====================
+// Task Pricing Labels
+// =====================
+
+export const TASK_PRICING_STATUS_LABELS: Record<TASK_PRICING_STATUS, string> = {
+  [TASK_PRICING_STATUS.DRAFT]: "Rascunho",
+  [TASK_PRICING_STATUS.APPROVED]: "Aprovado",
+  [TASK_PRICING_STATUS.REJECTED]: "Rejeitado",
+  [TASK_PRICING_STATUS.CANCELLED]: "Cancelado",
+};
+
+// =====================
+// Reschedule Reason Labels
+// =====================
+
+export const RESCHEDULE_REASON_LABELS: Record<RESCHEDULE_REASON, string> = {
+  [RESCHEDULE_REASON.CUSTOMER_REQUEST]: "Solicitação do Cliente",
+  [RESCHEDULE_REASON.RESOURCE_UNAVAILABLE]: "Recurso Indisponível",
+  [RESCHEDULE_REASON.MATERIAL_SHORTAGE]: "Falta de Material",
+  [RESCHEDULE_REASON.EQUIPMENT_FAILURE]: "Falha de Equipamento",
+  [RESCHEDULE_REASON.WEATHER_CONDITIONS]: "Condições Climáticas",
+  [RESCHEDULE_REASON.STAFF_UNAVAILABLE]: "Funcionário Indisponível",
+  [RESCHEDULE_REASON.PRIORITY_CHANGE]: "Mudança de Prioridade",
+  [RESCHEDULE_REASON.TECHNICAL_ISSUES]: "Problemas Técnicos",
+  [RESCHEDULE_REASON.OTHER]: "Outro",
 };

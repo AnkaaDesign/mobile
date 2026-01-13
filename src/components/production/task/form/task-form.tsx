@@ -107,11 +107,13 @@ const taskFormSchema = z.object({
     fileIds: z.array(z.string().min(1, "ID do arquivo inválido")).optional(),
   }).nullable().optional(),
   serviceOrders: z.array(z.object({
+    id: z.string().uuid().optional(), // For existing service orders (updates)
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).default(SERVICE_ORDER_STATUS.PENDING),
     statusOrder: z.number().int().min(1).max(4).default(1).optional(),
     type: z.enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]]).default(SERVICE_ORDER_TYPE.PRODUCTION),
     assignedToId: z.string().uuid("Usuário inválido").nullable().optional(),
+    observation: z.string().nullable().optional(), // For rejection/approval notes
     startedAt: z.date().nullable().optional(),
     finishedAt: z.date().nullable().optional(),
   })).optional(),
@@ -464,11 +466,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     artworkIds: initialData?.artworkIds || [],
     observation: initialData?.observation || null,
     serviceOrders: initialData?.serviceOrders || initialData?.services?.map((s: any) => ({
+      id: s.id || undefined, // For existing service orders
       description: s.description || "",
       status: s.status || SERVICE_ORDER_STATUS.PENDING,
       statusOrder: s.statusOrder || 1,
       type: s.type || SERVICE_ORDER_TYPE.PRODUCTION,
       assignedToId: s.assignedToId || null,
+      observation: s.observation || null, // For rejection/approval notes
       startedAt: s.startedAt || null,
       finishedAt: s.finishedAt || null,
     })) || [{
@@ -476,7 +480,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       status: SERVICE_ORDER_STATUS.PENDING,
       statusOrder: 1,
       type: SERVICE_ORDER_TYPE.PRODUCTION,
-      assignedToId: null
+      assignedToId: null,
+      observation: null
     }],
     status: initialData?.status || TASK_STATUS.PREPARATION,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
@@ -1264,7 +1269,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Service Orders */}
           <FormCard title="Ordens de Serviço" icon="IconTool">
-              <FormFieldGroup label="Ordens de Serviço" error={errors.serviceOrders?.message}>
+              <FormFieldGroup error={errors.serviceOrders?.message}>
                 <Controller
                   control={form.control}
                   name="serviceOrders"

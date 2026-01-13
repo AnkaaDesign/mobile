@@ -1,6 +1,10 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PaintFormula } from '@/types'
+import { SECTOR_PRIVILEGES } from '@/constants/enums'
 import { canEditPaintFormulas } from '@/utils/permissions/entity-permissions'
+
+// Helper function to check if user is NOT a warehouse user
+const canViewPrices = (user: any) => user?.sector?.privileges !== SECTOR_PRIVILEGES.WAREHOUSE
 
 
 export const formulasListConfig: ListConfig<PaintFormula> = {
@@ -106,6 +110,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
           return Number(formula.pricePerLiter)
         },
         format: 'currency',
+        canView: canViewPrices,
       },
       {
         key: 'createdAt',
@@ -255,6 +260,7 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
         label: 'Preço por Litro',
         type: 'number-range',
         placeholder: { min: 'Preço Mín (R$)', max: 'Preço Máx (R$)' },
+        canView: canViewPrices,
       },
       {
         key: 'density',

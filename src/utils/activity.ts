@@ -41,8 +41,8 @@ export function formatActivityDescription(activity: Activity): string {
 /**
  * Get formatted date for activity
  */
-export function getActivityDate(activity: Activity, format: string = "dd/MM/yyyy HH:mm"): string {
-  return dateUtils.formatDate(activity.createdAt, format);
+export function getActivityDate(activity: Activity): string {
+  return dateUtils.formatDateTime(activity.createdAt);
 }
 
 /**

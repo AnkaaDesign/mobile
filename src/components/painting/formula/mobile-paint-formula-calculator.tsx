@@ -275,13 +275,12 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   }, [calculatedComponents]);
 
   const handleToggleComponent = (componentId: string) => {
-    if (!correctionMode) {
-      setSelectedComponents((prev) =>
-        prev.includes(componentId)
-          ? prev.filter((id) => id !== componentId)
-          : [...prev, componentId]
-      );
-    }
+    // Allow toggling checkboxes in both normal and correction mode
+    setSelectedComponents((prev) =>
+      prev.includes(componentId)
+        ? prev.filter((id) => id !== componentId)
+        : [...prev, componentId]
+    );
   };
 
   const handleComponentError = (componentId: string) => {
@@ -430,9 +429,11 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                 activeOpacity={0.7}
                 onPress={() => {
                   if (!correctionMode) {
-                    const firstUnchecked = calculatedComponents.find((c) => !selectedComponents.includes(c.id));
-                    if (firstUnchecked) {
-                      handleComponentError(firstUnchecked.id);
+                    // Find the last checked component (the proper marked item itself is the wrong one)
+                    const checkedComponents = calculatedComponents.filter((c) => selectedComponents.includes(c.id));
+                    const lastChecked = checkedComponents.length > 0 ? checkedComponents[checkedComponents.length - 1] : null;
+                    if (lastChecked) {
+                      handleComponentError(lastChecked.id);
                     }
                   } else {
                     handleResetCorrection();
@@ -496,14 +497,8 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                 ]}
               >
                 <View style={styles.checkboxCell}>
-                  {correctionMode ? (
-                    component.hasError ? (
-                      <IconAlertCircle size={16} color={colors.destructive} />
-                    ) : component.wasAlreadyAdded ? (
-                      <IconCheck size={16} color="#16a34a" />
-                    ) : (
-                      <IconX size={16} color={colors.mutedForeground} />
-                    )
+                  {correctionMode && component.hasError ? (
+                    <IconAlertCircle size={16} color={colors.destructive} />
                   ) : (
                     <Checkbox
                       checked={selectedComponents.includes(component.id)}

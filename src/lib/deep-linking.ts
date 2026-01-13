@@ -1,6 +1,9 @@
-import { Linking } from 'react-native';
+import { Linking, Alert } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// DEBUG: Flag to enable/disable debug alerts for testing
+const DEBUG_DEEP_LINKING = true;
 
 // =====================================================
 // Route Mapping Configuration
@@ -12,7 +15,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export const ROUTE_MAP = {
   // Production Routes
-  Task: '/(tabs)/producao/tarefas/detalhes/[id]',
+  // Task uses unified route that works regardless of task status (agenda/cronograma/historico)
+  Task: '/(tabs)/producao/tarefa/[id]',
   ServiceOrder: '/(tabs)/producao/ordens-de-servico/detalhes/[id]',
   Service: '/(tabs)/producao/servicos/detalhes/[id]',
   Airbrushing: '/(tabs)/producao/aerografia/detalhes/[id]',
@@ -73,6 +77,89 @@ export const ROUTE_MAP = {
  * Used for parsing shortened deep link URLs
  */
 export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
+  // Uppercase variants for API compatibility (API sends TASK, ORDER, etc.)
+  TASK: 'Task',
+  ORDER: 'Order',
+  SERVICE_ORDER: 'ServiceOrder',
+  SERVICEORDER: 'ServiceOrder',
+  SERVICE: 'Service',
+  AIRBRUSHING: 'Airbrushing',
+  CUT: 'Cut',
+  OBSERVATION: 'Observation',
+  PAINT: 'Paint',
+  ITEM: 'Item',
+  BORROW: 'Borrow',
+  EXTERNAL_WITHDRAWAL: 'ExternalWithdrawal',
+  EXTERNALWITHDRAWAL: 'ExternalWithdrawal',
+  MAINTENANCE: 'Maintenance',
+  ACTIVITY: 'Activity',
+  SUPPLIER: 'Supplier',
+  EMPLOYEE: 'Employee',
+  BONUS: 'Bonus',
+  WARNING: 'Warning',
+  VACATION: 'Vacation',
+  HOLIDAY: 'Holiday',
+  TIME_RECORD: 'TimeRecord',
+  TIMERECORD: 'TimeRecord',
+  USER: 'User',
+  CUSTOMER: 'Customer',
+  SECTOR: 'Sector',
+  NOTIFICATION: 'Notification',
+  CHANGE_LOG: 'ChangeLog',
+  CHANGELOG: 'ChangeLog',
+  PAINT_FORMULA: 'PaintFormula',
+  PAINTFORMULA: 'PaintFormula',
+  PAINT_CATALOG: 'PaintCatalog',
+  PAINTCATALOG: 'PaintCatalog',
+  PAINT_BRAND: 'PaintBrand',
+  PAINTBRAND: 'PaintBrand',
+  PAINT_PRODUCTION: 'PaintProduction',
+  PAINTPRODUCTION: 'PaintProduction',
+  BRAND: 'Brand',
+  CATEGORY: 'Category',
+  POSITION: 'Position',
+  CATALOG_ITEM: 'CatalogItem',
+  CATALOGITEM: 'CatalogItem',
+  FINANCIAL_CUSTOMER: 'FinancialCustomer',
+  FINANCIALCUSTOMER: 'FinancialCustomer',
+
+  // PascalCase variants (for direct entity type matching)
+  Task: 'Task',
+  Order: 'Order',
+  ServiceOrder: 'ServiceOrder',
+  Service: 'Service',
+  Airbrushing: 'Airbrushing',
+  Cut: 'Cut',
+  Observation: 'Observation',
+  Paint: 'Paint',
+  Item: 'Item',
+  Borrow: 'Borrow',
+  ExternalWithdrawal: 'ExternalWithdrawal',
+  Maintenance: 'Maintenance',
+  Activity: 'Activity',
+  Supplier: 'Supplier',
+  Employee: 'Employee',
+  Bonus: 'Bonus',
+  Warning: 'Warning',
+  Vacation: 'Vacation',
+  Holiday: 'Holiday',
+  TimeRecord: 'TimeRecord',
+  User: 'User',
+  Customer: 'Customer',
+  Sector: 'Sector',
+  Notification: 'Notification',
+  ChangeLog: 'ChangeLog',
+  PaintFormula: 'PaintFormula',
+  PaintCatalog: 'PaintCatalog',
+  PaintBrand: 'PaintBrand',
+  PaintProduction: 'PaintProduction',
+  Brand: 'Brand',
+  Category: 'Category',
+  Position: 'Position',
+  CatalogItem: 'CatalogItem',
+  FinancialCustomer: 'FinancialCustomer',
+
+  // Lowercase variants (existing)
   task: 'Task',
   tasks: 'Task',
   'service-order': 'ServiceOrder',
@@ -238,6 +325,12 @@ export function parseDeepLink(url: string): ParsedDeepLink {
   try {
     console.log('[Deep Link] Parsing URL:', url);
 
+    // Ignore Expo development URLs - they're not real deep links
+    if (url.startsWith('exp://')) {
+      console.log('[Deep Link] Ignoring Expo development URL');
+      return { route: '', requiresAuth: false };
+    }
+
     // Parse the URL
     const parsed = parseUrl(url);
     console.log('[Deep Link] Parsed URL:', JSON.stringify(parsed, null, 2));
@@ -292,10 +385,16 @@ export function parseDeepLink(url: string): ParsedDeepLink {
       }
     }
 
-    // Handle web universal links (https://ankaadesign.com/app/...)
-    if (hostname === 'ankaadesign.com' || hostname === 'www.ankaadesign.com') {
+    // Handle web universal links (https://ankaadesign.com.br/...)
+    if (hostname === 'ankaadesign.com.br' || hostname === 'www.ankaadesign.com.br') {
+      // Handle paths with /app/ prefix
       if (path?.startsWith('/app/')) {
         const appPath = path.replace('/app/', '');
+        return parseDeepLink(`ankaadesign://${appPath}`);
+      }
+      // Handle direct paths without /app/ prefix
+      if (path && path !== '/') {
+        const appPath = path.replace(/^\//, '');
         return parseDeepLink(`ankaadesign://${appPath}`);
       }
     }
@@ -356,9 +455,26 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
 
     const { route, params, requiresAuth } = parseDeepLink(url);
 
+    if (DEBUG_DEEP_LINKING) {
+      Alert.alert(
+        '🧭 Deep Link Parsed',
+        `URL: ${url}\nRoute: ${route || '(empty)'}\nParams: ${JSON.stringify(params) || 'none'}\nRequiresAuth: ${requiresAuth}\nIsAuth: ${isAuthenticated}`,
+        [{ text: 'OK' }]
+      );
+    }
+
+    // If route is empty, the URL should be ignored (e.g., Expo dev URLs)
+    if (!route) {
+      console.log('[Deep Link] Ignoring URL - no route to navigate');
+      return;
+    }
+
     // If route requires auth but user is not authenticated
     if (requiresAuth && !isAuthenticated) {
       console.log('[Deep Link] Storing pending deep link for after login');
+      if (DEBUG_DEEP_LINKING) {
+        Alert.alert('🔒 Auth Required', `Storing deep link for after login:\n${url}`);
+      }
       await storePendingDeepLink(url);
 
       // Navigate to login
@@ -369,6 +485,14 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     // Navigate to the parsed route
     console.log('[Deep Link] Navigating to:', route, 'Params:', params);
 
+    if (DEBUG_DEEP_LINKING) {
+      Alert.alert(
+        '➡️ Navigating',
+        `Route: ${route}\nParams: ${JSON.stringify(params) || 'none'}`,
+        [{ text: 'OK' }]
+      );
+    }
+
     if (params) {
       router.push({ pathname: route as any, params });
     } else {
@@ -376,6 +500,9 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     }
   } catch (error) {
     console.error('[Deep Link] Error handling deep link:', error);
+    if (DEBUG_DEEP_LINKING) {
+      Alert.alert('❌ Deep Link Error', `Error: ${error}`);
+    }
     // Fallback to home on error
     router.push('/(tabs)');
   }
@@ -405,6 +532,14 @@ export async function processPendingDeepLink(isAuthenticated: boolean): Promise<
     if (pendingUrl && isAuthenticated) {
       console.log('[Deep Link] Processing pending deep link:', pendingUrl);
 
+      if (DEBUG_DEEP_LINKING) {
+        Alert.alert(
+          '📦 Processing Pending Deep Link',
+          `URL: ${pendingUrl}\nAuth: ${isAuthenticated ? 'Yes' : 'No'}`,
+          [{ text: 'OK' }]
+        );
+      }
+
       // Clear the pending link
       await AsyncStorage.removeItem(PENDING_DEEP_LINK_KEY);
 
@@ -415,6 +550,9 @@ export async function processPendingDeepLink(isAuthenticated: boolean): Promise<
     }
   } catch (error) {
     console.error('[Deep Link] Error processing pending deep link:', error);
+    if (DEBUG_DEEP_LINKING) {
+      Alert.alert('❌ Pending Deep Link Error', `Error: ${error}`);
+    }
   }
 }
 
@@ -467,7 +605,7 @@ export function generateUniversalLink(entityType: keyof typeof ROUTE_MAP, id: st
     ([_, value]) => value === entityType
   )?.[0] || entityKey;
 
-  return `https://ankaadesign.com/app/${alias}/${id}`;
+  return `https://ankaadesign.com.br/${alias}/${id}`;
 }
 
 /**

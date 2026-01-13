@@ -18,6 +18,7 @@ export interface Supplier extends BaseEntity {
   address: string | null;
   addressNumber: string | null;
   addressComplement: string | null;
+  streetType: string | null;
   neighborhood: string | null;
   city: string | null;
   state: string | null;

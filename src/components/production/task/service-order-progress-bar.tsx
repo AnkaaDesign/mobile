@@ -9,13 +9,15 @@ interface ServiceOrderProgressBarProps {
   compact?: boolean;
 }
 
+// Colors matching web app badge-colors.ts for consistency
 const COLORS = {
-  COMPLETED: '#10b981', // green-500
-  IN_PROGRESS: '#3b82f6', // blue-500
-  PENDING: '#f59e0b', // amber-500
-  CANCELLED: '#9ca3af', // gray-400
-  RED_CIRCLE: '#ef4444', // red-500
-  BACKGROUND_LIGHT: '#f3f4f6', // gray-100
+  COMPLETED: '#15803d', // green-700 (matching badge)
+  WAITING_APPROVE: '#9333ea', // purple-600 (matching badge)
+  IN_PROGRESS: '#1d4ed8', // blue-700 (matching badge)
+  PENDING: '#737373', // neutral-500 (matching badge)
+  CANCELLED: '#b91c1c', // red-700 (matching badge)
+  RED_CIRCLE: '#dc2626', // red-600 (destructive)
+  BACKGROUND_LIGHT: '#e5e5e5', // gray-200
   BACKGROUND_DARK: '#374151', // gray-700
 };
 
@@ -29,7 +31,7 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
   // If no service orders, show dash
   if (totalCount === 0) {
     return (
-      <View style={styles.container}>
+      <View style={styles.outerContainer}>
         <Text style={[styles.dashText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>-</Text>
       </View>
     );
@@ -37,6 +39,7 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
 
   // Count by status
   const completedCount = serviceOrders.filter((so: any) => so.status === 'COMPLETED').length;
+  const waitingApproveCount = serviceOrders.filter((so: any) => so.status === 'WAITING_APPROVE').length;
   const inProgressCount = serviceOrders.filter((so: any) => so.status === 'IN_PROGRESS').length;
   const pendingCount = serviceOrders.filter((so: any) => so.status === 'PENDING').length;
   const cancelledCount = serviceOrders.filter((so: any) => so.status === 'CANCELLED').length;
@@ -51,6 +54,7 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
 
   // Calculate percentages for progress bar
   const completedPercent = (completedCount / totalCount) * 100;
+  const waitingApprovePercent = (waitingApproveCount / totalCount) * 100;
   const inProgressPercent = (inProgressCount / totalCount) * 100;
   const pendingPercent = (pendingCount / totalCount) * 100;
   const cancelledPercent = (cancelledCount / totalCount) * 100;
@@ -59,9 +63,9 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
   const backgroundColor = isDark ? COLORS.BACKGROUND_DARK : COLORS.BACKGROUND_LIGHT;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.outerContainer}>
       <View style={[styles.progressBarContainer, { height: barHeight, backgroundColor }]}>
-        {/* Completed segment (green) */}
+        {/* Completed segment (green-700) */}
         {completedCount > 0 && (
           <View
             style={[
@@ -75,7 +79,21 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
           />
         )}
 
-        {/* In Progress segment (blue) */}
+        {/* Waiting Approve segment (purple-600) */}
+        {waitingApproveCount > 0 && (
+          <View
+            style={[
+              styles.segment,
+              {
+                backgroundColor: COLORS.WAITING_APPROVE,
+                width: `${waitingApprovePercent}%`,
+                left: `${completedPercent}%`,
+              },
+            ]}
+          />
+        )}
+
+        {/* In Progress segment (blue-700) */}
         {inProgressCount > 0 && (
           <View
             style={[
@@ -83,13 +101,13 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
               {
                 backgroundColor: COLORS.IN_PROGRESS,
                 width: `${inProgressPercent}%`,
-                left: `${completedPercent}%`,
+                left: `${completedPercent + waitingApprovePercent}%`,
               },
             ]}
           />
         )}
 
-        {/* Pending segment (amber) */}
+        {/* Pending segment (neutral-500) */}
         {pendingCount > 0 && (
           <View
             style={[
@@ -97,13 +115,13 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
               {
                 backgroundColor: COLORS.PENDING,
                 width: `${pendingPercent}%`,
-                left: `${completedPercent + inProgressPercent}%`,
+                left: `${completedPercent + waitingApprovePercent + inProgressPercent}%`,
               },
             ]}
           />
         )}
 
-        {/* Cancelled segment (gray) */}
+        {/* Cancelled segment (red-700) */}
         {cancelledCount > 0 && (
           <View
             style={[
@@ -111,7 +129,7 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
               {
                 backgroundColor: COLORS.CANCELLED,
                 width: `${cancelledPercent}%`,
-                left: `${completedPercent + inProgressPercent + pendingPercent}%`,
+                left: `${completedPercent + waitingApprovePercent + inProgressPercent + pendingPercent}%`,
               },
             ]}
           />
@@ -125,12 +143,10 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
         </View>
       </View>
 
-      {/* Red circle indicator for incomplete user-assigned orders */}
+      {/* Red circle indicator for incomplete user-assigned orders - positioned as overlay */}
       {incompleteAssignedCount > 0 && (
-        <View style={styles.redCircleContainer}>
-          <View style={[styles.redCircle, { backgroundColor: COLORS.RED_CIRCLE }]}>
-            <Text style={styles.redCircleText}>{incompleteAssignedCount}</Text>
-          </View>
+        <View style={styles.redCircleOverlay}>
+          <Text style={styles.redCircleText}>{incompleteAssignedCount}</Text>
         </View>
       )}
     </View>
@@ -138,11 +154,10 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  outerContainer: {
+    position: 'relative',
     paddingHorizontal: 4,
+    paddingTop: 4, // Space for overlay badge
   },
   dashText: {
     fontSize: 12,
@@ -150,7 +165,6 @@ const styles = StyleSheet.create({
   },
   progressBarContainer: {
     position: 'relative',
-    flex: 1,
     minWidth: 70,
     maxWidth: 120,
     borderRadius: 4,
@@ -183,23 +197,24 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  redCircleContainer: {
-    flexShrink: 0,
-  },
-  redCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  redCircleOverlay: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#dc2626', // red-600 (destructive)
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 3,
   },
   redCircleText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: '#ffffff',
   },

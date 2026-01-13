@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { MessageBlockRenderer } from "@/components/ui/message-block-renderer";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, shadow } from "@/constants/design-system";
-import { transformMessageContent, hasRenderableContent } from "@/utils/message-transformer";
+import { transformMessageContent, extractPlainTextFromContent } from "@/utils/message-transformer";
 import type { Notification } from "@/types";
 
 export interface MessageModalProps {
@@ -140,6 +140,22 @@ export function MessageModal({
     return null;
   }
 
+  // Get content and transform blocks like web does (direct approach)
+  const messageContent = (currentMessage as any).content;
+  const transformedBlocks = transformMessageContent(messageContent);
+
+  // Debug logging - remove after fixing
+  console.log('[MessageModal] currentMessage:', JSON.stringify(currentMessage, null, 2));
+  console.log('[MessageModal] messageContent:', JSON.stringify(messageContent, null, 2));
+  console.log('[MessageModal] transformedBlocks:', transformedBlocks.length, transformedBlocks);
+
+  // Fallback text extraction for when blocks are empty
+  const fallbackText = transformedBlocks.length === 0 && !currentMessage.body
+    ? extractPlainTextFromContent(messageContent)
+    : null;
+
+  console.log('[MessageModal] fallbackText:', fallbackText);
+
   return (
     <Modal
       visible={visible}
@@ -185,9 +201,9 @@ export function MessageModal({
                 <ThemedText style={styles.title} numberOfLines={2}>
                   {currentMessage.title}
                 </ThemedText>
-                {currentMessage.sentAt && (
+                {((currentMessage as any).publishedAt || currentMessage.sentAt) && (
                   <ThemedText style={[styles.date, { color: colors.mutedForeground }]}>
-                    {formatDate(currentMessage.sentAt)}
+                    {formatDate((currentMessage as any).publishedAt || currentMessage.sentAt)}
                   </ThemedText>
                 )}
               </View>
@@ -228,16 +244,22 @@ export function MessageModal({
               contentContainerStyle={styles.bodyContent}
               showsVerticalScrollIndicator={true}
             >
-              {/* Render structured content blocks if available */}
-              {hasRenderableContent((currentMessage as any).content) ? (
-                <MessageBlockRenderer
-                  blocks={transformMessageContent((currentMessage as any).content)}
-                />
+              {/* Render structured content blocks like web does (direct approach) */}
+              {transformedBlocks.length > 0 ? (
+                <MessageBlockRenderer blocks={transformedBlocks} />
               ) : currentMessage.body ? (
                 <ThemedText style={styles.bodyText}>
                   {currentMessage.body}
                 </ThemedText>
-              ) : null}
+              ) : fallbackText ? (
+                <ThemedText style={styles.bodyText}>
+                  {fallbackText}
+                </ThemedText>
+              ) : (
+                <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
+                  Esta mensagem não possui conteúdo.
+                </ThemedText>
+              )}
             </ScrollView>
 
             {/* Footer */}
@@ -354,7 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   body: {
-    flex: 1,
+    minHeight: 150,
     paddingHorizontal: spacing.lg,
   },
   bodyContent: {

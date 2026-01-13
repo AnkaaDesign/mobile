@@ -12,6 +12,7 @@ import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/contexts/auth-context";
+import { NetworkProvider, useNetwork } from "@/contexts/network-context";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SidebarProvider } from "@/contexts/sidebar-context";
 import { SwipeRowProvider } from "@/contexts/swipe-row-context";
@@ -27,9 +28,8 @@ import { AppStatusBar } from "@/components/app-status-bar";
 import { DeepLinkHandler } from "@/components/deep-link-handler";
 import { AuthAwareMessageModal } from "@/components/message/MessageModalIntegration";
 // Toast system removed - API client uses native Alert/ToastAndroid via setup-notifications.ts
-import NetInfo from "@react-native-community/netinfo";
 import Constants from "expo-constants";
-import { updateApiUrl, initializeApiUrl, getCurrentApiUrl, getIsUsingFallback } from '../api-client';
+import { updateApiUrl } from '../api-client';
 import { setupMobileNotifications } from "@/lib/setup-notifications";
 import "../../global.css";
 
@@ -94,25 +94,16 @@ if (__DEV__) {
 // Initialize the global error handler
 setupGlobalErrorHandler();
 
-// Initialize API URL early - this is critical for mobile
-// Priority: app.json > environment variable > nothing
+// Set initial API URL - NetworkProvider will handle dynamic switching based on connectivity
+// Priority: app.json > environment variable > default
 const apiUrl = Constants.expoConfig?.extra?.apiUrl || process.env.EXPO_PUBLIC_API_URL;
 const fallbackApiUrl = Constants.expoConfig?.extra?.fallbackApiUrl || process.env.EXPO_PUBLIC_FALLBACK_API_URL;
 
 if (apiUrl) {
   console.log("[App] Primary API URL:", apiUrl);
   console.log("[App] Fallback API URL:", fallbackApiUrl || 'not configured');
-  // Set initial URL synchronously for immediate use
+  // Set initial URL - NetworkProvider will update this dynamically based on connectivity
   updateApiUrl(apiUrl);
-
-  // Initialize with automatic fallback detection (async)
-  // This will test the primary URL and switch to fallback if unreachable
-  initializeApiUrl().then((selectedUrl) => {
-    const usingFallback = getIsUsingFallback();
-    console.log("[App] API URL initialized:", selectedUrl, usingFallback ? "(using fallback)" : "(using primary)");
-  }).catch((error) => {
-    console.error("[App] Failed to initialize API URL:", error);
-  });
 } else {
   console.error("[App] No API URL configured! App will not work correctly.");
 }
@@ -159,89 +150,117 @@ if (process.env.NODE_ENV === "production") {
   console.log("[Dev] Clearing persisted React Query cache to avoid auth issues");
   AsyncStorage.removeItem("react-query-cache").catch(() => {});
 }
-export default function RootLayout() {
-  const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+/**
+ * Offline Banner Component
+ * Uses NetworkContext to display connectivity status
+ */
+function OfflineBanner() {
+  const { isConnected, isUsingOfflineUrl, currentBaseUrl } = useNetwork();
 
-  // Initialize network state and listen for changes
+  // Don't show banner when connected to internet
+  if (isConnected) {
+    return null;
+  }
+
+  return (
+    <View
+      style={{
+        backgroundColor: isUsingOfflineUrl ? "#fef3c7" : "#fef2f2",
+        padding: 10,
+        alignItems: "center",
+      }}
+    >
+      <Text className={isUsingOfflineUrl ? "text-amber-800" : "text-red-800"}>
+        {isUsingOfflineUrl
+          ? "Usando servidor local (rede interna)"
+          : "Voce esta offline. Alguns recursos podem nao estar disponiveis."}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * App Content Component
+ * Separated to allow use of NetworkContext hooks
+ * This component is inside NetworkProvider, so it can use useNetwork()
+ */
+function AppContent() {
+  const [isHydrated, setIsHydrated] = useState<boolean>(false);
+  const { currentBaseUrl } = useNetwork();
+
+  // Mark hydration complete quickly - no artificial delay needed
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsConnected(!!state.isConnected);
-    });
-    // Check initial connection state
-    NetInfo.fetch().then((state) => {
-      setIsConnected(!!state.isConnected);
-    });
-    // Mark hydration complete quickly - no artificial delay needed
     const timer = setTimeout(() => {
       setIsHydrated(true);
     }, 50);
-    return () => {
-      unsubscribe();
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
-  // Show loading state while hydrating, but render the full component tree
-  // to avoid breaking hooks in child components
+  if (!isHydrated) {
+    // Show loading screen during hydration
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" className="text-primary" />
+        <Text>Carregando dados...</Text>
+      </View>
+    );
+  }
+
+  // Show app content after hydration
+  // FileViewerProvider uses currentBaseUrl which updates dynamically based on connectivity
+  return (
+    <FileViewerProvider baseUrl={currentBaseUrl}>
+      <AppStatusBar />
+      <OfflineBanner />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="(autenticacao)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack>
+      <PortalHost />
+      {/* System Messages Modal - shows unviewed messages on app load and focus */}
+      <AuthAwareMessageModal />
+    </FileViewerProvider>
+  );
+}
+
+export default function RootLayout() {
+  // Handle connectivity changes for logging
+  const handleConnectivityChange = (isConnected: boolean) => {
+    if (__DEV__) {
+      console.log("[RootLayout] Connectivity changed:", isConnected ? "ONLINE" : "OFFLINE");
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <PushNotificationsProvider>
-                <DeepLinkHandler />
-                <ErrorBoundary>
-                <SidebarProvider>
-                  <FavoritesProvider>
-                    <FileViewerProvider baseUrl={process.env.EXPO_PUBLIC_API_URL}>
-                      <NavigationHistoryProvider>
-                        <SwipeRowProvider>
-                      {!isHydrated ? (
-                      // Show loading screen during hydration
-                      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <ActivityIndicator size="large" className="text-primary" />
-                        <Text>Carregando dados...</Text>
-                      </View>
-                    ) : (
-                      // Show app content after hydration
-                      <>
-                        <AppStatusBar />
-                        {isConnected === false && (
-                          <View
-                            style={{
-                              backgroundColor: "#fef2f2",
-                              padding: 10,
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text className="text-red-800">Você está offline. Alguns recursos podem não estar disponíveis.</Text>
-                          </View>
-                        )}
-                        <Stack
-                          screenOptions={{
-                            headerShown: false,
-                          }}
-                        >
-                          <Stack.Screen name="(autenticacao)" options={{ headerShown: false }} />
-                          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                          <Stack.Screen name="index" options={{ headerShown: false }} />
-                        </Stack>
-                        <PortalHost />
-                        {/* System Messages Modal - shows unviewed messages on app load and focus */}
-                        <AuthAwareMessageModal />
-                      </>
-                    )}
-                        </SwipeRowProvider>
-                      </NavigationHistoryProvider>
-                    </FileViewerProvider>
-                  </FavoritesProvider>
-                </SidebarProvider>
-                </ErrorBoundary>
-              </PushNotificationsProvider>
-            </AuthProvider>
-          </QueryClientProvider>
+          <NetworkProvider onConnectivityChange={handleConnectivityChange}>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
+                <PushNotificationsProvider>
+                  <DeepLinkHandler />
+                  <ErrorBoundary>
+                    <SidebarProvider>
+                      <FavoritesProvider>
+                        <NavigationHistoryProvider>
+                          <SwipeRowProvider>
+                            {/* FileViewerProvider moved to AppContent to use dynamic currentBaseUrl from NetworkContext */}
+                            <AppContent />
+                          </SwipeRowProvider>
+                        </NavigationHistoryProvider>
+                      </FavoritesProvider>
+                    </SidebarProvider>
+                  </ErrorBoundary>
+                </PushNotificationsProvider>
+              </AuthProvider>
+            </QueryClientProvider>
+          </NetworkProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

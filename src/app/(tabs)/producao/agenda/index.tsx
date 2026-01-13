@@ -2,42 +2,33 @@ import { View } from "react-native";
 import { Stack, router } from "expo-router";
 import { TaskScheduleLayout } from "@/components/production/task/schedule/TaskScheduleLayout";
 import { tasksListConfig } from "@/config/list/production/tasks";
-import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { FAB } from "@/components/ui/fab";
 import { useMemo } from "react";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
-import { hasPrivilege } from "@/utils";
 
 export default function ProductionPreparationScreen() {
   const { user } = useAuth();
 
   // Only ADMIN users can create tasks
   const canCreateTasks = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
-  const isAdmin = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
-  const isFinancial = user && hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
 
   const handleCreateTask = () => {
     router.push("/producao/agenda/cadastrar");
   };
 
-  // Create a config specifically for the agenda page with PREPARATION filter
+  // Create a config specifically for the agenda page
+  // Uses universal agenda display logic (not role-based):
+  // - Excludes CANCELLED tasks
+  // - Excludes COMPLETED tasks only if they have all 4 SO types AND all SOs are completed
   const agendaConfig: ListConfig<Task> = useMemo(() => {
-    // Build filter values with service order filtering
+    // Build filter values with agenda display logic
     const defaultFilters: any = {
-      status: [TASK_STATUS.PREPARATION],
+      shouldDisplayInAgenda: true,
     };
-
-    // Add service order filtering based on user role
-    if (isAdmin) {
-      // Admin: show tasks with no service orders OR incomplete NEGOTIATION/PRODUCTION/ARTWORK service orders
-      defaultFilters.hasIncompleteNonFinancialServiceOrders = true;
-    } else if (isFinancial) {
-      // Financial: show tasks with ANY incomplete service orders (including FINANCIAL type)
-      defaultFilters.hasIncompleteServiceOrders = true;
-    }
 
     return {
       ...tasksListConfig,
@@ -72,7 +63,7 @@ export default function ProductionPreparationScreen() {
       },
     },
   };
-  }, [isAdmin, isFinancial]);
+  }, []);
 
   return (
     <>

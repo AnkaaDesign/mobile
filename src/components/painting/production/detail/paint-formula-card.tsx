@@ -8,9 +8,10 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPaint, IconCurrencyDollar, IconWeight, IconFlask } from "@tabler/icons-react-native";
 import type { PaintProduction } from '../../../../types';
-import { PAINT_FINISH_LABELS, routes } from "@/constants";
+import { PAINT_FINISH_LABELS, routes, SECTOR_PRIVILEGES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCurrency } from "@/utils";
+import { useAuth } from '@/contexts/auth-context';
 
 interface PaintFormulaCardProps {
   production: PaintProduction;
@@ -18,6 +19,8 @@ interface PaintFormulaCardProps {
 
 export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const isWarehouseUser = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
   const formula = production.formula;
   const paint = formula?.paint;
 
@@ -92,18 +95,20 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
 
                   {/* Metrics Grid */}
                   <View style={styles.metricsGrid}>
-                    {/* Price per Liter */}
-                    <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
-                      <View style={styles.metricHeader}>
-                        <IconCurrencyDollar size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
-                          Preço/L
+                    {/* Price per Liter - Hidden for warehouse users */}
+                    {!isWarehouseUser && (
+                      <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
+                        <View style={styles.metricHeader}>
+                          <IconCurrencyDollar size={14} color={colors.mutedForeground} />
+                          <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                            Preço/L
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                          {formatCurrency(formula.pricePerLiter)}/L
                         </ThemedText>
                       </View>
-                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
-                        {formatCurrency(formula.pricePerLiter)}/L
-                      </ThemedText>
-                    </View>
+                    )}
 
                     {/* Density */}
                     <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>

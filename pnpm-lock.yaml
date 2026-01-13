@@ -140,6 +140,9 @@ importers:
       expo:
         specifier: ~54.0.10
         version: 54.0.21(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      expo-application:
+        specifier: ~7.0.8
+        version: 7.0.8(expo@54.0.21)
       expo-av:
         specifier: ~16.0.7
         version: 16.0.7(expo@54.0.21)(react-native-web@0.21.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
@@ -184,7 +187,7 @@ importers:
         version: 15.0.7(expo@54.0.21)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))
       expo-router:
         specifier: ~6.0.8
-        version: 6.0.14(3a4f7c2258881af5b687fe967c3387a0)
+        version: 6.0.14(u4727lqxpqj6rzvhjixvz5scci)
       expo-sharing:
         specifier: ~14.0.7
         version: 14.0.7(expo@54.0.21)
@@ -8257,7 +8260,7 @@ snapshots:
       wrap-ansi: 7.0.0
       ws: 8.18.3
     optionalDependencies:
-      expo-router: 6.0.14(3a4f7c2258881af5b687fe967c3387a0)
+      expo-router: 6.0.14(u4727lqxpqj6rzvhjixvz5scci)
       react-native: 0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
@@ -12227,7 +12230,7 @@ snapshots:
       expo: 54.0.21(@babel/core@7.28.5)(@expo/metro-runtime@6.1.2)(expo-router@6.0.14)(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       react-native: 0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0)
 
-  expo-router@6.0.14(3a4f7c2258881af5b687fe967c3387a0):
+  expo-router@6.0.14(u4727lqxpqj6rzvhjixvz5scci):
     dependencies:
       '@expo/metro-runtime': 6.1.2(expo@54.0.21)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.5)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@expo/schema-utils': 0.1.7

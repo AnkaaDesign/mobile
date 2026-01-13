@@ -73,7 +73,7 @@ export function isBorrowReturned(borrow: Borrow): boolean {
  * Format borrow details for display
  */
 export function formatBorrowDetails(borrow: Borrow): string {
-  const borrowDate = dateUtils.formatDate(borrow.createdAt, "dd/MM/yyyy");
+  const borrowDate = dateUtils.formatDate(borrow.createdAt);
   const duration = getBorrowDaysAgo(borrow);
   return `Emprestado em ${borrowDate} (${duration} dias atrás)`;
 }

@@ -21,9 +21,8 @@
       "bundleIdentifier": "com.ankaadesign.management",
       "jsEngine": "hermes",
       "associatedDomains": [
-        "applinks:ankaa.live",
-        "applinks:www.ankaa.live",
-        "applinks:app.ankaa.com.br"
+        "applinks:ankaadesign.com.br",
+        "applinks:www.ankaadesign.com.br"
       ],
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "fetch"]
@@ -43,17 +42,11 @@
           "data": [
             {
               "scheme": "https",
-              "host": "ankaa.live",
-              "pathPrefix": "/app"
+              "host": "ankaadesign.com.br"
             },
             {
               "scheme": "https",
-              "host": "www.ankaa.live",
-              "pathPrefix": "/app"
-            },
-            {
-              "scheme": "https",
-              "host": "app.ankaa.com.br"
+              "host": "www.ankaadesign.com.br"
             }
           ],
           "category": [
@@ -92,8 +85,8 @@
       "eas": {
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
-      "apiUrl": "https://api.ankaa.live",
-      "fallbackApiUrl": "http://192.168.10.165:3030"
+      "apiUrl": "https://api.ankaadesign.com.br",
+      "fallbackApiUrl": "http://192.168.10.180"
     }
   }
 }

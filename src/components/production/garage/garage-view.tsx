@@ -14,6 +14,8 @@ import Animated, {
   runOnJS,
   useAnimatedReaction,
   Easing,
+  useAnimatedRef,
+  measure,
 } from 'react-native-reanimated';
 import { IconChevronLeft, IconChevronRight, IconDeviceFloppy, IconReload } from '@tabler/icons-react-native';
 import { Text } from '@/components/ui/text';
@@ -98,9 +100,17 @@ const GARAGE_CONFIG = {
 const COLORS = {
   LANE_FILL: '#FEF3C7',
   LANE_STROKE: '#D97706',
+  LANE_HOVER: 'rgba(251, 191, 36, 0.35)', // Brighter amber when drag over
   GARAGE_FILL: '#F5F5F4',
   GARAGE_STROKE: '#78716C',
   PATIO_STROKE: '#0284C7',
+  // Preview colors (matches web)
+  PREVIEW_GREEN_FILL: '#86efac', // green-300
+  PREVIEW_GREEN_STROKE: '#10b981', // green-500
+  PREVIEW_GREEN_TEXT: '#15803d', // dark green
+  PREVIEW_RED_FILL: '#fca5a5', // red-300
+  PREVIEW_RED_STROKE: '#ef4444', // red-500
+  PREVIEW_RED_TEXT: '#b91c1c', // dark red
 } as const;
 
 // =====================
@@ -151,6 +161,13 @@ function parseSpot(spot: TRUCK_SPOT): { garage: GarageId | null; lane: LaneId | 
   };
 }
 
+// IMPORTANT: Always use this function to get truck length for positioning and calculations
+// originalLength = full truck length including cabin/tractor
+// length = cargo/trailer length only (for display purposes)
+function getTruckLength(truck: GarageTruck): number {
+  return truck.originalLength ?? truck.length;
+}
+
 function calculateLaneXPosition(laneIndex: number, garageId: GarageId): number {
   const config = GARAGE_CONFIGS[garageId];
   return config.lanePaddingX + laneIndex * (config.laneWidth + config.laneSpacing);
@@ -158,6 +175,261 @@ function calculateLaneXPosition(laneIndex: number, garageId: GarageId): number {
 
 function calculateGarageWidth(garageId: GarageId): number {
   return GARAGE_CONFIGS[garageId].width;
+}
+
+// Calculate lane availability for drag preview (matches web implementation)
+interface LaneAvailability {
+  canFit: boolean;
+  availableSpace: number;
+  requiredSpace: number;
+  occupiedSpots: number[];
+  // Per-position available space for more accurate preview display
+  positionSpaces: {
+    v1: number; // Available space at top position
+    v2: number; // Available space at middle/bottom position
+    v3: number; // Available space at bottom position
+  };
+}
+
+function calculateLaneAvailability(
+  garageId: GarageId,
+  laneId: LaneId,
+  trucks: GarageTruck[],
+  truckLength: number,
+  excludeTruckId?: string
+): LaneAvailability {
+  const config = GARAGE_CONFIGS[garageId];
+  const laneLength = config.laneLength;
+
+  // Get trucks in this lane
+  const trucksInLane = trucks.filter((t) => {
+    if (!t.spot || t.id === excludeTruckId) return false;
+    const parsed = parseSpot(t.spot);
+    return parsed.garage === garageId && parsed.lane === laneId;
+  });
+
+  const occupiedSpots = trucksInLane.map((t) => parseSpot(t.spot!).spotNumber!).filter(Boolean);
+
+  // Calculate total occupied length
+  const totalOccupiedLength = trucksInLane.reduce((sum, t) => {
+    const garageLength = t.originalLength ?? t.length;
+    return sum + garageLength;
+  }, 0);
+
+  // Calculate required spacing - FIXED: properly calculate gaps for 2+ trucks
+  const margins = 2 * GARAGE_CONFIG.TRUCK_MARGIN_TOP; // 0.4m total
+  const newTruckCount = trucksInLane.length + 1;
+
+  // Calculate gaps: n trucks need (n-1) gaps between them
+  // For 2 trucks: 1 gap, for 3 trucks: 2 gaps
+  const gapsBetweenTrucks = newTruckCount >= 2
+    ? (newTruckCount - 1) * GARAGE_CONFIG.TRUCK_MIN_SPACING
+    : 0;
+
+  const requiredSpace = margins + totalOccupiedLength + truckLength + gapsBetweenTrucks;
+
+  // Calculate existing gaps (between current trucks)
+  const existingGaps = trucksInLane.length >= 2
+    ? (trucksInLane.length - 1) * GARAGE_CONFIG.TRUCK_MIN_SPACING
+    : 0;
+
+  // Available space = total - occupied - margins - existing gaps - new gap (if adding to existing trucks)
+  const newGapNeeded = trucksInLane.length > 0 ? GARAGE_CONFIG.TRUCK_MIN_SPACING : 0;
+  const availableSpace = Math.max(0, laneLength - totalOccupiedLength - margins - existingGaps - newGapNeeded);
+
+  const canFit = trucksInLane.length < 3 && requiredSpace <= laneLength;
+
+  // Calculate per-position available space
+  // This shows how much space is available at each specific position
+  const positionSpaces = { v1: 0, v2: 0, v3: 0 };
+
+  // Get trucks at each position
+  const v1Truck = trucksInLane.find((t) => parseSpot(t.spot!).spotNumber === 1);
+  const v2Truck = trucksInLane.find((t) => parseSpot(t.spot!).spotNumber === 2);
+  const v3Truck = trucksInLane.find((t) => parseSpot(t.spot!).spotNumber === 3);
+
+  const topMargin = GARAGE_CONFIG.TRUCK_MARGIN_TOP;
+  const bottomMargin = GARAGE_CONFIG.TRUCK_MARGIN_TOP;
+  const spacing = GARAGE_CONFIG.TRUCK_MIN_SPACING;
+
+  if (trucksInLane.length === 0) {
+    // Empty lane: each position gets roughly half the usable space (accounting for spacing if both filled)
+    const usableSpace = laneLength - topMargin - bottomMargin - spacing; // Space for 2 trucks with gap
+    positionSpaces.v1 = usableSpace / 2;
+    positionSpaces.v2 = usableSpace / 2;
+    positionSpaces.v3 = 0; // V3 only used when V2 is occupied
+  } else if (trucksInLane.length === 1) {
+    if (v1Truck) {
+      // V1 occupied: V2 gets remaining space at bottom
+      const v1End = topMargin + (v1Truck.originalLength ?? v1Truck.length) + spacing;
+      positionSpaces.v1 = 0; // Already occupied
+      positionSpaces.v2 = laneLength - v1End - bottomMargin;
+      positionSpaces.v3 = 0;
+    } else if (v2Truck) {
+      // V2 occupied (bottom-aligned): V1 gets space at top
+      const v2Start = laneLength - bottomMargin - (v2Truck.originalLength ?? v2Truck.length);
+      positionSpaces.v1 = v2Start - topMargin - spacing;
+      positionSpaces.v2 = 0; // Already occupied
+      positionSpaces.v3 = 0;
+    }
+  } else if (trucksInLane.length === 2) {
+    // Two trucks: calculate middle space for V2 or remaining space for V1/V3
+    if (v1Truck && v2Truck) {
+      // V1 at top, V2 at bottom (both occupied) - V3 not applicable since V2 is at bottom
+      positionSpaces.v1 = 0;
+      positionSpaces.v2 = 0;
+      // Check if V3 position (very bottom) has space - usually not
+      const v1End = topMargin + (v1Truck.originalLength ?? v1Truck.length) + spacing;
+      const v2Start = laneLength - bottomMargin - (v2Truck.originalLength ?? v2Truck.length);
+      positionSpaces.v3 = Math.max(0, v2Start - v1End - spacing);
+    } else if (v1Truck && v3Truck) {
+      // V1 at top, V3 at bottom - V2 gets middle space
+      const v1End = topMargin + (v1Truck.originalLength ?? v1Truck.length) + spacing;
+      const v3Start = laneLength - bottomMargin - (v3Truck.originalLength ?? v3Truck.length) - spacing;
+      positionSpaces.v1 = 0;
+      positionSpaces.v2 = Math.max(0, v3Start - v1End);
+      positionSpaces.v3 = 0;
+    }
+  }
+
+  return { canFit, availableSpace, requiredSpace, occupiedSpots, positionSpaces };
+}
+
+// Preview position for drag feedback
+interface PreviewPosition {
+  y: number;
+  height: number;
+  color: 'green' | 'red';
+  availableSpace: number; // Actual available space at this position
+  spotNumber: 1 | 2 | 3; // Which spot this preview represents
+}
+
+function calculatePreviewPositions(
+  laneLength: number,
+  draggedTruckLength: number,
+  occupiedSpots: number[],
+  canFit: boolean,
+  trucksInLane: GarageTruck[],
+  availableSpace: number,
+  positionSpaces: { v1: number; v2: number; v3: number }
+): PreviewPosition[] {
+  const previews: PreviewPosition[] = [];
+  const isLargeTruck = draggedTruckLength > laneLength * 0.5;
+
+  // Helper to determine color based on whether truck fits in specific position
+  const getColorForPosition = (space: number): 'green' | 'red' => {
+    return space >= draggedTruckLength ? 'green' : 'red';
+  };
+
+  // Large truck - show single preview
+  if (isLargeTruck) {
+    if (!canFit) {
+      const maxFitHeight = Math.min(draggedTruckLength, availableSpace);
+      previews.push({
+        y: GARAGE_CONFIG.TRUCK_MARGIN_TOP,
+        height: maxFitHeight > 0 ? maxFitHeight : draggedTruckLength,
+        color: 'red',
+        availableSpace: availableSpace,
+        spotNumber: 1,
+      });
+    } else {
+      previews.push({
+        y: 0,
+        height: laneLength,
+        color: 'green',
+        availableSpace: availableSpace,
+        spotNumber: 1,
+      });
+    }
+    return previews;
+  }
+
+  // Small truck - show possible positions with per-position color based on fit
+  if (occupiedSpots.length === 0) {
+    // Empty lane - show both top (V1) and bottom (V2) positions
+    const v1Color = getColorForPosition(positionSpaces.v1);
+    const v2Color = getColorForPosition(positionSpaces.v2);
+
+    previews.push(
+      {
+        y: GARAGE_CONFIG.TRUCK_MARGIN_TOP,
+        height: draggedTruckLength,
+        color: v1Color,
+        availableSpace: positionSpaces.v1,
+        spotNumber: 1,
+      },
+      {
+        y: laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - draggedTruckLength,
+        height: draggedTruckLength,
+        color: v2Color,
+        availableSpace: positionSpaces.v2,
+        spotNumber: 2,
+      }
+    );
+  } else if (occupiedSpots.length === 1) {
+    if (occupiedSpots[0] === 1) {
+      // V1 occupied - show V2 at bottom
+      const v2Color = getColorForPosition(positionSpaces.v2);
+      previews.push({
+        y: laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - draggedTruckLength,
+        height: draggedTruckLength,
+        color: v2Color,
+        availableSpace: positionSpaces.v2,
+        spotNumber: 2,
+      });
+    } else {
+      // V2/V3 occupied - show V1 at top
+      const v1Color = getColorForPosition(positionSpaces.v1);
+      previews.push({
+        y: GARAGE_CONFIG.TRUCK_MARGIN_TOP,
+        height: draggedTruckLength,
+        color: v1Color,
+        availableSpace: positionSpaces.v1,
+        spotNumber: 1,
+      });
+    }
+  } else if (occupiedSpots.length === 2) {
+    // Two trucks - show remaining position
+    if (!occupiedSpots.includes(1)) {
+      const v1Color = getColorForPosition(positionSpaces.v1);
+      previews.push({
+        y: GARAGE_CONFIG.TRUCK_MARGIN_TOP,
+        height: draggedTruckLength,
+        color: v1Color,
+        availableSpace: positionSpaces.v1,
+        spotNumber: 1,
+      });
+    } else if (!occupiedSpots.includes(2)) {
+      // V2 free - show in middle
+      const v1Truck = trucksInLane.find((t) => parseSpot(t.spot!).spotNumber === 1);
+      const v3Truck = trucksInLane.find((t) => parseSpot(t.spot!).spotNumber === 3);
+      const v1Bottom = v1Truck
+        ? GARAGE_CONFIG.TRUCK_MARGIN_TOP + getTruckLength(v1Truck) + GARAGE_CONFIG.TRUCK_MIN_SPACING
+        : GARAGE_CONFIG.TRUCK_MARGIN_TOP;
+      const v3Top = v3Truck
+        ? laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - getTruckLength(v3Truck) - GARAGE_CONFIG.TRUCK_MIN_SPACING
+        : laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP;
+      const v2Color = getColorForPosition(positionSpaces.v2);
+      previews.push({
+        y: v1Bottom + (v3Top - v1Bottom - draggedTruckLength) / 2,
+        height: draggedTruckLength,
+        color: v2Color,
+        availableSpace: positionSpaces.v2,
+        spotNumber: 2,
+      });
+    } else if (!occupiedSpots.includes(3)) {
+      const v3Color = getColorForPosition(positionSpaces.v3);
+      previews.push({
+        y: laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - draggedTruckLength,
+        height: draggedTruckLength,
+        color: v3Color,
+        availableSpace: positionSpaces.v3,
+        spotNumber: 3,
+      });
+    }
+  }
+
+  return previews;
 }
 
 // Calculate optimal patio layout based on truck count and screen size
@@ -182,7 +454,7 @@ function calculatePatioLayout(trucks: GarageTruck[], screenWidth: number, maxHei
 
     patioTrucks.forEach((truck, index) => {
       const col = index % cols;
-      columnContentHeights[col] += truck.length + GARAGE_CONFIG.TRUCK_MIN_SPACING;
+      columnContentHeights[col] += getTruckLength(truck) + GARAGE_CONFIG.TRUCK_MIN_SPACING;
     });
 
     // Calculate actual content height (replace last spacing with bottom margin)
@@ -208,7 +480,7 @@ function calculatePatioLayout(trucks: GarageTruck[], screenWidth: number, maxHei
         yPosition: columnHeights[col],
       });
 
-      columnHeights[col] += truck.length + GARAGE_CONFIG.TRUCK_MIN_SPACING;
+      columnHeights[col] += getTruckLength(truck) + GARAGE_CONFIG.TRUCK_MIN_SPACING;
     });
 
     const height = actualLaneLength + padding * 2;
@@ -258,26 +530,27 @@ function calculateGarageLayout(areaId: GarageId, trucks: GarageTruck[]): AreaLay
       const spotNumber = parsed.spotNumber || 1;
 
       let yPosition: number;
+      const currentTruckLength = getTruckLength(truck);
 
       if (spotNumber === 1) {
         // V1: Always top aligned
         yPosition = GARAGE_CONFIG.TRUCK_MARGIN_TOP;
       } else if (spotNumber === 3) {
         // V3: Always bottom aligned
-        yPosition = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - truck.length;
+        yPosition = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - currentTruckLength;
       } else {
         // V2: Bottom aligned when alone, middle when V3 exists
         if (v3Truck) {
           // V2 with V3: position in the middle
           const v1Bottom = v1Truck
-            ? GARAGE_CONFIG.TRUCK_MARGIN_TOP + v1Truck.length + GARAGE_CONFIG.TRUCK_MIN_SPACING
+            ? GARAGE_CONFIG.TRUCK_MARGIN_TOP + getTruckLength(v1Truck) + GARAGE_CONFIG.TRUCK_MIN_SPACING
             : GARAGE_CONFIG.TRUCK_MARGIN_TOP;
-          const v3Top = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - v3Truck.length - GARAGE_CONFIG.TRUCK_MIN_SPACING;
+          const v3Top = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - getTruckLength(v3Truck) - GARAGE_CONFIG.TRUCK_MIN_SPACING;
           // Center V2 between V1's bottom and V3's top
-          yPosition = v1Bottom + (v3Top - v1Bottom - truck.length) / 2;
+          yPosition = v1Bottom + (v3Top - v1Bottom - currentTruckLength) / 2;
         } else {
           // V2 alone: bottom aligned (same logic as V3)
-          yPosition = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - truck.length;
+          yPosition = config.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - currentTruckLength;
         }
       }
 
@@ -310,6 +583,10 @@ interface TruckElementProps {
   onNavigatePrev?: () => void; // Called when truck dragged past left boundary
   onNavigateNext?: () => void; // Called when truck dragged past right boundary
   onNavigateWithTruck?: (direction: 'prev' | 'next') => void; // Navigate AND move truck
+  // New: Screen-coordinate edge detection (matches web implementation)
+  onEdgeDetection?: (absoluteX: number) => void; // Called during drag with absolute screen X
+  onDragStarted?: () => void; // Called when drag starts to show preview indicators
+  onDragEnded?: () => void; // Called when drag ends to clear edge state
   disabled?: boolean; // Disable dragging (read-only mode)
 }
 
@@ -325,10 +602,14 @@ const TruckElement = memo(function TruckElement({
   onNavigatePrev,
   onNavigateNext,
   onNavigateWithTruck,
+  onEdgeDetection,
+  onDragStarted,
+  onDragEnded,
   disabled = false,
 }: TruckElementProps) {
   const width = GARAGE_CONFIG.TRUCK_WIDTH_TOP_VIEW * scale;
-  const height = truck.length * scale;
+  const truckFullLength = getTruckLength(truck); // Use full length including cabin
+  const height = truckFullLength * scale;
   const baseX = truck.xPosition * scale;
   const baseY = truck.yPosition * scale;
   const bgColor = truck.paintHex || '#ffffff';
@@ -359,6 +640,8 @@ const TruckElement = memo(function TruckElement({
   const isDragging = useSharedValue(false);
   const hasNavigated = useSharedValue(false);
   const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const truckViewRef = useAnimatedRef<Animated.View>(); // Use animated ref for Animated.View
+  const startAbsoluteX = useSharedValue(0); // Track absolute X at drag start
 
   // NOTE: We intentionally DON'T reset translation when baseX/baseY changes
   // This allows trucks to stay under the finger during garage transitions
@@ -475,12 +758,34 @@ const TruckElement = memo(function TruckElement({
     // The gesture will continue to track the finger position
   }, [hasNavigated]);
 
+  // Handle edge detection during drag using screen coordinates
+  // This is the NEW approach matching web implementation
+  const handleScreenEdgeDetection = useCallback(
+    (translationX: number) => {
+      if (onEdgeDetection) {
+        // Calculate current absolute X position on screen
+        const absoluteX = startAbsoluteX.value + translationX;
+        onEdgeDetection(absoluteX);
+      }
+    },
+    [onEdgeDetection, startAbsoluteX]
+  );
+
   const panGesture = Gesture.Pan()
     .enabled(!disabled) // Disable gesture in read-only mode
     .onStart(() => {
       'worklet';
       isDragging.value = true;
       hasNavigated.value = false;
+      // Capture truck's screen position at drag start using reanimated measure
+      const measurement = measure(truckViewRef);
+      if (measurement) {
+        startAbsoluteX.value = measurement.pageX;
+      }
+      // Notify parent that drag has started (for preview indicators)
+      if (onDragStarted) {
+        runOnJS(onDragStarted)();
+      }
     })
     .onUpdate((event) => {
       'worklet';
@@ -488,14 +793,22 @@ const TruckElement = memo(function TruckElement({
       translateX.value = event.translationX;
       translateY.value = event.translationY;
 
-      // Check for boundary navigation during drag (only if not already navigated)
+      // NEW: Use screen-coordinate edge detection (matches web implementation)
+      // The GarageView handles the 60px threshold and 500ms delay
       if (!hasNavigated.value) {
+        runOnJS(handleScreenEdgeDetection)(event.translationX);
+        // Also run legacy check as fallback for navigation without truck
         runOnJS(handleNavigationCheck)(event.translationX, markAsNavigated);
       }
     })
     .onEnd((event) => {
       'worklet';
       isDragging.value = false;
+
+      // Clear edge detection state in GarageView
+      if (onDragEnded) {
+        runOnJS(onDragEnded)();
+      }
 
       // If we navigated, the truck is now in a new garage
       // Animate back to its new base position smoothly
@@ -521,7 +834,9 @@ const TruckElement = memo(function TruckElement({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Animated.View style={[{ position: 'absolute', left: baseX - strokePadding, top: baseY - strokePadding, width: svgWidth, height: svgHeight }, animatedStyle]}>
+      <Animated.View
+        ref={truckViewRef}
+        style={[{ position: 'absolute', left: baseX - strokePadding, top: baseY - strokePadding, width: svgWidth, height: svgHeight }, animatedStyle]}>
         <Svg width={svgWidth} height={svgHeight}>
           <Rect
             x={strokePadding}
@@ -643,6 +958,14 @@ interface ActiveDrag {
   sourceGarageIndex: number;
 }
 
+// Container bounds for screen-coordinate edge detection (matches web implementation)
+interface ContainerBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface GarageViewProps {
   trucks: GarageTruck[];
   onTruckMove?: (truckId: string, newSpot: TRUCK_SPOT) => void;
@@ -657,6 +980,11 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
   const [currentAreaIndex, setCurrentAreaIndex] = useState(0);
   const [pendingChanges, setPendingChanges] = useState<Map<string, PendingSpotChange>>(new Map());
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [dragOverEdge, setDragOverEdge] = useState<'left' | 'right' | null>(null);
+  const [containerBounds, setContainerBounds] = useState<ContainerBounds | null>(null);
+  const [activeDragTruckId, setActiveDragTruckId] = useState<string | null>(null); // Track which truck is being dragged
+  const containerRef = useRef<View>(null);
+  const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -681,6 +1009,28 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
   // Carousel offset for horizontal scrolling (shared value for smooth animations)
   const carouselOffset = useSharedValue(0);
+
+  // Capture container bounds for screen-coordinate edge detection (matches web implementation)
+  const handleContainerLayout = useCallback(() => {
+    if (containerRef.current) {
+      containerRef.current.measureInWindow((x, y, width, height) => {
+        setContainerBounds({ x, y, width, height });
+      });
+    }
+  }, []);
+
+  // Edge detection constants - matches web implementation
+  const EDGE_THRESHOLD = 60; // pixels from edge to trigger navigation (matches web)
+  const EDGE_NAVIGATION_DELAY = 500; // ms delay before navigation (matches web)
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) {
+        clearTimeout(switchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const currentAreaId = AREAS[currentAreaIndex];
   const isPatio = currentAreaId === 'PATIO';
@@ -791,6 +1141,33 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
   }, [lanePositions, scale]);
 
   const scaledLaneWidth = currentGarageConfig ? currentGarageConfig.laneWidth * scale : undefined;
+
+  // Calculate lane availability for all lanes when dragging (for preview indicators)
+  const activeDragTruck = useMemo(() => {
+    if (!activeDragTruckId) return null;
+    return trucksWithPendingChanges.find((t) => t.id === activeDragTruckId) || null;
+  }, [activeDragTruckId, trucksWithPendingChanges]);
+
+  const laneAvailability = useMemo(() => {
+    if (!activeDragTruck || isPatio) return null;
+
+    const availability: Record<string, LaneAvailability> = {};
+    const truckLength = activeDragTruck.originalLength ?? activeDragTruck.length;
+    const garageId = currentAreaId as GarageId;
+
+    LANES.forEach((laneId) => {
+      const key = `${garageId}_${laneId}`;
+      availability[key] = calculateLaneAvailability(
+        garageId,
+        laneId,
+        trucksWithPendingChanges,
+        truckLength,
+        activeDragTruck.id
+      );
+    });
+
+    return availability;
+  }, [activeDragTruck, isPatio, currentAreaId, trucksWithPendingChanges]);
 
   const svgWidth = contentWidth * scale + padding + rulerTotalWidth;
   const svgHeight = contentHeight * scale + bottomRulerOffset + padding;
@@ -907,6 +1284,64 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
     [currentAreaIndex, trucks, trucksWithPendingChanges, visibleAreaWidth, carouselOffset]
   );
 
+  // Edge detection handlers - called by TruckElement during drag
+  // Uses 60px threshold and 500ms delay to match web implementation
+  const handleEdgeDetection = useCallback(
+    (truckId: string, absoluteX: number) => {
+      if (!containerBounds) return;
+
+      const leftEdge = containerBounds.x + EDGE_THRESHOLD;
+      const rightEdge = containerBounds.x + containerBounds.width - EDGE_THRESHOLD;
+
+      // Clear existing timeout when edge state changes
+      const clearNavigationTimeout = () => {
+        if (switchTimeoutRef.current) {
+          clearTimeout(switchTimeoutRef.current);
+          switchTimeoutRef.current = null;
+        }
+      };
+
+      // LEFT EDGE DETECTION
+      if (absoluteX < leftEdge) {
+        if (dragOverEdge !== 'left') {
+          setDragOverEdge('left');
+          clearNavigationTimeout();
+          switchTimeoutRef.current = setTimeout(() => {
+            handleNavigateWithTruck(truckId, 'prev');
+          }, EDGE_NAVIGATION_DELAY);
+        }
+      }
+      // RIGHT EDGE DETECTION
+      else if (absoluteX > rightEdge) {
+        if (dragOverEdge !== 'right') {
+          setDragOverEdge('right');
+          clearNavigationTimeout();
+          switchTimeoutRef.current = setTimeout(() => {
+            handleNavigateWithTruck(truckId, 'next');
+          }, EDGE_NAVIGATION_DELAY);
+        }
+      }
+      // CANCEL EDGE DETECTION - moved away from edge
+      else {
+        if (dragOverEdge !== null) {
+          setDragOverEdge(null);
+          clearNavigationTimeout();
+        }
+      }
+    },
+    [containerBounds, dragOverEdge, handleNavigateWithTruck, EDGE_THRESHOLD, EDGE_NAVIGATION_DELAY]
+  );
+
+  // Clear edge detection state and active drag truck when drag ends
+  const handleDragEnded = useCallback(() => {
+    setDragOverEdge(null);
+    setActiveDragTruckId(null); // Clear active drag truck to hide preview indicators
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current);
+      switchTimeoutRef.current = null;
+    }
+  }, []);
+
   // Swipe gesture for navigation with smooth carousel animation
   const swipeGesture = Gesture.Pan()
     .activeOffsetX([-20, 20]) // Only activate after 20px horizontal movement
@@ -963,23 +1398,25 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           spotToTruck.set(parsed.spotNumber, t);
 
           // Calculate Y position for this truck (same logic as calculateGarageLayout)
+          // IMPORTANT: Use getTruckLength for full length including cabin
           let yPosition: number;
+          const tLength = getTruckLength(t);
           const v1Truck = parsed.spotNumber === 1 ? t : trucksWithPendingChanges.find(tr => tr.spot && parseSpot(tr.spot).garage === targetGarageId && parseSpot(tr.spot).lane === targetLane && parseSpot(tr.spot).spotNumber === 1);
           const v3Truck = trucksWithPendingChanges.find(tr => tr.spot && parseSpot(tr.spot).garage === targetGarageId && parseSpot(tr.spot).lane === targetLane && parseSpot(tr.spot).spotNumber === 3);
 
           if (parsed.spotNumber === 1) {
             yPosition = GARAGE_CONFIG.TRUCK_MARGIN_TOP;
           } else if (parsed.spotNumber === 3) {
-            yPosition = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - t.length;
+            yPosition = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - tLength;
           } else {
             if (v3Truck) {
               const v1Bottom = v1Truck
-                ? GARAGE_CONFIG.TRUCK_MARGIN_TOP + v1Truck.length + GARAGE_CONFIG.TRUCK_MIN_SPACING
+                ? GARAGE_CONFIG.TRUCK_MARGIN_TOP + getTruckLength(v1Truck) + GARAGE_CONFIG.TRUCK_MIN_SPACING
                 : GARAGE_CONFIG.TRUCK_MARGIN_TOP;
-              const v3Top = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - v3Truck.length - GARAGE_CONFIG.TRUCK_MIN_SPACING;
-              yPosition = v1Bottom + (v3Top - v1Bottom - t.length) / 2;
+              const v3Top = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - getTruckLength(v3Truck) - GARAGE_CONFIG.TRUCK_MIN_SPACING;
+              yPosition = v1Bottom + (v3Top - v1Bottom - tLength) / 2;
             } else {
-              yPosition = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - t.length;
+              yPosition = targetConfig.laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - tLength;
             }
           }
 
@@ -987,7 +1424,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
             truck: t,
             spotNumber: parsed.spotNumber,
             yStart: yPosition * scale,
-            yEnd: (yPosition + t.length) * scale,
+            yEnd: (yPosition + tLength) * scale,
           });
         }
       });
@@ -1218,7 +1655,10 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           {/* Middle section - Garage visualization centered */}
           <View style={styles.middleSection}>
             <GestureDetector gesture={swipeGesture}>
-              <View style={[styles.garageContainer, { width: containerWidth, height: containerHeight }]}>
+              <View
+                ref={containerRef}
+                onLayout={handleContainerLayout}
+                style={[styles.garageContainer, { width: containerWidth, height: containerHeight }]}>
             <Pressable onPress={handlePrevArea} style={styles.navButton}>
               <IconChevronLeft size={24} color="#666" />
             </Pressable>
@@ -1294,35 +1734,82 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
                       rx={4}
                     />
 
-                    {/* Lanes */}
+                    {/* Lanes with preview indicators */}
                     {garageLayout?.lanes.map((lane) => {
                       const laneX = lane.xPosition * scale;
                       const laneY = currentGarageConfig!.paddingTop * scale;
                       const laneW = currentGarageConfig!.laneWidth * scale;
                       const laneH = currentGarageConfig!.laneLength * scale;
+                      const laneKey = `${currentAreaId}_${lane.id}`;
+                      const availability = laneAvailability?.[laneKey];
+                      const isDragging = !!activeDragTruck;
+
+                      // Calculate preview positions when dragging
+                      const previews = isDragging && availability && activeDragTruck
+                        ? calculatePreviewPositions(
+                            currentGarageConfig!.laneLength,
+                            activeDragTruck.originalLength ?? activeDragTruck.length,
+                            availability.occupiedSpots,
+                            availability.canFit,
+                            trucksWithPendingChanges.filter((t) => {
+                              if (!t.spot || t.id === activeDragTruck.id) return false;
+                              const parsed = parseSpot(t.spot);
+                              return parsed.garage === currentAreaId && parsed.lane === lane.id;
+                            }),
+                            availability.availableSpace,
+                            availability.positionSpaces
+                          )
+                        : [];
+
                       return (
                         <G key={lane.id}>
+                          {/* Lane background */}
                           <Rect
                             x={laneX}
                             y={laneY}
                             width={laneW}
                             height={laneH}
-                            fill={COLORS.LANE_FILL}
+                            fill={isDragging ? COLORS.LANE_HOVER : COLORS.LANE_FILL}
                             stroke={COLORS.LANE_STROKE}
                             strokeWidth={2}
                             rx={3}
                           />
-                          {/* Lane label just below the lane */}
-                          <SvgText
-                            x={laneX + laneW / 2}
-                            y={laneY + laneH + 12}
-                            textAnchor="middle"
-                            fontSize={10}
-                            fontWeight="bold"
-                            fill="#78716C"
-                          >
-                            {lane.id}
-                          </SvgText>
+                          {/* Preview rectangles showing where truck can be placed */}
+                          {previews.map((preview, index) => {
+                            const isGreen = preview.color === 'green';
+                            // Always show the available space at this position (not truck length)
+                            const displayText = `${preview.availableSpace.toFixed(1).replace('.', ',')}m`;
+
+                            return (
+                              <G key={index}>
+                                <Rect
+                                  x={laneX + 2}
+                                  y={laneY + preview.y * scale}
+                                  width={laneW - 4}
+                                  height={preview.height * scale}
+                                  fill={isGreen ? COLORS.PREVIEW_GREEN_FILL : COLORS.PREVIEW_RED_FILL}
+                                  fillOpacity={0.6}
+                                  stroke={isGreen ? COLORS.PREVIEW_GREEN_STROKE : COLORS.PREVIEW_RED_STROKE}
+                                  strokeWidth={2}
+                                  rx={2}
+                                />
+                                {/* Available space text */}
+                                {displayText && preview.height * scale > 20 && (
+                                  <SvgText
+                                    x={laneX + laneW / 2}
+                                    y={laneY + preview.y * scale + (preview.height * scale / 2)}
+                                    textAnchor="middle"
+                                    alignmentBaseline="middle"
+                                    fontSize={9}
+                                    fontWeight="bold"
+                                    fill={isGreen ? COLORS.PREVIEW_GREEN_TEXT : COLORS.PREVIEW_RED_TEXT}
+                                  >
+                                    {displayText}
+                                  </SvgText>
+                                )}
+                              </G>
+                            );
+                          })}
                         </G>
                       );
                     })}
@@ -1360,6 +1847,9 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
                       onNavigatePrev={handlePrevArea}
                       onNavigateNext={handleNextArea}
                       onNavigateWithTruck={readOnly ? undefined : (direction) => handleNavigateWithTruck(truck.id, direction)}
+                      onEdgeDetection={readOnly ? undefined : (absoluteX) => handleEdgeDetection(truck.id, absoluteX)}
+                      onDragStarted={readOnly ? undefined : () => setActiveDragTruckId(truck.id)}
+                      onDragEnded={handleDragEnded}
                       disabled={readOnly}
                     />
                   ))
@@ -1378,6 +1868,9 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
                         onNavigatePrev={handlePrevArea}
                         onNavigateNext={handleNextArea}
                         onNavigateWithTruck={readOnly ? undefined : (direction) => handleNavigateWithTruck(truck.id, direction)}
+                        onEdgeDetection={readOnly ? undefined : (absoluteX) => handleEdgeDetection(truck.id, absoluteX)}
+                        onDragStarted={readOnly ? undefined : () => setActiveDragTruckId(truck.id)}
+                        onDragEnded={handleDragEnded}
                         disabled={readOnly}
                       />
                     ))

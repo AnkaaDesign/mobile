@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
-import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions, Linking, Text as RNText, ScrollView } from 'react-native';
+import { View, Pressable, StyleSheet, FlatList, ActivityIndicator, Platform, Dimensions, Linking, Text as RNText, ScrollView, Alert } from 'react-native';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
@@ -15,6 +15,10 @@ import type { Notification } from '@/types';
 import { formatNotificationTime } from '@/utils/notifications/date-utils';
 import { NOTIFICATION_TYPE } from '@/constants';
 import * as Haptics from 'expo-haptics';
+import { parseDeepLink } from '@/lib/deep-linking';
+
+// DEBUG: Flag to enable/disable debug alerts for testing
+const DEBUG_NOTIFICATION_POPOVER = true;
 
 const isWeb = Platform.OS === 'web';
 
@@ -288,6 +292,60 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
     return notifications.filter(n => !n.isSeenByUser).length;
   }, [notifications]);
 
+  /**
+   * Extract mobile deep link from actionUrl
+   * Handles multiple formats:
+   * 1. Direct mobile URL: "ankaadesign://task/123"
+   * 2. Embedded JSON: 'http://localhost:5173{"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}'
+   * 3. JSON object with mobile field: {"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}
+   */
+  const extractMobileUrl = useCallback((actionUrl: string): string | null => {
+    try {
+      // If it's already a mobile deep link, return it
+      if (actionUrl.startsWith('ankaadesign://')) {
+        return actionUrl;
+      }
+
+      // Try to find embedded JSON in the URL (API sends malformed data like "http://localhost:5173{...}")
+      const jsonStartIndex = actionUrl.indexOf('{');
+      if (jsonStartIndex !== -1) {
+        const jsonString = actionUrl.substring(jsonStartIndex);
+        try {
+          const parsed = JSON.parse(jsonString);
+          // Check for mobile field
+          if (parsed.mobile && typeof parsed.mobile === 'string') {
+            return parsed.mobile;
+          }
+          // Check for universalLink as fallback
+          if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+            return parsed.universalLink;
+          }
+        } catch {
+          // JSON parse failed, continue to other methods
+        }
+      }
+
+      // Try parsing the whole string as JSON
+      try {
+        const parsed = JSON.parse(actionUrl);
+        if (parsed.mobile && typeof parsed.mobile === 'string') {
+          return parsed.mobile;
+        }
+        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+          return parsed.universalLink;
+        }
+      } catch {
+        // Not valid JSON
+      }
+
+      // Return original URL as fallback
+      return actionUrl;
+    } catch (error) {
+      console.error('[NotificationPopover] Error extracting mobile URL:', error);
+      return null;
+    }
+  }, []);
+
   // Handle notification press
   const handleNotificationPress = useCallback(async (notification: Notification) => {
     // Mark as read
@@ -298,15 +356,67 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
     // Close popover
     setIsOpen(false);
 
+    if (DEBUG_NOTIFICATION_POPOVER) {
+      Alert.alert(
+        '🔔 In-App Notification Tapped',
+        `Title: ${notification.title}\nActionUrl: ${notification.actionUrl || 'N/A'}`,
+        [{ text: 'OK' }]
+      );
+    }
+
     // Navigate to notification target if available
     if (notification.actionUrl) {
-      if (notification.actionUrl.startsWith('http://') || notification.actionUrl.startsWith('https://')) {
-        Linking.openURL(notification.actionUrl);
+      // First, try to extract mobile URL from potentially malformed actionUrl
+      const mobileUrl = extractMobileUrl(notification.actionUrl);
+
+      if (DEBUG_NOTIFICATION_POPOVER) {
+        Alert.alert(
+          '🔗 Extracted URL',
+          `Original: ${notification.actionUrl.substring(0, 100)}...\nExtracted: ${mobileUrl || 'N/A'}`,
+          [{ text: 'OK' }]
+        );
+      }
+
+      if (mobileUrl) {
+        // If it's a web URL (http/https), open in browser
+        if (mobileUrl.startsWith('http://') || mobileUrl.startsWith('https://')) {
+          if (DEBUG_NOTIFICATION_POPOVER) {
+            Alert.alert('🌐 Opening Web URL', mobileUrl);
+          }
+          Linking.openURL(mobileUrl);
+        } else {
+          // Use parseDeepLink to properly handle the mobile deep link
+          const parsed = parseDeepLink(mobileUrl);
+
+          if (DEBUG_NOTIFICATION_POPOVER) {
+            Alert.alert(
+              '🚀 NAVIGATING TO',
+              `Mobile URL: ${mobileUrl}\nParsed Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
+              [{ text: 'GO', onPress: () => {
+                if (parsed.route && parsed.route !== '/(tabs)') {
+                  router.push(parsed.route as any);
+                }
+              }}]
+            );
+          } else {
+            if (parsed.route && parsed.route !== '/(tabs)') {
+              router.push(parsed.route as any);
+            }
+          }
+        }
       } else {
+        // Fallback: try to use actionUrl directly
+        if (DEBUG_NOTIFICATION_POPOVER) {
+          Alert.alert('⚠️ No Mobile URL Extracted', `Trying direct: ${notification.actionUrl}`);
+        }
         router.push(notification.actionUrl as any);
       }
+    } else {
+      if (DEBUG_NOTIFICATION_POPOVER) {
+        Alert.alert('⚠️ No actionUrl', 'This notification has no navigation target');
+      }
     }
-  }, [user?.id, markAsRead, router]);
+  }, [user?.id, markAsRead, router, extractMobileUrl]);
 
   // Handle load more on scroll
   const handleLoadMore = useCallback(() => {

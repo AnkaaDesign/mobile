@@ -88,6 +88,16 @@ interface ComboboxProps<TData = ComboboxOption> {
   // UI behavior
   hideDescription?: boolean;
 
+  // Size variant
+  size?: "default" | "sm";
+
+  // Custom styling for the trigger button
+  triggerStyle?: {
+    backgroundColor?: string;
+    textColor?: string;
+    borderColor?: string;
+  };
+
   // Scroll behavior - callback to notify parent when combobox opens
   // Parent can use this to scroll the combobox into view
   // Returns true if scrolling was performed
@@ -142,6 +152,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   showCount = true,
   hideDefaultBadges = false,
   hideDescription = false,
+  size = "default",
+  triggerStyle,
   onOpen,
   onClose: onCloseProp,
 }: ComboboxProps<TData>) {
@@ -790,9 +802,10 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         ref={selectRef}
         style={[
           styles.selector,
+          size === "sm" && styles.selectorSm,
           {
-            backgroundColor: colors.input,
-            borderColor: error ? colors.destructive : colors.border,
+            backgroundColor: triggerStyle?.backgroundColor || colors.input,
+            borderColor: error ? colors.destructive : (triggerStyle?.borderColor || colors.border),
           },
           disabled && styles.disabled,
         ]}
@@ -806,12 +819,13 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         <Text
           style={[
             styles.selectorText,
+            size === "sm" && styles.selectorTextSm,
             {
-              color: disabled
+              color: triggerStyle?.textColor || (disabled
                 ? colors.mutedForeground
                 : selectedOptions.length > 0
                   ? colors.cardForeground || colors.foreground
-                  : colors.mutedForeground,
+                  : colors.mutedForeground),
             },
           ]}
           numberOfLines={1}
@@ -821,7 +835,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
         <View style={styles.iconContainer}>
           {loading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={triggerStyle?.textColor || colors.primary} />
           ) : (
             <>
               {clearable && selectedOptions.length > 0 && !disabled && (
@@ -831,13 +845,13 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                   accessibilityRole="button"
                   accessibilityLabel="Limpar seleção"
                 >
-                  <Icon name="x" size={20} color={colors.mutedForeground} />
+                  <Icon name="x" size={20} color={triggerStyle?.textColor || colors.mutedForeground} />
                 </Pressable>
               )}
               <Icon
                 name={open ? "chevronUp" : "chevronDown"}
                 size={20}
-                color={disabled ? colors.mutedForeground : colors.foreground}
+                color={triggerStyle?.textColor || (disabled ? colors.mutedForeground : colors.foreground)}
               />
             </>
           )}
@@ -1083,6 +1097,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  selectorSm: {
+    height: 36,
+    paddingHorizontal: 10,
+  },
   disabled: {
     opacity: 0.5,
   },
@@ -1090,6 +1108,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     flex: 1,
     marginRight: spacing.xs,
+  },
+  selectorTextSm: {
+    fontSize: fontSize.sm,
   },
   iconContainer: {
     flexDirection: "row",

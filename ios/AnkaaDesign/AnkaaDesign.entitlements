@@ -6,9 +6,8 @@
     <string>production</string>
     <key>com.apple.developer.associated-domains</key>
     <array>
-      <string>applinks:ankaa.live</string>
-      <string>applinks:www.ankaa.live</string>
-      <string>applinks:app.ankaa.com.br</string>
+      <string>applinks:ankaadesign.com.br</string>
+      <string>applinks:www.ankaadesign.com.br</string>
     </array>
   </dict>
 </plist>

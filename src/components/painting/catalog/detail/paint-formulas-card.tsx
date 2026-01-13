@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from '../../../../utils';
 import type { Paint, PaintFormula } from '../../../../types';
-import { routes } from '@/constants';
+import { routes, SECTOR_PRIVILEGES } from '@/constants';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
 // import { showToast } from '@/components/ui/toast';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize } from '@/constants/design-system';
+import { useAuth } from '@/contexts/auth-context';
 
 interface PaintFormulasCardProps {
   paint: Paint;
@@ -22,6 +23,8 @@ interface PaintFormulasCardProps {
 
 export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const isWarehouseUser = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
   const hasFormulas = paint.formulas && paint.formulas.length > 0;
 
   const handleFormulaClick = (formulaId: string) => {
@@ -30,10 +33,15 @@ export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
 
   const handleFormulaCopy = async (formula: PaintFormula) => {
     try {
-      const formulaText = `Fórmula: ${formula.description || 'Sem descrição'}
-Componentes: ${formula.components?.length || 0}
-Preço/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.pricePerLiter)) : '-'}
-Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/ml` : '-'}`;
+      let formulaText = `Fórmula: ${formula.description || 'Sem descrição'}
+Componentes: ${formula.components?.length || 0}`;
+
+      // Only include price in copy if not warehouse user
+      if (!isWarehouseUser) {
+        formulaText += `\nPreço/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.pricePerLiter)) : '-'}`;
+      }
+
+      formulaText += `\nDensidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/ml` : '-'}`;
 
       await Clipboard.setStringAsync(formulaText);
       Alert.alert("Sucesso", "Fórmula copiada!");
@@ -89,16 +97,18 @@ Densidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/
 
                 {/* Metrics Row */}
                 <View className="flex-row gap-4">
-                  {/* Price per Liter */}
-                  <View className="flex-1">
-                    <View className="flex-row items-center gap-1 mb-1">
-                      <Icon name="currency-dollar" size={14} className="text-muted-foreground" />
-                      <Text className="text-xs text-muted-foreground">Preço/L</Text>
+                  {/* Price per Liter - Hidden for warehouse users */}
+                  {!isWarehouseUser && (
+                    <View className="flex-1">
+                      <View className="flex-row items-center gap-1 mb-1">
+                        <Icon name="currency-dollar" size={14} className="text-muted-foreground" />
+                        <Text className="text-xs text-muted-foreground">Preço/L</Text>
+                      </View>
+                      <Text className="text-sm font-medium text-foreground">
+                        {formula.pricePerLiter != null && formula.pricePerLiter !== undefined ? formatCurrency(Number(formula.pricePerLiter)) : '-'}
+                      </Text>
                     </View>
-                    <Text className="text-sm font-medium text-foreground">
-                      {formula.pricePerLiter != null && formula.pricePerLiter !== undefined ? formatCurrency(Number(formula.pricePerLiter)) : '-'}
-                    </Text>
-                  </View>
+                  )}
 
                   {/* Density */}
                   <View className="flex-1">

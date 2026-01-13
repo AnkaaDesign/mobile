@@ -7,9 +7,13 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
+import { Alert } from 'react-native';
 import { NOTIFICATION_ACTIONS } from './notificationCategories';
 import { scheduleReminder } from './localNotifications';
 import { handleDeepLink as handleDeepLinkNavigation, generateNotificationLink } from '@/lib/deep-linking';
+
+// DEBUG: Flag to enable/disable debug alerts for testing
+const DEBUG_NOTIFICATION_HANDLER = true;
 
 export interface NotificationData {
   url?: string;
@@ -18,6 +22,12 @@ export interface NotificationData {
   entityType?: string;
   entityId?: string;
   notificationId?: string;
+  // For SERVICE_ORDER notifications - contains parent task ID for navigation
+  taskId?: string;
+  // Action URL - may contain embedded JSON with web, mobile, universalLink URLs
+  actionUrl?: string;
+  // Additional metadata that may be included
+  [key: string]: unknown;
 }
 
 export interface NotificationResponse extends Notifications.NotificationResponse {
@@ -122,6 +132,14 @@ export class NotificationHandlerService {
         data,
       });
 
+      if (DEBUG_NOTIFICATION_HANDLER) {
+        Alert.alert(
+          '🔔 NotificationHandler Response',
+          `Action: ${actionIdentifier}\nData: ${JSON.stringify(data, null, 2)}`,
+          [{ text: 'OK' }]
+        );
+      }
+
       // Get handler for the specific action
       const handler = this.actionHandlers.get(actionIdentifier);
 
@@ -136,7 +154,64 @@ export class NotificationHandlerService {
       }
     } catch (error) {
       console.error('[NotificationHandler] Error handling notification response:', error);
+      if (DEBUG_NOTIFICATION_HANDLER) {
+        Alert.alert('❌ NotificationHandler Error', `Error: ${error}`);
+      }
       throw new Error(`Failed to handle notification response: ${error}`);
+    }
+  }
+
+  /**
+   * Extract mobile deep link from actionUrl
+   * Handles multiple formats:
+   * 1. Direct mobile URL: "ankaadesign://task/123"
+   * 2. Embedded JSON: 'http://localhost:5173{"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}'
+   * 3. JSON object with mobile field: {"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}
+   */
+  private extractMobileUrl(actionUrl: string): string | null {
+    try {
+      // If it's already a mobile deep link, return it
+      if (actionUrl.startsWith('ankaadesign://')) {
+        return actionUrl;
+      }
+
+      // Try to find embedded JSON in the URL (API sends malformed data like "http://localhost:5173{...}")
+      const jsonStartIndex = actionUrl.indexOf('{');
+      if (jsonStartIndex !== -1) {
+        const jsonString = actionUrl.substring(jsonStartIndex);
+        try {
+          const parsed = JSON.parse(jsonString);
+          // Check for mobile field
+          if (parsed.mobile && typeof parsed.mobile === 'string') {
+            return parsed.mobile;
+          }
+          // Check for universalLink as fallback
+          if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+            return parsed.universalLink;
+          }
+        } catch {
+          // JSON parse failed, continue to other methods
+        }
+      }
+
+      // Try parsing the whole string as JSON
+      try {
+        const parsed = JSON.parse(actionUrl);
+        if (parsed.mobile && typeof parsed.mobile === 'string') {
+          return parsed.mobile;
+        }
+        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+          return parsed.universalLink;
+        }
+      } catch {
+        // Not valid JSON
+      }
+
+      // Return original URL as fallback
+      return actionUrl;
+    } catch (error) {
+      console.error('[NotificationHandler] Error extracting mobile URL:', error);
+      return null;
     }
   }
 
@@ -147,35 +222,89 @@ export class NotificationHandlerService {
     try {
       console.log('[NotificationHandler] Processing deep link data:', data);
 
+      if (DEBUG_NOTIFICATION_HANDLER) {
+        Alert.alert(
+          '🔗 NotificationHandler DeepLink',
+          `Processing data:\n${JSON.stringify(data, null, 2)}`,
+          [{ text: 'OK' }]
+        );
+      }
+
       // Priority 1: Use url if provided (direct deep link)
       if (data.url) {
-        console.log('[NotificationHandler] Using direct URL:', data.url);
+        const mobileUrl = this.extractMobileUrl(data.url);
+        console.log('[NotificationHandler] Using direct URL:', data.url, '-> Mobile:', mobileUrl);
+        if (DEBUG_NOTIFICATION_HANDLER) {
+          Alert.alert('➡️ Handler - Direct URL', `URL: ${data.url}\nExtracted: ${mobileUrl}`);
+        }
         // Use our centralized deep link handler with auth check
-        await handleDeepLinkNavigation(data.url, true);
+        await handleDeepLinkNavigation(mobileUrl || data.url, true);
         return;
       }
 
       // Priority 2: Use entityType and entityId to generate deep link
       if (data.entityType && data.entityId) {
-        const deepLink = generateNotificationLink(data.entityType as any, data.entityId);
+        let entityType = data.entityType;
+        let entityId = data.entityId;
+
+        // Special handling for SERVICE_ORDER - navigate to parent Task instead
+        // ServiceOrders don't have their own detail page, they're viewed within Task
+        if (
+          (entityType === 'SERVICE_ORDER' || entityType === 'ServiceOrder' || entityType === 'SERVICEORDER') &&
+          data.taskId
+        ) {
+          entityType = 'Task';
+          entityId = data.taskId;
+          console.log('[NotificationHandler] SERVICE_ORDER -> redirecting to parent Task:', { taskId: entityId });
+        }
+
+        const deepLink = generateNotificationLink(entityType as any, entityId);
         console.log('[NotificationHandler] Generated deep link from entity:', deepLink);
+        if (DEBUG_NOTIFICATION_HANDLER) {
+          Alert.alert(
+            '➡️ Handler - Entity Link',
+            `EntityType: ${entityType}\nEntityId: ${entityId}\nDeepLink: ${deepLink}`
+          );
+        }
         await handleDeepLinkNavigation(deepLink, true);
         return;
       }
 
-      // Priority 3: Use screen and params (legacy support)
+      // Priority 3: Try actionUrl which may contain embedded JSON with mobile URL
+      if (data.actionUrl && typeof data.actionUrl === 'string') {
+        const mobileUrl = this.extractMobileUrl(data.actionUrl);
+        if (mobileUrl && mobileUrl.startsWith('ankaadesign://')) {
+          console.log('[NotificationHandler] Extracted mobile URL from actionUrl:', mobileUrl);
+          if (DEBUG_NOTIFICATION_HANDLER) {
+            Alert.alert('➡️ Handler - Extracted Mobile URL', `ActionUrl: ${data.actionUrl.substring(0, 50)}...\nExtracted: ${mobileUrl}`);
+          }
+          await handleDeepLinkNavigation(mobileUrl, true);
+          return;
+        }
+      }
+
+      // Priority 4: Use screen and params (legacy support)
       if (data.screen) {
         console.log('[NotificationHandler] Using screen navigation:', data.screen, data.params);
         // Try to convert screen path to deep link format
         const screenPath = data.screen.replace(/^\//, '');
         const deepLink = `ankaadesign://${screenPath}`;
+        if (DEBUG_NOTIFICATION_HANDLER) {
+          Alert.alert('➡️ Handler - Screen Path', `Screen: ${data.screen}\nDeepLink: ${deepLink}`);
+        }
         await handleDeepLinkNavigation(deepLink, true);
         return;
       }
 
       console.warn('[NotificationHandler] No navigation data in notification');
+      if (DEBUG_NOTIFICATION_HANDLER) {
+        Alert.alert('⚠️ Handler - No Navigation Data', 'No url, entityType/entityId, actionUrl, or screen found');
+      }
     } catch (error) {
       console.error('[NotificationHandler] Failed to handle deep link:', error);
+      if (DEBUG_NOTIFICATION_HANDLER) {
+        Alert.alert('❌ Handler DeepLink Error', `Error: ${error}`);
+      }
       throw error;
     }
   }

@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Linking, AppState, AppStateStatus } from 'react-native';
+import { Linking, AppState, AppStateStatus, Alert } from 'react-native';
 import { useAuth } from '@/contexts/auth-context';
 import { handleDeepLink, processPendingDeepLink } from '@/lib/deep-linking';
+
+// DEBUG: Flag to enable/disable debug alerts for testing
+const DEBUG_DEEP_LINKING = true;
 
 /**
  * DeepLinkHandler component
@@ -38,6 +41,13 @@ export function DeepLinkHandler() {
 
         if (url) {
           console.log('[Deep Link Handler] Initial URL detected (cold start):', url);
+          if (DEBUG_DEEP_LINKING) {
+            Alert.alert(
+              '🔗 Deep Link - Cold Start',
+              `URL: ${url}\nAuth: ${isAuthenticated ? 'Yes' : 'No'}`,
+              [{ text: 'OK' }]
+            );
+          }
           lastProcessedUrl.current = url;
           await handleDeepLink(url, isAuthenticated);
           hasProcessedInitialLink.current = true;
@@ -49,6 +59,9 @@ export function DeepLinkHandler() {
         }
       } catch (error) {
         console.error('[Deep Link Handler] Error handling initial URL:', error);
+        if (DEBUG_DEEP_LINKING) {
+          Alert.alert('❌ Deep Link Error', `Initial URL error: ${error}`);
+        }
       }
     };
 
@@ -63,6 +76,14 @@ export function DeepLinkHandler() {
 
     const handleURLEvent = ({ url }: { url: string }) => {
       console.log('[Deep Link Handler] URL event received (warm start):', url);
+
+      if (DEBUG_DEEP_LINKING) {
+        Alert.alert(
+          '🔗 Deep Link - Warm Start',
+          `URL: ${url}\nAuth: ${isAuthenticated ? 'Yes' : 'No'}`,
+          [{ text: 'OK' }]
+        );
+      }
 
       // Avoid processing the same URL twice in quick succession
       if (lastProcessedUrl.current === url) {

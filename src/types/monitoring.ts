@@ -159,10 +159,10 @@ export interface BackupMetadata extends BaseEntity {
 }
 
 // =====================
-// WebDAV Folder Types
+// Remote Storage Folder Types
 // =====================
 
-export interface WebDavFolder {
+export interface RemoteStorageFolder {
   name: string;
   path: string;
   fullPath: string;
@@ -188,14 +188,14 @@ export interface WebDavFolder {
     expirationDate?: Date;
     permissions: "read" | "write" | "admin";
   };
-  children?: WebDavFolder[];
+  children?: RemoteStorageFolder[];
 }
 
-export interface WebDavInfo extends BaseEntity {
+export interface RemoteStorageInfo extends BaseEntity {
   serverUrl: string;
   username?: string;
   isConnected: boolean;
-  rootFolder: WebDavFolder;
+  rootFolder: RemoteStorageFolder;
   statistics: {
     totalFiles: number;
     totalFolders: number;
@@ -215,6 +215,10 @@ export interface WebDavInfo extends BaseEntity {
   lastSync: Date;
   error?: string;
 }
+
+// Legacy type aliases for backwards compatibility
+export type WebDavFolder = RemoteStorageFolder;
+export type WebDavInfo = RemoteStorageInfo;
 
 // =====================
 // System Monitoring Types
@@ -362,7 +366,7 @@ export interface BackupMetadataIncludes {
   alerts?: boolean;
 }
 
-export interface WebDavInfoIncludes {
+export interface RemoteStorageInfoIncludes {
   rootFolder?:
     | boolean
     | {
@@ -375,6 +379,9 @@ export interface WebDavInfoIncludes {
   statistics?: boolean;
   capabilities?: boolean;
 }
+
+// Legacy type alias
+export type WebDavInfoIncludes = RemoteStorageInfoIncludes;
 
 export interface SystemMetricsIncludes {
   cpu?: boolean;
@@ -417,13 +424,16 @@ export interface BackupMetadataOrderBy {
   updatedAt?: ORDER_BY_DIRECTION;
 }
 
-export interface WebDavInfoOrderBy {
+export interface RemoteStorageInfoOrderBy {
   id?: ORDER_BY_DIRECTION;
   serverUrl?: ORDER_BY_DIRECTION;
   lastSync?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
 }
+
+// Legacy type alias
+export type WebDavInfoOrderBy = RemoteStorageInfoOrderBy;
 
 export interface SystemMetricsOrderBy {
   id?: ORDER_BY_DIRECTION;
@@ -446,8 +456,12 @@ export type RaidStatusGetManyResponse = BaseGetManyResponse<RaidStatus>;
 export type BackupMetadataGetUniqueResponse = BaseGetUniqueResponse<BackupMetadata>;
 export type BackupMetadataGetManyResponse = BaseGetManyResponse<BackupMetadata>;
 
-export type WebDavInfoGetUniqueResponse = BaseGetUniqueResponse<WebDavInfo>;
-export type WebDavInfoGetManyResponse = BaseGetManyResponse<WebDavInfo>;
+export type RemoteStorageInfoGetUniqueResponse = BaseGetUniqueResponse<RemoteStorageInfo>;
+export type RemoteStorageInfoGetManyResponse = BaseGetManyResponse<RemoteStorageInfo>;
+
+// Legacy type aliases
+export type WebDavInfoGetUniqueResponse = RemoteStorageInfoGetUniqueResponse;
+export type WebDavInfoGetManyResponse = RemoteStorageInfoGetManyResponse;
 
 export type SystemMetricsGetUniqueResponse = BaseGetUniqueResponse<SystemMetrics>;
 export type SystemMetricsGetManyResponse = BaseGetManyResponse<SystemMetrics>;

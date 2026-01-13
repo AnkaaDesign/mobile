@@ -64,6 +64,7 @@
     "colorjs.io": "^0.5.2",
     "date-fns": "^4.1.0",
     "expo": "~54.0.10",
+    "expo-application": "~7.0.8",
     "expo-av": "~16.0.7",
     "expo-clipboard": "^8.0.7",
     "expo-dev-client": "~6.0.16",

@@ -109,7 +109,11 @@ function convertListItems(items: any[]): ListItemBlock[] {
  * Transforms a single block from API format to mobile renderer format
  */
 function transformBlock(block: any): MessageBlock | null {
-  if (!block || !block.type) return null;
+  console.log('[transformBlock] Processing block:', block?.type, block);
+  if (!block || !block.type) {
+    console.log('[transformBlock] Block is null or missing type');
+    return null;
+  }
 
   switch (block.type) {
     case "heading":
@@ -188,6 +192,14 @@ function transformBlock(block: any): MessageBlock | null {
       } as QuoteBlock;
     }
 
+    case "callout": {
+      // Convert callout to paragraph (like web does)
+      return {
+        type: "paragraph",
+        content: convertInlineFormatToInlineText(block.content),
+      } as ParagraphBlock;
+    }
+
     case "spacer":
       // Skip spacer blocks (not supported in mobile renderer)
       return null;
@@ -215,7 +227,14 @@ function transformBlock(block: any): MessageBlock | null {
  * Handles both old format (content.blocks) and new format (content as array)
  */
 export function transformMessageContent(content: any): MessageBlock[] {
+  // Debug logging - remove after fixing
+  console.log('[transformMessageContent] Input content:', JSON.stringify(content, null, 2));
+  console.log('[transformMessageContent] content type:', typeof content);
+  console.log('[transformMessageContent] content.blocks:', content?.blocks);
+  console.log('[transformMessageContent] Array.isArray(content):', Array.isArray(content));
+
   if (!content) {
+    console.log('[transformMessageContent] Content is null/undefined, returning []');
     return [];
   }
 
@@ -224,15 +243,19 @@ export function transformMessageContent(content: any): MessageBlock[] {
   // Handle different content formats
   if (content.blocks && Array.isArray(content.blocks)) {
     // New format: content is an object with blocks array
+    console.log('[transformMessageContent] Using content.blocks format');
     blocks = content.blocks;
   } else if (Array.isArray(content)) {
     // Old format: content is directly an array
+    console.log('[transformMessageContent] Using array format');
     blocks = content;
   } else {
     // Unknown content format
-    console.warn("[message-transformer] Unknown content format:", typeof content);
+    console.warn("[message-transformer] Unknown content format:", typeof content, content);
     return [];
   }
+
+  console.log('[transformMessageContent] Blocks to transform:', blocks.length, blocks);
 
   // Transform each block, handling row blocks specially to flatten them
   const result: MessageBlock[] = [];
@@ -263,4 +286,75 @@ export function transformMessageContent(content: any): MessageBlock[] {
 export function hasRenderableContent(content: any): boolean {
   const blocks = transformMessageContent(content);
   return blocks.length > 0;
+}
+
+/**
+ * Extracts plain text from content blocks
+ * Used as a fallback when blocks can't be rendered
+ */
+export function extractPlainTextFromContent(content: any): string {
+  if (!content) return "";
+
+  let blocks: any[] = [];
+
+  // Handle different content formats
+  if (content.blocks && Array.isArray(content.blocks)) {
+    blocks = content.blocks;
+  } else if (Array.isArray(content)) {
+    blocks = content;
+  } else {
+    return "";
+  }
+
+  const textParts: string[] = [];
+
+  for (const block of blocks) {
+    if (!block) continue;
+
+    // Extract text from various block types
+    if (block.content) {
+      if (typeof block.content === "string") {
+        textParts.push(block.content);
+      } else if (Array.isArray(block.content)) {
+        // Handle InlineFormat array
+        const inlineText = block.content
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item.text) return item.text;
+            if (item.content) return item.content;
+            return "";
+          })
+          .filter(Boolean)
+          .join("");
+        if (inlineText) textParts.push(inlineText);
+      }
+    }
+
+    // Handle list items
+    if (block.type === "list" && block.items && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        if (typeof item === "string") {
+          textParts.push(`• ${item}`);
+        } else if (item.content) {
+          const itemText = Array.isArray(item.content)
+            ? item.content.map((c: any) => c.text || c.content || "").join("")
+            : item.content;
+          if (itemText) textParts.push(`• ${itemText}`);
+        }
+      }
+    }
+
+    // Handle button text
+    if (block.type === "button" && block.text) {
+      textParts.push(block.text);
+    }
+
+    // Handle nested row blocks
+    if (block.type === "row" && block.blocks && Array.isArray(block.blocks)) {
+      const nestedText = extractPlainTextFromContent({ blocks: block.blocks });
+      if (nestedText) textParts.push(nestedText);
+    }
+  }
+
+  return textParts.join("\n\n");
 }

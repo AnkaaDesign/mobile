@@ -1,8 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
-import { Platform, AppState, AppStateStatus } from 'react-native';
+import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+
+// DEBUG: Flag to enable/disable debug alerts for testing
+const DEBUG_PUSH_NOTIFICATIONS = true;
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import {
   registerForPushNotifications,
@@ -11,6 +15,7 @@ import {
   getLastNotificationResponse,
   setBadgeCount,
 } from '@/lib/notifications';
+import { parseDeepLink, generateNotificationLink, ENTITY_ALIAS_MAP, ROUTE_MAP } from '@/lib/deep-linking';
 import { pushNotificationService } from '@/api-client';
 import { useAuth } from './auth-context';
 
@@ -46,33 +51,184 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     setNotification(notification);
   }, []);
 
+  /**
+   * Extract mobile deep link from actionUrl
+   * Handles multiple formats:
+   * 1. Direct mobile URL: "ankaadesign://task/123"
+   * 2. Embedded JSON: 'http://localhost:5173{"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}'
+   * 3. JSON object with mobile field: {"web":"...", "mobile":"ankaadesign://...", "universalLink":"..."}
+   */
+  const extractMobileUrl = useCallback((actionUrl: string): string | null => {
+    try {
+      // If it's already a mobile deep link, return it
+      if (actionUrl.startsWith('ankaadesign://')) {
+        return actionUrl;
+      }
+
+      // Try to find embedded JSON in the URL (API sends malformed data like "http://localhost:5173{...}")
+      const jsonStartIndex = actionUrl.indexOf('{');
+      if (jsonStartIndex !== -1) {
+        const jsonString = actionUrl.substring(jsonStartIndex);
+        try {
+          const parsed = JSON.parse(jsonString);
+          // Check for mobile field
+          if (parsed.mobile && typeof parsed.mobile === 'string') {
+            return parsed.mobile;
+          }
+          // Check for universalLink as fallback
+          if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+            return parsed.universalLink;
+          }
+        } catch {
+          // JSON parse failed, continue to other methods
+        }
+      }
+
+      // Try parsing the whole string as JSON
+      try {
+        const parsed = JSON.parse(actionUrl);
+        if (parsed.mobile && typeof parsed.mobile === 'string') {
+          return parsed.mobile;
+        }
+        if (parsed.universalLink && typeof parsed.universalLink === 'string') {
+          return parsed.universalLink;
+        }
+      } catch {
+        // Not valid JSON
+      }
+
+      // Return original URL as fallback
+      return actionUrl;
+    } catch (error) {
+      console.error('[Push Notification] Error extracting mobile URL:', error);
+      return null;
+    }
+  }, []);
+
   // Handle notification tap - navigate to deep link
   const handleNotificationResponse = useCallback((response: Notifications.NotificationResponse) => {
-    const deepLink = handleNotificationTap(response);
+    try {
+      const data = response.notification.request.content.data;
+      const title = response.notification.request.content.title;
+      const body = response.notification.request.content.body;
 
-    if (deepLink) {
-      try {
-        let path = deepLink;
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert(
+          '🔔 Push Notification Tapped',
+          `Title: ${title}\nBody: ${body}\nData: ${JSON.stringify(data, null, 2)}`,
+          [{ text: 'OK' }]
+        );
+      }
 
-        // Remove scheme if present
-        if (path.startsWith('ankaadesign://')) {
-          path = path.replace('ankaadesign://', '/');
-        } else if (path.includes('/app/')) {
-          const appIndex = path.indexOf('/app/');
-          path = path.substring(appIndex + 4);
+      // Priority 1: Use entityType + entityId if available (most reliable for API notifications)
+      if (data?.entityType && data?.entityId) {
+        let entityType = data.entityType;
+        let entityId = data.entityId;
+
+        // Special handling for SERVICE_ORDER - navigate to parent Task instead
+        // ServiceOrders don't have their own detail page in mobile, they're viewed within Task
+        if (
+          (entityType === 'SERVICE_ORDER' || entityType === 'ServiceOrder' || entityType === 'SERVICEORDER') &&
+          data?.taskId
+        ) {
+          entityType = 'TASK';
+          entityId = data.taskId;
+          console.log('[Push Notification] SERVICE_ORDER -> redirecting to parent Task:', { taskId: entityId });
         }
 
-        // Ensure path starts with /
-        if (!path.startsWith('/')) {
-          path = '/' + path;
+        // Map API entity types (e.g., 'TASK') to our ROUTE_MAP keys (e.g., 'Task')
+        const mappedEntityType = ENTITY_ALIAS_MAP[entityType] || entityType;
+
+        if (mappedEntityType && ROUTE_MAP[mappedEntityType as keyof typeof ROUTE_MAP]) {
+          const route = ROUTE_MAP[mappedEntityType as keyof typeof ROUTE_MAP];
+          const finalRoute = route.replace('[id]', entityId);
+          console.log('[Push Notification] Navigating via entity:', { entityType: mappedEntityType, id: entityId, route: finalRoute });
+
+          if (DEBUG_PUSH_NOTIFICATIONS) {
+            Alert.alert(
+              '➡️ Push Nav - Entity Route',
+              `EntityType: ${entityType}\nMapped: ${mappedEntityType}\nID: ${entityId}\nRoute: ${finalRoute}`,
+              [{ text: 'OK' }]
+            );
+          }
+
+          // ALWAYS show the final route before navigating (for debugging 404s)
+          Alert.alert(
+            '🚀 NAVIGATING TO',
+            `Route: ${finalRoute}\nID: ${entityId}`,
+            [{ text: 'GO', onPress: () => router.push(finalRoute as any) }]
+          );
+          return;
+        }
+      }
+
+      // Priority 2: Try actionUrl from notification data (may contain embedded JSON with mobile URL)
+      if (data?.actionUrl && typeof data.actionUrl === 'string') {
+        const mobileUrl = extractMobileUrl(data.actionUrl);
+
+        if (mobileUrl) {
+          const parsed = parseDeepLink(mobileUrl);
+          console.log('[Push Notification] Navigating via extracted mobile URL:', { original: data.actionUrl, mobileUrl, parsed });
+
+          if (DEBUG_PUSH_NOTIFICATIONS) {
+            Alert.alert(
+              '➡️ Push Nav - Extracted Mobile URL',
+              `Original: ${data.actionUrl.substring(0, 50)}...\nExtracted: ${mobileUrl}\nParsed Route: ${parsed.route}`,
+              [{ text: 'OK' }]
+            );
+          }
+
+          if (parsed.route && parsed.route !== '/(tabs)') {
+            // ALWAYS show the final route before navigating (for debugging 404s)
+            Alert.alert(
+              '🚀 NAVIGATING TO',
+              `Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
+              [{ text: 'GO', onPress: () => router.push(parsed.route as any) }]
+            );
+            return;
+          }
+        }
+      }
+
+      // Priority 3: Use the deep link returned by handleNotificationTap
+      const deepLink = handleNotificationTap(response);
+
+      if (deepLink) {
+        // Use parseDeepLink to properly handle all URL formats
+        // (custom scheme, universal links, paths)
+        const parsed = parseDeepLink(deepLink);
+        console.log('[Push Notification] Navigating via parseDeepLink:', { deepLink, parsed });
+
+        if (DEBUG_PUSH_NOTIFICATIONS) {
+          Alert.alert(
+            '➡️ Push Nav - Deep Link',
+            `DeepLink: ${deepLink}\nParsed Route: ${parsed.route}`,
+            [{ text: 'OK' }]
+          );
         }
 
-        router.push(path as any);
-      } catch (error: any) {
-        // Navigation error - silently ignore
+        if (parsed.route && parsed.route !== '/(tabs)') {
+          // ALWAYS show the final route before navigating (for debugging 404s)
+          Alert.alert(
+            '🚀 NAVIGATING TO',
+            `Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
+            [{ text: 'GO', onPress: () => router.push(parsed.route as any) }]
+          );
+          return;
+        }
+      }
+
+      console.log('[Push Notification] No valid route found in notification data');
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert('⚠️ Push Nav - No Route', 'No valid route found in notification data');
+      }
+    } catch (error: any) {
+      console.error('[Push Notification] Navigation error:', error);
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert('❌ Push Nav Error', `Error: ${error?.message || error}`);
       }
     }
-  }, [router]);
+  }, [router, extractMobileUrl]);
 
   // Register push token with backend
   const registerToken = useCallback(async () => {
@@ -82,6 +238,9 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
 
     if (!Device.isDevice) {
       hasAttemptedRegistration.current = true;
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert('⚠️ Push Token', 'Not a physical device - push notifications unavailable');
+      }
       return;
     }
 
@@ -91,10 +250,33 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       const token = await registerForPushNotifications(projectId);
 
       if (!token) {
+        if (DEBUG_PUSH_NOTIFICATIONS) {
+          Alert.alert('⚠️ Push Token', 'Failed to get push token');
+        }
         return;
       }
 
       setExpoPushToken(token);
+
+      // Get device ID for deduplication (prevents duplicate notifications from multiple app installs)
+      let deviceId: string | null = null;
+      try {
+        if (Platform.OS === 'ios') {
+          deviceId = await Application.getIosIdForVendorAsync();
+        } else {
+          deviceId = Application.getAndroidId();
+        }
+      } catch (deviceIdError) {
+        console.warn('[Push Token] Failed to get device ID:', deviceIdError);
+      }
+
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert(
+          '✅ Push Token Obtained',
+          `Token: ${token.substring(0, 30)}...\nPlatform: ${Platform.OS}\nDeviceId: ${deviceId || 'N/A'}`,
+          [{ text: 'OK' }]
+        );
+      }
 
       // Register token with backend if user is authenticated
       if (isAuthenticated) {
@@ -104,16 +286,28 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
           await pushNotificationService.registerToken({
             token,
             platform,
+            // Send deviceId to allow backend to deduplicate tokens per device
+            // This prevents duplicate notifications when user has multiple app builds installed
+            ...(deviceId && { deviceId }),
           });
 
           setIsRegistered(true);
+          if (DEBUG_PUSH_NOTIFICATIONS) {
+            Alert.alert('✅ Push Token Registered', `Token registered with backend successfully\nDeviceId: ${deviceId || 'N/A'}`);
+          }
         } catch (backendError: any) {
           // Backend registration failed - still mark as registered locally
           setIsRegistered(true);
+          if (DEBUG_PUSH_NOTIFICATIONS) {
+            Alert.alert('⚠️ Backend Registration Failed', `Error: ${backendError?.message || backendError}`);
+          }
         }
       }
     } catch (error: any) {
       // Error during push token registration
+      if (DEBUG_PUSH_NOTIFICATIONS) {
+        Alert.alert('❌ Push Token Error', `Error: ${error?.message || error}`);
+      }
     }
   }, [isAuthenticated, projectId]);
 

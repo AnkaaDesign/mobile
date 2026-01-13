@@ -25,7 +25,7 @@ The deep linking system allows users to navigate directly to specific screens wi
 ### Key Features
 
 - **Custom URL Scheme**: `ankaadesign://`
-- **Universal Links**: `https://ankaadesign.com/app/...`
+- **Universal Links**: `https://ankaadesign.com.br/app/...`
 - **Authentication Handling**: Redirects to login if needed, stores pending links
 - **Notification Integration**: Automatic navigation from push notifications
 - **Route Mapping**: Centralized mapping of entity types to app routes
@@ -42,8 +42,8 @@ The app is configured with:
     "scheme": "ankaadesign",
     "ios": {
       "associatedDomains": [
-        "applinks:ankaadesign.com",
-        "applinks:www.ankaadesign.com"
+        "applinks:ankaadesign.com.br",
+        "applinks:www.ankaadesign.com.br"
       ]
     },
     "android": {
@@ -54,7 +54,7 @@ The app is configured with:
           "data": [
             {
               "scheme": "https",
-              "host": "ankaadesign.com",
+              "host": "ankaadesign.com.br",
               "pathPrefix": "/app"
             }
           ],
@@ -105,14 +105,14 @@ ankaadesign://service-order/101
 
 ### Universal Links (HTTPS)
 
-**Format**: `https://ankaadesign.com/app/{entity-type}/{id}`
+**Format**: `https://ankaadesign.com.br/app/{entity-type}/{id}`
 
 **Examples**:
 
 ```
-https://ankaadesign.com/app/task/123
-https://ankaadesign.com/app/order/456
-https://ankaadesign.com/app/employee/789
+https://ankaadesign.com.br/app/task/123
+https://ankaadesign.com.br/app/order/456
+https://ankaadesign.com.br/app/employee/789
 ```
 
 ### Notification Links
@@ -221,7 +221,7 @@ npx uri-scheme open ankaadesign://producao/tasks/123 --android
 adb shell am start -W -a android.intent.action.VIEW -d "ankaadesign://task/123" com.ankaadesign.management
 
 # Test universal link
-adb shell am start -W -a android.intent.action.VIEW -d "https://ankaadesign.com/app/task/123" com.ankaadesign.management
+adb shell am start -W -a android.intent.action.VIEW -d "https://ankaadesign.com.br/app/task/123" com.ankaadesign.management
 ```
 
 ### Using xcrun (iOS Simulator)
@@ -229,7 +229,7 @@ adb shell am start -W -a android.intent.action.VIEW -d "https://ankaadesign.com/
 ```bash
 # Test on iOS simulator
 xcrun simctl openurl booted "ankaadesign://task/123"
-xcrun simctl openurl booted "https://ankaadesign.com/app/task/123"
+xcrun simctl openurl booted "https://ankaadesign.com.br/app/task/123"
 ```
 
 ### Manual Testing Scenarios
@@ -274,7 +274,7 @@ const taskLink = generateDeepLink('Task', '123');
 
 // Generate universal link
 const taskUniversalLink = generateUniversalLink('Task', '123');
-// Result: https://ankaadesign.com/app/task/123
+// Result: https://ankaadesign.com.br/app/task/123
 
 // Generate notification link
 const notificationLink = generateNotificationLink('Task', '123');
@@ -332,13 +332,13 @@ Include deep links in email or SMS content:
 **HTML Email**:
 
 ```html
-<a href="https://ankaadesign.com/app/task/123">View Task #123</a>
+<a href="https://ankaadesign.com.br/app/task/123">View Task #123</a>
 ```
 
 **Plain Text**:
 
 ```
-View Task #123: https://ankaadesign.com/app/task/123
+View Task #123: https://ankaadesign.com.br/app/task/123
 ```
 
 ### QR Code Generation
@@ -381,7 +381,7 @@ const shareTask = async (taskId: string) => {
 
 2. **Universal Links Not Working (iOS)**
    - Verify Apple App Site Association file is hosted at:
-     `https://ankaadesign.com/.well-known/apple-app-site-association`
+     `https://ankaadesign.com.br/.well-known/apple-app-site-association`
    - Ensure associated domains are configured in app.json
    - Check entitlements in Xcode
 
@@ -390,7 +390,7 @@ const shareTask = async (taskId: string) => {
    - Check Android manifest after build
    - Ensure `autoVerify: true` is set
    - Host Digital Asset Links file at:
-     `https://ankaadesign.com/.well-known/assetlinks.json`
+     `https://ankaadesign.com.br/.well-known/assetlinks.json`
 
 ### Authentication Issues
 

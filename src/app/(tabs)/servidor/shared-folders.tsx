@@ -145,11 +145,11 @@ export default function SharedFoldersScreen() {
                       </Text>
                     </View>
 
-                    {item.webdavPath && (
+                    {item.remotePath && (
                       <View className="flex-row items-center gap-2">
                         <Icon name="globe" className="w-4 h-4 text-muted-foreground" />
                         <Text className="text-sm text-muted-foreground flex-1" numberOfLines={1}>
-                          {item.webdavPath}
+                          {item.remotePath}
                         </Text>
                       </View>
                     )}
