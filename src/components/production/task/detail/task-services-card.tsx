@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { spacing, fontSize } from "@/constants/design-system";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SERVICE_ORDER_TYPE, SERVICE_ORDER_TYPE_LABELS, SECTOR_PRIVILEGES, getBadgeVariant } from "@/constants";
 import { hasPrivilege, formatDateShort } from "@/utils";
-import { canLeaderUpdateServiceOrder } from "@/utils/permissions/entity-permissions";
+import { canLeaderUpdateServiceOrder, getVisibleServiceOrderTypes, hasDetailedServiceOrderView, canEditServiceOrderOfType, getAllowedServiceOrderStatuses } from "@/utils/permissions/entity-permissions";
 import { useServiceOrderMutations } from "@/hooks";
 import type { ServiceOrder } from '../../../../types';
 import { IconTools, IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
@@ -45,44 +45,45 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     text: '',
   });
 
-  // Check if user can edit service order status
-  const canEditStatus = user && (
-    hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
-    canLeaderUpdateServiceOrder(user, taskSectorId)
-  );
+  // Check if user should see detailed view (with dates, users, etc.)
+  const hasDetailedView = useMemo(() => hasDetailedServiceOrderView(user), [user]);
 
-  // Status options for combobox
-  const statusOptions = Object.values(SERVICE_ORDER_STATUS).map(status => ({
-    label: SERVICE_ORDER_STATUS_LABELS[status],
-    value: status,
-  }));
+  // Get visible service order types for current user
+  const visibleTypes = useMemo(() => getVisibleServiceOrderTypes(user), [user]);
 
-  // Filter out services with missing data to prevent errors
-  const validServices = useMemo(() =>
-    services.filter(s => s && s.id && s.status && s.description),
-    [services]
-  );
+  // Filter out services with missing data AND filter by visible types
+  const validServices = useMemo(() => {
+    return services.filter(s => {
+      // Check basic validity
+      if (!s || !s.id || !s.status || !s.description) return false;
 
-  // Group services by type
+      // Get service type (default to PRODUCTION if missing)
+      const serviceType = (s.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
+
+      // Check if user can view this service type
+      return visibleTypes.includes(serviceType);
+    });
+  }, [services, visibleTypes]);
+
+  // Group services by type (only visible types)
   const servicesByType = useMemo(() => {
-    const groups: Record<SERVICE_ORDER_TYPE, ServiceOrder[]> = {
-      [SERVICE_ORDER_TYPE.PRODUCTION]: [],
-      [SERVICE_ORDER_TYPE.FINANCIAL]: [],
-      [SERVICE_ORDER_TYPE.NEGOTIATION]: [],
-      [SERVICE_ORDER_TYPE.ARTWORK]: [],
-    };
+    // Initialize groups only for visible types
+    const groups: Partial<Record<SERVICE_ORDER_TYPE, ServiceOrder[]>> = {};
+    visibleTypes.forEach(type => {
+      groups[type] = [];
+    });
 
     validServices.forEach((service) => {
-      if (service.type && groups[service.type as SERVICE_ORDER_TYPE]) {
-        groups[service.type as SERVICE_ORDER_TYPE].push(service);
-      } else {
-        // Default to PRODUCTION if type is missing
-        groups[SERVICE_ORDER_TYPE.PRODUCTION].push(service);
+      const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
+
+      // Add to group if it exists (should always exist due to filtering above)
+      if (groups[serviceType]) {
+        groups[serviceType]!.push(service);
       }
     });
 
-    return groups;
-  }, [validServices]);
+    return groups as Record<SERVICE_ORDER_TYPE, ServiceOrder[]>;
+  }, [validServices, visibleTypes]);
 
   // Get trigger style based on status
   const getStatusTriggerStyle = (status: string) => {
@@ -111,10 +112,29 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     return null;
   }
 
-  // Render a single service item
-  const renderServiceItem = (service: ServiceOrder) => {
+  // Get status options for a specific service order (filtered by permissions)
+  const getStatusOptionsForService = (service: ServiceOrder) => {
+    const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
+    const allowedStatuses = getAllowedServiceOrderStatuses(user, serviceType, service.status || '');
+
+    return allowedStatuses.map(status => ({
+      label: SERVICE_ORDER_STATUS_LABELS[status as SERVICE_ORDER_STATUS],
+      value: status,
+    }));
+  };
+
+  // Check if user can edit a specific service order
+  const canEditService = (service: ServiceOrder): boolean => {
+    const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
+    return canEditServiceOrderOfType(user, serviceType);
+  };
+
+  // Render a single service item - DETAILED VIEW
+  const renderDetailedServiceItem = (service: ServiceOrder) => {
     const badgeVariant = service.status ? getBadgeVariant(service.status, "SERVICE_ORDER") : "default";
     const statusLabel = service.status ? (SERVICE_ORDER_STATUS_LABELS[service.status] || service.status) : "N/A";
+    const canEdit = canEditService(service);
+    const statusOptions = getStatusOptionsForService(service);
 
     return (
       <View
@@ -174,7 +194,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
         {/* Row 3: Status (Combobox or Badge) */}
         <View style={styles.statusRow}>
-          {canEditStatus ? (
+          {canEdit && statusOptions.length > 0 ? (
             <View style={styles.statusCombobox}>
               <Combobox
                 key={`status-${service.id}`}
@@ -196,6 +216,30 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
             </Badge>
           )}
         </View>
+      </View>
+    );
+  };
+
+  // Render a single service item - SIMPLIFIED VIEW (single row: description + badge)
+  const renderSimplifiedServiceItem = (service: ServiceOrder) => {
+    const badgeVariant = service.status ? getBadgeVariant(service.status, "SERVICE_ORDER") : "default";
+    const statusLabel = service.status ? (SERVICE_ORDER_STATUS_LABELS[service.status] || service.status) : "N/A";
+
+    return (
+      <View
+        key={service.id}
+        style={[styles.serviceItemSimplified, { borderBottomColor: colors.border }]}
+      >
+        <ThemedText
+          style={[styles.serviceNameSimplified, { color: colors.foreground }]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {service.description}
+        </ThemedText>
+        <Badge variant={badgeVariant} style={styles.statusBadgeInline}>
+          {statusLabel}
+        </Badge>
       </View>
     );
   };
@@ -223,7 +267,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
           </Badge>
         </View>
         <View style={styles.typeContent}>
-          {typeServices.map(renderServiceItem)}
+          {typeServices.map(hasDetailedView ? renderDetailedServiceItem : renderSimplifiedServiceItem)}
         </View>
       </View>
     );
@@ -240,7 +284,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       </View>
 
       <View style={styles.content}>
-        {Object.values(SERVICE_ORDER_TYPE).map((type) => renderTypeGroup(type as SERVICE_ORDER_TYPE))}
+        {visibleTypes.map((type) => renderTypeGroup(type))}
       </View>
 
       {/* Observation Modal */}
@@ -396,6 +440,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     alignSelf: "flex-start",
+  },
+  // Simplified service item styles (for users without detailed view)
+  serviceItemSimplified: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing.sm,
+  },
+  serviceNameSimplified: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    flex: 1,
+    lineHeight: fontSize.sm * 1.4,
+  },
+  statusBadgeInline: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexShrink: 0,
   },
   // Modal styles
   modalOverlay: {

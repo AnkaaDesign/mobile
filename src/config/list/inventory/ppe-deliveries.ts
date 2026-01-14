@@ -1,17 +1,11 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
-import { PPE_DELIVERY_STATUS} from '@/constants'
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
 import { routes } from '@/constants'
 import { routeToMobilePath } from '@/utils/route-mapper'
 import { canEditPpeDeliveries } from '@/utils/permissions/entity-permissions'
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovado',
-  DELIVERED: 'Entregue',
-  REPROVED: 'Reprovado',
-  CANCELLED: 'Cancelado',
-}
+const STATUS_LABELS: Record<string, string> = PPE_DELIVERY_STATUS_LABELS
 
 export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
   key: 'inventory-ppe-deliveries',
@@ -72,7 +66,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (delivery) => delivery.status || '-',
+        render: (delivery) => STATUS_LABELS[delivery.status] || delivery.status || '-',
         format: 'badge',
       },
       {
@@ -110,7 +104,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         render: (delivery) => delivery.deliveryMethod || '-',
       },
     ],
-    defaultVisible: ['user', 'item', 'status', 'scheduledDate'],
+    defaultVisible: ['user', 'item', 'quantity', 'status'],
     rowHeight: 60,
     actions: [
       {
@@ -130,7 +124,26 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         onPress: (delivery, router) => {
           router.push(routeToMobilePath(routes.inventory.ppe.deliveries.edit(delivery.id)) as any)
         },
-        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING || delivery.status === PPE_DELIVERY_STATUS.APPROVED,
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.APPROVED,
+      },
+      {
+        key: 'deliver',
+        label: 'Entregar',
+        icon: 'package',
+        variant: 'default',
+        confirm: {
+          title: 'Marcar como Entregue',
+          message: 'Tem certeza que deseja marcar esta entrega como entregue?',
+          confirmText: 'Entregar',
+          cancelText: 'Voltar',
+        },
+        onPress: async (delivery, _router, { updateEntity }) => {
+          await updateEntity(delivery.id, {
+            status: PPE_DELIVERY_STATUS.DELIVERED,
+            actualDeliveryDate: new Date(),
+          })
+        },
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.APPROVED,
       },
       {
         key: 'cancel',
@@ -146,7 +159,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         onPress: async (delivery, _router, { updateEntity }) => {
           await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.CANCELLED })
         },
-        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING || delivery.status === PPE_DELIVERY_STATUS.APPROVED,
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.APPROVED,
       },
     ],
   },

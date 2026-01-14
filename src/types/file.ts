@@ -1,6 +1,7 @@
 // packages/interfaces/src/file.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
+import type { Artwork, ArtworkIncludes } from "./artwork";
 import type { Task, TaskIncludes } from "./task";
 import type { Customer, CustomerIncludes } from "./customer";
 import type { Supplier, SupplierIncludes } from "./supplier";
@@ -25,6 +26,7 @@ export interface File extends BaseEntity {
   url?: string; // Public URL for the file (computed property from API)
 
   // Relations
+  artworks?: Artwork[];
   tasksArtworks?: Task[];
   customerLogo?: Customer[];
   supplierLogo?: Supplier[];

@@ -8,9 +8,209 @@
  * Use isTeamLeader(user) to check if a user manages a sector.
  */
 
-import { SECTOR_PRIVILEGES } from '@/constants';
+import { SECTOR_PRIVILEGES, SERVICE_ORDER_TYPE } from '@/constants';
 import type { User } from '@/types';
 import { hasAnyPrivilege, isTeamLeader } from '@/utils';
+
+// =====================
+// SERVICE ORDER PERMISSIONS
+// =====================
+
+/**
+ * Get visible service order types based on user's sector privilege
+ * This controls which service order types a user can view in task details
+ *
+ * Permission Matrix (VISIBILITY):
+ * | Sector          | PRODUCTION | NEGOTIATION | ARTWORK    | FINANCIAL  |
+ * |-----------------|------------|-------------|------------|------------|
+ * | ADMIN           | ✓          | ✓           | ✓          | ✓          |
+ * | COMMERCIAL      | ✓          | ✓           | -          | ✓          |
+ * | DESIGNER        | ✓          | -           | ✓          | -          |
+ * | FINANCIAL       | ✓          | -           | -          | ✓          |
+ * | LOGISTIC        | ✓          | ✓           | ✓          | -          |
+ * | PRODUCTION      | ✓          | -           | -          | -          |
+ * | WAREHOUSE       | ✓          | -           | -          | -          |
+ * | HUMAN_RESOURCES | ✓          | -           | -          | -          |
+ * | Others          | ✓          | -           | -          | -          |
+ */
+export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TYPE[] {
+  if (!user?.sector?.privileges) return [];
+
+  const privilege = user.sector.privileges;
+
+  switch (privilege) {
+    case SECTOR_PRIVILEGES.ADMIN:
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.NEGOTIATION,
+        SERVICE_ORDER_TYPE.ARTWORK,
+        SERVICE_ORDER_TYPE.FINANCIAL,
+      ];
+
+    case SECTOR_PRIVILEGES.COMMERCIAL:
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.NEGOTIATION,
+        SERVICE_ORDER_TYPE.FINANCIAL,
+      ];
+
+    case SECTOR_PRIVILEGES.DESIGNER:
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.ARTWORK,
+      ];
+
+    case SECTOR_PRIVILEGES.FINANCIAL:
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.FINANCIAL,
+      ];
+
+    case SECTOR_PRIVILEGES.LOGISTIC:
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.NEGOTIATION,
+        SERVICE_ORDER_TYPE.ARTWORK,
+      ];
+
+    case SECTOR_PRIVILEGES.HUMAN_RESOURCES:
+    case SECTOR_PRIVILEGES.PRODUCTION:
+    case SECTOR_PRIVILEGES.WAREHOUSE:
+    case SECTOR_PRIVILEGES.BASIC:
+    case SECTOR_PRIVILEGES.EXTERNAL:
+    case SECTOR_PRIVILEGES.MAINTENANCE:
+    case SECTOR_PRIVILEGES.PLOTTING:
+    default:
+      // All other sectors see only production
+      return [SERVICE_ORDER_TYPE.PRODUCTION];
+  }
+}
+
+/**
+ * Check if a user can view a specific service order type
+ */
+export function canViewServiceOrderType(user: User | null, serviceOrderType: SERVICE_ORDER_TYPE): boolean {
+  const visibleTypes = getVisibleServiceOrderTypes(user);
+  return visibleTypes.includes(serviceOrderType);
+}
+
+/**
+ * Check if user can edit service orders of a specific type
+ *
+ * Edit Permission Matrix:
+ * | Sector          | PRODUCTION | NEGOTIATION | ARTWORK | FINANCIAL |
+ * |-----------------|------------|-------------|---------|-----------|
+ * | ADMIN           | ✓          | ✓           | ✓       | ✓         |
+ * | COMMERCIAL      | -          | ✓           | -       | -         |
+ * | DESIGNER        | -          | -           | ✓       | -         |
+ * | FINANCIAL       | -          | -           | -       | ✓         |
+ * | LOGISTIC        | ✓          | -           | -       | -         |
+ * | Leader          | ✓          | -           | -       | -         |
+ * | Others          | -          | -           | -       | -         |
+ */
+export function canEditServiceOrderOfType(user: User | null, serviceOrderType: SERVICE_ORDER_TYPE): boolean {
+  if (!user?.sector?.privileges) return false;
+
+  const privilege = user.sector.privileges;
+
+  // ADMIN can edit all types
+  if (privilege === SECTOR_PRIVILEGES.ADMIN) return true;
+
+  // Type-specific edit permissions
+  switch (serviceOrderType) {
+    case SERVICE_ORDER_TYPE.PRODUCTION:
+      // LOGISTIC and team leaders can edit production service orders
+      return privilege === SECTOR_PRIVILEGES.LOGISTIC || isTeamLeader(user);
+
+    case SERVICE_ORDER_TYPE.NEGOTIATION:
+      // Only COMMERCIAL can edit negotiation service orders
+      return privilege === SECTOR_PRIVILEGES.COMMERCIAL;
+
+    case SERVICE_ORDER_TYPE.ARTWORK:
+      // Only DESIGNER can edit artwork service orders
+      return privilege === SECTOR_PRIVILEGES.DESIGNER;
+
+    case SERVICE_ORDER_TYPE.FINANCIAL:
+      // Only FINANCIAL can edit financial service orders
+      return privilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check if user should see detailed service order view
+ * Detailed view includes: assigned user, start/finish dates, observation indicator
+ * Simplified view: only description and status badge in same row
+ *
+ * Users with detailed view: ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC
+ * Users with simplified view: PRODUCTION, WAREHOUSE, HUMAN_RESOURCES, Others
+ */
+export function hasDetailedServiceOrderView(user: User | null): boolean {
+  if (!user?.sector?.privileges) return false;
+
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.LOGISTIC,
+  ]);
+}
+
+/**
+ * Check if user can cancel any service order
+ * Only ADMIN can cancel service orders
+ */
+export function canCancelServiceOrder(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
+}
+
+/**
+ * Check if user can mark ARTWORK service orders as COMPLETED
+ * Only ADMIN can complete artwork service orders
+ * Designers can only mark them as WAITING_APPROVE
+ */
+export function canCompleteArtworkServiceOrder(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
+}
+
+/**
+ * Get allowed status transitions for a user editing a specific service order
+ * Returns array of statuses the user is allowed to set
+ *
+ * IMPORTANT: Only ADMIN can see/set CANCELLED status
+ */
+export function getAllowedServiceOrderStatuses(
+  user: User | null,
+  serviceOrderType: SERVICE_ORDER_TYPE,
+  currentStatus: string
+): string[] {
+  if (!user) return [];
+
+  // Check if user can edit this type at all
+  if (!canEditServiceOrderOfType(user, serviceOrderType)) return [];
+
+  // Base statuses available to all authorized users (no CANCELLED)
+  const baseStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_APPROVE', 'COMPLETED'];
+
+  // ADMIN can set any status including CANCELLED
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) {
+    return [...baseStatuses, 'CANCELLED'];
+  }
+
+  // For ARTWORK service orders, DESIGNER cannot set COMPLETED (only WAITING_APPROVE)
+  if (serviceOrderType === SERVICE_ORDER_TYPE.ARTWORK &&
+      user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
+    return baseStatuses.filter(s => s !== 'COMPLETED');
+  }
+
+  // All other authorized users: base statuses only (no CANCELLED, no restrictions)
+  return baseStatuses;
+}
 
 // =====================
 // TASK PERMISSIONS

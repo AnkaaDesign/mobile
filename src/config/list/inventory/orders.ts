@@ -56,7 +56,7 @@ export const ordersListConfig: ListConfig<Order> = {
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (order) => order.status,
+        render: (order) => ORDER_STATUS_LABELS[order.status as keyof typeof ORDER_STATUS_LABELS] || order.status,
         format: 'badge',
         badgeEntity: 'ORDER',
       },

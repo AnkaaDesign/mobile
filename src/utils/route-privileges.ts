@@ -139,10 +139,10 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/producao/historico/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL', 'ADMIN'],
 
   // Agenda - COMMERCIAL has access - Only ADMIN can create
-  '/(tabs)/producao/agenda': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'COMMERCIAL', 'ADMIN'],
-  '/(tabs)/producao/agenda/index': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda/index': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/producao/agenda/cadastrar': ['ADMIN'],
-  '/(tabs)/producao/agenda/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda/detalhes/[id]': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
 
   // Airbrushings (Aerografia) - COMMERCIAL has access
   '/(tabs)/producao/aerografia': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL'],

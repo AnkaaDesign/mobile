@@ -177,6 +177,7 @@ const ALL_ROUTES = [
   { name: "producao/observacoes/detalhes/[id]", title: "Detalhes da Observação" },
   { name: "producao/observacoes/editar/[id]", title: "Editar Observação" },
   { name: "producao/historico/index", title: "Histórico" },
+  { name: "producao/historico/detalhes/[id]", title: "Detalhes da Tarefa" },
   { name: "producao/ordens-de-servico/cadastrar", title: "Cadastrar Ordem de Serviço" },
   { name: "producao/ordens-de-servico/listar", title: "Ordens de Serviço" },
   { name: "producao/ordens-de-servico/detalhes/[id]", title: "Detalhes da Ordem de Serviço" },

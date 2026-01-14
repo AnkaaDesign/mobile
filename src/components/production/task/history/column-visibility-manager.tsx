@@ -7,13 +7,12 @@ const MOBILE_COLUMNS = [
   "finishedAt",              // FINALIZADO EM
 ];
 
-// Tablet columns (>= 624px) - adds serial number, finished at, and commission
+// Tablet columns (>= 624px) - adds serial number and finished at
 const TABLET_COLUMNS = [
   "name",                    // NOME/LOGOMARCA
   "serialNumber",            // Nº SÉRIE
   "sector.name",             // SETOR
   "finishedAt",              // FINALIZADO EM
-  "commission",              // COMISSÃO
 ];
 
 /**

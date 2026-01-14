@@ -1,14 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
-import { PPE_DELIVERY_STATUS } from '@/constants/enums'
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendente',
-  APPROVED: 'Aprovado',
-  DELIVERED: 'Entregue',
-  REPROVED: 'Reprovado',
-  CANCELLED: 'Cancelado',
-}
+const STATUS_LABELS: Record<string, string> = PPE_DELIVERY_STATUS_LABELS
 
 export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
   key: 'hr-ppe-deliveries',
@@ -147,6 +141,39 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
         onPress: (delivery, router) => {
           router.push(`/recursos-humanos/epi/entregas/editar/${delivery.id}`)
         },
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING,
+      },
+      {
+        key: 'approve',
+        label: 'Aprovar',
+        icon: 'check',
+        variant: 'default',
+        confirm: {
+          title: 'Aprovar Entrega',
+          message: 'Tem certeza que deseja aprovar esta entrega?',
+          confirmText: 'Aprovar',
+          cancelText: 'Voltar',
+        },
+        onPress: async (delivery, _router, { updateEntity }) => {
+          await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.APPROVED })
+        },
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING,
+      },
+      {
+        key: 'reprove',
+        label: 'Reprovar',
+        icon: 'x-circle',
+        variant: 'destructive',
+        confirm: {
+          title: 'Reprovar Entrega',
+          message: 'Tem certeza que deseja reprovar esta entrega?',
+          confirmText: 'Reprovar',
+          cancelText: 'Voltar',
+        },
+        onPress: async (delivery, _router, { updateEntity }) => {
+          await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.REPROVED })
+        },
+        visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING,
       },
       {
         key: 'delete',
