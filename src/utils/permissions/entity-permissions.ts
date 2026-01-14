@@ -141,14 +141,19 @@ export function canEditServiceOrderOfType(user: User | null, serviceOrderType: S
 
 /**
  * Check if user should see detailed service order view
- * Detailed view includes: assigned user, start/finish dates, observation indicator
+ * Detailed view includes: assigned user, start/finish dates, observation indicator, status combobox
  * Simplified view: only description and status badge in same row
  *
- * Users with detailed view: ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC
- * Users with simplified view: PRODUCTION, WAREHOUSE, HUMAN_RESOURCES, Others
+ * Users with detailed view: ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, Team Leaders
+ * Users with simplified view: PRODUCTION (non-leaders), WAREHOUSE, HUMAN_RESOURCES, Others
+ *
+ * Note: Team leaders need detailed view to see observation indicators and change service order status
  */
 export function hasDetailedServiceOrderView(user: User | null): boolean {
   if (!user?.sector?.privileges) return false;
+
+  // Team leaders always get detailed view (needed for observation indicator and status changes)
+  if (isTeamLeader(user)) return true;
 
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
@@ -182,7 +187,14 @@ export function canCompleteArtworkServiceOrder(user: User | null): boolean {
  * Get allowed status transitions for a user editing a specific service order
  * Returns array of statuses the user is allowed to set
  *
- * IMPORTANT: Only ADMIN can see/set CANCELLED status
+ * Status availability by service order type:
+ * - ARTWORK: PENDING, IN_PROGRESS, WAITING_APPROVE, COMPLETED (approval workflow)
+ * - PRODUCTION, FINANCIAL, NEGOTIATION: PENDING, IN_PROGRESS, COMPLETED (simple workflow)
+ *
+ * IMPORTANT:
+ * - Only ADMIN can see/set CANCELLED status
+ * - WAITING_APPROVE is ONLY for ARTWORK (designer → admin approval workflow)
+ * - DESIGNER can only set WAITING_APPROVE, not COMPLETED (admin approves)
  */
 export function getAllowedServiceOrderStatuses(
   user: User | null,
@@ -194,22 +206,34 @@ export function getAllowedServiceOrderStatuses(
   // Check if user can edit this type at all
   if (!canEditServiceOrderOfType(user, serviceOrderType)) return [];
 
-  // Base statuses available to all authorized users (no CANCELLED)
-  const baseStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_APPROVE', 'COMPLETED'];
+  const isAdmin = user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
+
+  // ARTWORK has special approval workflow with WAITING_APPROVE status
+  if (serviceOrderType === SERVICE_ORDER_TYPE.ARTWORK) {
+    const artworkStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_APPROVE', 'COMPLETED'];
+
+    // ADMIN can set any status including CANCELLED
+    if (isAdmin) {
+      return [...artworkStatuses, 'CANCELLED'];
+    }
+
+    // DESIGNER cannot set COMPLETED (only WAITING_APPROVE for admin approval)
+    if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
+      return artworkStatuses.filter(s => s !== 'COMPLETED');
+    }
+
+    return artworkStatuses;
+  }
+
+  // PRODUCTION, FINANCIAL, NEGOTIATION: Simple workflow without WAITING_APPROVE
+  const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
 
   // ADMIN can set any status including CANCELLED
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) {
-    return [...baseStatuses, 'CANCELLED'];
+  if (isAdmin) {
+    return [...simpleStatuses, 'CANCELLED'];
   }
 
-  // For ARTWORK service orders, DESIGNER cannot set COMPLETED (only WAITING_APPROVE)
-  if (serviceOrderType === SERVICE_ORDER_TYPE.ARTWORK &&
-      user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
-    return baseStatuses.filter(s => s !== 'COMPLETED');
-  }
-
-  // All other authorized users: base statuses only (no CANCELLED, no restrictions)
-  return baseStatuses;
+  return simpleStatuses;
 }
 
 // =====================

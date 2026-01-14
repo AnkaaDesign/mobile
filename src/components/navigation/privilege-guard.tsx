@@ -50,6 +50,13 @@ export function PrivilegeGuard({
     }
   }, [user, isLoading, isAuthReady]);
 
+  // Reset redirect flag when user logs in (allows redirect on subsequent logout)
+  useEffect(() => {
+    if (user && hasRedirected.current) {
+      hasRedirected.current = false;
+    }
+  }, [user]);
+
   // Show loading state while auth is being determined
   if (isLoading || !isAuthReady || !user) {
     return (
@@ -161,7 +168,7 @@ function UnauthorizedScreen({ requiredPrivilege, _fallbackScreen }: { requiredPr
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/(autenticacao)/entrar' as any);
+    // Navigation is handled by PrivilegeGuard useEffect when user becomes null
   };
 
   return (

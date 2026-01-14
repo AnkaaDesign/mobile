@@ -12,8 +12,11 @@ import type {
   ImageBlock,
   ButtonBlock,
   DividerBlock,
+  SpacerBlock,
   ListBlock,
   QuoteBlock,
+  IconBlock,
+  RowBlock,
   InlineText,
   ListItemBlock,
 } from "@/components/ui/message-block-renderer/types";
@@ -138,6 +141,9 @@ function transformBlock(block: any): MessageBlock | null {
         type: "heading",
         level,
         content: convertInlineFormatToInlineText(block.content),
+        id: block.id,
+        fontSize: block.fontSize,
+        fontWeight: block.fontWeight,
       } as HeadingBlock;
     }
 
@@ -145,17 +151,25 @@ function transformBlock(block: any): MessageBlock | null {
       return {
         type: "paragraph",
         content: convertInlineFormatToInlineText(block.content),
+        id: block.id,
+        fontSize: block.fontSize,
+        fontWeight: block.fontWeight,
       } as ParagraphBlock;
     }
 
     case "image": {
       return {
         type: "image",
-        url: block.url || block.src || "",
+        url: block.url,
+        src: block.src,
         alt: block.alt,
         caption: block.caption,
+        size: block.size,
+        customWidth: block.customWidth,
         width: block.width,
         height: block.height,
+        alignment: block.alignment,
+        id: block.id,
       } as ImageBlock;
     }
 
@@ -166,6 +180,8 @@ function transformBlock(block: any): MessageBlock | null {
         url: block.url,
         action: block.action,
         variant: block.variant || "default",
+        disabled: block.disabled,
+        id: block.id,
       } as ButtonBlock;
     }
 
@@ -173,6 +189,7 @@ function transformBlock(block: any): MessageBlock | null {
       return {
         type: "divider",
         style: block.style || "solid",
+        id: block.id,
       } as DividerBlock;
     }
 
@@ -181,6 +198,7 @@ function transformBlock(block: any): MessageBlock | null {
         type: "list",
         ordered: block.ordered || block.listType === "number" || false,
         items: convertListItems(block.items || []),
+        id: block.id,
       } as ListBlock;
     }
 
@@ -189,6 +207,9 @@ function transformBlock(block: any): MessageBlock | null {
         type: "quote",
         content: convertInlineFormatToInlineText(block.content),
         author: block.author,
+        id: block.id,
+        fontSize: block.fontSize,
+        fontWeight: block.fontWeight,
       } as QuoteBlock;
     }
 
@@ -200,21 +221,45 @@ function transformBlock(block: any): MessageBlock | null {
       } as ParagraphBlock;
     }
 
-    case "spacer":
-      // Skip spacer blocks (not supported in mobile renderer)
-      return null;
+    case "spacer": {
+      return {
+        type: "spacer",
+        height: block.height || "md",
+        id: block.id,
+      } as SpacerBlock;
+    }
 
-    case "icon":
-      // Skip icon blocks (not supported in mobile renderer)
-      return null;
+    case "icon": {
+      return {
+        type: "icon",
+        icon: block.icon || "",
+        size: block.size || "md",
+        color: block.color,
+        alignment: block.alignment || "center",
+        id: block.id,
+      } as IconBlock;
+    }
 
-    case "row":
-      // For row blocks, we flatten the nested blocks
+    case "row": {
+      // Transform nested blocks within the row
+      const nestedBlocks: MessageBlock[] = [];
       if (block.blocks && Array.isArray(block.blocks)) {
-        // Return null and handle separately to flatten
-        return null;
+        for (const nestedBlock of block.blocks) {
+          const transformed = transformBlock(nestedBlock);
+          if (transformed) {
+            nestedBlocks.push(transformed);
+          }
+        }
       }
-      return null;
+      return {
+        type: "row",
+        blocks: nestedBlocks,
+        columns: block.columns,
+        gap: block.gap || "md",
+        verticalAlign: block.verticalAlign || "top",
+        id: block.id,
+      } as RowBlock;
+    }
 
     default:
       console.warn("[message-transformer] Unknown block type:", block.type);
@@ -257,23 +302,13 @@ export function transformMessageContent(content: any): MessageBlock[] {
 
   console.log('[transformMessageContent] Blocks to transform:', blocks.length, blocks);
 
-  // Transform each block, handling row blocks specially to flatten them
+  // Transform each block
   const result: MessageBlock[] = [];
 
   for (const block of blocks) {
-    if (block.type === "row" && block.blocks && Array.isArray(block.blocks)) {
-      // Flatten row blocks - transform nested blocks and add them directly
-      for (const nestedBlock of block.blocks) {
-        const transformed = transformBlock(nestedBlock);
-        if (transformed) {
-          result.push(transformed);
-        }
-      }
-    } else {
-      const transformed = transformBlock(block);
-      if (transformed) {
-        result.push(transformed);
-      }
+    const transformed = transformBlock(block);
+    if (transformed) {
+      result.push(transformed);
     }
   }
 

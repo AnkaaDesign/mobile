@@ -47,8 +47,8 @@ export function MessageModal({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  // Filter out dismissed messages
-  const activeMessages = messages.filter((msg) => !dismissed.has(msg.id));
+  // Filter out dismissed messages (with safety check for undefined)
+  const activeMessages = (messages || []).filter((msg) => !dismissed.has(msg.id));
   const currentMessage = activeMessages[currentIndex];
   const totalMessages = activeMessages.length;
   const hasMultipleMessages = totalMessages > 1;

@@ -27,8 +27,11 @@ import {
   IconPhone,
   IconCategory,
   IconTool,
+  IconCoin,
 } from "@tabler/icons-react-native";
-import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
+import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
+import { Badge } from "@/components/ui/badge";
+import { COMMISSION_STATUS } from "@/constants/enums";
 
 interface TaskInfoCardProps {
   task: Task & {
@@ -110,6 +113,27 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Setor</ThemedText>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.sector.name}</ThemedText>
+            </View>
+          </View>
+        )}
+
+        {/* Commission Status */}
+        {task.commission && (
+          <View style={styles.infoItem}>
+            <IconCoin size={20} color={colors.mutedForeground} />
+            <View style={styles.infoText}>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Comissão</ThemedText>
+              <Badge
+                variant={
+                  task.commission === COMMISSION_STATUS.FULL_COMMISSION ? "success" :
+                  task.commission === COMMISSION_STATUS.PARTIAL_COMMISSION ? "blue" :
+                  task.commission === COMMISSION_STATUS.NO_COMMISSION ? "orange" :
+                  task.commission === COMMISSION_STATUS.SUSPENDED_COMMISSION ? "destructive" :
+                  "secondary"
+                }
+              >
+                {COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
+              </Badge>
             </View>
           </View>
         )}
@@ -238,10 +262,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+    flex: 1,
+    marginRight: spacing.sm,
   },
   title: {
     fontSize: fontSize.lg,
     fontWeight: "500",
+    flexShrink: 1,
   },
   infoItem: {
     flexDirection: "row",

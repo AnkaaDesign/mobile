@@ -6,6 +6,8 @@ import type { Task, User } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
+  COMMISSION_STATUS,
+  COMMISSION_STATUS_LABELS,
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
@@ -100,6 +102,16 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         align: 'center',
         render: (task) => TASK_STATUS_LABELS[task.status as keyof typeof TASK_STATUS_LABELS] || task.status,
         format: 'badge',
+      },
+      {
+        key: 'commission',
+        label: 'COMISSÃO',
+        sortable: true,
+        width: 1.6,
+        align: 'center',
+        render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',
+        format: 'badge',
+        badgeEntity: 'COMMISSION_STATUS',
       },
       {
         key: 'finishedAt',
@@ -388,6 +400,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
       { key: 'generalPainting', label: 'Pintura', path: 'generalPainting.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'status', label: 'Status', path: 'status' },
+      { key: 'commission', label: 'Comissão', path: 'commission', format: (value) => value ? COMMISSION_STATUS_LABELS[value as keyof typeof COMMISSION_STATUS_LABELS] || value : '-' },
       { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
       { key: 'plate', label: 'Placa', path: 'truck.plate' },
       { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },

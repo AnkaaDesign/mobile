@@ -11,7 +11,6 @@ import { deletePpeDelivery } from "@/api-client";
 import { ThemedView, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
 import { TeamPpeDeliveryTable, createColumnDefinitions } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-table";
 import { TeamPpeDeliveryFilterTags } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-filter-tags";
-import { TeamPpeDeliveryStatsCard } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-stats-card";
 import { TableErrorBoundary } from "@/components/ui/table-error-boundary";
 import { ItemsCountDisplay } from "@/components/ui/items-count-display";
 import { useTheme } from "@/lib/theme";
@@ -69,7 +68,7 @@ export default function TeamEPIsScreen() {
     setVisibleColumns,
   } = useColumnVisibility(
     "team-ppe-deliveries",
-    ["userName", "itemName", "quantity", "status", "deliveryDate"],
+    ["userName", "itemName", "status"],
     ["userName", "itemName", "quantity", "status", "deliveryDate", "scheduledDate", "reviewedBy", "createdAt"]
   );
 
@@ -352,9 +351,6 @@ export default function TeamEPIsScreen() {
           }}
           onClearAll={handleClearFilters}
         />
-
-        {/* Statistics Card */}
-        {hasDeliveries && <TeamPpeDeliveryStatsCard deliveries={deliveries} />}
 
         {hasDeliveries ? (
           <TableErrorBoundary onRetry={handleRefresh}>

@@ -10,19 +10,25 @@ import { ButtonBlockComponent } from "./button-block";
 import { DividerBlockComponent } from "./divider-block";
 import { ListBlockComponent } from "./list-block";
 import { QuoteBlockComponent } from "./quote-block";
+import { SpacerBlockComponent } from "./spacer-block";
+import { IconBlockComponent } from "./icon-block";
+import { RowBlockComponent } from "./row-block";
 import type { MessageBlock, MessageBlockRendererProps } from "./types";
 
 /**
  * Main MessageBlockRenderer Component
  *
  * Renders a list of message content blocks with support for:
- * - Headings (h1-h6)
- * - Paragraphs with inline formatting (bold, italic, links)
- * - Images with captions
- * - Interactive buttons
- * - Dividers
+ * - Headings (h1-h6) with fontSize and fontWeight options
+ * - Paragraphs with inline formatting (bold, italic, links) and fontSize/fontWeight
+ * - Images with size presets, alignment, and captions (matching web behavior)
+ * - Interactive buttons with multiple variants
+ * - Dividers with style options
+ * - Spacers with configurable height
  * - Ordered and unordered lists (with nesting)
- * - Blockquotes with author attribution
+ * - Blockquotes with author attribution and fontSize/fontWeight
+ * - Icons using Tabler icons with size and color options
+ * - Row layouts for side-by-side blocks
  *
  * Features:
  * - Fully typed with TypeScript
@@ -31,6 +37,7 @@ import type { MessageBlock, MessageBlockRendererProps } from "./types";
  * - Proper link handling (internal navigation and external URLs)
  * - Accessible components with proper ARIA labels
  * - Beautiful styling following the app's design system
+ * - Feature parity with web message rendering
  *
  * @example
  * ```tsx
@@ -176,6 +183,22 @@ export function MessageBlockRenderer({
           />
         );
 
+      case "spacer":
+        return <SpacerBlockComponent key={index} block={block} />;
+
+      case "icon":
+        return <IconBlockComponent key={index} block={block} />;
+
+      case "row":
+        return (
+          <RowBlockComponent
+            key={index}
+            block={block}
+            onLinkPress={handleLinkPress}
+            onButtonPress={handleButtonPress}
+          />
+        );
+
       default:
         // Type guard to ensure all cases are handled
         const _exhaustiveCheck: never = block;
@@ -204,11 +227,18 @@ export type {
   HeadingBlock,
   ParagraphBlock,
   ImageBlock,
+  ImageSizePreset,
+  ImageAlignment,
   ButtonBlock,
   DividerBlock,
+  SpacerBlock,
   ListBlock,
   QuoteBlock,
+  IconBlock,
+  RowBlock,
   InlineText,
   InlineStyle,
   ListItemBlock,
+  FontSize,
+  FontWeight,
 } from "./types";

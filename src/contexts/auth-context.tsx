@@ -99,15 +99,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           .then(m => m.default.removeItem("react-query-cache"))
           .catch(() => {});
 
-        // Navigate after state is cleared - small delay to let React process state updates
+        // Reset logging out flag after a short delay to allow guards to handle navigation
+        // Navigation is handled by PrivilegeGuard when user becomes null
         setTimeout(() => {
-          try {
-            router.replace('/(autenticacao)/entrar' as any);
-          } catch (navError) {
-            console.error("Navigation error:", navError);
-          }
           setIsLoggingOut(false);
-        }, 50);
+        }, 100);
       }
     };
 
@@ -444,15 +440,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .then(m => m.default.removeItem("react-query-cache"))
       .catch(() => {});
 
-    // Navigate after state is cleared - small delay to let React process state updates
+    // Reset logging out flag after a short delay to allow guards to handle navigation
+    // Navigation is handled by PrivilegeGuard when user becomes null
     setTimeout(() => {
-      try {
-        router.replace('/(autenticacao)/entrar' as any);
-      } catch (navError) {
-        console.error("Navigation error:", navError);
-      }
       setIsLoggingOut(false);
-    }, 50);
+    }, 100);
   };
 
   const refreshUserData = async () => {

@@ -19,6 +19,20 @@ import { usePushNotifications } from "@/contexts/push-notifications-context";
 
 type NotificationChannel = "IN_APP" | "EMAIL" | "PUSH" | "WHATSAPP";
 
+type SectorPrivilege =
+  | "BASIC"
+  | "PRODUCTION"
+  | "MAINTENANCE"
+  | "WAREHOUSE"
+  | "PLOTTING"
+  | "ADMIN"
+  | "HUMAN_RESOURCES"
+  | "EXTERNAL"
+  | "DESIGNER"
+  | "FINANCIAL"
+  | "LOGISTIC"
+  | "COMMERCIAL";
+
 const ALL_CHANNELS: NotificationChannel[] = ["IN_APP", "EMAIL", "PUSH", "WHATSAPP"];
 
 interface NotificationEventPreference {
@@ -31,8 +45,55 @@ interface NotificationPreferences {
   order: Record<string, NotificationEventPreference>;
   service_order: Record<string, NotificationEventPreference>;
   stock: Record<string, NotificationEventPreference>;
+  cut: Record<string, NotificationEventPreference>;
+  ppe: Record<string, NotificationEventPreference>;
   system: Record<string, NotificationEventPreference>;
   vacation: Record<string, NotificationEventPreference>;
+}
+
+// =====================
+// Sector-based Access Control
+// =====================
+
+// Sectors that can see each notification category
+const CATEGORY_ALLOWED_SECTORS: Record<string, SectorPrivilege[]> = {
+  task: [], // All sectors can see (but individual events are filtered)
+  order: ["ADMIN", "WAREHOUSE"],
+  service_order: ["ADMIN", "DESIGNER", "PRODUCTION", "FINANCIAL", "LOGISTIC", "COMMERCIAL"],
+  stock: ["ADMIN", "WAREHOUSE"],
+  cut: ["ADMIN", "PLOTTING", "PRODUCTION"],
+  ppe: ["ADMIN", "HUMAN_RESOURCES", "WAREHOUSE"], // Only these can configure PPE preferences
+  system: [], // All users
+  vacation: ["ADMIN", "HUMAN_RESOURCES"], // Only these can configure vacation preferences
+};
+
+// Service Order event-specific sector restrictions
+const SERVICE_ORDER_EVENT_ALLOWED_SECTORS: Record<string, SectorPrivilege[]> = {
+  created: ["ADMIN"], // Only ADMIN sees all new service orders
+  assigned: [],
+  "assigned.updated": [],
+  "my.updated": [],
+  "my.completed": [],
+};
+
+function canAccessCategory(categoryId: string, userPrivilege: SectorPrivilege | null): boolean {
+  if (!userPrivilege) return false;
+  if (userPrivilege === "ADMIN") return true;
+
+  const allowedSectors = CATEGORY_ALLOWED_SECTORS[categoryId];
+  if (!allowedSectors || allowedSectors.length === 0) return true;
+
+  return allowedSectors.includes(userPrivilege);
+}
+
+function canAccessServiceOrderEvent(eventKey: string, userPrivilege: SectorPrivilege | null): boolean {
+  if (!userPrivilege) return false;
+  if (userPrivilege === "ADMIN") return true;
+
+  const allowedSectors = SERVICE_ORDER_EVENT_ALLOWED_SECTORS[eventKey];
+  if (!allowedSectors || allowedSectors.length === 0) return true;
+
+  return allowedSectors.includes(userPrivilege);
 }
 
 // =====================
@@ -123,7 +184,10 @@ const notificationSections: NotificationSection[] = [
     icon: "✅",
     events: [
       { key: "created", label: "Nova Ordem de Serviço", description: "Quando uma nova ordem de serviço é criada", mandatory: true },
-      { key: "status.changed", label: "Mudança de Status", description: "Quando o status de uma ordem de serviço é alterado", mandatory: true },
+      { key: "assigned", label: "Atribuída a Mim", description: "Quando uma ordem de serviço é atribuída a você", mandatory: true },
+      { key: "assigned.updated", label: "Atribuída a Mim Atualizada", description: "Quando uma ordem de serviço atribuída a você é atualizada", mandatory: false },
+      { key: "my.updated", label: "Que Criei Atualizada", description: "Quando uma ordem de serviço que você criou é atualizada", mandatory: false },
+      { key: "my.completed", label: "Que Criei Concluída", description: "Quando uma ordem de serviço que você criou é concluída", mandatory: true },
     ],
   },
   {
@@ -134,6 +198,28 @@ const notificationSections: NotificationSection[] = [
       { key: "low", label: "Estoque Baixo", description: "Quando um item está abaixo do mínimo", mandatory: false },
       { key: "out", label: "Estoque Esgotado", description: "Quando um item fica sem estoque", mandatory: true },
       { key: "restock", label: "Reabastecimento", description: "Quando é necessário reabastecer", mandatory: false },
+    ],
+  },
+  {
+    id: "cut",
+    title: "Recortes",
+    icon: "✂️",
+    events: [
+      { key: "created", label: "Novo Recorte", description: "Quando um novo recorte é adicionado à tarefa", mandatory: false },
+      { key: "started", label: "Recorte Iniciado", description: "Quando o corte de um recorte é iniciado", mandatory: false },
+      { key: "completed", label: "Recorte Concluído", description: "Quando o corte de um recorte é finalizado", mandatory: false },
+      { key: "request", label: "Solicitação de Recorte", description: "Quando é solicitado um novo recorte (retrabalho)", mandatory: true },
+    ],
+  },
+  {
+    id: "ppe",
+    title: "Entrega de EPI",
+    icon: "🦺",
+    events: [
+      { key: "requested", label: "Nova Solicitação", description: "Quando um EPI é solicitado", mandatory: true },
+      { key: "approved", label: "Solicitação Aprovada", description: "Quando sua solicitação de EPI é aprovada", mandatory: true },
+      { key: "rejected", label: "Solicitação Reprovada", description: "Quando sua solicitação de EPI é reprovada", mandatory: true },
+      { key: "delivered", label: "EPI Entregue", description: "Quando o EPI é entregue a você", mandatory: true },
     ],
   },
   {
@@ -213,12 +299,27 @@ const defaultPreferences: NotificationPreferences = {
   },
   service_order: {
     created: createDefaultPreference(true),
-    "status.changed": createDefaultPreference(true),
+    assigned: createDefaultPreference(true),
+    "assigned.updated": createDefaultPreference(false),
+    "my.updated": createDefaultPreference(false),
+    "my.completed": createDefaultPreference(true),
   },
   stock: {
     low: createDefaultPreference(false),
     out: createDefaultPreference(true),
     restock: createDefaultPreference(false),
+  },
+  cut: {
+    created: createDefaultPreference(false),
+    started: createDefaultPreference(false),
+    completed: createDefaultPreference(false),
+    request: createDefaultPreference(true),
+  },
+  ppe: {
+    requested: createDefaultPreference(true),
+    approved: createDefaultPreference(true),
+    rejected: createDefaultPreference(true),
+    delivered: createDefaultPreference(true),
   },
   system: {
     maintenance: createDefaultPreference(true),
@@ -325,6 +426,9 @@ export default function NotificationPreferencesScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { expoPushToken, isRegistered, registerToken } = usePushNotifications();
+
+  // Get user's sector privilege for filtering
+  const userSectorPrivilege = (user?.sector?.privileges as SectorPrivilege) || null;
 
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [originalPreferences, setOriginalPreferences] = useState<NotificationPreferences>(defaultPreferences);
@@ -545,48 +649,58 @@ export default function NotificationPreferencesScreen() {
 
         {/* Notification Sections */}
         <Accordion type="multiple" collapsible className="w-full">
-          {notificationSections.map((section) => {
-            const sectionKey = section.id as keyof NotificationPreferences;
+          {notificationSections
+            .filter((section) => canAccessCategory(section.id, userSectorPrivilege))
+            .map((section) => {
+              const sectionKey = section.id as keyof NotificationPreferences;
 
-            return (
-              <Card
-                key={section.id}
-                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-              >
-                <AccordionItem value={section.id}>
-                  <AccordionTrigger>
-                    <View style={styles.sectionHeader}>
-                      <View style={styles.sectionTitleRow}>
-                        <Text style={styles.sectionIcon}>{section.icon}</Text>
-                        <ThemedText style={styles.sectionTitle}>{section.title}</ThemedText>
+              // Filter events for service_order section based on user privilege
+              const filteredEvents = section.id === "service_order"
+                ? section.events.filter((event) => canAccessServiceOrderEvent(event.key, userSectorPrivilege))
+                : section.events;
+
+              // Skip section if no events after filtering
+              if (filteredEvents.length === 0) return null;
+
+              return (
+                <Card
+                  key={section.id}
+                  style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <AccordionItem value={section.id}>
+                    <AccordionTrigger>
+                      <View style={styles.sectionHeader}>
+                        <View style={styles.sectionTitleRow}>
+                          <Text style={styles.sectionIcon}>{section.icon}</Text>
+                          <ThemedText style={styles.sectionTitle}>{section.title}</ThemedText>
+                        </View>
+                        <ThemedText style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+                          {filteredEvents.length} eventos
+                        </ThemedText>
                       </View>
-                      <ThemedText style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
-                        {section.events.length} eventos
-                      </ThemedText>
-                    </View>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <View style={styles.sectionContent}>
-                      {section.events.map((event) => {
-                        const eventPref = preferences[sectionKey][event.key];
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <View style={styles.sectionContent}>
+                        {filteredEvents.map((event) => {
+                          const eventPref = preferences[sectionKey][event.key];
 
-                        return (
-                          <PreferenceRow
-                            key={event.key}
-                            label={event.label}
-                            description={event.description}
-                            selectedChannels={eventPref?.channels || []}
-                            onChange={(channels) => handlePreferenceChange(sectionKey, event.key, channels)}
-                            mandatory={event.mandatory}
-                          />
-                        );
-                      })}
-                    </View>
-                  </AccordionContent>
-                </AccordionItem>
-              </Card>
-            );
-          })}
+                          return (
+                            <PreferenceRow
+                              key={event.key}
+                              label={event.label}
+                              description={event.description}
+                              selectedChannels={eventPref?.channels || []}
+                              onChange={(channels) => handlePreferenceChange(sectionKey, event.key, channels)}
+                              mandatory={event.mandatory}
+                            />
+                          );
+                        })}
+                      </View>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Card>
+              );
+            })}
         </Accordion>
 
         {/* Action Buttons */}

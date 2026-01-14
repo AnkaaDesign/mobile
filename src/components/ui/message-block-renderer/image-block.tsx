@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Image,
@@ -9,14 +9,54 @@ import {
 } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, spacing, fontSize } from "@/constants/design-system";
-import type { ImageBlock } from "./types";
+import type { ImageBlock, ImageSizePreset } from "./types";
 
 interface ImageBlockProps {
   block: ImageBlock;
 }
 
 /**
+ * Converts size preset to actual pixel width
+ */
+function getSizeInPixels(
+  size: ImageSizePreset | undefined,
+  customWidth: string | undefined,
+  containerWidth: number
+): number {
+  // If customWidth is provided, try to parse it
+  if (customWidth) {
+    if (customWidth.endsWith("%")) {
+      const percent = parseFloat(customWidth) / 100;
+      return containerWidth * percent;
+    }
+    if (customWidth.endsWith("px")) {
+      return parseFloat(customWidth);
+    }
+    // Try parsing as number
+    const parsed = parseFloat(customWidth);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  // If size preset is provided
+  if (size) {
+    if (size.endsWith("%")) {
+      const percent = parseFloat(size) / 100;
+      return containerWidth * percent;
+    }
+    if (size.endsWith("px")) {
+      return parseFloat(size);
+    }
+  }
+
+  // Default to 50% like web
+  return containerWidth * 0.5;
+}
+
+/**
  * Renders image blocks with loading states and captions
+ * Matches web behavior with size presets and alignment
  */
 export function ImageBlockComponent({ block }: ImageBlockProps) {
   const { colors } = useTheme();
@@ -28,22 +68,36 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
     height: number;
   } | null>(null);
 
-  const maxWidth = screenWidth - spacing.screenPadding * 2;
+  // Support both 'src' (web standard) and 'url' properties
+  const imageSrc = block.src || block.url;
+
+  // Container width (screen width minus padding)
+  const containerWidth = screenWidth - spacing.screenPadding * 2;
+
+  // Calculate max width based on size preset (matching web behavior)
+  const targetMaxWidth = useMemo(
+    () => getSizeInPixels(block.size, block.customWidth, containerWidth),
+    [block.size, block.customWidth, containerWidth]
+  );
+
+  // Ensure we don't exceed container width
+  const maxWidth = Math.min(targetMaxWidth, containerWidth);
 
   React.useEffect(() => {
-    if (block.url) {
+    if (imageSrc) {
       Image.getSize(
-        block.url,
+        imageSrc,
         (width, height) => {
-          // Calculate aspect ratio and fit to screen width
+          // Calculate aspect ratio
           const aspectRatio = width / height;
-          let displayWidth = block.width || width;
-          let displayHeight = block.height || height;
 
+          // Use the smaller of: original width, block.width, or maxWidth
+          let displayWidth = block.width || width;
           if (displayWidth > maxWidth) {
             displayWidth = maxWidth;
-            displayHeight = displayWidth / aspectRatio;
           }
+
+          const displayHeight = displayWidth / aspectRatio;
 
           setImageSize({ width: displayWidth, height: displayHeight });
           setLoading(false);
@@ -54,22 +108,37 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
         }
       );
     }
-  }, [block.url, block.width, block.height, maxWidth]);
+  }, [imageSrc, block.width, block.height, maxWidth]);
+
+  // Get alignment style (matches web behavior)
+  const getAlignmentStyle = () => {
+    switch (block.alignment) {
+      case "left":
+        return "flex-start" as const;
+      case "right":
+        return "flex-end" as const;
+      case "center":
+      default:
+        return "center" as const;
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
       marginVertical: spacing.md,
-      alignItems: "center",
+      alignItems: getAlignmentStyle(),
+      width: "100%",
     },
     imageContainer: {
       borderRadius: borderRadius.lg,
       overflow: "hidden",
       backgroundColor: colors.muted,
+      maxWidth: maxWidth,
     },
     image: {
       width: imageSize?.width || maxWidth,
       height: imageSize?.height || 200,
-      resizeMode: "cover",
+      resizeMode: "contain",
     },
     loadingContainer: {
       width: maxWidth,
@@ -98,6 +167,7 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
       color: colors.mutedForeground,
       textAlign: "center",
       paddingHorizontal: spacing.sm,
+      maxWidth: maxWidth,
     },
   });
 
@@ -123,7 +193,7 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
         <>
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: block.url }}
+              source={{ uri: imageSrc }}
               style={styles.image}
               accessibilityLabel={block.alt}
             />

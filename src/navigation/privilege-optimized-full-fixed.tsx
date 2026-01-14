@@ -1,7 +1,7 @@
 // Ultra-Optimized Navigation with Full Menu Structure and Privilege-Based Loading
 // This version combines the privilege optimization with the original menu design
 
-import { useMemo, Suspense, lazy } from "react";
+import { useMemo, Suspense, lazy, useEffect, useRef } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { NotificationPopover } from "@/components/notifications/NotificationPopover";
+import { router } from "expo-router";
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -509,15 +510,17 @@ function NotificationBell({ color }: { color: string }) {
 
 // Main optimized drawer layout with full menu structure
 export function PrivilegeOptimizedFullLayout() {
-  const { user } = useAuth();
+  const { user, isAuthReady, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
+  const hasRedirectedToLogin = useRef(false);
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
 
   // Get user privileges - check both sector and sectors for compatibility
+  // Must be called before any conditional returns (React hooks rules)
   const userPrivileges = useMemo(() => {
     if (extUser?.sector?.privileges) {
       return [extUser.sector.privileges];
@@ -529,19 +532,53 @@ export function PrivilegeOptimizedFullLayout() {
   }, [extUser]);
 
   // Get accessible routes based on privileges
+  // Must be called before any conditional returns (React hooks rules)
   const accessibleRoutes = useMemo(() => {
+    if (!user) return []; // Return empty if no user
     const routes = getAccessibleRoutes(userPrivileges, extUser);
     console.log(`[PRIVILEGE-NAV] User has access to ${routes.length} routes out of ${ALL_ROUTES.length}`);
     return routes;
-  }, [userPrivileges, extUser]);
+  }, [userPrivileges, extUser, user]);
 
   // Memoized drawer colors - matching theme palette
+  // Must be called before any conditional returns (React hooks rules)
   const drawerColors = useMemo(() => ({
     background: isDark ? "#212121" : "#fafafa", // Drawer uses slightly different shade
     text: isDark ? "#d9d9d9" : "#404040", // foreground colors
     activeText: "#ffffff",
     active: "#15803d", // primary color (green-700)
   }), [isDark]);
+
+  // Handle authentication redirect at the root level
+  // This prevents issues with router.replace() from inside nested Drawer navigators
+  useEffect(() => {
+    // Don't redirect if we already did
+    if (hasRedirectedToLogin.current) return;
+
+    // Wait for auth to be ready
+    if (!isAuthReady || isLoading) return;
+
+    // If user is null after auth is ready, redirect to login
+    if (!user) {
+      hasRedirectedToLogin.current = true;
+      console.log("[PrivilegeOptimizedFullLayout] User logged out, redirecting to login");
+      // Use replace to prevent back navigation to protected screens
+      router.replace('/(autenticacao)/entrar' as any);
+    }
+  }, [user, isAuthReady, isLoading]);
+
+  // Reset redirect flag when user logs in (so we can redirect again on next logout)
+  useEffect(() => {
+    if (user && hasRedirectedToLogin.current) {
+      hasRedirectedToLogin.current = false;
+    }
+  }, [user]);
+
+  // Show loading screen while auth is being determined or during logout redirect
+  // This must come AFTER all hooks are called
+  if (!isAuthReady || isLoading || !user) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Drawer

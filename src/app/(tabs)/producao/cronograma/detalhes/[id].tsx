@@ -75,6 +75,12 @@ export default function ScheduleDetailsScreen() {
                            userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
                            userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
+  // Check if user can view artwork badges and non-approved artworks (admin/commercial/logistic/designer only)
+  const canViewArtworkBadges = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                               userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+                               userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+                               userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+
   // Check if user can view truck layout (admin/logistic/team leaders only)
   // Team leadership is now determined by managedSector relationship
   const canViewTruckLayout = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
@@ -470,79 +476,98 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Artworks Section */}
-          {(task as any)?.artworks && (task as any).artworks.length > 0 && (
-            <Card style={styles.sectionCard}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <View style={styles.sectionHeaderLeft}>
-                  <IconFiles size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
-                  <Badge variant="secondary">
-                    {(task as any).artworks.length}
-                  </Badge>
-                </View>
-              </View>
-              <View style={styles.sectionContent}>
-                <View style={styles.viewModeControls}>
-                  {(task as any).artworks.length > 1 && (
-                    <TouchableOpacity
-                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                      onPress={async () => {
-                        for (const file of (task as any).artworks) {
-                          try {
-                            await fileViewer.actions.downloadFile(file);
-                          } catch (_error) {
-                            console.error("Error downloading file:", error);
-                          }
-                        }
-                        Alert.alert("Sucesso", `${(task as any).artworks.length} arquivos baixados`);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <IconDownload size={16} color={colors.primaryForeground} />
-                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                        Baixar Todos
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
-                  <View style={styles.viewModeButtons}>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: artworksViewMode === "list" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setArtworksViewMode("list")}
-                      activeOpacity={0.7}
-                    >
-                      <IconList size={16} color={artworksViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: artworksViewMode === "grid" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setArtworksViewMode("grid")}
-                      activeOpacity={0.7}
-                    >
-                      <IconLayoutGrid size={16} color={artworksViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
+          {(() => {
+            // Filter artworks: show all if user can view badges, otherwise only approved
+            const filteredArtworks = (task as any)?.artworks?.filter((artwork: any) =>
+              canViewArtworkBadges || artwork.status === 'APPROVED'
+            ) || [];
+
+            if (filteredArtworks.length === 0) return null;
+
+            return (
+              <Card style={styles.sectionCard}>
+                <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <IconFiles size={20} color={colors.mutedForeground} />
+                    <ThemedText style={styles.sectionTitle}>Artes</ThemedText>
+                    <Badge variant="secondary">
+                      {filteredArtworks.length}
+                    </Badge>
                   </View>
                 </View>
-                <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                  {(task as any).artworks.map((file: any, index: number) => (
-                    <FileItem
-                      key={file.id}
-                      file={file}
-                      viewMode={artworksViewMode}
-                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                      onPress={() => {
-                        fileViewer.actions.viewFiles((task as any).artworks, index);
-                      }}
-                    />
-                  ))}
+                <View style={styles.sectionContent}>
+                  <View style={styles.viewModeControls}>
+                    {filteredArtworks.length > 1 && (
+                      <TouchableOpacity
+                        style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                        onPress={async () => {
+                          for (const file of filteredArtworks) {
+                            try {
+                              await fileViewer.actions.downloadFile(file);
+                            } catch (_error) {
+                              console.error("Error downloading file:", error);
+                            }
+                          }
+                          Alert.alert("Sucesso", `${filteredArtworks.length} arquivos baixados`);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <IconDownload size={16} color={colors.primaryForeground} />
+                        <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                          Baixar Todos
+                        </ThemedText>
+                      </TouchableOpacity>
+                    )}
+                    <View style={styles.viewModeButtons}>
+                      <TouchableOpacity
+                        style={[
+                          styles.viewModeButton,
+                          { backgroundColor: artworksViewMode === "list" ? colors.primary : colors.muted }
+                        ]}
+                        onPress={() => setArtworksViewMode("list")}
+                        activeOpacity={0.7}
+                      >
+                        <IconList size={16} color={artworksViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.viewModeButton,
+                          { backgroundColor: artworksViewMode === "grid" ? colors.primary : colors.muted }
+                        ]}
+                        onPress={() => setArtworksViewMode("grid")}
+                        activeOpacity={0.7}
+                      >
+                        <IconLayoutGrid size={16} color={artworksViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                    {filteredArtworks.map((artwork: any, index: number) => (
+                      <View key={artwork.id} style={styles.artworkItemContainer}>
+                        <FileItem
+                          file={artwork}
+                          viewMode={artworksViewMode}
+                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                          onPress={() => {
+                            fileViewer.actions.viewFiles(filteredArtworks, index);
+                          }}
+                        />
+                        {canViewArtworkBadges && artwork.status && (
+                          <View style={styles.artworkBadgeContainer}>
+                            <Badge
+                              variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                            >
+                              {artwork.status === 'APPROVED' ? 'Aprovado' : artwork.status === 'REJECTED' ? 'Reprovado' : 'Rascunho'}
+                            </Badge>
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            </Card>
-          )}
+              </Card>
+            );
+          })()}
 
           {/* Documents Section - Only for Admin and Financial */}
           {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
@@ -950,6 +975,14 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     gap: spacing.sm,
+  },
+  artworkItemContainer: {
+    position: "relative",
+  },
+  artworkBadgeContainer: {
+    position: "absolute",
+    top: spacing.xs,
+    right: spacing.xs,
   },
   documentSection: {
     marginTop: spacing.md,

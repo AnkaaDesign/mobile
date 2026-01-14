@@ -214,9 +214,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   },
 
   filters: {
-    defaultValues: {
-      statuses: [BORROW_STATUS.ACTIVE],
-    },
+    defaultValues: {},
     fields: [
       {
         key: 'statuses',

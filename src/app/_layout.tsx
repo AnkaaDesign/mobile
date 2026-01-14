@@ -211,7 +211,6 @@ function AppContent() {
   return (
     <FileViewerProvider baseUrl={currentBaseUrl}>
       <AppStatusBar />
-      <OfflineBanner />
       <Stack
         screenOptions={{
           headerShown: false,

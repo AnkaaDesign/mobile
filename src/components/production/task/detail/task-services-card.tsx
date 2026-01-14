@@ -145,7 +145,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
         <View style={styles.descriptionRow}>
           <ThemedText
             style={[styles.serviceName, { color: colors.foreground }]}
-            numberOfLines={2}
+            numberOfLines={1}
             ellipsizeMode="tail"
           >
             {service.description}
@@ -232,7 +232,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       >
         <ThemedText
           style={[styles.serviceNameSimplified, { color: colors.foreground }]}
-          numberOfLines={2}
+          numberOfLines={1}
           ellipsizeMode="tail"
         >
           {service.description}
@@ -244,6 +244,9 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     );
   };
 
+  // Check if we should show type headers (only when user can see multiple types)
+  const showTypeHeaders = visibleTypes.length > 1;
+
   // Render a type group section
   const renderTypeGroup = (type: SERVICE_ORDER_TYPE) => {
     const typeServices = servicesByType[type];
@@ -254,6 +257,15 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
     const typeColor = TYPE_COLORS[type];
     const typeLabel = SERVICE_ORDER_TYPE_LABELS[type];
+
+    // If user can only see one type, skip the type header for cleaner UI
+    if (!showTypeHeaders) {
+      return (
+        <View key={type} style={styles.typeGroupNoHeader}>
+          {typeServices.map(hasDetailedView ? renderDetailedServiceItem : renderSimplifiedServiceItem)}
+        </View>
+      );
+    }
 
     return (
       <View key={type} style={styles.typeGroup}>
@@ -347,6 +359,9 @@ const styles = StyleSheet.create({
   },
   // Type group styles
   typeGroup: {
+    gap: spacing.xs,
+  },
+  typeGroupNoHeader: {
     gap: spacing.xs,
   },
   typeHeader: {

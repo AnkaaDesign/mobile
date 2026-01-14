@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
-import { useTeamVacationsInfiniteMobile, useCurrentUser } from "@/hooks";
+import { useTeamStaffVacationsInfiniteMobile, useCurrentUser } from "@/hooks";
 import { TeamVacationTable } from "@/components/my-team/vacation/team-vacation-table";
 import type { Vacation } from "@/types";
 import { TeamVacationCalendar } from "@/components/my-team/vacation/team-vacation-calendar";
@@ -120,6 +120,7 @@ export default function MyTeamVacationsScreen() {
   }), [searchText, buildWhereClause, buildOrderBy]);
 
   // Fetch vacations for team members with infinite scroll
+  // Uses /team-staff/vacations endpoint which is accessible to team leaders
   const {
     items,
     isLoading,
@@ -133,7 +134,7 @@ export default function MyTeamVacationsScreen() {
     refresh,
     prefetchNext,
     shouldPrefetch,
-  } = useTeamVacationsInfiniteMobile({
+  } = useTeamStaffVacationsInfiniteMobile({
     ...queryParams,
     enabled: userIsTeamLeader,
   });
