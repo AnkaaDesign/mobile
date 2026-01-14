@@ -40,8 +40,11 @@ import type { LayoutCreateFormData } from "@/schemas";
 import type { Customer, Paint } from "@/types";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
+// MATCHES: Web version (web/src/schemas/task.ts) and Backend API (api/src/schemas/task.ts)
 const taskFormSchema = z.object({
-  name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200, "Nome muito longo"),
+  // FIXED: Name is now nullable/optional to match web CREATE schema
+  // Web has validation that requires "at least one of: customer, serialNumber, plate, or name"
+  name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200, "Nome muito longo").nullable().optional(),
   customerId: z.string().uuid("Cliente inválido").nullable().optional(),
   invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
   negotiatingWith: z.object({
@@ -66,6 +69,9 @@ const taskFormSchema = z.object({
     .refine((val) => !val || /^[A-Z0-9-]+$/.test(val), {
       message: "Número de série deve conter apenas letras maiúsculas, números e hífens",
     }),
+  // ADDED: Serial number range fields (from web schema)
+  serialNumberFrom: z.number().int().positive("Número de série inicial deve ser positivo").optional(),
+  serialNumberTo: z.number().int().positive("Número de série final deve ser positivo").optional(),
   truck: z.object({
     plate: z.string()
       .nullable()
@@ -96,12 +102,13 @@ const taskFormSchema = z.object({
   paintIds: z.array(z.string().uuid()).optional(),
   baseFileIds: z.array(z.string().uuid()).optional(), // Base files for artwork design
   artworkIds: z.array(z.string().uuid()).optional(), // General artwork files
-  // Financial file IDs
+  // Financial file IDs - FIXED: Using consistent field names from web/backend
   budgetIds: z.array(z.string().uuid()).optional(),
   invoiceIds: z.array(z.string().uuid()).optional(),
   receiptIds: z.array(z.string().uuid()).optional(),
   reimbursementIds: z.array(z.string().uuid()).optional(),
-  invoiceReimbursementIds: z.array(z.string().uuid()).optional(),
+  // FIXED: Field name to match web schema (was invoiceReimbursementIds)
+  reimbursementInvoiceIds: z.array(z.string().uuid()).optional(),
   observation: z.object({
     description: z.string().min(1, "Descrição é obrigatória"),
     fileIds: z.array(z.string().min(1, "ID do arquivo inválido")).optional(),
@@ -111,6 +118,7 @@ const taskFormSchema = z.object({
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).default(SERVICE_ORDER_STATUS.PENDING),
     statusOrder: z.number().int().min(1).max(4).default(1).optional(),
+    // CRITICAL: Type field is REQUIRED in Prisma schema (default PRODUCTION)
     type: z.enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]]).default(SERVICE_ORDER_TYPE.PRODUCTION),
     assignedToId: z.string().uuid("Usuário inválido").nullable().optional(),
     observation: z.string().nullable().optional(), // For rejection/approval notes
@@ -147,15 +155,54 @@ const taskFormSchema = z.object({
     invoiceIds: z.array(z.string()).optional(),
     artworkIds: z.array(z.string()).optional(),
   })).optional(),
-  // Financial file IDs
-  budgetIds: z.array(z.string()).optional(),
-  invoiceIds: z.array(z.string()).optional(),
-  receiptIds: z.array(z.string()).optional(),
   status: z.enum(Object.values(TASK_STATUS) as [string, ...string[]]).optional(),
   commission: z.string().nullable().optional(),
   startedAt: z.date().nullable().optional(),
   finishedAt: z.date().nullable().optional(),
 }).superRefine((data, ctx) => {
+  // ADDED: Require at least one of: customer, serialNumber, plate, or name (matches web logic)
+  const hasCustomer = !!data.customerId;
+  const hasSerialNumber = !!data.serialNumber;
+  const hasPlate = !!data.truck?.plate;
+  const hasName = !!data.name;
+
+  if (!hasCustomer && !hasSerialNumber && !hasPlate && !hasName) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pelo menos um dos seguintes campos deve ser preenchido: Cliente, Número de série, Placa ou Nome",
+      path: ["name"],
+    });
+  }
+
+  // ADDED: Serial number range validation (matches web logic)
+  const hasSerialNumberFrom = data.serialNumberFrom !== undefined;
+  const hasSerialNumberTo = data.serialNumberTo !== undefined;
+
+  // Both must be provided together or both omitted
+  if (hasSerialNumberFrom && !hasSerialNumberTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Número de série final é obrigatório quando o número inicial é fornecido",
+      path: ["serialNumberTo"],
+    });
+  }
+
+  if (!hasSerialNumberFrom && hasSerialNumberTo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Número de série inicial é obrigatório quando o número final é fornecido",
+      path: ["serialNumberFrom"],
+    });
+  }
+
+  // serialNumberTo must be >= serialNumberFrom
+  if (hasSerialNumberFrom && hasSerialNumberTo && data.serialNumberTo! < data.serialNumberFrom!) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Número de série final deve ser maior ou igual ao número inicial",
+      path: ["serialNumberTo"],
+    });
+  }
   // Cross-field validation: term must be after entryDate
   if (data.entryDate && data.term && data.term <= data.entryDate) {
     ctx.addIssue({

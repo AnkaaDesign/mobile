@@ -19,6 +19,7 @@ const BADGE_COLORS = {
 interface Paint {
   id: string;
   name: string;
+  code?: string | null;
   hex?: string;
   colorPreview?: string | null;
   finish?: PAINT_FINISH;
@@ -73,6 +74,12 @@ export const TaskLogoPaintsCard: React.FC<TaskLogoPaintsCardProps> = ({
             <ThemedText style={[styles.paintName, { color: colors.foreground }]} numberOfLines={1}>
               {paint.name}
             </ThemedText>
+
+            {paint.code && (
+              <ThemedText style={[styles.paintCode, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {paint.code}
+              </ThemedText>
+            )}
 
             <View style={styles.badgesContainer}>
               {paint.paintType?.name && (
@@ -184,6 +191,11 @@ const styles = StyleSheet.create({
   paintName: {
     fontSize: fontSize.base,
     fontWeight: "600",
+  },
+  paintCode: {
+    fontSize: fontSize.xs,
+    fontFamily: "monospace",
+    fontWeight: "500",
   },
   badgesContainer: {
     flexDirection: "row",

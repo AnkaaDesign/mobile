@@ -45,12 +45,14 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
       invoices: z.boolean().optional(), // Many-to-many relation with File
       receipts: z.boolean().optional(), // Many-to-many relation with File
       reimbursements: z.boolean().optional(), // Many-to-many relation with File
-      invoiceReimbursements: z.boolean().optional(), // Many-to-many relation with File
+      // FIXED: Field name to match Prisma schema and web (was invoiceReimbursements)
+      reimbursementInvoices: z.boolean().optional(), // Many-to-many relation with File
       // Legacy field names for backwards compatibility (mapped in repository)
       budget: z.boolean().optional(), // @deprecated Use budgets instead
       nfe: z.boolean().optional(), // @deprecated Use nfes instead
       receipt: z.boolean().optional(), // @deprecated Use receipts instead
       reimbursement: z.boolean().optional(), // @deprecated Use reimbursements instead
+      // FIXED: Corrected deprecated field mapping
       nfeReimbursement: z.boolean().optional(), // @deprecated Use reimbursementInvoices instead
       observation: z
         .union([
@@ -1089,6 +1091,7 @@ const taskObservationCreateSchema = z.object({
 });
 
 // ServiceOrder schema without taskId (will be auto-linked)
+// MATCHES: Web schema and Prisma model (ServiceOrder.type is REQUIRED, line 999 in schema.prisma)
 const taskServiceOrderCreateSchema = z.object({
   id: z.string().uuid().optional(), // For existing service orders (updates)
   status: z
@@ -1098,6 +1101,12 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_STATUS.PENDING),
   statusOrder: z.number().int().min(1).max(4).default(1).optional(),
   description: z.string().min(3, { message: "Mínimo de 3 caracteres" }).max(400, { message: "Máximo de 40 caracteres atingido" }),
+  // CRITICAL FIX: Added type field (REQUIRED in Prisma model, was missing in mobile schema)
+  type: z
+    .enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]], {
+      errorMap: () => ({ message: "Tipo inválido" }),
+    })
+    .default(SERVICE_ORDER_TYPE.PRODUCTION),
   assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
   observation: z.string().nullable().optional(), // For rejection/approval notes
   startedAt: nullableDate.optional(),
@@ -1124,6 +1133,7 @@ const layoutSideSchema = z
   .optional();
 
 // Consolidated truck schema with basic fields AND layouts
+// MATCHES: Prisma Truck model (lines 1194-1214) and web schema
 const taskTruckCreateSchema = z.object({
   // Basic truck fields
   plate: z
@@ -1139,6 +1149,9 @@ const taskTruckCreateSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val === "" ? null : val?.toUpperCase())),
+  // ADDED: Category and implementType fields (from Prisma model lines 1198-1199)
+  category: z.string().nullable().optional(), // TruckCategory enum
+  implementType: z.string().nullable().optional(), // ImplementType enum
   // Truck spot in garage (e.g., "B1_F1_V1", "B2_F2_V3", "PATIO", or null)
   spot: z.string().nullable().optional(),
   xPosition: z.number().nullable().optional(),
@@ -1183,17 +1196,33 @@ export const taskCreateSchema = z
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    negotiatingWith: z.object({
-      name: z.string(),
-      phone: z.string(),
-    }).nullable().optional(),
+    // ENHANCED: negotiatingWith now has validation to require both fields or neither (matches web logic)
+    negotiatingWith: z
+      .object({
+        name: z.string().optional(),
+        phone: z.string().optional(),
+      })
+      .nullable()
+      .optional()
+      .refine(
+        (data) => {
+          if (!data) return true;
+          const hasName = data.name && data.name.trim().length > 0;
+          const hasPhone = data.phone && data.phone.trim().length > 0;
+          return (hasName && hasPhone) || (!hasName && !hasPhone);
+        },
+        {
+          message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
+        }
+      ),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to invoices/nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
-    invoiceReimbursementIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
+    // FIXED: Field name to match Prisma schema and web (was invoiceReimbursementIds)
+    reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(), // Maps to artworks
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
@@ -1274,17 +1303,33 @@ export const taskUpdateSchema = z
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    negotiatingWith: z.object({
-      name: z.string(),
-      phone: z.string(),
-    }).nullable().optional(),
+    // ENHANCED: negotiatingWith now has validation to require both fields or neither (matches web logic)
+    negotiatingWith: z
+      .object({
+        name: z.string().optional(),
+        phone: z.string().optional(),
+      })
+      .nullable()
+      .optional()
+      .refine(
+        (data) => {
+          if (!data) return true;
+          const hasName = data.name && data.name.trim().length > 0;
+          const hasPhone = data.phone && data.phone.trim().length > 0;
+          return (hasName && hasPhone) || (!hasName && !hasPhone);
+        },
+        {
+          message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
+        }
+      ),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to invoices/nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
-    invoiceReimbursementIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
+    // FIXED: Field name to match Prisma schema and web (was invoiceReimbursementIds)
+    reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(), // Maps to artworks
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints

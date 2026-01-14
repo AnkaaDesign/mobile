@@ -83,13 +83,13 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
                 {groundPaint.name}
               </ThemedText>
 
-              {/* Hex Code */}
-              {groundPaint.hex && (
+              {/* Paint Code */}
+              {groundPaint.code && (
                 <ThemedText
-                  style={[styles.hexCode, { color: colors.mutedForeground }]}
+                  style={[styles.paintCode, { color: colors.mutedForeground }]}
                   numberOfLines={1}
                 >
-                  {groundPaint.hex.toUpperCase()}
+                  {groundPaint.code}
                 </ThemedText>
               )}
 
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     lineHeight: fontSize.sm * 1.4,
   },
-  hexCode: {
+  paintCode: {
     fontSize: fontSize.xs,
     fontFamily: "monospace",
     fontWeight: fontWeight.medium,
