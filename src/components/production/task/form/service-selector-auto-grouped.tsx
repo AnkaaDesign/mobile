@@ -325,34 +325,49 @@ function ServiceRow({
   });
 
   // Determine which status options are available based on type and user privilege
+  // IMPORTANT: WAITING_APPROVE status is ONLY available for ARTWORK service orders
+  // This is because only artwork has the designer → admin approval workflow
   const getAvailableStatuses = useMemo(() => {
-    // Admin can set any status
+    const isArtworkType = service.type === SERVICE_ORDER_TYPE.ARTWORK;
+
+    // Admin can set any status, but WAITING_APPROVE only for ARTWORK
     if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) {
-      return [
-        SERVICE_ORDER_STATUS.PENDING,
-        SERVICE_ORDER_STATUS.IN_PROGRESS,
-        SERVICE_ORDER_STATUS.WAITING_APPROVE,
-        SERVICE_ORDER_STATUS.COMPLETED,
-        SERVICE_ORDER_STATUS.CANCELLED,
-      ];
+      if (isArtworkType) {
+        // ARTWORK: All statuses including WAITING_APPROVE (approval workflow)
+        return [
+          SERVICE_ORDER_STATUS.PENDING,
+          SERVICE_ORDER_STATUS.IN_PROGRESS,
+          SERVICE_ORDER_STATUS.WAITING_APPROVE,
+          SERVICE_ORDER_STATUS.COMPLETED,
+          SERVICE_ORDER_STATUS.CANCELLED,
+        ];
+      } else {
+        // Non-ARTWORK: All statuses EXCEPT WAITING_APPROVE (simple workflow)
+        return [
+          SERVICE_ORDER_STATUS.PENDING,
+          SERVICE_ORDER_STATUS.IN_PROGRESS,
+          SERVICE_ORDER_STATUS.COMPLETED,
+          SERVICE_ORDER_STATUS.CANCELLED,
+        ];
+      }
     }
 
     // ARTWORK type has special two-step approval - designer can only go to WAITING_APPROVE
-    if (service.type === SERVICE_ORDER_TYPE.ARTWORK && userPrivilege === SECTOR_PRIVILEGES.DESIGNER) {
+    if (isArtworkType && userPrivilege === SECTOR_PRIVILEGES.DESIGNER) {
       return [
         SERVICE_ORDER_STATUS.PENDING,
         SERVICE_ORDER_STATUS.IN_PROGRESS,
         SERVICE_ORDER_STATUS.WAITING_APPROVE,
-        SERVICE_ORDER_STATUS.CANCELLED,
+        // Note: No COMPLETED - designer must submit for admin approval
+        // Note: No CANCELLED - only admin can cancel
       ];
     }
 
-    // Default: all statuses except WAITING_APPROVE (not needed for non-artwork)
+    // For other users/types, return simple workflow statuses (no WAITING_APPROVE, no CANCELLED)
     return [
       SERVICE_ORDER_STATUS.PENDING,
       SERVICE_ORDER_STATUS.IN_PROGRESS,
       SERVICE_ORDER_STATUS.COMPLETED,
-      SERVICE_ORDER_STATUS.CANCELLED,
     ];
   }, [userPrivilege, service.type]);
 

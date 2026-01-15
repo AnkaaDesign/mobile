@@ -126,6 +126,8 @@ export interface GarageTruck {
   paintHex?: string | null;
   length: number;
   originalLength?: number;
+  forecastDate?: string | null; // Forecast date - when truck is expected to arrive at company
+  finishedAt?: string | null; // Task completion date - null if not complete
 }
 
 interface PositionedTruck extends GarageTruck {

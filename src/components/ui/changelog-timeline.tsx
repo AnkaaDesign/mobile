@@ -568,7 +568,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       } else if (changelog.field === "itemId") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") itemIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") itemIds.add(changelog.newValue);
-      } else if (changelog.field === "budgetId" || changelog.field === "nfeId" || changelog.field === "receiptId") {
+      } else if (changelog.field === "budgetIds" || changelog.field === "invoiceIds" || changelog.field === "receiptIds") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") fileIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") fileIds.add(changelog.newValue);
       } else if (changelog.field === "observationId") {
@@ -700,7 +700,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
           if (field === "itemId" && entityDetails.items?.has?.(parsedValue)) {
             return entityDetails.items.get(parsedValue) || "Item";
           }
-          if ((field === "budgetId" || field === "nfeId" || field === "receiptId") && entityDetails.files?.has?.(parsedValue)) {
+          if ((field === "budgetIds" || field === "invoiceIds" || field === "receiptIds") && entityDetails.files?.has?.(parsedValue)) {
             return entityDetails.files.get(parsedValue) || "Arquivo";
           }
           if (field === "observationId" && entityDetails.observations?.has?.(parsedValue)) {
@@ -724,7 +724,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       if (field === "paintId") return "Tinta (carregando...)";
       if (field === "formulaId" || field === "formulaPaintId") return "Fórmula (carregando...)";
       if (field === "itemId") return "Item (carregando...)";
-      if (field === "budgetId" || field === "nfeId" || field === "receiptId") return "Arquivo (carregando...)";
+      if (field === "budgetIds" || field === "invoiceIds" || field === "receiptIds") return "Arquivo (carregando...)";
       if (field === "observationId") return "Observação (carregando...)";
       if (field === "truckId") return "Caminhão (carregando...)";
     }

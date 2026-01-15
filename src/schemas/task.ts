@@ -560,26 +560,26 @@ const taskTransform = (data: any): any => {
   }
 
   if (data.hasBudget === true) {
-    andConditions.push({ budgetId: { not: null } });
+    andConditions.push({ budgets: { some: {} } });
     delete data.hasBudget;
   } else if (data.hasBudget === false) {
-    andConditions.push({ budgetId: null });
+    andConditions.push({ budgets: { none: {} } });
     delete data.hasBudget;
   }
 
   if (data.hasNfe === true) {
-    andConditions.push({ nfeId: { not: null } });
+    andConditions.push({ invoices: { some: {} } });
     delete data.hasNfe;
   } else if (data.hasNfe === false) {
-    andConditions.push({ nfeId: null });
+    andConditions.push({ invoices: { none: {} } });
     delete data.hasNfe;
   }
 
   if (data.hasReceipt === true) {
-    andConditions.push({ receiptId: { not: null } });
+    andConditions.push({ receipts: { some: {} } });
     delete data.hasReceipt;
   } else if (data.hasReceipt === false) {
-    andConditions.push({ receiptId: null });
+    andConditions.push({ receipts: { none: {} } });
     delete data.hasReceipt;
   }
 

@@ -84,9 +84,36 @@ export default function GaragesScreen() {
           paintHex: (task.generalPainting as any)?.hex || null,
           length: truckLength,
           originalLength: sectionsSum > 0 ? sectionsSum : undefined,
+          forecastDate: (task as any).forecastDate || null,
+          finishedAt: (task as any).finishedAt || null,
         };
       });
   }, [tasksResponse]);
+
+  // Filter trucks by forecastDate and completion status
+  // WORKFLOW:
+  // - forecastDate: The date when the truck is expected to arrive at the company (REQUIRED)
+  // - finishedAt: When the task was completed (null if still in progress)
+  //
+  // Only show trucks where forecastDate <= today AND not complete
+  const filteredTrucks = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return garageTrucks.filter(truck => {
+      // MUST have forecastDate - tasks without forecast date are not displayed
+      if (!truck.forecastDate) return false;
+
+      // MUST not be complete
+      if (truck.finishedAt) return false;
+
+      const forecastDate = new Date(truck.forecastDate);
+      forecastDate.setHours(0, 0, 0, 0);
+
+      // Show truck only if forecastDate <= today (truck has arrived or expected today)
+      return forecastDate <= today;
+    });
+  }, [garageTrucks]);
 
   // Handle batch save of all spot changes using single API call
   const handleSaveChanges = useCallback(
@@ -157,7 +184,7 @@ export default function GaragesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <GarageView
-        trucks={garageTrucks}
+        trucks={filteredTrucks}
         onSaveChanges={canEditGaragePositions ? handleSaveChanges : undefined}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
