@@ -21,17 +21,17 @@ import { hasAnyPrivilege, isTeamLeader } from '@/utils';
  * This controls which service order types a user can view in task details
  *
  * Permission Matrix (VISIBILITY):
- * | Sector          | PRODUCTION | NEGOTIATION | ARTWORK    | FINANCIAL  |
- * |-----------------|------------|-------------|------------|------------|
- * | ADMIN           | ✓          | ✓           | ✓          | ✓          |
- * | COMMERCIAL      | ✓          | ✓           | -          | ✓          |
- * | DESIGNER        | ✓          | -           | ✓          | -          |
- * | FINANCIAL       | ✓          | -           | -          | ✓          |
- * | LOGISTIC        | ✓          | ✓           | ✓          | -          |
- * | PRODUCTION      | ✓          | -           | -          | -          |
- * | WAREHOUSE       | ✓          | -           | -          | -          |
- * | HUMAN_RESOURCES | ✓          | -           | -          | -          |
- * | Others          | ✓          | -           | -          | -          |
+ * | Sector          | PRODUCTION | FINANCIAL | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |-----------------|------------|-----------|------------|----------|---------|
+ * | ADMIN           | ✓          | ✓         | ✓          | ✓        | ✓       |
+ * | COMMERCIAL      | ✓          | ✓         | ✓          | -        | -       |
+ * | DESIGNER        | ✓          | -         | -          | -        | ✓       |
+ * | FINANCIAL       | ✓          | ✓         | -          | -        | -       |
+ * | LOGISTIC        | ✓          | -         | -          | ✓        | -       |
+ * | PRODUCTION      | ✓          | -         | -          | -        | -       |
+ * | WAREHOUSE       | ✓          | -         | -          | -        | -       |
+ * | HUMAN_RESOURCES | ✓          | -         | -          | -        | -       |
+ * | Others          | ✓          | -         | -          | -        | -       |
  */
 export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TYPE[] {
   if (!user?.sector?.privileges) return [];
@@ -42,16 +42,17 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
     case SECTOR_PRIVILEGES.ADMIN:
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.NEGOTIATION,
-        SERVICE_ORDER_TYPE.ARTWORK,
         SERVICE_ORDER_TYPE.FINANCIAL,
+        SERVICE_ORDER_TYPE.COMMERCIAL,
+        SERVICE_ORDER_TYPE.LOGISTIC,
+        SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.COMMERCIAL:
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.NEGOTIATION,
         SERVICE_ORDER_TYPE.FINANCIAL,
+        SERVICE_ORDER_TYPE.COMMERCIAL,
       ];
 
     case SECTOR_PRIVILEGES.DESIGNER:
@@ -69,8 +70,7 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
     case SECTOR_PRIVILEGES.LOGISTIC:
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.NEGOTIATION,
-        SERVICE_ORDER_TYPE.ARTWORK,
+        SERVICE_ORDER_TYPE.LOGISTIC,
       ];
 
     case SECTOR_PRIVILEGES.HUMAN_RESOURCES:
@@ -98,15 +98,15 @@ export function canViewServiceOrderType(user: User | null, serviceOrderType: SER
  * Check if user can edit service orders of a specific type
  *
  * Edit Permission Matrix:
- * | Sector          | PRODUCTION | NEGOTIATION | ARTWORK | FINANCIAL |
- * |-----------------|------------|-------------|---------|-----------|
- * | ADMIN           | ✓          | ✓           | ✓       | ✓         |
- * | COMMERCIAL      | -          | ✓           | -       | -         |
- * | DESIGNER        | -          | -           | ✓       | -         |
- * | FINANCIAL       | -          | -           | -       | ✓         |
- * | LOGISTIC        | ✓          | -           | -       | -         |
- * | Leader          | ✓          | -           | -       | -         |
- * | Others          | -          | -           | -       | -         |
+ * | Sector          | PRODUCTION | FINANCIAL | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |-----------------|------------|-----------|------------|----------|---------|
+ * | ADMIN           | ✓          | ✓         | ✓          | ✓        | ✓       |
+ * | COMMERCIAL      | -          | -         | ✓          | -        | -       |
+ * | DESIGNER        | -          | -         | -          | -        | ✓       |
+ * | FINANCIAL       | -          | ✓         | -          | -        | -       |
+ * | LOGISTIC        | ✓          | -         | -          | ✓        | -       |
+ * | Leader          | ✓          | -         | -          | -        | -       |
+ * | Others          | -          | -         | -          | -        | -       |
  */
 export function canEditServiceOrderOfType(user: User | null, serviceOrderType: SERVICE_ORDER_TYPE): boolean {
   if (!user?.sector?.privileges) return false;
@@ -122,17 +122,21 @@ export function canEditServiceOrderOfType(user: User | null, serviceOrderType: S
       // LOGISTIC and team leaders can edit production service orders
       return privilege === SECTOR_PRIVILEGES.LOGISTIC || isTeamLeader(user);
 
-    case SERVICE_ORDER_TYPE.NEGOTIATION:
-      // Only COMMERCIAL can edit negotiation service orders
+    case SERVICE_ORDER_TYPE.FINANCIAL:
+      // Only FINANCIAL can edit financial service orders
+      return privilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+    case SERVICE_ORDER_TYPE.COMMERCIAL:
+      // Only COMMERCIAL can edit commercial service orders
       return privilege === SECTOR_PRIVILEGES.COMMERCIAL;
+
+    case SERVICE_ORDER_TYPE.LOGISTIC:
+      // Only LOGISTIC can edit logistic service orders
+      return privilege === SECTOR_PRIVILEGES.LOGISTIC;
 
     case SERVICE_ORDER_TYPE.ARTWORK:
       // Only DESIGNER can edit artwork service orders
       return privilege === SECTOR_PRIVILEGES.DESIGNER;
-
-    case SERVICE_ORDER_TYPE.FINANCIAL:
-      // Only FINANCIAL can edit financial service orders
-      return privilege === SECTOR_PRIVILEGES.FINANCIAL;
 
     default:
       return false;
@@ -189,7 +193,7 @@ export function canCompleteArtworkServiceOrder(user: User | null): boolean {
  *
  * Status availability by service order type:
  * - ARTWORK: PENDING, IN_PROGRESS, WAITING_APPROVE, COMPLETED (approval workflow)
- * - PRODUCTION, FINANCIAL, NEGOTIATION: PENDING, IN_PROGRESS, COMPLETED (simple workflow)
+ * - PRODUCTION, FINANCIAL, COMMERCIAL, LOGISTIC: PENDING, IN_PROGRESS, COMPLETED (simple workflow)
  *
  * IMPORTANT:
  * - Only ADMIN can see/set CANCELLED status
@@ -225,7 +229,7 @@ export function getAllowedServiceOrderStatuses(
     return artworkStatuses;
   }
 
-  // PRODUCTION, FINANCIAL, NEGOTIATION: Simple workflow without WAITING_APPROVE
+  // PRODUCTION, FINANCIAL, COMMERCIAL, LOGISTIC: Simple workflow without WAITING_APPROVE
   const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
 
   // ADMIN can set any status including CANCELLED

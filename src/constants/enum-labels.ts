@@ -177,7 +177,8 @@ export const SERVICE_ORDER_STATUS_LABELS: Record<SERVICE_ORDER_STATUS, string> =
 export const SERVICE_ORDER_TYPE_LABELS: Record<SERVICE_ORDER_TYPE, string> = {
   [SERVICE_ORDER_TYPE.PRODUCTION]: "Produção",
   [SERVICE_ORDER_TYPE.FINANCIAL]: "Financeiro",
-  [SERVICE_ORDER_TYPE.NEGOTIATION]: "Negociação",
+  [SERVICE_ORDER_TYPE.COMMERCIAL]: "Comercial",
+  [SERVICE_ORDER_TYPE.LOGISTIC]: "Logística",
   [SERVICE_ORDER_TYPE.ARTWORK]: "Arte",
 };
 
@@ -1761,6 +1762,7 @@ export const BONUS_STATUS_LABELS: Record<BONUS_STATUS, string> = {
 };
 
 export const DISCOUNT_TYPE_LABELS: Record<DISCOUNT_TYPE, string> = {
+  [DISCOUNT_TYPE.NONE]: "Nenhum",
   [DISCOUNT_TYPE.PERCENTAGE]: "Porcentagem",
   [DISCOUNT_TYPE.FIXED_VALUE]: "Valor Fixo",
 };

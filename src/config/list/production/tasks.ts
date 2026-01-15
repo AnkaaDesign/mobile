@@ -34,39 +34,61 @@ const COUNTDOWN_STATUSES = [
   TASK_STATUS.WAITING_PRODUCTION,
 ]
 
-// Get row background color based on status and deadline
-// Matches web version logic exactly
+// Get row background color based on status and deadline (for cronograma) or forecastDate (for agenda)
 const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
-  // Non-production tasks (PREPARATION, WAITING_PRODUCTION, COMPLETED, CANCELLED) use neutral gray
-  if (task.status !== TASK_STATUS.IN_PRODUCTION) {
+  // For IN_PRODUCTION tasks: use term-based coloring (cronograma logic)
+  if (task.status === TASK_STATUS.IN_PRODUCTION) {
+    // Tasks with no deadline use neutral gray
+    if (!task.term) {
+      return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
+    }
+
+    // Check if task is overdue
+    const now = new Date()
+    const deadline = new Date(task.term)
+    const diffMs = deadline.getTime() - now.getTime()
+
+    if (diffMs < 0) {
+      // Overdue - red
+      return isDark ? '#7f1d1d' : '#fecaca' // red-900 / red-200
+    }
+
+    // Calculate hours remaining for active production tasks
+    const hoursRemaining = diffMs / (1000 * 60 * 60)
+
+    if (hoursRemaining > 4) {
+      // Safe - green (>4 hours)
+      return isDark ? '#14532d' : '#bbf7d0' // green-900 / green-200
+    } else {
+      // Warning - orange (0-4 hours)
+      return isDark ? '#7c2d12' : '#fed7aa' // orange-900 / orange-200
+    }
+  }
+
+  // For other statuses (PREPARATION, WAITING_PRODUCTION, etc.): use forecastDate-based coloring (agenda logic)
+  // Tasks without forecastDate use neutral
+  if (!task.forecastDate) {
     return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
   }
 
-  // Tasks with no deadline use neutral gray
-  if (!task.term) {
-    return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
-  }
-
-  // Check if task is overdue
+  // Calculate days remaining until forecastDate
   const now = new Date()
-  const deadline = new Date(task.term)
-  const diffMs = deadline.getTime() - now.getTime()
+  const forecast = new Date(task.forecastDate)
+  const diffMs = forecast.getTime() - now.getTime()
+  const daysRemaining = diffMs / (1000 * 60 * 60 * 24)
 
-  if (diffMs < 0) {
-    // Overdue - red
+  // Red zone: 3 days or less (including overdue)
+  if (daysRemaining <= 3) {
     return isDark ? '#7f1d1d' : '#fecaca' // red-900 / red-200
   }
 
-  // Calculate hours remaining for active production tasks
-  const hoursRemaining = diffMs / (1000 * 60 * 60)
-
-  if (hoursRemaining > 4) {
-    // Safe - green (>4 hours)
-    return isDark ? '#14532d' : '#bbf7d0' // green-900 / green-200
-  } else {
-    // Warning - orange (0-4 hours)
-    return isDark ? '#7c2d12' : '#fed7aa' // orange-900 / orange-200
+  // Yellow zone: between 3 and 7 days
+  if (daysRemaining <= 7) {
+    return isDark ? '#7c2d12' : '#fed7aa' // orange-900 / orange-200 (amber/yellow)
   }
+
+  // Safe zone: more than 7 days - neutral (no special color)
+  return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
 }
 
 
