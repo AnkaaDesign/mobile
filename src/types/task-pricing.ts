@@ -20,6 +20,7 @@ export type TaskPricingItem = {
 
 export type TaskPricing = {
   id?: string;
+  budgetNumber?: number; // Auto-generated sequential number for display
   subtotal: number;
   discountType: DISCOUNT_TYPE;
   discountValue: number | null;

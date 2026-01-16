@@ -73,6 +73,84 @@ export const ROUTE_MAP = {
 } as const;
 
 /**
+ * Maps list page types to their corresponding mobile routes
+ * Used for navigating to list pages (e.g., from daily stock summary notification)
+ * These routes don't require an [id] parameter
+ */
+export const LIST_ROUTE_MAP = {
+  // Inventory List Pages
+  items: '/(tabs)/estoque/produtos',
+  orders: '/(tabs)/estoque/pedidos',
+  suppliers: '/(tabs)/estoque/fornecedores',
+  activities: '/(tabs)/estoque/movimentacoes',
+  borrows: '/(tabs)/estoque/emprestimos',
+
+  // Production List Pages
+  tasks: '/(tabs)/producao/agenda',
+  serviceOrders: '/(tabs)/producao/ordens-de-servico',
+
+  // HR List Pages
+  employees: '/(tabs)/recursos-humanos/funcionarios',
+
+  // Administration List Pages
+  users: '/(tabs)/administracao/usuarios',
+  customers: '/(tabs)/administracao/clientes',
+  notifications: '/(tabs)/pessoal/minhas-notificacoes',
+} as const;
+
+/**
+ * Maps list page aliases to their route keys
+ * Used for parsing list page deep links (without entity ID)
+ */
+export const LIST_ALIAS_MAP: Record<string, keyof typeof LIST_ROUTE_MAP> = {
+  // Item/Product list
+  items: 'items',
+  produtos: 'items',
+  products: 'items',
+
+  // Order list
+  orders: 'orders',
+  pedidos: 'orders',
+
+  // Task list
+  tasks: 'tasks',
+  tarefas: 'tasks',
+  agenda: 'tasks',
+
+  // Service Order list
+  'service-orders': 'serviceOrders',
+  'ordens-de-servico': 'serviceOrders',
+
+  // Supplier list
+  suppliers: 'suppliers',
+  fornecedores: 'suppliers',
+
+  // Activity/Movement list
+  activities: 'activities',
+  movimentacoes: 'activities',
+
+  // Borrow list
+  borrows: 'borrows',
+  emprestimos: 'borrows',
+
+  // Employee list
+  employees: 'employees',
+  funcionarios: 'employees',
+
+  // User list
+  users: 'users',
+  usuarios: 'users',
+
+  // Customer list
+  customers: 'customers',
+  clientes: 'customers',
+
+  // Notifications list
+  notifications: 'notifications',
+  notificacoes: 'notifications',
+};
+
+/**
  * Maps simplified entity types to full entity types
  * Used for parsing shortened deep link URLs
  */
@@ -342,6 +420,21 @@ export function parseDeepLink(url: string): ParsedDeepLink {
       return parseNotificationLink(queryParams);
     }
 
+    // Handle list page shortcuts (e.g., ankaadesign://items - without ID)
+    // This is used for notifications that link to filtered list views
+    if (hostname && LIST_ALIAS_MAP[hostname.toLowerCase()]) {
+      const listKey = LIST_ALIAS_MAP[hostname.toLowerCase()];
+      const listRoute = LIST_ROUTE_MAP[listKey];
+
+      if (listRoute) {
+        console.log('[Deep Link] List page shortcut matched:', { listKey, route: listRoute });
+        return {
+          route: listRoute,
+          requiresAuth: true,
+        };
+      }
+    }
+
     // Handle entity type shortcuts (e.g., ankaadesign://task/123)
     if (hostname && ENTITY_ALIAS_MAP[hostname.toLowerCase()]) {
       const entityType = ENTITY_ALIAS_MAP[hostname.toLowerCase()];
@@ -354,6 +447,34 @@ export function parseDeepLink(url: string): ParsedDeepLink {
           return {
             route: route.replace('[id]', id),
             params: { id },
+            requiresAuth: true,
+          };
+        }
+      }
+
+      // If no path/ID provided, check if there's a list page for this entity
+      // This handles cases like ankaadesign://item (without ID) → item list
+      const singularToPlural: Record<string, string> = {
+        item: 'items',
+        order: 'orders',
+        task: 'tasks',
+        supplier: 'suppliers',
+        activity: 'activities',
+        borrow: 'borrows',
+        employee: 'employees',
+        user: 'users',
+        customer: 'customers',
+        notification: 'notifications',
+      };
+
+      const pluralAlias = singularToPlural[hostname.toLowerCase()];
+      if (pluralAlias && LIST_ALIAS_MAP[pluralAlias]) {
+        const listKey = LIST_ALIAS_MAP[pluralAlias];
+        const listRoute = LIST_ROUTE_MAP[listKey];
+        if (listRoute) {
+          console.log('[Deep Link] Singular entity without ID → list page:', { listKey, route: listRoute });
+          return {
+            route: listRoute,
             requiresAuth: true,
           };
         }

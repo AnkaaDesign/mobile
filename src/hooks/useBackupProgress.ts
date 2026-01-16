@@ -105,7 +105,7 @@ export function useBackupProgress(
     if (!backupId) return;
 
     // Use webhook subdomain or fallback to API URL
-    const socketUrl = Config.WEBHOOK_URL || 'https://webhook.ankaa.live';
+    const socketUrl = Config.WEBHOOK_URL || 'https://webhook.ankaadesign.com.br';
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
