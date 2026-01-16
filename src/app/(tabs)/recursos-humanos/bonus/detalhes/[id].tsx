@@ -198,32 +198,22 @@ export default function BonusDetailScreen() {
     return 0;
   }, []);
 
-  // Calculate final bonus amount (after discounts)
+  // Get final bonus amount (after discounts)
+  // IMPORTANT: Use netBonus from API as the single source of truth
+  // The API now correctly calculates netBonus = baseBonus - all discounts
   const calculateFinalAmount = useCallback(() => {
     if (!bonus) return 0;
 
-    const baseBonus = toNumber(bonus.baseBonus);
-
-    if (!bonus.bonusDiscounts || bonus.bonusDiscounts.length === 0) {
-      return baseBonus;
+    // Primary: Use netBonus directly from API (single source of truth)
+    const netBonus = toNumber((bonus as any).netBonus);
+    if (netBonus > 0) {
+      return netBonus;
     }
 
-    let finalAmount = baseBonus;
-
-    bonus.bonusDiscounts
-      .sort((a: any, b: any) => a.calculationOrder - b.calculationOrder)
-      .forEach((discount: any) => {
-        const percentage = toNumber(discount.percentage);
-        const value = toNumber(discount.value);
-
-        if (percentage) {
-          finalAmount -= finalAmount * (percentage / 100);
-        } else if (value) {
-          finalAmount -= value;
-        }
-      });
-
-    return finalAmount;
+    // Fallback: If netBonus is not available, use baseBonus
+    // This handles legacy data or edge cases
+    const baseBonus = toNumber(bonus.baseBonus);
+    return baseBonus;
   }, [bonus, toNumber]);
 
   // Get eligible users count from various sources

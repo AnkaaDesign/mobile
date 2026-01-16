@@ -223,29 +223,22 @@ export default function CurrentBonusScreen() {
     return commissionStats.tasks.filter((task: Task) => task.commission === selectedCommissionStatus);
   }, [commissionStats.tasks, selectedCommissionStatus]);
 
-  // Calculate final bonus amount (after discounts)
+  // Get final bonus amount (after discounts)
+  // IMPORTANT: Use netBonus from API as the single source of truth
+  // The API now correctly calculates netBonus = baseBonus - all discounts
   const calculateFinalAmount = useCallback(() => {
     if (!bonus) return 0;
 
-    const baseBonus = getNumericValue(bonus.baseBonus);
-
-    if (!bonus.bonusDiscounts || bonus.bonusDiscounts.length === 0) {
-      return baseBonus;
+    // Primary: Use netBonus directly from API (single source of truth)
+    const netBonus = getNumericValue((bonus as any).netBonus);
+    if (netBonus > 0) {
+      return netBonus;
     }
 
-    let finalAmount = baseBonus;
-
-    bonus.bonusDiscounts
-      .sort((a: any, b: any) => (a.calculationOrder || 0) - (b.calculationOrder || 0))
-      .forEach((discount: any) => {
-        if (discount.percentage) {
-          finalAmount -= finalAmount * (discount.percentage / 100);
-        } else if (discount.value) {
-          finalAmount -= getNumericValue(discount.value);
-        }
-      });
-
-    return finalAmount;
+    // Fallback: If netBonus is not available, use baseBonus
+    // This handles legacy data or edge cases
+    const baseBonus = getNumericValue(bonus.baseBonus);
+    return baseBonus;
   }, [bonus]);
 
   const handleRefresh = useCallback(async () => {
