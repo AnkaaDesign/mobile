@@ -408,7 +408,8 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
             },
             pressed && {
               backgroundColor: isDark ? 'rgba(21, 128, 61, 0.2)' : 'rgba(21, 128, 61, 0.15)',
-              transform: [{ scale: 0.98 }],
+              transform: [{ scale: 0.96 }],
+              opacity: 0.7,
             },
           ]}
         >
@@ -422,7 +423,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                   style={[
                     styles.notificationTitle,
                     {
-                      color: isDark ? '#e5e5e5' : '#262626',
+                      color: isDark ? '#cccccc' : '#525252',
                       fontWeight: isUnread ? '600' : '500',
                     },
                   ]}
@@ -433,7 +434,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                 <RNText
                   style={[
                     styles.notificationBody,
-                    { color: isDark ? '#a3a3a3' : '#737373' },
+                    { color: isDark ? '#d4d4d4' : '#525252' },
                   ]}
                   numberOfLines={2}
                 >
@@ -442,7 +443,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                 <RNText
                   style={[
                     styles.notificationTimestamp,
-                    { color: isDark ? '#737373' : '#a3a3a3' },
+                    { color: isDark ? '#8c8c8c' : '#737373' },
                   ]}
                 >
                   {formatNotificationTime(notification.createdAt)}
@@ -500,7 +501,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                     styles.drawer,
                     {
                       width: DRAWER_WIDTH,
-                      backgroundColor: isDark ? '#0a0a0a' : '#ffffff',
+                      backgroundColor: isDark ? '#212121' : '#fafafa',
                     },
                     drawerStyle,
                   ]}
@@ -519,11 +520,11 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                         <View style={styles.headerLeft}>
                           <Icon name="bell" size="lg" variant="muted" />
                           <View style={styles.headerInfo}>
-                            <RNText style={[styles.headerTitle, { color: isDark ? '#f5f5f5' : '#171717' }]}>
+                            <RNText style={[styles.headerTitle, { color: isDark ? '#ffffff' : '#171717' }]}>
                               Notificações
                             </RNText>
                             {unreadCount > 0 && (
-                              <RNText style={[styles.headerSubtitle, { color: isDark ? '#a3a3a3' : '#737373' }]}>
+                              <RNText style={[styles.headerSubtitle, { color: isDark ? '#d4d4d4' : '#525252' }]}>
                                 {unreadCount} não {unreadCount === 1 ? 'lida' : 'lidas'}
                               </RNText>
                             )}
@@ -537,13 +538,13 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                           ]}
                           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                          <Icon name="x" size={20} color={isDark ? '#a3a3a3' : '#737373'} />
+                          <Icon name="x" size={20} color={isDark ? '#8c8c8c' : '#737373'} />
                         </Pressable>
                       </View>
 
                       {/* Mark all as read button (like user menu dropdown) */}
                       {unreadCount > 0 && (
-                        <View style={[styles.actionMenu, { backgroundColor: isDark ? '#171717' : '#f5f5f5' }]}>
+                        <View style={[styles.actionMenu, { backgroundColor: isDark ? '#2a2a2a' : '#ffffff', borderColor: isDark ? '#404040' : '#e0e0e0', borderWidth: 1 }]}>
                           <Pressable
                             onPress={handleMarkAllAsRead}
                             disabled={markAllAsRead.isPending}
@@ -558,9 +559,9 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                             {markAllAsRead.isPending ? (
                               <ActivityIndicator size="small" color="#15803d" style={{ width: 16, height: 16 }} />
                             ) : (
-                              <Icon name="checks" size="sm" variant="muted" />
+                              <Icon name="check" size="sm" variant="muted" />
                             )}
-                            <RNText style={[styles.actionMenuText, { color: isDark ? '#e5e5e5' : '#262626' }]}>
+                            <RNText style={[styles.actionMenuText, { color: isDark ? '#d4d4d4' : '#404040' }]}>
                               {markAllAsRead.isPending ? 'Marcando...' : 'Marcar todas como lidas'}
                             </RNText>
                           </Pressable>
@@ -570,21 +571,21 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
 
                     {/* Notifications section */}
                     <View style={styles.section}>
-                      <RNText style={[styles.sectionTitle, { color: isDark ? '#737373' : '#a3a3a3' }]}>
+                      <RNText style={[styles.sectionTitle, { color: isDark ? '#8c8c8c' : '#737373' }]}>
                         {unreadCount > 0 ? 'NÃO LIDAS' : 'NOTIFICAÇÕES'}
                       </RNText>
 
                       {isLoading ? (
                         <View style={styles.loadingContainer}>
                           <ActivityIndicator size="small" color="#15803d" />
-                          <RNText style={[styles.loadingText, { color: isDark ? '#a3a3a3' : '#737373' }]}>
+                          <RNText style={[styles.loadingText, { color: isDark ? '#d4d4d4' : '#525252' }]}>
                             Carregando...
                           </RNText>
                         </View>
                       ) : notifications.length === 0 ? (
                         <View style={styles.emptyContainer}>
-                          <Icon name="bell-off" size={32} color={isDark ? '#525252' : '#a3a3a3'} />
-                          <RNText style={[styles.emptyText, { color: isDark ? '#737373' : '#a3a3a3' }]}>
+                          <Icon name="bell-off" size={32} color={isDark ? '#8c8c8c' : '#737373'} />
+                          <RNText style={[styles.emptyText, { color: isDark ? '#d4d4d4' : '#525252' }]}>
                             Nenhuma notificação
                           </RNText>
                         </View>
@@ -598,7 +599,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                           {/* Read notifications section */}
                           {notifications.filter(n => n.isSeenByUser).length > 0 && (
                             <>
-                              <RNText style={[styles.sectionTitle, { color: isDark ? '#737373' : '#a3a3a3', marginTop: SPACING.lg }]}>
+                              <RNText style={[styles.sectionTitle, { color: isDark ? '#8c8c8c' : '#737373', marginTop: SPACING.lg }]}>
                                 LIDAS
                               </RNText>
                               {notifications.filter(n => n.isSeenByUser).map((notification, index) =>
@@ -611,12 +612,12 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                           {hasNextPage && (
                             <Pressable
                               onPress={() => fetchNextPage()}
-                              style={[styles.loadMoreButton, { backgroundColor: isDark ? '#171717' : '#f5f5f5' }]}
+                              style={[styles.loadMoreButton, { backgroundColor: isDark ? '#2a2a2a' : '#ffffff', borderColor: isDark ? '#404040' : '#e0e0e0', borderWidth: 1 }]}
                             >
                               {isFetchingNextPage ? (
                                 <ActivityIndicator size="small" color="#15803d" />
                               ) : (
-                                <RNText style={[styles.loadMoreText, { color: isDark ? '#a3a3a3' : '#737373' }]}>
+                                <RNText style={[styles.loadMoreText, { color: isDark ? '#d4d4d4' : '#404040' }]}>
                                   Carregar mais
                                 </RNText>
                               )}
