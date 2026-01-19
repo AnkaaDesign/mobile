@@ -94,6 +94,9 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: { order: 8, description: "Recursos humanos e pessoal" },
     [SECTOR_PRIVILEGES.FINANCIAL]: { order: 9, description: "Controle financeiro e orçamentário" },
     [SECTOR_PRIVILEGES.ADMIN]: { order: 10, description: "Administração completa do sistema" },
+    [SECTOR_PRIVILEGES.COMMERCIAL]: { order: 11, description: "Gestão comercial e vendas" },
+    [SECTOR_PRIVILEGES.LEADER]: { order: 12, description: "Liderança de equipe" },
+    [SECTOR_PRIVILEGES.PLOTTING]: { order: 13, description: "Plotagem e impressão" },
   };
 
   // Sort privileges by order (matching web version)

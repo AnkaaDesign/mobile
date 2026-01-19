@@ -13,6 +13,22 @@ export const discountTypeSchema = z.enum([
   'FIXED_VALUE',
 ]);
 
+export const paymentConditionSchema = z.enum([
+  'CASH',
+  'INSTALLMENTS_2',
+  'INSTALLMENTS_3',
+  'INSTALLMENTS_4',
+  'INSTALLMENTS_5',
+  'INSTALLMENTS_6',
+  'INSTALLMENTS_7',
+  'CUSTOM',
+]);
+
+export const guaranteeYearsSchema = z.number().refine(
+  (val) => [5, 10, 15].includes(val),
+  { message: 'Período de garantia inválido' }
+);
+
 export const taskPricingItemSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().min(1, 'Descrição é obrigatória').max(400),
@@ -36,6 +52,15 @@ export const taskPricingCreateNestedSchema = z
     discountType: discountTypeSchema.optional().default('NONE'),
     discountValue: z.number().optional().nullable(),
     total: z.number().optional().nullable(),
+    // Payment Terms
+    paymentCondition: paymentConditionSchema.optional().nullable(),
+    downPaymentDate: z.coerce.date().optional().nullable(),
+    customPaymentText: z.string().max(2000).optional().nullable(),
+    // Guarantee Terms
+    guaranteeYears: guaranteeYearsSchema.optional().nullable(),
+    customGuaranteeText: z.string().max(2000).optional().nullable(),
+    // Layout File
+    layoutFileId: z.string().uuid().optional().nullable(),
   })
   .optional()
   .superRefine((data, ctx) => {
@@ -108,6 +133,7 @@ export const taskPricingCreateNestedSchema = z
 
 export const taskPricingSchema = z.object({
   id: z.string().uuid().optional(),
+  budgetNumber: z.number().optional(),
   subtotal: z.number().min(0),
   discountType: discountTypeSchema.default('NONE'),
   discountValue: z.number().optional().nullable(),
@@ -115,6 +141,16 @@ export const taskPricingSchema = z.object({
   expiresAt: z.coerce.date(),
   status: taskPricingStatusSchema,
   items: z.array(taskPricingItemSchema).min(1, 'Pelo menos um item é obrigatório'),
+  // Payment Terms
+  paymentCondition: paymentConditionSchema.optional().nullable(),
+  downPaymentDate: z.coerce.date().optional().nullable(),
+  customPaymentText: z.string().max(2000).optional().nullable(),
+  // Guarantee Terms
+  guaranteeYears: guaranteeYearsSchema.optional().nullable(),
+  customGuaranteeText: z.string().max(2000).optional().nullable(),
+  // Layout File
+  layoutFileId: z.string().uuid().optional().nullable(),
+  customerSignatureId: z.string().uuid().optional().nullable(),
 }).superRefine((data, ctx) => {
   // Validate discount fields
   if (data.discountType !== 'NONE') {

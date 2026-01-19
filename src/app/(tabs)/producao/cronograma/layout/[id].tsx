@@ -15,11 +15,12 @@ import { useTaskDetail, useLayoutsByTruck, useLayoutMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
+import { routes, TRUCK_MANUFACTURER } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { canEditLayouts, canEditLayoutsOnly, canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
-import type { LayoutCreateFormData } from "@/schemas";
+import type { LayoutCreateFormData, TruckCreateFormData } from "@/schemas";
 import { Icon } from "@/components/ui/icon";
+import { truckService } from "@/api-client";
 
 export default function LayoutOnlyEditScreen() {
   const router = useRouter();
@@ -161,25 +162,17 @@ export default function LayoutOnlyEditScreen() {
     }
   }, [layouts]);
 
-  // Check if task has a truck (layout requires a truck)
-  const hasTruck = !!truckId;
-
   // Check if any layout exists
   const hasExistingLayout = !!(existingLayouts?.left || existingLayouts?.right || existingLayouts?.back);
 
   // When there's no existing layout, mark all sides as modified to create them with defaults
   useEffect(() => {
-    if (!hasExistingLayout && hasTruck && modifiedLayoutSides.size === 0) {
+    if (!hasExistingLayout && modifiedLayoutSides.size === 0) {
       setModifiedLayoutSides(new Set(['left', 'right', 'back']));
     }
-  }, [hasExistingLayout, hasTruck, modifiedLayoutSides.size]);
+  }, [hasExistingLayout, modifiedLayoutSides.size]);
 
   const handleSubmit = async () => {
-    if (!truckId) {
-      Alert.alert("Erro", "Esta tarefa nao possui um caminhao associado. Layout nao pode ser salvo.");
-      return;
-    }
-
     if (modifiedLayoutSides.size === 0) {
       Alert.alert("Info", "Nenhuma alteracao foi feita no layout.");
       return;
@@ -188,6 +181,26 @@ export default function LayoutOnlyEditScreen() {
     setIsSubmitting(true);
 
     try {
+      // Auto-create truck if it doesn't exist
+      let activeTruckId = truckId;
+      if (!activeTruckId) {
+        try {
+          const truckData: TruckCreateFormData = {
+            model: `Caminhão - ${task?.name || 'Tarefa'}`,
+            manufacturer: TRUCK_MANUFACTURER.VOLVO,
+            taskId: id!,
+          };
+          const truckResponse = await truckService.createTruck(truckData);
+          activeTruckId = truckResponse.data.id;
+          console.log('[Layout] Auto-created truck:', activeTruckId);
+        } catch (error) {
+          console.error('[Layout] Failed to auto-create truck:', error);
+          Alert.alert("Erro", "Não foi possível criar o caminhão automaticamente.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       // Save each modified side
       const savePromises: Promise<any>[] = [];
 
@@ -203,7 +216,7 @@ export default function LayoutOnlyEditScreen() {
           });
           savePromises.push(
             createOrUpdateTruckLayout({
-              truckId,
+              truckId: activeTruckId,
               side,
               data: layoutData,
             })
@@ -345,25 +358,8 @@ export default function LayoutOnlyEditScreen() {
               </View>
             </Card>
 
-            {/* Warning if no truck */}
-            {!hasTruck && (
-              <Card style={[styles.warningCard, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive }]}>
-                <View style={styles.warningContent}>
-                  <Icon name="alert-triangle" size={24} color={colors.destructive} />
-                  <View style={styles.warningTextContainer}>
-                    <ThemedText style={[styles.warningTitle, { color: colors.destructive }]}>
-                      Caminhao nao encontrado
-                    </ThemedText>
-                    <ThemedText style={[styles.warningMessage, { color: colors.mutedForeground }]}>
-                      Esta tarefa nao possui um caminhao associado. Para editar o layout, e necessario que a tarefa tenha um caminhao cadastrado.
-                    </ThemedText>
-                  </View>
-                </View>
-              </Card>
-            )}
-
             {/* Layout Section */}
-            {hasTruck && (
+            {(
               <Card style={styles.layoutCard}>
                 <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
                   <Icon name="ruler" size={20} color={colors.primary} />
@@ -472,7 +468,7 @@ export default function LayoutOnlyEditScreen() {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting || isSavingTruckLayout}
         submitLabel={hasExistingLayout ? "Salvar Alteracoes" : "Cadastrar Layout"}
-        canSubmit={hasTruck && modifiedLayoutSides.size > 0 && !layoutWidthError}
+        canSubmit={modifiedLayoutSides.size > 0 && !layoutWidthError}
       />
     </ThemedView>
   );

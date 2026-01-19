@@ -11,32 +11,6 @@ export const usePaintsInfiniteMobile = (filters?: Partial<PaintGetManyFormData>,
       const params: PaintGetManyFormData = {
         page: pageParam,
         perPage: pageSize,
-        orderBy: filters?.orderBy || { createdAt: "desc" },
-        include: {
-          brand: true,
-          type: true,
-          catalog: true,
-          formulas: {
-            include: {
-              components: {
-                include: {
-                  component: true,
-                }
-              }
-            },
-            take: 1,
-          },
-          productions: {
-            orderBy: { createdAt: "desc" },
-            take: 5,
-          },
-          _count: {
-            select: {
-              formulas: true,
-              productions: true,
-            }
-          },
-        },
         ...filters,
       };
 

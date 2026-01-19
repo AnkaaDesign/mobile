@@ -5,6 +5,7 @@ import type { ORDER_BY_DIRECTION, TASK_STATUS, COMMISSION_STATUS } from '@/const
 import type { Sector, SectorIncludes, SectorOrderBy } from "./sector";
 import type { Customer, CustomerIncludes, CustomerOrderBy } from "./customer";
 import type { File, FileIncludes } from "./file";
+import type { Artwork, ArtworkIncludes } from "./artwork";
 import type { Observation, ObservationIncludes } from "./observation";
 import type { Paint, PaintIncludes, PaintOrderBy } from "./paint";
 import type { User, UserIncludes, UserOrderBy } from "./user";
@@ -64,7 +65,7 @@ export interface Task extends BaseEntity {
   observation?: Observation;
   generalPainting?: Paint;
   createdBy?: User;
-  artworks?: File[];
+  artworks?: Artwork[];
   logoPaints?: Paint[];
   services?: ServiceOrder[];
   airbrushings?: Airbrushing[];
@@ -119,7 +120,7 @@ export interface TaskIncludes {
   artworks?:
     | boolean
     | {
-        include?: FileIncludes;
+        include?: ArtworkIncludes;
       };
   baseFiles?:
     | boolean

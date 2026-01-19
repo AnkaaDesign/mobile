@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
+import { useFileViewer } from "@/components/file";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatDateTime } from "@/utils";
 
@@ -25,6 +26,7 @@ interface TaskAttachmentsCardProps {
 
 export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({ files }) => {
   const { colors } = useTheme();
+  const { openFile } = useFileViewer();
 
   const getFileIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
@@ -56,10 +58,8 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({ files 
     }
   };
 
-  const handleDownload = (file: File) => {
-    if (file.filename) {
-      Linking.openURL(file.filename);
-    }
+  const handleOpenFile = (file: File) => {
+    openFile(file);
   };
 
   return (
@@ -80,7 +80,7 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({ files 
               styles.fileItem,
               index < files.length - 1 && styles.fileItemBorder,
             ]}
-            onPress={() => handleDownload(file)}
+            onPress={() => handleOpenFile(file)}
             activeOpacity={0.7}
           >
             <Icon

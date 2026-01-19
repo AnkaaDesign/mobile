@@ -19,8 +19,8 @@ import { ServiceOrderProgressBar } from '@/components/production/task/service-or
 
 // Helper to check if task has pending service orders
 const hasPendingServiceOrders = (task: Task): boolean => {
-  if (!task.services || task.services.length === 0) return false
-  return task.services.some(
+  if (!task.serviceOrders || task.serviceOrders.length === 0) return false
+  return task.serviceOrders.some(
     (service) => service.status === SERVICE_ORDER_STATUS.PENDING || service.status === SERVICE_ORDER_STATUS.IN_PROGRESS
   )
 }
@@ -110,7 +110,7 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
       truck: true,
-      services: {
+      serviceOrders: {
         select: {
           id: true,
           name: true,

@@ -63,7 +63,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (activity) => activity.user?.name || '-',
+        render: (activity) => activity.user?.name || 'Sistema',
       },
       {
         key: 'quantity',

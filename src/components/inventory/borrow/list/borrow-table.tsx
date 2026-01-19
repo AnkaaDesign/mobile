@@ -151,7 +151,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (borrow: Borrow) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {borrow.user?.name || "Usuário"}
+        {borrow.user?.name || "Sistema"}
       </ThemedText>
     ),
   },

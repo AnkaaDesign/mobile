@@ -26,7 +26,7 @@
     "production": {
       "channel": "production",
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"
       },
       "ios": {
         "buildConfiguration": "Release",
@@ -37,6 +37,15 @@
             "ios/Pods"
           ]
         }
+      },
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      }
+    },
+    "production-aab": {
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
       },
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=4096"

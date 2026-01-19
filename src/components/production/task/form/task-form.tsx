@@ -37,6 +37,7 @@ import { SpotSelector } from "./spot-selector";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
+import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
 import type { Customer, Paint } from "@/types";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
@@ -125,14 +126,8 @@ const taskFormSchema = z.object({
     startedAt: z.date().nullable().optional(),
     finishedAt: z.date().nullable().optional(),
   })).optional(),
-  // Budget detailed - line items
-  budget: z.object({
-    items: z.array(z.object({
-      description: z.string().min(1, "Descrição é obrigatória"),
-      amount: z.number().positive("Valor deve ser positivo"),
-    })).optional(),
-    expiresIn: z.date().nullable().optional(),
-  }).nullable().optional(),
+  // Pricing - comprehensive pricing with items, discounts, payment terms, etc.
+  pricing: taskPricingCreateNestedSchema,
   // Cuts
   cuts: z.array(z.object({
     type: z.string(), // CUT_TYPE enum
@@ -530,6 +525,55 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       assignedToId: null,
       observation: null
     }],
+    // Initialize pricing with default structure - default row is part of initial state, not a change
+    pricing: initialData?.pricing ? {
+      expiresAt: initialData.pricing.expiresAt ? new Date(initialData.pricing.expiresAt) : null,
+      status: initialData.pricing.status || 'DRAFT',
+      subtotal: initialData.pricing.subtotal || 0,
+      discountType: initialData.pricing.discountType || 'NONE',
+      discountValue: initialData.pricing.discountValue || null,
+      total: initialData.pricing.total || 0,
+      // Payment Terms
+      paymentCondition: initialData.pricing.paymentCondition || null,
+      downPaymentDate: initialData.pricing.downPaymentDate ? new Date(initialData.pricing.downPaymentDate) : null,
+      customPaymentText: initialData.pricing.customPaymentText || null,
+      // Guarantee Terms
+      guaranteeYears: initialData.pricing.guaranteeYears || null,
+      customGuaranteeText: initialData.pricing.customGuaranteeText || null,
+      // Layout File
+      layoutFileId: initialData.pricing.layoutFileId || null,
+      items: initialData.pricing.items?.length > 0
+        ? initialData.pricing.items.map((item: any) => ({
+            id: item.id,
+            description: item.description || "",
+            amount: typeof item.amount === 'number' ? item.amount : (item.amount ? Number(item.amount) : 0),
+          }))
+        : [{ description: "", amount: null }], // Default empty row
+    } : undefined, // undefined when no pricing exists (optional field)
+    // Initialize cuts with default empty array (MultiCutSelector handles its own defaults)
+    cuts: initialData?.cuts && initialData.cuts.length > 0
+      ? initialData.cuts.map((cut: any) => ({
+          id: cut.id,
+          type: cut.type,
+          quantity: cut.quantity || 1,
+          origin: cut.origin,
+          fileId: cut.fileId,
+          fileName: cut.file?.name || cut.fileName,
+        }))
+      : [],
+    // Initialize airbrushings with default empty array (MultiAirbrushingSelector handles its own defaults)
+    airbrushings: initialData?.airbrushings && initialData.airbrushings.length > 0
+      ? initialData.airbrushings.map((a: any) => ({
+          id: a.id, // Preserve original airbrushing ID
+          startDate: a.startDate ? new Date(a.startDate) : null,
+          finishDate: a.finishDate ? new Date(a.finishDate) : null,
+          price: a.price,
+          status: a.status,
+          receiptIds: a.receipts?.map((r: any) => r.id) || [],
+          invoiceIds: a.invoices?.map((n: any) => n.id) || [],
+          artworkIds: a.artworks?.map((art: any) => art.fileId || art.file?.id || art.id) || [],
+        }))
+      : [],
     status: initialData?.status || TASK_STATUS.PREPARATION,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
     startedAt: initialData?.startedAt || null,
@@ -803,6 +847,45 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         console.log('[TaskForm] Consolidated truck:', consolidatedTruck);
       }
 
+      // Add artwork statuses if changed (filter to UUIDs only, not temp IDs)
+      if (hasArtworkStatusChanges && Object.keys(artworkStatuses).length > 0) {
+        const filteredArtworkStatuses: Record<string, string> = {};
+        Object.entries(artworkStatuses).forEach(([fileId, status]) => {
+          // Only include real UUIDs, not temporary IDs
+          if (fileId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fileId)) {
+            filteredArtworkStatuses[fileId] = status;
+          }
+        });
+        if (Object.keys(filteredArtworkStatuses).length > 0) {
+          formDataFields.artworkStatuses = filteredArtworkStatuses;
+          console.log('[TaskForm] Including artworkStatuses (filtered UUIDs):', filteredArtworkStatuses);
+        }
+      }
+
+      // Add pricing layout file if present
+      if (pricingLayoutFiles.length > 0) {
+        const newPricingLayoutFiles = pricingLayoutFiles.filter(f => !f.uploaded);
+        if (newPricingLayoutFiles.length > 0) {
+          files.pricingLayoutFiles = newPricingLayoutFiles;
+          // Include existing pricing layout file ID
+          const existingPricingLayoutId = pricingLayoutFiles.find(f => f.uploaded && f.id)?.id;
+          if (existingPricingLayoutId && formDataFields.pricing) {
+            formDataFields.pricing.layoutFileId = existingPricingLayoutId;
+          }
+        }
+      }
+
+      // Get pricing data from form for validation
+      const pricingData = form.getValues('pricing');
+      if (pricingData && pricingData.items && pricingData.items.length > 0) {
+        // Pricing validation already handled by PricingSelector component
+        console.log('[TaskForm] Including pricing data with items:', pricingData.items.length);
+      }
+
+      // Get cuts and airbrushings data - these will be handled after task update
+      const cutsData = form.getValues('cuts') || [];
+      const airbrushingsData = form.getValues('airbrushings') || [];
+
       // Create FormData with context for proper backend file organization
       const formData = createFormDataWithContext(
         formDataFields,
@@ -813,8 +896,50 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         }
       );
 
-      await onSubmit(formData as any);
+      const result = await onSubmit(formData as any);
       console.log('[TaskForm] FormData submission completed');
+
+      // Create cuts separately if there are any
+      if (cutsData.length > 0 && result && 'success' in result && result.success) {
+        const cutCreationPromises = cutsData.map(async (cut: any) => {
+          // Only create cuts with new files
+          if (!cut.file || cut.fileId) {
+            return { success: false, skipped: true };
+          }
+
+          try {
+            const cutFormData = new FormData();
+            cutFormData.append('type', cut.type);
+            cutFormData.append('origin', CUT_ORIGIN.PLAN);
+            cutFormData.append('taskId', initialData?.id || '');
+            cutFormData.append('quantity', String(cut.quantity || 1));
+            cutFormData.append('file', cut.file);
+
+            const context = {
+              entityType: 'cut',
+              entityId: initialData?.id,
+              customerName: initialCustomer?.fantasyName || initialCustomer?.corporateName || 'Sem-Nome',
+              cutType: cut.type,
+            };
+            cutFormData.append('_context', JSON.stringify(context));
+
+            await createCutAsync(cutFormData as any);
+            return { success: true };
+          } catch (error) {
+            console.error('[TaskForm] Cut creation error:', error);
+            return { success: false, error };
+          }
+        });
+
+        await Promise.all(cutCreationPromises);
+      }
+
+      // Reset artwork flags after successful submission
+      if (hasArtworkStatusChanges || hasArtworkFileChanges) {
+        console.log('[TaskForm] Resetting artwork flags after successful submission');
+        setHasArtworkStatusChanges(false);
+        setHasArtworkFileChanges(false);
+      }
     } else {
       // No files - submit as regular JSON with proper formatting
       const cleanedData: any = {
@@ -879,8 +1004,30 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         console.log('[TaskForm] Consolidated truck (JSON):', consolidatedTruck);
       }
 
+      // Add artwork statuses if changed (JSON path)
+      if (hasArtworkStatusChanges && Object.keys(artworkStatuses).length > 0) {
+        const filteredArtworkStatuses: Record<string, string> = {};
+        Object.entries(artworkStatuses).forEach(([fileId, status]) => {
+          // Only include real UUIDs, not temporary IDs
+          if (fileId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fileId)) {
+            filteredArtworkStatuses[fileId] = status;
+          }
+        });
+        if (Object.keys(filteredArtworkStatuses).length > 0) {
+          cleanedData.artworkStatuses = filteredArtworkStatuses;
+          console.log('[TaskForm] Including artworkStatuses in JSON (filtered UUIDs):', filteredArtworkStatuses);
+        }
+      }
+
       await onSubmit(cleanedData);
       console.log('[TaskForm] JSON submission completed');
+
+      // Reset artwork flags after successful submission
+      if (hasArtworkStatusChanges || hasArtworkFileChanges) {
+        console.log('[TaskForm] Resetting artwork flags after successful submission (JSON path)');
+        setHasArtworkStatusChanges(false);
+        setHasArtworkFileChanges(false);
+      }
     }
     } catch (error) {
       console.error('[TaskForm] Submission error:', error);
@@ -1365,6 +1512,57 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
           </FormCard>
 
+          {/* Pricing Card - Visible to ADMIN, FINANCIAL, and COMMERCIAL users */}
+          {canViewPricingSections && (
+            <FormCard
+              title="Precificação"
+              icon="IconFileInvoice"
+              badge={pricingItemCount > 0 ? pricingItemCount : undefined}
+            >
+              <PricingSelector
+                ref={pricingSelectorRef}
+                control={form.control}
+                disabled={isSubmitting}
+                userRole={user?.sector?.privileges}
+                onItemCountChange={setPricingItemCount}
+                layoutFiles={pricingLayoutFiles}
+                onLayoutFilesChange={setPricingLayoutFiles}
+              />
+            </FormCard>
+          )}
+
+          {/* Cut Plans Section - EDITABLE for Designer, Hidden for Financial, Logistic, and Commercial users */}
+          {!isFinancialSector && !isLogisticSector && !isCommercialSector && (
+            <FormCard
+              title="Plano de Corte"
+              icon="IconScissors"
+              badge={cutsCount > 0 ? cutsCount : undefined}
+            >
+              <MultiCutSelector
+                ref={multiCutSelectorRef}
+                control={form.control}
+                disabled={isSubmitting}
+                onCutsCountChange={setCutsCount}
+              />
+            </FormCard>
+          )}
+
+          {/* Airbrushing Section - Hidden for Warehouse, Financial, Designer, Logistic, and Commercial users */}
+          {!isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
+            <FormCard
+              title="Aerografias"
+              icon="IconSparkles"
+              badge={airbrushingsCount > 0 ? airbrushingsCount : undefined}
+            >
+              <MultiAirbrushingSelector
+                ref={multiAirbrushingSelectorRef}
+                control={form.control}
+                disabled={isSubmitting}
+                onAirbrushingsCountChange={setAirbrushingsCount}
+              />
+            </FormCard>
+          )}
+
           {/* Financial Files - Hidden for warehouse, designer, logistic, commercial users */}
           {!isWarehouseSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
           <FormCard title="Documentos Financeiros (Opcional)" icon="IconCurrencyDollar">
@@ -1699,17 +1897,31 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           {/* Artworks - Last section, hidden for warehouse, financial, logistic, commercial users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && !isCommercialSector && (
             <FormCard title="Artes (Opcional)" icon="IconPhotoPlus">
-                <FilePicker
-                  value={artworkFiles}
-                  onChange={setArtworkFiles}
+                <ArtworkFileUploadField
+                  onFilesChange={(files) => {
+                    console.log('[TaskForm] 🎨 Artworks changed:', files.length);
+                    setUploadedFiles(files);
+                    setHasArtworkFileChanges(true);
+                  }}
+                  onStatusChange={(fileId, status) => {
+                    console.log('[TaskForm] 🎨 Artwork status changed:', { fileId, status });
+                    setArtworkStatuses(prev => {
+                      const newStatuses = {
+                        ...prev,
+                        [fileId]: status,
+                      };
+                      console.log('[TaskForm] 🎨 New artworkStatuses:', newStatuses);
+                      return newStatuses;
+                    });
+                    setHasArtworkStatusChanges(true);
+                    console.log('[TaskForm] 🎨 Set hasArtworkStatusChanges to true');
+                  }}
                   maxFiles={5}
-                  placeholder="Adicionar arquivos de arte"
-                  helperText="Imagens, PDFs ou outros arquivos"
-                  showCamera={false}
-                  showVideoCamera={false}
-                  showGallery={true}
-                  showFilePicker={true}
                   disabled={isSubmitting}
+                  showPreview={true}
+                  existingFiles={uploadedFiles}
+                  placeholder="Adicione artes relacionadas à tarefa"
+                  label="Artes anexadas"
                 />
             </FormCard>
           )}

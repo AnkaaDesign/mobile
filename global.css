@@ -79,7 +79,7 @@
     --destructive: 0 70% 70%; /* #f87171 red-400 - matching web */
     --destructive-foreground: 0 0% 100%; /* white - matching web */
 
-    --border: 0 0% 23%; /* #3a3a3a - matching web */
+    --border: 0 0% 22%; /* subtle but visible - matching web */
     --input: 0 0% 15%; /* #262626 - same as card for visibility - matching web */
     --ring: 142 72% 29%; /* green-700 #15803d - matching web */
   }
