@@ -1,7 +1,7 @@
 // Ultra-Optimized Navigation with Full Menu Structure and Privilege-Based Loading
 // This version combines the privilege optimization with the original menu design
 
-import { useMemo, Suspense, lazy, useEffect, useRef } from "react";
+import { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,8 +10,10 @@ import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
-import { NotificationPopover } from "@/components/notifications/NotificationPopover";
+import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
+import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
 import { router } from "expo-router";
+import * as Haptics from 'expo-haptics';
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -21,8 +23,8 @@ const logPerformance = (action: string, startTime: number) => {
   }
 };
 
-// Lazy load drawer content with full menu
-const DrawerContent = lazy(() => import('./OriginalMenuDrawer'));
+// Lazy load combined drawer content (supports both menu and notifications)
+const CombinedDrawerContent = lazy(() => import('./CombinedDrawerContent'));
 
 // Complete route list with correct naming
 const ALL_ROUTES = [
@@ -505,18 +507,49 @@ interface ExtendedUser {
   [key: string]: any;
 }
 
-// Notification Bell component for header - now uses popover like web version
-function NotificationBell({ color }: { color: string }) {
-  return <NotificationPopover color={color} />;
+// Notification Bell component for header - opens notification drawer
+function NotificationBell({ color, onPress }: { color: string; onPress: () => void }) {
+  const { count, isLoading } = useUnreadNotificationsCount();
+  const { isDark } = useTheme();
+
+  const handlePress = useCallback(() => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onPress();
+  }, [onPress]);
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
+        styles.headerButton,
+        pressed && { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)' }
+      ]}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <View>
+        <Icon name="bell" size="md" color={color} />
+        {!isLoading && count > 0 && (
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText} numberOfLines={1}>
+              {count > 99 ? '99+' : String(count)}
+            </Text>
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
 }
 
-// Main optimized drawer layout with full menu structure
-export function PrivilegeOptimizedFullLayout() {
+// Inner layout component that uses drawer mode context
+function InnerLayout() {
   const { user, isAuthReady, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
+  const { setDrawerMode } = useDrawerMode();
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
@@ -582,11 +615,28 @@ export function PrivilegeOptimizedFullLayout() {
     return <LoadingScreen />;
   }
 
+  // Handler to open notifications drawer
+  const openNotificationsDrawer = useCallback((navigation: any) => {
+    setDrawerMode('notifications');
+    // Small delay to ensure state is set before drawer opens
+    requestAnimationFrame(() => {
+      navigation.openDrawer();
+    });
+  }, [setDrawerMode]);
+
+  // Handler to open menu drawer
+  const openMenuDrawer = useCallback((navigation: any) => {
+    setDrawerMode('menu');
+    requestAnimationFrame(() => {
+      navigation.openDrawer();
+    });
+  }, [setDrawerMode]);
+
   return (
     <Drawer
       drawerContent={(props) => (
         <Suspense fallback={<LoadingScreen />}>
-          <DrawerContent {...props} />
+          <CombinedDrawerContent {...props} />
         </Suspense>
       )}
       screenOptions={({ navigation, route }) => {
@@ -648,9 +698,12 @@ export function PrivilegeOptimizedFullLayout() {
           ),
           headerRight: () => (
             <View style={styles.headerRight}>
-              <NotificationBell color={headerText} />
+              <NotificationBell
+                color={headerText}
+                onPress={() => openNotificationsDrawer(navigation)}
+              />
               <Pressable
-                onPress={() => navigation.openDrawer()}
+                onPress={() => openMenuDrawer(navigation)}
                 style={({ pressed }) => [
                   styles.headerButton,
                   pressed && { backgroundColor: buttonPressed }
@@ -691,6 +744,16 @@ export function PrivilegeOptimizedFullLayout() {
   );
 }
 
+// Main optimized drawer layout with full menu structure
+// Wraps InnerLayout with DrawerModeProvider
+export function PrivilegeOptimizedFullLayout() {
+  return (
+    <DrawerModeProvider>
+      <InnerLayout />
+    </DrawerModeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -711,6 +774,27 @@ const styles = StyleSheet.create({
     gap: 8, // Gap between notification bell and menu
     paddingRight: Platform.OS === 'ios' ? 16 : 12, // More padding from edge
     alignItems: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: '#dc2626',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#262626',
+  },
+  notificationBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 11,
   },
 });
 
