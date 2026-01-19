@@ -217,23 +217,8 @@ const taskFormSchema = z.object({
     });
   }
 
-  // Status-dependent validation: IN_PRODUCTION requires startedAt
-  if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Data de início é obrigatória quando status é 'Em Produção'",
-      path: ["startedAt"],
-    });
-  }
-
-  // Status-dependent validation: COMPLETED requires finishedAt
-  if (data.status === TASK_STATUS.COMPLETED && !data.finishedAt) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Data de conclusão é obrigatória quando status é 'Concluída'",
-      path: ["finishedAt"],
-    });
-  }
+  // Note: startedAt and finishedAt are no longer required as they are auto-filled by the backend
+  // when task status changes to IN_PRODUCTION or COMPLETED respectively
 
   // finishedAt must be after startedAt
   if (data.startedAt && data.finishedAt && data.finishedAt <= data.startedAt) {

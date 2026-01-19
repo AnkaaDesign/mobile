@@ -74,7 +74,7 @@ Componentes: ${formula.components?.length || 0}`;
       {hasFormulas ? (
         <View className="gap-3">
           {/* Formula List */}
-          {paint.formulas!.map((formula, index) => (
+          {[...paint.formulas!].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((formula, index) => (
             <View key={formula.id}>
               <TouchableOpacity
                 onPress={() => handleFormulaClick(formula.id)}
