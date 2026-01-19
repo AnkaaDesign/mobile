@@ -111,9 +111,9 @@ export function TaskDuplicateModal({
         customerId: task.customerId,
         sectorId: task.sectorId,
         commission: task.commission,
-        budgetId: task.budgetId,
-        nfeId: task.nfeId,
-        receiptId: task.receiptId,
+        budgetIds: task.budgets?.map((b: any) => b.id) || [],
+        invoiceIds: task.invoices?.map((i: any) => i.id) || [],
+        receiptIds: task.receipts?.map((r: any) => r.id) || [],
 
         // Relations - copy artwork and paint IDs
         artworkIds: task.artworks?.map((file) => file.id),

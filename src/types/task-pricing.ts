@@ -29,7 +29,7 @@ export type TaskPricing = {
   status: TASK_PRICING_STATUS;
   taskId: string;
 
-  // Payment Terms
+  // Payment Terms (simplified)
   paymentCondition: PAYMENT_CONDITION | null;
   downPaymentDate: Date | null;
   customPaymentText: string | null;
