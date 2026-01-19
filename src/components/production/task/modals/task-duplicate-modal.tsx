@@ -127,7 +127,7 @@ export function TaskDuplicateModal({
             }
           : null,
 
-        services: task.services?.map((service) => ({
+        services: task.serviceOrders?.map((service) => ({
           status: service.status,
           statusOrder: service.statusOrder,
           description: service.description,

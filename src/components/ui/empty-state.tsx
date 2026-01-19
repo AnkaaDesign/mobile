@@ -30,24 +30,26 @@ export function EmptyState({ title, description, icon = "package", iconSize = 64
   const { colors, isDark } = useTheme();
 
   const getIconBackground = () => {
-    if (icon === "package") return extendedColors.blue[100];
-    if (icon === "alert-circle") return extendedColors.red[100];
-    if (icon === "users") return extendedColors.green[100];
-    if (icon === "search") return extendedColors.purple[100];
+    // Use dark-mode-aware colors for icon backgrounds
+    if (icon === "package") return isDark ? extendedColors.blue[900] : extendedColors.blue[100];
+    if (icon === "alert-circle") return isDark ? extendedColors.red[900] : extendedColors.red[100];
+    if (icon === "users") return isDark ? extendedColors.green[900] : extendedColors.green[100];
+    if (icon === "search") return isDark ? extendedColors.purple[900] : extendedColors.purple[100];
     return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100];
   };
 
   const getIconTint = () => {
     if (iconColor) return iconColor;
-    if (icon === "package") return extendedColors.blue[600];
-    if (icon === "alert-circle") return extendedColors.red[600];
-    if (icon === "users") return extendedColors.green[600];
-    if (icon === "search") return extendedColors.purple[600];
+    // Use lighter tints in dark mode for better visibility
+    if (icon === "package") return isDark ? extendedColors.blue[400] : extendedColors.blue[600];
+    if (icon === "alert-circle") return isDark ? extendedColors.red[400] : extendedColors.red[600];
+    if (icon === "users") return isDark ? extendedColors.green[400] : extendedColors.green[600];
+    if (icon === "search") return isDark ? extendedColors.purple[400] : extendedColors.purple[600];
     return colors.mutedForeground;
   };
 
   return (
-    <View style={StyleSheet.flatten([styles.container, style])}>
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }, style])}>
       <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: getIconBackground() }])}>
         <Icon name={icon} size={iconSize} color={getIconTint()} />
       </View>

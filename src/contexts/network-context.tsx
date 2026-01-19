@@ -8,12 +8,13 @@ import { updateApiUrl, getCurrentApiUrl } from "../api-client";
 // =====================================================
 
 /**
- * Primary API URL (cloud/internet)
- * Used when device has internet connectivity
+ * Primary API URL
+ * For development: local server
+ * For production: cloud API
  */
 const ONLINE_API_URL = Constants.expoConfig?.extra?.apiUrl
   || process.env.EXPO_PUBLIC_API_URL
-  || "https://api.ankaadesign.com.br";
+  || "http://192.168.10.157:3030";
 
 /**
  * Fallback API URL (local network)
@@ -23,11 +24,11 @@ const ONLINE_API_URL = Constants.expoConfig?.extra?.apiUrl
  * Priority:
  * 1. app.json extra.fallbackApiUrl
  * 2. EXPO_PUBLIC_FALLBACK_API_URL environment variable
- * 3. Default: http://192.168.10.180 (local server)
+ * 3. Default: http://192.168.10.157:3030 (local server)
  */
 const OFFLINE_API_URL = Constants.expoConfig?.extra?.fallbackApiUrl
   || process.env.EXPO_PUBLIC_FALLBACK_API_URL
-  || "http://192.168.10.180";
+  || "http://192.168.10.157:3030";
 
 // =====================================================
 // Types & Interfaces

@@ -3,7 +3,7 @@
  *
  * This service monitors internet connectivity and manages the API base URL:
  * - Online: Uses the cloud API (https://api.ankaadesign.com.br)
- * - Offline (local network): Uses the local server (http://192.168.10.180)
+ * - Offline (local network): Uses the local server (http://192.168.10.157:3030)
  *
  * The service automatically switches between URLs based on connectivity.
  */
@@ -91,8 +91,8 @@ class NetworkService {
       return process.env.EXPO_PUBLIC_API_URL;
     }
 
-    // Default: Cloud API
-    return 'https://api.ankaadesign.com.br';
+    // Default: Local API for development
+    return 'http://192.168.10.157:3030';
   }
 
   /**
@@ -110,7 +110,7 @@ class NetworkService {
     }
 
     // Default: Local network server
-    return 'http://192.168.10.180';
+    return 'http://192.168.10.157:3030';
   }
 
   /**

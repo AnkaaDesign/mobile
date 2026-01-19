@@ -553,7 +553,7 @@ export default function ScheduleDetailsScreen() {
                           }}
                         />
                         {canViewArtworkBadges && artwork.status && (
-                          <View style={styles.artworkBadgeContainer}>
+                          <View style={[styles.artworkBadgeContainer, { backgroundColor: colors.card }]}>
                             <Badge
                               variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REJECTED' ? 'destructive' : 'secondary'}
                             >
@@ -981,8 +981,13 @@ const styles = StyleSheet.create({
   },
   artworkBadgeContainer: {
     position: "absolute",
-    top: spacing.xs,
+    top: spacing.sm,
     right: spacing.xs,
+    paddingLeft: spacing.md,
+    paddingRight: spacing.xs,
+    paddingVertical: spacing.xxs,
+    borderTopLeftRadius: borderRadius.md,
+    borderBottomLeftRadius: borderRadius.md,
   },
   documentSection: {
     marginTop: spacing.md,

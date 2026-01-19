@@ -181,7 +181,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: false,
     width: 0,
     accessor: (task: Task) => {
-      const serviceCount = (task as any)._count?.services || task.services?.length || 0;
+      const serviceCount = (task as any)._count?.serviceOrders || task.serviceOrders?.length || 0;
       return (
         <View style={styles.centerAlign}>
           <Badge variant="outline" size="sm">

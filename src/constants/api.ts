@@ -12,20 +12,16 @@
  */
 
 /**
- * Primary API URL (Production Server)
- * Used when the device has internet connectivity
+ * Primary API URL (Local Server for Development)
+ * Used as the default API endpoint during development
  */
-export const ONLINE_API_URL = "https://api.ankaadesign.com.br";
+export const ONLINE_API_URL = "http://192.168.10.1577:3030";
 
 /**
- * Fallback API URL (Local Network Server)
- * Used when the primary API is unreachable (offline mode)
- * This allows the app to connect to a local server on the same network
- *
- * Note: HTTP (not HTTPS) is required for local IP addresses.
- * iOS and Android are configured to allow cleartext traffic to this IP.
+ * Fallback API URL (Production Server)
+ * Used when the primary API is unreachable
  */
-export const OFFLINE_API_URL = "http://192.168.10.180";
+export const OFFLINE_API_URL = "https://api.ankaadesign.com.br";
 
 /**
  * API Configuration Object
@@ -46,7 +42,7 @@ export const API_CONFIG = {
  * Local network IP address used for offline mode
  * This is the IP of the local server on the same network
  */
-export const LOCAL_SERVER_IP = "192.168.10.180";
+export const LOCAL_SERVER_IP = "192.168.10.157";
 
 /**
  * Check if a URL is the local/offline URL

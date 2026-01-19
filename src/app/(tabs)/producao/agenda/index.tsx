@@ -13,8 +13,11 @@ import { routes } from "@/constants/routes";
 export default function ProductionPreparationScreen() {
   const { user } = useAuth();
 
-  // Only ADMIN users can create tasks
-  const canCreateTasks = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
+  // ADMIN, COMMERCIAL, and LOGISTIC can create tasks
+  const canCreateTasks =
+    user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN ||
+    user?.sector?.privileges === SECTOR_PRIVILEGES.COMMERCIAL ||
+    user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
 
   const handleCreateTask = () => {
     router.push("/producao/agenda/cadastrar");
@@ -59,7 +62,10 @@ export default function ProductionPreparationScreen() {
       create: {
         label: 'Criar Tarefa',
         route: '/producao/agenda/cadastrar',
-        canCreate: (user) => user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN,
+        canCreate: (user) =>
+          user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN ||
+          user?.sector?.privileges === SECTOR_PRIVILEGES.COMMERCIAL ||
+          user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC,
       },
     },
   };

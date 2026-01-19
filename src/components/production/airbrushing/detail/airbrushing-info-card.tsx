@@ -66,7 +66,7 @@ export function AirbrushingInfoCard({ airbrushing }: AirbrushingInfoCardProps) {
                 {(airbrushing.task.logoPaints?.length ?? 0) > 0 && (
                   <View style={styles.paintItem}>
                     <ThemedText style={StyleSheet.flatten([styles.paintLabel, { color: colors.mutedForeground }])}>
-                      Tintas do Logo ({airbrushing.task.logoPaints?.length ?? 0}):
+                      Tintas da Logomarca ({airbrushing.task.logoPaints?.length ?? 0}):
                     </ThemedText>
                     <View style={styles.badgesContainer}>
                       {airbrushing.task.logoPaints?.map((logoPaint: any) => (

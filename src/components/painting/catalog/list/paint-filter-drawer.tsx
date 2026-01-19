@@ -87,6 +87,26 @@ export function PaintFilterDrawer({
   const handleChange = useCallback((key: string, value: any) => {
     setLocalFilters((prev) => {
       const currentFilters = prev || {};
+
+      // Special handling for similarColor - validate hex format
+      if (key === "similarColor") {
+        const isValidHex = typeof value === 'string' &&
+                           value !== '' &&
+                           value !== '#000000' &&
+                           /^#[0-9A-Fa-f]{6}$/.test(value);
+        if (!isValidHex) {
+          // Remove similarColor and its threshold if invalid
+          const { similarColor: _, similarColorThreshold: __, ...rest } = currentFilters;
+          return rest;
+        }
+        // Valid color - set it
+        return {
+          ...currentFilters,
+          [key]: value.toUpperCase(),
+        };
+      }
+
+      // Standard handling for other fields
       if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
         const { [key]: _, ...rest } = currentFilters;
         return rest;
@@ -101,12 +121,25 @@ export function PaintFilterDrawer({
   const handleApply = useCallback(() => {
     const cleanedFilters = { ...(localFilters || {}) };
 
-    // CRITICAL: Remove similarColor if it's empty, undefined, or the default black color
-    if (
-      !cleanedFilters.similarColor ||
-      cleanedFilters.similarColor === "#000000" ||
-      cleanedFilters.similarColor === ""
-    ) {
+    // Helper to validate hex color format (API requires exactly #RRGGBB format)
+    const isValidHex = (hex: string | undefined): boolean => {
+      if (!hex) return false;
+      return /^#[0-9A-Fa-f]{6}$/.test(hex);
+    };
+
+    // CRITICAL: Validate and normalize similarColor before sending to API
+    // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
+    // Check if similarColor exists and is valid
+    const hasSimilarColor = cleanedFilters.similarColor &&
+      cleanedFilters.similarColor !== "" &&
+      cleanedFilters.similarColor !== "#000000" &&
+      isValidHex(cleanedFilters.similarColor);
+
+    if (hasSimilarColor) {
+      // Ensure uppercase for consistency with API
+      cleanedFilters.similarColor = cleanedFilters.similarColor!.toUpperCase();
+    } else {
+      // Remove invalid/empty similarColor and its threshold
       delete cleanedFilters.similarColor;
       delete cleanedFilters.similarColorThreshold;
     }

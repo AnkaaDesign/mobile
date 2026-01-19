@@ -251,8 +251,14 @@ export default function CatalogListScreen() {
       });
     }
 
-    // Similar color filter
-    if (filters.similarColor && filters.similarColor !== "#000000") {
+    // Similar color filter - validate hex format before adding
+    // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
+    const isValidHex = (hex: string | undefined): boolean => {
+      if (!hex || hex === "" || hex === "#000000") return false;
+      return /^#[0-9A-Fa-f]{6}$/.test(hex);
+    };
+
+    if (isValidHex(filters.similarColor)) {
       params.similarColor = filters.similarColor;
       if (filters.similarColorThreshold !== undefined) {
         params.similarColorThreshold = filters.similarColorThreshold;
@@ -272,7 +278,7 @@ export default function CatalogListScreen() {
 
   // Fetch paints
   const {
-    items: paints,
+    items: rawPaints,
     isLoading,
     error,
     refetch,
@@ -283,6 +289,85 @@ export default function CatalogListScreen() {
     totalItemsLoaded,
     totalCount,
   } = usePaintsInfiniteMobile(queryParams, pageSize);
+
+  // Apply client-side sorting (matching web version and view-only catalog)
+  const paints = useMemo(() => {
+    if (!rawPaints || rawPaints.length === 0) return [];
+
+    // Check if color similarity filter is active (API already sorted by similarity)
+    const hasSimilarColorFilter = filters.similarColor &&
+                                   filters.similarColor.trim() !== "" &&
+                                   filters.similarColor !== "#000000";
+
+    if (hasSimilarColorFilter) {
+      console.log('[Catalog Sort] Using API similarity sorting');
+      return rawPaints;
+    }
+
+    // Helper function for null-safe colorOrder comparison
+    const getColorOrder = (paint: Paint): number => paint.colorOrder ?? Number.MAX_SAFE_INTEGER;
+
+    // Always apply client-side sorting to ensure consistent ordering
+    let sorted = [...rawPaints];
+
+    switch (currentSort) {
+      case "color":
+        console.log('[Catalog Sort] Sorting by colorOrder');
+        sorted.sort((a, b) => getColorOrder(a) - getColorOrder(b));
+        break;
+
+      case "paintBrand":
+        console.log('[Catalog Sort] Sorting by brand name, then colorOrder');
+        sorted.sort((a, b) => {
+          const brandA = a.paintBrand?.name || '';
+          const brandB = b.paintBrand?.name || '';
+          const brandCompare = brandA.localeCompare(brandB);
+          if (brandCompare !== 0) return brandCompare;
+          return getColorOrder(a) - getColorOrder(b);
+        });
+        break;
+
+      case "type":
+        console.log('[Catalog Sort] Sorting by type name, then colorOrder');
+        sorted.sort((a, b) => {
+          const typeA = a.paintType?.name || '';
+          const typeB = b.paintType?.name || '';
+          const typeCompare = typeA.localeCompare(typeB);
+          if (typeCompare !== 0) return typeCompare;
+          return getColorOrder(a) - getColorOrder(b);
+        });
+        break;
+
+      case "finish":
+        console.log('[Catalog Sort] Sorting by finish, then colorOrder');
+        sorted.sort((a, b) => {
+          const finishA = a.finish || '';
+          const finishB = b.finish || '';
+          const finishCompare = finishA.localeCompare(finishB);
+          if (finishCompare !== 0) return finishCompare;
+          return getColorOrder(a) - getColorOrder(b);
+        });
+        break;
+
+      case "manufacturer":
+        console.log('[Catalog Sort] Sorting by manufacturer, then colorOrder');
+        sorted.sort((a, b) => {
+          const manuA = a.manufacturer || '';
+          const manuB = b.manufacturer || '';
+          const manuCompare = manuA.localeCompare(manuB);
+          if (manuCompare !== 0) return manuCompare;
+          return getColorOrder(a) - getColorOrder(b);
+        });
+        break;
+
+      case "name":
+        console.log('[Catalog Sort] Sorting by name');
+        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        break;
+    }
+
+    return sorted;
+  }, [rawPaints, currentSort, filters.similarColor]);
 
   // Handle paint press from minimized view - switch to maximized and scroll
   // This must be defined after paints is available

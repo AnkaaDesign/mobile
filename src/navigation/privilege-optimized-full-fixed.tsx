@@ -609,13 +609,9 @@ function InnerLayout() {
     }
   }, [user]);
 
-  // Show loading screen while auth is being determined or during logout redirect
-  // This must come AFTER all hooks are called
-  if (!isAuthReady || isLoading || !user) {
-    return <LoadingScreen />;
-  }
-
   // Handler to open notifications drawer
+  // IMPORTANT: These hooks must be called BEFORE any conditional returns to avoid
+  // "Rendered fewer hooks than expected" error when user logs out
   const openNotificationsDrawer = useCallback((navigation: any) => {
     setDrawerMode('notifications');
     // Small delay to ensure state is set before drawer opens
@@ -631,6 +627,12 @@ function InnerLayout() {
       navigation.openDrawer();
     });
   }, [setDrawerMode]);
+
+  // Show loading screen while auth is being determined or during logout redirect
+  // This must come AFTER all hooks are called
+  if (!isAuthReady || isLoading || !user) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Drawer

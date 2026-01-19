@@ -164,7 +164,8 @@ const getDefaultApiUrl = (): string => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  return "https://api.ankaadesign.com.br";
+  // Default: Local API for development
+  return "http://192.168.10.157:3030";
 };
 
 // Synchronous getter for API URL (uses cached value or default)
@@ -421,6 +422,19 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
             continue; // Skip null/undefined values
           }
 
+          // CRITICAL: Skip empty strings entirely - they cause API validation errors
+          if (value === "") {
+            continue;
+          }
+
+          // CRITICAL: Extra safeguard for similarColor - must be valid hex format
+          // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
+          if (key === "similarColor") {
+            if (typeof value !== 'string' || value === "" || value === "#000000" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+              continue;
+            }
+          }
+
           // Check if this is a complex nested object (more than 1 level deep)
           if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
             // Check if it has nested objects
@@ -442,7 +456,7 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
 
         const queryString = qs.stringify(processedParams, {
           arrayFormat: "brackets",
-          encode: false,
+          encode: true, // CRITICAL: Must encode special characters like # in hex colors (e.g., #FF0000 -> %23FF0000)
           serializeDate: (date: Date) => date.toISOString(),
           skipNulls: true,
           addQueryPrefix: false,

@@ -280,8 +280,8 @@ export function LogoPaintsSelector({
   onValueChange,
   disabled = false,
   error,
-  label = "Tintas da Logo",
-  placeholder = "Selecione as tintas da logo",
+  label = "Tintas da Logomarca",
+  placeholder = "Selecione as tintas da logomarca",
   initialPaints = [],
 }: LogoPaintsSelectorProps) {
   const renderOption = usePaintRenderOption();

@@ -222,7 +222,7 @@ export default function EditScheduleScreen() {
           term: task.term ? new Date(task.term) : undefined,
           generalPaintingId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
-          services: task.serviceOrders?.map((s) => ({
+          serviceOrders: task.serviceOrders?.map((s) => ({
             description: s.description,
             status: s.status ?? undefined,
           })) || [],

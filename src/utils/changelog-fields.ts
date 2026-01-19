@@ -282,7 +282,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     paints: "Tintas da logomarca",
     groundPaints: "Fundos da Tinta",
     commissions: "Comissões",
-    services: "Serviços",
+    services: "Serviços", // Legacy - for historical changelog records
+    serviceOrders: "Ordens de Serviço",
     airbrushings: "Aerografias",
     cuts: "Recortes",
     cutRequest: "Solicitações de Corte",

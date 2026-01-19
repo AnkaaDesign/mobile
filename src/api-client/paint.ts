@@ -155,32 +155,62 @@ export class PaintService {
   // =====================
 
   async getPaints(params: PaintGetManyFormData = {}): Promise<PaintGetManyResponse> {
+    // Helper to validate hex color format (API requires exactly #RRGGBB format)
+    const isValidHex = (hex: unknown): hex is string => {
+      if (!hex || typeof hex !== 'string') return false;
+      return /^#[0-9A-Fa-f]{6}$/.test(hex);
+    };
+
+    // FIRST: Remove similarColor and threshold from input if invalid
+    // This is critical because the API schema validates these fields
+    const inputParams = { ...params };
+    if ('similarColor' in inputParams) {
+      if (!isValidHex(inputParams.similarColor) || inputParams.similarColor === '#000000') {
+        delete inputParams.similarColor;
+        delete inputParams.similarColorThreshold;
+      }
+    }
+
     // Clean up params to remove empty strings, undefined, and null values
     const cleanedParams: Partial<PaintGetManyFormData> = {};
 
-    for (const [key, value] of Object.entries(params)) {
+    for (const [key, value] of Object.entries(inputParams)) {
       // Skip empty strings, null, undefined
       if (value === "" || value === null || value === undefined) {
         continue;
       }
 
-      // CRITICAL: Skip color similarity if it's the default black color, empty, or not a valid hex
+      // CRITICAL: Double-check similarColor validation
+      // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
       if (key === "similarColor") {
-        if (!value || value === "#000000" || value === "" || typeof value !== "string" || !value.match(/^#[0-9A-Fa-f]{6}$/)) {
+        if (!isValidHex(value) || value === "#000000") {
           continue;
         }
+        // Ensure uppercase for API consistency
+        cleanedParams.similarColor = value.toUpperCase();
+        continue;
       }
 
-      // CRITICAL: Skip threshold if there's no valid color
+      // CRITICAL: Skip threshold if there's no valid color in cleanedParams
       if (key === "similarColorThreshold") {
-        const similarColor = params.similarColor;
-        if (!similarColor || similarColor === "#000000" || similarColor === "" || typeof similarColor !== "string" || !similarColor.match(/^#[0-9A-Fa-f]{6}$/)) {
-          continue;
-        }
+        // Will only add threshold if similarColor is already in cleanedParams
+        // (which means it passed validation)
+        continue; // Handle after loop
       }
 
       // Only include valid values
       (cleanedParams as any)[key] = value;
+    }
+
+    // Add threshold only if we have a valid similarColor
+    if (cleanedParams.similarColor && inputParams.similarColorThreshold !== undefined) {
+      cleanedParams.similarColorThreshold = inputParams.similarColorThreshold;
+    }
+
+    // FINAL safety check - absolutely ensure no empty similarColor
+    if ('similarColor' in cleanedParams && !isValidHex(cleanedParams.similarColor)) {
+      delete cleanedParams.similarColor;
+      delete cleanedParams.similarColorThreshold;
     }
 
     const response = await apiClient.get<PaintGetManyResponse>(this.basePath, { params: cleanedParams });

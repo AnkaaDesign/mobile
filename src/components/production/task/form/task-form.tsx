@@ -34,6 +34,7 @@ import { CustomerSelector } from "./customer-selector";
 import { ServiceSelectorAutoGrouped } from "./service-selector-auto-grouped";
 import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
 import { SpotSelector } from "./spot-selector";
+import { ArtworkFileUploadField, type ArtworkFileItem } from "./artwork-file-upload-field";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
@@ -306,9 +307,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     return [];
   });
   // Initialize artwork files from existing data in edit mode
-  const [artworkFiles, setArtworkFiles] = useState<FilePickerItem[]>(() => {
+  const [artworkFiles, setArtworkFiles] = useState<ArtworkFileItem[]>(() => {
     if (mode === "edit" && initialData?.artworks) {
-      // Convert existing files to FilePickerItem format
+      // Convert existing files to ArtworkFileItem format with status
       return initialData.artworks.map((file: any) => ({
         id: file.id,
         uri: file.url || file.path || "",
@@ -316,12 +317,19 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         type: file.mimeType || file.mimetype || file.type || "application/octet-stream",
         size: file.size,
         uploaded: true, // Mark as already uploaded
+        uploadedFileId: file.id, // Keep track of original file ID for status updates
+        status: file.status || "DRAFT", // Include artwork status
         // Generate thumbnail URL for image files
         thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
       }));
     }
     return [];
   });
+  // Artwork status tracking - for updating status of existing artworks
+  const [artworkStatuses, setArtworkStatuses] = useState<Record<string, string>>({});
+  const [hasArtworkFileChanges, setHasArtworkFileChanges] = useState(false);
+  const [hasArtworkStatusChanges, setHasArtworkStatusChanges] = useState(false);
+
   // Initialize observation files from existing data in edit mode
   const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>(() => {
     if (mode === "edit" && initialData?.observation?.files) {
@@ -507,7 +515,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     baseFileIds: initialData?.baseFileIds || [],
     artworkIds: initialData?.artworkIds || [],
     observation: initialData?.observation || null,
-    serviceOrders: initialData?.serviceOrders || initialData?.services?.map((s: any) => ({
+    serviceOrders: initialData?.serviceOrders?.map((s: any) => ({
       id: s.id || undefined, // For existing service orders
       description: s.description || "",
       status: s.status || SERVICE_ORDER_STATUS.PENDING,
@@ -862,30 +870,6 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         }
       }
 
-      // Add pricing layout file if present
-      if (pricingLayoutFiles.length > 0) {
-        const newPricingLayoutFiles = pricingLayoutFiles.filter(f => !f.uploaded);
-        if (newPricingLayoutFiles.length > 0) {
-          files.pricingLayoutFiles = newPricingLayoutFiles;
-          // Include existing pricing layout file ID
-          const existingPricingLayoutId = pricingLayoutFiles.find(f => f.uploaded && f.id)?.id;
-          if (existingPricingLayoutId && formDataFields.pricing) {
-            formDataFields.pricing.layoutFileId = existingPricingLayoutId;
-          }
-        }
-      }
-
-      // Get pricing data from form for validation
-      const pricingData = form.getValues('pricing');
-      if (pricingData && pricingData.items && pricingData.items.length > 0) {
-        // Pricing validation already handled by PricingSelector component
-        console.log('[TaskForm] Including pricing data with items:', pricingData.items.length);
-      }
-
-      // Get cuts and airbrushings data - these will be handled after task update
-      const cutsData = form.getValues('cuts') || [];
-      const airbrushingsData = form.getValues('airbrushings') || [];
-
       // Create FormData with context for proper backend file organization
       const formData = createFormDataWithContext(
         formDataFields,
@@ -896,43 +880,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         }
       );
 
-      const result = await onSubmit(formData as any);
+      await onSubmit(formData as any);
       console.log('[TaskForm] FormData submission completed');
-
-      // Create cuts separately if there are any
-      if (cutsData.length > 0 && result && 'success' in result && result.success) {
-        const cutCreationPromises = cutsData.map(async (cut: any) => {
-          // Only create cuts with new files
-          if (!cut.file || cut.fileId) {
-            return { success: false, skipped: true };
-          }
-
-          try {
-            const cutFormData = new FormData();
-            cutFormData.append('type', cut.type);
-            cutFormData.append('origin', CUT_ORIGIN.PLAN);
-            cutFormData.append('taskId', initialData?.id || '');
-            cutFormData.append('quantity', String(cut.quantity || 1));
-            cutFormData.append('file', cut.file);
-
-            const context = {
-              entityType: 'cut',
-              entityId: initialData?.id,
-              customerName: initialCustomer?.fantasyName || initialCustomer?.corporateName || 'Sem-Nome',
-              cutType: cut.type,
-            };
-            cutFormData.append('_context', JSON.stringify(context));
-
-            await createCutAsync(cutFormData as any);
-            return { success: true };
-          } catch (error) {
-            console.error('[TaskForm] Cut creation error:', error);
-            return { success: false, error };
-          }
-        });
-
-        await Promise.all(cutCreationPromises);
-      }
 
       // Reset artwork flags after successful submission
       if (hasArtworkStatusChanges || hasArtworkFileChanges) {
@@ -1512,7 +1461,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
           </FormCard>
 
-          {/* Pricing Card - Visible to ADMIN, FINANCIAL, and COMMERCIAL users */}
+          {/* TODO: Pricing Card - PricingSelector component not yet implemented for mobile
           {canViewPricingSections && (
             <FormCard
               title="Precificação"
@@ -1530,8 +1479,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
             </FormCard>
           )}
+          */}
 
-          {/* Cut Plans Section - EDITABLE for Designer, Hidden for Financial, Logistic, and Commercial users */}
+          {/* TODO: Cut Plans Section - MultiCutSelector component not yet implemented for mobile
           {!isFinancialSector && !isLogisticSector && !isCommercialSector && (
             <FormCard
               title="Plano de Corte"
@@ -1546,8 +1496,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
             </FormCard>
           )}
+          */}
 
-          {/* Airbrushing Section - Hidden for Warehouse, Financial, Designer, Logistic, and Commercial users */}
+          {/* TODO: Airbrushing Section - MultiAirbrushingSelector not imported/integrated
           {!isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
             <FormCard
               title="Aerografias"
@@ -1562,6 +1513,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
             </FormCard>
           )}
+          */}
 
           {/* Financial Files - Hidden for warehouse, designer, logistic, commercial users */}
           {!isWarehouseSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
@@ -1900,7 +1852,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 <ArtworkFileUploadField
                   onFilesChange={(files) => {
                     console.log('[TaskForm] 🎨 Artworks changed:', files.length);
-                    setUploadedFiles(files);
+                    setArtworkFiles(files);
                     setHasArtworkFileChanges(true);
                   }}
                   onStatusChange={(fileId, status) => {
@@ -1919,9 +1871,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   maxFiles={5}
                   disabled={isSubmitting}
                   showPreview={true}
-                  existingFiles={uploadedFiles}
+                  existingFiles={artworkFiles}
                   placeholder="Adicione artes relacionadas à tarefa"
-                  label="Artes anexadas"
                 />
             </FormCard>
           )}

@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
@@ -126,7 +127,7 @@ export function FilePreviewModal({
   showThumbnailStrip = true,
   showImageCounter = true,
 }: FilePreviewModalProps) {
-  const { colors, isDark: _isDark } = useTheme();
+  const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
   // State management
@@ -625,11 +626,11 @@ export function FilePreviewModal({
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor={isDark ? '#1a1a1a' : '#e5e5e5'} translucent />
 
-      <View style={styles.container}>
-        {/* Background - always light for image visibility, matches thumbnail in table */}
-        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: '#e5e5e5' }])} />
+      <View style={[styles.container, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}>
+        {/* Background - respects dark mode */}
+        <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }])} />
 
         {/* Main Content */}
         <View style={styles.content}>
@@ -669,7 +670,7 @@ export function FilePreviewModal({
               <>
                 {/* PDF Viewer - Full screen inline */}
                 {isPDF && (
-                  <View style={styles.pdfContainer}>
+                  <Pressable style={styles.pdfContainer} onPress={toggleControls}>
                     {!Pdf ? (
                       <View style={styles.pdfLoadingOverlay}>
                         <Text style={styles.errorIcon}>📄</Text>
@@ -702,6 +703,9 @@ export function FilePreviewModal({
                           onLoadProgress={(percent) => {
                             console.log('[PDF Viewer] Progress:', Math.round(percent * 100) + '%');
                           }}
+                          onPageSingleTap={() => {
+                            toggleControls();
+                          }}
                           style={styles.pdfViewer}
                           enablePaging={true}
                           horizontal={false}
@@ -725,7 +729,7 @@ export function FilePreviewModal({
                         )}
                       </>
                     )}
-                  </View>
+                  </Pressable>
                 )}
 
                 {/* Video Preview - Show thumbnail with play button */}
@@ -747,7 +751,7 @@ export function FilePreviewModal({
                       <Animated.View style={animatedImageStyle}>
                         {isSVG ? (
                           // Render SVG files with SvgUri for crisp vector rendering
-                          <View style={styles.svgContainer}>
+                          <View style={[styles.svgContainer, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}>
                             <SvgUri
                               key={`svg-image-${currentFile.id}-${currentIndex}`}
                               uri={getFileUrl(currentFile)}
@@ -819,7 +823,7 @@ export function FilePreviewModal({
 
                       {/* Loading Overlay */}
                       {imageLoading && (
-                        <View style={styles.imageOverlay}>
+                        <View style={[styles.imageOverlay, { backgroundColor: isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]}>
                           <ActivityIndicator size="large" color={colors.primary} />
                           <Text style={styles.loadingText}>Carregando...</Text>
                         </View>
@@ -827,7 +831,7 @@ export function FilePreviewModal({
 
                       {/* Error Overlay */}
                       {imageError && (
-                        <View style={styles.imageOverlay}>
+                        <View style={[styles.imageOverlay, { backgroundColor: isDark ? 'rgba(26, 26, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)' }]}>
                           <Text style={styles.errorIcon}>⚠️</Text>
                           <Text style={styles.errorTitle}>Erro ao carregar</Text>
                           <Text style={styles.errorText}>Não foi possível carregar a imagem</Text>
@@ -945,9 +949,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: "#262626", // neutral-825
+    backgroundColor: "#1a1a1a", // neutral-900 - darker for better dark mode
     borderBottomWidth: 1,
-    borderBottomColor: "#404040", // neutral-700
+    borderBottomColor: "#333333", // neutral-750
     zIndex: 10,
   },
   headerLeft: {
@@ -974,7 +978,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   imageCounter: {
-    backgroundColor: "#404040", // neutral-700
+    backgroundColor: "#333333", // neutral-750 - darker for better dark mode
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -988,7 +992,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#404040", // neutral-700
+    backgroundColor: "#333333", // neutral-750 - darker for better dark mode
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -997,7 +1001,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
-    borderColor: "#525252", // neutral-600
+    borderColor: "#444444", // neutral-650
   },
   imageContainer: {
     flex: 1,
@@ -1190,12 +1194,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   bottomControls: {
-    backgroundColor: "#262626", // neutral-825
+    backgroundColor: "#1a1a1a", // neutral-900 - darker for better dark mode
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: "#404040", // neutral-700
+    borderTopColor: "#333333", // neutral-750
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
@@ -1234,9 +1238,9 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: "#404040", // neutral-700
+    backgroundColor: "#333333", // neutral-750 - darker for better dark mode
     borderWidth: 1,
-    borderColor: "#525252", // neutral-600
+    borderColor: "#444444", // neutral-650
   },
   controlButtonPrimary: {
     backgroundColor: "#15803d", // green-700 (primary)
@@ -1269,10 +1273,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   thumbnailStrip: {
-    backgroundColor: "#262626", // neutral-825 (same as other bars)
+    backgroundColor: "#1a1a1a", // neutral-900 - darker for better dark mode
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#404040", // neutral-700
+    borderTopColor: "#333333", // neutral-750
   },
   thumbnailScrollContent: {
     paddingHorizontal: 16,
@@ -1286,7 +1290,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "#525252", // neutral-600
+    borderColor: "#444444", // neutral-650 - darker for better dark mode
     backgroundColor: "#fafafa", // neutral-50 - same as light mode for consistent thumbnail bg
   },
   thumbnailButtonActive: {

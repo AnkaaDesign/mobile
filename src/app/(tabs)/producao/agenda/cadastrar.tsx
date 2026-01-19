@@ -16,9 +16,12 @@ export default function CreateAgendaTaskScreen() {
   const { createAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Check permissions - Only ADMIN can create tasks
+  // Check permissions - ADMIN, COMMERCIAL, and LOGISTIC can create tasks
   const userPrivilege = user?.sector?.privileges;
-  const canCreate = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+  const canCreate =
+    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+    userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
 
   useEffect(() => {
     // Wait for user to load

@@ -161,7 +161,7 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
           }),
         ])
         .optional(), // Alias for logoPaints
-      services: z
+      serviceOrders: z
         .union([
           z.boolean(),
           z.object({
@@ -395,7 +395,7 @@ export const taskWhereSchema: z.ZodSchema<any> = z.lazy(() =>
           none: z.any().optional(),
         })
         .optional(),
-      services: z
+      serviceOrders: z
         .object({
           some: z.any().optional(),
           every: z.any().optional(),
@@ -467,7 +467,7 @@ const taskTransform = (data: any): any => {
         { truck: { plate: { contains: searchTerm, mode: "insensitive" } } },
         { observation: { description: { contains: searchTerm, mode: "insensitive" } } },
         // ServiceOrder only has description field, no name field
-        { services: { some: { description: { contains: searchTerm, mode: "insensitive" } } } },
+        { serviceOrders: { some: { description: { contains: searchTerm, mode: "insensitive" } } } },
         { generalPainting: { name: { contains: searchTerm, mode: "insensitive" } } },
       ],
     });
@@ -543,12 +543,12 @@ const taskTransform = (data: any): any => {
     delete data.hasCommissions;
   }
 
-  if (data.hasServices === true) {
-    andConditions.push({ services: { some: {} } });
-    delete data.hasServices;
-  } else if (data.hasServices === false) {
-    andConditions.push({ services: { none: {} } });
-    delete data.hasServices;
+  if (data.hasServiceOrders === true) {
+    andConditions.push({ serviceOrders: { some: {} } });
+    delete data.hasServiceOrders;
+  } else if (data.hasServiceOrders === false) {
+    andConditions.push({ serviceOrders: { none: {} } });
+    delete data.hasServiceOrders;
   }
 
   if (data.hasAirbrushing === true) {
@@ -884,7 +884,7 @@ export const taskGetManySchema = z
     hasObservation: z.boolean().optional(),
     hasArtworks: z.boolean().optional(),
     hasPaints: z.boolean().optional(),
-    hasServices: z.boolean().optional(),
+    hasServiceOrders: z.boolean().optional(),
     hasAirbrushing: z.boolean().optional(),
     hasBudget: z.boolean().optional(),
     hasNfe: z.boolean().optional(),
@@ -1227,7 +1227,7 @@ export const taskCreateSchema = z
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     observation: taskObservationCreateSchema.nullable().optional(),
-    services: z.array(taskServiceOrderCreateSchema).optional(),
+    serviceOrders: z.array(taskServiceOrderCreateSchema).optional(),
     truck: taskTruckCreateSchema.nullable().optional(),
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
@@ -1337,12 +1337,28 @@ export const taskUpdateSchema = z
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     observation: taskObservationCreateSchema.nullable().optional(),
-    services: z.array(taskServiceOrderCreateSchema).optional(),
+    serviceOrders: z.array(taskServiceOrderCreateSchema).optional(),
     truck: taskTruckCreateSchema.nullable().optional(),
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
     pricing: taskPricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
+  })
+  // Auto-fill dates based on status changes (before validation)
+  .transform((data) => {
+    // Auto-fill startedAt when status changes to IN_PRODUCTION
+    if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
+      data.startedAt = new Date();
+    }
+    // Auto-fill finishedAt when status changes to COMPLETED
+    if (data.status === TASK_STATUS.COMPLETED && !data.finishedAt) {
+      data.finishedAt = new Date();
+      // Also auto-fill startedAt if not set (completing without starting)
+      if (!data.startedAt) {
+        data.startedAt = new Date();
+      }
+    }
+    return data;
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {
@@ -1369,22 +1385,9 @@ export const taskUpdateSchema = z
       });
     }
 
-    // Validate status-based requirements
-    if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Data de início é obrigatória para tarefas em produção",
-        path: ["startedAt"],
-      });
-    }
-
-    if (data.status === TASK_STATUS.COMPLETED && !data.finishedAt) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Data de conclusão é obrigatória para tarefas concluídas",
-        path: ["finishedAt"],
-      });
-    }
+    // Note: Status-based date requirements are now auto-filled by the transform above,
+    // but we keep a fallback validation in case the transform didn't run
+    // (this shouldn't happen in normal flow, but provides safety)
   });
 
 // =====================

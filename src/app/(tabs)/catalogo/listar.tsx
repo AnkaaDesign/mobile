@@ -198,10 +198,6 @@ function CatalogViewOnlyListScreen() {
         break;
     }
 
-    // Debug logging
-    console.log('[Catalog Sort] Current sort:', currentSort);
-    console.log('[Catalog Sort] OrderBy:', JSON.stringify(orderBy));
-
     const params: any = {
       include: {
         paintType: true,
@@ -251,8 +247,14 @@ function CatalogViewOnlyListScreen() {
       });
     }
 
-    // Similar color filter
-    if (filters.similarColor && filters.similarColor !== "#000000") {
+    // Similar color filter - validate hex format before adding
+    // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
+    const isValidHex = (hex: string | undefined): boolean => {
+      if (!hex || hex === "" || hex === "#000000") return false;
+      return /^#[0-9A-Fa-f]{6}$/.test(hex);
+    };
+
+    if (isValidHex(filters.similarColor)) {
       params.similarColor = filters.similarColor;
       if (filters.similarColorThreshold !== undefined) {
         params.similarColorThreshold = filters.similarColorThreshold;
@@ -294,66 +296,64 @@ function CatalogViewOnlyListScreen() {
                                    filters.similarColor !== "#000000";
 
     if (hasSimilarColorFilter) {
-      console.log('[Catalog Sort] Using API similarity sorting');
       return rawPaints;
     }
 
     // Always apply client-side sorting to ensure consistent ordering
     let sorted = [...rawPaints];
 
+    // Helper function for null-safe colorOrder comparison
+    const getColorOrder = (paint: Paint): number => paint.colorOrder ?? Number.MAX_SAFE_INTEGER;
+
     switch (currentSort) {
       case "color":
-        console.log('[Catalog Sort] Sorting by colorOrder');
-        sorted.sort((a, b) => a.colorOrder - b.colorOrder);
+        sorted.sort((a, b) => getColorOrder(a) - getColorOrder(b));
         break;
 
       case "paintBrand":
-        console.log('[Catalog Sort] Sorting by brand name, then colorOrder');
         sorted.sort((a, b) => {
           // First sort by brand name
           const brandA = a.paintBrand?.name || '';
           const brandB = b.paintBrand?.name || '';
           const brandCompare = brandA.localeCompare(brandB);
           if (brandCompare !== 0) return brandCompare;
-          // Then by colorOrder
-          return a.colorOrder - b.colorOrder;
+          // Then by colorOrder (null-safe)
+          return getColorOrder(a) - getColorOrder(b);
         });
         break;
 
       case "type":
-        console.log('[Catalog Sort] Sorting by type name, then colorOrder');
         sorted.sort((a, b) => {
           const typeA = a.paintType?.name || '';
           const typeB = b.paintType?.name || '';
           const typeCompare = typeA.localeCompare(typeB);
           if (typeCompare !== 0) return typeCompare;
-          return a.colorOrder - b.colorOrder;
+          return getColorOrder(a) - getColorOrder(b);
         });
         break;
 
       case "finish":
-        console.log('[Catalog Sort] Sorting by finish, then colorOrder');
         sorted.sort((a, b) => {
-          const finishCompare = a.finish.localeCompare(b.finish);
+          const finishA = a.finish || '';
+          const finishB = b.finish || '';
+          const finishCompare = finishA.localeCompare(finishB);
           if (finishCompare !== 0) return finishCompare;
-          return a.colorOrder - b.colorOrder;
+          return getColorOrder(a) - getColorOrder(b);
         });
         break;
 
       case "manufacturer":
-        console.log('[Catalog Sort] Sorting by manufacturer, then colorOrder');
         sorted.sort((a, b) => {
           const manuA = a.manufacturer || '';
           const manuB = b.manufacturer || '';
           const manuCompare = manuA.localeCompare(manuB);
           if (manuCompare !== 0) return manuCompare;
-          return a.colorOrder - b.colorOrder;
+          return getColorOrder(a) - getColorOrder(b);
         });
         break;
 
       case "name":
-        console.log('[Catalog Sort] Sorting by name');
-        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
     }
 

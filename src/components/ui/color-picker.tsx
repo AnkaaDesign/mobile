@@ -117,6 +117,7 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
     runOnJS(updateTempColor)(hexColor);
   }, [updateTempColor]);
 
+
   const handleApply = () => {
     if (isValidHex(tempColor)) {
       onColorChange(tempColor);

@@ -24,7 +24,7 @@ export interface TaskFormValidationState {
   errors: {
     name?: string;
     customerId?: string;
-    services?: string;
+    serviceOrders?: string;
     entryDate?: string;
     term?: string;
     cuts?: Record<number, { name?: string; quantity?: string; measurements?: string }>;
@@ -51,7 +51,7 @@ interface UseTaskFormUrlStateOptions {
     term?: Date | null;
 
     // Services
-    services?: Array<{
+    serviceOrders?: Array<{
       description: string;
       startedAt?: Date | null;
       finishedAt?: Date | null;
@@ -138,7 +138,7 @@ const taskFormFilterConfig = {
   },
 
   // Services - Array of service objects
-  services: {
+  serviceOrders: {
     schema: z
       .array(
         z.object({
@@ -274,8 +274,8 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       if (initialData.term !== undefined) {
         config.term = { ...config.term, defaultValue: initialData.term };
       }
-      if (initialData.services !== undefined) {
-        config.services = { ...config.services, defaultValue: initialData.services };
+      if (initialData.serviceOrders !== undefined) {
+        config.serviceOrders = { ...config.serviceOrders, defaultValue: initialData.serviceOrders };
       }
       if (initialData.cuts !== undefined) {
         config.cuts = { ...config.cuts, defaultValue: initialData.cuts };
@@ -311,7 +311,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
   const details = filters.details || "";
   const entryDate = filters.entryDate;
   const term = filters.term;
-  const services = filters.services || [];
+  const serviceOrders = filters.serviceOrders || [];
   const cuts = filters.cuts || [];
   const airbrushing = filters.airbrushing;
   const generalPaintingId = filters.generalPaintingId;
@@ -377,9 +377,9 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
     [setFilter],
   );
 
-  const updateServices = useCallback(
-    (newServices: typeof services) => {
-      setFilter("services", newServices.length > 0 ? newServices : undefined);
+  const updateServiceOrders = useCallback(
+    (newServiceOrders: typeof serviceOrders) => {
+      setFilter("serviceOrders", newServiceOrders.length > 0 ? newServiceOrders : undefined);
     },
     [setFilter],
   );
@@ -427,29 +427,29 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
   );
 
   // Service management helpers
-  const addService = useCallback(() => {
-    const newService = {
+  const addServiceOrder = useCallback(() => {
+    const newServiceOrder = {
       description: "",
       startedAt: null,
       finishedAt: null,
     };
-    updateServices([...services, newService]);
-  }, [services, updateServices]);
+    updateServiceOrders([...serviceOrders, newServiceOrder]);
+  }, [serviceOrders, updateServiceOrders]);
 
-  const removeService = useCallback(
+  const removeServiceOrder = useCallback(
     (index: number) => {
-      const newServices = services.filter((_, i) => i !== index);
-      updateServices(newServices);
+      const newServiceOrders = serviceOrders.filter((_, i) => i !== index);
+      updateServiceOrders(newServiceOrders);
     },
-    [services, updateServices],
+    [serviceOrders, updateServiceOrders],
   );
 
-  const updateService = useCallback(
-    (index: number, serviceData: Partial<(typeof services)[0]>) => {
-      const newServices = services.map((service, i) => (i === index ? { ...service, ...serviceData } : service));
-      updateServices(newServices);
+  const updateServiceOrder = useCallback(
+    (index: number, serviceOrderData: Partial<(typeof serviceOrders)[0]>) => {
+      const newServiceOrders = serviceOrders.map((serviceOrder, i) => (i === index ? { ...serviceOrder, ...serviceOrderData } : serviceOrder));
+      updateServiceOrders(newServiceOrders);
     },
-    [services, updateServices],
+    [serviceOrders, updateServiceOrders],
   );
 
   // Cut management helpers
@@ -512,11 +512,11 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       isValid = false;
     }
 
-    // Validate services (only if services are provided, ensure they have descriptions)
-    if (services.length > 0) {
-      const hasInvalidService = services.some((service) => !service.description.trim());
-      if (hasInvalidService) {
-        errors.services = "Todos os serviços devem ter descrição";
+    // Validate serviceOrders (only if serviceOrders are provided, ensure they have descriptions)
+    if (serviceOrders.length > 0) {
+      const hasInvalidServiceOrder = serviceOrders.some((serviceOrder) => !serviceOrder.description.trim());
+      if (hasInvalidServiceOrder) {
+        errors.serviceOrders = "Todos os serviços devem ter descrição";
         isValid = false;
       }
     }
@@ -566,7 +566,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       isValid,
       errors,
     };
-  }, [name, customerId, entryDate, term, services, cuts, airbrushing, truck]);
+  }, [name, customerId, entryDate, term, serviceOrders, cuts, airbrushing, truck]);
 
   // Get form data for submission
   const getFormData = useCallback(() => {
@@ -585,7 +585,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       term: term || undefined,
 
       // Services
-      services: services.length > 0 ? services : undefined,
+      serviceOrders: serviceOrders.length > 0 ? serviceOrders : undefined,
 
       // Cuts
       cuts: cuts.length > 0 ? cuts : undefined,
@@ -603,7 +603,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       // Files
       artworkIds: artworkIds.length > 0 ? artworkIds : undefined,
     };
-  }, [name, customerId, sectorId, serialNumber, plate, details, entryDate, term, services, cuts, airbrushing, generalPaintingId, logoPaintIds, truck, artworkIds]);
+  }, [name, customerId, sectorId, serialNumber, plate, details, entryDate, term, serviceOrders, cuts, airbrushing, generalPaintingId, logoPaintIds, truck, artworkIds]);
 
   const resetForm = useCallback(() => {
     resetFilters();
@@ -620,7 +620,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       details.trim() !== "" ||
       entryDate !== undefined ||
       term !== undefined ||
-      services.length > 0 ||
+      serviceOrders.length > 0 ||
       cuts.length > 0 ||
       airbrushing !== null ||
       generalPaintingId !== undefined ||
@@ -630,7 +630,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
       truck.yPosition !== null ||
       truck.garageId !== null
     );
-  }, [name, customerId, sectorId, serialNumber, plate, details, entryDate, term, services, cuts, airbrushing, generalPaintingId, logoPaintIds, artworkIds, truck]);
+  }, [name, customerId, sectorId, serialNumber, plate, details, entryDate, term, serviceOrders, cuts, airbrushing, generalPaintingId, logoPaintIds, artworkIds, truck]);
 
   return {
     // Core Form State
@@ -642,7 +642,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
     details,
     entryDate,
     term,
-    services,
+    serviceOrders,
     cuts,
     airbrushing,
     generalPaintingId,
@@ -660,7 +660,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
     updateDetails,
     updateEntryDate,
     updateTerm,
-    updateServices,
+    updateServiceOrders,
     updateCuts,
     updateAirbrushing,
     updateGeneralPaintingId,
@@ -669,9 +669,9 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
     updateArtworkIds,
 
     // Helper Functions
-    addService,
-    removeService,
-    updateService,
+    addServiceOrder,
+    removeServiceOrder,
+    updateServiceOrder,
     addCut,
     removeCut,
     updateCut,
@@ -683,7 +683,7 @@ export function useTaskFormUrlState(options: UseTaskFormUrlStateOptions = {}) {
     hasFormData,
 
     // Computed Values
-    serviceCount: services.length,
+    serviceOrderCount: serviceOrders.length,
     cutCount: cuts.length,
     hasAirbrushing: airbrushing !== null,
     hasGeneralPainting: generalPaintingId !== undefined,

@@ -25,7 +25,7 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
   const { isDark } = useTheme();
   const { user } = useAuth();
 
-  const serviceOrders = task.services || [];
+  const serviceOrders = task.serviceOrders || [];
   const totalCount = serviceOrders.length;
 
   // If no service orders, show dash

@@ -51,8 +51,8 @@ export function ServiceOrdersTable({ customer, maxHeight = 400 }: ServiceOrdersT
 
     const orders: ServiceOrder[] = [];
     customer.tasks.forEach((task) => {
-      if (task.services) {
-        orders.push(...task.services);
+      if (task.serviceOrders) {
+        orders.push(...task.serviceOrders);
       }
     });
     return orders;

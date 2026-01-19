@@ -301,13 +301,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // PESSOAL - Only for production workers (PRODUCTION, DESIGNER, WAREHOUSE, PLOTTING)
+  // PESSOAL - Only for production workers (PRODUCTION, WAREHOUSE, PLOTTING) - NOT DESIGNER (Designer has flat menu like web)
   {
     id: "pessoal",
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {
@@ -315,6 +315,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meu Bônus",
         icon: "dollarSign",
         path: "/pessoal/meu-bonus",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT available for DESIGNER
         requiresBonifiable: true, // Only show if user's position is bonifiable
         children: [
           { id: "meu-bonus-historico", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
@@ -327,6 +328,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meus Emprestimos",
         icon: "loan",
         path: "/pessoal/meus-emprestimos",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
         children: [{ id: "meus-emprestimos-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-emprestimos/detalhes/:id", isDynamic: true }],
       },
       {
@@ -334,6 +336,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Meus EPIs",
         icon: "helmet",
         path: "/pessoal/meus-epis",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
         children: [
           { id: "meus-epis-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
           { id: "meus-epis-solicitar", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
@@ -345,6 +348,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Minhas Advertencias",
         icon: "alertTriangle",
         path: "/pessoal/minhas-advertencias",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
         children: [{ id: "minhas-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
@@ -359,6 +363,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         title: "Minhas Movimentacoes",
         icon: "movement",
         path: "/pessoal/minhas-movimentacoes",
+        requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
         children: [{ id: "minhas-movimentacoes-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-movimentacoes/detalhes/:id", isDynamic: true }],
       },
     ],
@@ -657,15 +662,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
   },
 
-  // Catalogo de Tintas - Direct access for DESIGNER only (full edit capabilities)
-  // Team leaders use the read-only "/catalogo" menu instead
-  {
-    id: "catalogo-tintas-direct",
-    title: "Catalogo de Tintas",
-    icon: "palette",
-    path: "/pintura/catalogo",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
-  },
+  // Catalogo de Tintas - Direct access removed for DESIGNER (they use the view-only "/catalogo" menu)
+  // Keep this for other roles that might need direct paint catalog access in the future
+  // {
+  //   id: "catalogo-tintas-direct",
+  //   title: "Catalogo de Tintas",
+  //   icon: "palette",
+  //   path: "/pintura/catalogo",
+  //   requiredPrivilege: [],
+  // },
 
   // Clientes - Direct access for FINANCIAL and COMMERCIAL
   {
@@ -685,13 +690,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.PLOTTING],
   },
 
-  // Agenda - Direct access for DESIGNER, FINANCIAL, LOGISTIC, COMMERCIAL, ADMIN
+  // Agenda - Direct access for DESIGNER, FINANCIAL, LOGISTIC, COMMERCIAL (NOT ADMIN - admin accesses via Producao menu)
   {
     id: "agenda-direct",
     title: "Agenda",
     icon: "clipboard-list",
     path: "/producao/agenda",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL],
   },
 
   // Historico - Direct access for DESIGNER, FINANCIAL, LOGISTIC, COMMERCIAL, PLOTTING
@@ -703,13 +708,46 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.PLOTTING],
   },
 
-  // Recorte - Direct access for DESIGNER and PLOTTING
+  // ============================================================
+  // DESIGNER PERSONAL ITEMS - Direct access at root (matches web structure)
+  // These are flat menu items instead of being inside "Pessoal" group
+  // ============================================================
+
+  // Feriados - Direct access for DESIGNER only (at root level like web)
+  {
+    id: "feriados-direct",
+    title: "Feriados",
+    icon: "holiday",
+    path: "/pessoal/meus-feriados",
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
+  },
+
+  // Minhas Férias - Direct access for DESIGNER only (at root level like web)
+  {
+    id: "minhas-ferias-direct",
+    title: "Minhas Férias",
+    icon: "calendarWeek",
+    path: "/pessoal/minhas-ferias",
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
+    children: [{ id: "minhas-ferias-detalhes-direct", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
+  },
+
+  // Meus Pontos - Direct access for DESIGNER only (at root level like web)
+  {
+    id: "meus-pontos-direct",
+    title: "Meus Pontos",
+    icon: "fingerprint",
+    path: "/pessoal/meus-pontos",
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
+  },
+
+  // Recorte - Direct access for PLOTTING only (not for DESIGNER - matches web structure)
   {
     id: "recorte-direct",
     title: "Recorte",
     icon: "scissors",
     path: "/producao/recorte",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.PLOTTING],
+    requiredPrivilege: [SECTOR_PRIVILEGES.PLOTTING],
     children: [
       {
         id: "plano-de-recorte-direct",

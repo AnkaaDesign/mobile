@@ -187,7 +187,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         sortable: false,
         width: 1.0,
         align: 'center',
-        render: (task) => String(task.services?.length || 0),
+        render: (task) => String(task.serviceOrders?.length || 0),
         format: 'badge',
       },
       {

@@ -59,13 +59,12 @@ const getIconComponentLocal = (
 
 export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { user: authUser, logout, refreshUserData } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, isDark: isDarkMode } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { navigation } = props;
-  const isDarkMode = theme === "dark";
   const drawerStatus = useDrawerStatus();
 
   // State

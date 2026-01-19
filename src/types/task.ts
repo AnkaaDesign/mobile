@@ -67,7 +67,7 @@ export interface Task extends BaseEntity {
   createdBy?: User;
   artworks?: Artwork[];
   logoPaints?: Paint[];
-  services?: ServiceOrder[];
+  serviceOrders?: ServiceOrder[];
   airbrushings?: Airbrushing[];
   cuts?: Cut[];
   truck?: Truck;
@@ -132,7 +132,7 @@ export interface TaskIncludes {
     | {
         include?: PaintIncludes;
       };
-  services?:
+  serviceOrders?:
     | boolean
     | {
         include?: ServiceOrderIncludes;

@@ -4,14 +4,33 @@ import { paintKeys } from './queryKeys';
 import type { PaintGetManyFormData } from '@/schemas';
 
 export const usePaintsInfiniteMobile = (filters?: Partial<PaintGetManyFormData>, pageSize: number = 40) => {
+  // CRITICAL: Clean filters before using in queryKey and API calls
+  // This prevents empty/invalid similarColor from causing API validation errors
+  const cleanedFilters = filters ? (() => {
+    const cleaned = { ...filters };
+    // Remove similarColor if empty, undefined, or invalid hex format
+    if ('similarColor' in cleaned) {
+      const color = cleaned.similarColor;
+      const isValidHex = typeof color === 'string' &&
+                         color !== '' &&
+                         color !== '#000000' &&
+                         /^#[0-9A-Fa-f]{6}$/.test(color);
+      if (!isValidHex) {
+        delete cleaned.similarColor;
+        delete cleaned.similarColorThreshold;
+      }
+    }
+    return cleaned;
+  })() : undefined;
 
   const query = useInfiniteQuery({
-    queryKey: paintKeys.list(filters),
+    queryKey: paintKeys.list(cleanedFilters),
     queryFn: async ({ pageParam = 1 }) => {
+      // Use 'limit' instead of 'perPage' to match API schema
       const params: PaintGetManyFormData = {
         page: pageParam,
-        perPage: pageSize,
-        ...filters,
+        limit: pageSize,
+        ...cleanedFilters,
       };
 
       return paintService.getPaints(params);
