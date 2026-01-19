@@ -116,7 +116,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
       }
       return (
         <Badge variant="outline" size="sm">
-          <ThemedText style={styles.badgeText}>{task.sector.name}</ThemedText>
+          <ThemedText style={styles.badgeText}>{task.sector?.name || "-"}</ThemedText>
         </Badge>
       );
     },

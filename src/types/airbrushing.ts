@@ -4,6 +4,7 @@ import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreate
 import type { AIRBRUSHING_STATUS, ORDER_BY_DIRECTION } from '@/constants';
 import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 import type { File, FileIncludes } from "./file";
+import type { Artwork, ArtworkIncludes } from "./artwork";
 
 // =====================
 // Main Entity Interface
@@ -21,7 +22,7 @@ export interface Airbrushing extends BaseEntity {
   task?: Task;
   receipts?: File[];
   invoices?: File[];
-  artworks?: File[];
+  artworks?: Artwork[];
 }
 
 // =====================
@@ -47,7 +48,7 @@ export interface AirbrushingIncludes {
   artworks?:
     | boolean
     | {
-        include?: FileIncludes;
+        include?: ArtworkIncludes;
       };
 }
 

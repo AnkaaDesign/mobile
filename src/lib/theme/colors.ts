@@ -50,7 +50,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     accentForeground: "#ffffff", // white - matching web
     destructive: "#ef4444", // red-500 - better visibility in dark mode
     destructiveForeground: "#ffffff", // white - matching web
-    border: "#3a3a3a", // HSL: 0 0% 23% - matching web dark border
+    border: "#383838", // HSL: 0 0% 22% - subtle but visible, matching web
     input: "#262626", // Same as card - distinct from background for visibility
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors

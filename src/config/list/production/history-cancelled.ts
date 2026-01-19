@@ -34,7 +34,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           name: true,
         },
       },
-      services: {
+      serviceOrders: {
         select: {
           id: true,
           name: true,

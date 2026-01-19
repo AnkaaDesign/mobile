@@ -35,7 +35,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           name: true,
         },
       },
-      services: {
+      serviceOrders: {
         select: {
           id: true,
           name: true,

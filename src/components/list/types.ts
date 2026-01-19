@@ -42,6 +42,8 @@ export interface TableColumn<T = any> {
   label: string
   width: number // Ratio for responsive widths
   sortable?: boolean
+  /** Custom sort field - use for nested entity sorting (e.g., 'paintBrand.name' for paint brand name) */
+  sortField?: string
   align?: 'left' | 'center' | 'right'
   render: (item: T) => any // Can return primitive or ReactNode
   format?: CellFormat // Auto-format the rendered value

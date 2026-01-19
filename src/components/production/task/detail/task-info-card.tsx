@@ -74,7 +74,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <IconBuilding size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cliente</ThemedText>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer.fantasyName}</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer?.fantasyName || "-"}</ThemedText>
             </View>
           </View>
         )}

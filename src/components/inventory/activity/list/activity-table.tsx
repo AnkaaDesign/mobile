@@ -209,7 +209,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (activity: Activity) => (
       <ThemedText style={styles.cellText} numberOfLines={2} ellipsizeMode="tail">
-        {activity.user?.name || "-"}
+        {activity.user?.name || "Sistema"}
       </ThemedText>
     ),
   },

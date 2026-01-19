@@ -20,7 +20,7 @@ export type TaskPricingItem = {
 
 export type TaskPricing = {
   id?: string;
-  budgetNumber?: number; // Auto-generated sequential number for display
+  budgetNumber: number; // Auto-generated sequential number for display
   subtotal: number;
   discountType: DISCOUNT_TYPE;
   discountValue: number | null;
@@ -40,6 +40,11 @@ export type TaskPricing = {
 
   // Layout File
   layoutFileId: string | null;
+  layoutFile?: any; // File type
+
+  // Customer Signature
+  customerSignatureId: string | null;
+  customerSignature?: any; // File type
 
   items?: TaskPricingItem[];
   createdAt?: Date;

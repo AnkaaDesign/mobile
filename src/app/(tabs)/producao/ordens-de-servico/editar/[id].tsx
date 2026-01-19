@@ -21,7 +21,7 @@ export default function EditServiceOrderScreen() {
       sector: true,
       generalPainting: true,
       paints: true,
-      services: true,
+      serviceOrders: true,
       budgets: true,
       invoices: true,
       receipts: true,
@@ -107,7 +107,7 @@ export default function EditServiceOrderScreen() {
     generalPaintingId: task.data.generalPainting?.id ?? null,
     // Fixed: paints doesn't exist, should use logoPaints instead
     paintIds: task.data.logoPaints?.filter((p: any) => p && p.id).map((p: any /* TODO: Add proper type */) => p.id) || [],
-    services: task.data.services?.map((s) => ({
+    services: task.data.serviceOrders?.map((s) => ({
       description: s.description,
       status: s.status ?? undefined,
     })) || [{ description: "", status: "PENDING" }],

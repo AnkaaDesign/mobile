@@ -1,8 +1,16 @@
-
-import { UnderConstruction } from "@/components/ui/under-construction";
+import { Stack } from "expo-router";
+import { NotificationForm } from "@/components/administration/notification/form/notification-form";
 
 export default function SendNotificationScreen() {
   return (
-    <UnderConstruction title="Enviar Notificação" description="Criação e envio de notificações personalizadas para usuários específicos ou grupos de usuários." icon="bell-plus" />
+    <>
+      <Stack.Screen
+        options={{
+          title: "Enviar Notificação",
+          headerBackTitle: "Voltar",
+        }}
+      />
+      <NotificationForm mode="create" />
+    </>
   );
 }

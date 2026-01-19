@@ -232,7 +232,8 @@ function buildSortMapping(columns: any[]): Record<string, string> {
 
   columns.forEach((col) => {
     if (col.sortable) {
-      mapping[col.key] = col.key
+      // Use sortField if provided (for nested entity sorting), otherwise use key
+      mapping[col.key] = col.sortField || col.key
     }
   })
 

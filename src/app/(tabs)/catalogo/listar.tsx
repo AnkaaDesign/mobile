@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, useWindowDimensions } from "react-native";
+
+console.log('[CATALOG FILE] Module loaded at:', new Date().toISOString());
 import type { FlatList as FlatListType } from "react-native";
 import { Stack, router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,6 +14,8 @@ import Animated, {
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
 import { spacing } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants';
@@ -59,7 +63,8 @@ const TABLET_WIDTH_THRESHOLD = 624;
  * - No editing capabilities
  * - View-only access to paint details
  */
-export default function CatalogViewOnlyListScreen() {
+function CatalogViewOnlyListScreen() {
+  console.log('[CATALOG COMPONENT] Rendering at:', new Date().toISOString());
   const { colors, isDark } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
@@ -170,7 +175,7 @@ export default function CatalogViewOnlyListScreen() {
 
   // Build query params
   const queryParams = useMemo(() => {
-    // Build orderBy based on current sort
+    // Build orderBy based on current sort (matching web version - single field)
     let orderBy: any = {};
     switch (currentSort) {
       case "name":
@@ -192,6 +197,10 @@ export default function CatalogViewOnlyListScreen() {
         orderBy = { manufacturer: "asc" };
         break;
     }
+
+    // Debug logging
+    console.log('[Catalog Sort] Current sort:', currentSort);
+    console.log('[Catalog Sort] OrderBy:', JSON.stringify(orderBy));
 
     const params: any = {
       include: {
@@ -263,7 +272,7 @@ export default function CatalogViewOnlyListScreen() {
 
   // Fetch paints
   const {
-    items: paints,
+    items: rawPaints,
     isLoading,
     error,
     refetch,
@@ -274,6 +283,82 @@ export default function CatalogViewOnlyListScreen() {
     totalItemsLoaded,
     totalCount,
   } = usePaintsInfiniteMobile(queryParams, pageSize);
+
+  // Apply client-side sorting (matching web version)
+  const paints = useMemo(() => {
+    if (!rawPaints || rawPaints.length === 0) return [];
+
+    // Check if color similarity filter is active (API already sorted by similarity)
+    const hasSimilarColorFilter = filters.similarColor &&
+                                   filters.similarColor.trim() !== "" &&
+                                   filters.similarColor !== "#000000";
+
+    if (hasSimilarColorFilter) {
+      console.log('[Catalog Sort] Using API similarity sorting');
+      return rawPaints;
+    }
+
+    // Always apply client-side sorting to ensure consistent ordering
+    let sorted = [...rawPaints];
+
+    switch (currentSort) {
+      case "color":
+        console.log('[Catalog Sort] Sorting by colorOrder');
+        sorted.sort((a, b) => a.colorOrder - b.colorOrder);
+        break;
+
+      case "paintBrand":
+        console.log('[Catalog Sort] Sorting by brand name, then colorOrder');
+        sorted.sort((a, b) => {
+          // First sort by brand name
+          const brandA = a.paintBrand?.name || '';
+          const brandB = b.paintBrand?.name || '';
+          const brandCompare = brandA.localeCompare(brandB);
+          if (brandCompare !== 0) return brandCompare;
+          // Then by colorOrder
+          return a.colorOrder - b.colorOrder;
+        });
+        break;
+
+      case "type":
+        console.log('[Catalog Sort] Sorting by type name, then colorOrder');
+        sorted.sort((a, b) => {
+          const typeA = a.paintType?.name || '';
+          const typeB = b.paintType?.name || '';
+          const typeCompare = typeA.localeCompare(typeB);
+          if (typeCompare !== 0) return typeCompare;
+          return a.colorOrder - b.colorOrder;
+        });
+        break;
+
+      case "finish":
+        console.log('[Catalog Sort] Sorting by finish, then colorOrder');
+        sorted.sort((a, b) => {
+          const finishCompare = a.finish.localeCompare(b.finish);
+          if (finishCompare !== 0) return finishCompare;
+          return a.colorOrder - b.colorOrder;
+        });
+        break;
+
+      case "manufacturer":
+        console.log('[Catalog Sort] Sorting by manufacturer, then colorOrder');
+        sorted.sort((a, b) => {
+          const manuA = a.manufacturer || '';
+          const manuB = b.manufacturer || '';
+          const manuCompare = manuA.localeCompare(manuB);
+          if (manuCompare !== 0) return manuCompare;
+          return a.colorOrder - b.colorOrder;
+        });
+        break;
+
+      case "name":
+        console.log('[Catalog Sort] Sorting by name');
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    return sorted;
+  }, [rawPaints, currentSort, filters.similarColor]);
 
   // Handle paint press from minimized view - switch to maximized and scroll
   // This must be defined after paints is available
@@ -488,17 +573,34 @@ export default function CatalogViewOnlyListScreen() {
   }).length;
 
   if (error) {
+    // Show alert with actual error details
+    console.error('[Catalog Error]', error);
+    Alert.alert(
+      'Erro de Conexão',
+      `Detalhes: ${error instanceof Error ? error.message : String(error)}`,
+      [{ text: 'OK' }]
+    );
+
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar catálogo</ThemedText>
-        <TouchableOpacity
-          onPress={() => refetch()}
-          style={[styles.retryButton, { backgroundColor: colors.primary }]}
-          activeOpacity={0.7}
-        >
-          <ThemedText style={{ color: "#FFFFFF", fontWeight: "600" }}>Tentar novamente</ThemedText>
-        </TouchableOpacity>
-      </View>
+      <>
+        <Stack.Screen
+          options={{
+            title: "Catálogo de Tintas",
+            headerBackTitle: "Voltar",
+          }}
+        />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+          <EmptyState
+            title="Erro ao carregar catálogo"
+            description="Não foi possível carregar o catálogo de tintas. Verifique sua conexão e tente novamente."
+            icon="alert-circle"
+            iconSize={64}
+            actionLabel="Tentar novamente"
+            onAction={() => refetch()}
+            actionVariant="default"
+          />
+        </View>
+      </>
     );
   }
 
@@ -902,3 +1004,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
+
+// Wrap the entire screen in an error boundary to catch all errors with proper dark mode styling
+export default function CatalogViewOnlyListScreenWithErrorBoundary() {
+  console.log('[CATALOG WRAPPER] ErrorBoundary wrapper rendering');
+  return (
+    <ErrorBoundary>
+      <CatalogViewOnlyListScreen />
+    </ErrorBoundary>
+  );
+}

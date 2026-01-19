@@ -138,7 +138,7 @@ export function SectorSelectModal({
                   Atual:
                 </ThemedText>
                 <ThemedText style={styles.currentSectorValue}>
-                  {task.sector.name}
+                  {task.sector?.name || "-"}
                 </ThemedText>
               </View>
             )}

@@ -55,7 +55,7 @@ export default function EditScheduleScreen() {
       sector: true,
       generalPainting: true,
       logoPaints: true,
-      services: true,
+      serviceOrders: true,
       truck: true, // ✅ Include truck to get truckId
       artworks: true, // ✅ Include artworks for edit mode
       observation: {
@@ -222,7 +222,7 @@ export default function EditScheduleScreen() {
           term: task.term ? new Date(task.term) : undefined,
           generalPaintingId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
-          services: task.services?.map((s) => ({
+          services: task.serviceOrders?.map((s) => ({
             description: s.description,
             status: s.status ?? undefined,
           })) || [],

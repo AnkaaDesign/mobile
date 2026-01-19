@@ -96,7 +96,7 @@ export default function ScheduleDetailsScreen() {
       sector: true,
       customer: true,
       createdBy: true,
-      services: true,
+      serviceOrders: true,
       baseFiles: true,
       artworks: true,
       budget: {
@@ -310,8 +310,8 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Services */}
-          {task.services && task.services.length > 0 && (
-            <TaskServicesCard services={task.services} taskSectorId={task.sectorId} />
+          {task.serviceOrders && task.serviceOrders.length > 0 && (
+            <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
           )}
 
           {/* General Painting */}
