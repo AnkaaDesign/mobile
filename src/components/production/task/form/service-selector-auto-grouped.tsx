@@ -6,10 +6,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, USER_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { SERVICE_ORDER_TYPE_LABELS, SERVICE_ORDER_STATUS_LABELS } from "@/constants/enum-labels";
+import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useServiceMutations } from "@/hooks";
-import { serviceService, getUsers } from "@/api-client";
-import type { Service, User } from "@/types";
+import { getUsers } from "@/api-client";
+import type { User } from "@/types";
 import { IconNote, IconTrash, IconPlus } from "@tabler/icons-react-native";
 
 interface ServiceOrder {
@@ -40,13 +40,6 @@ export function ServiceSelectorAutoGrouped({
   currentUserId,
 }: ServiceSelectorAutoGroupedProps) {
   const { colors } = useTheme();
-  const [creatingServiceIndex, setCreatingServiceIndex] = useState<number | null>(null);
-
-  const { createAsync: createService } = useServiceMutations();
-
-  // Memoize callbacks
-  const getOptionLabel = useCallback((service: Service) => service.description, []);
-  const getOptionValue = useCallback((service: Service) => service.description, []);
 
   // Group services by type
   const { groupedServices, ungroupedIndices } = useMemo(() => {
@@ -60,8 +53,7 @@ export function ServiceSelectorAutoGrouped({
     const ungrouped: number[] = [];
 
     services.forEach((service, index) => {
-      const isBeingCreated = creatingServiceIndex === index;
-      const isComplete = service?.type && service?.description && service.description.trim().length >= 3 && !isBeingCreated;
+      const isComplete = service?.type && service?.description && service.description.trim().length >= 3;
 
       if (isComplete) {
         groups[service.type as string]?.push(index);
@@ -71,7 +63,7 @@ export function ServiceSelectorAutoGrouped({
     });
 
     return { groupedServices: groups, ungroupedIndices: ungrouped };
-  }, [services, creatingServiceIndex]);
+  }, [services]);
 
   // Handle adding a new service
   const handleAddService = useCallback(() => {
@@ -86,31 +78,6 @@ export function ServiceSelectorAutoGrouped({
       },
     ]);
   }, [services, onChange]);
-
-  // Handle creating a new service
-  const handleCreateService = useCallback(
-    async (description: string, type: string, serviceIndex: number) => {
-      try {
-        setCreatingServiceIndex(serviceIndex);
-
-        const result = await createService({
-          description,
-          type,
-        });
-
-        if (result && result.success && result.data) {
-          return result.data;
-        }
-        setCreatingServiceIndex(null);
-        return undefined;
-      } catch (error) {
-        console.error("[ServiceSelector] Error creating service:", error);
-        setCreatingServiceIndex(null);
-        throw error;
-      }
-    },
-    [createService]
-  );
 
   // Handle removing a service
   const handleRemoveService = useCallback(
@@ -170,11 +137,6 @@ export function ServiceSelectorAutoGrouped({
     [services, onChange]
   );
 
-  // Clear creating state callback
-  const clearCreatingState = useCallback(() => {
-    setCreatingServiceIndex(null);
-  }, []);
-
   // Render a service group (no card wrapper)
   const renderServiceGroup = (type: string) => {
     const serviceIndices = groupedServices[type];
@@ -202,18 +164,13 @@ export function ServiceSelectorAutoGrouped({
               index={index}
               type={type}
               disabled={disabled}
-              isCreating={creatingServiceIndex === index}
               onRemove={() => handleRemoveService(index)}
-              onCreateService={handleCreateService}
               onDescriptionChange={handleServiceDescriptionChange}
               onTypeChange={handleServiceTypeChange}
               onAssignedToChange={handleAssignedToChange}
               onStatusChange={handleStatusChange}
               onObservationChange={handleObservationChange}
-              getOptionLabel={getOptionLabel}
-              getOptionValue={getOptionValue}
               isGrouped={true}
-              clearCreatingState={clearCreatingState}
               userPrivilege={userPrivilege}
               currentUserId={currentUserId}
             />
@@ -235,18 +192,13 @@ export function ServiceSelectorAutoGrouped({
               index={index}
               type={services[index]?.type || SERVICE_ORDER_TYPE.PRODUCTION}
               disabled={disabled}
-              isCreating={creatingServiceIndex === index}
               onRemove={() => handleRemoveService(index)}
-              onCreateService={handleCreateService}
               onDescriptionChange={handleServiceDescriptionChange}
               onTypeChange={handleServiceTypeChange}
               onAssignedToChange={handleAssignedToChange}
               onStatusChange={handleStatusChange}
               onObservationChange={handleObservationChange}
-              getOptionLabel={getOptionLabel}
-              getOptionValue={getOptionValue}
               isGrouped={false}
-              clearCreatingState={clearCreatingState}
               userPrivilege={userPrivilege}
               currentUserId={currentUserId}
             />
@@ -281,18 +233,13 @@ interface ServiceRowProps {
   index: number;
   type: string;
   disabled?: boolean;
-  isCreating: boolean;
   onRemove: () => void;
-  onCreateService: (description: string, type: string, index: number) => Promise<Service | undefined>;
   onDescriptionChange: (index: number, description: string | undefined) => void;
   onTypeChange: (index: number, type: string) => void;
   onAssignedToChange: (index: number, userId: string | null) => void;
   onStatusChange: (index: number, status: string) => void;
   onObservationChange: (index: number, observation: string) => void;
-  getOptionLabel: (service: Service) => string;
-  getOptionValue: (service: Service) => string;
   isGrouped: boolean;
-  clearCreatingState: () => void;
   initialAssignedUser?: User;
   userPrivilege?: string;
   currentUserId?: string;
@@ -303,18 +250,13 @@ function ServiceRow({
   index,
   type,
   disabled,
-  isCreating,
   onRemove,
-  onCreateService,
   onDescriptionChange,
   onTypeChange,
   onAssignedToChange,
   onStatusChange,
   onObservationChange,
-  getOptionLabel,
-  getOptionValue,
   isGrouped,
-  clearCreatingState,
   initialAssignedUser,
   userPrivilege,
 }: ServiceRowProps) {
@@ -371,19 +313,14 @@ function ServiceRow({
     ];
   }, [userPrivilege, service.type]);
 
-  // Get initial options for this service
-  const getInitialOptions = useCallback(() => {
-    if (!service?.description) return [];
-    return [
-      {
-        id: `temp-${service.description}`,
-        description: service.description,
-        type: service.type,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Service,
-    ];
-  }, [service]);
+  // Get description options from enums based on service type
+  const descriptionOptions = useMemo(() => {
+    const descriptions = getServiceDescriptionsByType(service.type as SERVICE_ORDER_TYPE);
+    return descriptions.map((description) => ({
+      value: description,
+      label: description,
+    }));
+  }, [service.type]);
 
   // Get initial user options for assigned user
   const getUserInitialOptions = useMemo(() => {
@@ -435,59 +372,6 @@ function ServiceRow({
     }
   }, []);
 
-  // Search function for Combobox - filtered by type
-  const searchServices = async (
-    search: string,
-    page: number = 1
-  ): Promise<{
-    data: Service[];
-    hasMore: boolean;
-  }> => {
-    const params: any = {
-      orderBy: { description: "asc" },
-      page: page,
-      take: 50,
-      type: service.type,
-    };
-
-    if (search && search.trim()) {
-      params.searchingFor = search.trim();
-    }
-
-    try {
-      const response = await serviceService.getServices(params);
-      const servicesList = response.data || [];
-      const hasMore = response.meta?.hasNextPage || false;
-
-      if (page === 1 && (!search || !search.trim()) && service.description && service.description.trim()) {
-        const existsInResults = servicesList.some((s) => s.description === service.description);
-
-        if (!existsInResults) {
-          const existingService: Service = {
-            id: `temp-${service.description}`,
-            description: service.description,
-            type: service.type,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-
-          return {
-            data: [existingService, ...servicesList],
-            hasMore: hasMore,
-          };
-        }
-      }
-
-      return {
-        data: servicesList,
-        hasMore: hasMore,
-      };
-    } catch (error) {
-      console.error("[ServiceRow] Error fetching services:", error);
-      return { data: [], hasMore: false };
-    }
-  };
-
   // Handle saving observation from modal
   const handleSaveObservation = () => {
     onObservationChange(index, observationModal.text);
@@ -518,45 +402,18 @@ function ServiceRow({
 
       {/* Row 2: Description (full width) */}
       <View style={styles.descriptionRow}>
-        <Combobox<Service>
+        <Combobox
           value={service.description}
           onValueChange={(newValue) => {
             onDescriptionChange(index, newValue as string | undefined);
-            setTimeout(() => {
-              if (service.description && service.description === newValue) {
-                clearCreatingState();
-              } else {
-                setTimeout(() => {
-                  clearCreatingState();
-                }, 500);
-              }
-            }, 1000);
           }}
-          placeholder="Selecione ou crie um serviço"
-          emptyText="Digite para criar um novo serviço"
+          placeholder="Selecione o serviço..."
+          emptyText="Nenhum serviço encontrado"
           searchPlaceholder="Pesquisar serviços..."
-          disabled={disabled || isCreating}
-          async={true}
-          allowCreate={true}
-          createLabel={(value) => `Criar serviço "${value}"`}
-          onCreate={async (value) => {
-            const newService = await onCreateService(value, service.type, index);
-            if (newService) {
-              return newService;
-            }
-            return undefined;
-          }}
-          isCreating={isCreating}
-          queryKey={["serviceOrders", "search", index, service.type]}
-          queryFn={searchServices}
-          initialOptions={getInitialOptions()}
-          getOptionLabel={getOptionLabel}
-          getOptionValue={getOptionValue}
-          minSearchLength={0}
-          pageSize={50}
-          debounceMs={300}
+          disabled={disabled}
+          options={descriptionOptions}
+          searchable={true}
           clearable={false}
-          hideDescription={true}
         />
       </View>
 

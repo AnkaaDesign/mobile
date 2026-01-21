@@ -14,3 +14,4 @@ export * from "./design-system";
 export * from "./colors";
 export * from "./tabler-icons-mapping";
 export * from "./api";
+export * from "./service-descriptions";

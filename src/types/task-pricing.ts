@@ -14,6 +14,7 @@ export type PAYMENT_CONDITION =
 export type TaskPricingItem = {
   id?: string;
   description: string;
+  observation?: string | null;
   amount: number;
   pricingId?: string;
 };

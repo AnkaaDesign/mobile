@@ -23,15 +23,29 @@ export default function ProductionPreparationScreen() {
     router.push("/producao/agenda/cadastrar");
   };
 
+  // Determine user privileges for agenda filtering
+  const isFinancialUser = user?.sector?.privileges === SECTOR_PRIVILEGES.FINANCIAL;
+  const isLogisticUser = user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
+
   // Create a config specifically for the agenda page
-  // Uses universal agenda display logic (not role-based):
-  // - Excludes CANCELLED tasks
-  // - Excludes COMPLETED tasks only if they have all 4 SO types AND all SOs are completed
+  // Role-based agenda display logic:
+  // - FINANCIAL users: Need PRODUCTION, COMMERCIAL, ARTWORK, FINANCIAL (exclude LOGISTIC)
+  // - LOGISTIC users: Need PRODUCTION, COMMERCIAL, ARTWORK, LOGISTIC (exclude FINANCIAL)
+  // - All other users (including ADMIN): Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both)
   const agendaConfig: ListConfig<Task> = useMemo(() => {
     // Build filter values with agenda display logic
     const defaultFilters: any = {
       shouldDisplayInAgenda: true,
     };
+
+    // Only FINANCIAL users see FINANCIAL service order requirements
+    if (!isFinancialUser) {
+      defaultFilters.agendaExcludeFinancial = true;
+    }
+    // Only LOGISTIC users see LOGISTIC service order requirements
+    if (!isLogisticUser) {
+      defaultFilters.agendaExcludeLogistic = true;
+    }
 
     return {
       ...tasksListConfig,
@@ -69,7 +83,7 @@ export default function ProductionPreparationScreen() {
       },
     },
   };
-  }, []);
+  }, [isFinancialUser, isLogisticUser]);
 
   return (
     <>

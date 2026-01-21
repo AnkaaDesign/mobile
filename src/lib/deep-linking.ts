@@ -485,7 +485,61 @@ export function parseDeepLink(url: string): ParsedDeepLink {
     if (path) {
       const pathSegments = path.replace(/^\//, '').split('/');
 
-      // Try to match path patterns
+      // Web path pattern mapping for /section/page/detalhes/id format
+      // These are web paths that don't follow the simple /section/entity/id pattern
+      const WEB_PATH_TO_ENTITY: Record<string, keyof typeof ROUTE_MAP> = {
+        // Task pages (cronograma, agenda, historico all lead to task detail)
+        'producao/cronograma': 'Task',
+        'producao/agenda': 'Task',
+        'producao/historico': 'Task',
+        'producao/tarefa': 'Task',
+        // Item/Product pages
+        'estoque/produtos': 'Item',
+        'estoque/pedidos': 'Order',
+        'estoque/emprestimos': 'Borrow',
+        'estoque/fornecedores': 'Supplier',
+        'estoque/movimentacoes': 'Activity',
+        'estoque/manutencao': 'Maintenance',
+        'estoque/retiradas-externas': 'ExternalWithdrawal',
+        // HR pages
+        'recursos-humanos/funcionarios': 'Employee',
+        'recursos-humanos/bonus': 'Bonus',
+        'recursos-humanos/advertencias': 'Warning',
+        'recursos-humanos/ferias': 'Vacation',
+        'recursos-humanos/feriados': 'Holiday',
+        // Administration pages
+        'administracao/usuarios': 'User',
+        'administracao/clientes': 'Customer',
+        'administracao/setores': 'Sector',
+        'administracao/notificacoes': 'Notification',
+        // Painting pages
+        'pintura/formulas': 'PaintFormula',
+        'pintura/catalogo': 'PaintCatalog',
+        'pintura/marcas-de-tinta': 'PaintBrand',
+        'pintura/producoes': 'PaintProduction',
+      };
+
+      // Try to match web path patterns: /section/page/detalhes/id
+      if (pathSegments.length >= 4) {
+        const webPathKey = `${pathSegments[0]}/${pathSegments[1]}`;
+        const entityType = WEB_PATH_TO_ENTITY[webPathKey.toLowerCase()];
+
+        if (entityType) {
+          // For /section/page/detalhes/id format, ID is at index 3
+          const id = pathSegments[3];
+          if (id) {
+            const route = ROUTE_MAP[entityType];
+            console.log('[Deep Link] Web path pattern matched:', { webPathKey, entityType, id });
+            return {
+              route: route.replace('[id]', id),
+              params: { id },
+              requiresAuth: true,
+            };
+          }
+        }
+      }
+
+      // Fallback: Try to match simpler path patterns (/section/entity/id)
       if (pathSegments.length >= 2) {
         const section = pathSegments[0]; // e.g., 'producao', 'estoque', 'inventory'
         const entityPath = pathSegments[1]; // e.g., 'tasks', 'orders'
