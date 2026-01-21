@@ -111,6 +111,7 @@ export * from "./details-header";
 export * from "./cpf-input";
 export * from "./cnpj-input";
 export * from "./phone-input";
+export * from "./phone-array-input";
 export * from "./zipcode-input";
 export * from "./address-form";
 export * from "./file-picker";

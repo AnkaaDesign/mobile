@@ -1,15 +1,23 @@
 // packages/api-client/src/layout.ts
 
 import { apiClient } from "./axiosClient";
-import type { Layout, BaseGetUniqueResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse } from '../types';
+import type {
+  Layout,
+  LayoutGetUniqueResponse,
+  LayoutGetManyResponse,
+  LayoutCreateResponse,
+  LayoutUpdateResponse,
+  LayoutDeleteResponse,
+  LayoutBatchCreateResponse,
+  LayoutBatchUpdateResponse,
+  LayoutBatchDeleteResponse,
+} from '../types';
 import type { LayoutCreateFormData, LayoutUpdateFormData } from '../schemas';
 import { safeFileDownload } from "./platform-utils";
 
-// Response Types
-export type LayoutGetUniqueResponse = BaseGetUniqueResponse<Layout>;
-export type LayoutCreateResponse = BaseCreateResponse<Layout>;
-export type LayoutUpdateResponse = BaseUpdateResponse<Layout>;
-export type LayoutDeleteResponse = BaseDeleteResponse;
+// =====================
+// Custom Response Types
+// =====================
 
 export interface LayoutsByTruckResponse {
   success: boolean;
@@ -21,31 +29,124 @@ export interface LayoutsByTruckResponse {
   };
 }
 
+export interface LayoutListResponse {
+  success: boolean;
+  message: string;
+  data: Layout[];
+}
+
+export interface LayoutUsageResponse {
+  success: boolean;
+  message: string;
+  data: {
+    layoutId: string;
+    trucks: Array<{
+      truckId: string;
+      side: "left" | "right" | "back";
+    }>;
+  };
+}
+
+export interface LayoutAssignResponse {
+  success: boolean;
+  message: string;
+  data: Layout;
+}
+
 // Extended type for layout data with photo URI
 export interface LayoutDataWithPhoto extends LayoutCreateFormData {
   photoUri?: string;
 }
 
-// Layout Service
-export const layoutService = {
-  // Get layout by ID
-  getById: (id: string, params?: { include?: any }) => apiClient.get<LayoutGetUniqueResponse>(`/layout/${id}`, { params }),
+// =====================
+// Layout Service Class
+// =====================
 
-  // Get layouts by truck ID
-  getByTruckId: (truckId: string, params?: { include?: any }) => apiClient.get<LayoutsByTruckResponse>(`/layout/truck/${truckId}`, { params }),
+export class LayoutService {
+  private readonly basePath = "/layout";
 
-  // Create layout
-  create: (data: LayoutCreateFormData) => apiClient.post<LayoutCreateResponse>("/layout", data),
+  // =====================
+  // Query Operations
+  // =====================
 
-  // Update layout
-  update: (id: string, data: LayoutUpdateFormData) => apiClient.put<LayoutUpdateResponse>(`/layout/${id}`, data),
+  async getById(id: string, params?: { include?: any }): Promise<LayoutGetUniqueResponse> {
+    const response = await apiClient.get<LayoutGetUniqueResponse>(`${this.basePath}/${id}`, { params });
+    return response.data;
+  }
 
-  // Delete layout
-  delete: (id: string) => apiClient.delete<LayoutDeleteResponse>(`/layout/${id}`),
+  async getByTruckId(truckId: string, params?: { include?: any }): Promise<LayoutsByTruckResponse> {
+    const response = await apiClient.get<LayoutsByTruckResponse>(`${this.basePath}/truck/${truckId}`, { params });
+    return response.data;
+  }
 
-  // Create or update truck layout for specific side
-  // Supports photo upload via FormData when photoUri is provided
-  createOrUpdateTruckLayout: (truckId: string, side: "left" | "right" | "back", data: LayoutDataWithPhoto) => {
+  async listLayouts(options?: { includeUsage?: boolean; includeSections?: boolean }): Promise<LayoutListResponse> {
+    const response = await apiClient.get<LayoutListResponse>(this.basePath, { params: options });
+    return response.data;
+  }
+
+  async getLayoutUsage(layoutId: string): Promise<LayoutUsageResponse> {
+    const response = await apiClient.get<LayoutUsageResponse>(`${this.basePath}/${layoutId}/usage`);
+    return response.data;
+  }
+
+  // =====================
+  // Mutation Operations
+  // =====================
+
+  async create(data: LayoutCreateFormData): Promise<LayoutCreateResponse> {
+    const response = await apiClient.post<LayoutCreateResponse>(this.basePath, data);
+    return response.data;
+  }
+
+  async update(id: string, data: LayoutUpdateFormData): Promise<LayoutUpdateResponse> {
+    const response = await apiClient.put<LayoutUpdateResponse>(`${this.basePath}/${id}`, data);
+    return response.data;
+  }
+
+  async delete(id: string): Promise<LayoutDeleteResponse> {
+    const response = await apiClient.delete<LayoutDeleteResponse>(`${this.basePath}/${id}`);
+    return response.data;
+  }
+
+  // =====================
+  // Batch Operations
+  // =====================
+
+  async batchCreate(data: LayoutCreateFormData[]): Promise<LayoutBatchCreateResponse<LayoutCreateFormData>> {
+    const response = await apiClient.post<LayoutBatchCreateResponse<LayoutCreateFormData>>(`${this.basePath}/batch`, { data });
+    return response.data;
+  }
+
+  async batchUpdate(data: Array<LayoutUpdateFormData & { id: string }>): Promise<LayoutBatchUpdateResponse<LayoutUpdateFormData & { id: string }>> {
+    const response = await apiClient.put<LayoutBatchUpdateResponse<LayoutUpdateFormData & { id: string }>>(`${this.basePath}/batch`, { data });
+    return response.data;
+  }
+
+  async batchDelete(data: { ids: string[] }): Promise<LayoutBatchDeleteResponse> {
+    const response = await apiClient.delete<LayoutBatchDeleteResponse>(`${this.basePath}/batch`, { data });
+    return response.data;
+  }
+
+  // =====================
+  // Special Operations
+  // =====================
+
+  async assignLayoutToTruck(layoutId: string, data: { truckId: string; side: "left" | "right" | "back" }): Promise<LayoutAssignResponse> {
+    const response = await apiClient.post<LayoutAssignResponse>(`${this.basePath}/${layoutId}/assign-to-truck`, data);
+    return response.data;
+  }
+
+  async createOrUpdateTruckLayout(
+    truckId: string,
+    side: "left" | "right" | "back",
+    data: LayoutDataWithPhoto,
+    existingLayoutId?: string
+  ): Promise<LayoutCreateResponse | LayoutAssignResponse> {
+    // If existingLayoutId is provided, use the assignLayoutToTruck endpoint
+    if (existingLayoutId) {
+      return this.assignLayoutToTruck(existingLayoutId, { truckId, side });
+    }
+
     // Check if there's a photo to upload (only backside supports photos)
     if (data.photoUri && side === 'back') {
       // Use FormData for file upload
@@ -65,8 +166,8 @@ export const layoutService = {
         type: 'image/jpeg',
       } as any);
 
-      return apiClient.post<LayoutCreateResponse>(
-        `/layout/truck/${truckId}/${side}`,
+      const response = await apiClient.post<LayoutCreateResponse>(
+        `${this.basePath}/truck/${truckId}/${side}`,
         formData,
         {
           headers: {
@@ -74,25 +175,37 @@ export const layoutService = {
           },
         }
       );
+      return response.data;
     }
 
     // No photo - send as JSON
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { photoUri, ...layoutData } = data;
-    return apiClient.post<LayoutCreateResponse>(`/layout/truck/${truckId}/${side}`, layoutData);
-  },
+    const response = await apiClient.post<LayoutCreateResponse>(`${this.basePath}/truck/${truckId}/${side}`, layoutData);
+    return response.data;
+  }
 
-  // Generate SVG for layout
-  generateSVG: (id: string) => apiClient.get(`/layout/${id}/svg`, { responseType: "blob" }),
+  // =====================
+  // Export Operations
+  // =====================
 
-  // Download SVG for layout
-  downloadSVG: async (id: string, filename?: string) => {
-    const response = await layoutService.generateSVG(id);
-    const blob = response.data;
+  async generateSVG(id: string): Promise<Blob> {
+    const response = await apiClient.get(`${this.basePath}/${id}/svg`, { responseType: "blob" });
+    return response.data;
+  }
+
+  async downloadSVG(id: string, filename?: string): Promise<Blob | undefined> {
+    const blob = await this.generateSVG(id);
 
     const success = safeFileDownload(blob, filename || `layout-${id}.svg`);
 
     // Return the blob for React Native or other environments to handle
     return success ? undefined : blob;
-  },
-};
+  }
+}
+
+// =====================
+// Service Instance
+// =====================
+
+export const layoutService = new LayoutService();

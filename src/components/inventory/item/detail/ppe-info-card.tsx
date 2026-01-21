@@ -58,7 +58,13 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
                   <Icon size={16} color={colors.mutedForeground} />
                   <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Tipo</ThemedText>
                 </View>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{PPE_TYPE_LABELS[item.ppeType]}</ThemedText>
+                <ThemedText
+                  style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {PPE_TYPE_LABELS[item.ppeType]}
+                </ThemedText>
               </View>
               {item.ppeSize && (
                 <View style={StyleSheet.flatten([styles.infoRow, { backgroundColor: colors.muted + "50" }])}>
@@ -66,7 +72,13 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
                     <IconRuler size={16} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Tamanho</ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{PPE_SIZE_LABELS[item.ppeSize as PPE_SIZE]}</ThemedText>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {PPE_SIZE_LABELS[item.ppeSize as PPE_SIZE]}
+                  </ThemedText>
                 </View>
               )}
               {item.ppeCA && (
@@ -75,7 +87,13 @@ export function PpeInfoCard({ item }: PpeInfoCardProps) {
                     <IconCertificate size={16} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Certificado de Aprovação (CA)</ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{item.ppeCA}</ThemedText>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.ppeCA}
+                  </ThemedText>
                 </View>
               )}
             </View>
@@ -169,12 +187,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    flex: 1,
+    flexShrink: 0,
   },
   infoLabel: {
     fontSize: fontSize.sm,
@@ -183,6 +202,8 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
   divider: {
     paddingTop: spacing.lg,

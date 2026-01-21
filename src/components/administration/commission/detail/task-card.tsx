@@ -46,9 +46,9 @@ export function TaskCard({ commission }: TaskCardProps) {
             <View style={styles.taskHeader}>
               <View style={styles.taskInfo}>
                 <ThemedText style={StyleSheet.flatten([styles.taskName, { color: colors.foreground }])}>{task.name}</ThemedText>
-                {task.description && (
+                {task.details && (
                   <ThemedText style={StyleSheet.flatten([styles.taskDescription, { color: colors.mutedForeground }])} numberOfLines={2}>
-                    {task.description}
+                    {task.details}
                   </ThemedText>
                 )}
               </View>

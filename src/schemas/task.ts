@@ -1334,14 +1334,18 @@ export const taskUpdateSchema = z
   .transform((data) => {
     // Auto-fill startedAt when status changes to IN_PRODUCTION
     if (data.status === TASK_STATUS.IN_PRODUCTION && !data.startedAt) {
-      data.startedAt = new Date();
+      // If entryDate exists and is in the future, use entryDate, otherwise use current date
+      const now = new Date();
+      data.startedAt = data.entryDate && data.entryDate > now ? data.entryDate : now;
     }
     // Auto-fill finishedAt when status changes to COMPLETED
     if (data.status === TASK_STATUS.COMPLETED && !data.finishedAt) {
-      data.finishedAt = new Date();
+      const now = new Date();
+      data.finishedAt = now;
       // Also auto-fill startedAt if not set (completing without starting)
       if (!data.startedAt) {
-        data.startedAt = new Date();
+        // Use entryDate if it exists and is <= now, otherwise use now
+        data.startedAt = data.entryDate && data.entryDate <= now ? data.entryDate : now;
       }
     }
     return data;
@@ -1465,7 +1469,7 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   invoiceIds: task.invoices?.map((nfe) => nfe.id),
   receiptIds: task.receipts?.map((receipt) => receipt.id),
   reimbursementIds: task.reimbursements?.map((reimbursement) => reimbursement.id),
-  invoiceReimbursementIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
+  reimbursementInvoiceIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
   artworkIds: task.artworks?.map((artwork) => artwork.id),
   baseFileIds: task.baseFiles?.map((baseFile) => baseFile.id),
   paintIds: task.logoPaints?.map((paint) => paint.id),

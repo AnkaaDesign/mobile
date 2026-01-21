@@ -79,14 +79,19 @@ export const formatBrazilianPhone = (phone: string): string => {
     const isMobile = thirdDigit === "9";
 
     if (phoneNumber.length === 10 && !isMobile) {
-      // Complete landline (doesn't start with 9)
+      // Complete landline (doesn't start with 9): (11) 9999-9999
+      const firstPart = phoneNumber.substring(2, 6);
+      const secondPart = phoneNumber.substring(6);
+      return `(${areaCode}) ${firstPart}-${secondPart}`;
+    } else if (phoneNumber.length === 10 && isMobile) {
+      // Old mobile format without 9th digit: (11) 9999-9999
       const firstPart = phoneNumber.substring(2, 6);
       const secondPart = phoneNumber.substring(6);
       return `(${areaCode}) ${firstPart}-${secondPart}`;
     } else {
-      // Partial mobile (7-10 digits starting with 9) or any 7-9 digit number
-      const firstPart = phoneNumber.substring(2, 7);
-      const secondPart = phoneNumber.substring(7);
+      // Partial number (7-9 digits)
+      const firstPart = phoneNumber.substring(2, Math.min(7, phoneNumber.length));
+      const secondPart = phoneNumber.substring(Math.min(7, phoneNumber.length));
       if (secondPart) {
         return `(${areaCode}) ${firstPart}-${secondPart}`;
       }
@@ -262,3 +267,82 @@ export function formatCurrency(value: number | string | null | undefined): strin
     return '-'
   }
 }
+
+export type PixKeyType = "cpf" | "cnpj" | "phone" | "email" | "random";
+
+export interface PixKeyInfo {
+  type: PixKeyType;
+  formatted: string;
+  isValid: boolean;
+}
+
+export const detectPixKeyType = (key: string): PixKeyInfo => {
+  if (!key || typeof key !== "string") {
+    return { type: "random", formatted: key, isValid: false };
+  }
+
+  const cleaned = key.trim();
+
+  // Email detection (simplest check first)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailRegex.test(cleaned)) {
+    return {
+      type: "email",
+      formatted: cleaned.toLowerCase(),
+      isValid: true
+    };
+  }
+
+  // Remove all non-digit characters for numeric checks
+  const numericOnly = cleaned.replace(/\D/g, "");
+
+  // CPF detection (11 digits)
+  if (numericOnly.length === 11 && !numericOnly.startsWith("55")) {
+    return {
+      type: "cpf",
+      formatted: formatCPF(numericOnly),
+      isValid: true
+    };
+  }
+
+  // CNPJ detection (14 digits)
+  if (numericOnly.length === 14) {
+    return {
+      type: "cnpj",
+      formatted: formatCNPJ(numericOnly),
+      isValid: true
+    };
+  }
+
+  // Phone detection
+  // Brazilian phone with country code: 55 + 2 digit area code + 8 or 9 digits = 12 or 13 digits
+  if ((numericOnly.length === 13 || numericOnly.length === 12) && numericOnly.startsWith("55")) {
+    return {
+      type: "phone",
+      formatted: formatBrazilianPhoneWithCountryCode(numericOnly),
+      isValid: true
+    };
+  }
+
+  // Brazilian phone without country code: 2 digit area code + 8 or 9 digits = 10 or 11 digits
+  if (numericOnly.length === 11 || numericOnly.length === 10) {
+    return {
+      type: "phone",
+      formatted: formatBrazilianPhone(numericOnly),
+      isValid: true
+    };
+  }
+
+  // Random key (UUID-like or any other format)
+  // Random PIX keys are typically 32 characters
+  return {
+    type: "random",
+    formatted: cleaned,
+    isValid: cleaned.length >= 32
+  };
+};
+
+export const formatPixKey = (key: string): string => {
+  const info = detectPixKeyType(key);
+  return info.formatted;
+};

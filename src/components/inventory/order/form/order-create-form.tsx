@@ -19,7 +19,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
 import { useMultiStepForm } from "@/hooks";
 import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from "@/constants";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
 import {
@@ -656,6 +656,14 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                         <Input
                           value={value || ""}
                           onChangeText={(val) => handleFormChange("paymentPix", val)}
+                          onBlur={() => {
+                            const currentValue = form.getValues("paymentPix");
+                            if (currentValue) {
+                              const formatted = formatPixKey(currentValue);
+                              form.setValue("paymentPix", formatted);
+                              handleFormChange("paymentPix", formatted);
+                            }
+                          }}
                           placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
                           editable={!isSubmitting}
                           autoCapitalize="none"

@@ -830,11 +830,13 @@ export const userGetManySchema = z
 
 // PPE Size nested creation schema
 const ppeSizeCreateNestedSchema = z.object({
-  shirts: z.string().optional(),
-  boots: z.string().optional(),
-  pants: z.string().optional(),
-  sleeves: z.string().optional(),
-  mask: z.string().optional(),
+  shirts: z.string().nullable().optional(),
+  boots: z.string().nullable().optional(),
+  pants: z.string().nullable().optional(),
+  sleeves: z.string().nullable().optional(),
+  mask: z.string().nullable().optional(),
+  gloves: z.string().nullable().optional(),
+  rainBoots: z.string().nullable().optional(),
 });
 
 // Notification preferences nested creation schema
@@ -859,6 +861,7 @@ export const userCreateSchema = z
     pis: pisSchema.nullable().optional(),
     cpf: cpfSchema.nullable().optional(),
     verified: z.boolean().default(false),
+    isActive: z.boolean().default(true),
     admissional: nullableDate.optional(),
     performanceLevel: z.number().int().min(0).max(5).default(0),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
@@ -870,7 +873,10 @@ export const userCreateSchema = z
     addressComplement: z.string().nullable().optional(),
     neighborhood: z.string().min(1, "Bairro é obrigatório").nullable().optional(),
     city: z.string().min(1, "Cidade é obrigatória").nullable().optional(),
-    state: z.string().length(2, "Estado deve ter 2 caracteres").nullable().optional(),
+    state: z.preprocess(
+      (val) => (val === "" ? null : val),
+      z.string().length(2, "Estado deve ter 2 caracteres").nullable().optional()
+    ),
     zipCode: z.string().nullable().optional(),
     site: z.string().url("URL inválida").nullable().optional(),
 
@@ -885,6 +891,13 @@ export const userCreateSchema = z
         },
         { message: "O colaborador deve ter pelo menos 18 anos" }
       ),
+
+    // Status tracking dates
+    exp1StartAt: nullableDate.optional(),
+    exp1EndAt: nullableDate.optional(),
+    exp2StartAt: nullableDate.optional(),
+    exp2EndAt: nullableDate.optional(),
+    effectedAt: nullableDate.optional(),
     dismissedAt: nullableDate.optional(),
 
     // Payroll info
@@ -919,6 +932,7 @@ export const userUpdateSchema = z
     pis: pisSchema.nullable().optional(),
     cpf: cpfSchema.nullable().optional(),
     verified: z.boolean().optional(),
+    isActive: z.boolean().optional(),
     admissional: nullableDate.optional(),
     performanceLevel: z.number().int().min(0).max(5).optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
@@ -930,7 +944,10 @@ export const userUpdateSchema = z
     addressComplement: z.string().nullable().optional(),
     neighborhood: z.string().nullable().optional(),
     city: z.string().nullable().optional(),
-    state: z.string().length(2, "Estado deve ter 2 caracteres").nullable().optional(),
+    state: z.preprocess(
+      (val) => (val === "" ? null : val),
+      z.string().length(2, "Estado deve ter 2 caracteres").nullable().optional()
+    ),
     zipCode: z.string().nullable().optional(),
     site: z.string().url("URL inválida").nullable().optional(),
 
@@ -946,10 +963,20 @@ export const userUpdateSchema = z
         { message: "O colaborador deve ter pelo menos 18 anos" }
       )
       .optional(),
+
+    // Status tracking dates
+    exp1StartAt: nullableDate.optional(),
+    exp1EndAt: nullableDate.optional(),
+    exp2StartAt: nullableDate.optional(),
+    exp2EndAt: nullableDate.optional(),
+    effectedAt: nullableDate.optional(),
     dismissedAt: nullableDate.optional(),
 
     // Payroll info
     payrollNumber: z.number().int().positive("Número da folha deve ser positivo").nullable().optional(),
+
+    // PPE Sizes
+    ppeSize: ppeSizeCreateNestedSchema.optional(),
 
     verificationCode: z.string().nullable().optional(),
     verificationExpiresAt: z.date().nullable().optional(),

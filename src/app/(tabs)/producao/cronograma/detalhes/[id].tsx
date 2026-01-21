@@ -555,9 +555,9 @@ export default function ScheduleDetailsScreen() {
                         {canViewArtworkBadges && artwork.status && (
                           <View style={[styles.artworkBadgeContainer, { backgroundColor: colors.card }]}>
                             <Badge
-                              variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                              variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REPROVED' ? 'destructive' : 'secondary'}
                             >
-                              {artwork.status === 'APPROVED' ? 'Aprovado' : artwork.status === 'REJECTED' ? 'Reprovado' : 'Rascunho'}
+                              {artwork.status === 'APPROVED' ? 'Aprovado' : artwork.status === 'REPROVED' ? 'Reprovado' : 'Rascunho'}
                             </Badge>
                           </View>
                         )}

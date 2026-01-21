@@ -226,7 +226,7 @@ export default function PaintDetailsScreen() {
 
             <TabsContent value="formulas" className="space-y-4">
               {paint?.formulas && paint.formulas.length > 0 ? (
-                paint.formulas.map((formula, index) => (
+                [...paint.formulas].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((formula, index) => (
                   <View key={formula.id || index}>
                     <PaintFormulaDetail formula={formula} showComponents={true} showCalculations={true} />
                     {index < paint.formulas!.length - 1 && <Separator className="my-4" />}

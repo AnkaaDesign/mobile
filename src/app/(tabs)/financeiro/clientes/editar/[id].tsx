@@ -24,8 +24,8 @@ import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
-import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
+import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 
 /**
@@ -76,18 +76,22 @@ export default function FinancialCustomerEditScreen() {
 
   // CEP Lookup Hook
   const { lookupCep, isLoading: isLoadingCep } = useCepLookup({
-    onSuccess: (data: any /* TODO: Add proper type */) => {
-      setValue("address", data.logradouro);
-      setValue("neighborhood", data.bairro);
-      setValue("city", data.localidade);
-      setValue("state", data.uf);
+    onSuccess: (data) => {
+      if (data.logradouro) {
+        setValue("address", data.logradouro);
+      }
+      if (data.bairro) {
+        setValue("neighborhood", data.bairro);
+      }
+      if (data.localidade) {
+        setValue("city", data.localidade);
+      }
+      if (data.uf) {
+        setValue("state", data.uf);
+      }
     },
-    onError: () => {
-      Alert.alert(
-        "CEP não encontrado",
-        "Não foi possível encontrar o endereço para este CEP. Verifique o número ou preencha manualmente.",
-        [{ text: "OK" }]
-      );
+    onError: (error) => {
+      console.error('CEP lookup error:', error);
     },
   });
 
@@ -140,6 +144,15 @@ export default function FinancialCustomerEditScreen() {
       setDocumentType("cnpj");
     }
   }, [cpfValue, cnpjValue]);
+
+  // Watch CEP field and trigger lookup
+  const cepValue = watch("zipCode");
+  useEffect(() => {
+    const cleanCep = cepValue?.replace(/\D/g, '');
+    if (cleanCep && cleanCep.length === 8) {
+      lookupCep(cleanCep);
+    }
+  }, [cepValue, lookupCep]);
 
   // Populate form when customer data is loaded
   useEffect(() => {
@@ -248,11 +261,6 @@ export default function FinancialCustomerEditScreen() {
   const handleCnpjBlur = async (cnpj: string | null | undefined) => {
     if (!cnpj || cnpj.length !== 14) return;
     await lookupCnpj(cnpj);
-  };
-
-  const handleCepBlur = async (cep: string | null | undefined) => {
-    if (!cep || cep.length !== 8) return;
-    await lookupCep(cep);
   };
 
   const stateOptions = BRAZILIAN_STATES.map((state) => ({
@@ -508,15 +516,12 @@ export default function FinancialCustomerEditScreen() {
                     <Input
                       value={value ? formatCEP(String(value || '')) : ""}
                       onChangeText={(text) => onChange(cleanCEP(String(text || "")) || "")}
-                      onBlur={() => {
-                        onBlur();
-                        handleCepBlur(value);
-                      }}
+                      onBlur={onBlur}
                       placeholder="00000-000"
                       keyboardType="numeric"
                       maxLength={9}
                       error={!!errors.zipCode}
-                      editable={!isLoadingCep}
+                      editable={!isSubmitting && !isLoadingCep}
                       style={{ flex: 1 }}
                     />
                     {isLoadingCep && (
@@ -628,7 +633,17 @@ export default function FinancialCustomerEditScreen() {
           </View>
           <View style={styles.sectionContentWrapper}>
             <SimpleFormField label="Telefones">
-              <Controller control={control} name="phones" render={({ field: { onChange, value } }) => <PhoneManager phones={value || []} onChange={onChange} />} />
+              <Controller
+                control={control}
+                name="phones"
+                render={({ field: { onChange, value } }) => (
+                  <PhoneArrayInput
+                    phones={value || []}
+                    onChange={onChange}
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
             </SimpleFormField>
           </View>
         </Card>

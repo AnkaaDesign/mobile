@@ -44,7 +44,11 @@ export function AddressCard({ employee }: AddressCardProps) {
                     Data de Nascimento
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                <ThemedText
+                  style={[styles.value, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {formatDate(employee.birth)} ({getAge(employee.birth)} anos)
                 </ThemedText>
               </View>
@@ -58,7 +62,11 @@ export function AddressCard({ employee }: AddressCardProps) {
                     Número da Folha
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                <ThemedText
+                  style={[styles.value, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {employee.payrollNumber}
                 </ThemedText>
               </View>
@@ -105,7 +113,11 @@ export function AddressCard({ employee }: AddressCardProps) {
                     Bairro
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                <ThemedText
+                  style={[styles.value, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {employee.neighborhood}
                 </ThemedText>
               </View>
@@ -119,7 +131,11 @@ export function AddressCard({ employee }: AddressCardProps) {
                     Cidade/Estado
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                <ThemedText
+                  style={[styles.value, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {employee.city}
                   {employee.city && employee.state && " - "}
                   {employee.state}
@@ -135,7 +151,11 @@ export function AddressCard({ employee }: AddressCardProps) {
                     CEP
                   </ThemedText>
                 </View>
-                <ThemedText style={[styles.value, styles.monospace, { color: colors.foreground }]}>
+                <ThemedText
+                  style={[styles.value, styles.monospace, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {formatZipCode(employee.zipCode)}
                 </ThemedText>
               </View>
@@ -199,11 +219,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   labelWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    flexShrink: 0,
   },
   label: {
     fontSize: fontSize.sm,
@@ -213,6 +235,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
     textAlign: "right",
+    flex: 1,
   },
   addressValueContainer: {
     alignItems: "flex-end",

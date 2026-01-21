@@ -75,7 +75,11 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
               Nome
             </ThemedText>
           </View>
-          <ThemedText style={[styles.value, { color: colors.foreground }]}>
+          <ThemedText
+            style={[styles.value, { color: colors.foreground }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {employee.name}
           </ThemedText>
         </View>
@@ -91,6 +95,8 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
             <ThemedText
               style={[styles.value, { color: colors.primary }]}
               onPress={handleEmailPress}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {employee.email}
             </ThemedText>
@@ -109,6 +115,8 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
               <ThemedText
                 style={[styles.value, styles.phoneValue, { color: "#16a34a" }]}
                 onPress={handlePhonePress}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {formatBrazilianPhone(employee.phone)}
               </ThemedText>
@@ -116,6 +124,7 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
                 size={20}
                 color="#16a34a"
                 onPress={handleWhatsAppPress}
+                style={styles.whatsappIcon}
               />
             </View>
           </View>
@@ -173,11 +182,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   labelWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    flexShrink: 0,
   },
   label: {
     fontSize: fontSize.sm,
@@ -186,13 +197,20 @@ const styles = StyleSheet.create({
   value: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
   phoneContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flex: 1,
   },
   phoneValue: {
     fontFamily: "monospace",
+    flex: 1,
+  },
+  whatsappIcon: {
+    flexShrink: 0,
   },
 });

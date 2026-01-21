@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { OrderStatusBadge } from "../list/order-status-badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatDate, formatDateTime, formatCurrency, formatCNPJ } from "@/utils";
+import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey, formatBrazilianPhone } from "@/utils";
 import type { Order } from "../../../../types";
 import {
   IconPackage,
@@ -19,6 +19,7 @@ import {
   IconPhone,
   IconMail,
   IconCreditCard,
+  IconBrandWhatsapp,
 } from "@tabler/icons-react-native";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
 
@@ -43,11 +44,15 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
     }, 0);
   }, [order?.items]);
 
-  const handlePhonePress = () => {
-    if (order.supplier?.phones && order.supplier.phones.length > 0) {
-      const cleanPhone = order.supplier.phones[0].replace(/\D/g, "");
-      Linking.openURL(`tel:${cleanPhone}`).catch(() => {});
-    }
+  const handlePhonePress = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    Linking.openURL(`tel:${cleanPhone}`).catch(() => {});
+  };
+
+  const handleWhatsAppPress = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {});
   };
 
   const handleEmailPress = () => {
@@ -114,21 +119,30 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
 
               {/* Phone */}
               {order.supplier.phones && order.supplier.phones.length > 0 && (
-                <TouchableOpacity
-                  style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}
-                  onPress={handlePhonePress}
-                  activeOpacity={0.7}
-                >
+                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
                   <View style={styles.infoLabel}>
                     <IconPhone size={16} color={colors.mutedForeground} />
                     <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
                       Telefone
                     </ThemedText>
                   </View>
-                  <ThemedText style={[styles.valueText, styles.linkText, { color: colors.primary }]}>
-                    {order.supplier.phones[0]}
-                  </ThemedText>
-                </TouchableOpacity>
+                  <View style={styles.phoneContainer}>
+                    <TouchableOpacity
+                      onPress={() => handlePhonePress(order.supplier.phones[0])}
+                      activeOpacity={0.7}
+                    >
+                      <ThemedText style={[styles.phoneValue, { color: "#16a34a" }]}>
+                        {formatBrazilianPhone(order.supplier.phones[0])}
+                      </ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleWhatsAppPress(order.supplier.phones[0])}
+                      activeOpacity={0.7}
+                    >
+                      <IconBrandWhatsapp size={20} color="#16a34a" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               )}
 
               {/* Email */}
@@ -323,7 +337,7 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
                     </ThemedText>
                   </View>
                   <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                    {order.paymentPix}
+                    {formatPixKey(order.paymentPix)}
                   </ThemedText>
                 </View>
               )}
@@ -418,6 +432,16 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     textAlign: "right",
     flex: 1,
+  },
+  phoneContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  phoneValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    fontFamily: "monospace",
   },
   totalValue: {
     fontSize: fontSize.base,

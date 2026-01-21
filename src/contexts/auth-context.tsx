@@ -209,45 +209,56 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     lastValidationTime.current = now;
     setIsValidatingSession(true);
 
+    // Add timeout to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Session validation timeout')), 15000); // 15 second timeout
+    });
+
     try {
-      const token = await getStoredToken();
+      await Promise.race([
+        (async () => {
+          const token = await getStoredToken();
 
-      if (token) {
-        const decodedToken = decodeToken(token);
-        if (!decodedToken) {
-          await removeStoredToken();
-          await removeUserData();
-          setAccessToken(null);
-          setCachedToken(null);
-          setUser(null);
-          setAuthToken(null);
-          return;
-        }
+          if (token) {
+            const decodedToken = decodeToken(token);
+            if (!decodedToken) {
+              await removeStoredToken();
+              await removeUserData();
+              setAccessToken(null);
+              setCachedToken(null);
+              setUser(null);
+              setAuthToken(null);
+              return;
+            }
 
-        setAuthToken(token);
-        setAccessToken(token);
-        setCachedToken(token);
+            setAuthToken(token);
+            setAccessToken(token);
+            setCachedToken(token);
 
-        const userData = await fetchAndUpdateUserData(token);
+            const userData = await fetchAndUpdateUserData(token);
 
-        if (userData === 'SKIP') return;
+            if (userData === 'SKIP') return;
 
-        if (!userData) {
-          await removeStoredToken();
-          await removeUserData();
-          setAccessToken(null);
-          setCachedToken(null);
-          setUser(null);
-          setAuthToken(null);
-        }
-      } else {
-        setUser(null);
-        setAccessToken(null);
-        setCachedToken(null);
-        setAuthToken(null);
-      }
+            if (!userData) {
+              await removeStoredToken();
+              await removeUserData();
+              setAccessToken(null);
+              setCachedToken(null);
+              setUser(null);
+              setAuthToken(null);
+            }
+          } else {
+            setUser(null);
+            setAccessToken(null);
+            setCachedToken(null);
+            setAuthToken(null);
+          }
+        })(),
+        timeoutPromise
+      ]);
     } catch (error) {
       console.error("Session validation error:", error);
+      // Clear invalid/timed out session
       await removeStoredToken();
       setAccessToken(null);
       setCachedToken(null);

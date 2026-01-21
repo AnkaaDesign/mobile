@@ -61,8 +61,11 @@ export {
   formatChassis,
   formatPhoneNumber,
   formatCurrency,
+  formatPixKey,
+  detectPixKeyType,
   // Note: formatDate, formatDateTime are exported from date.ts
 } from "./formatters";
+export type { PixKeyType, PixKeyInfo } from "./formatters";
 // Export specific items from format-standard to avoid conflicts
 export {
   formatPercentage,

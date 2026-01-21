@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -36,6 +36,9 @@ export default function EditOrderItemScreen() {
     );
   }
 
+  // Track if form has been initialized to prevent unnecessary resets
+  const formInitialized = useRef(false);
+
   // Get order item details
   const {
     data: orderItem,
@@ -60,6 +63,7 @@ export default function EditOrderItemScreen() {
       },
     },
     enabled: !!id,
+    refetchOnWindowFocus: false, // Prevent refetch on window focus which causes form reset
   });
 
   // Form setup
@@ -80,14 +84,15 @@ export default function EditOrderItemScreen() {
   const watchedFulfilledQuantity = watch("receivedQuantity");
   const watchedReceivedQuantity = watch("receivedQuantity");
 
-  // Initialize form with current data
+  // Initialize form with current data (only once when data first loads)
   useEffect(() => {
-    if (orderItem?.data) {
+    if (orderItem?.data && !formInitialized.current) {
       reset({
         orderedQuantity: orderItem.data.orderedQuantity,
         price: orderItem.data.price || 0,
         receivedQuantity: orderItem.data.receivedQuantity || undefined,
       });
+      formInitialized.current = true;
     }
   }, [orderItem, reset]);
 
@@ -183,7 +188,7 @@ export default function EditOrderItemScreen() {
                   <IconPackage size={20} color={colors.mutedForeground} />
                   <View style={{ flex: 1 }}>
                     <ThemedText style={styles.title}>{order?.description || `Pedido #${orderId}`}</ThemedText>
-                    <ThemedText style={{ fontSize: 14, opacity: 0.7 }}>{order?.supplier?.name}</ThemedText>
+                    <ThemedText style={{ fontSize: 14, opacity: 0.7 }}>{order?.supplier?.fantasyName}</ThemedText>
                   </View>
                 </View>
                 <View style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: status.color + "20" }])}>
@@ -257,8 +262,15 @@ export default function EditOrderItemScreen() {
                       placeholder="1"
                       value={value?.toString() || ""}
                       onChangeText={(text) => {
-                        const num = parseInt(text) || 0;
-                        onChange(num);
+                        // Allow empty string during editing
+                        if (text === "") {
+                          onChange(undefined);
+                          return;
+                        }
+                        const num = parseInt(text, 10);
+                        if (!isNaN(num) && num > 0) {
+                          onChange(num);
+                        }
                       }}
                       keyboardType="numeric"
                       error={errors.orderedQuantity?.message}
@@ -313,8 +325,15 @@ export default function EditOrderItemScreen() {
                       placeholder="0"
                       value={value?.toString() || ""}
                       onChangeText={(text) => {
-                        const num = parseInt(text) || undefined;
-                        onChange(num);
+                        // Allow empty string during editing
+                        if (text === "") {
+                          onChange(undefined);
+                          return;
+                        }
+                        const num = parseInt(text, 10);
+                        if (!isNaN(num) && num >= 0) {
+                          onChange(num);
+                        }
                       }}
                       keyboardType="numeric"
                       error={errors.receivedQuantity?.message}

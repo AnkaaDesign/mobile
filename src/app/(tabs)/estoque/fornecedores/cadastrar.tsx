@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateSupplier, useKeyboardAwareScroll } from "@/hooks";
+import { useCreateSupplier, useKeyboardAwareScroll, useCepLookup } from "@/hooks";
 import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
@@ -14,7 +14,8 @@ import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
-import { PhoneManager, TagManager } from "@/components/inventory/supplier/form";
+import { TagManager } from "@/components/inventory/supplier/form";
+import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { formSpacing } from "@/constants/form-styles";
 
@@ -59,6 +60,29 @@ export default function SupplierCreateScreen() {
   });
 
   const { mutateAsync: createAsync } = useCreateSupplier();
+
+  // CEP lookup
+  const { lookupCep, isLoading: isCepLoading } = useCepLookup({
+    onSuccess: (data) => {
+      // Only fill empty fields, don't overwrite existing data
+      if (!form.getValues('address')) form.setValue('address', data.logradouro);
+      if (!form.getValues('neighborhood')) form.setValue('neighborhood', data.bairro);
+      if (!form.getValues('city')) form.setValue('city', data.localidade);
+      if (!form.getValues('state')) form.setValue('state', data.uf);
+    },
+    onError: (error) => {
+      console.error('CEP lookup error:', error);
+    },
+  });
+
+  // Watch zipCode field and trigger lookup when complete
+  const zipCode = form.watch('zipCode');
+  useEffect(() => {
+    const cleanCep = zipCode?.replace(/\D/g, '');
+    if (cleanCep && cleanCep.length === 8) {
+      lookupCep(cleanCep);
+    }
+  }, [zipCode, lookupCep]);
 
   const onSubmit = async (data: SupplierCreateFormData) => {
     if (isSubmitting) return;
@@ -283,14 +307,14 @@ export default function SupplierCreateScreen() {
               name="zipCode"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  value={value ? formatZipCode(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(text ? cleanZipCode(String(text)) ?? "" : "")}
+                  type="cep"
+                  value={value || ""}
+                  onChange={onChange}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"
-                  maxLength={9}
+                  editable={!isSubmitting && !isCepLoading}
                   error={!!form.formState.errors.zipCode}
-                  editable={!isSubmitting}
                 />
               )}
             />
@@ -417,15 +441,17 @@ export default function SupplierCreateScreen() {
 
         {/* Contact */}
         <FormCard title="Contato" icon="IconPhone">
-          <FormFieldGroup label="Telefones">
-            <Controller
-              control={form.control}
-              name="phones"
-              render={({ field: { onChange, value } }) => (
-                <PhoneManager phones={value || []} onChange={onChange} />
-              )}
-            />
-          </FormFieldGroup>
+          <Controller
+            control={form.control}
+            name="phones"
+            render={({ field: { onChange, value } }) => (
+              <PhoneArrayInput
+                phones={value || []}
+                onChange={onChange}
+                disabled={isSubmitting}
+              />
+            )}
+          />
         </FormCard>
 
         {/* Payment */}

@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert } from "react-native";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ScrollView, Modal, Pressable, Dimensions } from "react-native";
 import { router } from "expo-router";
 import { useSecullumRequests, useSecullumApproveRequest, useSecullumRejectRequest } from "@/hooks/secullum";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -12,29 +12,157 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
-import { IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX, IconClock } from "@tabler/icons-react-native";
+import { TextArea } from "@/components/ui/textarea";
+import {
+  IconUser,
+  IconCalendar,
+  IconRefresh,
+  IconCircleCheck,
+  IconCircleX,
+  IconClock,
+  IconWifiOff,
+  IconDeviceMobile,
+  IconFingerprint,
+  IconQrcode,
+  IconId,
+  IconX
+} from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius } from "@/constants/design-system";
 
 interface TimeAdjustmentRequest {
-  id: string;
-  employeeName: string;
-  date: string;
-  originalEntry?: string;
-  requestedEntry?: string;
-  originalExit?: string;
-  requestedExit?: string;
-  justification: string;
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  type?: string;
+  Id: number;
+  Data: string;
+  DataFim: string | null;
+  FuncionarioId: number;
+  FuncionarioNome: string;
+  Entrada1: string | null;
+  Saida1: string | null;
+  Entrada2: string | null;
+  Saida2: string | null;
+  Entrada3: string | null;
+  Saida3: string | null;
+  Entrada1Original: string | null;
+  Saida1Original: string | null;
+  Entrada2Original: string | null;
+  Saida2Original: string | null;
+  Entrada3Original: string | null;
+  Saida3Original: string | null;
+  OrigemEntrada1: number | null;
+  OrigemSaida1: number | null;
+  OrigemEntrada2: number | null;
+  OrigemSaida2: number | null;
+  OrigemEntrada3: number | null;
+  OrigemSaida3: number | null;
+  Tipo: number;
+  TipoDescricao: string;
+  Estado: number;
+  Observacoes: string | null;
+  DataSolicitacao: string;
+  AlteracoesFonteDados: any[];
+  Versao: string;
+  TipoSolicitacao?: number;
+  DispositivoTipo?: 'mobile' | 'biometric' | 'qrcode' | 'card' | 'web';
+  DispositivoNome?: string;
 }
 
+// Helper function to detect actual changes vs time shifts
+const detectActualChanges = (request: TimeAdjustmentRequest): Set<string> => {
+  const changedFields = new Set<string>();
+
+  // Collect all original and requested time values
+  const originalTimes = [
+    request.Entrada1Original,
+    request.Saida1Original,
+    request.Entrada2Original,
+    request.Saida2Original,
+    request.Entrada3Original,
+    request.Saida3Original
+  ].filter(t => t && t !== "");
+
+  const requestedTimes = [
+    request.Entrada1,
+    request.Saida1,
+    request.Entrada2,
+    request.Saida2,
+    request.Entrada3,
+    request.Saida3
+  ].filter(t => t && t !== "");
+
+  // Check each field to see if it's a genuine change or just a shift
+  const fields = ['Entrada1', 'Saida1', 'Entrada2', 'Saida2', 'Entrada3', 'Saida3'];
+
+  fields.forEach((field) => {
+    const original = request[`${field}Original` as keyof TimeAdjustmentRequest] as string | null;
+    const requested = request[field as keyof TimeAdjustmentRequest] as string | null;
+
+    // Skip if both are empty
+    if ((!original || original === "") && (!requested || requested === "")) {
+      return;
+    }
+
+    // If values are different
+    if (original !== requested) {
+      // Check if the requested value exists somewhere in the original times
+      // If it doesn't exist in originals, it's a genuine modification
+      if (requested && !originalTimes.includes(requested)) {
+        changedFields.add(field);
+      }
+      // If original value doesn't appear in requested times, it was removed/changed
+      else if (original && !requestedTimes.includes(original)) {
+        changedFields.add(field);
+      }
+    }
+  });
+
+  return changedFields;
+};
+
+// Get origin icon and label
+const getOriginInfo = (origin: number | null | undefined) => {
+  if (origin === 16) {
+    return {
+      icon: IconWifiOff,
+      label: 'Ponto Virtual Offline',
+    };
+  }
+  return {
+    icon: IconUser,
+    label: 'Solicitado pelo usuário',
+  };
+};
+
+// Get device icon and label
+const getDeviceInfo = (type?: string) => {
+  switch (type) {
+    case 'mobile':
+      return { icon: IconDeviceMobile, label: 'Aplicativo móvel' };
+    case 'biometric':
+      return { icon: IconFingerprint, label: 'Biometria' };
+    case 'qrcode':
+      return { icon: IconQrcode, label: 'QR Code' };
+    case 'card':
+      return { icon: IconId, label: 'Cartão' };
+    case 'web':
+    default:
+      return { icon: IconUser, label: 'Portal web' };
+  }
+};
+
 export default function RequisitionsListScreen() {
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
   const [showPending, setShowPending] = useState(true);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showDetailView, setShowDetailView] = useState(false);
+
+  const screenWidth = Dimensions.get('window').width;
+  const isTablet = screenWidth >= 768;
 
   // Fetch time adjustment requests
   const {
@@ -48,110 +176,124 @@ export default function RequisitionsListScreen() {
   const approveMutation = useSecullumApproveRequest();
   const rejectMutation = useSecullumRejectRequest();
 
-  // Transform and filter requests
+  // Transform requests data
   const requests = useMemo(() => {
     if (!requestsData?.data || !Array.isArray(requestsData.data)) return [];
 
     let items: TimeAdjustmentRequest[] = requestsData.data.map((request: any, index: number) => ({
-      id: request.id || `request-${index}`,
-      employeeName: request.employeeName || request.NomeFuncionario || request.FuncionarioNome || "Funcionário não identificado",
-      date: request.date || request.Data || "",
-      originalEntry: request.originalEntry || request.EntradaOriginal || request.Entrada1Original,
-      requestedEntry: request.requestedEntry || request.EntradaSolicitada || request.Entrada1,
-      originalExit: request.originalExit || request.SaidaOriginal || request.Saida1Original,
-      requestedExit: request.requestedExit || request.SaidaSolicitada || request.Saida1,
-      justification: request.justification || request.Justificativa || request.Observacoes || "",
-      status: request.status || request.Status || request.Estado === 0 ? "pending" : request.Estado === 1 ? "approved" : "rejected",
-      createdAt: request.createdAt || request.DataCriacao || request.DataSolicitacao || "",
-      type: request.type || request.Tipo || request.TipoDescricao || "Ajuste de ponto",
+      Id: request.Id || request.id || index,
+      Data: request.Data || request.date || "",
+      DataFim: request.DataFim || null,
+      FuncionarioId: request.FuncionarioId || 0,
+      FuncionarioNome: request.FuncionarioNome || request.NomeFuncionario || request.employeeName || "Funcionário não identificado",
+      Entrada1: request.Entrada1 || null,
+      Saida1: request.Saida1 || null,
+      Entrada2: request.Entrada2 || null,
+      Saida2: request.Saida2 || null,
+      Entrada3: request.Entrada3 || null,
+      Saida3: request.Saida3 || null,
+      Entrada1Original: request.Entrada1Original || null,
+      Saida1Original: request.Saida1Original || null,
+      Entrada2Original: request.Entrada2Original || null,
+      Saida2Original: request.Saida2Original || null,
+      Entrada3Original: request.Entrada3Original || null,
+      Saida3Original: request.Saida3Original || null,
+      OrigemEntrada1: request.OrigemEntrada1 || null,
+      OrigemSaida1: request.OrigemSaida1 || null,
+      OrigemEntrada2: request.OrigemEntrada2 || null,
+      OrigemSaida2: request.OrigemSaida2 || null,
+      OrigemEntrada3: request.OrigemEntrada3 || null,
+      OrigemSaida3: request.OrigemSaida3 || null,
+      Tipo: request.Tipo || 0,
+      TipoDescricao: request.TipoDescricao || request.type || "Ajuste de ponto",
+      Estado: request.Estado || 0,
+      Observacoes: request.Observacoes || request.justification || null,
+      DataSolicitacao: request.DataSolicitacao || request.createdAt || "",
+      AlteracoesFonteDados: request.AlteracoesFonteDados || [],
+      Versao: request.Versao || "1",
+      TipoSolicitacao: request.TipoSolicitacao || 0,
+      DispositivoTipo: request.DispositivoTipo,
+      DispositivoNome: request.DispositivoNome,
     }));
 
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       items = items.filter((request) =>
-        request.employeeName?.toLowerCase().includes(query) ||
-        request.date?.toLowerCase().includes(query) ||
-        request.justification?.toLowerCase().includes(query)
+        request.FuncionarioNome?.toLowerCase().includes(query) ||
+        request.Data?.toLowerCase().includes(query) ||
+        request.Observacoes?.toLowerCase().includes(query)
       );
     }
 
     return items;
   }, [requestsData, searchQuery]);
 
+  // Auto-select first request
+  useEffect(() => {
+    if (requests.length > 0 && !selectedRequest) {
+      setSelectedRequest(requests[0]);
+      if (isTablet) {
+        setShowDetailView(true);
+      }
+    }
+  }, [requests, selectedRequest, isTablet]);
+
   // Handle refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await refetch();
-    } catch (_error) {
-      console.error("Error refreshing requests:", error);
     } finally {
       setRefreshing(false);
     }
   }, [refetch]);
 
   // Handle approve request
-  const handleApprove = useCallback((request: TimeAdjustmentRequest) => {
-    Alert.alert(
-      "Aprovar Requisição",
-      `Deseja aprovar a requisição de ${request.employeeName}?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Aprovar",
-          style: "default",
-          onPress: async () => {
-            try {
-              await approveMutation.mutateAsync({
-                requestId: request.id,
-                data: {},
-              });
-              Alert.alert("Sucesso", "Requisição aprovada com sucesso!");
-              setSelectedRequest(null);
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível aprovar a requisição. Tente novamente.");
-            }
-          },
-        },
-      ]
-    );
-  }, [approveMutation, refetch]);
+  const handleApprove = useCallback(async () => {
+    if (!selectedRequest) return;
+
+    try {
+      await approveMutation.mutateAsync({
+        requestId: selectedRequest.Id.toString(),
+        data: {
+          Versao: selectedRequest.Versao,
+          AlteracoesFonteDados: selectedRequest.AlteracoesFonteDados,
+          TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
+        }
+      });
+
+      setSelectedRequest(null);
+      setShowDetailView(false);
+      await refetch();
+    } catch (error) {
+      console.error("Error approving request:", error);
+    }
+  }, [selectedRequest, approveMutation, refetch]);
 
   // Handle reject request
-  const handleReject = useCallback((request: TimeAdjustmentRequest) => {
-    Alert.alert(
-      "Rejeitar Requisição",
-      `Deseja rejeitar a requisição de ${request.employeeName}?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Rejeitar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await rejectMutation.mutateAsync({
-                requestId: request.id,
-                data: {},
-              });
-              Alert.alert("Sucesso", "Requisição rejeitada com sucesso!");
-              setSelectedRequest(null);
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível rejeitar a requisição. Tente novamente.");
-            }
-          },
-        },
-      ]
-    );
-  }, [rejectMutation, refetch]);
+  const handleReject = useCallback(async () => {
+    if (!selectedRequest || !rejectReason.trim()) return;
+
+    try {
+      await rejectMutation.mutateAsync({
+        requestId: selectedRequest.Id.toString(),
+        data: {
+          Versao: selectedRequest.Versao,
+          MotivoDescarte: rejectReason,
+          TipoSolicitacao: selectedRequest.TipoSolicitacao || 0
+        }
+      });
+
+      setSelectedRequest(null);
+      setShowDetailView(false);
+      setRejectDialogOpen(false);
+      setRejectReason("");
+      await refetch();
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+    }
+  }, [selectedRequest, rejectReason, rejectMutation, refetch]);
 
   // Format date display
   const formatDateDisplay = (dateStr: string) => {
@@ -162,118 +304,276 @@ export default function RequisitionsListScreen() {
     }
   };
 
-  // Get status badge variant
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "success";
-      case "rejected":
-        return "destructive";
-      default:
-        return "outline";
-    }
+  // Count actual changes
+  const countChanges = (request: TimeAdjustmentRequest) => {
+    return detectActualChanges(request).size;
   };
 
-  // Get status label
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "Aprovado";
-      case "rejected":
-        return "Rejeitado";
-      default:
-        return "Pendente";
-    }
-  };
+  // Render request list item
+  const renderRequest = ({ item }: { item: TimeAdjustmentRequest }) => {
+    const isSelected = selectedRequest?.Id === item.Id;
+    const changeCount = countChanges(item);
 
-  // Render request item
-  const renderRequest = ({ item }: { item: TimeAdjustmentRequest }) => (
-    <TouchableOpacity
-      onPress={() => setSelectedRequest(item.id === selectedRequest?.id ? null : item)}
-      activeOpacity={0.7}
-    >
-      <Card style={[styles.requestCard, selectedRequest?.id === item.id && styles.selectedCard]}>
-        <View style={styles.requestHeader}>
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          setSelectedRequest(item);
+          if (!isTablet) {
+            setShowDetailView(true);
+          }
+        }}
+        activeOpacity={0.7}
+      >
+        <Card style={[
+          styles.requestCard,
+          {
+            backgroundColor: isSelected ? colors.primary : colors.card,
+            borderColor: isSelected ? colors.primary : colors.border
+          },
+          isSelected && styles.selectedCard
+        ]}>
+          <View style={styles.requestHeader}>
+            <View style={styles.userContainer}>
+              <IconUser size={16} color={isSelected ? '#fff' : colors.mutedForeground} />
+              <ThemedText
+                style={[
+                  styles.userName,
+                  { color: isSelected ? '#fff' : colors.foreground }
+                ]}
+                numberOfLines={1}
+              >
+                {item.FuncionarioNome}
+              </ThemedText>
+            </View>
+          </View>
+
           <View style={styles.dateContainer}>
-            <IconCalendar size={16} color="#6B7280" />
-            <ThemedText style={styles.dateText}>
-              {formatDateDisplay(item.date)}
+            <IconCalendar size={14} color={isSelected ? 'rgba(255,255,255,0.7)' : colors.mutedForeground} />
+            <ThemedText
+              style={[
+                styles.dateText,
+                { color: isSelected ? 'rgba(255,255,255,0.9)' : colors.mutedForeground }
+              ]}
+              numberOfLines={1}
+            >
+              {formatDateDisplay(item.Data)}
             </ThemedText>
           </View>
-          <Badge variant={getStatusBadgeVariant(item.status)}>
-            {getStatusLabel(item.status)}
-          </Badge>
-        </View>
 
-        <View style={styles.userContainer}>
-          <IconUser size={16} color="#6B7280" />
-          <ThemedText style={styles.userName}>{item.employeeName}</ThemedText>
-        </View>
+          {changeCount > 0 && (
+            <Badge
+              variant={isSelected ? "secondary" : "outline"}
+              style={styles.changeBadge}
+            >
+              {changeCount} alteraç{changeCount === 1 ? 'ão' : 'ões'}
+            </Badge>
+          )}
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
-        {item.type && (
-          <View style={styles.typeContainer}>
-            <IconClock size={14} color="#6B7280" />
-            <ThemedText style={styles.typeText}>{item.type}</ThemedText>
+  // Render detail view
+  const renderDetailView = () => {
+    if (!selectedRequest) {
+      return (
+        <View style={[styles.emptyDetailContainer, { backgroundColor: colors.background }]}>
+          <IconClock size={48} color={colors.mutedForeground} />
+          <ThemedText style={[styles.emptyDetailText, { color: colors.mutedForeground }]}>
+            Selecione uma requisição para ver os detalhes
+          </ThemedText>
+        </View>
+      );
+    }
+
+    const actualChanges = detectActualChanges(selectedRequest);
+    const deviceInfo = getDeviceInfo(selectedRequest.DispositivoTipo);
+    const DeviceIcon = deviceInfo.icon;
+
+    const timeSlots = [
+      { label: 'Entrada 1', field: 'Entrada1', origin: selectedRequest.OrigemEntrada1 },
+      { label: 'Saída 1', field: 'Saida1', origin: selectedRequest.OrigemSaida1 },
+      { label: 'Entrada 2', field: 'Entrada2', origin: selectedRequest.OrigemEntrada2 },
+      { label: 'Saída 2', field: 'Saida2', origin: selectedRequest.OrigemSaida2 },
+      { label: 'Entrada 3', field: 'Entrada3', origin: selectedRequest.OrigemEntrada3 },
+      { label: 'Saída 3', field: 'Saida3', origin: selectedRequest.OrigemSaida3 },
+    ];
+
+    return (
+      <View style={[styles.detailContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
+          {!isTablet && (
+            <TouchableOpacity onPress={() => setShowDetailView(false)} style={styles.backButton}>
+              <IconX size={24} color={colors.foreground} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.detailHeaderContent}>
+            <View style={styles.detailTitleRow}>
+              <IconUser size={20} color={colors.foreground} />
+              <ThemedText style={[styles.detailTitle, { color: colors.foreground }]}>
+                {selectedRequest.FuncionarioNome}
+              </ThemedText>
+            </View>
+            <View style={styles.detailSubtitleRow}>
+              <IconCalendar size={16} color={colors.mutedForeground} />
+              <ThemedText style={[styles.detailSubtitle, { color: colors.mutedForeground }]}>
+                {formatDateDisplay(selectedRequest.Data)}
+              </ThemedText>
+            </View>
+            {selectedRequest.DispositivoTipo && (
+              <View style={styles.detailSubtitleRow}>
+                <DeviceIcon size={16} color={colors.mutedForeground} />
+                <ThemedText style={[styles.detailSubtitle, { color: colors.mutedForeground }]}>
+                  {deviceInfo.label}
+                </ThemedText>
+              </View>
+            )}
           </View>
-        )}
-
-        <View style={styles.timeChangesContainer}>
-          {(item.originalEntry || item.requestedEntry) && (
-            <View style={styles.timeChangeRow}>
-              <ThemedText style={styles.timeChangeLabel}>Entrada:</ThemedText>
-              <View style={styles.timeChangeValues}>
-                <ThemedText style={styles.originalTime}>{item.originalEntry || "—"}</ThemedText>
-                <ThemedText style={styles.arrow}>→</ThemedText>
-                <ThemedText style={styles.requestedTime}>{item.requestedEntry || "—"}</ThemedText>
-              </View>
-            </View>
-          )}
-          {(item.originalExit || item.requestedExit) && (
-            <View style={styles.timeChangeRow}>
-              <ThemedText style={styles.timeChangeLabel}>Saída:</ThemedText>
-              <View style={styles.timeChangeValues}>
-                <ThemedText style={styles.originalTime}>{item.originalExit || "—"}</ThemedText>
-                <ThemedText style={styles.arrow}>→</ThemedText>
-                <ThemedText style={styles.requestedTime}>{item.requestedExit || "—"}</ThemedText>
-              </View>
-            </View>
-          )}
         </View>
 
-        {item.justification && (
-          <View style={styles.justificationContainer}>
-            <ThemedText style={styles.justificationLabel}>Justificativa:</ThemedText>
-            <ThemedText style={styles.justificationText} numberOfLines={2}>
-              {item.justification}
+        <ScrollView style={styles.detailContent} showsVerticalScrollIndicator={false}>
+          {/* Metadata Card */}
+          <Card style={[styles.metadataCard, { backgroundColor: colors.card }]}>
+            <View style={styles.metadataRow}>
+              <ThemedText style={[styles.metadataLabel, { color: colors.mutedForeground }]}>
+                Tipo de Solicitação
+              </ThemedText>
+              <ThemedText style={[styles.metadataValue, { color: colors.foreground }]}>
+                {selectedRequest.TipoDescricao}
+              </ThemedText>
+            </View>
+
+            {selectedRequest.DataSolicitacao && (
+              <View style={styles.metadataRow}>
+                <ThemedText style={[styles.metadataLabel, { color: colors.mutedForeground }]}>
+                  Data da Solicitação
+                </ThemedText>
+                <ThemedText style={[styles.metadataValue, { color: colors.foreground }]}>
+                  {formatDateDisplay(selectedRequest.DataSolicitacao)}
+                </ThemedText>
+              </View>
+            )}
+
+            {selectedRequest.Observacoes && (
+              <View style={[styles.metadataRow, styles.observationsRow]}>
+                <ThemedText style={[styles.metadataLabel, { color: colors.mutedForeground }]}>
+                  Observações
+                </ThemedText>
+                <ThemedText style={[styles.metadataValue, { color: colors.foreground }]}>
+                  {selectedRequest.Observacoes}
+                </ThemedText>
+              </View>
+            )}
+          </Card>
+
+          {/* Time Comparison Table */}
+          <Card style={[styles.comparisonCard, { backgroundColor: colors.card }]}>
+            <ThemedText style={[styles.comparisonTitle, { color: colors.foreground }]}>
+              Comparação de Horários
             </ThemedText>
-          </View>
-        )}
 
-        {selectedRequest?.id === item.id && item.status === "pending" && (
-          <View style={styles.actionsContainer}>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => handleReject(item)}
-              style={styles.rejectButton}
-            >
-              <IconCircleX size={16} color="#DC2626" />
-              <ThemedText style={styles.rejectButtonText}>Rejeitar</ThemedText>
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onPress={() => handleApprove(item)}
-              style={styles.approveButton}
-            >
-              <IconCircleCheck size={16} color="#fff" />
-              <ThemedText style={styles.approveButtonText}>Aprovar</ThemedText>
-            </Button>
-          </View>
-        )}
-      </Card>
-    </TouchableOpacity>
-  );
+            <View style={[styles.tableHeader, { backgroundColor: colors.muted }]}>
+              <ThemedText style={[styles.tableHeaderCell, styles.labelColumn, { color: colors.foreground }]}>
+                Horário
+              </ThemedText>
+              <ThemedText style={[styles.tableHeaderCell, styles.timeColumn, { color: colors.foreground }]}>
+                Original
+              </ThemedText>
+              <ThemedText style={[styles.tableHeaderCell, styles.timeColumn, { color: colors.foreground }]}>
+                Solicitado
+              </ThemedText>
+            </View>
+
+            {timeSlots.map((slot, index) => {
+              const originalValue = selectedRequest[`${slot.field}Original` as keyof TimeAdjustmentRequest] as string | null;
+              const requestedValue = selectedRequest[slot.field as keyof TimeAdjustmentRequest] as string | null;
+              const isChanged = actualChanges.has(slot.field);
+              const originInfo = getOriginInfo(slot.origin);
+              const OriginIcon = originInfo.icon;
+
+              // Skip if both values are empty
+              if (!originalValue && !requestedValue) return null;
+
+              return (
+                <View
+                  key={slot.field}
+                  style={[
+                    styles.tableRow,
+                    index % 2 === 0 && { backgroundColor: colors.background },
+                    { borderBottomColor: colors.border }
+                  ]}
+                >
+                  <View style={[styles.tableCell, styles.labelColumn]}>
+                    <ThemedText style={[styles.tableCellText, { color: colors.foreground }]}>
+                      {slot.label}
+                    </ThemedText>
+                  </View>
+
+                  <View style={[styles.tableCell, styles.timeColumn]}>
+                    <View style={styles.timeCellContent}>
+                      {originalValue && (
+                        <>
+                          <OriginIcon size={14} color={colors.mutedForeground} />
+                          <ThemedText style={[styles.timeValue, { color: colors.mutedForeground }]}>
+                            {originalValue}
+                          </ThemedText>
+                        </>
+                      )}
+                    </View>
+                  </View>
+
+                  <View style={[styles.tableCell, styles.timeColumn]}>
+                    {requestedValue && (
+                      <View style={[
+                        styles.timeCellContent,
+                        isChanged && styles.changedCell
+                      ]}>
+                        <ThemedText
+                          style={[
+                            styles.timeValue,
+                            isChanged ? styles.changedText : { color: colors.foreground }
+                          ]}
+                        >
+                          {requestedValue}
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </Card>
+
+          {/* Action Buttons */}
+          {showPending && (
+            <View style={styles.actionButtons}>
+              <Button
+                variant="outline"
+                onPress={() => setRejectDialogOpen(true)}
+                style={[styles.actionButton, styles.rejectButton]}
+                disabled={rejectMutation.isPending}
+              >
+                <IconCircleX size={18} color="#DC2626" />
+                <ThemedText style={styles.rejectButtonText}>Rejeitar</ThemedText>
+              </Button>
+
+              <Button
+                variant="default"
+                onPress={handleApprove}
+                style={[styles.actionButton, styles.approveButton]}
+                disabled={approveMutation.isPending}
+              >
+                <IconCircleCheck size={18} color="#fff" />
+                <ThemedText style={styles.approveButtonText}>
+                  {approveMutation.isPending ? 'Aprovando...' : 'Aprovar'}
+                </ThemedText>
+              </Button>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  };
 
   if (isLoading && !refreshing) {
     return <LoadingScreen />;
@@ -289,81 +589,279 @@ export default function RequisitionsListScreen() {
     );
   }
 
+  // Master-detail layout for tablet
+  if (isTablet) {
+    return (
+      <ThemedView style={styles.container}>
+        <Header
+          title="Requisições de Ponto"
+          subtitle="Aprovar ou rejeitar requisições"
+          showBackButton
+          onBackPress={() => router.back()}
+        />
+
+        <View style={styles.tabletContainer}>
+          {/* Left Panel - List */}
+          <View style={[styles.listPanel, { borderRightColor: colors.border }]}>
+            <View style={styles.filtersContainer}>
+              <View style={styles.toggleContainer}>
+                <Button
+                  variant={showPending ? "default" : "outline"}
+                  size="sm"
+                  onPress={() => setShowPending(true)}
+                  style={styles.toggleButton}
+                >
+                  Pendentes
+                </Button>
+                <Button
+                  variant={!showPending ? "default" : "outline"}
+                  size="sm"
+                  onPress={() => setShowPending(false)}
+                  style={styles.toggleButton}
+                >
+                  Processadas
+                </Button>
+              </View>
+
+              <SearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Buscar..."
+                style={styles.searchBar}
+              />
+
+              <View style={styles.statsContainer}>
+                <ThemedText style={[styles.statsText, { color: colors.mutedForeground }]}>
+                  {requests.length} encontrada{requests.length !== 1 ? 's' : ''}
+                </ThemedText>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onPress={onRefresh}
+                  disabled={refreshing}
+                >
+                  <IconRefresh size={16} color={colors.mutedForeground} />
+                </Button>
+              </View>
+            </View>
+
+            <FlatList
+              data={requests}
+              renderItem={renderRequest}
+              keyExtractor={(item) => item.Id.toString()}
+              contentContainerStyle={styles.listContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                />
+              }
+              ListEmptyComponent={
+                <EmptyState
+                  title="Nenhuma requisição"
+                  description={showPending ? "Não há requisições pendentes." : "Não há requisições processadas."}
+                  icon="clock-edit"
+                />
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
+
+          {/* Right Panel - Detail */}
+          <View style={styles.detailPanel}>
+            {renderDetailView()}
+          </View>
+        </View>
+
+        {/* Reject Modal */}
+        <Modal
+          visible={rejectDialogOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setRejectDialogOpen(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
+                  Rejeitar Requisição
+                </ThemedText>
+                <TouchableOpacity onPress={() => setRejectDialogOpen(false)}>
+                  <IconX size={24} color={colors.foreground} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalBody}>
+                <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
+                  Motivo da Rejeição
+                </ThemedText>
+                <TextArea
+                  value={rejectReason}
+                  onChangeText={setRejectReason}
+                  placeholder="Descreva o motivo da rejeição..."
+                  minHeight={100}
+                  style={styles.textArea}
+                />
+              </View>
+
+              <View style={styles.modalFooter}>
+                <Button
+                  variant="outline"
+                  onPress={() => setRejectDialogOpen(false)}
+                  style={styles.modalButton}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onPress={handleReject}
+                  disabled={!rejectReason.trim() || rejectMutation.isPending}
+                  style={styles.modalButton}
+                >
+                  {rejectMutation.isPending ? 'Rejeitando...' : 'Rejeitar'}
+                </Button>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ThemedView>
+    );
+  }
+
+  // Mobile layout - List or Detail
   return (
     <ThemedView style={styles.container}>
-      <Header
-        title="Requisições de Ponto"
-        subtitle="Aprovar ou rejeitar requisições"
-        showBackButton
-        onBackPress={() => router.back()}
-      />
+      {!showDetailView ? (
+        <>
+          <Header
+            title="Requisições de Ponto"
+            subtitle="Aprovar ou rejeitar requisições"
+            showBackButton
+            onBackPress={() => router.back()}
+          />
 
-      <View style={styles.filtersContainer}>
-        <View style={styles.toggleContainer}>
-          <Button
-            variant={showPending ? "default" : "outline"}
-            size="sm"
-            onPress={() => setShowPending(true)}
-            style={styles.toggleButton}
-          >
-            Pendentes
-          </Button>
-          <Button
-            variant={!showPending ? "default" : "outline"}
-            size="sm"
-            onPress={() => setShowPending(false)}
-            style={styles.toggleButton}
-          >
-            Processadas
-          </Button>
-        </View>
+          <View style={[styles.filtersContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <View style={styles.toggleContainer}>
+              <Button
+                variant={showPending ? "default" : "outline"}
+                size="sm"
+                onPress={() => setShowPending(true)}
+                style={styles.toggleButton}
+              >
+                Pendentes
+              </Button>
+              <Button
+                variant={!showPending ? "default" : "outline"}
+                size="sm"
+                onPress={() => setShowPending(false)}
+                style={styles.toggleButton}
+              >
+                Processadas
+              </Button>
+            </View>
 
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Buscar por funcionário, data ou justificativa..."
-          style={styles.searchBar}
-        />
-
-        <View style={styles.statsContainer}>
-          <ThemedText style={styles.statsText}>
-            {requests.length} requisição{requests.length !== 1 ? "ões" : ""} encontrada{requests.length !== 1 ? "s" : ""}
-          </ThemedText>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={onRefresh}
-            disabled={refreshing}
-          >
-            <IconRefresh size={16} color="#6B7280" />
-          </Button>
-        </View>
-      </View>
-
-      <View style={styles.listContainer}>
-        <FlatList
-          data={requests}
-          renderItem={renderRequest}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#3B82F6"]}
-              tintColor="#3B82F6"
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Buscar por funcionário, data..."
+              style={styles.searchBar}
             />
-          }
-          ListEmptyComponent={
-            <EmptyState
-              title="Nenhuma requisição encontrada"
-              description={showPending ? "Não há requisições pendentes no momento." : "Não há requisições processadas para exibir."}
-              icon="clock-edit"
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+
+            <View style={styles.statsContainer}>
+              <ThemedText style={[styles.statsText, { color: colors.mutedForeground }]}>
+                {requests.length} requisição{requests.length !== 1 ? 'ões' : ''} encontrada{requests.length !== 1 ? 's' : ''}
+              </ThemedText>
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={onRefresh}
+                disabled={refreshing}
+              >
+                <IconRefresh size={16} color={colors.mutedForeground} />
+              </Button>
+            </View>
+          </View>
+
+          <FlatList
+            data={requests}
+            renderItem={renderRequest}
+            keyExtractor={(item) => item.Id.toString()}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            }
+            ListEmptyComponent={
+              <EmptyState
+                title="Nenhuma requisição encontrada"
+                description={showPending ? "Não há requisições pendentes no momento." : "Não há requisições processadas para exibir."}
+                icon="clock-edit"
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        </>
+      ) : (
+        renderDetailView()
+      )}
+
+      {/* Reject Modal */}
+      <Modal
+        visible={rejectDialogOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRejectDialogOpen(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={styles.modalOverlayTouchable}
+            onPress={() => setRejectDialogOpen(false)}
+          />
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
+                Rejeitar Requisição
+              </ThemedText>
+              <TouchableOpacity onPress={() => setRejectDialogOpen(false)}>
+                <IconX size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
+                Motivo da Rejeição
+              </ThemedText>
+              <TextArea
+                value={rejectReason}
+                onChangeText={setRejectReason}
+                placeholder="Descreva o motivo da rejeição..."
+                minHeight={100}
+                style={styles.textArea}
+              />
+            </View>
+
+            <View style={styles.modalFooter}>
+              <Button
+                variant="outline"
+                onPress={() => setRejectDialogOpen(false)}
+                style={styles.modalButton}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onPress={handleReject}
+                disabled={!rejectReason.trim() || rejectMutation.isPending}
+                style={styles.modalButton}
+              >
+                {rejectMutation.isPending ? 'Rejeitando...' : 'Rejeitar'}
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -372,15 +870,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  tabletContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  listPanel: {
+    width: 380,
+    borderRightWidth: 1,
+  },
+  detailPanel: {
+    flex: 1,
+  },
   filtersContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingVertical: 12,
-    backgroundColor: "#F9FAFB",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
   },
   toggleContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
     marginBottom: 12,
   },
@@ -391,153 +898,251 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   statsText: {
     fontSize: 14,
-    color: "#6B7280",
-  },
-  listContainer: {
-    flex: 1,
   },
   listContent: {
-    padding: 16,
+    padding: spacing.md,
     gap: 12,
   },
   requestCard: {
-    padding: 16,
-    backgroundColor: "white",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
   },
   selectedCard: {
-    borderWidth: 2,
-    borderColor: "#3B82F6",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   requestHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 12,
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flex: 1,
-  },
-  dateText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    textTransform: "capitalize",
-    flexShrink: 1,
+    marginBottom: 8,
   },
   userContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
   },
   userName: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#111827",
+    fontWeight: '600',
+    flex: 1,
   },
-  typeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    marginBottom: 12,
-  },
-  typeText: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontStyle: "italic",
-  },
-  timeChangesContainer: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  timeChangeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 8,
   },
-  timeChangeLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
+  dateText: {
+    fontSize: 13,
+    textTransform: 'capitalize',
+    flex: 1,
   },
-  timeChangeValues: {
-    flexDirection: "row",
-    alignItems: "center",
+  changeBadge: {
+    alignSelf: 'flex-start',
+  },
+  detailContainer: {
+    flex: 1,
+  },
+  emptyDetailContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  emptyDetailText: {
+    marginTop: spacing.md,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  detailHeader: {
+    padding: spacing.md,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    marginBottom: spacing.sm,
+  },
+  detailHeaderContent: {
     gap: 8,
   },
-  originalTime: {
-    fontSize: 14,
-    color: "#9CA3AF",
-    textDecorationLine: "line-through",
+  detailTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  arrow: {
-    fontSize: 14,
-    color: "#6B7280",
+  detailTitle: {
+    fontSize: 20,
+    fontWeight: '600',
   },
-  requestedTime: {
-    fontSize: 14,
-    color: "#059669",
-    fontWeight: "600",
+  detailSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  justificationContainer: {
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 12,
+  detailSubtitle: {
+    fontSize: 14,
+  },
+  detailContent: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  metadataCard: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  metadataRow: {
     marginBottom: 12,
   },
-  justificationLabel: {
+  observationsRow: {
+    marginBottom: 0,
+  },
+  metadataLabel: {
     fontSize: 12,
-    color: "#6B7280",
-    fontWeight: "600",
+    fontWeight: '600',
     marginBottom: 4,
   },
-  justificationText: {
+  metadataValue: {
     fontSize: 14,
-    color: "#374151",
-    lineHeight: 20,
   },
-  actionsContainer: {
-    flexDirection: "row",
+  comparisonCard: {
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  comparisonTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.md,
+    marginBottom: 4,
+  },
+  tableHeaderCell: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  labelColumn: {
+    flex: 1,
+  },
+  timeColumn: {
+    width: 100,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+  },
+  tableCell: {
+    justifyContent: 'center',
+  },
+  tableCellText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  timeCellContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  timeValue: {
+    fontSize: 14,
+    fontFamily: 'monospace',
+  },
+  changedCell: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  changedText: {
+    color: '#16A34A',
+    fontWeight: '600',
+  },
+  actionButtons: {
+    flexDirection: 'row',
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-    paddingTop: 12,
+    marginTop: spacing.md,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   rejectButton: {
-    flex: 1,
-    borderColor: "#DC2626",
+    borderColor: '#DC2626',
   },
   rejectButtonText: {
-    color: "#DC2626",
-    marginLeft: 4,
+    color: '#DC2626',
+    fontWeight: '600',
   },
   approveButton: {
-    flex: 1,
-    backgroundColor: "#059669",
+    backgroundColor: '#16A34A',
   },
   approveButtonText: {
-    color: "#fff",
-    marginLeft: 4,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOverlayTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 500,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalBody: {
+    padding: spacing.md,
+  },
+  modalLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  textArea: {
+    minHeight: 100,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
   },
 });

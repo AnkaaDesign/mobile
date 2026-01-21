@@ -412,8 +412,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   const options = async ? allAsyncOptions : propOptions || [];
   const loading = async ? isLoadingOptions && currentPage === 1 : externalLoading;
 
-  console.log('[Combobox] Options:', { async, optionsCount: options.length, propOptionsCount: propOptions?.length, loading });
-
   // Filter options - only filter locally for non-async mode
   const filteredOptions = useMemo(() => {
     if (async) return options;
@@ -427,8 +425,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       return label.includes(searchLower) || description.includes(searchLower);
     });
   }, [async, options, search, searchable, getOptionLabel, getOptionDescription]);
-
-  console.log('[Combobox] Filtered options count:', filteredOptions.length);
 
   // Get selected option(s)
   const selectedOptions = useMemo(() => {

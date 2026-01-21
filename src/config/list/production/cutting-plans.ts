@@ -201,7 +201,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
             })
             return {
               data: (response.data || []).map((task: any) => ({
-                label: `${task.customer?.fantasyName || '-'} - ${task.plate || '-'}`,
+                label: `${task.customer?.fantasyName || '-'} - ${task.truck?.plate || '-'}`,
                 value: task.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,

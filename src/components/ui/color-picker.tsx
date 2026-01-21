@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Pressable, Modal, ActivityIndicator, InteractionManager } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, Modal, ActivityIndicator, InteractionManager, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import ColorPicker, { Panel1, HueSlider, Preview } from 'reanimated-color-picker';
@@ -69,13 +69,13 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
   // Handle when the picker has fully rendered (called from onLayout of the picker container)
   const handlePickerLayout = useCallback(() => {
     if (pickerMounted && !pickerFullyRendered) {
-      // Give an extra delay to ensure the color picker canvas is fully painted
+      // Give a shorter delay to ensure the color picker canvas is painted
       setTimeout(() => {
         setPickerFullyRendered(true);
         // Fade in the picker and fade out the loading
-        pickerOpacity.value = withTiming(1, { duration: 200 });
-        loadingOpacity.value = withTiming(0, { duration: 150 });
-      }, 350);
+        pickerOpacity.value = withTiming(1, { duration: 300 });
+        loadingOpacity.value = withTiming(0, { duration: 200 });
+      }, 100);
     }
   }, [pickerMounted, pickerFullyRendered, pickerOpacity, loadingOpacity]);
 
@@ -208,54 +208,60 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
               </View>
 
               {/* Picker content - always mounted, starts invisible */}
-              <Animated.View style={pickerAnimatedStyle}>
-                <View style={styles.modalBody} onLayout={handlePickerLayout}>
-                  {pickerMounted && (
-                    <ColorPicker
-                      value={tempColor}
-                      onComplete={handleColorSelect}
-                      style={styles.colorPicker}
-                      boundedThumb
-                    >
-                      <Preview style={styles.preview} hideInitialColor hideText />
-                      <Panel1 style={styles.panel} />
-                      <HueSlider style={styles.hueSlider} />
-                    </ColorPicker>
-                  )}
-                  {!pickerMounted && <View style={styles.pickerPlaceholder} />}
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                bounces={false}
+              >
+                <Animated.View style={[pickerAnimatedStyle, styles.pickerContainer]}>
+                  <View style={styles.modalBody} onLayout={handlePickerLayout}>
+                    {pickerMounted && (
+                      <ColorPicker
+                        value={tempColor}
+                        onComplete={handleColorSelect}
+                        style={styles.colorPicker}
+                        boundedThumb
+                      >
+                        <Preview style={styles.preview} hideInitialColor hideText />
+                        <Panel1 style={styles.panel} />
+                        <HueSlider style={styles.hueSlider} />
+                      </ColorPicker>
+                    )}
+                    {!pickerMounted && <View style={styles.pickerPlaceholder} />}
+                  </View>
+                </Animated.View>
+              </ScrollView>
+
+              {/* Action Bar - same style as paint form */}
+              <View
+                style={[
+                  styles.actionBar,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.card,
+                  },
+                ]}
+              >
+                <View style={styles.buttonWrapper}>
+                  <Button variant="outline" onPress={handleCancel}>
+                    <IconX size={18} color={colors.mutedForeground} />
+                    <Text style={styles.buttonText}>Cancelar</Text>
+                  </Button>
                 </View>
 
-                {/* Action Bar - same style as paint form */}
-                <View
-                  style={[
-                    styles.actionBar,
-                    {
-                      borderColor: colors.border,
-                      backgroundColor: colors.card,
-                    },
-                  ]}
-                >
-                  <View style={styles.buttonWrapper}>
-                    <Button variant="outline" onPress={handleCancel}>
-                      <IconX size={18} color={colors.mutedForeground} />
-                      <Text style={styles.buttonText}>Cancelar</Text>
-                    </Button>
-                  </View>
-
-                  <View style={styles.buttonWrapper}>
-                    <Button
-                      variant="default"
-                      onPress={handleApply}
-                      disabled={!isValidHex(tempColor)}
-                    >
-                      <IconCheck size={18} color={colors.primaryForeground} />
-                      <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                        Aplicar
-                      </Text>
-                    </Button>
-                  </View>
+                <View style={styles.buttonWrapper}>
+                  <Button
+                    variant="default"
+                    onPress={handleApply}
+                    disabled={!isValidHex(tempColor)}
+                  >
+                    <IconCheck size={18} color={colors.primaryForeground} />
+                    <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                      Aplicar
+                    </Text>
+                  </Button>
                 </View>
-              </Animated.View>
+              </View>
 
               {/* Loading overlay - fades out when picker is ready */}
               {!pickerFullyRendered && (
@@ -321,8 +327,7 @@ const styles = StyleSheet.create({
     borderWidth: formLayout.borderWidth,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '90%',
-    overflow: 'hidden',
+    maxHeight: '85%',
   },
   // Compact header
   modalHeader: {
@@ -339,6 +344,13 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: spacing.xs,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  pickerContainer: {
+    borderTopLeftRadius: formLayout.cardBorderRadius,
+    borderTopRightRadius: formLayout.cardBorderRadius,
   },
   modalBody: {
     padding: spacing.md,

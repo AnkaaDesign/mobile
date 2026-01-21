@@ -13,6 +13,7 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import type { LayoutCreateFormData } from "@/schemas";
 // import { showToast } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/utils/file";
+import { LayoutSelector } from "./selector/layout-selector";
 
 // MeasurementInput component with local state (like web version)
 const MeasurementInput = React.memo(({
@@ -130,6 +131,10 @@ interface LayoutFormProps {
   disabled?: boolean;
   /** When true, disables the internal ScrollView and KeyboardAvoidingView (use when nested in another scrollable) */
   embedded?: boolean;
+  /** Optional: Called when user selects an existing layout to assign */
+  onSelectExistingLayout?: (side: 'left' | 'right' | 'back', layoutId: string) => void;
+  /** Optional: Show layout selection UI */
+  showLayoutSelection?: boolean;
 }
 
 interface Door {
@@ -158,8 +163,12 @@ const getPhotoUrl = (photoId: string | null): string | undefined => {
   return `${apiUrl}/files/serve/${photoId}`;
 };
 
-export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, embedded = false }: LayoutFormProps) {
+export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, embedded = false, onSelectExistingLayout, showLayoutSelection = false }: LayoutFormProps) {
   const { colors } = useTheme();
+
+  // State for layout selection mode
+  const [selectedLayoutId, setSelectedLayoutId] = useState<string | undefined>();
+  const [showingLayoutOptions, setShowingLayoutOptions] = useState(false);
 
   // Keyboard-aware scrolling (only used when not embedded)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -874,9 +883,74 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     );
   }
 
+  // Handle existing layout selection
+  const handleSelectExistingLayout = (layoutId: string | undefined) => {
+    setSelectedLayoutId(layoutId);
+    if (layoutId && onSelectExistingLayout) {
+      onSelectExistingLayout(selectedSide, layoutId);
+    }
+  };
+
   // The main form content
   const formContent = (
     <>
+      {/* Layout Selection Section - Only show if enabled */}
+      {showLayoutSelection && (
+        <Card style={styles.layoutSelectionCard}>
+          <View style={styles.layoutSelectionHeader}>
+            <ThemedText style={[styles.layoutSelectionTitle, { color: colors.foreground }]}>
+              Opções de Layout
+            </ThemedText>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => setShowingLayoutOptions(!showingLayoutOptions)}
+              disabled={disabled}
+            >
+              <Icon name={showingLayoutOptions ? "chevron-up" : "chevron-down"} size={16} color={colors.foreground} />
+            </Button>
+          </View>
+
+          {showingLayoutOptions && (
+            <View style={styles.layoutSelectionContent}>
+              <ThemedText style={[styles.layoutSelectionHelp, { color: colors.mutedForeground }]}>
+                Você pode criar um novo layout ou selecionar um layout existente para reutilizar.
+              </ThemedText>
+
+              <LayoutSelector
+                value={selectedLayoutId}
+                onValueChange={handleSelectExistingLayout}
+                side={selectedSide}
+                disabled={disabled}
+                placeholder="Selecione um layout para reutilizar"
+              />
+
+              {selectedLayoutId && (
+                <View style={[styles.layoutWarning, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+                  <Icon name="alert-triangle" size={18} color={colors.warning} />
+                  <ThemedText style={[styles.layoutWarningText, { color: colors.warning }]}>
+                    Este layout é compartilhado. Alterações afetarão todos os caminhões que o utilizam.
+                  </ThemedText>
+                </View>
+              )}
+
+              {selectedLayoutId && (
+                <Button
+                  variant="outline"
+                  onPress={() => {
+                    setSelectedLayoutId(undefined);
+                    setShowingLayoutOptions(false);
+                  }}
+                  disabled={disabled}
+                >
+                  <ThemedText>Criar novo layout ao invés disso</ThemedText>
+                </Button>
+              )}
+            </View>
+          )}
+        </Card>
+      )}
+
       {/* Total Width Display */}
       <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
         <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
@@ -1256,5 +1330,41 @@ const styles = StyleSheet.create({
   },
   addButton: {
     marginBottom: spacing.md,
+  },
+  layoutSelectionCard: {
+    marginBottom: spacing.md,
+    padding: 0,
+  },
+  layoutSelectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  layoutSelectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+  },
+  layoutSelectionContent: {
+    padding: spacing.md,
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  layoutSelectionHelp: {
+    fontSize: fontSize.sm,
+  },
+  layoutWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  layoutWarningText: {
+    flex: 1,
+    fontSize: fontSize.sm,
   },
 });

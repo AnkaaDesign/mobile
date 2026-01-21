@@ -25,6 +25,7 @@ import type {
   TaskBatchUpdateResponse,
   TaskBatchDeleteResponse,
 } from '../types';
+import type { TaskCopyFromFormData } from '../types/task-copy';
 
 // =====================
 // Task Service Class
@@ -98,6 +99,11 @@ export class TaskService {
 
   async rollbackFieldChange(data: { changeLogId: string }): Promise<TaskUpdateResponse> {
     const response = await apiClient.post<TaskUpdateResponse>(`${this.basePath}/rollback-field`, data);
+    return response.data;
+  }
+
+  async copyFromTask(destinationTaskId: string, data: TaskCopyFromFormData): Promise<TaskUpdateResponse> {
+    const response = await apiClient.put<TaskUpdateResponse>(`${this.basePath}/${destinationTaskId}/copy-from`, data);
     return response.data;
   }
 
@@ -187,6 +193,7 @@ export const batchDeleteTasks = (data: TaskBatchDeleteFormData, query?: TaskQuer
 // Special operation exports
 export const duplicateTask = (data: TaskDuplicateFormData, query?: TaskQueryFormData) => taskService.duplicateTask(data, query);
 export const rollbackFieldChange = (data: { changeLogId: string }) => taskService.rollbackFieldChange(data);
+export const copyFromTask = (destinationTaskId: string, data: TaskCopyFromFormData) => taskService.copyFromTask(destinationTaskId, data);
 
 // Positioning operation exports
 export const getInProductionTasks = (query?: TaskQueryFormData) => taskService.getInProductionTasks(query);

@@ -206,6 +206,8 @@ export default function NotificationCenterScreen() {
       <Stack.Screen
         options={{
           title: 'Notificações',
+          // Disable drawer swipe on this screen to allow notification item swipe gestures
+          swipeEnabled: false,
           headerRight: () =>
             unreadCount > 0 ? (
               <Button

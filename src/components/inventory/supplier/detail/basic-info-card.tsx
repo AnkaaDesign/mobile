@@ -66,7 +66,11 @@ export function BasicInfoCard({ supplier }: BasicInfoCardProps) {
                 <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
                   Nome Fantasia
                 </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                <ThemedText
+                  style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {supplier.fantasyName}
                 </ThemedText>
               </View>
@@ -96,7 +100,11 @@ export function BasicInfoCard({ supplier }: BasicInfoCardProps) {
                       CNPJ
                     </ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
+                  <ThemedText
+                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
                     {formatCNPJ(supplier.cnpj)}
                   </ThemedText>
                 </View>
@@ -180,15 +188,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
+    gap: spacing.md,
   },
   fieldLabel: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
+    flexShrink: 0,
   },
   fieldLabelWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 0,
   },
   fieldValue: {
     fontSize: fontSize.sm,

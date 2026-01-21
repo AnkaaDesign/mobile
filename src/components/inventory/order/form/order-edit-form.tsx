@@ -7,18 +7,21 @@ import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
 import { useOrderMutations, useOrder } from '@/hooks';
 import { ThemedText } from '@/components/ui/themed-text';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
 import { FormActionBar } from '@/components/forms';
 import { useTheme } from '@/lib/theme';
+import { fontSize, fontWeight, borderRadius } from '@/constants/design-system';
 import { getSuppliers } from '@/api-client';
 import type { Supplier } from '@/types';
 import { createOrderFormData } from '@/utils/order-form-utils';
 import { formSpacing } from '@/constants/form-styles';
 import { PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from '@/constants';
+import { formatPixKey } from '@/utils';
 
 interface OrderEditFormProps {
   orderId: string;
@@ -26,7 +29,7 @@ interface OrderEditFormProps {
 }
 
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
-  const theme = useTheme();
+  const { colors, spacing } = useTheme();
   const router = useRouter();
 
   const { data: orderResponse, isLoading: isLoadingOrder } = useOrder(orderId, {
@@ -215,7 +218,6 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               supplier
                 ? {
                     id: supplier.id,
-                    name: supplier.name,
                     fantasyName: supplier.fantasyName,
                   }
                 : undefined
@@ -276,31 +278,32 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       paddingBottom: 0,
     },
     section: {
-      marginBottom: theme.spacing.lg,
+      marginBottom: spacing.lg,
     },
-    sectionTitle: {
-      fontSize: theme.fontSize.lg,
-      fontWeight: theme.fontWeight.semibold as any,
-      marginBottom: theme.spacing.md,
-      color: theme.colors.foreground,
+    labelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: spacing.xs,
     },
     field: {
-      marginBottom: theme.spacing.md,
+      marginBottom: spacing.lg,
     },
     label: {
-      fontSize: theme.fontSize.sm,
-      fontWeight: theme.fontWeight.medium as any,
-      marginBottom: theme.spacing.xs,
-      color: theme.colors.textSecondary,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium as any,
+      marginBottom: spacing.xs,
+      color: colors.textSecondary,
     },
     required: {
-      color: theme.colors.error,
+      color: "#ef4444",
+      fontSize: fontSize.sm,
+      fontWeight: "500",
     },
     itemsNote: {
-      padding: theme.spacing.md,
-      backgroundColor: theme.colors.muted,
-      borderRadius: theme.borderRadius.md,
-      marginTop: theme.spacing.md,
+      padding: spacing.md,
+      backgroundColor: colors.muted,
+      borderRadius: borderRadius.md,
+      marginTop: spacing.md,
     },
   });
 
@@ -331,27 +334,32 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-          <Card style={styles.section}>
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>
-              Descrição <ThemedText style={styles.required}>*</ThemedText>
-            </ThemedText>
-            <Controller
-              control={form.control}
-              name="description"
-              render={({ field, fieldState }) => (
-                <Input
-                  value={field.value}
-                  onChangeText={field.onChange}
-                  placeholder="Ex: Pedido de materiais de escritório"
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
-          </View>
+        <Card style={styles.section}>
+          <CardHeader>
+            <CardTitle>Informações do Pedido</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View style={styles.field}>
+              <View style={styles.labelRow}>
+                <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                <ThemedText style={styles.required}> *</ThemedText>
+              </View>
+              <Controller
+                control={form.control}
+                name="description"
+                render={({ field, fieldState }) => (
+                  <Input
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    placeholder="Ex: Pedido de materiais de escritório"
+                    error={!!fieldState.error}
+                  />
+                )}
+              />
+            </View>
 
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Fornecedor</ThemedText>
+            <View style={styles.field}>
+              <Label>Fornecedor</Label>
             <Controller
               control={form.control}
               name="supplierId"
@@ -377,25 +385,25 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
             />
           </View>
 
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Previsão de Entrega</ThemedText>
-            <Controller
-              control={form.control}
-              name="forecast"
-              render={({ field }) => (
-                <DateTimePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  mode="date"
-                  placeholder="Selecione uma data"
-                />
-              )}
-            />
-          </View>
+            <View style={styles.field}>
+              <Label>Previsão de Entrega</Label>
+              <Controller
+                control={form.control}
+                name="forecast"
+                render={({ field }) => (
+                  <DateTimePicker
+                    value={field.value ?? undefined}
+                    onChange={field.onChange}
+                    type="date"
+                    placeholder="Selecione uma data"
+                  />
+                )}
+              />
+            </View>
 
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Observações</ThemedText>
-            <Controller
+            <View style={styles.field}>
+              <Label>Observações</Label>
+              <Controller
               control={form.control}
               name="notes"
               render={({ field }) => (
@@ -408,15 +416,18 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                 />
               )}
             />
-          </View>
+            </View>
+          </CardContent>
         </Card>
 
         {/* Payment Section */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Pagamento</ThemedText>
-
-          <View style={styles.field}>
-            <ThemedText style={styles.label}>Método de Pagamento</ThemedText>
+          <CardHeader>
+            <CardTitle>Pagamento (Opcional)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <View style={styles.field}>
+              <Label>Método de Pagamento</Label>
             <Controller
               control={form.control}
               name="paymentMethod"
@@ -449,10 +460,10 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
             />
           </View>
 
-          {/* PIX Key (shown when PIX is selected) */}
-          {form.watch('paymentMethod') === PAYMENT_METHOD.PIX && (
-            <View style={styles.field}>
-              <ThemedText style={styles.label}>Chave Pix</ThemedText>
+            {/* PIX Key (shown when PIX is selected) */}
+            {form.watch('paymentMethod') === PAYMENT_METHOD.PIX && (
+              <View style={styles.field}>
+                <Label>Chave Pix</Label>
               <Controller
                 control={form.control}
                 name="paymentPix"
@@ -460,18 +471,25 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   <Input
                     value={field.value || ''}
                     onChangeText={field.onChange}
+                    onBlur={() => {
+                      const currentValue = form.getValues('paymentPix');
+                      if (currentValue) {
+                        const formatted = formatPixKey(currentValue);
+                        form.setValue('paymentPix', formatted);
+                      }
+                    }}
                     placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
                     autoCapitalize="none"
                   />
                 )}
               />
             </View>
-          )}
+            )}
 
-          {/* Due Days (shown when BANK_SLIP is selected) */}
-          {form.watch('paymentMethod') === PAYMENT_METHOD.BANK_SLIP && (
-            <View style={styles.field}>
-              <ThemedText style={styles.label}>Prazo de Vencimento</ThemedText>
+            {/* Due Days (shown when BANK_SLIP is selected) */}
+            {form.watch('paymentMethod') === PAYMENT_METHOD.BANK_SLIP && (
+              <View style={styles.field}>
+                <Label>Prazo de Vencimento</Label>
               <Controller
                 control={form.control}
                 name="paymentDueDays"
@@ -488,14 +506,18 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
                   />
                 )}
               />
-            </View>
-          )}
+              </View>
+            )}
+          </CardContent>
         </Card>
 
         {/* Documents Section */}
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Documentos</ThemedText>
-          <ThemedText style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, marginBottom: theme.spacing.md }}>
+          <CardHeader>
+            <CardTitle>Documentos (Opcional)</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md }}>
             {existingBudgetIds.length > 0 && `${existingBudgetIds.length} orçamento(s) existente(s). `}
             {existingInvoiceIds.length > 0 && `${existingInvoiceIds.length} nota(s) fiscal(is) existente(s). `}
             {existingReceiptIds.length > 0 && `${existingReceiptIds.length} recibo(s) existente(s). `}
@@ -567,15 +589,18 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
             showGallery={true}
             showFilePicker={true}
           />
+          </CardContent>
         </Card>
 
         {/* Items Note */}
         <Card style={styles.section}>
+          <CardContent>
           <View style={styles.itemsNote}>
-            <ThemedText style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary }}>
+            <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
               Nota: Para editar itens, quantidades ou preços, acesse a página de detalhes do pedido.
             </ThemedText>
           </View>
+          </CardContent>
         </Card>
       </ScrollView>
 

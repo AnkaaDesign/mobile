@@ -1,5 +1,7 @@
 import { ViewStyle } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
+import { useLayoutList } from "@/hooks/useLayout";
+import type { Layout } from "@/types";
 
 interface LayoutSelectorProps {
   value?: string;
@@ -10,20 +12,36 @@ interface LayoutSelectorProps {
   error?: string;
   required?: boolean;
   style?: ViewStyle;
+  side?: "left" | "right" | "back";
 }
 
 export function LayoutSelector({
   value,
   onValueChange,
-  placeholder = "Selecione um layout",
+  placeholder = "Selecione um layout existente",
   disabled = false,
-  label = "Layout",
+  label = "Layout Existente",
   error,
   required = false,
   style,
+  side,
 }: LayoutSelectorProps) {
-  // TODO: Implement actual layout options when needed
-  const layoutOptions: { value: string; label: string }[] = [];
+  // Fetch available layouts with usage counts
+  const { data: layouts, isLoading } = useLayoutList({
+    includeUsage: true,
+    includeSections: false,
+  });
+
+  // Format layouts for combobox
+  const layoutOptions = (layouts || []).map((layout: Layout) => {
+    const usageText = layout.usageCount ? ` (usado em ${layout.usageCount} caminhão${layout.usageCount !== 1 ? 'ões' : ''})` : '';
+    const sideLabel = side ? ` - ${side === 'left' ? 'Motorista' : side === 'right' ? 'Sapo' : 'Traseira'}` : '';
+
+    return {
+      value: layout.id,
+      label: `Layout ${sideLabel} - ${(layout.height || 0).toFixed(2)}m altura${usageText}`,
+    };
+  });
 
   return (
     <Combobox
@@ -33,10 +51,10 @@ export function LayoutSelector({
       placeholder={placeholder}
       label={required ? `${label} *` : label}
       error={error}
-      disabled={disabled}
+      disabled={disabled || isLoading}
       searchable={true}
       clearable={!required}
-      emptyText="Nenhum layout encontrado"
+      emptyText={isLoading ? "Carregando layouts..." : "Nenhum layout encontrado"}
     />
   );
 }

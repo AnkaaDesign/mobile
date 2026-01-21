@@ -15,6 +15,7 @@ import type { Cut, CutIncludes } from "./cut";
 import type { Truck, TruckIncludes } from "./truck";
 import type { Bonus, BonusIncludes } from "./bonus";
 import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";
+import type { TaskPricing } from "./task-pricing";
 
 // =====================
 // Task Interface
@@ -48,6 +49,7 @@ export interface Task extends BaseEntity {
   createdById: string | null;
   bonusDiscountId?: string | null;
   priority?: string | null;
+  pricingId?: string | null; // Foreign key to TaskPricing
 
   // Relations
   sector?: Sector;
@@ -68,6 +70,7 @@ export interface Task extends BaseEntity {
   artworks?: Artwork[];
   logoPaints?: Paint[];
   serviceOrders?: ServiceOrder[];
+  pricing?: TaskPricing; // Task pricing (one-to-many: one pricing can be shared across multiple tasks)
   airbrushings?: Airbrushing[];
   cuts?: Cut[];
   truck?: Truck;
@@ -136,6 +139,15 @@ export interface TaskIncludes {
     | boolean
     | {
         include?: ServiceOrderIncludes;
+      };
+  pricing?:
+    | boolean
+    | {
+        include?: {
+          items?: boolean;
+          layoutFile?: boolean;
+          customerSignature?: boolean;
+        };
       };
   airbrushings?:
     | boolean

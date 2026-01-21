@@ -48,7 +48,11 @@ export function PpeInfoCard({ category, itemCount = 0 }: PpeInfoCardProps) {
                   <IconPackage size={16} color={colors.mutedForeground} />
                   <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Total de Produtos</ThemedText>
                 </View>
-                <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
+                <ThemedText
+                  style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
                   {itemCount} {itemCount === 1 ? "produto" : "produtos"}
                 </ThemedText>
               </View>
@@ -129,12 +133,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    flex: 1,
+    flexShrink: 0,
   },
   infoLabel: {
     fontSize: fontSize.sm,
@@ -143,6 +148,8 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
   divider: {
     paddingTop: spacing.lg,

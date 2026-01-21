@@ -483,27 +483,63 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
   const changelogs = useMemo(() => {
     const logs = changelogsResponse?.data || [];
 
-    // Add creation entry if provided
-    if (entityCreatedAt && !isLoading) {
-      const creationEntry: Partial<ChangeLog> = {
-        id: `${entityId}-creation`,
-        entityId,
-        entityType,
-        action: CHANGE_ACTION.CREATE as any,
-        field: null,
-        oldValue: null,
-        newValue: null,
-        triggeredBy: CHANGE_TRIGGERED_BY.USER as any,
-        userId: null,
-        user: undefined,
-        createdAt: new Date(entityCreatedAt),
-        updatedAt: new Date(entityCreatedAt),
-      };
+    // TODO: Get user from auth context for privilege checking
+    // For now, we'll include all fields - privilege filtering should be added
+    const canViewFinancialFields = true; // TODO: Check user privileges
 
-      return [...logs, creationEntry as ChangeLog];
+    // Define sensitive fields that should not be displayed
+    const sensitiveFields = ["sessionToken", "verificationCode", "verificationExpiresAt", "verificationType", "password", "token", "apiKey", "secret"];
+
+    // Define financial/document fields that should only be visible to FINANCIAL and ADMIN
+    const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "commission"];
+
+    // Filter out sensitive field changes and financial fields for non-privileged users
+    const filteredLogs = logs.filter((log) => {
+      if (!log.field) return true;
+
+      // Check if the field is sensitive (case-insensitive)
+      const fieldLower = log.field.toLowerCase();
+
+      // Always filter out sensitive fields
+      if (sensitiveFields.some((sensitive) => fieldLower.includes(sensitive.toLowerCase()))) {
+        return false;
+      }
+
+      // Filter out financial fields for non-FINANCIAL/ADMIN users
+      if (!canViewFinancialFields && financialFields.some((financial) => fieldLower.includes(financial.toLowerCase()))) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Only add creation entry if entityCreatedAt is provided AND there's no existing CREATE action
+    if (entityCreatedAt && !isLoading) {
+      // Check if there's already a CREATE action in the filtered logs
+      const hasCreateAction = filteredLogs.some((log) => log.action === CHANGE_ACTION.CREATE);
+
+      if (!hasCreateAction) {
+        const creationEntry: Partial<ChangeLog> = {
+          id: `${entityId}-creation`,
+          entityId,
+          entityType,
+          action: CHANGE_ACTION.CREATE as any,
+          field: null,
+          oldValue: null,
+          newValue: null,
+          triggeredBy: CHANGE_TRIGGERED_BY.USER as any,
+          userId: null,
+          user: undefined,
+          createdAt: new Date(entityCreatedAt),
+          updatedAt: new Date(entityCreatedAt),
+        };
+
+        // Add creation entry at the end (oldest)
+        return [...filteredLogs, creationEntry as ChangeLog];
+      }
     }
 
-    return logs;
+    return filteredLogs;
   }, [changelogsResponse?.data, entityCreatedAt, entityId, entityType, isLoading]);
 
   // Extract entity IDs for fetching names
@@ -520,10 +556,22 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
     const fileIds = new Set<string>();
     const observationIds = new Set<string>();
     const truckIds = new Set<string>();
+    const serviceOrderIds = new Set<string>();
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     changelogs.forEach((changelog) => {
+      // Collect service order IDs from SERVICE_ORDER entity type changelogs
+      if (changelog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && changelog.entityId) {
+        serviceOrderIds.add(changelog.entityId);
+      }
+
+      // Also collect user IDs from service order related fields
+      if (changelog.field === "startedById" || changelog.field === "completedById" || changelog.field === "approvedById" || changelog.field === "assignedToId") {
+        if (changelog.oldValue && typeof changelog.oldValue === "string") userIds.add(changelog.oldValue);
+        if (changelog.newValue && typeof changelog.newValue === "string") userIds.add(changelog.newValue);
+      }
+
       if (changelog.field === "categoryId") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") categoryIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") categoryIds.add(changelog.newValue);
@@ -593,6 +641,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       fileIds: Array.from(fileIds),
       observationIds: Array.from(observationIds),
       truckIds: Array.from(truckIds),
+      serviceOrderIds: Array.from(serviceOrderIds),
     };
   }, [changelogs]);
 
@@ -981,6 +1030,87 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt as Date)}</ThemedText>
                           </View>
 
+                          {/* CREATE ACTION - Special handling for creation with entity details */}
+                          {firstChange.action === (CHANGE_ACTION.CREATE as any) && (() => {
+                            // Extract entity details from newValue for CREATE actions
+                            let entityCreatedDetails: any = null;
+                            try {
+                              if (firstChange.newValue) {
+                                entityCreatedDetails = typeof firstChange.newValue === 'string'
+                                  ? JSON.parse(firstChange.newValue)
+                                  : firstChange.newValue;
+                              }
+                            } catch (e) {
+                              // Failed to parse
+                            }
+
+                            return (
+                              <View style={styles.changesContainer}>
+                                {/* Service Order Details */}
+                                {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && entityCreatedDetails && (
+                                  <View style={{ gap: spacing.sm }}>
+                                    {entityCreatedDetails.type && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Tipo:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
+                                          {SERVICE_ORDER_STATUS_LABELS[entityCreatedDetails.type] || entityCreatedDetails.type}
+                                        </ThemedText>
+                                      </View>
+                                    )}
+                                    {entityCreatedDetails.description && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Descrição:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{entityCreatedDetails.description}</ThemedText>
+                                      </View>
+                                    )}
+                                    {entityCreatedDetails.status && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Status:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
+                                          {SERVICE_ORDER_STATUS_LABELS[entityCreatedDetails.status] || entityCreatedDetails.status}
+                                        </ThemedText>
+                                      </View>
+                                    )}
+                                  </View>
+                                )}
+
+                                {/* Truck Details */}
+                                {entityType === CHANGE_LOG_ENTITY_TYPE.TRUCK && entityCreatedDetails && (
+                                  <View style={{ gap: spacing.sm }}>
+                                    {entityCreatedDetails.plate && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Placa:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{entityCreatedDetails.plate}</ThemedText>
+                                      </View>
+                                    )}
+                                    {entityCreatedDetails.chassisNumber && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Chassi:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{entityCreatedDetails.chassisNumber}</ThemedText>
+                                      </View>
+                                    )}
+                                    {entityCreatedDetails.category && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Categoria:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{entityCreatedDetails.category}</ThemedText>
+                                      </View>
+                                    )}
+                                  </View>
+                                )}
+
+                                {/* Layout Details - Note: SVG visualization not yet implemented on mobile */}
+                                {entityType === CHANGE_LOG_ENTITY_TYPE.LAYOUT && entityCreatedDetails && entityCreatedDetails.layoutSections && entityCreatedDetails.layoutSections.length > 0 && (
+                                  <View style={{ gap: spacing.sm }}>
+                                    <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
+                                      Layout criado com {entityCreatedDetails.layoutSections.length} seções
+                                    </ThemedText>
+                                    {/* TODO: Add SVG visualization for layouts on mobile */}
+                                  </View>
+                                )}
+                              </View>
+                            );
+                          })()}
+
                           {/* SERVICE_ORDER UPDATE - Special handling to group related changes */}
                           {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action === (CHANGE_ACTION.UPDATE as any) && (() => {
                             // Group related field changes intelligently for service orders
@@ -1080,6 +1210,32 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                   // Exclude internal/system fields from display
                                   if (changelog.field === "statusOrder") return false;
                                   if (changelog.field === "colorOrder") return false;
+
+                                  // Exclude services field when it's just internal updates (service orders have their own changelog)
+                                  if (changelog.field === "services") {
+                                    const parseValue = (val: any) => {
+                                      if (!val) return val;
+                                      if (typeof val === "string" && (val.trim().startsWith("[") || val.trim().startsWith("{"))) {
+                                        try {
+                                          return JSON.parse(val);
+                                        } catch (e) {
+                                          return val;
+                                        }
+                                      }
+                                      return val;
+                                    };
+
+                                    const oldParsed = parseValue(changelog.oldValue);
+                                    const newParsed = parseValue(changelog.newValue);
+                                    const oldCount = Array.isArray(oldParsed) ? oldParsed.length : 0;
+                                    const newCount = Array.isArray(newParsed) ? newParsed.length : 0;
+
+                                    // If count is the same, services weren't added/removed, just updated - don't show
+                                    if (oldCount === newCount && oldCount > 0) {
+                                      return false;
+                                    }
+                                  }
+
                                   return true;
                                 })
                                 .map((changelog, changeIndex) => {
@@ -1111,17 +1267,67 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                           </View>
                                         </View>
                                       ) : changelog.field === "services" ? (
-                                        /* Special handling for services */
-                                        <View style={styles.fieldValues}>
-                                          <View>
-                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
-                                            {renderServicesCards(oldParsed, colors)}
-                                          </View>
-                                          <View style={{ marginTop: spacing.sm }}>
-                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
-                                            {renderServicesCards(newParsed, colors)}
-                                          </View>
-                                        </View>
+                                        /* Special handling for services - DON'T show for TASK since service orders have their own changelog */
+                                        (() => {
+                                          // Check if old or new is empty
+                                          const hasOld = Array.isArray(oldParsed) && oldParsed.length > 0;
+                                          const hasNew = Array.isArray(newParsed) && newParsed.length > 0;
+
+                                          // Check if services were actually added or removed (count changed)
+                                          const oldCount = Array.isArray(oldParsed) ? oldParsed.length : 0;
+                                          const newCount = Array.isArray(newParsed) ? newParsed.length : 0;
+
+                                          // If count is the same, services weren't added/removed, just updated internally
+                                          // In this case, don't show anything - individual service order changelogs will show below
+                                          if (oldCount === newCount && oldCount > 0) {
+                                            return null;
+                                          }
+
+                                          // Only show services being added (no "Antes:/Depois:" labels)
+                                          if (!hasOld && hasNew) {
+                                            return renderServicesCards(newParsed, colors);
+                                          }
+
+                                          // Only show services being removed
+                                          if (hasOld && !hasNew) {
+                                            return (
+                                              <View>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground, marginBottom: spacing.xs }])}>Removidos:</ThemedText>
+                                                {renderServicesCards(oldParsed, colors)}
+                                              </View>
+                                            );
+                                          }
+
+                                          // Show added and removed services when count changed
+                                          if (hasOld && hasNew && oldCount !== newCount) {
+                                            // Find which services were added/removed by ID
+                                            const oldIds = new Set(oldParsed.map((s: any) => s.id).filter(Boolean));
+                                            const newIds = new Set(newParsed.map((s: any) => s.id).filter(Boolean));
+
+                                            const addedServices = newParsed.filter((s: any) => s.id && !oldIds.has(s.id));
+                                            const removedServices = oldParsed.filter((s: any) => s.id && !newIds.has(s.id));
+
+                                            return (
+                                              <>
+                                                {removedServices.length > 0 && (
+                                                  <View style={{ marginBottom: spacing.sm }}>
+                                                    <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground, marginBottom: spacing.xs }])}>Removidos:</ThemedText>
+                                                    {renderServicesCards(removedServices, colors)}
+                                                  </View>
+                                                )}
+                                                {addedServices.length > 0 && (
+                                                  <View>
+                                                    {removedServices.length > 0 && <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground, marginBottom: spacing.xs }])}>Adicionados:</ThemedText>}
+                                                    {renderServicesCards(addedServices, colors)}
+                                                  </View>
+                                                )}
+                                              </>
+                                            );
+                                          }
+
+                                          // Nothing to show
+                                          return null;
+                                        })()
                                       ) : changelog.field === "airbrushings" ? (
                                         /* Special handling for airbrushings */
                                         <View style={styles.fieldValues}>
@@ -1212,6 +1418,22 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             ) : (
                                               <ThemedText style={{ color: "#22c55e", fontWeight: "500" }}>—</ThemedText>
                                             )}
+                                          </View>
+                                        </View>
+                                      ) : Array.isArray(changelog.oldValue) && Array.isArray(changelog.newValue) && changelog.field === "phones" ? (
+                                        /* Special handling for phone arrays - show complete lists */
+                                        <View style={styles.fieldValues}>
+                                          <View style={styles.valueRow}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueText, { color: colors.destructive }])}>
+                                              {formatValueWithEntity(changelog.oldValue, changelog.field)}
+                                            </ThemedText>
+                                          </View>
+                                          <View style={styles.valueRow}>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                            <ThemedText style={StyleSheet.flatten([styles.valueText, { color: colors.foreground }])}>
+                                              {formatValueWithEntity(changelog.newValue, changelog.field)}
+                                            </ThemedText>
                                           </View>
                                         </View>
                                       ) : Array.isArray(changelog.oldValue) && Array.isArray(changelog.newValue) &&
@@ -1604,5 +1826,20 @@ const styles = StyleSheet.create({
   userNameValue: {
     fontSize: fontSize.sm,
     fontWeight: "600",
+  },
+
+  // Detail row styles for CREATE action
+  detailRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  detailLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+    flex: 1,
   },
 });

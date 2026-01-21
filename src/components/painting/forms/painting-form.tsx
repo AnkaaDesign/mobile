@@ -258,10 +258,10 @@ export function PaintForm(props: PaintFormProps) {
 
   const handleSubmit = async (data: PaintCreateFormData | PaintUpdateFormData) => {
     if (mode === "create") {
-      const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.ratio > 0));
+      const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0));
       await (props as CreateFormProps).onSubmit(data as PaintCreateFormData, validFormulas);
     } else {
-      const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.ratio > 0));
+      const validFormulas = formulas.filter((f) => f.components && f.components.length > 0 && f.components.some((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0));
       await (props as UpdateFormProps).onSubmit(data as PaintUpdateFormData, validFormulas);
     }
   };

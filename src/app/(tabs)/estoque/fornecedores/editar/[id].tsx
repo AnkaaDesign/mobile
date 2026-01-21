@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll } from "@/hooks";
+import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll, useCepLookup } from "@/hooks";
 import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
@@ -13,7 +13,8 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import { useTheme } from "@/lib/theme";
 import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
-import { PhoneManager, TagManager } from "@/components/inventory/supplier/form";
+import { TagManager } from "@/components/inventory/supplier/form";
+import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { formSpacing } from "@/constants/form-styles";
 
@@ -61,6 +62,29 @@ export default function SupplierEditScreen() {
       logoId: null,
     },
   });
+
+  // CEP lookup
+  const { lookupCep, isLoading: isCepLoading } = useCepLookup({
+    onSuccess: (data) => {
+      // Only fill empty fields, don't overwrite existing data
+      if (!form.getValues('address')) form.setValue('address', data.logradouro);
+      if (!form.getValues('neighborhood')) form.setValue('neighborhood', data.bairro);
+      if (!form.getValues('city')) form.setValue('city', data.localidade);
+      if (!form.getValues('state')) form.setValue('state', data.uf);
+    },
+    onError: (error) => {
+      console.error('CEP lookup error:', error);
+    },
+  });
+
+  // Watch zipCode field and trigger lookup when complete
+  const zipCode = form.watch('zipCode');
+  useEffect(() => {
+    const cleanCep = zipCode?.replace(/\D/g, '');
+    if (cleanCep && cleanCep.length === 8) {
+      lookupCep(cleanCep);
+    }
+  }, [zipCode, lookupCep]);
 
   // Track original values for change detection
   const originalValuesRef = useRef<SupplierUpdateFormData | null>(null);
@@ -372,14 +396,14 @@ export default function SupplierEditScreen() {
               name="zipCode"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  value={value ? formatZipCode(String(value || "")) : ""}
-                  onChangeText={(text) => onChange(text ? cleanZipCode(String(text)) ?? "" : "")}
+                  type="cep"
+                  value={value || ""}
+                  onChange={onChange}
                   onBlur={onBlur}
                   placeholder="00000-000"
                   keyboardType="numeric"
-                  maxLength={9}
                   error={!!form.formState.errors.zipCode}
-                  editable={!isSubmitting}
+                  editable={!isSubmitting && !isCepLoading}
                 />
               )}
             />
@@ -511,7 +535,11 @@ export default function SupplierEditScreen() {
               control={form.control}
               name="phones"
               render={({ field: { onChange, value } }) => (
-                <PhoneManager phones={value || []} onChange={onChange} />
+                <PhoneArrayInput
+                  phones={value || []}
+                  onChange={onChange}
+                  disabled={isSubmitting}
+                />
               )}
             />
           </FormFieldGroup>

@@ -39,7 +39,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Cargo
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {employee.position.name}
             </ThemedText>
           </View>
@@ -53,7 +57,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Setor
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {employee.sector.name}
             </ThemedText>
           </View>
@@ -67,7 +75,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Setor Gerenciado
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {employee.managedSector.name}
             </ThemedText>
           </View>
@@ -81,7 +93,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Início Experiência 1
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.exp1StartAt)}
             </ThemedText>
           </View>
@@ -95,7 +111,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Fim Experiência 1
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.exp1EndAt)}
             </ThemedText>
           </View>
@@ -109,7 +129,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Início Experiência 2
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.exp2StartAt)}
             </ThemedText>
           </View>
@@ -123,7 +147,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Fim Experiência 2
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.exp2EndAt)}
             </ThemedText>
           </View>
@@ -138,7 +166,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Data de Efetivação
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.effectedAt)}
             </ThemedText>
           </View>
@@ -152,7 +184,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
                 Data de Demissão
               </ThemedText>
             </View>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.value, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {formatDate(employee.dismissedAt)}
             </ThemedText>
           </View>
@@ -169,7 +205,11 @@ export function ProfessionalInfoCard({ employee }: ProfessionalInfoCardProps) {
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Nível de Desempenho
               </ThemedText>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
+              <ThemedText
+                style={[styles.value, { color: colors.foreground }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {employee.performanceLevel}
               </ThemedText>
             </View>
@@ -220,11 +260,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+    gap: spacing.md,
   },
   labelWithIcon: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
+    flexShrink: 0,
   },
   label: {
     fontSize: fontSize.sm,
@@ -233,5 +275,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
+    flex: 1,
+    textAlign: "right",
   },
 });

@@ -9,6 +9,9 @@ export const layoutQueryKeys = {
   all: ["layouts"] as const,
   detail: (id: string) => ["layouts", "detail", id] as const,
   byTruck: (truckId: string) => ["layouts", "truck", truckId] as const,
+  list: (options?: { includeUsage?: boolean; includeSections?: boolean }) =>
+    ["layouts", "list", options] as const,
+  usage: (layoutId: string) => ["layouts", "usage", layoutId] as const,
 };
 
 // Get layout by ID
@@ -25,7 +28,7 @@ export const useLayoutDetail = (
       const response = await layoutService.getById(id, {
         include: options?.include,
       });
-      return response.data;
+      return response;
     },
     enabled: options?.enabled !== false && !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -46,7 +49,7 @@ export const useLayoutsByTruck = (
       const response = await layoutService.getByTruckId(truckId, {
         include: options?.include,
       });
-      return response.data.data;
+      return response.data;
     },
     enabled: (options?.enabled !== false) && !!truckId,
     staleTime: 5 * 60 * 1000,
@@ -96,8 +99,8 @@ export const useLayoutMutations = () => {
   });
 
   const createOrUpdateTruckLayoutMutation = useMutation({
-    mutationFn: ({ truckId, side, data }: { truckId: string; side: "left" | "right" | "back"; data: LayoutDataWithPhoto }) =>
-      layoutService.createOrUpdateTruckLayout(truckId, side, data),
+    mutationFn: ({ truckId, side, data, existingLayoutId }: { truckId: string; side: "left" | "right" | "back"; data: LayoutDataWithPhoto; existingLayoutId?: string }) =>
+      layoutService.createOrUpdateTruckLayout(truckId, side, data, existingLayoutId),
     onSuccess: (response, variables) => {
       queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });
       queryClient.invalidateQueries({
@@ -123,6 +126,72 @@ export const useLayoutMutations = () => {
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isSavingTruckLayout: createOrUpdateTruckLayoutMutation.isPending,
+  };
+};
+
+// List all layouts
+export const useLayoutList = (
+  options?: {
+    includeUsage?: boolean;
+    includeSections?: boolean;
+    enabled?: boolean;
+  }
+) => {
+  return useQuery({
+    queryKey: layoutQueryKeys.list({ includeUsage: options?.includeUsage, includeSections: options?.includeSections }),
+    queryFn: async () => {
+      const response = await layoutService.listLayouts({
+        includeUsage: options?.includeUsage,
+        includeSections: options?.includeSections,
+      });
+      return response.data;
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Get layout usage
+export const useLayoutUsage = (layoutId: string, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: layoutQueryKeys.usage(layoutId),
+    queryFn: async () => {
+      const response = await layoutService.getLayoutUsage(layoutId);
+      return response.data;
+    },
+    enabled: (options?.enabled !== false) && !!layoutId,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+// Assign existing layout to truck
+export const useAssignLayoutToTruck = () => {
+  const queryClient = useQueryClient();
+
+  const assignMutation = useMutation({
+    mutationFn: ({ layoutId, truckId, side }: { layoutId: string; truckId: string; side: "left" | "right" | "back" }) =>
+      layoutService.assignLayoutToTruck(layoutId, { truckId, side }),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: layoutQueryKeys.all });
+      queryClient.invalidateQueries({
+        queryKey: layoutQueryKeys.byTruck(variables.truckId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["trucks", "detail", variables.truckId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: layoutQueryKeys.usage(variables.layoutId),
+      });
+      return response;
+    },
+    onError: (_error: any) => {
+
+    },
+  });
+
+  return {
+    assignLayout: assignMutation.mutateAsync,
+    isAssigning: assignMutation.isPending,
   };
 };
 

@@ -100,7 +100,7 @@ const taskFormSchema = z.object({
   entryDate: z.date().nullable().optional(),
   term: z.date().nullable().optional(),
   forecastDate: z.date().nullable().optional(),
-  generalPaintingId: z.string().uuid().nullable().optional(),
+  paintId: z.string().uuid().nullable().optional(),
   paintIds: z.array(z.string().uuid()).optional(),
   baseFileIds: z.array(z.string().uuid()).optional(), // Base files for artwork design
   artworkIds: z.array(z.string().uuid()).optional(), // General artwork files
@@ -426,6 +426,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   // Track which sides were actually modified by the user (like web implementation)
   const [modifiedLayoutSides, setModifiedLayoutSides] = useState<Set<"left" | "right" | "back">>(new Set());
 
+  // Track selected existing layouts for each side (for layout assignment)
+  const [selectedExistingLayouts, setSelectedExistingLayouts] = useState<{
+    left?: string;
+    right?: string;
+    back?: string;
+  }>({});
+
   // Layout width validation error (same as web implementation)
   const [layoutWidthError, setLayoutWidthError] = useState<string | null>(null);
 
@@ -495,7 +502,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     entryDate: initialData?.entryDate || null,
     term: initialData?.term || null,
     forecastDate: initialData?.forecastDate || null,
-    generalPaintingId: initialData?.generalPaintingId || null,
+    paintId: initialData?.paintId || null,
     paintIds: initialData?.paintIds || [],
     baseFileIds: initialData?.baseFileIds || [],
     artworkIds: initialData?.artworkIds || [],
@@ -740,7 +747,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       if (data.entryDate) formDataFields.entryDate = data.entryDate;
       if (data.term) formDataFields.term = data.term;
       if (data.forecastDate) formDataFields.forecastDate = data.forecastDate;
-      if (data.generalPaintingId) formDataFields.generalPaintingId = data.generalPaintingId;
+      if (data.paintId) formDataFields.paintId = data.paintId;
       if (data.status) formDataFields.status = data.status;
       if (data.commission) formDataFields.commission = data.commission;
       if (data.startedAt) formDataFields.startedAt = data.startedAt;
@@ -810,12 +817,21 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         const consolidatedTruck: any = formDataFields.truck || {};
 
         for (const side of modifiedLayoutSides) {
+          const existingLayoutId = selectedExistingLayouts[side];
           const sideData = layouts[side];
-          if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
-            // Map internal side names to API field names
-            const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
-            const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
 
+          // Map internal side names to API field names
+          const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
+          const sideName = side === 'left' ? 'leftSide' : side === 'right' ? 'rightSide' : 'backSide';
+
+          // If an existing layout is selected, use existingLayoutId query parameter
+          if (existingLayoutId) {
+            console.log(`[TaskForm] Using existing layout ${existingLayoutId} for ${side} side`);
+            consolidatedTruck[layoutFieldName] = {
+              existingLayoutId,
+            };
+          } else if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
+            // Otherwise, create a new layout
             consolidatedTruck[layoutFieldName] = {
               height: sideData.height,
               layoutSections: sideData.layoutSections,
@@ -920,11 +936,20 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         const consolidatedTruck: any = cleanedData.truck || {};
 
         for (const side of modifiedLayoutSides) {
+          const existingLayoutId = selectedExistingLayouts[side];
           const sideData = layouts[side];
-          if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
-            // Map internal side names to API field names
-            const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
 
+          // Map internal side names to API field names
+          const layoutFieldName = side === 'left' ? 'leftSideLayout' : side === 'right' ? 'rightSideLayout' : 'backSideLayout';
+
+          // If an existing layout is selected, use existingLayoutId query parameter
+          if (existingLayoutId) {
+            console.log(`[TaskForm] Using existing layout ${existingLayoutId} for ${side} side (JSON)`);
+            consolidatedTruck[layoutFieldName] = {
+              existingLayoutId,
+            };
+          } else if (sideData && sideData.layoutSections && sideData.layoutSections.length > 0) {
+            // Otherwise, create a new layout
             consolidatedTruck[layoutFieldName] = {
               height: sideData.height,
               layoutSections: sideData.layoutSections,
@@ -1073,8 +1098,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   name="negotiatingWith.phone"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
+                      type="phone"
                       value={value || ""}
-                      onChangeText={onChange}
+                      onChange={onChange}
                       onBlur={onBlur}
                       placeholder="Ex: (11) 99999-9999"
                       error={!!errors.negotiatingWith}
@@ -1418,7 +1444,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               {/* General Painting */}
               <Controller
                 control={form.control}
-                name="generalPaintingId"
+                name="paintId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <GeneralPaintingSelector
                     value={value || undefined}
@@ -1499,71 +1525,6 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             </FormCard>
           )}
           */}
-
-          {/* Financial Files - Hidden for warehouse, designer, logistic, commercial users */}
-          {!isWarehouseSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
-          <FormCard title="Documentos Financeiros (Opcional)" icon="IconCurrencyDollar">
-              {/* Budget Files */}
-              <FilePicker
-                value={budgetFiles}
-                onChange={setBudgetFiles}
-                maxFiles={10}
-                label="Orçamentos"
-                placeholder="Adicionar orçamentos"
-                helperText="PDFs, imagens ou outros documentos"
-                showCamera={false}
-                showVideoCamera={false}
-                showGallery={true}
-                showFilePicker={true}
-                disabled={isSubmitting}
-              />
-
-              {/* Invoice Files */}
-              <FilePicker
-                value={invoiceFiles}
-                onChange={setInvoiceFiles}
-                maxFiles={10}
-                label="Notas Fiscais"
-                placeholder="Adicionar notas fiscais"
-                helperText="PDFs, imagens ou outros documentos"
-                showCamera={false}
-                showVideoCamera={false}
-                showGallery={true}
-                showFilePicker={true}
-                disabled={isSubmitting}
-              />
-
-              {/* Receipt Files */}
-              <FilePicker
-                value={receiptFiles}
-                onChange={setReceiptFiles}
-                maxFiles={10}
-                label="Recibos"
-                placeholder="Adicionar recibos"
-                helperText="PDFs, imagens ou outros documentos"
-                showCamera={false}
-                showVideoCamera={false}
-                showGallery={true}
-                showFilePicker={true}
-                disabled={isSubmitting}
-              />
-
-              {/* Reimbursement Files */}
-              <FilePicker
-                value={reimbursementFiles}
-                onChange={setReimbursementFiles}
-                maxFiles={10}
-                label="Reembolsos"
-                placeholder="Adicionar comprovantes de reembolso"
-                helperText="PDFs, imagens ou outros documentos"
-                showCamera={false}
-                showVideoCamera={false}
-                showGallery={true}
-                showFilePicker={true}
-                disabled={isSubmitting}
-              />
-          </FormCard>
-          )}
 
           {/* Truck Layout Section - Hidden for financial, warehouse, and commercial users */}
           {!isFinancialSector && !isWarehouseSector && !isCommercialSector && (
@@ -1663,6 +1624,19 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 <LayoutForm
                   selectedSide={selectedLayoutSide}
                   layouts={layouts}
+                  showLayoutSelection={true}
+                  onSelectExistingLayout={(side, layoutId) => {
+                    console.log('[TaskForm] Selected existing layout:', { side, layoutId });
+                    setSelectedExistingLayouts(prev => ({
+                      ...prev,
+                      [side]: layoutId,
+                    }));
+                    setModifiedLayoutSides(prev => {
+                      const newSet = new Set(prev);
+                      newSet.add(side);
+                      return newSet;
+                    });
+                  }}
                   onChange={(side, layoutData) => {
                     console.log('[TaskForm] 📥 Received onChange from LayoutForm:', {
                       side,
@@ -1739,82 +1713,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             </FormCard>
           )}
 
-          {/* Observation Section - Only in edit mode, after layout, hidden for warehouse, financial, designer, logistic, commercial users */}
-          {mode === "edit" && !isWarehouseSector && !isFinancialSector && !isDesignerSector && !isLogisticSector && !isCommercialSector && (
-            <Card>
-              <View style={[styles.collapsibleCardHeader, isObservationOpen && styles.collapsibleCardHeaderOpen, isObservationOpen && { borderBottomColor: colors.border }]}>
-                <View style={styles.collapsibleCardTitleRow}>
-                  <Icon name="IconFileText" size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.collapsibleCardTitle}>Observação</ThemedText>
-                </View>
-                {!isObservationOpen ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => setIsObservationOpen(true)}
-                    disabled={isSubmitting}
-                  >
-                    <Icon name="plus" size={16} color={colors.foreground} />
-                    <ThemedText style={{ marginLeft: spacing.xs, fontSize: fontSize.sm }}>
-                      Adicionar
-                    </ThemedText>
-                  </Button>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => {
-                      setIsObservationOpen(false);
-                      setObservationFiles([]);
-                      form.setValue('observation', null);
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    <IconX size={18} color={colors.destructive} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {isObservationOpen && (
-                <View style={styles.collapsibleCardContent}>
-                  {/* Observation Description */}
-                  <SimpleFormField label="Descrição" required error={errors.observation?.description}>
-                    <Controller
-                      control={form.control}
-                      name="observation.description"
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Textarea
-                          value={value || ""}
-                          onChangeText={onChange}
-                          onBlur={onBlur}
-                          placeholder="Descreva problemas ou observações sobre a tarefa..."
-                          numberOfLines={4}
-                          error={!!errors.observation?.description}
-                        />
-                      )}
-                    />
-                  </SimpleFormField>
-
-                  {/* Observation Files */}
-                  <FilePicker
-                    value={observationFiles}
-                    onChange={setObservationFiles}
-                    maxFiles={10}
-                    label="Arquivos de Evidência"
-                    placeholder="Adicionar arquivos"
-                    helperText="Fotos, documentos ou outros arquivos"
-                    showCamera={true}
-                    showGallery={true}
-                    showFilePicker={true}
-                    disabled={isSubmitting}
-                    required
-                  />
-                </View>
-              )}
-            </Card>
-          )}
-
-          {/* Base Files - Hidden for warehouse, financial, logistic, commercial users */}
-          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && !isCommercialSector && (
+          {/* Base Files - Hidden for warehouse, financial, logistic users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
             <FormCard title="Arquivos Base (Opcional)" icon="IconFile">
                 <FilePicker
                   value={baseFiles}
@@ -1831,8 +1731,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             </FormCard>
           )}
 
-          {/* Artworks - Last section, hidden for warehouse, financial, logistic, commercial users */}
-          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && !isCommercialSector && (
+          {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
+          {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
             <FormCard title="Artes (Opcional)" icon="IconPhotoPlus">
                 <ArtworkFileUploadField
                   onFilesChange={(files) => {

@@ -21,8 +21,8 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
-import { PhoneManager } from "@/components/administration/customer/form/phone-manager";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
+import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { Text } from "@/components/ui/text";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -734,7 +734,11 @@ export default function CreateCustomerScreen() {
               control={control}
               name="phones"
               render={({ field: { onChange, value } }) => (
-                <PhoneManager phones={value || []} onChange={onChange} />
+                <PhoneArrayInput
+                  phones={value || []}
+                  onChange={onChange}
+                  disabled={isSubmitting}
+                />
               )}
             />
           </FormFieldGroup>

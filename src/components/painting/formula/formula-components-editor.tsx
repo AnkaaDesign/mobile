@@ -11,6 +11,7 @@ import type { SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { paintFormulaComponentService } from "@/api-client/paint";
+import { canBeUsedInPaintFormula } from "@/utils/measure";
 import type { Item } from "../../../types";
 
 // Breakpoint for tablet detection
@@ -69,16 +70,24 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
   // Create combobox options with unicode - name format
   const getComboboxOptionsForRow = (currentRowIndex: number) => {
     const filteredItems = getFilteredItemsForRow(currentRowIndex);
-    return filteredItems.map((item) => ({
-      value: item.id,
-      label: item.uniCode ? `${item.uniCode} - ${item.name}` : item.name,
-    }));
+    return filteredItems.map((item) => {
+      const validation = canBeUsedInPaintFormula(item.measures || []);
+      const baseLabel = item.uniCode ? `${item.uniCode} - ${item.name}` : item.name;
+      const label = validation.valid ? baseLabel : `⚠️ ${baseLabel}`;
+
+      return {
+        value: item.id,
+        label,
+        disabled: !validation.valid,
+        subtitle: !validation.valid ? validation.error : undefined,
+      };
+    });
   };
 
   // Add initial empty row if no components exist
   useEffect(() => {
     if (fields.length === 0) {
-      append({ itemId: "", weightInGrams: 0, rawInput: "" });
+      append({ itemId: "", rawInput: "" });
     }
   }, [fields.length, append]);
 
@@ -174,7 +183,6 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     } else {
       // Clear the inputs for the only row instead of removing it
       setValue(`components.${index}.itemId`, "");
-      setValue(`components.${index}.weightInGrams`, 0);
       setValue(`components.${index}.rawInput`, "");
     }
   };
@@ -216,11 +224,11 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
       {/* Weight Input */}
       <View style={{ width: 100, marginRight: spacing.sm }}>
         <Input
-          value={watch(`components.${index}.rawInput`) || watch(`components.${index}.weightInGrams`)?.toString() || ""}
+          value={watch(`components.${index}.rawInput`) || ""}
           onChangeText={(value) => handleAmountChange(index, value)}
           onBlur={() => handleAmountBlur(index)}
           keyboardType="decimal-pad"
-          placeholder="0"
+          placeholder="Peso (g)"
           inputStyle={styles.weightInput}
         />
       </View>
@@ -258,11 +266,11 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
           {/* Weight Input */}
           <View style={styles.phoneWeightContainer}>
             <Input
-              value={watch(`components.${index}.rawInput`) || watch(`components.${index}.weightInGrams`)?.toString() || ""}
+              value={watch(`components.${index}.rawInput`) || ""}
               onChangeText={(value) => handleAmountChange(index, value)}
               onBlur={() => handleAmountBlur(index)}
               keyboardType="decimal-pad"
-              placeholder="0"
+              placeholder="Peso"
               inputStyle={styles.phoneWeightInput}
               suffix="g"
             />
@@ -306,7 +314,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
       {/* Add Component Button */}
       <Button
         variant="outline"
-        onPress={() => append({ itemId: "", weightInGrams: 0, rawInput: "" })}
+        onPress={() => append({ itemId: "", rawInput: "" })}
         style={styles.addButton}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

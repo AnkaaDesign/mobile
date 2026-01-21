@@ -67,7 +67,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
             <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
               Nome
             </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.detailValue, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {sector.name}
             </ThemedText>
           </View>
@@ -87,7 +91,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
             <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
               Usuários
             </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.detailValue, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {sector._count?.users || 0} usuário{(sector._count?.users || 0) !== 1 ? "s" : ""}
             </ThemedText>
           </View>
@@ -96,7 +104,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
             <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
               Tarefas
             </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.detailValue, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {sector._count?.tasks || 0} tarefa{(sector._count?.tasks || 0) !== 1 ? "s" : ""}
             </ThemedText>
           </View>
@@ -127,7 +139,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
             <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
               Criado em
             </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.detailValue, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {sector.createdAt ? formatDateTime(sector.createdAt) : "-"}
             </ThemedText>
           </View>
@@ -136,7 +152,11 @@ export function SpecificationsCard({ sector }: SpecificationsCardProps) {
             <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
               Atualizado em
             </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+            <ThemedText
+              style={[styles.detailValue, { color: colors.foreground }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {sector.updatedAt ? formatDateTime(sector.updatedAt) : "-"}
             </ThemedText>
           </View>
@@ -192,12 +212,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: fontSize.sm,
-    flex: 1,
+    flexShrink: 0,
   },
   detailValue: {
     fontSize: fontSize.sm,
     fontWeight: "500",
     textAlign: "right",
-    flexShrink: 1,
+    flex: 1,
   },
 });

@@ -27,7 +27,6 @@ export type TaskPricing = {
   total: number;
   expiresAt: Date;
   status: TASK_PRICING_STATUS;
-  taskId: string;
 
   // Payment Terms (simplified)
   paymentCondition: PAYMENT_CONDITION | null;
@@ -46,6 +45,7 @@ export type TaskPricing = {
   customerSignatureId: string | null;
   customerSignature?: any; // File type
 
+  tasks?: any[]; // Tasks that share this pricing (one-to-many)
   items?: TaskPricingItem[];
   createdAt?: Date;
   updatedAt?: Date;

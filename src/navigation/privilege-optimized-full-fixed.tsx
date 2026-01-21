@@ -674,6 +674,8 @@ function InnerLayout() {
             elevation: 0,
             shadowOpacity: 0,
           },
+          // Disable drawer swipe on notifications screen to allow notification item swipes
+          swipeEnabled: !route.name.includes('notifications'),
           headerLeft: () => (
             canGoBack ? (
               <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>

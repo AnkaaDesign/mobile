@@ -2,13 +2,18 @@
 
 import { apiClient } from "./axiosClient";
 import type {
-  // FormData types (parameters and responses)
+  // Schema types (for parameters)
   SectorGetManyFormData,
+  SectorGetByIdFormData,
   SectorCreateFormData,
   SectorUpdateFormData,
   SectorBatchCreateFormData,
   SectorBatchUpdateFormData,
   SectorBatchDeleteFormData,
+  SectorQueryFormData,
+} from '../schemas';
+import type {
+  // Interface types (for responses)
   Sector,
   SectorGetUniqueResponse,
   SectorGetManyResponse,
@@ -38,7 +43,7 @@ export class SectorService {
     return response.data;
   }
 
-  async getSectorById(id: string, params?: any): Promise<SectorGetUniqueResponse> {
+  async getSectorById(id: string, params?: Omit<SectorGetByIdFormData, "id">): Promise<SectorGetUniqueResponse> {
     const response = await apiClient.get<SectorGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });
@@ -49,14 +54,14 @@ export class SectorService {
   // Mutation Operations
   // =====================
 
-  async createSector(data: SectorCreateFormData, query?: any): Promise<SectorCreateResponse> {
+  async createSector(data: SectorCreateFormData, query?: SectorQueryFormData): Promise<SectorCreateResponse> {
     const response = await apiClient.post<SectorCreateResponse>(this.basePath, data, {
       params: query,
     });
     return response.data;
   }
 
-  async updateSector(id: string, data: SectorUpdateFormData, query?: any): Promise<SectorUpdateResponse> {
+  async updateSector(id: string, data: SectorUpdateFormData, query?: SectorQueryFormData): Promise<SectorUpdateResponse> {
     const response = await apiClient.put<SectorUpdateResponse>(`${this.basePath}/${id}`, data, {
       params: query,
     });
@@ -72,21 +77,21 @@ export class SectorService {
   // Batch Operations
   // =====================
 
-  async batchCreateSectors(data: SectorBatchCreateFormData, query?: any): Promise<SectorBatchCreateResponse<Sector>> {
+  async batchCreateSectors(data: SectorBatchCreateFormData, query?: SectorQueryFormData): Promise<SectorBatchCreateResponse<Sector>> {
     const response = await apiClient.post<SectorBatchCreateResponse<Sector>>(`${this.basePath}/batch`, data, {
       params: query,
     });
     return response.data;
   }
 
-  async batchUpdateSectors(data: SectorBatchUpdateFormData, query?: any): Promise<SectorBatchUpdateResponse<Sector>> {
+  async batchUpdateSectors(data: SectorBatchUpdateFormData, query?: SectorQueryFormData): Promise<SectorBatchUpdateResponse<Sector>> {
     const response = await apiClient.put<SectorBatchUpdateResponse<Sector>>(`${this.basePath}/batch`, data, {
       params: query,
     });
     return response.data;
   }
 
-  async batchDeleteSectors(data: SectorBatchDeleteFormData, query?: any): Promise<SectorBatchDeleteResponse> {
+  async batchDeleteSectors(data: SectorBatchDeleteFormData, query?: SectorQueryFormData): Promise<SectorBatchDeleteResponse> {
     const response = await apiClient.delete<SectorBatchDeleteResponse>(`${this.basePath}/batch`, {
       data,
       params: query,

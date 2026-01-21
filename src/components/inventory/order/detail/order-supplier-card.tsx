@@ -4,9 +4,9 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCNPJ } from "@/utils";
+import { formatCNPJ, formatBrazilianPhone } from "@/utils";
 import type { Supplier } from '../../../../types';
-import { IconPhone, IconMail, IconMapPin, IconBuilding } from "@tabler/icons-react-native";
+import { IconPhone, IconMail, IconMapPin, IconBuilding, IconBrandWhatsapp } from "@tabler/icons-react-native";
 
 interface OrderSupplierCardProps {
   supplier: Supplier;
@@ -18,6 +18,12 @@ export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }
   const handleCallPhone = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     Linking.openURL(`tel:${cleanPhone}`);
+  };
+
+  const handleWhatsAppPress = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {});
   };
 
   const handleSendEmail = (email: string) => {
@@ -58,15 +64,25 @@ export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }
 
 
         {supplier.phones && supplier.phones.length > 0 && (
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={() => handleCallPhone(supplier.phones[0])}
-          >
-            <IconPhone size={16} color={colors.primary} />
-            <ThemedText style={StyleSheet.flatten([styles.value, styles.link])}>
-              {supplier.phones[0]}
-            </ThemedText>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <IconPhone size={16} color={colors.mutedForeground} />
+            <View style={styles.phoneContainer}>
+              <TouchableOpacity
+                onPress={() => handleCallPhone(supplier.phones[0])}
+                activeOpacity={0.7}
+              >
+                <ThemedText style={[styles.phoneValue, { color: "#16a34a" }]}>
+                  {formatBrazilianPhone(supplier.phones[0])}
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleWhatsAppPress(supplier.phones[0])}
+                activeOpacity={0.7}
+              >
+                <IconBrandWhatsapp size={20} color="#16a34a" />
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
 
         {supplier.email && (
@@ -139,6 +155,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     paddingVertical: spacing.xs,
+  },
+  phoneContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  phoneValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    fontFamily: "monospace",
   },
   addressRow: {
     alignItems: "flex-start",
