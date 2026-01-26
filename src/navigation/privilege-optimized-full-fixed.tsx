@@ -157,6 +157,7 @@ const ALL_ROUTES = [
   { name: "producao/cronograma/index", title: "Cronograma" },
   { name: "producao/cronograma/cadastrar", title: "Cadastrar Cronograma" },
   { name: "producao/agenda/index", title: "Agenda" },
+  { name: "producao/agenda/cadastrar", title: "Cadastrar Tarefa" },
   { name: "producao/agenda/detalhes/[id]", title: "Detalhes da Tarefa" },
   { name: "producao/tarefa/[id]", title: "Detalhes da Tarefa" },
   { name: "producao/cronograma/listar", title: "Cronograma" },

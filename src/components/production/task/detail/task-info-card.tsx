@@ -52,9 +52,11 @@ interface TaskInfoCardProps {
     width: number;
     height: number;
   } | null;
+  /** Whether user can view financial fields (invoiceTo, commission). Defaults to false for safety. */
+  canViewFinancialFields?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions, canViewFinancialFields = false }) => {
   const { colors } = useTheme();
 
   return (
@@ -79,8 +81,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
           </View>
         )}
 
-        {/* Invoice To Customer */}
-        {task.invoiceTo && (
+        {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
+        {canViewFinancialFields && task.invoiceTo && (
           <View style={styles.infoItem}>
             <IconReceipt size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
@@ -117,8 +119,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
           </View>
         )}
 
-        {/* Commission Status */}
-        {task.commission && (
+        {/* Commission Status - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
+        {canViewFinancialFields && task.commission && (
           <View style={styles.infoItem}>
             <IconCoin size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>

@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask } from '@/api-client';
+import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask, copyFromTask } from '@/api-client';
 import type {
   TaskGetManyFormData,
   TaskCreateFormData,
@@ -11,6 +11,7 @@ import type {
   TaskBatchUpdateFormData,
   TaskBatchDeleteFormData,
   TaskDuplicateFormData,
+  TaskCopyFromFormData,
 } from '@/schemas';
 import {
   taskKeys,
@@ -47,17 +48,17 @@ interface UseTaskDetailParams {
 // -------------------------------------
 // INFINITE LIST HOOK
 // -------------------------------------
-export const useTasksInfinite = (params?: Partial<TaskGetManyFormData>) => {
+export const useTasksInfinite = (params?: Partial<TaskGetManyFormData> & { enabled?: boolean }) => {
   const queryClient = useQueryClient();
 
-  // Separate pagination params from filter params for stable query keys
-  const { page: _, limit, ...filterParams } = params || {};
+  // Separate pagination params and enabled from filter params for stable query keys
+  const { page: _, limit, enabled = true, ...filterParams } = params || {};
 
   const query = useInfiniteQuery({
     queryKey: taskKeys.list(filterParams), // Use only filters in query key, not pagination
     queryFn: async ({ pageParam = 1 }) => {
       return getTasks({
-        ...params,
+        ...filterParams,
         page: pageParam,
         limit: limit || 40,
       });
@@ -67,6 +68,7 @@ export const useTasksInfinite = (params?: Partial<TaskGetManyFormData>) => {
       return lastPage.meta.hasNextPage ? lastPage.meta.page + 1 : undefined;
     },
     initialPageParam: 1,
+    enabled, // Support enabling/disabling the query
   });
 
   const refresh = () => {
@@ -583,6 +585,43 @@ export function useDuplicateTask() {
           });
         });
       }
+    },
+  });
+}
+
+/**
+ * Hook for copying fields from one task to another
+ */
+export function useCopyFromTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ destinationTaskId, data }: { destinationTaskId: string; data: TaskCopyFromFormData }) =>
+      copyFromTask(destinationTaskId, data),
+    onSuccess: (response, variables) => {
+      // Invalidate the destination task
+      queryClient.invalidateQueries({
+        queryKey: taskKeys.detail(variables.destinationTaskId),
+      });
+
+      // Invalidate main task queries
+      queryClient.invalidateQueries({
+        queryKey: taskKeys.all,
+      });
+
+      // Invalidate related entities that might have been created/linked
+      queryClient.invalidateQueries({
+        queryKey: serviceOrderKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: observationKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: changeLogKeys.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: artworkKeys.all,
+      });
     },
   });
 }

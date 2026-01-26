@@ -173,6 +173,11 @@ import {
   IconShoppingCart,
   IconServer2,
   IconCpu,
+  IconBellRinging2,
+  IconDeviceMobile,
+  IconBrandWhatsapp,
+  IconRotateClockwise,
+  IconCamera,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -198,7 +203,8 @@ const tablerIcons = [
   IconCalendarTime, IconHelmet, IconBuildingBank, IconFileReport, IconListSearch, IconDroplet, IconQuestionMark,
   IconCircle, IconPhotoPlus, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
-  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu
+  IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu,
+  IconBellRinging2, IconDeviceMobile, IconBrandWhatsapp, IconRotateClockwise, IconCamera
 ];
 
 // Log any undefined icons for debugging
@@ -459,6 +465,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   radio: IconCircle, // Alias
   "photo-plus": IconPhotoPlus,
   image: IconPhotoPlus, // Alias
+  camera: IconCamera,
+  "camera-plus": IconCamera, // Alias
   "flip-horizontal": IconFlipHorizontal,
   mirror: IconFlipHorizontal, // Alias
 
@@ -526,6 +534,20 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   tag: IconTag,
   "shopping-cart": IconShoppingCart,
   shoppingCart: IconShoppingCart, // camelCase version
+
+  // Additional icons for notifications and devices
+  "bell-dot": IconBellRinging2, // bell-dot maps to bell-ringing-2
+  bellDot: IconBellRinging2, // camelCase version
+  "bell-ringing-2": IconBellRinging2,
+  "device-mobile": IconDeviceMobile,
+  deviceMobile: IconDeviceMobile, // camelCase version
+  mobile: IconDeviceMobile, // Alias
+  "brand-whatsapp": IconBrandWhatsapp,
+  brandWhatsapp: IconBrandWhatsapp, // camelCase version
+  whatsapp: IconBrandWhatsapp, // Alias
+  "rotate-clockwise": IconRotateClockwise,
+  rotateClockwise: IconRotateClockwise, // camelCase version
+  sync: IconRotateClockwise, // Alias
 };
 
 interface IconProps {

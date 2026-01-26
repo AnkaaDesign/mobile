@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
 import { useMemo } from "react";
 // import { showToast } from "@/components/ui/toast";
@@ -23,11 +23,12 @@ import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-g
 import { ObservationsTable } from "@/components/production/task/detail/observations-table";
 import { CutsTable } from "@/components/production/task/detail/cuts-table";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
+import { TaskPricingCard } from "@/components/production/task/detail/task-pricing-card";
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TouchableOpacity } from "react-native";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { TaskWithServiceOrdersChangelog } from "@/components/ui/task-with-service-orders-changelog";
 import { FileItem, useFileViewer} from "@/components/file";
 import {
   IconFileText,
@@ -41,8 +42,10 @@ import {
   IconCurrencyReal,
   IconFile,
   IconAlertCircle,
-  IconDownload
+  IconDownload,
+  IconClipboardCopy,
 } from "@tabler/icons-react-native";
+import { CopyFromTaskModal } from "@/components/production/task/schedule";
 
 export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -53,6 +56,7 @@ export default function ScheduleDetailsScreen() {
   const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("list");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
 
   // Get file viewer context
   const fileViewer = useFileViewer();
@@ -75,9 +79,10 @@ export default function ScheduleDetailsScreen() {
                            userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
                            userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
-  // Check if user can view artwork badges and non-approved artworks (admin/commercial/logistic/designer only)
+  // Check if user can view artwork badges and non-approved artworks (admin/commercial/financial/logistic/designer only)
   const canViewArtworkBadges = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
                                userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+                               userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
                                userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
                                userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
@@ -89,6 +94,16 @@ export default function ScheduleDetailsScreen() {
 
   // Check if user is from Financial sector
   const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+  // Check if user can view financial fields (invoiceTo, commission) - ADMIN, FINANCIAL, COMMERCIAL only
+  const canViewFinancialFields = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+                                  userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+
+  // Check if user can view pricing section - ADMIN, FINANCIAL, COMMERCIAL only
+  const canViewPricingSection = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+                                 userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+                                 userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
 
   // Fetch task details - optimized query to match web pattern
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
@@ -139,6 +154,13 @@ export default function ScheduleDetailsScreen() {
         },
       },
       truck: true,
+      pricing: {
+        include: {
+          items: true,
+          layoutFile: true,
+          customerSignature: true,
+        },
+      },
     },
   });
 
@@ -235,6 +257,7 @@ export default function ScheduleDetailsScreen() {
   }
 
   return (
+    <>
     <ScrollView
         style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
         refreshControl={
@@ -256,6 +279,15 @@ export default function ScheduleDetailsScreen() {
                 </ThemedText>
               </View>
               <View style={styles.headerActions}>
+                {canEdit && (
+                  <TouchableOpacity
+                    onPress={() => setIsCopyModalOpen(true)}
+                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border }])}
+                    activeOpacity={0.7}
+                  >
+                    <IconClipboardCopy size={18} color={colors.foreground} />
+                  </TouchableOpacity>
+                )}
                 {canEdit && (
                   <TouchableOpacity
                     onPress={handleEdit}
@@ -284,7 +316,7 @@ export default function ScheduleDetailsScreen() {
             truck: task.truck,
             customer: task.customer,
             details: task.details ?? "",
-          }} truckDimensions={truckDimensions} />
+          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} />
 
           {/* Dates Card - Datas */}
           <TaskDatesCard task={{
@@ -312,6 +344,17 @@ export default function ScheduleDetailsScreen() {
           {/* Services */}
           {task.serviceOrders && task.serviceOrders.length > 0 && (
             <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
+          )}
+
+          {/* Pricing Card - Only visible to ADMIN, FINANCIAL, and COMMERCIAL sectors */}
+          {canViewPricingSection && (task as any)?.pricing && (task as any).pricing.items && (task as any).pricing.items.length > 0 && (
+            <TaskPricingCard
+              pricing={(task as any).pricing}
+              customerId={task.customer?.id}
+              customerName={task.customer?.corporateName || task.customer?.fantasyName}
+              contactName={(task as any).negotiatingWith?.name}
+              termDate={task.term}
+            />
           )}
 
           {/* General Painting */}
@@ -780,11 +823,13 @@ export default function ScheduleDetailsScreen() {
                 </View>
               </View>
               <View style={styles.sectionContent}>
-                <ChangelogTimeline
-                  entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
-                  entityId={task.id}
-                  entityName={taskDisplayName}
-                  entityCreatedAt={task.createdAt}
+                <TaskWithServiceOrdersChangelog
+                  taskId={task.id}
+                  taskName={taskDisplayName}
+                  taskCreatedAt={task.createdAt}
+                  serviceOrderIds={(task.serviceOrders || []).map((so: any) => so.id)}
+                  truckId={(task as any)?.truck?.id}
+                  layoutIds={layouts?.data?.map((l: any) => l.id) || []}
                   maxHeight={400}
                 />
               </View>
@@ -800,6 +845,16 @@ export default function ScheduleDetailsScreen() {
           by FileViewerProvider - no need to manually render them here!
         */}
       </ScrollView>
+
+      {/* Copy From Task Modal */}
+      <CopyFromTaskModal
+        open={isCopyModalOpen}
+        onOpenChange={setIsCopyModalOpen}
+        targetTask={task}
+        userPrivilege={userPrivilege}
+        onSuccess={() => refetch()}
+      />
+    </>
   );
 }
 

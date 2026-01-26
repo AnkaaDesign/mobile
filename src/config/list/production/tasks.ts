@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
-import type { ListConfig } from '@/components/list/types'
+import type { ListConfig, RenderContext } from '@/components/list/types'
 import type { Task } from '@/types'
 import { canCreateTasks, canEditTasks, canDeleteTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks } from '@/utils/permissions/entity-permissions'
 import { useAuth } from '@/hooks/useAuth'
@@ -16,6 +16,7 @@ import { queryClient } from '@/lib/query-client'
 import { taskKeys } from '@/hooks/queryKeys'
 import { isTabletWidth } from '@/lib/table-utils'
 import { ServiceOrderProgressBar } from '@/components/production/task/service-order-progress-bar'
+import { ForecastDateCell } from '@/components/production/task/forecast-date-cell'
 
 // Helper to check if task has pending service orders
 const hasPendingServiceOrders = (task: Task): boolean => {
@@ -34,8 +35,16 @@ const COUNTDOWN_STATUSES = [
   TASK_STATUS.WAITING_PRODUCTION,
 ]
 
-// Get row background color based on status and deadline (for cronograma) or forecastDate (for agenda)
-const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
+// Get row background color based on status and deadline (for cronograma only)
+// NOTE: PREPARATION and WAITING_PRODUCTION statuses use neutral alternating colors (matching web version)
+const getRowBackgroundColor = (task: Task, isDark: boolean = false, rowIndex?: number) => {
+  // For PREPARATION and WAITING_PRODUCTION: use neutral alternating colors (like web version)
+  // Corner flags indicate issues, not row background colors
+  if (task.status === TASK_STATUS.PREPARATION || task.status === TASK_STATUS.WAITING_PRODUCTION) {
+    // Return null to use default alternating row colors (handled by the table component)
+    return null
+  }
+
   // For IN_PRODUCTION tasks: use term-based coloring (cronograma logic)
   if (task.status === TASK_STATUS.IN_PRODUCTION) {
     // Tasks with no deadline use neutral gray
@@ -65,29 +74,7 @@ const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
     }
   }
 
-  // For other statuses (PREPARATION, WAITING_PRODUCTION, etc.): use forecastDate-based coloring (agenda logic)
-  // Tasks without forecastDate use neutral
-  if (!task.forecastDate) {
-    return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
-  }
-
-  // Calculate days remaining until forecastDate
-  const now = new Date()
-  const forecast = new Date(task.forecastDate)
-  const diffMs = forecast.getTime() - now.getTime()
-  const daysRemaining = diffMs / (1000 * 60 * 60 * 24)
-
-  // Red zone: 3 days or less (including overdue)
-  if (daysRemaining <= 3) {
-    return isDark ? '#7f1d1d' : '#fecaca' // red-900 / red-200
-  }
-
-  // Yellow zone: between 3 and 7 days
-  if (daysRemaining <= 7) {
-    return isDark ? '#7c2d12' : '#fed7aa' // orange-900 / orange-200 (amber/yellow)
-  }
-
-  // Safe zone: more than 7 days - neutral (no special color)
+  // For COMPLETED and other statuses: neutral color
   return isDark ? '#262626' : '#f5f5f5' // neutral-800 / neutral-100
 }
 
@@ -207,8 +194,14 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: true,
         width: 1.3,
         align: 'left',
-        render: (task) => task.forecastDate,
-        format: 'date',
+        render: (task, context) => {
+          // Use ForecastDateCell with corner flags for preparation route
+          const navigationRoute = context?.navigationRoute || 'schedule'
+          return React.createElement(ForecastDateCell, {
+            task,
+            navigationRoute,
+          })
+        },
       },
       {
         key: 'entryDate',
@@ -284,10 +277,13 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: false,
         width: 1.5,
         align: 'center',
-        render: (task) => {
+        render: (task, context) => {
+          // Pass navigationRoute to ServiceOrderProgressBar for corner flags
+          const navigationRoute = context?.navigationRoute || 'schedule'
           return React.createElement(ServiceOrderProgressBar, {
             task,
             compact: true,
+            navigationRoute,
           })
         },
       },
@@ -317,9 +313,11 @@ export const tasksListConfig: ListConfig<Task> = {
     ],
     defaultVisible: ['name', 'serialNumber', 'term', 'remainingTime'],
     rowHeight: 48,
-    getRowStyle: (task, isDark) => ({
-      backgroundColor: getRowBackgroundColor(task, isDark),
-    }),
+    getRowStyle: (task, isDark, rowIndex) => {
+      const backgroundColor = getRowBackgroundColor(task, isDark, rowIndex)
+      // If null, don't set backgroundColor - let the table handle alternating colors
+      return backgroundColor ? { backgroundColor } : {}
+    },
     actions: [
       // View action (handled by row click, not shown in swipe)
       {
@@ -423,9 +421,9 @@ export const tasksListConfig: ListConfig<Task> = {
         // Action is handled by TaskScheduleLayout - opens modal
       },
       {
-        key: 'duplicate',
-        label: 'Duplicar Tarefa',
-        icon: 'copy',
+        key: 'copyFromTask',
+        label: 'Copiar de Outra',
+        icon: 'clipboardCopy',
         variant: 'default',
         canPerform: canBatchOperateTasks,
         // Action is handled by TaskScheduleLayout - opens modal

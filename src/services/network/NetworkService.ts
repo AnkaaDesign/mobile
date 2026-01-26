@@ -3,17 +3,20 @@
  *
  * This service monitors internet connectivity and manages the API base URL:
  * - Online: Uses the cloud API (https://api.ankaadesign.com.br)
- * - Offline (local network): Uses the local server (http://192.168.10.157:3030)
+ * - Offline (local network): Uses the local server (http://192.168.10.161:3030)
  *
  * The service automatically switches between URLs based on connectivity.
  */
 
-import NetInfo, { NetInfoState, NetInfoSubscription } from '@react-native-community/netinfo';
-import Constants from 'expo-constants';
-import { updateApiUrl, getCurrentApiUrl } from '../../api-client';
+import NetInfo, {
+  NetInfoState,
+  NetInfoSubscription,
+} from "@react-native-community/netinfo";
+import Constants from "expo-constants";
+import { updateApiUrl, getCurrentApiUrl } from "../../api-client";
 
 // Network mode types
-export type NetworkMode = 'online' | 'offline' | 'checking';
+export type NetworkMode = "online" | "offline" | "checking";
 
 // Listener callback type
 export type NetworkStateListener = (state: NetworkServiceState) => void;
@@ -61,7 +64,7 @@ class NetworkService {
     this.currentState = {
       isConnected: true, // Assume connected until proven otherwise
       isInternetReachable: null,
-      mode: 'checking',
+      mode: "checking",
       currentApiUrl: primaryUrl,
       lastChecked: new Date(),
     };
@@ -82,7 +85,10 @@ class NetworkService {
    */
   private getPrimaryApiUrl(): string {
     // Priority 1: Check expo config (from app.json extra.apiUrl)
-    if (typeof Constants !== 'undefined' && Constants.expoConfig?.extra?.apiUrl) {
+    if (
+      typeof Constants !== "undefined" &&
+      Constants.expoConfig?.extra?.apiUrl
+    ) {
       return Constants.expoConfig.extra.apiUrl;
     }
 
@@ -92,7 +98,7 @@ class NetworkService {
     }
 
     // Default: Local API for development
-    return 'http://192.168.10.157:3030';
+    return "http://192.168.10.161:3030";
   }
 
   /**
@@ -100,7 +106,10 @@ class NetworkService {
    */
   private getFallbackApiUrl(): string {
     // Priority 1: Check expo config (from app.json extra.fallbackApiUrl)
-    if (typeof Constants !== 'undefined' && Constants.expoConfig?.extra?.fallbackApiUrl) {
+    if (
+      typeof Constants !== "undefined" &&
+      Constants.expoConfig?.extra?.fallbackApiUrl
+    ) {
       return Constants.expoConfig.extra.fallbackApiUrl;
     }
 
@@ -110,7 +119,7 @@ class NetworkService {
     }
 
     // Default: Local network server
-    return 'http://192.168.10.157:3030';
+    return "http://192.168.10.161:3030";
   }
 
   /**
@@ -122,12 +131,17 @@ class NetworkService {
       return;
     }
 
-    console.log('[NetworkService] Initializing...');
-    console.log('[NetworkService] Primary API URL:', this.config.primaryApiUrl);
-    console.log('[NetworkService] Fallback API URL:', this.config.fallbackApiUrl);
+    console.log("[NetworkService] Initializing...");
+    console.log("[NetworkService] Primary API URL:", this.config.primaryApiUrl);
+    console.log(
+      "[NetworkService] Fallback API URL:",
+      this.config.fallbackApiUrl,
+    );
 
     // Subscribe to network state changes
-    this.netInfoSubscription = NetInfo.addEventListener(this.handleNetInfoChange.bind(this));
+    this.netInfoSubscription = NetInfo.addEventListener(
+      this.handleNetInfoChange.bind(this),
+    );
 
     // Perform initial connectivity check
     await this.checkConnectivity();
@@ -136,7 +150,10 @@ class NetworkService {
     this.startReachabilityChecks();
 
     this.isInitialized = true;
-    console.log('[NetworkService] Initialized with mode:', this.currentState.mode);
+    console.log(
+      "[NetworkService] Initialized with mode:",
+      this.currentState.mode,
+    );
   }
 
   /**
@@ -156,7 +173,7 @@ class NetworkService {
 
     this.listeners.clear();
     this.isInitialized = false;
-    console.log('[NetworkService] Cleaned up');
+    console.log("[NetworkService] Cleaned up");
   }
 
   /**
@@ -179,7 +196,12 @@ class NetworkService {
 
     // Notify listeners if mode changed
     if (previousMode !== this.currentState.mode) {
-      console.log('[NetworkService] Mode changed:', previousMode, '->', this.currentState.mode);
+      console.log(
+        "[NetworkService] Mode changed:",
+        previousMode,
+        "->",
+        this.currentState.mode,
+      );
       this.notifyListeners();
     }
   }
@@ -187,7 +209,10 @@ class NetworkService {
   /**
    * Determine which API URL to use based on connectivity
    */
-  private async determineApiUrl(isConnected: boolean, isInternetReachable: boolean | null): Promise<void> {
+  private async determineApiUrl(
+    isConnected: boolean,
+    isInternetReachable: boolean | null,
+  ): Promise<void> {
     // If completely disconnected, try local fallback
     if (!isConnected) {
       await this.switchToFallback();
@@ -201,7 +226,9 @@ class NetworkService {
     }
 
     // If internet reachability is unknown or false, test primary first
-    const primaryReachable = await this.testUrlReachability(this.config.primaryApiUrl);
+    const primaryReachable = await this.testUrlReachability(
+      this.config.primaryApiUrl,
+    );
 
     if (primaryReachable) {
       await this.switchToPrimary();
@@ -209,7 +236,9 @@ class NetworkService {
     }
 
     // Primary not reachable, try fallback
-    const fallbackReachable = await this.testUrlReachability(this.config.fallbackApiUrl);
+    const fallbackReachable = await this.testUrlReachability(
+      this.config.fallbackApiUrl,
+    );
 
     if (fallbackReachable) {
       await this.switchToFallback();
@@ -219,7 +248,7 @@ class NetworkService {
     // Neither reachable - stay on current URL and mark as offline
     this.currentState = {
       ...this.currentState,
-      mode: 'offline',
+      mode: "offline",
     };
   }
 
@@ -227,19 +256,25 @@ class NetworkService {
    * Switch to primary API URL (online mode)
    */
   private async switchToPrimary(): Promise<void> {
-    if (this.currentState.currentApiUrl === this.config.primaryApiUrl && this.currentState.mode === 'online') {
+    if (
+      this.currentState.currentApiUrl === this.config.primaryApiUrl &&
+      this.currentState.mode === "online"
+    ) {
       return; // Already on primary
     }
 
     this.currentState = {
       ...this.currentState,
-      mode: 'online',
+      mode: "online",
       currentApiUrl: this.config.primaryApiUrl,
     };
 
     // Update the API client
     updateApiUrl(this.config.primaryApiUrl);
-    console.log('[NetworkService] Switched to primary API:', this.config.primaryApiUrl);
+    console.log(
+      "[NetworkService] Switched to primary API:",
+      this.config.primaryApiUrl,
+    );
     this.notifyListeners();
   }
 
@@ -247,19 +282,25 @@ class NetworkService {
    * Switch to fallback API URL (offline/local mode)
    */
   private async switchToFallback(): Promise<void> {
-    if (this.currentState.currentApiUrl === this.config.fallbackApiUrl && this.currentState.mode === 'offline') {
+    if (
+      this.currentState.currentApiUrl === this.config.fallbackApiUrl &&
+      this.currentState.mode === "offline"
+    ) {
       return; // Already on fallback
     }
 
     this.currentState = {
       ...this.currentState,
-      mode: 'offline',
+      mode: "offline",
       currentApiUrl: this.config.fallbackApiUrl,
     };
 
     // Update the API client
     updateApiUrl(this.config.fallbackApiUrl);
-    console.log('[NetworkService] Switched to fallback API:', this.config.fallbackApiUrl);
+    console.log(
+      "[NetworkService] Switched to fallback API:",
+      this.config.fallbackApiUrl,
+    );
     this.notifyListeners();
   }
 
@@ -269,10 +310,13 @@ class NetworkService {
   private async testUrlReachability(url: string): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.config.reachabilityTimeout);
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.config.reachabilityTimeout,
+      );
 
       const response = await fetch(`${url}/`, {
-        method: 'HEAD',
+        method: "HEAD",
         signal: controller.signal,
       });
 
@@ -289,7 +333,7 @@ class NetworkService {
   public async checkConnectivity(): Promise<NetworkServiceState> {
     this.currentState = {
       ...this.currentState,
-      mode: 'checking',
+      mode: "checking",
     };
     this.notifyListeners();
 
@@ -297,11 +341,11 @@ class NetworkService {
       const netState = await NetInfo.fetch();
       await this.handleNetInfoChange(netState);
     } catch (error) {
-      console.error('[NetworkService] Error checking connectivity:', error);
+      console.error("[NetworkService] Error checking connectivity:", error);
       // On error, try to use current URL
       this.currentState = {
         ...this.currentState,
-        mode: 'offline',
+        mode: "offline",
         lastChecked: new Date(),
       };
       this.notifyListeners();
@@ -320,8 +364,10 @@ class NetworkService {
 
     this.reachabilityCheckInterval = setInterval(async () => {
       // Only check if we're currently offline - try to reconnect to primary
-      if (this.currentState.mode === 'offline') {
-        const primaryReachable = await this.testUrlReachability(this.config.primaryApiUrl);
+      if (this.currentState.mode === "offline") {
+        const primaryReachable = await this.testUrlReachability(
+          this.config.primaryApiUrl,
+        );
         if (primaryReachable) {
           await this.switchToPrimary();
         }
@@ -348,11 +394,11 @@ class NetworkService {
    * Notify all listeners of state change
    */
   private notifyListeners(): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(this.currentState);
       } catch (error) {
-        console.error('[NetworkService] Error notifying listener:', error);
+        console.error("[NetworkService] Error notifying listener:", error);
       }
     });
   }
@@ -375,14 +421,14 @@ class NetworkService {
    * Check if currently online (using primary API)
    */
   public isOnline(): boolean {
-    return this.currentState.mode === 'online';
+    return this.currentState.mode === "online";
   }
 
   /**
    * Check if currently offline (using fallback API)
    */
   public isOffline(): boolean {
-    return this.currentState.mode === 'offline';
+    return this.currentState.mode === "offline";
   }
 
   /**
@@ -401,7 +447,9 @@ class NetworkService {
    * Force switch to fallback API (manual override)
    */
   public async forceFallback(): Promise<boolean> {
-    const reachable = await this.testUrlReachability(this.config.fallbackApiUrl);
+    const reachable = await this.testUrlReachability(
+      this.config.fallbackApiUrl,
+    );
     if (reachable) {
       await this.switchToFallback();
       return true;
@@ -411,7 +459,8 @@ class NetworkService {
 }
 
 // Export singleton instance getter
-export const getNetworkService = (): NetworkService => NetworkService.getInstance();
+export const getNetworkService = (): NetworkService =>
+  NetworkService.getInstance();
 
 // Export default instance for convenience
 export default NetworkService;

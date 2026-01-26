@@ -793,39 +793,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               </Pressable>
 
               <Pressable
-                onPress={async () => {
-                  if (isRefreshing) return;
-
-                  setIsRefreshing(true);
-                  try {
-                    await refreshUserData();
-                  } finally {
-                    setIsRefreshing(false);
-                  }
-                }}
-                disabled={isRefreshing}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: pressed && !isRefreshing
-                      ? (isDarkMode ? "rgba(34, 197, 94, 0.15)" : "rgba(34, 197, 94, 0.08)")
-                      : "transparent",
-                    opacity: isRefreshing ? 0.5 : 1,
-                  }
-                ]}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
-                  {isRefreshing ? (
-                    <ActivityIndicator size="small" color={isDarkMode ? "#22c55e" : "#16a34a"} />
-                  ) : (
-                    <IconRefresh size={22} color={isDarkMode ? "#22c55e" : "#16a34a"} />
-                  )}
-                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#22c55e" : "#16a34a" }}>
-                    {isRefreshing ? "Atualizando..." : "Atualizar Dados"}
-                  </Text>
-                </View>
-              </Pressable>
-
-              <Pressable
                 onPress={() => {
                   closeUserMenu();
                   logout();

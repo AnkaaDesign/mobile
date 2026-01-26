@@ -11,6 +11,7 @@ import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-na
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -18,6 +19,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 export default function CreateObservationScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack, getBackPath } = useNavigationHistory();
   const params = useLocalSearchParams<{ taskId?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useObservationMutations();
@@ -96,6 +98,16 @@ export default function CreateObservationScreen() {
     }
   };
 
+  const handleNavigateBack = () => {
+    const backPath = getBackPath();
+    if (backPath) {
+      goBack();
+    } else {
+      // Fallback if no history
+      router.push(routeToMobilePath(routes.production.observations.list) as any);
+    }
+  };
+
   const handleCancel = () => {
     Alert.alert(
       "Cancelar",
@@ -105,7 +117,7 @@ export default function CreateObservationScreen() {
         {
           text: "Cancelar",
           style: "destructive",
-          onPress: () => router.push(routeToMobilePath(routes.production.observations.list) as any),
+          onPress: handleNavigateBack,
         },
       ]
     );

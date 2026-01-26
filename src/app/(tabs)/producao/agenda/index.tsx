@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
+import { hasPrivilege } from "@/utils/user";
 
 export default function ProductionPreparationScreen() {
   const { user } = useAuth();
@@ -24,16 +25,20 @@ export default function ProductionPreparationScreen() {
   };
 
   // Determine user privileges for agenda filtering
-  const isFinancialUser = user?.sector?.privileges === SECTOR_PRIVILEGES.FINANCIAL;
-  const isLogisticUser = user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
+  // Use hasPrivilege to match web behavior - ADMIN users have all privileges
+  const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
+  const isLogisticUser = hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
 
   // Create a config specifically for the agenda page
-  // Role-based agenda display logic:
+  // Role-based agenda display logic (matching web behavior):
+  // - ADMIN users: See ALL tasks (no exclusions - hasPrivilege returns true for all privileges)
   // - FINANCIAL users: Need PRODUCTION, COMMERCIAL, ARTWORK, FINANCIAL (exclude LOGISTIC)
   // - LOGISTIC users: Need PRODUCTION, COMMERCIAL, ARTWORK, LOGISTIC (exclude FINANCIAL)
-  // - All other users (including ADMIN): Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both)
+  // - All other users: Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both FINANCIAL and LOGISTIC)
   const agendaConfig: ListConfig<Task> = useMemo(() => {
     // Build filter values with agenda display logic
+    // IMPORTANT: Do NOT include status filter - the web deletes it (line 381 of task-history-list.tsx)
+    // and lets shouldDisplayInAgenda handle the filtering. Status grouping happens client-side.
     const defaultFilters: any = {
       shouldDisplayInAgenda: true,
     };
@@ -49,6 +54,11 @@ export default function ProductionPreparationScreen() {
 
     return {
       ...tasksListConfig,
+      // Override default sort to forecastDate (like web agenda)
+      query: {
+        ...tasksListConfig.query,
+        defaultSort: { field: 'forecastDate', direction: 'asc' },
+      },
       filters: {
         ...tasksListConfig.filters,
         defaultValues: defaultFilters,
@@ -57,6 +67,7 @@ export default function ProductionPreparationScreen() {
     table: {
       ...tasksListConfig.table,
       groupBySector: false, // Agenda should not group by sector
+      groupByStatus: true, // Enable 3-table workflow: Preparation, In Production, Completed
       defaultVisible: ['name', 'forecastDate', 'services'],
       // Override view action to navigate to agenda details
       actions: tasksListConfig.table.actions?.map(action =>

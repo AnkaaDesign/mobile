@@ -11,6 +11,7 @@ import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-na
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -19,6 +20,7 @@ export default function EditObservationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack, getBackPath } = useNavigationHistory();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useObservationMutations();
 
@@ -72,6 +74,16 @@ export default function EditObservationScreen() {
     }
   }, [observation, reset]);
 
+  const handleNavigateBack = () => {
+    const backPath = getBackPath();
+    if (backPath) {
+      goBack();
+    } else {
+      // Fallback to details page if no history
+      router.push(routeToMobilePath(routes.production.observations.details(id!)) as any);
+    }
+  };
+
   const onSubmit = async (data: ObservationUpdateFormData) => {
     if (!canEdit) {
       Alert.alert("Erro", "Você não tem permissão para editar observações");
@@ -91,7 +103,7 @@ export default function EditObservationScreen() {
         [
           {
             text: "OK",
-            onPress: () => router.push(routeToMobilePath(routes.production.observations.details(id!)) as any),
+            onPress: handleNavigateBack,
           },
         ]
       );
@@ -115,12 +127,12 @@ export default function EditObservationScreen() {
           {
             text: "Cancelar",
             style: "destructive",
-            onPress: () => router.push(routeToMobilePath(routes.production.observations.details(id!)) as any),
+            onPress: handleNavigateBack,
           },
         ]
       );
     } else {
-      router.push(routeToMobilePath(routes.production.observations.details(id!)) as any);
+      handleNavigateBack();
     }
   };
 

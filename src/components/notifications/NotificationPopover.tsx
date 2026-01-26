@@ -13,6 +13,8 @@ import {
   Modal,
   Animated,
   BackHandler,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import ReanimatedAnimated, {
@@ -209,6 +211,17 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
   const unreadCount = useMemo(() => {
     return notifications.filter(n => !n.isSeenByUser).length;
   }, [notifications]);
+
+  // Handle scroll to detect when near bottom for infinite scroll
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100; // Start loading when 100px from bottom
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && hasNextPage && !isFetchingNextPage && !isLoading) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
 
   // Handle drawer open/close animations
   const openDrawer = useCallback(() => {
@@ -508,8 +521,10 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                 >
                   <ScrollView
                     style={styles.scrollView}
-                    contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                    contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + SPACING.lg }}
                     showsVerticalScrollIndicator={false}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={400}
                   >
                     {/* Top padding for safe area */}
                     <View style={{ height: insets.top }} />
@@ -608,20 +623,11 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                             </>
                           )}
 
-                          {/* Load more indicator */}
-                          {hasNextPage && (
-                            <Pressable
-                              onPress={() => fetchNextPage()}
-                              style={[styles.loadMoreButton, { backgroundColor: isDark ? '#2a2a2a' : '#ffffff', borderColor: isDark ? '#404040' : '#e0e0e0', borderWidth: 1 }]}
-                            >
-                              {isFetchingNextPage ? (
-                                <ActivityIndicator size="small" color="#15803d" />
-                              ) : (
-                                <RNText style={[styles.loadMoreText, { color: isDark ? '#d4d4d4' : '#404040' }]}>
-                                  Carregar mais
-                                </RNText>
-                              )}
-                            </Pressable>
+                          {/* Loading indicator for infinite scroll */}
+                          {isFetchingNextPage && (
+                            <View style={styles.loadingMoreContainer}>
+                              <ActivityIndicator size="small" color="#15803d" />
+                            </View>
                           )}
                         </>
                       )}
@@ -827,15 +833,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: SPACING.sm,
   },
-  loadMoreButton: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: 8,
+  loadingMoreContainer: {
+    paddingVertical: SPACING.lg,
     alignItems: 'center',
-  },
-  loadMoreText: {
-    fontSize: 14,
-    fontWeight: '500',
+    justifyContent: 'center',
   },
 });

@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { View, ScrollView, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { useState, useCallback } from "react";
+import { View, ScrollView, Pressable, StyleSheet, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
@@ -7,7 +7,6 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/lib/setup-notifications";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 // Types
@@ -192,7 +191,7 @@ function PreferenceRow({
       : [...selectedChannels, channel];
 
     if (newChannels.length === 0) {
-      toast("Pelo menos um canal deve estar selecionado", "error");
+      Alert.alert("Aviso", "Pelo menos um canal deve estar selecionado");
       return;
     }
 
@@ -236,6 +235,22 @@ export default function NotificationPreferencesScreen() {
   const [preferences, setPreferences] = useState<PreferencesState>(createDefaultPreferences);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Pull to refresh handler
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // TODO: Implement API call to load preferences
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setPreferences(createDefaultPreferences());
+      setHasChanges(false);
+    } catch (error) {
+      Alert.alert("Erro", "Falha ao carregar preferências");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
   // Handle preference change
   const handlePreferenceChange = useCallback((sectionId: string, eventKey: string, channels: NotificationChannel[]) => {
@@ -255,10 +270,10 @@ export default function NotificationPreferencesScreen() {
     try {
       // TODO: Implement API call to save preferences
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast("Preferencias salvas com sucesso!", "success");
+      Alert.alert("Sucesso", "Preferências salvas com sucesso!");
       setHasChanges(false);
     } catch (error) {
-      toast("Erro ao salvar preferencias", "error");
+      Alert.alert("Erro", "Erro ao salvar preferências");
     } finally {
       setIsSaving(false);
     }
@@ -268,7 +283,7 @@ export default function NotificationPreferencesScreen() {
   const handleReset = useCallback(() => {
     setPreferences(createDefaultPreferences());
     setHasChanges(true);
-    toast("Preferencias restauradas para o padrao", "success");
+    Alert.alert("Sucesso", "Preferências restauradas para o padrão");
   }, []);
 
   return (
@@ -277,6 +292,14 @@ export default function NotificationPreferencesScreen() {
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {/* Channel Legend */}
         <View style={[styles.legendCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

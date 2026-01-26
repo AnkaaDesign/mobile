@@ -52,7 +52,11 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
   // Get visible service order types for current user
   const visibleTypes = useMemo(() => getVisibleServiceOrderTypes(user), [user]);
 
+  // Get user's sector privilege
+  const userSectorPrivilege = user?.sector?.privileges;
+
   // Filter out services with missing data AND filter by visible types
+  // Also handle canceled service orders visibility
   const validServices = useMemo(() => {
     return services.filter(s => {
       // Check basic validity
@@ -62,9 +66,22 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       const serviceType = (s.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
 
       // Check if user can view this service type
-      return visibleTypes.includes(serviceType);
+      if (!visibleTypes.includes(serviceType)) return false;
+
+      // Handle canceled service orders visibility
+      // Hide canceled PRODUCTION service orders from PRODUCTION and WAREHOUSE users
+      if (s.status === SERVICE_ORDER_STATUS.CANCELLED) {
+        if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
+          if (userSectorPrivilege === SECTOR_PRIVILEGES.PRODUCTION ||
+              userSectorPrivilege === SECTOR_PRIVILEGES.WAREHOUSE) {
+            return false;
+          }
+        }
+      }
+
+      return true;
     });
-  }, [services, visibleTypes]);
+  }, [services, visibleTypes, userSectorPrivilege]);
 
   // Group services by type (only visible types)
   const servicesByType = useMemo(() => {

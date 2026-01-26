@@ -39,7 +39,9 @@ export const taskPricingItemSchema = z.object({
 const taskPricingItemCreateSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().optional().default(''),
+  observation: z.string().max(2000).optional().nullable(),
   amount: z.number().optional().nullable(),
+  shouldSync: z.boolean().optional().default(true), // Controls bidirectional sync with ServiceOrder
 });
 
 // Schema that allows optional pricing or validates pricing when items exist

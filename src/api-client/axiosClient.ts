@@ -1,7 +1,13 @@
 // packages/services/src/client.ts
 
 import axios, { AxiosError } from "axios";
-import type { AxiosRequestConfig, AxiosInstance, InternalAxiosRequestConfig, CancelTokenSource, AxiosResponse } from "axios";
+import type {
+  AxiosRequestConfig,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  CancelTokenSource,
+  AxiosResponse,
+} from "axios";
 import qs from "qs";
 import Constants from "expo-constants";
 import { notify } from "./notify";
@@ -99,9 +105,13 @@ class ApiError extends Error {
   requestId?: string;
   originalError?: unknown;
 
-  constructor(errorInfo: ErrorInfo, requestId?: string, originalError?: unknown) {
+  constructor(
+    errorInfo: ErrorInfo,
+    requestId?: string,
+    originalError?: unknown,
+  ) {
     super(errorInfo.message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.title = errorInfo.title;
     this._statusCode = errorInfo._statusCode;
     this.errors = errorInfo.errors;
@@ -150,7 +160,10 @@ let currentApiUrl: string | null = null;
 // Priority: window global > expo config > env variable > default
 const getDefaultApiUrl = (): string => {
   // Priority 1: Check for dynamically set URL (from NetworkContext)
-  if (typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_API_URL__) {
+  if (
+    typeof (globalThis as any).window !== "undefined" &&
+    (globalThis as any).window.__ANKAA_API_URL__
+  ) {
     return (globalThis as any).window.__ANKAA_API_URL__;
   }
 
@@ -164,8 +177,8 @@ const getDefaultApiUrl = (): string => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Default: Local API for development
-  return "http://192.168.10.157:3030";
+  // Default: Production API
+  return "https://api.ankaadesign.com.br";
 };
 
 // Synchronous getter for API URL (uses cached value or default)
@@ -196,11 +209,14 @@ const DEFAULT_CONFIG: ApiClientConfig = {
 // Utility Functions
 // =====================
 
-const isWriteMethod = (method?: string): boolean => ["post", "patch", "put", "delete"].includes(method?.toLowerCase() || "");
+const isWriteMethod = (method?: string): boolean =>
+  ["post", "patch", "put", "delete"].includes(method?.toLowerCase() || "");
 
-const isCacheableMethod = (method?: string): boolean => ["get", "head"].includes(method?.toLowerCase() || "");
+const isCacheableMethod = (method?: string): boolean =>
+  ["get", "head"].includes(method?.toLowerCase() || "");
 
-const generateRequestId = (): string => `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+const generateRequestId = (): string =>
+  `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const createCacheKey = (config: AxiosRequestConfig): string => {
   const { method, url, params, data } = config;
@@ -215,10 +231,17 @@ const getSuccessMessage = (method?: string): string => {
     delete: "Excluído com sucesso",
   };
 
-  return methodMessages[method?.toLowerCase() || ""] || "Operação realizada com sucesso";
+  return (
+    methodMessages[method?.toLowerCase() || ""] ||
+    "Operação realizada com sucesso"
+  );
 };
 
-const shouldRetry = (error: AxiosError, attempt: number, maxAttempts: number): boolean => {
+const shouldRetry = (
+  error: AxiosError,
+  attempt: number,
+  maxAttempts: number,
+): boolean => {
   if (attempt >= maxAttempts) return false;
 
   // Don't retry client errors (4xx) - especially rate limits (429)
@@ -239,7 +262,8 @@ const shouldRetry = (error: AxiosError, attempt: number, maxAttempts: number): b
   );
 };
 
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 // =====================
 // Request Retry Tracking & Toast Deduplication
@@ -396,7 +420,9 @@ class RequestCache {
 // Enhanced API Client Factory
 // =====================
 
-const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosInstance => {
+const createApiClient = (
+  config: Partial<ApiClientConfig> = {},
+): ExtendedAxiosInstance => {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   const cache = new RequestCache(finalConfig.cacheTimeout);
   const cancelTokens = new Map<string, CancelTokenSource>();
@@ -430,16 +456,29 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           // CRITICAL: Extra safeguard for similarColor - must be valid hex format
           // API schema requires: /^#[0-9A-Fa-f]{6}$/ format
           if (key === "similarColor") {
-            if (typeof value !== 'string' || value === "" || value === "#000000" || !/^#[0-9A-Fa-f]{6}$/.test(value)) {
+            if (
+              typeof value !== "string" ||
+              value === "" ||
+              value === "#000000" ||
+              !/^#[0-9A-Fa-f]{6}$/.test(value)
+            ) {
               continue;
             }
           }
 
           // Check if this is a complex nested object (more than 1 level deep)
-          if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+          if (
+            typeof value === "object" &&
+            !Array.isArray(value) &&
+            !(value instanceof Date)
+          ) {
             // Check if it has nested objects
             const hasNestedObjects = Object.values(value).some(
-              v => v !== null && typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date)
+              (v) =>
+                v !== null &&
+                typeof v === "object" &&
+                !Array.isArray(v) &&
+                !(v instanceof Date),
             );
 
             if (hasNestedObjects) {
@@ -455,14 +494,14 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
         }
 
         const queryString = qs.stringify(processedParams, {
-          arrayFormat: "brackets",
+          arrayFormat: "indices", // Match web: use indices for arrays (orderBy[0].field=asc instead of orderBy[].field=asc)
           encode: true, // CRITICAL: Must encode special characters like # in hex colors (e.g., #FF0000 -> %23FF0000)
           serializeDate: (date: Date) => date.toISOString(),
           skipNulls: true,
           addQueryPrefix: false,
-          allowDots: false,
+          allowDots: true, // Match web: use dot notation for nested objects (orderBy[0].forecastDate.sort=asc)
           strictNullHandling: true,
-          indices: false,
+          indices: true, // Match web: produce orderBy[0].name=asc instead of orderBy[].name=asc
         });
 
         return queryString;
@@ -494,22 +533,29 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       config.metadata = metadata;
 
       // Auto-attach token if tokenProvider is configured
-      const tokenProvider = (client as any).__tokenProvider || globalTokenProvider || finalConfig.tokenProvider;
+      const tokenProvider =
+        (client as any).__tokenProvider ||
+        globalTokenProvider ||
+        finalConfig.tokenProvider;
 
       // Skip public auth endpoints to avoid sending corrupted tokens
-      const isPublicAuthEndpoint = config.url?.includes("/auth/login") ||
-                                    config.url?.includes("/auth/register") ||
-                                    config.url?.includes("/auth/password-reset") ||
-                                    config.url?.includes("/auth/verify") ||
-                                    config.url?.includes("/auth/send-verification") ||
-                                    config.url?.includes("/auth/resend-verification");
+      const isPublicAuthEndpoint =
+        config.url?.includes("/auth/login") ||
+        config.url?.includes("/auth/register") ||
+        config.url?.includes("/auth/password-reset") ||
+        config.url?.includes("/auth/verify") ||
+        config.url?.includes("/auth/send-verification") ||
+        config.url?.includes("/auth/resend-verification");
 
       if (tokenProvider && !isPublicAuthEndpoint) {
         try {
           const token = await tokenProvider();
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-          } else if (!config.url?.includes("/auth/") && (client as any).__justLoggedIn) {
+          } else if (
+            !config.url?.includes("/auth/") &&
+            (client as any).__justLoggedIn
+          ) {
             // If no token and not an auth endpoint, check if we just logged in
             await delay(300);
             const retryToken = await tokenProvider();
@@ -528,8 +574,15 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Fix array serialization for batch operations
-      if (config.url?.includes("/batch") && config.method?.toLowerCase() === "put") {
-        if (config.data && typeof config.data === "object" && !Array.isArray(config.data)) {
+      if (
+        config.url?.includes("/batch") &&
+        config.method?.toLowerCase() === "put"
+      ) {
+        if (
+          config.data &&
+          typeof config.data === "object" &&
+          !Array.isArray(config.data)
+        ) {
           const fixedData: any = {};
           for (const key in config.data) {
             const value = config.data[key];
@@ -550,10 +603,24 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Fix array serialization issue for external-withdrawals
-      if (config.url?.includes("/external-withdrawals") && config.method?.toLowerCase() === "post") {
-        if (config.data && typeof config.data === "object" && !Array.isArray(config.data)) {
-          if (config.data.items && typeof config.data.items === "object" && !Array.isArray(config.data.items)) {
-            config.data = { ...config.data, items: Object.values(config.data.items) };
+      if (
+        config.url?.includes("/external-withdrawals") &&
+        config.method?.toLowerCase() === "post"
+      ) {
+        if (
+          config.data &&
+          typeof config.data === "object" &&
+          !Array.isArray(config.data)
+        ) {
+          if (
+            config.data.items &&
+            typeof config.data.items === "object" &&
+            !Array.isArray(config.data.items)
+          ) {
+            config.data = {
+              ...config.data,
+              items: Object.values(config.data.items),
+            };
           }
           if (config.data.items && Array.isArray(config.data.items)) {
             config.data = JSON.parse(JSON.stringify(config.data));
@@ -592,7 +659,9 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       return config;
     },
     (error: AxiosError) => {
-      const enhancedError = new Error("Erro ao preparar a requisição. Tente novamente.") as EnhancedError;
+      const enhancedError = new Error(
+        "Erro ao preparar a requisição. Tente novamente.",
+      ) as EnhancedError;
       enhancedError.category = ErrorCategory.UNKNOWN;
       return Promise.reject(enhancedError);
     },
@@ -615,11 +684,14 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       }
 
       // Cache successful GET responses
-      if (finalConfig.enableCache && isCacheableMethod(config.method) && !metadata.isCached) {
+      if (
+        finalConfig.enableCache &&
+        isCacheableMethod(config.method) &&
+        !metadata.isCached
+      ) {
         const cacheKey = createCacheKey(config);
         cache.set(cacheKey, response.data);
       }
-
 
       // Dismiss any pending retry toasts for this request
       if (finalConfig.enableNotifications && metadata) {
@@ -632,18 +704,28 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       if (finalConfig.enableNotifications && isWriteMethod(config.method)) {
         // Skip notifications for specific operations that handle their own success messages
         const isBatchOperation = config.url?.includes("/batch");
-        const isAuthOperation = config.url?.includes("/auth/login") ||
-                                config.url?.includes("/auth/register") ||
-                                config.url?.includes("/auth/logout");
+        const isAuthOperation =
+          config.url?.includes("/auth/login") ||
+          config.url?.includes("/auth/register") ||
+          config.url?.includes("/auth/logout");
         // Skip notifications for background operations that shouldn't show toasts
-        const isBackgroundOperation = config.url?.includes("/notifications/device-token") ||
-                                      config.url?.includes("/notifications/preferences");
+        const isBackgroundOperation =
+          config.url?.includes("/notifications/device-token") ||
+          config.url?.includes("/notifications/preferences") ||
+          config.url?.includes("/mark-as-read") ||
+          config.url?.includes("/mark-all-as-read");
 
         // Only show success if the response indicates success
-        const isSuccess = response.data?.success !== false as boolean; // Show success unless explicitly false
+        const isSuccess = response.data?.success !== (false as boolean); // Show success unless explicitly false
 
-        if (!isBatchOperation && !isAuthOperation && !isBackgroundOperation && isSuccess) {
-          const message = response.data?.message || getSuccessMessage(config.method);
+        if (
+          !isBatchOperation &&
+          !isAuthOperation &&
+          !isBackgroundOperation &&
+          isSuccess
+        ) {
+          const message =
+            response.data?.message || getSuccessMessage(config.method);
           notify.success("Sucesso", message);
         }
       }
@@ -665,17 +747,29 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
       // No per-call fallback logic is needed here.
 
       // Handle retry logic
-      if (config && metadata && shouldRetry(error, metadata.retryCount, finalConfig.retryAttempts)) {
+      if (
+        config &&
+        metadata &&
+        shouldRetry(error, metadata.retryCount, finalConfig.retryAttempts)
+      ) {
         metadata.retryCount++;
 
         // Show retry notification
         if (finalConfig.enableNotifications) {
           const errorInfo = handleApiError(error);
-          notify.retry("Tentando novamente...", errorInfo.message, metadata.url, metadata.method, metadata.retryCount, finalConfig.retryAttempts);
+          notify.retry(
+            "Tentando novamente...",
+            errorInfo.message,
+            metadata.url,
+            metadata.method,
+            metadata.retryCount,
+            finalConfig.retryAttempts,
+          );
         }
 
         // Calculate exponential backoff delay
-        const backoffDelay = finalConfig.retryDelay * Math.pow(2, metadata.retryCount - 1);
+        const backoffDelay =
+          finalConfig.retryDelay * Math.pow(2, metadata.retryCount - 1);
         await delay(backoffDelay);
 
         // Create new cancel token for retry
@@ -723,12 +817,23 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
           // Skip notifications for file uploads - they should be handled by upload components
           const isFileUpload = config?.url?.includes("/files/upload");
           // Skip notifications for my-secullum-calculations - handled by component with friendly message
-          const isMySecullumCalculations = config?.url?.includes("/my-secullum-calculations");
+          const isMySecullumCalculations = config?.url?.includes(
+            "/my-secullum-calculations",
+          );
 
           // Check if we should show this toast (deduplication check)
-          const shouldShow = retryTracker.shouldShowToast(metadata.url, metadata.method, errorInfo.message);
+          const shouldShow = retryTracker.shouldShowToast(
+            metadata.url,
+            metadata.method,
+            errorInfo.message,
+          );
 
-          if (!isBatchOperation && !isFileUpload && !isMySecullumCalculations && shouldShow) {
+          if (
+            !isBatchOperation &&
+            !isFileUpload &&
+            !isMySecullumCalculations &&
+            shouldShow
+          ) {
             // For rate limit errors, show specialized message
             if (errorInfo.category === ErrorCategory.RATE_LIMIT) {
               notify.error("Limite de Requisições", errorInfo.message, {
@@ -736,7 +841,9 @@ const createApiClient = (config: Partial<ApiClientConfig> = {}): ExtendedAxiosIn
               });
             } else if (errorInfo.errors && errorInfo.errors.length > 1) {
               // For multiple errors, show all details
-              notify.error(errorInfo.title, errorInfo.message, { duration: 10000 });
+              notify.error(errorInfo.title, errorInfo.message, {
+                duration: 10000,
+              });
             } else {
               notify.error(errorInfo.title, errorInfo.message);
             }
@@ -807,10 +914,15 @@ const handleApiError = (error: unknown): ErrorInfo => {
   }
 
   // Network or timeout errors
-  if (!error.response || error.code === "ECONNABORTED" || error.message === "Network Error") {
+  if (
+    !error.response ||
+    error.code === "ECONNABORTED" ||
+    error.message === "Network Error"
+  ) {
     return {
       title: "Erro de Conexão",
-      message: "Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.",
+      message:
+        "Não foi possível conectar ao servidor. Verifique sua conexão com a internet e tente novamente.",
       _statusCode: 0,
       errors: ["Erro de conectividade"],
       isRetryable: true,
@@ -848,7 +960,9 @@ const handleApiError = (error: unknown): ErrorInfo => {
       errorData.response?.message,
       errorData.response?.error,
       // Try validation errors array (from Zod validation pipe) - join them for display
-      Array.isArray(errorData.errors) && errorData.errors.length > 0 ? errorData.errors.join("\n") : null,
+      Array.isArray(errorData.errors) && errorData.errors.length > 0
+        ? errorData.errors.join("\n")
+        : null,
       // Try specific error fields
       errorData.error,
       errorData.detail,
@@ -899,7 +1013,9 @@ const handleApiError = (error: unknown): ErrorInfo => {
 
     // Include additional errors if available
     if (errorData.errors && Array.isArray(errorData.errors)) {
-      const additionalErrors = errorData.errors.filter((err: string) => !errorMessages.includes(err));
+      const additionalErrors = errorData.errors.filter(
+        (err: string) => !errorMessages.includes(err),
+      );
       errorMessages = [...errorMessages, ...additionalErrors];
 
       if (additionalErrors.length > 0) {
@@ -913,26 +1029,39 @@ const handleApiError = (error: unknown): ErrorInfo => {
 
     // Handle batch operation failures with detailed extraction
     if (errorData.data?.failed && Array.isArray(errorData.data.failed)) {
-      const failedDetails = errorData.data.failed.map((item: any, index: number) => {
-        const itemIndex = item.index !== undefined ? item.index : index;
+      const failedDetails = errorData.data.failed.map(
+        (item: any, index: number) => {
+          const itemIndex = item.index !== undefined ? item.index : index;
 
-        // Extract the most detailed error from the failed item
-        const itemErrorSources = [item.errorDetails?.message, item.error, item.message, item.details, item.reason].filter(Boolean);
+          // Extract the most detailed error from the failed item
+          const itemErrorSources = [
+            item.errorDetails?.message,
+            item.error,
+            item.message,
+            item.details,
+            item.reason,
+          ].filter(Boolean);
 
-        const itemError = itemErrorSources[0] || "Erro desconhecido";
-        return `• Item ${itemIndex + 1}: ${itemError}`;
-      });
+          const itemError = itemErrorSources[0] || "Erro desconhecido";
+          return `• Item ${itemIndex + 1}: ${itemError}`;
+        },
+      );
 
       if (failedDetails.length > 0) {
         const batchErrorMessage = `\n\nDetalhes dos erros:\n${failedDetails.join("\n")}`;
-        mainMessage = mainMessage ? mainMessage + batchErrorMessage : `Erros na operação em lote:${batchErrorMessage}`;
+        mainMessage = mainMessage
+          ? mainMessage + batchErrorMessage
+          : `Erros na operação em lote:${batchErrorMessage}`;
         errorMessages = [...errorMessages, ...failedDetails];
       }
     }
 
     // Final validation - ensure we have a meaningful message
     if (!mainMessage && errorData.message) {
-      mainMessage = typeof errorData.message === "string" ? errorData.message : "Erro desconhecido";
+      mainMessage =
+        typeof errorData.message === "string"
+          ? errorData.message
+          : "Erro desconhecido";
       errorMessages = [mainMessage];
     }
   }
@@ -962,7 +1091,9 @@ const handleApiError = (error: unknown): ErrorInfo => {
   };
 };
 
-const categorizeError = (statusCode: number): { category: ErrorCategory; isRetryable: boolean } => {
+const categorizeError = (
+  statusCode: number,
+): { category: ErrorCategory; isRetryable: boolean } => {
   if (statusCode >= 500) {
     return { category: ErrorCategory.SERVER_ERROR, isRetryable: true };
   }
@@ -1051,7 +1182,11 @@ const getSingletonInstance = (): ExtendedAxiosInstance => {
       }
 
       // 3. For web only: Check global window token as last resort
-      if (!token && typeof (globalThis as any).window !== "undefined" && (globalThis as any).window.__ANKAA_AUTH_TOKEN__) {
+      if (
+        !token &&
+        typeof (globalThis as any).window !== "undefined" &&
+        (globalThis as any).window.__ANKAA_AUTH_TOKEN__
+      ) {
         token = (globalThis as any).window.__ANKAA_AUTH_TOKEN__;
       }
 
@@ -1090,7 +1225,11 @@ export { axios };
 
 // Verification function for debugging - returns info instead of logging
 // NOTE: isUsingFallback is now always false as URL switching is handled by NetworkContext
-export const verifyApiClient = (): { exists: boolean; baseURL: string | undefined; isUsingFallback: boolean } => {
+export const verifyApiClient = (): {
+  exists: boolean;
+  baseURL: string | undefined;
+  isUsingFallback: boolean;
+} => {
   return {
     exists: !!apiClient,
     baseURL: apiClient?.defaults?.baseURL,
@@ -1103,10 +1242,18 @@ export const verifyApiClient = (): { exists: boolean; baseURL: string | undefine
 // =====================
 
 // Storage for the token provider to be used by the default apiClient
-let globalTokenProvider: (() => string | null | Promise<string | null>) | undefined;
+let globalTokenProvider:
+  | (() => string | null | Promise<string | null>)
+  | undefined;
 
 // Global authentication error handler
-let globalAuthErrorHandler: ((error: { statusCode: number; message: string; category: ErrorCategory }) => void) | undefined;
+let globalAuthErrorHandler:
+  | ((error: {
+      statusCode: number;
+      message: string;
+      category: ErrorCategory;
+    }) => void)
+  | undefined;
 
 // Flag to indicate if we're in the process of logging out
 let isLoggingOut = false;
@@ -1149,7 +1296,9 @@ export const setAuthToken = (token: string | null): void => {
 };
 
 // Set a token provider function that will be called for each request
-export const setTokenProvider = (provider: () => string | null | Promise<string | null>): void => {
+export const setTokenProvider = (
+  provider: () => string | null | Promise<string | null>,
+): void => {
   globalTokenProvider = provider;
   if (singletonInstance) {
     (singletonInstance as any).__tokenProvider = provider;
@@ -1157,12 +1306,20 @@ export const setTokenProvider = (provider: () => string | null | Promise<string 
 };
 
 // Get the current token provider
-export const getTokenProvider = (): (() => string | null | Promise<string | null>) | undefined => {
+export const getTokenProvider = ():
+  | (() => string | null | Promise<string | null>)
+  | undefined => {
   return globalTokenProvider;
 };
 
 // Set authentication error handler that will be called on 401/403 errors
-export const setAuthErrorHandler = (handler: (error: { statusCode: number; message: string; category: ErrorCategory }) => void): void => {
+export const setAuthErrorHandler = (
+  handler: (error: {
+    statusCode: number;
+    message: string;
+    category: ErrorCategory;
+  }) => void,
+): void => {
   globalAuthErrorHandler = handler;
 };
 
@@ -1172,7 +1329,13 @@ export const removeAuthErrorHandler = (): void => {
 };
 
 // Get the current auth error handler
-export const getAuthErrorHandler = (): ((error: { statusCode: number; message: string; category: ErrorCategory }) => void) | undefined => {
+export const getAuthErrorHandler = ():
+  | ((error: {
+      statusCode: number;
+      message: string;
+      category: ErrorCategory;
+    }) => void)
+  | undefined => {
   return globalAuthErrorHandler;
 };
 
@@ -1228,7 +1391,9 @@ export const forceTokenRefresh = (token: string): void => {
 // Utility Functions
 // =====================
 
-export const createCustomApiClient = (config: Partial<ApiClientConfig>): ExtendedAxiosInstance => {
+export const createCustomApiClient = (
+  config: Partial<ApiClientConfig>,
+): ExtendedAxiosInstance => {
   return createApiClient(config);
 };
 
@@ -1278,23 +1443,41 @@ export const getIsUsingFallback = (): boolean => {
 // Enhanced HTTP Methods with Better Type Support
 // =====================
 
-export const httpGet = <TResponse = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<TResponse>> => {
+export const httpGet = <TResponse = unknown>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<TResponse>> => {
   return apiClient.get<TResponse>(url, config);
 };
 
-export const httpPost = <TResponse = unknown, TData = unknown>(url: string, data?: TData, config?: AxiosRequestConfig): Promise<AxiosResponse<TResponse>> => {
+export const httpPost = <TResponse = unknown, TData = unknown>(
+  url: string,
+  data?: TData,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<TResponse>> => {
   return apiClient.post<TResponse>(url, data, config);
 };
 
-export const httpPut = <TResponse = unknown, TData = unknown>(url: string, data?: TData, config?: AxiosRequestConfig): Promise<AxiosResponse<TResponse>> => {
+export const httpPut = <TResponse = unknown, TData = unknown>(
+  url: string,
+  data?: TData,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<TResponse>> => {
   return apiClient.put<TResponse>(url, data, config);
 };
 
-export const httpPatch = <TResponse = unknown, TData = unknown>(url: string, data?: TData, config?: AxiosRequestConfig): Promise<AxiosResponse<TResponse>> => {
+export const httpPatch = <TResponse = unknown, TData = unknown>(
+  url: string,
+  data?: TData,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<TResponse>> => {
   return apiClient.patch<TResponse>(url, data, config);
 };
 
-export const httpDelete = <TResponse = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<TResponse>> => {
+export const httpDelete = <TResponse = unknown>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<AxiosResponse<TResponse>> => {
   return apiClient.delete<TResponse>(url, config);
 };
 
@@ -1302,4 +1485,12 @@ export const httpDelete = <TResponse = unknown>(url: string, config?: AxiosReque
 // Export Types
 // =====================
 
-export type { ApiSuccessResponse, ApiErrorResponse, ApiPaginatedResponse, ApiClientConfig, ErrorInfo, ErrorCategory, RequestMetadata };
+export type {
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  ApiPaginatedResponse,
+  ApiClientConfig,
+  ErrorInfo,
+  ErrorCategory,
+  RequestMetadata,
+};

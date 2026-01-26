@@ -81,7 +81,6 @@ export function SerialNumberRangeInput({ control, disabled }: SerialNumberRangeI
           <FormFieldGroup
             label="Números de Série"
             error={fieldState.error?.message}
-            helper="Digite um número ou intervalo (ex: 10 14 para criar 10,11,12,13,14)"
           >
             <Input
               value={newRange}

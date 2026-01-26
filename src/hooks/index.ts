@@ -159,7 +159,6 @@ export * from "./use-ppe-sizes-infinite-mobile";
 export * from "./use-request-ppe-delivery";
 export * from "./use-sectors-infinite-mobile";
 export * from "./use-service-orders-infinite-mobile";
-export * from "./use-services-infinite-mobile";
 export * from "./use-suppliers-infinite-mobile";
 export * from "./use-tasks-infinite-mobile";
 export * from "./use-users-infinite-mobile";

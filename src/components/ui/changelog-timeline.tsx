@@ -30,6 +30,8 @@ import {
   AIRBRUSHING_STATUS_LABELS,
   PAINT_FINISH_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
+  SERVICE_ORDER_TYPE_LABELS,
+  TRUCK_MANUFACTURER_LABELS,
 } from "@/constants/enum-labels";
 import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
 import { getApiBaseUrl } from "@/utils/file";
@@ -1053,7 +1055,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Tipo:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {SERVICE_ORDER_STATUS_LABELS[entityCreatedDetails.type] || entityCreatedDetails.type}
+                                          {SERVICE_ORDER_TYPE_LABELS[entityCreatedDetails.type] || entityCreatedDetails.type}
                                         </ThemedText>
                                       </View>
                                     )}
@@ -1092,7 +1094,9 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                     {entityCreatedDetails.category && (
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Categoria:</ThemedText>
-                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{entityCreatedDetails.category}</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
+                                          {TRUCK_MANUFACTURER_LABELS[entityCreatedDetails.category] || entityCreatedDetails.category}
+                                        </ThemedText>
                                       </View>
                                     )}
                                   </View>
@@ -1113,8 +1117,13 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
 
                           {/* SERVICE_ORDER UPDATE - Special handling to group related changes */}
                           {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action === (CHANGE_ACTION.UPDATE as any) && (() => {
+                            // Get service order details from entityDetails
+                            const serviceOrderDetails = entityDetails?.serviceOrders?.get(firstChange.entityId);
+
                             // Group related field changes intelligently for service orders
                             const statusChange = changelogGroup.find(c => c.field === 'status');
+                            const descriptionChange = changelogGroup.find(c => c.field === 'description');
+                            const typeChange = changelogGroup.find(c => c.field === 'type');
                             const timestampChanges = changelogGroup.filter(c =>
                               ['startedAt', 'finishedAt', 'approvedAt', 'completedAt'].includes(c.field || '')
                             );
@@ -1123,7 +1132,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             );
                             const otherChanges = changelogGroup.filter(c =>
                               c.field &&
-                              !['status', 'statusOrder', 'startedAt', 'finishedAt', 'approvedAt', 'completedAt', 'startedById', 'completedById', 'approvedById'].includes(c.field)
+                              !['status', 'statusOrder', 'description', 'type', 'startedAt', 'finishedAt', 'approvedAt', 'completedAt', 'startedById', 'completedById', 'approvedById'].includes(c.field)
                             );
 
                             // Build a summary of the status change
@@ -1147,7 +1156,16 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                 return false;
                               });
                               if (relevantTimestamp?.newValue) {
-                                const date = new Date(relevantTimestamp.newValue);
+                                // Parse the value - handle both double-encoded (old data) and correct format (new data)
+                                let dateValue = relevantTimestamp.newValue;
+                                if (typeof dateValue === 'string' && dateValue.startsWith('"') && dateValue.endsWith('"')) {
+                                  try {
+                                    dateValue = JSON.parse(dateValue);
+                                  } catch (e) {
+                                    // If parsing fails, use as-is
+                                  }
+                                }
+                                const date = new Date(dateValue);
                                 statusSummary.timestamp = date.toLocaleDateString('pt-BR') + ' - ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                               }
 
@@ -1165,6 +1183,28 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
 
                             return (
                               <View style={styles.changesContainer}>
+                                {/* Service Order identification - show description and type */}
+                                {(descriptionChange || typeChange || serviceOrderDetails) && (
+                                  <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
+                                    {(descriptionChange?.newValue || serviceOrderDetails?.description) && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Descrição:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
+                                          {descriptionChange?.newValue || serviceOrderDetails?.description}
+                                        </ThemedText>
+                                      </View>
+                                    )}
+                                    {(typeChange?.newValue || serviceOrderDetails?.type) && (
+                                      <View style={styles.detailRow}>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Tipo:</ThemedText>
+                                        <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
+                                          {SERVICE_ORDER_TYPE_LABELS[(typeChange?.newValue || serviceOrderDetails?.type) as keyof typeof SERVICE_ORDER_TYPE_LABELS] || (typeChange?.newValue || serviceOrderDetails?.type)}
+                                        </ThemedText>
+                                      </View>
+                                    )}
+                                  </View>
+                                )}
+
                                 {/* Status change summary */}
                                 {statusSummary && (
                                   <View style={StyleSheet.flatten([styles.statusSummary, { backgroundColor: colors.muted + '30' }])}>

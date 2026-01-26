@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text as RNText,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Linking,
   Alert,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 const Text = RNText;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -334,6 +336,17 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
     }).start();
   }, [showActions, dropdownAnimation]);
 
+  // Handle scroll to detect when near bottom for infinite scroll
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100; // Start loading when 100px from bottom
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && hasNextPage && !isFetchingNextPage && !isLoading) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
+
   // Render notification item (matching menu item style from OriginalMenuDrawer)
   const renderNotificationItem = useCallback((notification: Notification & { isSeenByUser: boolean }) => {
     const isUnread = !notification.isSeenByUser;
@@ -561,7 +574,12 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, SPACING.xl) + SPACING.lg }
+        ]}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
       >
         {/* Loading state */}
         {isLoading ? (
@@ -612,29 +630,11 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
               </View>
             )}
 
-            {/* Load more */}
-            {hasNextPage && (
-              <Pressable
-                onPress={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-                style={({ pressed }) => [
-                  styles.loadMoreButton,
-                  {
-                    backgroundColor: isDarkMode ? "#2a2a2a" : "#ffffff",
-                    borderColor: isDarkMode ? "#404040" : "#e0e0e0",
-                    opacity: pressed || isFetchingNextPage ? 0.7 : 1,
-                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                  }
-                ]}
-              >
-                {isFetchingNextPage ? (
-                  <ActivityIndicator size="small" color="#15803d" />
-                ) : (
-                  <Text style={[styles.loadMoreText, { color: isDarkMode ? "#d4d4d4" : "#404040" }]}>
-                    Carregar mais
-                  </Text>
-                )}
-              </Pressable>
+            {/* Loading indicator for infinite scroll */}
+            {isFetchingNextPage && (
+              <View style={styles.loadingMoreContainer}>
+                <ActivityIndicator size="small" color="#15803d" />
+              </View>
             )}
           </>
         )}
@@ -786,16 +786,9 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
   },
-  loadMoreButton: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: 8,
-    borderWidth: 1,
+  loadingMoreContainer: {
+    paddingVertical: SPACING.lg,
     alignItems: "center",
-  },
-  loadMoreText: {
-    fontSize: 14,
-    fontWeight: "500",
+    justifyContent: "center",
   },
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Controller } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -12,9 +12,29 @@ interface PlateTagsInputProps {
   disabled?: boolean;
 }
 
+/**
+ * Format Brazilian license plate for display
+ * Old format: ABC-1234 (3 letters + hyphen + 4 numbers)
+ * Mercosul format: ABC-1D23 (3 letters + hyphen + 1 number + 1 letter + 2 numbers)
+ */
+const formatPlate = (val: string): string => {
+  const clean = val.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  if (clean.length <= 3) {
+    return clean;
+  }
+  // Add hyphen after first 3 characters
+  return clean.slice(0, 3) + "-" + clean.slice(3, 7);
+};
+
 export function PlateTagsInput({ control, disabled }: PlateTagsInputProps) {
   const { colors } = useTheme();
   const [newPlate, setNewPlate] = useState("");
+
+  const handlePlateChange = useCallback((text: string) => {
+    // Clean and format as user types
+    const formatted = formatPlate(text);
+    setNewPlate(formatted);
+  }, []);
 
   return (
     <Controller
@@ -24,20 +44,25 @@ export function PlateTagsInput({ control, disabled }: PlateTagsInputProps) {
         const plates: string[] = field.value || [];
 
         const handleAddPlate = () => {
-          const trimmedPlate = newPlate.trim().toUpperCase();
+          const formattedPlate = formatPlate(newPlate.trim());
 
-          if (!trimmedPlate) {
+          if (!formattedPlate || formattedPlate.length < 4) {
             return;
           }
 
-          // Check if plate already exists
-          if (plates.includes(trimmedPlate)) {
+          // Check if plate already exists (compare without formatting differences)
+          const cleanNewPlate = formattedPlate.replace(/-/g, "");
+          const alreadyExists = plates.some(
+            (p) => p.replace(/-/g, "") === cleanNewPlate
+          );
+
+          if (alreadyExists) {
             setNewPlate("");
             return;
           }
 
-          // Add plate to array
-          field.onChange([...plates, trimmedPlate]);
+          // Add formatted plate to array
+          field.onChange([...plates, formattedPlate]);
           setNewPlate("");
         };
 
@@ -50,13 +75,14 @@ export function PlateTagsInput({ control, disabled }: PlateTagsInputProps) {
           <FormFieldGroup label="Placas" error={fieldState.error?.message}>
             <Input
               value={newPlate}
-              onChangeText={(text) => setNewPlate(text.toUpperCase())}
+              onChangeText={handlePlateChange}
               onSubmitEditing={handleAddPlate}
-              placeholder="Digite a placa e pressione Enter"
+              placeholder="Ex: ABC-1234"
               disabled={disabled}
               autoCapitalize="characters"
               returnKeyType="done"
               blurOnSubmit={false}
+              maxLength={8}
             />
 
             {plates.length > 0 && (

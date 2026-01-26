@@ -24,14 +24,7 @@ export default function PreferencesIndexScreen() {
       title: "Notificações",
       description: "Configurar notificações",
       icon: "bell",
-      path: "/pessoal/preferencias/notificacoes",
-    },
-    {
-      id: "privacidade",
-      title: "Privacidade",
-      description: "Configurações de privacidade",
-      icon: "lock",
-      path: "/pessoal/preferencias/privacidade",
+      path: "/(tabs)/perfil/notification-preferences",
     },
   ];
 

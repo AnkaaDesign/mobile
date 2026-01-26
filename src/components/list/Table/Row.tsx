@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
 import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
-import type { TableColumn, TableAction } from '../types'
+import type { TableColumn, TableAction, RenderContext } from '../types'
 
 interface RowProps<T extends { id: string }> {
   item: T
@@ -19,6 +19,8 @@ interface RowProps<T extends { id: string }> {
   actions?: Array<TableAction<T>>
   onPress?: (item: T) => void
   getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
+  /** Context passed to render functions for navigation route and other info */
+  renderContext?: RenderContext
 }
 
 export const Row = memo(function Row<T extends { id: string }>({
@@ -29,6 +31,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   actions,
   onPress,
   getRowStyle,
+  renderContext,
 }: RowProps<T>) {
   const { colors, isDark } = useTheme()
   const { width: screenWidth } = Dimensions.get('window')
@@ -113,7 +116,7 @@ export const Row = memo(function Row<T extends { id: string }>({
                       style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
                     >
                       <CellContent
-                        value={column.render(item)}
+                        value={column.render(item, renderContext)}
                         format={column.format}
                         style={column.style}
                         badgeEntity={column.badgeEntity}
@@ -160,7 +163,7 @@ export const Row = memo(function Row<T extends { id: string }>({
                   style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
                 >
                   <CellContent
-                    value={column.render(item)}
+                    value={column.render(item, renderContext)}
                     format={column.format}
                     style={column.style}
                     badgeEntity={column.badgeEntity}

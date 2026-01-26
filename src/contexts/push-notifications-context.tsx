@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
 import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 // DEBUG: Flag to enable/disable debug alerts for testing
-const DEBUG_PUSH_NOTIFICATIONS = true;
+const DEBUG_PUSH_NOTIFICATIONS = false;
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import * as Application from 'expo-application';
@@ -16,7 +17,8 @@ import {
   setBadgeCount,
 } from '@/lib/notifications';
 import { parseDeepLink, generateNotificationLink, ENTITY_ALIAS_MAP, ROUTE_MAP } from '@/lib/deep-linking';
-import { pushNotificationService } from '@/api-client';
+import { pushNotificationService, markAsRead, notify } from '@/api-client';
+import { notificationKeys } from '@/hooks/queryKeys';
 import { useAuth } from './auth-context';
 
 interface PushNotificationsContextType {
@@ -35,6 +37,7 @@ const PushNotificationsContext = createContext<PushNotificationsContextType>({} 
 
 export const PushNotificationsProvider = ({ children }: PushNotificationsProviderProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
@@ -106,8 +109,12 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
   }, []);
 
   // Handle notification tap - navigate to deep link
-  const handleNotificationResponse = useCallback((response: Notifications.NotificationResponse) => {
+  const handleNotificationResponse = useCallback(async (response: Notifications.NotificationResponse) => {
     try {
+      // Suppress success toasts while handling notification tap
+      // This prevents "Sucesso" toasts from API calls made during navigation
+      notify.setSuppressSuccessToasts(true, 5000);
+
       const data = response.notification.request.content.data;
       const title = response.notification.request.content.title;
       const body = response.notification.request.content.body;
@@ -118,6 +125,21 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
           `Title: ${title}\nBody: ${body}\nData: ${JSON.stringify(data, null, 2)}`,
           [{ text: 'OK' }]
         );
+      }
+
+      // Mark notification as read if we have the notificationId and user is authenticated
+      const notificationId = data?.notificationId || data?.id;
+      if (notificationId && user?.id) {
+        try {
+          await markAsRead(notificationId, user.id);
+          // Invalidate notification queries to update the unread count
+          queryClient.invalidateQueries({ queryKey: notificationKeys.unread(user.id) });
+          queryClient.invalidateQueries({ queryKey: notificationKeys.byUser(user.id) });
+          queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+        } catch (error) {
+          // Silently fail - don't block navigation if marking as read fails
+          console.warn('[Push Notification] Failed to mark notification as read:', error);
+        }
       }
 
       // Priority 1: Use entityType + entityId if available (most reliable for API notifications)
@@ -152,17 +174,32 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
             );
           }
 
-          // ALWAYS show the final route before navigating (for debugging 404s)
-          Alert.alert(
-            '🚀 NAVIGATING TO',
-            `Route: ${finalRoute}\nID: ${entityId}`,
-            [{ text: 'GO', onPress: () => router.push(finalRoute as any) }]
-          );
+          router.push(finalRoute as any);
           return;
         }
       }
 
-      // Priority 2: Try actionUrl from notification data (may contain embedded JSON with mobile URL)
+      // Priority 2: Try direct mobileUrl from notification data (set by queue processor)
+      // This is the most efficient path when API properly sets mobileUrl in the push payload
+      if (data?.mobileUrl && typeof data.mobileUrl === 'string' && data.mobileUrl.length > 0) {
+        const parsed = parseDeepLink(data.mobileUrl);
+        console.log('[Push Notification] Navigating via direct mobileUrl:', { mobileUrl: data.mobileUrl, parsed });
+
+        if (DEBUG_PUSH_NOTIFICATIONS) {
+          Alert.alert(
+            '➡️ Push Nav - Direct Mobile URL',
+            `MobileUrl: ${data.mobileUrl}\nParsed Route: ${parsed.route}`,
+            [{ text: 'OK' }]
+          );
+        }
+
+        if (parsed.route && parsed.route !== '/(tabs)') {
+          router.push(parsed.route as any);
+          return;
+        }
+      }
+
+      // Priority 3: Try actionUrl from notification data (may contain embedded JSON with mobile URL)
       if (data?.actionUrl && typeof data.actionUrl === 'string') {
         const mobileUrl = extractMobileUrl(data.actionUrl);
 
@@ -179,18 +216,13 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
           }
 
           if (parsed.route && parsed.route !== '/(tabs)') {
-            // ALWAYS show the final route before navigating (for debugging 404s)
-            Alert.alert(
-              '🚀 NAVIGATING TO',
-              `Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
-              [{ text: 'GO', onPress: () => router.push(parsed.route as any) }]
-            );
+            router.push(parsed.route as any);
             return;
           }
         }
       }
 
-      // Priority 3: Use the deep link returned by handleNotificationTap
+      // Priority 4: Use the deep link returned by handleNotificationTap (legacy fallback)
       const deepLink = handleNotificationTap(response);
 
       if (deepLink) {
@@ -208,12 +240,7 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
         }
 
         if (parsed.route && parsed.route !== '/(tabs)') {
-          // ALWAYS show the final route before navigating (for debugging 404s)
-          Alert.alert(
-            '🚀 NAVIGATING TO',
-            `Route: ${parsed.route}\nParams: ${JSON.stringify(parsed.params)}`,
-            [{ text: 'GO', onPress: () => router.push(parsed.route as any) }]
-          );
+          router.push(parsed.route as any);
           return;
         }
       }
@@ -227,8 +254,13 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       if (DEBUG_PUSH_NOTIFICATIONS) {
         Alert.alert('❌ Push Nav Error', `Error: ${error?.message || error}`);
       }
+    } finally {
+      // Reset toast suppression after a short delay to allow navigation to complete
+      setTimeout(() => {
+        notify.setSuppressSuccessToasts(false);
+      }, 1000);
     }
-  }, [router, extractMobileUrl]);
+  }, [router, extractMobileUrl, user?.id, queryClient]);
 
   // Register push token with backend
   const registerToken = useCallback(async () => {

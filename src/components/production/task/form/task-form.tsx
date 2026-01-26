@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, FormProvider } from "react-hook-form";
 import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,6 +36,8 @@ import { GeneralPaintingSelector, LogoPaintsSelector } from "./paint-selector";
 import { SpotSelector } from "./spot-selector";
 import { ArtworkFileUploadField, type ArtworkFileItem } from "./artwork-file-upload-field";
 import { LayoutForm } from "@/components/production/layout/layout-form";
+import { PricingSelector, type PricingSelectorRef } from "@/components/production/task/pricing";
+import { canViewPricing } from "@/utils/permissions/pricing-permissions";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
 import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
@@ -394,10 +396,32 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     return [];
   });
 
+  // Pricing layout file state
+  const [pricingLayoutFiles, setPricingLayoutFiles] = useState<FilePickerItem[]>(() => {
+    if (mode === "edit" && initialData?.pricing?.layoutFile) {
+      const file = initialData.pricing.layoutFile;
+      return [{
+        id: file.id,
+        uri: file.url || file.path || "",
+        name: file.name || file.filename || "layout",
+        type: file.mimeType || file.mimetype || file.type || "image/jpeg",
+        size: file.size,
+        uploaded: true,
+        thumbnailUrl: file.id ? getFileThumbnailUrl(file.id, "medium") : undefined,
+      }];
+    }
+    return [];
+  });
+
   // Observation section state - auto-open if observation exists in edit mode
   const [isObservationOpen, setIsObservationOpen] = useState(
     () => mode === "edit" && !!initialData?.observation?.description
   );
+
+  // Pricing section state
+  const [pricingItemCount, setPricingItemCount] = useState(0);
+  const pricingSelectorRef = useRef<PricingSelectorRef>(null);
+  const canViewPricingSections = canViewPricing(userPrivilege || "");
 
   // Layout state - Initialize with existingLayouts if available (edit mode)
   // Include photoUri for new photos that need to be uploaded
@@ -480,9 +504,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   // Use useEditForm for edit mode with change detection, regular useForm for create mode
   const defaultFormValues = {
     name: initialData?.name || "",
-    customerId: initialData?.customerId || "",
+    customerId: initialData?.customerId || null,
     invoiceToId: initialData?.invoiceToId || null,
-    negotiatingWith: initialData?.negotiatingWith || { name: "", phone: "" },
+    negotiatingWith: initialData?.negotiatingWith || { name: null, phone: null },
     sectorId: initialData?.sectorId || null,
     serialNumber: initialData?.serialNumber || null,
     truck: initialData?.truck ? {
@@ -499,13 +523,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       spot: null,
     },
     details: initialData?.details || null,
-    entryDate: initialData?.entryDate || null,
-    term: initialData?.term || null,
-    forecastDate: initialData?.forecastDate || null,
+    entryDate: initialData?.entryDate ? new Date(initialData.entryDate) : null,
+    term: initialData?.term ? new Date(initialData.term) : null,
+    forecastDate: initialData?.forecastDate ? new Date(initialData.forecastDate) : null,
     paintId: initialData?.paintId || null,
     paintIds: initialData?.paintIds || [],
-    baseFileIds: initialData?.baseFileIds || [],
-    artworkIds: initialData?.artworkIds || [],
+    baseFileIds: initialData?.baseFileIds || initialData?.baseFiles?.map((f: any) => f.id) || [],
+    artworkIds: initialData?.artworkIds || initialData?.artworks?.map((a: any) => a.fileId || a.file?.id || a.id) || [],
     observation: initialData?.observation || null,
     serviceOrders: initialData?.serviceOrders?.map((s: any) => ({
       id: s.id || undefined, // For existing service orders
@@ -515,15 +539,19 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       type: s.type || SERVICE_ORDER_TYPE.PRODUCTION,
       assignedToId: s.assignedToId || null,
       observation: s.observation || null, // For rejection/approval notes
-      startedAt: s.startedAt || null,
-      finishedAt: s.finishedAt || null,
+      startedAt: s.startedAt ? new Date(s.startedAt) : null,
+      finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
+      shouldSync: s.shouldSync !== false, // Default true
     })) || [{
       description: "",
       status: SERVICE_ORDER_STATUS.PENDING,
       statusOrder: 1,
       type: SERVICE_ORDER_TYPE.PRODUCTION,
       assignedToId: null,
-      observation: null
+      observation: null,
+      startedAt: null,
+      finishedAt: null,
+      shouldSync: true,
     }],
     // Initialize pricing with default structure - default row is part of initial state, not a change
     pricing: initialData?.pricing ? {
@@ -546,9 +574,11 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         ? initialData.pricing.items.map((item: any) => ({
             id: item.id,
             description: item.description || "",
+            observation: item.observation || null,
             amount: typeof item.amount === 'number' ? item.amount : (item.amount ? Number(item.amount) : 0),
+            shouldSync: item.shouldSync !== false, // Default true
           }))
-        : [{ description: "", amount: null }], // Default empty row
+        : [{ description: "", observation: null, amount: null, shouldSync: true }], // Default empty row
     } : undefined, // undefined when no pricing exists (optional field)
     // Initialize cuts with default empty array (MultiCutSelector handles its own defaults)
     cuts: initialData?.cuts && initialData.cuts.length > 0
@@ -576,15 +606,115 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       : [],
     status: initialData?.status || TASK_STATUS.PREPARATION,
     commission: initialData?.commission || COMMISSION_STATUS.FULL_COMMISSION,
-    startedAt: initialData?.startedAt || null,
-    finishedAt: initialData?.finishedAt || null,
+    startedAt: initialData?.startedAt ? new Date(initialData.startedAt) : null,
+    finishedAt: initialData?.finishedAt ? new Date(initialData.finishedAt) : null,
   };
 
   const form = mode === "edit" && initialData
     ? useEditForm<TaskFormData>({
         resolver: zodResolver(taskFormSchema),
         originalData: initialData,
-        mapDataToForm: (data) => data as TaskFormData,
+        mapDataToForm: (data: any) => ({
+          name: data?.name || "",
+          customerId: data?.customerId || null,
+          invoiceToId: data?.invoiceToId || null,
+          negotiatingWith: data?.negotiatingWith || { name: null, phone: null },
+          sectorId: data?.sectorId || null,
+          serialNumber: data?.serialNumber || null,
+          truck: data?.truck ? {
+            plate: data.truck.plate || null,
+            chassisNumber: data.truck.chassisNumber || null,
+            category: data.truck.category || null,
+            implementType: data.truck.implementType || null,
+            spot: data.truck.spot || null,
+          } : {
+            plate: null,
+            chassisNumber: null,
+            category: null,
+            implementType: null,
+            spot: null,
+          },
+          details: data?.details || null,
+          entryDate: data?.entryDate ? new Date(data.entryDate) : null,
+          term: data?.term ? new Date(data.term) : null,
+          forecastDate: data?.forecastDate ? new Date(data.forecastDate) : null,
+          paintId: data?.paintId || null,
+          paintIds: data?.paintIds || [],
+          baseFileIds: data?.baseFileIds || data?.baseFiles?.map((f: any) => f.id) || [],
+          artworkIds: data?.artworkIds || data?.artworks?.map((a: any) => a.fileId || a.file?.id || a.id) || [],
+          observation: data?.observation || null,
+          serviceOrders: data?.serviceOrders?.map((s: any) => ({
+            id: s.id || undefined,
+            description: s.description || "",
+            status: s.status || SERVICE_ORDER_STATUS.PENDING,
+            statusOrder: s.statusOrder || 1,
+            type: s.type || SERVICE_ORDER_TYPE.PRODUCTION,
+            assignedToId: s.assignedToId || null,
+            observation: s.observation || null,
+            startedAt: s.startedAt ? new Date(s.startedAt) : null,
+            finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
+            shouldSync: s.shouldSync !== false, // Default true
+          })) || [{
+            description: "",
+            status: SERVICE_ORDER_STATUS.PENDING,
+            statusOrder: 1,
+            type: SERVICE_ORDER_TYPE.PRODUCTION,
+            assignedToId: null,
+            observation: null,
+            startedAt: null,
+            finishedAt: null,
+            shouldSync: true,
+          }],
+          pricing: data?.pricing ? {
+            expiresAt: data.pricing.expiresAt ? new Date(data.pricing.expiresAt) : null,
+            status: data.pricing.status || 'DRAFT',
+            subtotal: data.pricing.subtotal || 0,
+            discountType: data.pricing.discountType || 'NONE',
+            discountValue: data.pricing.discountValue || null,
+            total: data.pricing.total || 0,
+            paymentCondition: data.pricing.paymentCondition || null,
+            downPaymentDate: data.pricing.downPaymentDate ? new Date(data.pricing.downPaymentDate) : null,
+            customPaymentText: data.pricing.customPaymentText || null,
+            guaranteeYears: data.pricing.guaranteeYears || null,
+            customGuaranteeText: data.pricing.customGuaranteeText || null,
+            layoutFileId: data.pricing.layoutFileId || null,
+            items: data.pricing.items?.length > 0
+              ? data.pricing.items.map((item: any) => ({
+                  id: item.id,
+                  description: item.description || "",
+                  observation: item.observation || null,
+                  amount: typeof item.amount === 'number' ? item.amount : (item.amount ? Number(item.amount) : 0),
+                  shouldSync: item.shouldSync !== false, // Default true
+                }))
+              : [{ description: "", observation: null, amount: null, shouldSync: true }],
+          } : undefined,
+          cuts: data?.cuts?.length > 0
+            ? data.cuts.map((cut: any) => ({
+                id: cut.id,
+                type: cut.type,
+                quantity: cut.quantity || 1,
+                origin: cut.origin,
+                fileId: cut.fileId,
+                fileName: cut.file?.name || cut.fileName,
+              }))
+            : [],
+          airbrushings: data?.airbrushings?.length > 0
+            ? data.airbrushings.map((a: any) => ({
+                id: a.id,
+                startDate: a.startDate ? new Date(a.startDate) : null,
+                finishDate: a.finishDate ? new Date(a.finishDate) : null,
+                price: a.price,
+                status: a.status,
+                receiptIds: a.receipts?.map((r: any) => r.id) || [],
+                invoiceIds: a.invoices?.map((n: any) => n.id) || [],
+                artworkIds: a.artworks?.map((art: any) => art.fileId || art.file?.id || art.id) || [],
+              }))
+            : [],
+          status: data?.status || TASK_STATUS.PREPARATION,
+          commission: data?.commission || COMMISSION_STATUS.FULL_COMMISSION,
+          startedAt: data?.startedAt ? new Date(data.startedAt) : null,
+          finishedAt: data?.finishedAt ? new Date(data.finishedAt) : null,
+        }) as TaskFormData,
         onSubmit: async (data: Partial<TaskFormData>) => {
           console.log("[TaskForm Edit] Submitting changed fields:", data);
           // In edit mode, submit only changed fields to optimize payload
@@ -658,6 +788,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     const newInvoiceFiles = invoiceFiles.filter(f => !f.uploaded);
     const newReceiptFiles = receiptFiles.filter(f => !f.uploaded);
     const newReimbursementFiles = reimbursementFiles.filter(f => !f.uploaded);
+    const newPricingLayoutFiles = pricingLayoutFiles.filter(f => !f.uploaded);
 
     // Debug logging for file upload
     console.log('[TaskForm] File upload check:', {
@@ -665,6 +796,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       observationFilesCount: observationFiles.length,
       newArtworkFilesCount: newArtworkFiles.length,
       newObservationFilesCount: newObservationFiles.length,
+      newPricingLayoutFilesCount: newPricingLayoutFiles.length,
       hasLayoutPhotos,
       isObservationOpen,
     });
@@ -674,7 +806,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     }
 
     // If we have NEW files to upload, convert to FormData with context for proper file organization
-    if (newBaseFiles.length > 0 || newArtworkFiles.length > 0 || newObservationFiles.length > 0 || newBudgetFiles.length > 0 || newInvoiceFiles.length > 0 || newReceiptFiles.length > 0 || newReimbursementFiles.length > 0 || hasLayoutPhotos) {
+    if (newBaseFiles.length > 0 || newArtworkFiles.length > 0 || newObservationFiles.length > 0 || newBudgetFiles.length > 0 || newInvoiceFiles.length > 0 || newReceiptFiles.length > 0 || newReimbursementFiles.length > 0 || newPricingLayoutFiles.length > 0 || hasLayoutPhotos) {
       // Prepare files with proper structure - only NEW files
       const files: Record<string, any[]> = {};
 
@@ -704,6 +836,10 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
       if (newReimbursementFiles.length > 0) {
         files.reimbursementFiles = newReimbursementFiles;
+      }
+
+      if (newPricingLayoutFiles.length > 0) {
+        files.pricingLayoutFile = newPricingLayoutFiles;
       }
 
       // Prepare form data (excluding files)
@@ -1016,6 +1152,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           scrollEventThrottle={16}
           contentContainerStyle={styles.scrollContent}
         >
+          <FormProvider {...form}>
           <KeyboardAwareFormProvider value={keyboardContextValue}>
           <View style={styles.container}>
             {/* Basic Information */}
@@ -1057,25 +1194,27 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </FormFieldGroup>
 
-              {/* Invoice To Customer - Disabled for financial, warehouse, designer */}
-              <FormFieldGroup label="Faturar Para (Opcional)" error={errors.invoiceToId?.message}>
-                <Controller
-                  control={form.control}
-                  name="invoiceToId"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <CustomerSelector
-                      value={value}
-                      onValueChange={onChange}
-                      disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-                      error={error?.message}
-                      required={false}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
+              {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
+              {canViewPricingSections && (
+                <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
+                  <Controller
+                    control={form.control}
+                    name="invoiceToId"
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
+                      <CustomerSelector
+                        value={value}
+                        onValueChange={onChange}
+                        disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
+                        error={error?.message}
+                        required={false}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+              )}
 
               {/* Negotiating With - Contact Person */}
-              <SimpleFormField label="Negociando Com (Opcional)" error={errors.negotiatingWith?.name?.message || (errors.negotiatingWith as any)?.message}>
+              <SimpleFormField label="Negociando Com" error={errors.negotiatingWith?.name?.message || (errors.negotiatingWith as any)?.message}>
                 <Controller
                   control={form.control}
                   name="negotiatingWith.name"
@@ -1092,7 +1231,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </SimpleFormField>
 
-              <SimpleFormField label="Telefone do Contato (Opcional)" error={errors.negotiatingWith?.phone?.message}>
+              <SimpleFormField label="Telefone do Contato" error={errors.negotiatingWith?.phone?.message}>
                 <Controller
                   control={form.control}
                   name="negotiatingWith.phone"
@@ -1138,31 +1277,33 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                     // Format Brazilian license plate for display
                     // Old format: ABC-1234 (3 letters + hyphen + 4 numbers)
                     // Mercosul format: ABC-1D23 (3 letters + hyphen + 1 number + 1 letter + 2 numbers)
-                    const formatPlate = (val: string) => {
+                    const formatPlate = (val: string | null | undefined): string => {
+                      if (!val) return "";
                       const clean = val.replace(/[^A-Z0-9]/gi, '').toUpperCase();
                       if (clean.length <= 3) {
                         return clean;
                       }
 
-                      // Check if it's Mercosul format (5th character is a letter)
-                      const fifthChar = clean.charAt(4);
-                      const isMercosul = fifthChar && /[A-Z]/i.test(fifthChar);
-
                       // Format: ABC-1234 or ABC-1D23
                       return clean.slice(0, 3) + '-' + clean.slice(3, 7);
                     };
 
-                    const handleChange = (text: string) => {
+                    const handleChange = (text: string | null) => {
+                      // Handle null/empty values
+                      if (!text) {
+                        onChange(null);
+                        return;
+                      }
                       // Remove all non-alphanumeric characters, convert to uppercase
                       const cleanValue = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
                       // Limit to 7 characters (3 letters + 4 chars)
                       const limitedValue = cleanValue.slice(0, 7);
-                      onChange(limitedValue);
+                      onChange(limitedValue || null);
                     };
 
                     return (
                       <Input
-                        value={formatPlate(value || "")}
+                        value={formatPlate(value)}
                         onChangeText={handleChange}
                         onBlur={onBlur}
                         placeholder="Ex: ABC-1234 ou ABC-1D23"
@@ -1195,7 +1336,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               </SimpleFormField>
 
               {/* Truck - Category */}
-              <SimpleFormField label="Categoria do Caminhão (Opcional)" error={errors.truck?.category}>
+              <SimpleFormField label="Categoria do Caminhão" error={errors.truck?.category}>
                 <Controller
                   control={form.control}
                   name="truck.category"
@@ -1217,7 +1358,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               </SimpleFormField>
 
               {/* Truck - Implement Type */}
-              <SimpleFormField label="Tipo de Implemento (Opcional)" error={errors.truck?.implementType}>
+              <SimpleFormField label="Tipo de Implemento" error={errors.truck?.implementType}>
                 <Controller
                   control={form.control}
                   name="truck.implementType"
@@ -1320,7 +1461,30 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </SimpleFormField>
 
-              {/* Entry Date - in Basic Info for create mode */}
+            </FormCard>
+
+          {/* Dates Card - All date fields grouped together like web version */}
+          <FormCard title="Datas" icon="IconCalendar">
+              {/* Forecast Date - First, like web version */}
+              <Controller
+                control={form.control}
+                name="forecastDate"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <View style={styles.fieldGroup}>
+                    <Label>Data de Previsão de Liberação</Label>
+                    <DatePicker
+                      value={value ?? undefined}
+                      onChange={onChange}
+                      type="datetime"
+                      placeholder="Selecione a data de previsão"
+                      disabled={isSubmitting}
+                    />
+                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+                  </View>
+                )}
+              />
+
+              {/* Entry Date */}
               <Controller
                 control={form.control}
                 name="entryDate"
@@ -1339,7 +1503,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 )}
               />
 
-              {/* Term/Deadline - in Basic Info for create mode */}
+              {/* Term/Deadline */}
               <Controller
                 control={form.control}
                 name="term"
@@ -1358,30 +1522,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 )}
               />
 
-              {/* Forecast Date */}
-              <Controller
-                control={form.control}
-                name="forecastDate"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <View style={styles.fieldGroup}>
-                    <Label>Data de Previsão</Label>
-                    <DatePicker
-                      value={value ?? undefined}
-                      onChange={onChange}
-                      type="datetime"
-                      placeholder="Selecione a data de previsão"
-                      disabled={isSubmitting}
-                    />
-                    {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-                  </View>
-                )}
-              />
-            </FormCard>
-
-          {/* Additional Dates (edit mode only) */}
-          {mode === "edit" && (
-          <FormCard title="Datas Adicionais" icon="IconCalendar">
-              {/* Started At */}
+              {/* Started At - Edit mode only */}
+              {mode === "edit" && (
               <Controller
                 control={form.control}
                 name="startedAt"
@@ -1399,8 +1541,10 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   </View>
                 )}
               />
+              )}
 
-              {/* Finished At */}
+              {/* Finished At - Edit mode only */}
+              {mode === "edit" && (
               <Controller
                 control={form.control}
                 name="finishedAt"
@@ -1418,8 +1562,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   </View>
                 )}
               />
+              )}
           </FormCard>
-          )}
 
           {/* Service Orders */}
           <FormCard title="Ordens de Serviço" icon="IconTool">
@@ -1472,7 +1616,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
           </FormCard>
 
-          {/* TODO: Pricing Card - PricingSelector component not yet implemented for mobile
+          {/* Pricing Card */}
           {canViewPricingSections && (
             <FormCard
               title="Precificação"
@@ -1490,7 +1634,6 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               />
             </FormCard>
           )}
-          */}
 
           {/* TODO: Cut Plans Section - MultiCutSelector component not yet implemented for mobile
           {!isFinancialSector && !isLogisticSector && !isCommercialSector && (
@@ -1715,7 +1858,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Base Files - Hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <FormCard title="Arquivos Base (Opcional)" icon="IconFile">
+            <FormCard title="Arquivos Base" icon="IconFile">
                 <FilePicker
                   value={baseFiles}
                   onChange={setBaseFiles}
@@ -1733,7 +1876,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Artworks - Last section, hidden for warehouse, financial, logistic users */}
           {!isWarehouseSector && !isFinancialSector && !isLogisticSector && (
-            <FormCard title="Artes (Opcional)" icon="IconPhotoPlus">
+            <FormCard title="Artes" icon="IconPhotoPlus">
                 <ArtworkFileUploadField
                   onFilesChange={(files) => {
                     console.log('[TaskForm] 🎨 Artworks changed:', files.length);
@@ -1763,6 +1906,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           )}
         </View>
         </KeyboardAwareFormProvider>
+          </FormProvider>
       </ScrollView>
       </KeyboardAvoidingView>
 

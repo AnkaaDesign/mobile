@@ -9,6 +9,7 @@ import { TaskForm } from "@/components/production/task/form/task-form";
 import { SkeletonCard } from "@/components/ui/loading";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
@@ -19,6 +20,7 @@ export default function EditScheduleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { goBack, getBackPath } = useNavigationHistory();
   const { updateAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
@@ -127,6 +129,16 @@ export default function EditScheduleScreen() {
     return Object.keys(layouts).length > 0 ? layouts : undefined;
   }, [layoutsData]);
 
+  const handleNavigateBack = () => {
+    const backPath = getBackPath();
+    if (backPath) {
+      goBack();
+    } else {
+      // Fallback if no history
+      router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+    }
+  };
+
   const handleSubmit = async (data: any) => {
     if (!id) return;
 
@@ -139,7 +151,7 @@ export default function EditScheduleScreen() {
 
       if (result.success) {
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+        handleNavigateBack();
       } else {
         // API returned failure
         console.error('[EditSchedule] Task update failed:', result);
@@ -155,7 +167,7 @@ export default function EditScheduleScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+    handleNavigateBack();
   };
 
   // Show loading while checking permission

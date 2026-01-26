@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback, useState } from 'react'
+import React, { memo, useMemo, useCallback, useState, useEffect } from 'react'
 import {
   View,
   SectionList,
@@ -25,8 +25,9 @@ import { Filters } from '@/components/list/Filters'
 import { BulkActions } from '@/components/list/BulkActions'
 import { ColumnVisibilityButton, ColumnVisibilityPanel } from '@/components/list/ColumnVisibility'
 import { Header as TableHeader, Row as TableRow, Empty, Loading } from '@/components/list/Table'
-import { SectorSelectModal, TaskDuplicateModal } from '@/components/production/task/modals'
-import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction } from '@/components/list/types'
+import { SectorSelectModal } from '@/components/production/task/modals'
+import { CopyFromTaskModal } from './copy-from-task-modal'
+import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
 interface TaskScheduleLayoutProps {
@@ -87,7 +88,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   // Modal state for admin actions
   const [sectorModalTask, setSectorModalTask] = useState<Task | null>(null)
-  const [duplicateModalTask, setDuplicateModalTask] = useState<Task | null>(null)
+  const [copyFromTaskModalTask, setCopyFromTaskModalTask] = useState<Task | null>(null)
 
   // Check if user is a team leader (should see filtered view by default)
   // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
@@ -112,23 +113,138 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     limit: 100, // Get all production sectors
   })
 
-  // Build query params for tasks
-  const taskQueryParams = useMemo(() => ({
-    orderBy: { [sortConfig.field]: sortConfig.direction },
-    ...(searchText ? { searchingFor: searchText } : {}),
-    ...filterValues,
-    include: config.query.include,
-    limit: 1000, // Get all tasks for grouping
-  }), [sortConfig, searchText, filterValues, config.query.include])
+  // Check if config has groupByStatus flag (for agenda 3-table workflow)
+  // Defined early because query params depend on this
+  const shouldGroupByStatus = config.table.groupByStatus === true
 
-  // Fetch tasks
+  // Build base query params (without status filter for agenda view)
+  const baseQueryParams = useMemo(() => {
+    // For agenda view (groupByStatus), we DON'T include status in base params
+    // because we'll make separate calls for each status group like the web does
+    const { status: _status, ...filterValuesWithoutStatus } = filterValues as any;
+
+    // For agenda view, use multi-column sorting like the web: forecastDate ASC, then identificador ASC
+    // Use Prisma's nulls: "last" format to match web behavior (null forecastDates at the end)
+    // identificador is mapped to serialNumber (the primary identifier field)
+    // For other views, use the single sortConfig
+    const orderBy = shouldGroupByStatus
+      ? [
+          { forecastDate: { sort: 'asc' as const, nulls: 'last' as const } },
+          { serialNumber: { sort: 'asc' as const, nulls: 'last' as const } },
+        ]
+      : { [sortConfig.field]: sortConfig.direction };
+
+    return {
+      orderBy,
+      ...(searchText ? { searchingFor: searchText } : {}),
+      ...filterValuesWithoutStatus,
+      include: config.query.include,
+      limit: 1000, // Get all tasks for grouping
+    };
+  }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include])
+
+  // For agenda view (groupByStatus=true), make 3 separate API calls like the web does
+  // This ensures we get the same results as the web
+  const preparationQueryParams = useMemo(() => {
+    if (!shouldGroupByStatus) return null;
+    return {
+      ...baseQueryParams,
+      status: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION],
+    };
+  }, [shouldGroupByStatus, baseQueryParams]);
+
+  const inProductionQueryParams = useMemo(() => {
+    if (!shouldGroupByStatus) return null;
+    return {
+      ...baseQueryParams,
+      status: [TASK_STATUS.IN_PRODUCTION],
+    };
+  }, [shouldGroupByStatus, baseQueryParams]);
+
+  const completedQueryParams = useMemo(() => {
+    if (!shouldGroupByStatus) return null;
+    return {
+      ...baseQueryParams,
+      status: [TASK_STATUS.COMPLETED],
+    };
+  }, [shouldGroupByStatus, baseQueryParams]);
+
+  // Non-agenda query params (includes status from filterValues)
+  const standardQueryParams = useMemo(() => {
+    if (shouldGroupByStatus) return null;
+    return {
+      orderBy: { [sortConfig.field]: sortConfig.direction },
+      ...(searchText ? { searchingFor: searchText } : {}),
+      ...filterValues,
+      include: config.query.include,
+      limit: 1000,
+    };
+  }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include]);
+
+  // Fetch tasks - for agenda view, make 3 separate calls
+  // For non-agenda view, make a single call
   const {
-    items: allTasks,
-    isLoading: tasksLoading,
-    error: tasksError,
-    refresh: refreshTasks,
-    totalCount,
-  } = useTasksInfiniteMobile(taskQueryParams)
+    items: preparationTasks,
+    isLoading: preparationLoading,
+    error: preparationError,
+    refresh: refreshPreparation,
+  } = useTasksInfiniteMobile(preparationQueryParams || { enabled: false });
+
+  const {
+    items: inProductionTasks,
+    isLoading: inProductionLoading,
+    error: inProductionError,
+    refresh: refreshInProduction,
+  } = useTasksInfiniteMobile(inProductionQueryParams || { enabled: false });
+
+  const {
+    items: completedTasks,
+    isLoading: completedLoading,
+    error: completedError,
+    refresh: refreshCompleted,
+  } = useTasksInfiniteMobile(completedQueryParams || { enabled: false });
+
+  const {
+    items: standardTasks,
+    isLoading: standardLoading,
+    error: standardError,
+    refresh: refreshStandard,
+  } = useTasksInfiniteMobile(standardQueryParams || { enabled: false });
+
+  // Combine results based on view type
+  const allTasks = useMemo(() => {
+    if (shouldGroupByStatus) {
+      return [...preparationTasks, ...inProductionTasks, ...completedTasks];
+    }
+    return standardTasks;
+  }, [shouldGroupByStatus, preparationTasks, inProductionTasks, completedTasks, standardTasks]);
+
+  const tasksLoading = shouldGroupByStatus
+    ? (preparationLoading || inProductionLoading || completedLoading)
+    : standardLoading;
+
+  const tasksError = shouldGroupByStatus
+    ? (preparationError || inProductionError || completedError)
+    : standardError;
+
+  const refreshTasks = useCallback(async () => {
+    if (shouldGroupByStatus) {
+      await Promise.all([refreshPreparation(), refreshInProduction(), refreshCompleted()]);
+    } else {
+      await refreshStandard();
+    }
+  }, [shouldGroupByStatus, refreshPreparation, refreshInProduction, refreshCompleted, refreshStandard]);
+
+  // DEBUG: Log task counts for comparison with web
+  useEffect(() => {
+    if (shouldGroupByStatus) {
+      console.log('[TaskScheduleLayout] Agenda view - Separate API calls:');
+      console.log('  Preparation tasks:', preparationTasks.length);
+      console.log('  In Production tasks:', inProductionTasks.length);
+      console.log('  Completed tasks:', completedTasks.length);
+      console.log('  Total:', allTasks.length);
+    }
+  }, [shouldGroupByStatus, preparationTasks.length, inProductionTasks.length, completedTasks.length, allTasks.length]);
 
   // ============================================================================
   // Computed Values
@@ -178,7 +294,99 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Check if config has groupBySector flag (default true for backward compatibility)
   const shouldGroupBySector = config.table.groupBySector !== false
 
+  // Filter tasks from each status group by search text (for agenda view)
+  const filteredPreparationTasks = useMemo(() => {
+    if (!shouldGroupByStatus || !displaySearchText) return preparationTasks
+    const searchLower = displaySearchText.toLowerCase()
+    return preparationTasks.filter((task) => {
+      return (
+        task.name?.toLowerCase().includes(searchLower) ||
+        task.customer?.fantasyName?.toLowerCase().includes(searchLower) ||
+        task.customer?.corporateName?.toLowerCase().includes(searchLower) ||
+        task.serialNumber?.toLowerCase().includes(searchLower) ||
+        task.truck?.plate?.toLowerCase().includes(searchLower) ||
+        task.sector?.name?.toLowerCase().includes(searchLower)
+      )
+    })
+  }, [shouldGroupByStatus, preparationTasks, displaySearchText])
+
+  const filteredInProductionTasks = useMemo(() => {
+    if (!shouldGroupByStatus || !displaySearchText) return inProductionTasks
+    const searchLower = displaySearchText.toLowerCase()
+    return inProductionTasks.filter((task) => {
+      return (
+        task.name?.toLowerCase().includes(searchLower) ||
+        task.customer?.fantasyName?.toLowerCase().includes(searchLower) ||
+        task.customer?.corporateName?.toLowerCase().includes(searchLower) ||
+        task.serialNumber?.toLowerCase().includes(searchLower) ||
+        task.truck?.plate?.toLowerCase().includes(searchLower) ||
+        task.sector?.name?.toLowerCase().includes(searchLower)
+      )
+    })
+  }, [shouldGroupByStatus, inProductionTasks, displaySearchText])
+
+  const filteredCompletedTasks = useMemo(() => {
+    if (!shouldGroupByStatus || !displaySearchText) return completedTasks
+    const searchLower = displaySearchText.toLowerCase()
+    return completedTasks.filter((task) => {
+      return (
+        task.name?.toLowerCase().includes(searchLower) ||
+        task.customer?.fantasyName?.toLowerCase().includes(searchLower) ||
+        task.customer?.corporateName?.toLowerCase().includes(searchLower) ||
+        task.serialNumber?.toLowerCase().includes(searchLower) ||
+        task.truck?.plate?.toLowerCase().includes(searchLower) ||
+        task.sector?.name?.toLowerCase().includes(searchLower)
+      )
+    })
+  }, [shouldGroupByStatus, completedTasks, displaySearchText])
+
+  // Group tasks by status for agenda view (3-table workflow like web)
+  // Now uses pre-fetched data from separate API calls instead of grouping client-side
+  const tasksByStatus = useMemo(() => {
+    if (!shouldGroupByStatus) return null
+
+    return {
+      preparation: filteredPreparationTasks,
+      inProduction: filteredInProductionTasks,
+      completed: filteredCompletedTasks,
+    }
+  }, [shouldGroupByStatus, filteredPreparationTasks, filteredInProductionTasks, filteredCompletedTasks])
+
   const sections: SectionData[] = useMemo(() => {
+    // If grouping by status (agenda 3-table workflow), create 3 sections
+    if (shouldGroupByStatus && tasksByStatus) {
+      const result: SectionData[] = []
+
+      // Section 1: Em Preparação (PREPARATION + WAITING_PRODUCTION)
+      if (tasksByStatus.preparation.length > 0) {
+        result.push({
+          title: 'Em Preparação',
+          sectorId: 'preparation',
+          data: tasksByStatus.preparation,
+        })
+      }
+
+      // Section 2: Em Produção (IN_PRODUCTION)
+      if (tasksByStatus.inProduction.length > 0) {
+        result.push({
+          title: 'Em Produção',
+          sectorId: 'in-production',
+          data: tasksByStatus.inProduction,
+        })
+      }
+
+      // Section 3: Concluído (COMPLETED)
+      if (tasksByStatus.completed.length > 0) {
+        result.push({
+          title: 'Concluído',
+          sectorId: 'completed',
+          data: tasksByStatus.completed,
+        })
+      }
+
+      return result
+    }
+
     // If not grouping by sector, return all tasks in a single section
     if (!shouldGroupBySector) {
       return [{
@@ -239,7 +447,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
 
     return result
-  }, [shouldGroupBySector, filteredTasks, tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors])
+  }, [shouldGroupByStatus, tasksByStatus, shouldGroupBySector, filteredTasks, tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors])
 
   // Calculate display columns
   const displayColumns = useMemo(() => {
@@ -386,10 +594,16 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [])
 
   const handleFilterClear = useCallback(() => {
-    setFilterValues({
-      status: [TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION],
-    })
-  }, [])
+    // When using status-based grouping (agenda 3-table view), don't apply restrictive status filter
+    // The shouldDisplayInAgenda filter handles the logic on the backend
+    if (config.table.groupByStatus) {
+      setFilterValues(config.filters?.defaultValues || {})
+    } else {
+      setFilterValues({
+        status: [TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION],
+      })
+    }
+  }, [config.table.groupByStatus, config.filters?.defaultValues])
 
   // ============================================================================
   // Permission Check
@@ -415,11 +629,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           },
         }
       }
-      if (action.key === 'duplicate') {
+      if (action.key === 'copyFromTask') {
         return {
           ...action,
           onPress: (task: Task) => {
-            setDuplicateModalTask(task)
+            setCopyFromTaskModalTask(task)
           },
         }
       }
@@ -563,14 +777,43 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 tintColor={colors.primary}
               />
             }
-            renderSectionHeader={({ section }) => (
+            renderSectionHeader={({ section }) => {
+              // Determine section color based on status grouping
+              const getSectionColor = () => {
+                if (!shouldGroupByStatus) {
+                  return section.sectorId === 'undefined' ? colors.mutedForeground : colors.foreground
+                }
+                // Status-based colors for agenda 3-table view
+                switch (section.sectorId) {
+                  case 'preparation':
+                    return '#f59e0b' // Amber for preparation/waiting
+                  case 'in-production':
+                    return colors.primary // Primary color for active production
+                  case 'completed':
+                    return '#22c55e' // Green for completed
+                  default:
+                    return colors.foreground
+                }
+              }
+
+              return (
               <View style={styles.sectionContainer}>
                 {/* Section Header - only show if title exists */}
                 {section.title && (
                   <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-                    <ThemedText style={[styles.sectionTitle, { color: section.sectorId === 'undefined' ? colors.mutedForeground : colors.foreground }]}>
-                      {section.title}
-                    </ThemedText>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      {shouldGroupByStatus && (
+                        <View style={{
+                          width: 4,
+                          height: 20,
+                          borderRadius: 2,
+                          backgroundColor: getSectionColor(),
+                        }} />
+                      )}
+                      <ThemedText style={[styles.sectionTitle, { color: getSectionColor() }]}>
+                        {section.title}
+                      </ThemedText>
+                    </View>
                     <ThemedText style={[styles.sectionCount, { color: colors.mutedForeground }]}>
                       {section.data.length} {section.data.length === 1 ? 'tarefa' : 'tarefas'}
                     </ThemedText>
@@ -597,25 +840,35 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                   </View>
                 </View>
               </View>
-            )}
-            renderItem={({ item, index, section }) => (
-              <View style={[styles.rowContainer, { borderColor: colors.border }]}>
-                <TableRow
-                  item={item}
-                  index={index}
-                  columns={displayColumns}
-                  selection={{
-                    enabled: selectionEnabled,
-                    selectedIds,
-                    onToggle: handleToggleSelection,
-                    onToggleAll: () => handleToggleAllInSection(section.data),
-                  }}
-                  actions={filteredTableActions}
-                  onPress={handleRowPress}
-                  getRowStyle={config.table.getRowStyle}
-                />
-              </View>
-            )}
+              )
+            }}
+            renderItem={({ item, index, section }) => {
+              // Create render context for cell rendering
+              const renderContext: RenderContext = {
+                navigationRoute: shouldGroupByStatus ? 'preparation' : 'schedule',
+                user,
+                rowIndex: index,
+              }
+              return (
+                <View style={[styles.rowContainer, { borderColor: colors.border }]}>
+                  <TableRow
+                    item={item}
+                    index={index}
+                    columns={displayColumns}
+                    selection={{
+                      enabled: selectionEnabled,
+                      selectedIds,
+                      onToggle: handleToggleSelection,
+                      onToggleAll: () => handleToggleAllInSection(section.data),
+                    }}
+                    actions={filteredTableActions}
+                    onPress={handleRowPress}
+                    getRowStyle={config.table.getRowStyle}
+                    renderContext={renderContext}
+                  />
+                </View>
+              )
+            }}
             renderSectionFooter={() => (
               <View style={[styles.sectionFooter, { backgroundColor: colors.card, borderColor: colors.border }]} />
             )}
@@ -670,16 +923,19 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         }}
       />
 
-      {/* Task Duplicate Modal */}
-      <TaskDuplicateModal
-        visible={!!duplicateModalTask}
-        onClose={() => setDuplicateModalTask(null)}
-        task={duplicateModalTask}
-        onSuccess={() => {
-          setDuplicateModalTask(null)
-          handleRefresh()
-        }}
-      />
+      {/* Copy From Task Modal */}
+      {copyFromTaskModalTask && (
+        <CopyFromTaskModal
+          open={!!copyFromTaskModalTask}
+          onOpenChange={(open) => !open && setCopyFromTaskModalTask(null)}
+          targetTask={copyFromTaskModalTask}
+          userPrivilege={user?.sector?.privileges}
+          onSuccess={() => {
+            setCopyFromTaskModalTask(null)
+            handleRefresh()
+          }}
+        />
+      )}
     </ThemedView>
   )
 })

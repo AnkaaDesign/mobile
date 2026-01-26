@@ -37,6 +37,16 @@ export type CellFormat =
   | 'badge'
   | 'count-badge'
 
+/** Context passed to render functions for additional information */
+export interface RenderContext {
+  /** Navigation route context - affects cell rendering (e.g., 'preparation' vs 'schedule') */
+  navigationRoute?: 'preparation' | 'schedule'
+  /** Current user for permission checks */
+  user?: any
+  /** Row index for alternating colors */
+  rowIndex?: number
+}
+
 export interface TableColumn<T = any> {
   key: string
   label: string
@@ -45,7 +55,7 @@ export interface TableColumn<T = any> {
   /** Custom sort field - use for nested entity sorting (e.g., 'paintBrand.name' for paint brand name) */
   sortField?: string
   align?: 'left' | 'center' | 'right'
-  render: (item: T) => any // Can return primitive or ReactNode
+  render: (item: T, context?: RenderContext) => any // Can return primitive or ReactNode, with optional context
   format?: CellFormat // Auto-format the rendered value
   component?: string // Special component to use (e.g., 'file-thumbnail')
   style?: TextStyle // Additional text styles
@@ -280,6 +290,10 @@ export interface ListConfig<T extends { id: string }> {
     actions?: TableAction<T>[]
     onRowPress?: (item: T, router: any) => void
     getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
+    /** Group tasks by sector (default: true). When false, all tasks appear in a single flat list. */
+    groupBySector?: boolean
+    /** Group tasks by status into 3 sections: Preparation, In Production, Completed (like web agenda). */
+    groupByStatus?: boolean
   }
 
   // Filters

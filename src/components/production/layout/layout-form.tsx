@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
+import { FilePicker, FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
@@ -151,8 +151,9 @@ interface SideState {
 }
 
 // Store photo state separately (like web implementation) to avoid sync issues
+// Using FilePickerItem[] for consistency with FilePicker component
 interface PhotoState {
-  imageUri?: string;  // Local URI for preview (from camera/gallery)
+  file?: FilePickerItem;  // File item (either new from picker or existing from backend)
   photoId?: string | null;  // ID from backend (existing photo)
 }
 
@@ -338,25 +339,29 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       backLayoutPhotoId: backLayout?.photoId,
       backLayoutPhotoUri: backLayout?.photoUri,
       currentPhotoStateId: photoState.photoId,
-      currentPhotoStateUri: photoState.imageUri,
+      currentPhotoStateUri: photoState.file?.uri,
     });
 
     // If user has selected a new file (has imageUri but no photoId), don't overwrite it
-    if (photoState.imageUri && !photoState.photoId) {
+    if (photoState.file?.uri && !photoState.photoId) {
       console.log('[LayoutForm Mobile PHOTO SYNC] ⏭️ Skipping - user has selected a new photo');
       return;
     }
 
     // Check if parent has a new photo URI (from user selection in this session)
     if (backLayout?.photoUri) {
-      if (photoState.imageUri === backLayout.photoUri) {
+      if (photoState.file?.uri === backLayout.photoUri) {
         console.log('[LayoutForm Mobile PHOTO SYNC] ⏭️ Skipping - photo already synced');
         return;
       }
 
       console.log('[LayoutForm Mobile PHOTO SYNC] ✅ Syncing new photo from parent:', backLayout.photoUri);
       setPhotoState({
-        imageUri: backLayout.photoUri,
+        file: {
+          uri: backLayout.photoUri,
+          name: `layout-photo-${Date.now()}.jpg`,
+          type: 'image/jpeg',
+        },
         photoId: backLayout.photoId || null,
       });
       return;
@@ -370,19 +375,27 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       }
 
       console.log('[LayoutForm Mobile PHOTO SYNC] ✅ Syncing existing photo from backend:', backLayout.photoId);
+      const photoUrl = getPhotoUrl(backLayout.photoId);
       setPhotoState({
-        imageUri: getPhotoUrl(backLayout.photoId),
+        file: photoUrl ? {
+          uri: photoUrl,
+          name: `layout-photo-${backLayout.photoId}.jpg`,
+          type: 'image/jpeg',
+          id: backLayout.photoId,
+          uploaded: true,
+          thumbnailUrl: photoUrl,
+        } : undefined,
         photoId: backLayout.photoId,
       });
       return;
     }
 
     // Layout has no photo - clear photoState only if it had a photoId (not a new user-selected photo)
-    if (photoState.photoId && !photoState.imageUri) {
+    if (photoState.photoId && !photoState.file?.uri) {
       console.log('[LayoutForm Mobile PHOTO SYNC] ❌ Clearing photo state - layout has no photo');
       setPhotoState({});
     }
-  }, [layouts, selectedSide, photoState.photoId, photoState.imageUri]);
+  }, [layouts, selectedSide, photoState.photoId, photoState.file?.uri]);
 
   // CRITICAL: Emit initial state to parent when selected side changes
   // This ensures parent knows the default values
@@ -430,7 +443,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         height: state.height / 100,
         layoutSections,
         photoId: selectedSide === 'back' ? (photoState.photoId || null) : null,
-        photoUri: selectedSide === 'back' ? photoState.imageUri : undefined,
+        photoUri: selectedSide === 'back' ? photoState.file?.uri : undefined,
       };
 
       console.log('[LayoutForm Mobile] Emitting initial state:', {
@@ -545,7 +558,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
           height: state.height / 100,
           layoutSections,
           photoId: selectedSide === 'back' ? (photoState.photoId || null) : null,
-          photoUri: selectedSide === 'back' ? photoState.imageUri : undefined,
+          photoUri: selectedSide === 'back' ? photoState.file?.uri : undefined,
         };
 
         console.log('[LayoutForm Mobile] ✅ Emitting changes:', {
@@ -713,25 +726,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     updateCurrentSide({ height: heightCm });
   }, [updateCurrentSide]);
 
-  // Handle photo upload for back side (like web implementation - separate from layout state)
-  const handlePhotoUpload = useCallback(async () => {
-    // Helper function to process the selected photo
-    const processPhoto = (imageUri: string) => {
-      console.log('[LayoutForm Mobile] Photo selected:', imageUri);
+  // Handle photo change from FilePicker (for back side layout photo)
+  const handlePhotoChange = useCallback((files: FilePickerItem[]) => {
+    const file = files[0]; // Single file mode
 
-      // Store photo in separate photoState (not in sideStates)
-      const newPhotoState = { imageUri, photoId: null };
-      setPhotoState(newPhotoState);
+    if (!file) {
+      // Photo was removed
+      console.log('[LayoutForm Mobile] Photo removed');
+      setPhotoState({});
 
-      // Photo selection is just a local UI change, no API call yet
-      // Photo will be uploaded when the form is submitted
-
-      // CRITICAL: Mark as having pending changes to prevent backend resets
-      lastUserInteractionRef.current = Date.now();
-      hasPendingChangesRef.current = true;
-      console.log('[LayoutForm Mobile] Photo upload - marked as pending changes');
-
-      // Trigger parent notification to include the photo
+      // Notify parent about photo removal
       if (!currentState) return;
 
       const segments = calculateSegments(currentState.doors, currentState.totalWidth);
@@ -745,68 +749,53 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       const layoutData: LayoutDataWithPhoto = {
         height: currentState.height / 100,
         layoutSections,
-        photoId: null, // New photo, no ID yet
-        photoUri: imageUri, // This is the key - include the new URI
+        photoId: null,
+        photoUri: undefined,
       };
 
-      console.log('[LayoutForm Mobile] Emitting layout with photo:', {
-        hasPhotoUri: !!imageUri,
-        layoutSectionsCount: layoutSections.length,
-      });
-
-      // Notify parent immediately with photo
       onChange(selectedSide, layoutData);
+      return;
+    }
+
+    console.log('[LayoutForm Mobile] Photo selected:', file.uri);
+
+    // Store photo in separate photoState
+    setPhotoState({
+      file,
+      photoId: file.id || null, // Keep existing ID if it's an already-uploaded file
+    });
+
+    // CRITICAL: Mark as having pending changes to prevent backend resets
+    lastUserInteractionRef.current = Date.now();
+    hasPendingChangesRef.current = true;
+    console.log('[LayoutForm Mobile] Photo upload - marked as pending changes');
+
+    // Trigger parent notification to include the photo
+    if (!currentState) return;
+
+    const segments = calculateSegments(currentState.doors, currentState.totalWidth);
+    const layoutSections = segments.map((segment, index) => ({
+      width: segment.width / 100,
+      isDoor: segment.type === 'door',
+      doorHeight: segment.type === 'door' && segment.door ? segment.door.doorHeight / 100 : null,
+      position: index
+    }));
+
+    const layoutData: LayoutDataWithPhoto = {
+      height: currentState.height / 100,
+      layoutSections,
+      photoId: file.id || null, // Keep existing ID if it's an already-uploaded file
+      photoUri: file.uploaded ? undefined : file.uri, // Only include URI for new photos
     };
 
-    try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    console.log('[LayoutForm Mobile] Emitting layout with photo:', {
+      hasPhotoUri: !!layoutData.photoUri,
+      hasPhotoId: !!layoutData.photoId,
+      layoutSectionsCount: layoutSections.length,
+    });
 
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permissão Necessária',
-          'Precisamos de permissão para acessar a câmera.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      Alert.alert(
-        'Adicionar Foto',
-        'Escolha uma opção',
-        [
-          {
-            text: 'Tirar Foto',
-            onPress: async () => {
-              const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                quality: 0.8,
-              });
-
-              if (!result.canceled && result.assets[0]) {
-                processPhoto(result.assets[0].uri);
-              }
-            }
-          },
-          {
-            text: 'Escolher da Galeria',
-            onPress: async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                quality: 0.8,
-              });
-
-              if (!result.canceled && result.assets[0]) {
-                processPhoto(result.assets[0].uri);
-              }
-            }
-          },
-          { text: 'Cancelar', style: 'cancel' }
-        ]
-      );
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert("Erro", "Erro ao adicionar foto");
-    }
+    // Notify parent immediately with photo
+    onChange(selectedSide, layoutData);
   }, [selectedSide, currentState, onChange]);
 
   // Calculate display scale for mobile
@@ -974,15 +963,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                 width: currentState.totalWidth * scale,
                 height: currentState.height * scale,
                 borderColor: colors.foreground,
-                backgroundColor: (selectedSide === 'back' && photoState.imageUri) ? 'transparent' : colors.background,
+                backgroundColor: (selectedSide === 'back' && photoState.file?.uri) ? 'transparent' : colors.background,
               }
             ]}
           >
             {/* Background photo for back side */}
-            {selectedSide === 'back' && photoState.imageUri && (
+            {selectedSide === 'back' && photoState.file?.uri && (
               <View style={StyleSheet.absoluteFill}>
                 <Image
-                  source={{ uri: photoState.imageUri }}
+                  source={{ uri: photoState.file?.uri }}
                   style={{ width: '100%', height: '100%', opacity: 0.5 }}
                   resizeMode="cover"
                 />
@@ -1182,19 +1171,23 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         </Button>
       )}
 
-      {/* Add Photo Button (only for back) */}
+      {/* Photo picker for back side layout */}
       {selectedSide === 'back' && (
-        <Button
-          variant="outline"
-          onPress={handlePhotoUpload}
-          disabled={disabled}
-          style={styles.addButton}
-        >
-          <Icon name="camera" size={16} color={colors.foreground} />
-          <ThemedText style={{ marginLeft: spacing.xs }}>
-            {photoState.imageUri ? 'Alterar Foto' : 'Adicionar Foto'}
-          </ThemedText>
-        </Button>
+        <View style={styles.photoPickerContainer}>
+          <FilePicker
+            value={photoState.file ? [photoState.file] : []}
+            onChange={handlePhotoChange}
+            maxFiles={1}
+            placeholder="Adicionar Foto do Layout"
+            helperText="Foto da traseira do caminhão"
+            showCamera={true}
+            showVideoCamera={false}
+            showGallery={true}
+            showFilePicker={false}
+            disabled={disabled}
+            confirmRemove={true}
+          />
+        </View>
       )}
 
       {!embedded && <View style={{ height: spacing.xl }} />}
@@ -1329,6 +1322,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
   },
   addButton: {
+    marginBottom: spacing.md,
+  },
+  photoPickerContainer: {
     marginBottom: spacing.md,
   },
   layoutSelectionCard: {

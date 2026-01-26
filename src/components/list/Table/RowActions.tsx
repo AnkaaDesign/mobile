@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'expo-router'
-import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconCopy } from '@tabler/icons-react-native'
+import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy } from '@tabler/icons-react-native'
 import type { TableAction } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
@@ -158,9 +158,9 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             } else if (action.key === 'change-sector' || action.icon === 'users') {
               backgroundColor = '#ea580c' // orange-600
               Icon = IconUsers
-            } else if (action.key === 'duplicate' || action.icon === 'copy') {
+            } else if (action.key === 'copyFromTask' || action.icon === 'clipboardCopy') {
               backgroundColor = '#0891b2' // cyan-600
-              Icon = IconCopy
+              Icon = IconClipboardCopy
             }
 
             // Resolve dynamic label if it's a function

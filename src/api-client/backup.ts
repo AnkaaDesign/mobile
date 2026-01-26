@@ -3,7 +3,7 @@ import { apiClient } from "./axiosClient";
 export interface BackupMetadata {
   id: string;
   name: string;
-  type: "database" | "files" | "full";
+  type: "database" | "files" | "system" | "full";
   size: number;
   createdAt: string;
   status: "pending" | "in_progress" | "completed" | "failed";
@@ -21,11 +21,18 @@ export interface BackupMetadata {
     retention: '1_day' | '3_days' | '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months' | '1_year';
     deleteAfter?: string; // ISO date string when backup should be deleted
   };
+  // Soft delete fields
+  deletedAt?: string | null;
+  deletedById?: string | null;
+  // Google Drive integration
+  gdriveFileId?: string | null;
+  gdriveStatus?: "pending" | "syncing" | "synced" | "failed" | "deleted" | null;
+  gdriveSyncedAt?: string | null;
 }
 
 export interface CreateBackupRequest {
   name: string;
-  type: "database" | "files" | "full";
+  type: "database" | "files" | "system" | "full";
   description?: string;
   paths?: string[];
   priority?: "low" | "medium" | "high" | "critical";
@@ -83,7 +90,7 @@ export interface ScheduledBackupJob {
 }
 
 export interface BackupQueryParams {
-  type?: "database" | "files" | "full";
+  type?: "database" | "files" | "system" | "full";
   status?: "pending" | "in_progress" | "completed" | "failed";
   limit?: number;
   orderBy?: {
@@ -228,25 +235,42 @@ class BackupApiClient {
   // Parse cron expression to human readable
   parseCronToHuman(cron: string): string {
     const parts = cron.split(" ");
-    if (parts.length < 5) return "Invalid cron expression";
+    if (parts.length < 5) return "Expressão cron inválida";
 
     const [minutes, hours, dayOfMonth, month, dayOfWeek] = parts;
 
     if (dayOfMonth === "*" && month === "*" && dayOfWeek === "*") {
-      return `Daily at ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+      return `Diariamente às ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
     }
 
     if (dayOfMonth === "*" && month === "*" && dayOfWeek !== "*") {
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const dayName = days[parseInt(dayOfWeek)] || `Day ${dayOfWeek}`;
-      return `Weekly on ${dayName} at ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+      const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+      const dayName = days[parseInt(dayOfWeek)] || `Dia ${dayOfWeek}`;
+      return `Semanalmente às ${dayName} às ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
     }
 
     if (dayOfMonth !== "*" && month === "*") {
-      return `Monthly on day ${dayOfMonth} at ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+      return `Mensalmente no dia ${dayOfMonth} às ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}`;
     }
 
-    return `At ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")} (${cron})`;
+    return `Às ${hours.padStart(2, "0")}:${minutes.padStart(2, "0")} (${cron})`;
+  }
+
+  // Get list of storage folders available for backup
+  async getStorageFolders(): Promise<string[]> {
+    const response = await this.api.get<{ success: boolean; data: string[]; message: string }>("/backups/storage-folders");
+    return response.data.data || [];
+  }
+
+  // Get backup history (deleted backups)
+  async getBackupHistory(): Promise<BackupMetadata[]> {
+    const response = await this.api.get<{ success: boolean; data: BackupMetadata[]; message: string }>("/backups/history");
+    return response.data.data || [];
+  }
+
+  // Permanently delete a backup (hard delete)
+  async hardDeleteBackup(id: string): Promise<void> {
+    await this.api.delete<{ success: boolean; message: string }>(`/backups/${id}/hard`);
   }
 }
 

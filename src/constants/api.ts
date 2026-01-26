@@ -12,10 +12,10 @@
  */
 
 /**
- * Primary API URL (Local Server for Development)
- * Used as the default API endpoint during development
+ * Primary API URL (Production Server)
+ * Used as the default API endpoint
  */
-export const ONLINE_API_URL = "http://192.168.10.1577:3030";
+export const ONLINE_API_URL = "https://api.ankaadesign.com.br";
 
 /**
  * Fallback API URL (Production Server)
@@ -42,7 +42,7 @@ export const API_CONFIG = {
  * Local network IP address used for offline mode
  * This is the IP of the local server on the same network
  */
-export const LOCAL_SERVER_IP = "192.168.10.157";
+export const LOCAL_SERVER_IP = "192.168.10.161";
 
 /**
  * Check if a URL is the local/offline URL

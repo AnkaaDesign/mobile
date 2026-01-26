@@ -9,6 +9,27 @@ export const notify = {
   _handler: null as NotifyHandler | null,
   _retryHandler: null as RetryNotifyHandler | null,
   _dismissRetryHandler: null as DismissRetryHandler | null,
+  _suppressSuccessToasts: false,
+  _suppressionTimeout: null as NodeJS.Timeout | null,
+
+  // Suppress success toasts temporarily (used when opening app from notification tap)
+  setSuppressSuccessToasts(suppress: boolean, durationMs: number = 5000) {
+    this._suppressSuccessToasts = suppress;
+
+    // Clear any existing timeout
+    if (this._suppressionTimeout) {
+      clearTimeout(this._suppressionTimeout);
+      this._suppressionTimeout = null;
+    }
+
+    // Auto-reset after duration to prevent getting stuck
+    if (suppress) {
+      this._suppressionTimeout = setTimeout(() => {
+        this._suppressSuccessToasts = false;
+        this._suppressionTimeout = null;
+      }, durationMs);
+    }
+  },
 
   setHandler(handler: NotifyHandler) {
     this._handler = handler;
@@ -23,6 +44,11 @@ export const notify = {
   },
 
   show(type: MessageType, title: string, message?: string, options?: NotifyOptions) {
+    // Suppress success toasts when flag is set (e.g., when opening from notification tap)
+    if (type === "success" && this._suppressSuccessToasts) {
+      return;
+    }
+
     if (this._handler) {
       this._handler(type, title, message, options);
     } else {

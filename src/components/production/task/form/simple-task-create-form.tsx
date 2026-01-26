@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
@@ -13,19 +13,27 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { IconFileText, IconCopy } from "@tabler/icons-react-native";
+import { IconFileText, IconCopy, IconCalendar, IconTruck, IconBox, IconClipboardList } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { TaskNameAutocomplete } from "./task-name-autocomplete";
 import { PlateTagsInput } from "./plate-tags-input";
 import { SerialNumberRangeInput } from "./serial-number-range-input";
-import { TASK_STATUS } from "@/constants/enums";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Combobox } from "@/components/ui/combobox";
+import { TASK_STATUS, TRUCK_CATEGORY, IMPLEMENT_TYPE, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from "@/constants/enums";
+import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
+import { DEFAULT_TASK_SERVICE_ORDER, getServiceDescriptionsByType } from "@/constants/service-descriptions";
 
-// Simplified schema matching web simple-task-create-dialog.tsx with badge inputs
+// Extended schema matching web task-create-form.tsx
 const simpleTaskSchema = z.object({
   name: z.string().optional(), // Name is not required
   customerId: z.string().uuid().nullable().optional(),
   plates: z.array(z.string()).optional(), // Array of plates
   serialNumbers: z.array(z.number()).optional(), // Array of serial numbers
+  forecastDate: z.date().nullable().optional(), // Forecast release date
+  serviceOrderDescription: z.string().nullable().optional(), // Service order description
+  category: z.string().optional(), // Truck category
+  implementType: z.string().optional(), // Implement type
 });
 
 type SimpleTaskFormData = z.infer<typeof simpleTaskSchema>;
@@ -61,12 +69,43 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
       customerId: null,
       plates: [],
       serialNumbers: [],
+      forecastDate: null,
+      serviceOrderDescription: DEFAULT_TASK_SERVICE_ORDER.description,
+      category: "",
+      implementType: IMPLEMENT_TYPE.CORRUGATED,
     },
   });
 
-  // Watch badge arrays to show task count preview
-  const plates = form.watch("plates") || [];
-  const serialNumbers = form.watch("serialNumbers") || [];
+  // Watch form values for task count calculation
+  const plates = useWatch({ control: form.control, name: "plates" }) || [];
+  const serialNumbers = useWatch({ control: form.control, name: "serialNumbers" }) || [];
+
+  // Get service order description options
+  const serviceOrderOptions = useMemo(() => {
+    const descriptions = getServiceDescriptionsByType(SERVICE_ORDER_TYPE.COMMERCIAL);
+    return descriptions.map((description) => ({
+      value: description,
+      label: description,
+    }));
+  }, []);
+
+  // Truck category options
+  const truckCategoryOptions = useMemo(() => [
+    { value: "", label: "Nenhuma" },
+    ...Object.values(TRUCK_CATEGORY).map((cat) => ({
+      value: cat,
+      label: TRUCK_CATEGORY_LABELS[cat],
+    })),
+  ], []);
+
+  // Implement type options
+  const implementTypeOptions = useMemo(() => [
+    { value: "", label: "Nenhum" },
+    ...Object.values(IMPLEMENT_TYPE).map((type) => ({
+      value: type,
+      label: IMPLEMENT_TYPE_LABELS[type],
+    })),
+  ], []);
 
   // Calculate expected task count based on combinations
   const calculateTaskCount = () => {
@@ -102,6 +141,22 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
           payload.customerId = data.customerId;
         }
 
+        // Add forecast date if provided
+        if (data.forecastDate) {
+          payload.forecastDate = data.forecastDate;
+        }
+
+        // Add service order if description is provided and has at least 3 chars
+        if (data.serviceOrderDescription && data.serviceOrderDescription.trim().length >= 3) {
+          payload.serviceOrders = [{
+            status: SERVICE_ORDER_STATUS.PENDING,
+            statusOrder: 1,
+            description: data.serviceOrderDescription.trim(),
+            type: SERVICE_ORDER_TYPE.COMMERCIAL,
+            assignedToId: null,
+          }];
+        }
+
         // Add plates array if provided
         if (data.plates && data.plates.length > 0) {
           payload.plates = data.plates;
@@ -110,6 +165,16 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
         // Add serial numbers array if provided
         if (data.serialNumbers && data.serialNumbers.length > 0) {
           payload.serialNumbers = data.serialNumbers;
+        }
+
+        // Add truck category if provided
+        if (data.category) {
+          payload.category = data.category;
+        }
+
+        // Add implement type if provided
+        if (data.implementType) {
+          payload.implementType = data.implementType;
         }
 
         await onSubmit(payload);
@@ -167,19 +232,127 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
                   />
                 </FormFieldGroup>
 
+                {/* Forecast Date */}
+                <FormFieldGroup
+                  label="Data de Previsão de Liberação"
+                  icon={<IconCalendar size={16} color={colors.mutedForeground} />}
+                  error={form.formState.errors.forecastDate?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="forecastDate"
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || undefined}
+                        onChange={field.onChange}
+                        type="date"
+                        placeholder="Selecione a data"
+                        disabled={isSubmitting}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
+                {/* Service Order Description */}
+                <FormFieldGroup
+                  label="Ordem de Serviço"
+                  icon={<IconClipboardList size={16} color={colors.mutedForeground} />}
+                  error={form.formState.errors.serviceOrderDescription?.message}
+                >
+                  <Controller
+                    control={form.control}
+                    name="serviceOrderDescription"
+                    render={({ field }) => (
+                      <Combobox
+                        value={field.value || ""}
+                        onValueChange={(val) => field.onChange(val)}
+                        options={serviceOrderOptions}
+                        placeholder="Ex: Enviar Orçamento"
+                        searchPlaceholder="Pesquisar serviços..."
+                        emptyText="Nenhum serviço encontrado"
+                        disabled={isSubmitting}
+                        searchable={true}
+                        clearable={true}
+                      />
+                    )}
+                  />
+                </FormFieldGroup>
+
+                {/* Truck Category and Implement Type - Side by Side */}
+                <View style={styles.rowFields}>
+                  {/* Truck Category */}
+                  <View style={styles.halfField}>
+                    <FormFieldGroup
+                      label="Categoria"
+                      icon={<IconTruck size={16} color={colors.mutedForeground} />}
+                      error={form.formState.errors.category?.message}
+                    >
+                      <Controller
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <Combobox
+                            value={field.value || ""}
+                            onValueChange={(val) => field.onChange(val)}
+                            options={truckCategoryOptions}
+                            placeholder="Selecione"
+                            searchPlaceholder="Buscar..."
+                            emptyText="Nenhum encontrado"
+                            disabled={isSubmitting}
+                            searchable={false}
+                            clearable={true}
+                          />
+                        )}
+                      />
+                    </FormFieldGroup>
+                  </View>
+
+                  {/* Implement Type */}
+                  <View style={styles.halfField}>
+                    <FormFieldGroup
+                      label="Implemento"
+                      icon={<IconBox size={16} color={colors.mutedForeground} />}
+                      error={form.formState.errors.implementType?.message}
+                    >
+                      <Controller
+                        control={form.control}
+                        name="implementType"
+                        render={({ field }) => (
+                          <Combobox
+                            value={field.value || ""}
+                            onValueChange={(val) => field.onChange(val)}
+                            options={implementTypeOptions}
+                            placeholder="Selecione"
+                            searchPlaceholder="Buscar..."
+                            emptyText="Nenhum encontrado"
+                            disabled={isSubmitting}
+                            searchable={false}
+                            clearable={true}
+                          />
+                        )}
+                      />
+                    </FormFieldGroup>
+                  </View>
+                </View>
+
                 {/* Plates - Badge Input (Full Width) */}
-                <PlateTagsInput control={form.control} disabled={isSubmitting} />
+                <PlateTagsInput control={form.control} disabled={isSubmitting || serialNumbers.length > 1} />
 
                 {/* Serial Numbers - Badge Input (Full Width) */}
-                <SerialNumberRangeInput control={form.control} disabled={isSubmitting} />
+                <SerialNumberRangeInput control={form.control} disabled={isSubmitting || plates.length > 1} />
 
-                {/* Task Count Preview */}
-                {expectedTaskCount > 1 && (
-                  <View style={[styles.taskCountPreview, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}>
+                {/* Task Count Preview - only show when combining plates and serial numbers */}
+                {plates.length > 0 && serialNumbers.length > 0 && expectedTaskCount > 1 && (
+                  <View style={[styles.taskCountPreview, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}>
                     <IconCopy size={16} color={colors.primary} />
-                    <ThemedText style={[styles.taskCountPreviewText, { color: colors.primary }]}>
-                      {expectedTaskCount} tarefa{expectedTaskCount > 1 ? "s" : ""} será{expectedTaskCount > 1 ? "ão" : ""} criada{expectedTaskCount > 1 ? "s" : ""}
-                    </ThemedText>
+                    <View style={styles.taskCountTextContainer}>
+                      <ThemedText style={[styles.taskCountPreviewText, { color: colors.primary }]}>
+                        {expectedTaskCount} tarefas serão criadas
+                      </ThemedText>
+                      <ThemedText style={[styles.taskCountSubtext, { color: colors.primary }]}>
+                        {plates.length} {plates.length === 1 ? 'placa' : 'placas'} × {serialNumbers.length} {serialNumbers.length === 1 ? 'número de série' : 'números de série'}
+                      </ThemedText>
+                    </View>
                   </View>
                 )}
               </View>
@@ -237,16 +410,31 @@ const styles = StyleSheet.create({
   content: {
     gap: 16, // spacing.md
   },
+  rowFields: {
+    flexDirection: "row",
+    gap: 12, // spacing.md
+  },
+  halfField: {
+    flex: 1,
+  },
   taskCountPreview: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8, // spacing.sm
+    alignItems: "flex-start",
+    gap: 12, // spacing.md
     padding: 12, // spacing.md
     borderRadius: 8, // borderRadius.md
     borderWidth: 1,
   },
+  taskCountTextContainer: {
+    flex: 1,
+  },
   taskCountPreviewText: {
     fontSize: 14, // fontSize.sm
     fontWeight: "600" as any, // fontWeight.semibold
+  },
+  taskCountSubtext: {
+    fontSize: 12, // fontSize.xs
+    marginTop: 2,
+    opacity: 0.8,
   },
 });

@@ -1,6 +1,33 @@
 import { notify } from '../api-client';
 import { Platform, Alert, ToastAndroid } from "react-native";
 
+// Global flag to suppress toasts when handling notification tap
+// This prevents success toasts from showing when the app opens from a notification
+let isHandlingNotificationTap = false;
+let suppressionTimeout: NodeJS.Timeout | null = null;
+
+export function setIsHandlingNotificationTap(value: boolean, durationMs: number = 3000) {
+  isHandlingNotificationTap = value;
+
+  // Clear any existing timeout
+  if (suppressionTimeout) {
+    clearTimeout(suppressionTimeout);
+    suppressionTimeout = null;
+  }
+
+  // Auto-reset after duration to prevent getting stuck
+  if (value) {
+    suppressionTimeout = setTimeout(() => {
+      isHandlingNotificationTap = false;
+      suppressionTimeout = null;
+    }, durationMs);
+  }
+}
+
+export function getIsHandlingNotificationTap(): boolean {
+  return isHandlingNotificationTap;
+}
+
 // Global mobile toast manager instance
 class GlobalMobileToastManager {
   private lastToasts = new Map<string, number>(); // key -> timestamp
@@ -59,6 +86,9 @@ const globalManager = new GlobalMobileToastManager();
 export function setupMobileNotifications() {
   try {
     notify.setHandler((type, title, message, options) => {
+      // Note: Success toast suppression during notification tap is now handled
+      // directly in notify.ts via notify.setSuppressSuccessToasts()
+
       // Format message - handle arrays or long messages
       const formattedMessage = Array.isArray(message) ? message.join("\n") : message;
 

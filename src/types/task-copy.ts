@@ -1,299 +1,310 @@
-// packages/schemas/src/task-copy.ts
+// Types and constants for task copy functionality
 
-import { z } from 'zod';
+// CopyableTaskField uses API schema field names (e.g., baseFileIds, artworkIds)
+// to match the backend validation schema for the copy-from endpoint
+export type CopyableTaskField =
+  | 'all'
+  | 'name'
+  | 'details'
+  | 'entryDate'
+  | 'term'
+  | 'forecastDate'
+  | 'commission'
+  | 'negotiatingWith'
+  | 'customerId'
+  | 'invoiceToId'
+  | 'pricingId'
+  | 'paintId'
+  | 'artworkIds'
+  | 'baseFileIds'
+  | 'logoPaintIds'
+  | 'cuts'
+  | 'airbrushings'
+  | 'serviceOrders'
+  | 'implementType'
+  | 'category'
+  | 'layouts'
+  | 'observation';
 
-/**
- * Schema for copying fields from one task to another
- * Supports granular field selection for copy operations
- */
+export interface CopyableFieldMetadata {
+  label: string;
+  description: string;
+  category: string;
+  isShared: boolean;
+  createNewInstances: boolean;
+}
 
-// All copyable field names
-export const COPYABLE_TASK_FIELDS = [
-  // Basic Task Fields (Copy Values)
+export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
+  'all',
   'name',
   'details',
-  'term',
   'entryDate',
+  'term',
   'forecastDate',
   'commission',
   'negotiatingWith',
-
-  // References (Shared - Copy IDs)
   'customerId',
   'invoiceToId',
-  'sectorId',
   'pricingId',
   'paintId',
-
-  // Files (Shared - Copy IDs)
   'artworkIds',
-  'budgetIds',
-  'invoiceIds',
-  'receiptIds',
-  'reimbursementIds',
-  'reimbursementInvoiceIds',
   'baseFileIds',
   'logoPaintIds',
-
-  // Individual Resources (Create New Instances)
   'cuts',
   'airbrushings',
-
-  // Shared Resources (Assign Same IDs)
-  'layouts',
-  'truck',
-
-  // Service Orders
   'serviceOrders',
-
-  // Observation
+  'implementType',
+  'category',
+  'layouts',
   'observation',
-
-  // Quick Action
-  'all',
-] as const;
-
-export type CopyableTaskField = typeof COPYABLE_TASK_FIELDS[number];
+];
 
 /**
- * Schema for task copy request
+ * Maps each copyable field to the sector privileges that can edit that field.
+ * Based on the field-level disabled checks in task-edit-form.tsx.
+ * When user selects "copy ALL", only fields they have permission to edit will be copied.
  */
-export const taskCopyFromSchema = z.object({
-  sourceTaskId: z
-    .string()
-    .uuid('ID da tarefa de origem deve ser um UUID válido'),
+export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'>, string[]> = {
+  // Basic fields - disabled for Financial, Warehouse, Designer
+  name: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  details: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  entryDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  term: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  forecastDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  negotiatingWith: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  customerId: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-  fields: z
-    .array(z.enum(COPYABLE_TASK_FIELDS))
-    .min(1, 'Pelo menos um campo deve ser selecionado para copiar')
-    .refine(
-      (fields) => {
-        // If 'all' is selected, no other fields should be selected
-        if (fields.includes('all')) {
-          return fields.length === 1;
-        }
-        return true;
-      },
-      {
-        message: 'Se "all" for selecionado, nenhum outro campo deve ser selecionado',
-      }
-    ),
-});
+  // Commission - disabled for Financial, Designer, Logistic, Warehouse
+  commission: ['ADMIN', 'COMMERCIAL', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-export type TaskCopyFromFormData = z.infer<typeof taskCopyFromSchema>;
+  // Invoice To - disabled for Financial, Warehouse, Designer, Logistic
+  invoiceToId: ['ADMIN', 'COMMERCIAL', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Pricing - only visible to ADMIN, FINANCIAL, COMMERCIAL (canViewPricingSections)
+  pricingId: ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
+
+  // Paint/Artworks - hidden for Warehouse, Financial, Logistic (different rules)
+  paintId: ['ADMIN', 'COMMERCIAL', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  artworkIds: ['ADMIN', 'COMMERCIAL', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  baseFileIds: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Logo paints - hidden for Commercial users
+  logoPaintIds: ['ADMIN', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Cuts - hidden for Financial, Logistic, Commercial
+  cuts: ['ADMIN', 'DESIGNER', 'WAREHOUSE', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Airbrushings - hidden for Warehouse, Financial, Designer, Logistic, Commercial
+  airbrushings: ['ADMIN', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Service orders - hidden for Warehouse and Plotting
+  serviceOrders: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Vehicle fields - disabled for Warehouse, Designer, Financial
+  implementType: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  category: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Layouts - hidden for Warehouse, Financial, Designer, Commercial
+  layouts: ['ADMIN', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Observation - hidden for Warehouse, Financial, Designer, Logistic, Commercial
+  observation: ['ADMIN', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+};
 
 /**
- * Field metadata for UI rendering
+ * Filters copyable fields based on user's sector privilege.
+ * Returns only fields the user has permission to edit.
  */
-export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, {
-  label: string;
-  category: string;
-  description: string;
-  isShared: boolean;
-  createNewInstances: boolean;
-}> = {
-  // Basic Fields
+export function getFieldsUserCanCopy(userPrivilege: string | undefined): CopyableTaskField[] {
+  if (!userPrivilege) return [];
+
+  // ADMIN can copy everything
+  if (userPrivilege === 'ADMIN') {
+    return COPYABLE_TASK_FIELDS;
+  }
+
+  // Filter fields based on user privilege
+  const allowedFields: CopyableTaskField[] = ['all']; // Always include 'all' option
+
+  for (const [field, allowedPrivileges] of Object.entries(COPYABLE_FIELD_PERMISSIONS)) {
+    if (allowedPrivileges.includes(userPrivilege)) {
+      allowedFields.push(field as CopyableTaskField);
+    }
+  }
+
+  return allowedFields;
+}
+
+/**
+ * Expands 'all' to only the fields the user has permission to copy.
+ * Used when user selects "COPIAR TUDO" to filter to allowed fields only.
+ */
+export function expandAllFieldsForUser(
+  selectedFields: CopyableTaskField[],
+  userPrivilege: string | undefined
+): CopyableTaskField[] {
+  if (!selectedFields.includes('all')) {
+    return selectedFields;
+  }
+
+  // Get all fields user can copy (excluding 'all')
+  const allowedFields = getFieldsUserCanCopy(userPrivilege);
+  return allowedFields.filter(f => f !== 'all');
+}
+
+export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMetadata> = {
+  all: {
+    label: 'COPIAR TUDO',
+    description: 'Copia todos os campos que voce tem permissao para editar',
+    category: 'Acoes Rapidas',
+    isShared: false,
+    createNewInstances: false,
+  },
   name: {
-    label: 'Nome da Tarefa',
-    category: 'Básico',
-    description: 'Nome/título da tarefa',
+    label: 'Nome',
+    description: 'Nome da tarefa',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
   details: {
     label: 'Detalhes',
-    category: 'Básico',
-    description: 'Descrição detalhada da tarefa',
-    isShared: false,
-    createNewInstances: false,
-  },
-  term: {
-    label: 'Prazo',
-    category: 'Básico',
-    description: 'Data limite para conclusão',
+    description: 'Descricao e detalhes da tarefa',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
   entryDate: {
     label: 'Data de Entrada',
-    category: 'Básico',
     description: 'Data de entrada da tarefa',
+    category: 'Basico',
+    isShared: false,
+    createNewInstances: false,
+  },
+  term: {
+    label: 'Prazo',
+    description: 'Data limite para conclusao',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
   forecastDate: {
-    label: 'Data de Previsão',
-    category: 'Básico',
-    description: 'Previsão de disponibilidade do caminhão',
+    label: 'Previsao',
+    description: 'Data prevista para conclusao',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
   commission: {
-    label: 'Comissão',
-    category: 'Básico',
-    description: 'Status da comissão',
+    label: 'Comissao',
+    description: 'Informacoes de comissao',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
   negotiatingWith: {
     label: 'Negociando Com',
-    category: 'Básico',
-    description: 'Pessoa de contato (nome e telefone)',
+    description: 'Informacoes de contato da negociacao',
+    category: 'Basico',
     isShared: false,
     createNewInstances: false,
   },
-
-  // References
   customerId: {
     label: 'Cliente',
-    category: 'Referências',
-    description: 'Cliente da tarefa',
+    description: 'Cliente associado a tarefa',
+    category: 'Referencias',
     isShared: true,
     createNewInstances: false,
   },
   invoiceToId: {
     label: 'Faturar Para',
-    category: 'Referências',
     description: 'Cliente para faturamento',
-    isShared: true,
-    createNewInstances: false,
-  },
-  sectorId: {
-    label: 'Setor',
-    category: 'Referências',
-    description: 'Setor responsável',
+    category: 'Referencias',
     isShared: true,
     createNewInstances: false,
   },
   pricingId: {
-    label: 'Precificação',
-    category: 'Recursos Compartilhados',
-    description: 'Precificação compartilhada (atualizações afetam todas as tarefas)',
+    label: 'Precificacao',
+    description: 'Tabela de precos e itens',
+    category: 'Referencias',
     isShared: true,
     createNewInstances: false,
   },
   paintId: {
     label: 'Pintura Geral',
-    category: 'Recursos Compartilhados',
-    description: 'Pintura geral compartilhada',
+    description: 'Configuracao de pintura geral',
+    category: 'Referencias',
     isShared: true,
     createNewInstances: false,
   },
-
-  // Files
   artworkIds: {
     label: 'Artes',
-    category: 'Arquivos Compartilhados',
-    description: 'Artes compartilhadas (mudanças de status afetam todas as tarefas)',
-    isShared: true,
-    createNewInstances: false,
-  },
-  budgetIds: {
-    label: 'Orçamentos',
-    category: 'Arquivos Compartilhados',
-    description: 'Arquivos de orçamento compartilhados',
-    isShared: true,
-    createNewInstances: false,
-  },
-  invoiceIds: {
-    label: 'Notas Fiscais',
-    category: 'Arquivos Compartilhados',
-    description: 'Notas fiscais compartilhadas',
-    isShared: true,
-    createNewInstances: false,
-  },
-  receiptIds: {
-    label: 'Recibos',
-    category: 'Arquivos Compartilhados',
-    description: 'Recibos compartilhados',
-    isShared: true,
-    createNewInstances: false,
-  },
-  reimbursementIds: {
-    label: 'Reembolsos',
-    category: 'Arquivos Compartilhados',
-    description: 'Arquivos de reembolso compartilhados',
-    isShared: true,
-    createNewInstances: false,
-  },
-  reimbursementInvoiceIds: {
-    label: 'NFs de Reembolso',
-    category: 'Arquivos Compartilhados',
-    description: 'Notas fiscais de reembolso compartilhadas',
+    description: 'Arquivos de arte',
+    category: 'Arquivos',
     isShared: true,
     createNewInstances: false,
   },
   baseFileIds: {
     label: 'Arquivos Base',
-    category: 'Arquivos Compartilhados',
-    description: 'Arquivos base para design compartilhados',
+    description: 'Arquivos base para criacao de artes',
+    category: 'Arquivos',
     isShared: true,
     createNewInstances: false,
   },
   logoPaintIds: {
     label: 'Pinturas de Logo',
+    description: 'Configuracoes de pintura de logos',
     category: 'Recursos Compartilhados',
-    description: 'Pinturas de logo compartilhadas',
     isShared: true,
     createNewInstances: false,
   },
-
-  // Individual Resources
   cuts: {
-    label: 'Cortes',
+    label: 'Recortes',
+    description: 'Recortes de vinil/adesivo',
     category: 'Recursos Individuais',
-    description: 'Criar novos registros de corte (individuais para esta tarefa)',
     isShared: false,
     createNewInstances: true,
   },
   airbrushings: {
     label: 'Aerografias',
+    description: 'Trabalhos de aerografia',
     category: 'Recursos Individuais',
-    description: 'Criar novos registros de aerografia (individuais para esta tarefa)',
     isShared: false,
     createNewInstances: true,
   },
-
-  // Shared Resources
-  layouts: {
-    label: 'Layouts do Caminhão',
-    category: 'Recursos Compartilhados',
-    description: 'Layouts compartilhados (atualizações afetam todos os caminhões)',
-    isShared: true,
-    createNewInstances: false,
-  },
-  truck: {
-    label: 'Dados do Caminhão',
-    category: 'Recursos Individuais',
-    description: 'Categoria, tipo de implemento e vaga (exceto placa e chassi)',
-    isShared: false,
-    createNewInstances: false,
-  },
-
-  // Service Orders
   serviceOrders: {
-    label: 'Ordens de Serviço',
-    category: 'Serviços',
-    description: 'Ordens de serviço',
+    label: 'Ordens de Servico',
+    description: 'Ordens de servico vinculadas',
+    category: 'Recursos Compartilhados',
+    isShared: false,
+    createNewInstances: true,
+  },
+  implementType: {
+    label: 'Implemento',
+    description: 'Tipo de implemento do veiculo',
+    category: 'Veiculo',
     isShared: true,
     createNewInstances: false,
   },
-
-  // Observation
-  observation: {
-    label: 'Observação/Todos',
-    category: 'Observações',
-    description: 'Observação da tarefa',
-    isShared: false,
+  category: {
+    label: 'Categoria',
+    description: 'Categoria do veiculo',
+    category: 'Veiculo',
+    isShared: true,
     createNewInstances: false,
   },
-
-  // Quick Action
-  all: {
-    label: 'COPIAR TUDO',
-    category: 'Ações Rápidas',
-    description: 'Copiar todos os campos (exceto serialNumber, plate e chassisNumber)',
-    isShared: false,
+  layouts: {
+    label: 'Layouts',
+    description: 'Layouts do veiculo (esquerdo, direito, traseiro)',
+    category: 'Veiculo',
+    isShared: true,
     createNewInstances: false,
+  },
+  observation: {
+    label: 'Observacoes',
+    description: 'Observacoes e notas da tarefa',
+    category: 'Observacoes',
+    isShared: false,
+    createNewInstances: true,
   },
 };

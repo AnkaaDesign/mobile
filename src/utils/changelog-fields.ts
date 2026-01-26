@@ -290,6 +290,9 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     cutPlan: "Planos de Corte",
     relatedTasks: "Tarefas Relacionadas",
     relatedTo: "Relacionado a",
+    // Direct truck fields (when truck data is embedded in task changelog)
+    category: "Categoria do Caminhão",
+    implementType: "Tipo de Implemento",
     // Nested relationship fields
     "customer.fantasyName": "Nome Fantasia do Cliente",
     "customer.corporateName": "Razão Social do Cliente",
@@ -873,6 +876,11 @@ interface FieldMetadata {
  * @returns The formatted value as a string
  */
 export function formatFieldValue(value: ComplexFieldValue, field?: string | null, entityType?: CHANGE_LOG_ENTITY_TYPE, metadata?: FieldMetadata): string {
+  // Handle null/undefined commission field specifically
+  if ((value === null || value === undefined) && field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+    return "Não Definida";
+  }
+
   if (value === null || value === undefined) return "Nenhum";
 
   // First, try to parse JSON-encoded strings (double-encoded values from backend)
@@ -1199,6 +1207,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   }
 
   // Handle commission status
+  if (field === "commission" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK && typeof value === "string") {
+    const commissionStatusLabels: Record<string, string> = {
+      NO_COMMISSION: "Sem Comissão",
+      PARTIAL_COMMISSION: "Comissão Parcial",
+      FULL_COMMISSION: "Comissão Integral",
+      SUSPENDED_COMMISSION: "Comissão Suspensa",
+    };
+    return commissionStatusLabels[value] || value;
+  }
 
   // Handle maintenance type
   if (field === "type" && entityType === CHANGE_LOG_ENTITY_TYPE.MAINTENANCE && typeof value === "string") {

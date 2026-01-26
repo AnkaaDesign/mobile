@@ -19,6 +19,15 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
 import { IconCamera, IconTrash, IconBell } from "@tabler/icons-react-native";
+import {
+  SHIRT_SIZE_LABELS,
+  PANTS_SIZE_LABELS,
+  BOOT_SIZE_LABELS,
+  GLOVES_SIZE_LABELS,
+  MASK_SIZE_LABELS,
+  SLEEVES_SIZE_LABELS,
+  RAIN_BOOTS_SIZE_LABELS,
+} from "@/constants";
 
 // Profile update schema (subset of fields user can edit)
 const profileUpdateSchema = z.object({
@@ -447,43 +456,43 @@ export default function ProfileScreen() {
               {user.ppeSize.shirts && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Camisa</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.shirts}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{SHIRT_SIZE_LABELS[user.ppeSize.shirts as keyof typeof SHIRT_SIZE_LABELS] || user.ppeSize.shirts}</ThemedText>
                 </View>
               )}
               {user.ppeSize.pants && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Calça</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.pants}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{PANTS_SIZE_LABELS[user.ppeSize.pants as keyof typeof PANTS_SIZE_LABELS] || user.ppeSize.pants}</ThemedText>
                 </View>
               )}
               {user.ppeSize.boots && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Bota</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.boots}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{BOOT_SIZE_LABELS[user.ppeSize.boots as keyof typeof BOOT_SIZE_LABELS] || user.ppeSize.boots}</ThemedText>
                 </View>
               )}
               {user.ppeSize.gloves && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Luvas</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.gloves}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{GLOVES_SIZE_LABELS[user.ppeSize.gloves as keyof typeof GLOVES_SIZE_LABELS] || user.ppeSize.gloves}</ThemedText>
                 </View>
               )}
               {user.ppeSize.mask && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Máscara</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.mask}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{MASK_SIZE_LABELS[user.ppeSize.mask as keyof typeof MASK_SIZE_LABELS] || user.ppeSize.mask}</ThemedText>
                 </View>
               )}
               {user.ppeSize.sleeves && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Mangas</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.sleeves}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{SLEEVES_SIZE_LABELS[user.ppeSize.sleeves as keyof typeof SLEEVES_SIZE_LABELS] || user.ppeSize.sleeves}</ThemedText>
                 </View>
               )}
               {user.ppeSize.rainBoots && (
                 <View style={styles.measureItem}>
                   <ThemedText style={[styles.measureLabel, { color: colors.mutedForeground }]}>Galocha</ThemedText>
-                  <ThemedText style={styles.measureValue}>{user.ppeSize.rainBoots}</ThemedText>
+                  <ThemedText style={styles.measureValue}>{RAIN_BOOTS_SIZE_LABELS[user.ppeSize.rainBoots as keyof typeof RAIN_BOOTS_SIZE_LABELS] || user.ppeSize.rainBoots}</ThemedText>
                 </View>
               )}
             </View>

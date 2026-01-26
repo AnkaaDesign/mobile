@@ -2,11 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { IconAlertTriangle } from '@tabler/icons-react-native';
 import type { Task } from '@/types';
 
 interface ServiceOrderProgressBarProps {
   task: Task;
   compact?: boolean;
+  /**
+   * The navigation route context - affects which indicators are shown
+   * 'preparation' shows missing service order corner flags
+   */
+  navigationRoute?: 'preparation' | 'schedule';
 }
 
 // Colors matching web app badge-colors.ts for consistency
@@ -21,15 +27,40 @@ const COLORS = {
   BACKGROUND_DARK: '#374151', // gray-700
 };
 
-export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderProgressBarProps) {
+export function ServiceOrderProgressBar({ task, compact = false, navigationRoute = 'schedule' }: ServiceOrderProgressBarProps) {
   const { isDark } = useTheme();
   const { user } = useAuth();
 
   const serviceOrders = task.serviceOrders || [];
   const totalCount = serviceOrders.length;
 
-  // If no service orders, show dash
+  // Count incomplete orders assigned to current user (needed for both empty and non-empty cases)
+  const incompleteAssignedCount = serviceOrders.filter(
+    (so: any) =>
+      so.assignedToId === user?.id &&
+      so.status !== 'COMPLETED' &&
+      so.status !== 'CANCELLED'
+  ).length;
+
+  // If no service orders, show dash with corner flag in preparation route
   if (totalCount === 0) {
+    // In preparation route, show corner flag for missing service orders
+    if (navigationRoute === 'preparation' && incompleteAssignedCount === 0) {
+      return (
+        <View style={styles.outerContainer}>
+          <Text style={[styles.dashText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>-</Text>
+          {/* Corner flag for missing service orders */}
+          <View style={styles.cornerFlagContainer}>
+            <View style={styles.cornerFlag} />
+            <IconAlertTriangle
+              size={10}
+              color="#ffffff"
+              style={styles.cornerIcon}
+            />
+          </View>
+        </View>
+      );
+    }
     return (
       <View style={styles.outerContainer}>
         <Text style={[styles.dashText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>-</Text>
@@ -43,14 +74,6 @@ export function ServiceOrderProgressBar({ task, compact = false }: ServiceOrderP
   const inProgressCount = serviceOrders.filter((so: any) => so.status === 'IN_PROGRESS').length;
   const pendingCount = serviceOrders.filter((so: any) => so.status === 'PENDING').length;
   const cancelledCount = serviceOrders.filter((so: any) => so.status === 'CANCELLED').length;
-
-  // Count incomplete orders assigned to current user
-  const incompleteAssignedCount = serviceOrders.filter(
-    (so: any) =>
-      so.assignedToId === user?.id &&
-      so.status !== 'COMPLETED' &&
-      so.status !== 'CANCELLED'
-  ).length;
 
   // Calculate percentages for progress bar
   const completedPercent = (completedCount / totalCount) * 100;
@@ -217,5 +240,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  cornerFlagContainer: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    overflow: 'visible',
+  },
+  cornerFlag: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 0,
+    height: 0,
+    borderTopWidth: 20,
+    borderLeftWidth: 20,
+    borderLeftColor: 'transparent',
+    borderTopColor: '#ef4444', // red-500
+  },
+  cornerIcon: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
   },
 });

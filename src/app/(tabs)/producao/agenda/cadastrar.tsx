@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { SimpleTaskCreateForm } from "@/components/production/task/form/simple-task-create-form";
 import { useTaskMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
@@ -13,6 +14,7 @@ export default function CreateAgendaTaskScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { goBack, getBackPath } = useNavigationHistory();
   const { createAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
@@ -54,6 +56,16 @@ export default function CreateAgendaTaskScreen() {
     return null;
   }
 
+  const handleNavigateBack = () => {
+    const backPath = getBackPath();
+    if (backPath) {
+      goBack();
+    } else {
+      // Fallback if no history
+      router.replace(routeToMobilePath(routes.production.agenda.root) as any);
+    }
+  };
+
   const handleSubmit = async (data: any) => {
     try {
       console.log('[CreateAgendaTask] Starting task creation...');
@@ -65,7 +77,7 @@ export default function CreateAgendaTaskScreen() {
       if (result.success && result.data) {
         console.log('[CreateAgendaTask] Task created successfully');
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.production.agenda.root) as any);
+        handleNavigateBack();
       } else {
         // API returned failure
         console.error('[CreateAgendaTask] Task creation failed:', result);
@@ -81,7 +93,7 @@ export default function CreateAgendaTaskScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.production.agenda.root) as any);
+    handleNavigateBack();
   };
 
   return (

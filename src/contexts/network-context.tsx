@@ -1,5 +1,17 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode, useRef } from "react";
-import NetInfo, { NetInfoState, NetInfoSubscription } from "@react-native-community/netinfo";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  ReactNode,
+  useRef,
+} from "react";
+import NetInfo, {
+  NetInfoState,
+  NetInfoSubscription,
+} from "@react-native-community/netinfo";
 import Constants from "expo-constants";
 import { updateApiUrl, getCurrentApiUrl } from "../api-client";
 
@@ -9,26 +21,26 @@ import { updateApiUrl, getCurrentApiUrl } from "../api-client";
 
 /**
  * Primary API URL
- * For development: local server
  * For production: cloud API
  */
-const ONLINE_API_URL = Constants.expoConfig?.extra?.apiUrl
-  || process.env.EXPO_PUBLIC_API_URL
-  || "http://192.168.10.157:3030";
+const ONLINE_API_URL =
+  Constants.expoConfig?.extra?.apiUrl ||
+  process.env.EXPO_PUBLIC_API_URL ||
+  "https://api.ankaadesign.com.br";
 
 /**
- * Fallback API URL (local network)
+ * Fallback API URL
  * Used when device does NOT have internet connectivity
- * This allows the app to work on a local network without internet
  *
  * Priority:
  * 1. app.json extra.fallbackApiUrl
  * 2. EXPO_PUBLIC_FALLBACK_API_URL environment variable
- * 3. Default: http://192.168.10.157:3030 (local server)
+ * 3. Default: https://api.ankaadesign.com.br (production server)
  */
-const OFFLINE_API_URL = Constants.expoConfig?.extra?.fallbackApiUrl
-  || process.env.EXPO_PUBLIC_FALLBACK_API_URL
-  || "http://192.168.10.157:3030";
+const OFFLINE_API_URL =
+  Constants.expoConfig?.extra?.fallbackApiUrl ||
+  process.env.EXPO_PUBLIC_FALLBACK_API_URL ||
+  "https://api.ankaadesign.com.br";
 
 // =====================================================
 // Types & Interfaces
@@ -109,7 +121,10 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
  * - Wrap your app with <NetworkProvider>
  * - Use useNetwork() hook in components to access network state
  */
-export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProviderProps) => {
+export const NetworkProvider = ({
+  children,
+  onConnectivityChange,
+}: NetworkProviderProps) => {
   // Network state from NetInfo
   const [networkState, setNetworkState] = useState<NetInfoState | null>(null);
 
@@ -160,8 +175,8 @@ export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProvi
 
     if (__DEV__) {
       console.log(
-        `[NetworkContext] Connectivity changed: ${connected ? 'ONLINE' : 'OFFLINE'}`,
-        `-> Using URL: ${newUrl}`
+        `[NetworkContext] Connectivity changed: ${connected ? "ONLINE" : "OFFLINE"}`,
+        `-> Using URL: ${newUrl}`,
       );
     }
   }, []);
@@ -169,22 +184,25 @@ export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProvi
   /**
    * Handle network state changes
    */
-  const handleNetworkStateChange = useCallback((state: NetInfoState) => {
-    setNetworkState(state);
+  const handleNetworkStateChange = useCallback(
+    (state: NetInfoState) => {
+      setNetworkState(state);
 
-    const connected = checkIsConnected(state);
-    setIsConnected(connected);
+      const connected = checkIsConnected(state);
+      setIsConnected(connected);
 
-    // Only trigger URL update and callback if connectivity actually changed
-    if (prevConnectedRef.current !== connected) {
-      prevConnectedRef.current = connected;
-      updateUrlBasedOnConnectivity(connected);
-      onConnectivityChange?.(connected);
-    }
+      // Only trigger URL update and callback if connectivity actually changed
+      if (prevConnectedRef.current !== connected) {
+        prevConnectedRef.current = connected;
+        updateUrlBasedOnConnectivity(connected);
+        onConnectivityChange?.(connected);
+      }
 
-    // Mark network as ready after first state update
-    setIsNetworkReady(true);
-  }, [checkIsConnected, updateUrlBasedOnConnectivity, onConnectivityChange]);
+      // Mark network as ready after first state update
+      setIsNetworkReady(true);
+    },
+    [checkIsConnected, updateUrlBasedOnConnectivity, onConnectivityChange],
+  );
 
   /**
    * Manually refresh network state
@@ -195,7 +213,10 @@ export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProvi
       handleNetworkStateChange(state);
     } catch (error) {
       if (__DEV__) {
-        console.error("[NetworkContext] Error refreshing network state:", error);
+        console.error(
+          "[NetworkContext] Error refreshing network state:",
+          error,
+        );
       }
     }
   }, [handleNetworkStateChange]);
@@ -213,7 +234,9 @@ export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProvi
     NetInfo.fetch().then(handleNetworkStateChange);
 
     // Subscribe to ongoing changes
-    subscriptionRef.current = NetInfo.addEventListener(handleNetworkStateChange);
+    subscriptionRef.current = NetInfo.addEventListener(
+      handleNetworkStateChange,
+    );
 
     // Cleanup subscription on unmount
     return () => {
@@ -225,22 +248,25 @@ export const NetworkProvider = ({ children, onConnectivityChange }: NetworkProvi
   }, [handleNetworkStateChange]);
 
   // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo<NetworkContextType>(() => ({
-    isConnected,
-    isNetworkReady,
-    currentBaseUrl,
-    isUsingOfflineUrl: currentBaseUrl === OFFLINE_API_URL,
-    getApiUrl,
-    refreshNetworkState,
-    networkState,
-  }), [
-    isConnected,
-    isNetworkReady,
-    currentBaseUrl,
-    getApiUrl,
-    refreshNetworkState,
-    networkState,
-  ]);
+  const contextValue = useMemo<NetworkContextType>(
+    () => ({
+      isConnected,
+      isNetworkReady,
+      currentBaseUrl,
+      isUsingOfflineUrl: currentBaseUrl === OFFLINE_API_URL,
+      getApiUrl,
+      refreshNetworkState,
+      networkState,
+    }),
+    [
+      isConnected,
+      isNetworkReady,
+      currentBaseUrl,
+      getApiUrl,
+      refreshNetworkState,
+      networkState,
+    ],
+  );
 
   return (
     <NetworkContext.Provider value={contextValue}>
