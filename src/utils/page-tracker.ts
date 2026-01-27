@@ -1,4 +1,6 @@
-interface PageAccess {
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export interface PageAccess {
   path: string;
   title: string;
   icon?: string;
@@ -6,17 +8,22 @@ interface PageAccess {
   lastAccessed: string;
 }
 
-const PAGE_ACCESS_KEY = "ankaa_page_access";
+const PAGE_ACCESS_KEY = "@ankaa_page_access";
 const MAX_TRACKED_PAGES = 20;
 
-// Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+// Pages that should not be tracked or displayed in recents/most accessed
+const EXCLUDED_PATHS = ["/(tabs)/inicio", "/login", "/logout", "/register", "/forgot-password", "/reset-password", "/"];
 
-export function trackPageAccess(path: string, title: string, icon?: string): void {
-  if (!isBrowser) return;
+function isExcludedPath(path: string): boolean {
+  return EXCLUDED_PATHS.some((excluded) => path === excluded || path.startsWith(excluded + "?"));
+}
+
+export async function trackPageAccess(path: string, title: string, icon?: string): Promise<void> {
+  // Don't track excluded pages
+  if (isExcludedPath(path)) return;
 
   try {
-    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = await AsyncStorage.getItem(PAGE_ACCESS_KEY);
     const pageAccesses: PageAccess[] = storedData ? JSON.parse(storedData) : [];
 
     const existingIndex = pageAccesses.findIndex((page) => page.path === path);
@@ -44,24 +51,23 @@ export function trackPageAccess(path: string, title: string, icon?: string): voi
       pageAccesses.splice(MAX_TRACKED_PAGES);
     }
 
-    window.localStorage.setItem(PAGE_ACCESS_KEY, JSON.stringify(pageAccesses));
+    await AsyncStorage.setItem(PAGE_ACCESS_KEY, JSON.stringify(pageAccesses));
   } catch (error) {
-    // Fail silently if localStorage is not available
     console.error("Failed to track page access:", error);
   }
 }
 
-export function getMostAccessedPages(limit: number = 6): PageAccess[] {
-  if (!isBrowser) return [];
-
+export async function getMostAccessedPages(limit: number = 6): Promise<PageAccess[]> {
   try {
-    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = await AsyncStorage.getItem(PAGE_ACCESS_KEY);
     if (!storedData) return [];
 
     const pageAccesses: PageAccess[] = JSON.parse(storedData);
 
     // Sort by count (descending) and then by last accessed (most recent first)
+    // Filter out excluded paths
     return pageAccesses
+      .filter((page) => !isExcludedPath(page.path))
       .sort((a, b) => {
         if (b.count !== a.count) return b.count - a.count;
         return new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime();
@@ -73,27 +79,40 @@ export function getMostAccessedPages(limit: number = 6): PageAccess[] {
   }
 }
 
-export function clearPageAccessHistory(): void {
-  if (!isBrowser) return;
-
+export async function getRecentPages(limit: number = 6): Promise<PageAccess[]> {
   try {
-    window.localStorage.removeItem(PAGE_ACCESS_KEY);
+    const storedData = await AsyncStorage.getItem(PAGE_ACCESS_KEY);
+    if (!storedData) return [];
+
+    const pageAccesses: PageAccess[] = JSON.parse(storedData);
+
+    // Sort by last accessed (most recent first)
+    // Filter out excluded paths
+    return pageAccesses
+      .filter((page) => !isExcludedPath(page.path))
+      .sort((a, b) => new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime())
+      .slice(0, limit);
+  } catch (error) {
+    console.error("Failed to get recent pages:", error);
+    return [];
+  }
+}
+
+export async function clearPageAccessHistory(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(PAGE_ACCESS_KEY);
   } catch (error) {
     console.error("Failed to clear page access history:", error);
   }
 }
 
-export function getPageAccessStats(): {
+export async function getPageAccessStats(): Promise<{
   totalPages: number;
   totalAccesses: number;
   mostVisited: PageAccess | null;
-} {
-  if (!isBrowser) {
-    return { totalPages: 0, totalAccesses: 0, mostVisited: null };
-  }
-
+}> {
   try {
-    const storedData = window.localStorage.getItem(PAGE_ACCESS_KEY);
+    const storedData = await AsyncStorage.getItem(PAGE_ACCESS_KEY);
     if (!storedData) {
       return { totalPages: 0, totalAccesses: 0, mostVisited: null };
     }

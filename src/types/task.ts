@@ -48,7 +48,6 @@ export interface Task extends BaseEntity {
   baseFileIds?: string[];
   createdById: string | null;
   bonusDiscountId?: string | null;
-  priority?: string | null;
   pricingId?: string | null; // Foreign key to TaskPricing
 
   // Relations

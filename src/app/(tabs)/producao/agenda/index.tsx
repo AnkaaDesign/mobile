@@ -69,6 +69,8 @@ export default function ProductionPreparationScreen() {
       groupBySector: false, // Agenda should not group by sector
       groupByStatus: true, // Enable 3-table workflow: Preparation, In Production, Completed
       defaultVisible: ['name', 'forecastDate', 'services'],
+      // Disable term-based row coloring for agenda - use neutral alternating colors for all tables
+      getRowStyle: () => undefined,
       // Override view action to navigate to agenda details
       actions: tasksListConfig.table.actions?.map(action =>
         action.key === 'view'

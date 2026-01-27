@@ -84,7 +84,7 @@ export default function PayrollDetailScreen() {
             position: true,
             bonus: {
               include: {
-                bonusDiscounts: true,
+                bonusDiscounts: true, bonusExtras: true,
                 position: true,
                 tasks: true,
               },
@@ -121,7 +121,7 @@ export default function PayrollDetailScreen() {
         include: {
           user: { include: { position: true, sector: true } },
           position: true,
-          bonus: { include: { bonusDiscounts: true, position: true, tasks: true } },
+          bonus: { include: { bonusDiscounts: true, bonusExtras: true, position: true, tasks: true } },
           discounts: true,
         },
       });
@@ -183,7 +183,19 @@ export default function PayrollDetailScreen() {
           }
         });
     }
-    const netBonus = bonusAmount - bonusDiscounts;
+    // Calculate bonus extras
+    let bonusExtrasTotal = 0;
+    if (payroll.bonus?.bonusExtras && payroll.bonus.bonusExtras.length > 0) {
+      payroll.bonus.bonusExtras.forEach((extra: any) => {
+        if (extra.percentage) {
+          bonusExtrasTotal += bonusAmount * (getNumericValue(extra.percentage) / 100);
+        } else if (extra.value) {
+          bonusExtrasTotal += getNumericValue(extra.value);
+        }
+      });
+    }
+    const effectiveBonusBase = bonusAmount + bonusExtrasTotal;
+    const netBonus = effectiveBonusBase - bonusDiscounts;
 
     // Get Secullum data - overtime and DSR
     const overtime50Amount = getNumericValue(payroll.overtime50Amount);
@@ -202,15 +214,15 @@ export default function PayrollDetailScreen() {
     const fgtsAmount = getNumericValue(payroll.fgtsAmount);
 
     // Total gross includes ALL earnings
-    const totalGross = baseRemuneration + bonusAmount + overtime50Amount + overtime100Amount + nightDifferentialAmount + dsrAmount;
+    const totalGross = baseRemuneration + Math.max(0, netBonus) + overtime50Amount + overtime100Amount + nightDifferentialAmount + dsrAmount;
 
     // Calculate payroll discounts
     let totalDiscounts = 0;
     if (payroll.discounts && payroll.discounts.length > 0) {
       payroll.discounts.forEach((discount: any) => {
-        const fixedValue = getNumericValue(discount.value) || getNumericValue(discount.fixedValue);
-        if (fixedValue > 0) {
-          totalDiscounts += fixedValue;
+        const discountVal = getNumericValue(discount.value);
+        if (discountVal > 0) {
+          totalDiscounts += discountVal;
         } else if (discount.percentage) {
           totalDiscounts += totalGross * (getNumericValue(discount.percentage) / 100);
         }
@@ -432,6 +444,22 @@ export default function PayrollDetailScreen() {
                       {calculations.bonusAmount > 0 ? formatCurrency(calculations.bonusAmount) : "Sem bônus"}
                     </ThemedText>
                   </View>
+                  {calculations.bonusAmount > 0 && payroll.bonus?.bonusExtras && payroll.bonus.bonusExtras.length > 0 &&
+                    payroll.bonus.bonusExtras.map((extra: any, index: number) => {
+                      const percentageValue = getNumericValue(extra.percentage);
+                      const hasPercentage = percentageValue > 0;
+                      return (
+                        <View key={extra.id || `extra-${index}`} style={styles.financialRow}>
+                          <ThemedText style={styles.financialLabel}>{extra.reference || `Extra ${index + 1}`}</ThemedText>
+                          <ThemedText style={[styles.financialValue, { color: '#059669' }]}>
+                            +{hasPercentage
+                              ? `${percentageValue}%`
+                              : formatCurrency(getNumericValue(extra.value))}
+                          </ThemedText>
+                        </View>
+                      );
+                    })
+                  }
                   {calculations.bonusAmount > 0 && calculations.netBonus !== calculations.bonusAmount && (
                     <View style={styles.financialRow}>
                       <ThemedText style={styles.financialLabel}>Bônus Líquido</ThemedText>
@@ -453,7 +481,6 @@ export default function PayrollDetailScreen() {
                 .map((discount: any, index: number) => {
                   const discountValue = getNumericValue(discount.amount) ||
                     getNumericValue(discount.value) ||
-                    getNumericValue(discount.fixedValue) ||
                     (calculations.totalGross * (getNumericValue(discount.percentage) / 100));
 
                   const displayDescription = discount.reference || discount.description || "Desconto";

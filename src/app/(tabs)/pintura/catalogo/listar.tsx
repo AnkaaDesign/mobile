@@ -3,6 +3,7 @@ import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, St
 import type { FlatList as FlatListType } from "react-native";
 import { Stack, router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePageTracker } from "@/hooks/use-page-tracker";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -64,6 +65,9 @@ export default function CatalogListScreen() {
   const tagBadgeStyle = isDark ? TAG_BADGE_COLORS.dark : TAG_BADGE_COLORS.light;
   // const { toast } = useToast();
   const { delete: deletePaint } = usePaintMutations();
+
+  // Track page access for recents/most accessed
+  usePageTracker({ title: "Catálogo de Tintas" });
 
   // Check user permissions - only WAREHOUSE and ADMIN can edit/create
   // Team leaders have READ-ONLY access to the catalogue (they use catalogo-basico route)

@@ -123,8 +123,14 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
   let showIndicator = false;
   let indicatorColor = URGENCY_COLORS.RED;
   let IndicatorIcon = IconAlertTriangle;
-  // Default text color - only change to blue when forecast is today and ready
+  // Default text color - change to blue when forecast is today (matching web behavior)
   let textColor = isDark ? '#f5f5f5' : '#0a0a0a';
+
+  // Show blue text whenever the date is today (matching web behavior)
+  // This is independent of the corner flag indicator logic
+  if (showCornerFlags && today) {
+    textColor = URGENCY_COLORS.BLUE;
+  }
 
   if (showCornerFlags) {
     if (today && !hasIncomplete && !missingOrders) {
@@ -132,7 +138,6 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
       showIndicator = true;
       indicatorColor = URGENCY_COLORS.BLUE;
       IndicatorIcon = IconCheck;
-      textColor = URGENCY_COLORS.BLUE; // Only case where text is colored
     } else if (today && (hasIncomplete || missingOrders)) {
       // Today with pending/missing orders - red alert flag (no text color change)
       showIndicator = true;
@@ -167,7 +172,7 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
             ]}
           />
           <IndicatorIcon
-            size={10}
+            size={7}
             color="#ffffff"
             style={styles.cornerIcon}
           />
@@ -184,6 +189,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     minHeight: 24,
     justifyContent: 'center',
+    flex: 1,
+    alignSelf: 'stretch',
   },
   dateText: {
     fontSize: 12,
@@ -191,11 +198,11 @@ const styles = StyleSheet.create({
   },
   cornerFlagContainer: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    overflow: 'visible',
+    top: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    overflow: 'hidden',
   },
   cornerFlag: {
     position: 'absolute',
@@ -203,18 +210,14 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     height: 0,
-    borderTopWidth: 20,
-    borderLeftWidth: 20,
+    borderTopWidth: 14,
+    borderLeftWidth: 14,
     borderLeftColor: 'transparent',
     borderTopColor: '#ef4444', // Default red, overridden inline
   },
   cornerIcon: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    // Shadow for better visibility
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    top: 1,
+    right: 1,
   },
 });

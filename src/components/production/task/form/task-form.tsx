@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { View, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller, FormProvider } from "react-hook-form";
@@ -38,6 +38,15 @@ import { ArtworkFileUploadField, type ArtworkFileItem } from "./artwork-file-upl
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { PricingSelector, type PricingSelectorRef } from "@/components/production/task/pricing";
 import { canViewPricing } from "@/utils/permissions/pricing-permissions";
+import {
+  getPricingItemsToAddFromServiceOrders,
+  getServiceOrdersToAddFromPricingItems,
+  syncObservationsFromServiceOrdersToPricing,
+  syncObservationsFromPricingToServiceOrders,
+  normalizeDescription,
+  type SyncServiceOrder,
+  type SyncPricingItem,
+} from "@/utils/task-pricing-service-order-sync";
 import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
 import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
@@ -210,13 +219,17 @@ const taskFormSchema = z.object({
     });
   }
 
-  // Cross-field validation: startedAt must be >= entryDate (aligned with web)
-  if (data.entryDate && data.startedAt && data.startedAt < data.entryDate) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Data de início deve ser igual ou posterior à data de entrada",
-      path: ["startedAt"],
-    });
+  // Cross-field validation: startedAt must be >= entryDate (date-only comparison, ignoring time)
+  if (data.entryDate && data.startedAt) {
+    const startDate = new Date(data.startedAt.getFullYear(), data.startedAt.getMonth(), data.startedAt.getDate());
+    const entryDateOnly = new Date(data.entryDate.getFullYear(), data.entryDate.getMonth(), data.entryDate.getDate());
+    if (startDate < entryDateOnly) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Data de início deve ser igual ou posterior à data de entrada",
+        path: ["startedAt"],
+      });
+    }
   }
 
   // Note: startedAt and finishedAt are no longer required as they are auto-filled by the backend
@@ -268,13 +281,28 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   // Combine external and internal submitting states
   const isSubmitting = isSubmittingProp || isSubmittingInternal;
 
-  // Get user role/privileges for field restrictions
+  // Get user role/privileges for field restrictions (matching web entity-permissions.ts)
   const userPrivilege = user?.sector?.privileges;
+  const isAdminSector = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
   const isWarehouseSector = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isDesignerSector = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isLogisticSector = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
   const isCommercialSector = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+  const isProductionSector = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
+
+  // Team leader check (user has managedSector relation)
+  const isTeamLeader = !!user?.managedSector?.id;
+
+  // Visibility rules matching web task-edit-form.tsx
+  // canViewRestrictedFields: ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER
+  const canViewRestrictedFields = isAdminSector || isFinancialSector || isCommercialSector || isLogisticSector || isDesignerSector;
+
+  // canViewCommissionField: ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION
+  const canViewCommissionField = isAdminSector || isFinancialSector || isCommercialSector || isProductionSector;
+
+  // canViewLayoutSection: ADMIN, LOGISTIC, or PRODUCTION team leaders
+  const canViewLayoutSection = isAdminSector || isLogisticSector || (isProductionSector && isTeamLeader);
 
   // File upload state - initialize base files from existing data in edit mode
   const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>(() => {
@@ -542,7 +570,12 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       startedAt: s.startedAt ? new Date(s.startedAt) : null,
       finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
       shouldSync: s.shouldSync !== false, // Default true
-    })) || [{
+    })).sort((a: any, b: any) => {
+      // Cancelled items go to end, otherwise preserve creation order from API
+      const aCancelled = a.status === SERVICE_ORDER_STATUS.CANCELLED ? 1 : 0;
+      const bCancelled = b.status === SERVICE_ORDER_STATUS.CANCELLED ? 1 : 0;
+      return aCancelled - bCancelled;
+    }) || [{
       description: "",
       status: SERVICE_ORDER_STATUS.PENDING,
       statusOrder: 1,
@@ -654,7 +687,11 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             startedAt: s.startedAt ? new Date(s.startedAt) : null,
             finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
             shouldSync: s.shouldSync !== false, // Default true
-          })) || [{
+          })).sort((a: any, b: any) => {
+            const aCancelled = a.status === SERVICE_ORDER_STATUS.CANCELLED ? 1 : 0;
+            const bCancelled = b.status === SERVICE_ORDER_STATUS.CANCELLED ? 1 : 0;
+            return aCancelled - bCancelled;
+          }) || [{
             description: "",
             status: SERVICE_ORDER_STATUS.PENDING,
             statusOrder: 1,
@@ -754,7 +791,185 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
   // Observation files are now handled directly by FilePicker
 
+  // ==========================================
+  // BIDIRECTIONAL SYNC: Service Orders ↔ Pricing Items
+  // ==========================================
+  const isFormInitializedRef = useRef(false);
+  const isSyncingRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedServiceOrderCountRef = useRef(0);
+  const lastSyncedPricingItemCountRef = useRef(0);
+  const deletedPricingItemDescriptionsRef = useRef(new Set<string>());
+  const deletedServiceOrderDescriptionsRef = useRef(new Set<string>());
+
+  // Watch service orders and pricing for sync
+  const watchedServiceOrders = form.watch('serviceOrders');
+  const watchedPricing = form.watch('pricing');
+
+  // Initialize sync refs on first render
+  useEffect(() => {
+    if (!isFormInitializedRef.current) {
+      const currentServiceOrders = (watchedServiceOrders as any[]) || [];
+      const currentPricingItems = ((watchedPricing as any)?.items as any[]) || [];
+
+      const validSOCount = currentServiceOrders.filter(
+        (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
+      ).length;
+      const validPricingCount = currentPricingItems.filter(
+        (item: any) => item.description?.trim().length >= 3
+      ).length;
+
+      lastSyncedServiceOrderCountRef.current = validSOCount;
+      lastSyncedPricingItemCountRef.current = validPricingCount;
+
+      setTimeout(() => {
+        isFormInitializedRef.current = true;
+      }, 1000);
+    }
+  }, []);
+
+  // Debounced sync effect
+  useEffect(() => {
+    if (!isFormInitializedRef.current || isSyncingRef.current || isSubmittingRef.current) return;
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(() => {
+      if (isSubmittingRef.current) return;
+
+      const currentServiceOrders = (watchedServiceOrders as any[]) || [];
+      const currentPricingItems = ((watchedPricing as any)?.items as any[]) || [];
+
+      const validServiceOrders = currentServiceOrders.filter(
+        (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
+      );
+      const validPricingItems = currentPricingItems.filter(
+        (item: any) => item.description?.trim().length >= 3
+      );
+
+      const currentSOCount = validServiceOrders.length;
+      const currentPricingCount = validPricingItems.length;
+
+      const serviceOrdersAdded = currentSOCount > lastSyncedServiceOrderCountRef.current;
+      const pricingItemsAdded = currentPricingCount > lastSyncedPricingItemCountRef.current;
+
+      isSyncingRef.current = true;
+
+      try {
+        const syncServiceOrders: SyncServiceOrder[] = validServiceOrders.map((so: any) => ({
+          id: so.id,
+          description: so.description || '',
+          observation: so.observation || null,
+          type: so.type,
+          status: so.status || SERVICE_ORDER_STATUS.PENDING,
+          statusOrder: so.statusOrder || 1,
+          shouldSync: so.shouldSync !== false,
+        }));
+
+        const syncPricingItems: SyncPricingItem[] = validPricingItems.map((item: any) => ({
+          id: item.id,
+          description: item.description || '',
+          observation: item.observation || null,
+          amount: item.amount || 0,
+          shouldSync: item.shouldSync !== false,
+        }));
+
+        // Helper filters
+        const filterEmptyPricingItems = (items: any[]) => items.filter((item: any) => {
+          const hasDescription = item.description && item.description.trim() !== "";
+          const hasAmount = item.amount !== null && item.amount !== undefined && item.amount > 0;
+          return hasDescription || hasAmount;
+        });
+        const filterEmptyServiceOrders = (orders: any[]) => orders.filter((so: any) => {
+          return so.description && so.description.trim().length >= 3;
+        });
+
+        // SYNC 1: Service Orders → Pricing Items
+        const pricingItemsToAddRaw = serviceOrdersAdded
+          ? getPricingItemsToAddFromServiceOrders(syncServiceOrders, syncPricingItems)
+          : [];
+        const pricingItemsToAdd = pricingItemsToAddRaw.filter((item: any) => {
+          const normalizedDesc = normalizeDescription(item.description);
+          return !deletedPricingItemDescriptionsRef.current.has(normalizedDesc);
+        });
+
+        const pricingWithSyncedObs = syncObservationsFromServiceOrdersToPricing(
+          syncServiceOrders,
+          currentPricingItems,
+        );
+
+        const pricingObservationsChanged = JSON.stringify(pricingWithSyncedObs) !== JSON.stringify(currentPricingItems);
+
+        if (pricingItemsToAdd.length > 0 || pricingObservationsChanged) {
+          const basePricingItems = pricingItemsToAdd.length > 0
+            ? filterEmptyPricingItems(pricingWithSyncedObs)
+            : pricingWithSyncedObs;
+
+          const finalPricingItems = [...basePricingItems, ...pricingItemsToAdd];
+
+          console.log('[MOBILE PRICING↔SO SYNC] Updating pricing items:', {
+            added: pricingItemsToAdd.length,
+            observationsChanged: pricingObservationsChanged,
+          });
+          form.setValue('pricing.items', finalPricingItems as any, {
+            shouldDirty: true,
+          });
+        }
+
+        // SYNC 2: Pricing Items → Service Orders
+        const serviceOrdersToAddRaw = pricingItemsAdded
+          ? getServiceOrdersToAddFromPricingItems(syncPricingItems, syncServiceOrders)
+          : [];
+        const serviceOrdersToAdd = serviceOrdersToAddRaw.filter((so: any) => {
+          const normalizedDesc = normalizeDescription(so.description);
+          return !deletedServiceOrderDescriptionsRef.current.has(normalizedDesc);
+        });
+
+        const serviceOrdersWithSyncedObs = syncObservationsFromPricingToServiceOrders(
+          syncPricingItems,
+          currentServiceOrders,
+        );
+
+        const soObservationsChanged = JSON.stringify(serviceOrdersWithSyncedObs) !== JSON.stringify(currentServiceOrders);
+
+        if (serviceOrdersToAdd.length > 0 || soObservationsChanged) {
+          const baseServiceOrders = serviceOrdersToAdd.length > 0
+            ? filterEmptyServiceOrders(serviceOrdersWithSyncedObs)
+            : serviceOrdersWithSyncedObs;
+
+          const finalServiceOrders = [...serviceOrdersToAdd, ...baseServiceOrders];
+
+          console.log('[MOBILE PRICING↔SO SYNC] Updating service orders:', {
+            added: serviceOrdersToAdd.length,
+            observationsChanged: soObservationsChanged,
+          });
+          form.setValue('serviceOrders', finalServiceOrders as any, {
+            shouldDirty: true,
+          });
+        }
+
+        lastSyncedServiceOrderCountRef.current = currentSOCount + serviceOrdersToAdd.length;
+        lastSyncedPricingItemCountRef.current = currentPricingCount + pricingItemsToAdd.length;
+
+      } finally {
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 500);
+      }
+    }, 1500);
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, [watchedServiceOrders, watchedPricing, form]);
+
   const handleSubmit = async (data: TaskFormData) => {
+    isSubmittingRef.current = true;
     // Prevent double submission
     if (isSubmitting) {
       console.log('[TaskForm] Submission blocked - already submitting');
@@ -773,6 +988,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             "Por favor, adicione uma descrição e pelo menos um arquivo para a observação."
           );
           setIsSubmittingInternal(false);
+      isSubmittingRef.current = false;
           return;
         }
       }
@@ -1132,6 +1348,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       );
     } finally {
       setIsSubmittingInternal(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -1194,8 +1411,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </FormFieldGroup>
 
-              {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
-              {canViewPricingSections && (
+              {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER (matches web canViewRestrictedFields) */}
+              {canViewRestrictedFields && (
                 <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
                   <Controller
                     control={form.control}
@@ -1213,7 +1430,9 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 </FormFieldGroup>
               )}
 
-              {/* Negotiating With - Contact Person */}
+              {/* Negotiating With - Contact Person (only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER - matches web canViewRestrictedFields) */}
+              {canViewRestrictedFields && (
+              <>
               <SimpleFormField label="Negociando Com" error={errors.negotiatingWith?.name?.message || (errors.negotiatingWith as any)?.message}>
                 <Controller
                   control={form.control}
@@ -1249,6 +1468,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   )}
                 />
               </SimpleFormField>
+              </>
+              )}
 
               {/* Serial Number */}
               <SimpleFormField label="Número de Série" error={errors.serialNumber}>
@@ -1401,8 +1622,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 />
               </SimpleFormField>
 
-              {/* Commission Status - Hidden for financial and commercial sectors */}
-              {!isFinancialSector && !isCommercialSector && (
+              {/* Commission Status - Visible for ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION (matches web canViewCommissionField) */}
+              {canViewCommissionField && (
               <SimpleFormField label="Status de Comissão" error={errors.commission}>
                 <Controller
                   control={form.control}
@@ -1465,7 +1686,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           {/* Dates Card - All date fields grouped together like web version */}
           <FormCard title="Datas" icon="IconCalendar">
-              {/* Forecast Date - First, like web version */}
+              {/* Forecast Date - First, like web version (only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER - matches web canViewRestrictedFields) */}
+              {canViewRestrictedFields && (
               <Controller
                 control={form.control}
                 name="forecastDate"
@@ -1483,6 +1705,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   </View>
                 )}
               />
+              )}
 
               {/* Entry Date */}
               <Controller
@@ -1600,7 +1823,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 )}
               />
 
-              {/* Logo Paints (Multi-select) */}
+              {/* Logo Paints (Multi-select) - Hidden for COMMERCIAL users (matches web) */}
+              {!isCommercialSector && (
               <Controller
                 control={form.control}
                 name="paintIds"
@@ -1614,6 +1838,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                   />
                 )}
               />
+              )}
           </FormCard>
 
           {/* Pricing Card */}
@@ -1669,8 +1894,8 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           )}
           */}
 
-          {/* Truck Layout Section - Hidden for financial, warehouse, and commercial users */}
-          {!isFinancialSector && !isWarehouseSector && !isCommercialSector && (
+          {/* Truck Layout Section - Only visible to ADMIN, LOGISTIC, and PRODUCTION team leaders (matches web) */}
+          {canViewLayoutSection && (
           <Card>
             <View style={[styles.collapsibleCardHeader, isLayoutOpen && styles.collapsibleCardHeaderOpen, isLayoutOpen && { borderBottomColor: colors.border }]}>
               <View style={styles.collapsibleCardTitleRow}>
@@ -1862,11 +2087,11 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 <FilePicker
                   value={baseFiles}
                   onChange={setBaseFiles}
-                  maxFiles={5}
+                  maxFiles={30}
                   placeholder="Adicionar arquivos base"
-                  helperText="Arquivos usados como base para criação das artes"
+                  helperText="Arquivos base para criação das artes (vídeos, imagens, PDFs)"
                   showCamera={false}
-                  showVideoCamera={false}
+                  showVideoCamera={true}
                   showGallery={true}
                   showFilePicker={true}
                   disabled={isSubmitting}
@@ -1896,7 +2121,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                     setHasArtworkStatusChanges(true);
                     console.log('[TaskForm] 🎨 Set hasArtworkStatusChanges to true');
                   }}
-                  maxFiles={5}
+                  maxFiles={10}
                   disabled={isSubmitting}
                   showPreview={true}
                   existingFiles={artworkFiles}

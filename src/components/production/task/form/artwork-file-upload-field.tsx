@@ -55,7 +55,7 @@ export interface ArtworkFileUploadFieldProps {
 export function ArtworkFileUploadField({
   onFilesChange,
   onStatusChange,
-  maxFiles = 5,
+  maxFiles = 10,
   existingFiles = [],
   disabled = false,
   showPreview = true,

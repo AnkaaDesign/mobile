@@ -70,13 +70,14 @@ export function useMyBonusesInfiniteMobile(
       month: currentMonth,
       performanceLevel: userBonus.level || currentUser.performanceLevel || 3,
       baseBonus: userBonus.baseBonus || 0,
-      netBonus: userBonus.netBonus || userBonus.baseBonus || 0,
+      netBonus: userBonus.netBonus || 0,
       weightedTasks: userBonus.weightedTasks || 0,
       averageTaskPerUser: userBonus.averageTaskPerUser || 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       user: currentUser,
-      bonusDiscounts: [],
+      bonusDiscounts: userBonus.bonusDiscounts || [],
+      bonusExtras: userBonus.bonusExtras || [],
       isLive: true, // Special flag
     };
   }, [liveData, currentUser, currentYear, currentMonth]);
@@ -101,7 +102,7 @@ export function useMyBonusesInfiniteMobile(
               sector: true,
             },
           },
-          bonusDiscounts: true,
+          bonusDiscounts: true, bonusExtras: true,
           ...params?.include,
         },
         orderBy: params?.orderBy || [

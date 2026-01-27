@@ -17,6 +17,7 @@ import { FAB } from '@/components/ui/fab'
 import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/contexts/auth-context'
+import { usePageTracker } from '@/hooks/use-page-tracker'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { isTeamLeader } from '@/utils/user'
@@ -27,6 +28,7 @@ import { ColumnVisibilityButton, ColumnVisibilityPanel } from '@/components/list
 import { Header as TableHeader, Row as TableRow, Empty, Loading } from '@/components/list/Table'
 import { SectorSelectModal } from '@/components/production/task/modals'
 import { CopyFromTaskModal } from './copy-from-task-modal'
+import { AddArtworksModal } from './add-artworks-modal'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
@@ -52,6 +54,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   const { user } = useAuth()
   const { width: screenWidth } = Dimensions.get('window')
   const insets = useSafeAreaInsets()
+
+  // Track page access for recents/most accessed
+  usePageTracker({ title: config.title })
 
   // ============================================================================
   // State
@@ -89,6 +94,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Modal state for admin actions
   const [sectorModalTask, setSectorModalTask] = useState<Task | null>(null)
   const [copyFromTaskModalTask, setCopyFromTaskModalTask] = useState<Task | null>(null)
+  const [addArtworksModalTask, setAddArtworksModalTask] = useState<Task | null>(null)
 
   // Check if user is a team leader (should see filtered view by default)
   // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
@@ -123,13 +129,14 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     // because we'll make separate calls for each status group like the web does
     const { status: _status, ...filterValuesWithoutStatus } = filterValues as any;
 
-    // For agenda view, use multi-column sorting like the web: forecastDate ASC, then identificador ASC
+    // For agenda view, use multi-column sorting like the web: forecastDate ASC, then name ASC, then identificador ASC
     // Use Prisma's nulls: "last" format to match web behavior (null forecastDates at the end)
     // identificador is mapped to serialNumber (the primary identifier field)
     // For other views, use the single sortConfig
     const orderBy = shouldGroupByStatus
       ? [
           { forecastDate: { sort: 'asc' as const, nulls: 'last' as const } },
+          { name: 'asc' as const },
           { serialNumber: { sort: 'asc' as const, nulls: 'last' as const } },
         ]
       : { [sortConfig.field]: sortConfig.direction };
@@ -637,6 +644,14 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           },
         }
       }
+      if (action.key === 'addArtworks') {
+        return {
+          ...action,
+          onPress: (task: Task) => {
+            setAddArtworksModalTask(task)
+          },
+        }
+      }
       return action
     })
   }, [config.table.actions, user])
@@ -932,6 +947,19 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           userPrivilege={user?.sector?.privileges}
           onSuccess={() => {
             setCopyFromTaskModalTask(null)
+            handleRefresh()
+          }}
+        />
+      )}
+
+      {/* Add Artworks Modal */}
+      {addArtworksModalTask && (
+        <AddArtworksModal
+          open={!!addArtworksModalTask}
+          onOpenChange={(open) => !open && setAddArtworksModalTask(null)}
+          targetTask={addArtworksModalTask}
+          onSuccess={() => {
+            setAddArtworksModalTask(null)
             handleRefresh()
           }}
         />

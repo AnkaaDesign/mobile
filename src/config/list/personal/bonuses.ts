@@ -82,7 +82,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         sortable: true,
         width: 1.3,
         align: 'right',
-        render: (bonus) => formatBonusAmount(bonus.netBonus || bonus.baseBonus),
+        render: (bonus) => formatBonusAmount(bonus.netBonus),
         style: { fontWeight: '600' },
       },
       {

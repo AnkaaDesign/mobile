@@ -119,6 +119,7 @@ const MIME_TYPE_CATEGORIES: Record<string, FileCategory> = {
   'video/x-msvideo': 'videos',
   'video/webm': 'videos',
   'video/x-matroska': 'videos',
+  'video/x-ms-wmv': 'videos',
   'video/x-flv': 'videos',
 
   // Audio

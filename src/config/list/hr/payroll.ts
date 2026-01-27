@@ -39,7 +39,7 @@ export const payrollListConfig: ListConfig<Payroll> = {
       bonus: {
         include: {
           tasks: true,
-          bonusDiscounts: true,
+          bonusDiscounts: true, bonusExtras: true,
         },
       },
       discounts: true,

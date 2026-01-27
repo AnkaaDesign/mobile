@@ -6,7 +6,7 @@ import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'expo-router'
-import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy } from '@tabler/icons-react-native'
+import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal } from '@tabler/icons-react-native'
 import type { TableAction } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
@@ -159,8 +159,20 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
               backgroundColor = '#ea580c' // orange-600
               Icon = IconUsers
             } else if (action.key === 'copyFromTask' || action.icon === 'clipboardCopy') {
-              backgroundColor = '#0891b2' // cyan-600
+              backgroundColor = '#0d9488' // teal-600
               Icon = IconClipboardCopy
+            } else if (action.key === 'release' || action.icon === 'calendar-check') {
+              backgroundColor = '#0891b2' // cyan-600
+              Icon = IconCalendarCheck
+            } else if (action.key === 'addArtworks' || action.icon === 'photo') {
+              backgroundColor = '#db2777' // pink-600
+              Icon = IconPhoto
+            } else if (action.key === 'pricing' || action.icon === 'currency-real') {
+              backgroundColor = '#f59e0b' // amber-500
+              Icon = IconCurrencyReal
+            } else if (action.key === 'cancel' || action.icon === 'x') {
+              backgroundColor = '#d97706' // amber-600 (different from delete-red and change-sector-orange)
+              Icon = IconX
             }
 
             // Resolve dynamic label if it's a function

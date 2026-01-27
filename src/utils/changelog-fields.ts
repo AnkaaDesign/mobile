@@ -202,6 +202,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     positionId: "Cargo",
     sector: "Setor",
     sectorId: "Setor",
+    managedSector: "Setor Gerenciado",
     managedSectorId: "Setor Gerenciado",
     performanceLevel: "Nível de Desempenho",
 
@@ -228,6 +229,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     lastLoginAt: "Último Login",
 
     // External integrations
+    secullumId: "ID Secullum",
     preferenceId: "ID de Preferências",
     avatarId: "Avatar",
 
@@ -255,10 +257,12 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     term: "Prazo",
     startedAt: "Iniciado em",
     finishedAt: "Finalizado em",
+    forecastDate: "Data de Previsão",
     paintId: "Tinta",
     commission: "Comissão",
     bonusDiscountId: "Desconto Bônus",
     customerId: "Cliente",
+    invoiceToId: "Faturar Para",
     sectorId: "Setor",
     createdById: "Criado por",
     budgetIds: "Orçamentos",
@@ -267,9 +271,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     generalPainting: "Pintura Geral",
     observationId: "Observação",
     truckId: "Caminhão",
+    negotiatingWith: "Negociando Com",
     // Relationship fields
     sector: "Setor",
     customer: "Cliente",
+    invoiceTo: "Faturar Para",
     budget: "Orçamento",
     nfe: "Nota Fiscal",
     receipt: "Recibo",
@@ -278,18 +284,25 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     truck: "Caminhão",
     createdBy: "Criado por",
     artworks: "Artes",
-    logoPaints: "Tintas da logomarca",
+    artworkIds: "Artes",
+    baseFiles: "Arquivos Base",
+    baseFileIds: "Arquivos Base",
+    logoPaints: "Tintas da Logomarca",
+    logoPaintIds: "Tintas da Logomarca",
     paints: "Tintas da logomarca",
     groundPaints: "Fundos da Tinta",
+    layouts: "Layouts do Veículo",
     commissions: "Comissões",
     services: "Serviços", // Legacy - for historical changelog records
     serviceOrders: "Ordens de Serviço",
+    pricingId: "Orçamento",
     airbrushings: "Aerografias",
     cuts: "Recortes",
     cutRequest: "Solicitações de Corte",
     cutPlan: "Planos de Corte",
     relatedTasks: "Tarefas Relacionadas",
     relatedTo: "Relacionado a",
+    trucks: "Caminhões",
     // Direct truck fields (when truck data is embedded in task changelog)
     category: "Categoria do Caminhão",
     implementType: "Tipo de Implemento",
@@ -297,6 +310,11 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "customer.fantasyName": "Nome Fantasia do Cliente",
     "customer.corporateName": "Razão Social do Cliente",
     "customer.cnpj": "CNPJ do Cliente",
+    "invoiceTo.fantasyName": "Nome Fantasia (Faturar Para)",
+    "invoiceTo.corporateName": "Razão Social (Faturar Para)",
+    "invoiceTo.cnpj": "CNPJ (Faturar Para)",
+    "negotiatingWith.name": "Responsável pela Negociação",
+    "negotiatingWith.phone": "Telefone do Responsável",
     "sector.name": "Nome do Setor",
     "createdBy.name": "Nome do Criador",
     "budget.filename": "Nome do Orçamento",
@@ -697,8 +715,14 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     yPosition: "Posição Y",
     taskId: "Tarefa",
     garageId: "Garagem",
+    spot: "Localização",
+    category: "Categoria",
+    implementType: "Tipo de Implemento",
     vehicle_movement: "Movimentação de Veículo",
     parking_position: "Posição de Estacionamento",
+    // Truck fields (accessed via truck relation)
+    plate: "Placa",
+    chassisNumber: "Número do Chassi",
     // Related task fields
     "truck.plate": "Placa do Caminhão",
     "task.name": "Nome da Tarefa",
@@ -724,6 +748,16 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "truck.plate": "Placa do Caminhão",
     "task.title": "Título da Tarefa",
     "parentCut.id": "ID do Corte Pai",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.LAYOUT]: {
+    height: "Altura",
+    photoId: "Foto",
+    leftSideLayoutId: "Layout Lateral Esquerdo",
+    rightSideLayoutId: "Layout Lateral Direito",
+    backSideLayoutId: "Layout Traseiro",
+    // Nested fields
+    "photo.name": "Nome da Foto",
+    "photo.path": "Caminho da Foto",
   },
   [CHANGE_LOG_ENTITY_TYPE.FILE]: {
     filename: "Nome do Arquivo",
@@ -969,8 +1003,12 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
     // Task-specific array handling
     if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
-      if (field === "artworks") {
-        return `${value.length} ${value.length === 1 ? "arte" : "artes"}`;
+      // File array fields - return as-is to be rendered with thumbnails by the UI component
+      if (field === "artworks" || field === "artworkIds" ||
+          field === "baseFiles" || field === "baseFileIds" ||
+          field === "budgets" || field === "invoices" || field === "receipts") {
+        // Return the array as-is to be handled by the UI component with file thumbnails
+        return value as any;
       }
       // Don't format logoPaints/paints/groundPaints as strings - they will be rendered as special cards in the UI
       if (field === "logoPaints" || field === "paints" || field === "groundPaints") {
@@ -1071,6 +1109,18 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       CANCELLED: "Cancelado",
     };
     return taskStatusLabels[value] || value;
+  }
+
+  // Handle service order status
+  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && typeof value === "string") {
+    const serviceOrderStatusLabels: Record<string, string> = {
+      PENDING: "Pendente",
+      IN_PROGRESS: "Em Andamento",
+      WAITING_APPROVE: "Aguardando Aprovação",
+      COMPLETED: "Concluído",
+      CANCELLED: "Cancelado",
+    };
+    return serviceOrderStatusLabels[value] || value;
   }
 
   // Handle maintenance status
@@ -1254,15 +1304,56 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   // Handle paint finish
   if (field === "finish" && entityType === CHANGE_LOG_ENTITY_TYPE.PAINT && typeof value === "string") {
     const paintFinishLabels: Record<string, string> = {
-      SOLID: "Lisa",
+      SOLID: "Sólido",
       METALLIC: "Metálico",
       PEARL: "Perolizado",
       MATTE: "Fosco",
-      SATIN: "Semi Brilho",
+      SATIN: "Acetinado",
     };
     return paintFinishLabels[value] || value;
   }
 
+  // Handle truck category (for both TRUCK entity and truck.category in TASK entity)
+  if ((field === "category" || field === "truck.category") && typeof value === "string") {
+    const truckCategoryLabels: Record<string, string> = {
+      MINI: "Mini",
+      VUC: "VUC (Veículo Urbano de Carga)",
+      THREE_QUARTER: "3/4",
+      RIGID: "Toco",
+      TRUCK: "Caminhão",
+      SEMI_TRAILER: "Carreta",
+      B_DOUBLE: "Bitrem",
+    };
+    return truckCategoryLabels[value] || value;
+  }
+
+  // Handle truck implement type
+  if ((field === "implementType" || field === "truck.implementType") && typeof value === "string") {
+    const implementTypeLabels: Record<string, string> = {
+      CORRUGATED: "Corrugado",
+      INSULATED: "Isoplastic",
+      CURTAIN_SIDE: "Sider",
+      TANK: "Tanque",
+      FLATBED: "Carroceria",
+    };
+    return implementTypeLabels[value] || value;
+  }
+
+  // Handle truck spot
+  if (field === "spot" || field === "truck.spot") {
+    // Handle empty/null case
+    if (!value || value === "" || value === null) return "Pátio";
+
+    if (typeof value === "string") {
+      if (value === "PATIO") return "Pátio";
+      // Parse B1_F1_V1 format -> "Garagem 1 - Fila 1 - Vaga 1"
+      const match = value.match(/B(\d)_F(\d)_V(\d)/);
+      if (match) {
+        return `Garagem ${match[1]} - Fila ${match[2]} - Vaga ${match[3]}`;
+      }
+      return value;
+    }
+  }
 
   // Handle ABC/XYZ categories
   if (field === "abcCategory" && typeof value === "string") {
@@ -1880,6 +1971,16 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
   // Handle objects
   if (typeof value === "object") {
+    // Special handling for negotiatingWith field in TASK
+    if (field === "negotiatingWith" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { name?: string; phone?: string | null };
+      if (!data.name && !data.phone) return "Nenhum";
+      if (data.name && data.phone) {
+        return `${data.name} ${formatBrazilianPhone(data.phone)}`;
+      }
+      return data.name || "Nenhum";
+    }
+
     // Special handling for componentImpact field in PAINT_PRODUCTION
     if (field === "componentImpact" && entityType === CHANGE_LOG_ENTITY_TYPE.PAINT_PRODUCTION) {
       if ((value as any).action === "ADD_COMPONENT") {
@@ -1982,10 +2083,19 @@ export const actionConfig: Record<CHANGE_LOG_ACTION, { label: string }> = {
  * Determine the action label based on action and triggered by
  * @param action - The change action
  * @param triggeredBy - The trigger type
+ * @param metadata - Optional metadata for additional context
  * @returns The action label
  */
-export function getActionLabel(action: CHANGE_LOG_ACTION, triggeredBy?: CHANGE_TRIGGERED_BY): string {
+export function getActionLabel(action: CHANGE_LOG_ACTION, triggeredBy?: CHANGE_TRIGGERED_BY, metadata?: { sourceTaskName?: string }): string {
   const baseLabel = actionConfig[action]?.label || action;
+
+  // Handle copy from task operation
+  if (triggeredBy === CHANGE_TRIGGERED_BY.TASK_COPY_FROM_TASK) {
+    if (metadata?.sourceTaskName) {
+      return `Copiado de "${metadata.sourceTaskName}"`;
+    }
+    return "Copiado de outra tarefa";
+  }
 
   // Handle batch operations
   if (triggeredBy === CHANGE_TRIGGERED_BY.BATCH_UPDATE) {

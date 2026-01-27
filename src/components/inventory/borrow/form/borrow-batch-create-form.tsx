@@ -264,7 +264,7 @@ export function BorrowBatchCreateForm({
                 style={styles.itemSelector}
                 selectedItems={multiStepForm.selectedItems}
                 quantities={multiStepForm.quantities}
-                onSelectItem={multiStepForm.toggleItemSelection}
+                onSelectItem={(itemId) => multiStepForm.toggleItemSelection(itemId)}
                 onQuantityChange={multiStepForm.setItemQuantity}
                 showQuantityInput
                 minQuantity={1}

@@ -3,7 +3,34 @@ import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig, RenderContext } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canCreateTasks, canEditTasks, canDeleteTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks } from '@/utils/permissions/entity-permissions'
+import { canCreateTasks, canEditTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks } from '@/utils/permissions/entity-permissions'
+import { canViewPricing } from '@/utils/permissions/pricing-permissions'
+import { SECTOR_PRIVILEGES } from '@/constants'
+
+// Column visibility helpers matching web task-edit-form.tsx
+const canViewRestrictedFields = (user: any) => {
+  const privilege = user?.sector?.privileges
+  return privilege === SECTOR_PRIVILEGES.ADMIN ||
+         privilege === SECTOR_PRIVILEGES.FINANCIAL ||
+         privilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+         privilege === SECTOR_PRIVILEGES.LOGISTIC ||
+         privilege === SECTOR_PRIVILEGES.DESIGNER
+}
+
+const canViewCommissionField = (user: any) => {
+  const privilege = user?.sector?.privileges
+  return privilege === SECTOR_PRIVILEGES.ADMIN ||
+         privilege === SECTOR_PRIVILEGES.FINANCIAL ||
+         privilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+         privilege === SECTOR_PRIVILEGES.PRODUCTION
+}
+
+const canViewPriceField = (user: any) => {
+  const privilege = user?.sector?.privileges
+  return privilege === SECTOR_PRIVILEGES.ADMIN ||
+         privilege === SECTOR_PRIVILEGES.FINANCIAL ||
+         privilege === SECTOR_PRIVILEGES.COMMERCIAL
+}
 import { useAuth } from '@/hooks/useAuth'
 import {
   TASK_STATUS,
@@ -147,15 +174,6 @@ export const tasksListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'priority',
-        label: 'PRIORIDADE',
-        sortable: true,
-        width: 1.0,
-        align: 'center',
-        render: (task) => String(task.priority || '-'),
-        format: 'badge',
-      },
-      {
         key: 'customer.fantasyName',
         label: 'CLIENTE',
         sortable: true,
@@ -192,7 +210,7 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'forecastDate',
         label: 'PREVISÃO',
         sortable: true,
-        width: 1.3,
+        width: 1.4,
         align: 'left',
         render: (task, context) => {
           // Use ForecastDateCell with corner flags for preparation route
@@ -202,6 +220,8 @@ export const tasksListConfig: ListConfig<Task> = {
             navigationRoute,
           })
         },
+        // Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER (matches web canViewRestrictedFields)
+        canView: canViewRestrictedFields,
       },
       {
         key: 'entryDate',
@@ -253,6 +273,8 @@ export const tasksListConfig: ListConfig<Task> = {
         align: 'center',
         render: (task) => task.commission || '-',
         format: 'badge',
+        // Only visible to ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION (matches web canViewCommissionField)
+        canView: canViewCommissionField,
       },
       {
         key: 'price',
@@ -262,6 +284,8 @@ export const tasksListConfig: ListConfig<Task> = {
         align: 'right',
         render: (task) => task.price || null,
         format: 'currency',
+        // Only visible to ADMIN, FINANCIAL, COMMERCIAL (matches web canViewPricingSections)
+        canView: canViewPriceField,
       },
       {
         key: 'generalPainting.name',
@@ -275,7 +299,7 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'services',
         label: 'SERVIÇOS',
         sortable: false,
-        width: 1.5,
+        width: 1.4,
         align: 'center',
         render: (task, context) => {
           // Pass navigationRoute to ServiceOrderProgressBar for corner flags
@@ -327,6 +351,27 @@ export const tasksListConfig: ListConfig<Task> = {
         variant: 'default',
         onPress: (task, router) => {
           router.push(`/producao/cronograma/detalhes/${task.id}`)
+        },
+      },
+      // Release action - sets forecastDate to today (ADMIN, LOGISTIC, COMMERCIAL)
+      // Only visible for PREPARATION status tasks
+      {
+        key: 'release',
+        label: 'Liberar',
+        icon: 'calendar-check',
+        variant: 'default',
+        canPerform: canReleaseTasks,
+        visible: (task: Task) => task.status === TASK_STATUS.PREPARATION,
+        onPress: async (task: Task) => {
+          try {
+            await updateTask(task.id, {
+              forecastDate: new Date().toISOString(),
+            })
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+            // API client already shows success/error alerts
+          } catch (_error) {
+            // API client already shows error alert
+          }
         },
       },
       // Leader actions (start/finish) - only shown for leaders managing tasks
@@ -395,29 +440,31 @@ export const tasksListConfig: ListConfig<Task> = {
           }
         },
       },
-      // Order from left to right: Layout, Definir Setor, Duplicar, Editar, Deletar
+      // Order from left to right: Layout, Adicionar Artes, Copiar de Outra, Definir Setor, Editar, Deletar
       {
         key: 'layout',
         label: (task: Task) => {
           const hasLayout = task.truck?.leftSideLayoutId ||
                            task.truck?.rightSideLayoutId ||
                            task.truck?.backSideLayoutId
-          return hasLayout ? 'Atualizar Layout' : 'Cadastrar Layout'
+          return hasLayout ? 'Editar Layout' : 'Adicionar Layout'
         },
         icon: 'truck',
         variant: 'default',
-        canPerform: canEditLayoutsOnly,
+        // ADMIN, LOGISTIC, or Team Leaders can view/edit layouts
+        canPerform: canViewLayouts,
         visible: (task: Task, user: any) => canEditLayoutForTask(user, task.sectorId),
         onPress: (task, router) => {
           router.push(`/producao/cronograma/layout/${task.id}`)
         },
       },
       {
-        key: 'change-sector',
-        label: 'Definir Setor',
-        icon: 'users',
+        key: 'addArtworks',
+        label: 'Adicionar Artes',
+        icon: 'photo',
         variant: 'default',
-        canPerform: canBatchOperateTasks,
+        // ADMIN, COMMERCIAL, FINANCIAL can add artworks (LOGISTIC excluded)
+        canPerform: canAddArtworks,
         // Action is handled by TaskScheduleLayout - opens modal
       },
       {
@@ -425,8 +472,28 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Copiar de Outra',
         icon: 'clipboardCopy',
         variant: 'default',
-        canPerform: canBatchOperateTasks,
+        // ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can copy from another task
+        canPerform: canAccessAdvancedTaskMenu,
         // Action is handled by TaskScheduleLayout - opens modal
+      },
+      {
+        key: 'change-sector',
+        label: 'Definir Setor',
+        icon: 'users',
+        variant: 'default',
+        // ADMIN and LOGISTIC can change sector
+        canPerform: canChangeTaskSector,
+        // Action is handled by TaskScheduleLayout - opens modal
+      },
+      {
+        key: 'pricing',
+        label: 'Orçamento',
+        icon: 'currency-real',
+        variant: 'default',
+        canPerform: (user: any) => canViewPricing(user?.sector?.privileges || ''),
+        onPress: (task, router) => {
+          router.push(`/producao/agenda/precificacao/${task.id}`)
+        },
       },
       {
         key: 'edit',
@@ -439,17 +506,28 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
       {
-        key: 'delete',
-        label: 'Deletar Tarefa',
-        icon: 'trash',
+        key: 'cancel',
+        label: 'Cancelar Tarefa',
+        icon: 'x',
         variant: 'destructive',
-        canPerform: canDeleteTasks,
+        // ADMIN, LOGISTIC, FINANCIAL, COMMERCIAL can cancel tasks
+        canPerform: canCancelTasks,
+        // Don't show for already cancelled tasks
+        visible: (task: Task) => task.status !== TASK_STATUS.CANCELLED,
         confirm: {
-          title: 'Confirmar Exclusao',
-          message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
+          title: 'Confirmar Cancelamento',
+          message: (task) => `Deseja cancelar a tarefa "${task.name}"?`,
         },
-        onPress: async (task, _, { delete: deleteTask }) => {
-          await deleteTask(task.id)
+        onPress: async (task: Task) => {
+          try {
+            await updateTask(task.id, {
+              status: TASK_STATUS.CANCELLED,
+            })
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+            // API client already shows success/error alerts
+          } catch (_error) {
+            // API client already shows error alert
+          }
         },
       },
     ],
@@ -528,7 +606,6 @@ export const tasksListConfig: ListConfig<Task> = {
       { key: 'startedAt', label: 'Iniciado Em', path: 'startedAt', format: 'datetime' },
       { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
       { key: 'status', label: 'Status', path: 'status' },
-      { key: 'priority', label: 'Prioridade', path: 'priority' },
       { key: 'details', label: 'Detalhes', path: 'details' },
       { key: 'price', label: 'Preço', path: 'price', format: 'currency' },
       { key: 'commission', label: 'Comissão', path: 'commission' },
@@ -567,19 +644,6 @@ export const tasksListConfig: ListConfig<Task> = {
           // Implementation would need to prompt for sector
           // This is a placeholder for the structure
           await batchUpdateAsync({ ids: Array.from(ids), data: {} })
-        },
-      },
-      {
-        key: 'delete',
-        label: 'Excluir',
-        icon: 'trash',
-        variant: 'destructive',
-        confirm: {
-          title: 'Confirmar Exclusão',
-          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
-        },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
         },
       },
     ],

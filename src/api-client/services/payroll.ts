@@ -164,7 +164,7 @@ export const payrollService = {
         ...params,
         include: {
           user: { include: { position: true, sector: true } },
-          bonus: { include: { tasks: true, bonusDiscounts: true } },
+          bonus: { include: { tasks: true, bonusDiscounts: true, bonusExtras: true } },
           discounts: true,
         },
       },
@@ -195,7 +195,7 @@ export const payrollService = {
           ...params,
           include: {
             user: { include: { position: true, sector: true } },
-            bonus: { include: { tasks: true, bonusDiscounts: true } },
+            bonus: { include: { tasks: true, bonusDiscounts: true, bonusExtras: true } },
             discounts: true,
           },
         },

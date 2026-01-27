@@ -43,7 +43,7 @@ export const bonusesListConfig: ListConfig<Bonus> = {
           sector: true,
         },
       },
-      bonusDiscounts: true,
+      bonusDiscounts: true, bonusExtras: true,
     },
   },
 

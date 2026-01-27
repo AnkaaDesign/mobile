@@ -52,6 +52,45 @@ const PDF_CONFIG = {
   directorTitle: 'Diretor Comercial',
 };
 
+/**
+ * Calculate available space for services on page 1
+ * and determine if we need to split services across pages
+ */
+function calculateServicesLayout(
+  itemCount: number,
+  hasDeliveryTerm: boolean,
+  hasPaymentConditions: boolean,
+  hasGuarantee: boolean,
+  hasDiscount: boolean
+): { maxItemsPage1: number; needsSplit: boolean } {
+  // Available height on page 1 for services
+  let usedHeight = PDF_CONFIG.headerHeight + PDF_CONFIG.headerLineHeight + PDF_CONFIG.sectionSpacing;
+  usedHeight += PDF_CONFIG.titleSectionHeight; // ORÇAMENTO title
+  usedHeight += PDF_CONFIG.customerSectionHeight; // Customer section
+  usedHeight += PDF_CONFIG.sectionTitleHeight; // "Serviços" title
+
+  // Calculate terms sections height
+  let termsHeight = 0;
+  if (hasDeliveryTerm) termsHeight += PDF_CONFIG.termsSectionHeight;
+  if (hasPaymentConditions) termsHeight += PDF_CONFIG.termsSectionHeight;
+  if (hasGuarantee) termsHeight += PDF_CONFIG.termsSectionHeight;
+
+  // Totals section height
+  const totalsHeight = hasDiscount ? 20 : 15;
+
+  // Footer height
+  usedHeight += PDF_CONFIG.footerHeight;
+
+  // Calculate available space for services + totals + terms
+  const availableHeight = PDF_CONFIG.contentHeight - usedHeight - termsHeight - totalsHeight - 10; // 10mm buffer
+
+  // Calculate max items that fit
+  const maxItemsPage1 = Math.floor(availableHeight / PDF_CONFIG.serviceItemHeight);
+  const needsSplit = itemCount > maxItemsPage1;
+
+  return { maxItemsPage1: Math.max(maxItemsPage1, 3), needsSplit };
+}
+
 // Portuguese words that should remain lowercase in title case
 const PORTUGUESE_LOWERCASE_WORDS = new Set([
   'a', 'à', 'as', 'às', 'ao', 'aos',
@@ -240,7 +279,15 @@ interface BudgetHtmlData {
  * EXACTLY matching the web version
  */
 function generateBudgetHtml(data: BudgetHtmlData): string {
+  // Calculate layout - matching web version's intelligent spacing
   const hasDiscount = data.discountType !== 'NONE' && data.discountValue && data.discountValue > 0;
+  const { maxItemsPage1 } = calculateServicesLayout(
+    data.items.length,
+    !!data.termDate,
+    !!data.paymentText,
+    !!data.guaranteeText,
+    hasDiscount
+  );
 
   // Generate services list with numbers
   // Description + observation shown inline (e.g., "Pintura Geral Azul Firenze")

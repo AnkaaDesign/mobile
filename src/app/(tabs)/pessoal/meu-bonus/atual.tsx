@@ -153,7 +153,7 @@ export default function CurrentBonusScreen() {
               sector: true,
             },
           },
-          bonusDiscounts: true,
+          bonusDiscounts: true, bonusExtras: true,
           users: true,
         },
       });
@@ -230,15 +230,14 @@ export default function CurrentBonusScreen() {
     if (!bonus) return 0;
 
     // Primary: Use netBonus directly from API (single source of truth)
-    const netBonus = getNumericValue((bonus as any).netBonus);
-    if (netBonus > 0) {
-      return netBonus;
+    // Check raw value before conversion since getNumericValue returns 0 for null/undefined
+    if ((bonus as any).netBonus !== null && (bonus as any).netBonus !== undefined) {
+      return getNumericValue((bonus as any).netBonus);
     }
 
     // Fallback: If netBonus is not available, use baseBonus
     // This handles legacy data or edge cases
-    const baseBonus = getNumericValue(bonus.baseBonus);
-    return baseBonus;
+    return getNumericValue(bonus.baseBonus);
   }, [bonus]);
 
   const handleRefresh = useCallback(async () => {
@@ -357,6 +356,7 @@ export default function CurrentBonusScreen() {
 
   // Display bonus data (works the same for live or saved)
   const bonusValue = calculateFinalAmount();
+  const hasExtras = (bonus as any).bonusExtras && (bonus as any).bonusExtras.length > 0;
   const hasDiscounts = bonus.bonusDiscounts && bonus.bonusDiscounts.length > 0;
   const position = bonus.position || bonus.user?.position;
 
@@ -386,6 +386,22 @@ export default function CurrentBonusScreen() {
                 {formatBonusAmount(bonus.baseBonus)}
               </ThemedText>
             </View>
+            {hasExtras && (bonus as any).bonusExtras!.map((extra: any, index: number) => {
+              const percentageValue = getNumericValue(extra.percentage);
+              const hasPercentage = percentageValue > 0;
+              return (
+                <View key={extra.id || `extra-${index}`} style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: '#059669' }]}>
+                    {extra.reference || `Extra ${index + 1}`}:
+                  </ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: '#059669' }]}>
+                    +{hasPercentage
+                      ? `${percentageValue}%`
+                      : formatCurrency(getNumericValue(extra.value))}
+                  </ThemedText>
+                </View>
+              );
+            })}
             {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => {
               const percentageValue = getNumericValue(discount.percentage);
               const hasPercentage = percentageValue > 0;

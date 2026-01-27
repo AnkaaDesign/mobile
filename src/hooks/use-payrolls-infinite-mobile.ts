@@ -26,7 +26,7 @@ export function usePayrollsInfiniteMobile(params?: Partial<PayrollGetManyParams>
         bonus: {
           include: {
             tasks: true,
-            bonusDiscounts: true,
+            bonusDiscounts: true, bonusExtras: true,
           },
         },
         discounts: true,

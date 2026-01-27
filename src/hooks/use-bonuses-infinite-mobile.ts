@@ -23,7 +23,7 @@ export function useBonusesInfiniteMobile(params?: Partial<BonusGetManyParams> & 
             sector: true,
           },
         },
-        bonusDiscounts: true,
+        bonusDiscounts: true, bonusExtras: true,
         ...params?.include,
       },
     }),

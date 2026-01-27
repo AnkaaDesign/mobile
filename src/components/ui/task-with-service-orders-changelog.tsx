@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useState } from "react";
-import { View, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -74,10 +74,175 @@ const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }
   [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#22c55e" },
+  [CHANGE_ACTION.RESCHEDULE]: { icon: IconCalendar, color: "#3b82f6" },
   [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#22c55e" },
   [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
+};
+
+// File fields that should show thumbnails instead of counts
+const FILE_ARRAY_FIELDS = ["artworks", "artworkIds", "baseFiles", "baseFileIds", "budgets", "invoices", "receipts"];
+
+// File thumbnail component for changelog display (similar to web's LogoDisplay)
+const FileThumbnail = ({
+  fileId,
+  size = 48,
+}: {
+  fileId?: string;
+  size?: number;
+}) => {
+  const { colors } = useTheme();
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  if (!fileId) {
+    return (
+      <View
+        style={[
+          styles.fileThumbnailPlaceholder,
+          {
+            width: size,
+            height: size,
+            backgroundColor: colors.muted,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <IconPhoto size={16} color={colors.mutedForeground} />
+      </View>
+    );
+  }
+
+  if (imageError) {
+    return (
+      <View
+        style={[
+          styles.fileThumbnailPlaceholder,
+          {
+            width: size,
+            height: size,
+            backgroundColor: colors.muted,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <IconPhoto size={16} color={colors.mutedForeground} />
+      </View>
+    );
+  }
+
+  const apiUrl = getApiBaseUrl();
+  const imageUrl = `${apiUrl}/files/thumbnail/${fileId}`;
+
+  return (
+    <View style={[styles.fileThumbnailContainer, { width: size, height: size }]}>
+      {imageLoading && (
+        <View
+          style={[
+            styles.fileThumbnailLoading,
+            {
+              width: size,
+              height: size,
+              backgroundColor: colors.muted,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      )}
+      <Image
+        source={{ uri: imageUrl }}
+        style={[
+          styles.fileThumbnailImage,
+          {
+            width: size,
+            height: size,
+            borderColor: colors.border,
+            opacity: imageLoading ? 0 : 1,
+          },
+        ]}
+        onError={() => {
+          setImageError(true);
+          setImageLoading(false);
+        }}
+        onLoad={() => {
+          setImageLoading(false);
+        }}
+        resizeMode="cover"
+      />
+    </View>
+  );
+};
+
+// Parse value helper for file arrays
+const parseFileArrayValue = (val: any): any[] | null => {
+  if (val === null || val === undefined) return null;
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+// Extract file ID from various data structures
+const extractFileId = (file: any, field: string): string => {
+  const isArtworkField = field === "artworks" || field === "artworkIds";
+  if (typeof file === "string") {
+    return file;
+  } else if (isArtworkField) {
+    // For artworks: { id: artworkId, fileId: fileId, file: { id, thumbnailUrl } }
+    return file.fileId || file.file?.id || file.id;
+  } else {
+    // For baseFiles/budgets/etc: { id: fileId, filename, thumbnailUrl }
+    return file.id;
+  }
+};
+
+// Render file thumbnails grid
+const FileArrayDisplay = ({
+  files,
+  field,
+  isOldValue,
+}: {
+  files: any[] | null;
+  field: string;
+  isOldValue?: boolean;
+}) => {
+  const { colors } = useTheme();
+
+  if (!files || files.length === 0) {
+    return (
+      <ThemedText
+        style={[
+          styles.fileArrayEmpty,
+          { color: isOldValue ? colors.destructive : "#22c55e" },
+        ]}
+      >
+        Nenhum arquivo
+      </ThemedText>
+    );
+  }
+
+  return (
+    <View style={styles.fileArrayContainer}>
+      <View style={styles.fileArrayGrid}>
+        {files.map((file: any, idx: number) => {
+          const fileId = extractFileId(file, field);
+          return <FileThumbnail key={idx} fileId={fileId} size={40} />;
+        })}
+      </View>
+      <ThemedText style={[styles.fileArrayCount, { color: colors.mutedForeground }]}>
+        ({files.length} arquivo{files.length > 1 ? "s" : ""})
+      </ThemedText>
+    </View>
+  );
 };
 
 // Group changelog entries by entity and time
@@ -280,7 +445,8 @@ const TimelineItem = ({
   // Get the display title
   const getTitle = () => {
     const entityLabel = getEntityTypeLabel(firstLog.entityType);
-    const actionLabel = getActionLabel(firstLog.action);
+    const metadata = firstLog.metadata as { sourceTaskName?: string } | undefined;
+    const actionLabel = getActionLabel(firstLog.action, firstLog.triggeredBy, metadata);
 
     // Special handling for service orders - show description/type
     if (
@@ -330,6 +496,29 @@ const TimelineItem = ({
       const fieldLabel = getFieldLabel(field, log.entityType);
 
       if (log.action === CHANGE_ACTION.UPDATE && field) {
+        // Special handling for file array fields - show thumbnails
+        if (FILE_ARRAY_FIELDS.includes(field)) {
+          const oldFiles = parseFileArrayValue(log.oldValue);
+          const newFiles = parseFileArrayValue(log.newValue);
+
+          changes.push(
+            <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+              <View style={styles.changeValuesVertical}>
+                <View style={styles.fileValueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes: </ThemedText>
+                  <FileArrayDisplay files={oldFiles} field={field} isOldValue />
+                </View>
+                <View style={styles.fileValueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Depois: </ThemedText>
+                  <FileArrayDisplay files={newFiles} field={field} />
+                </View>
+              </View>
+            </View>
+          );
+          return;
+        }
+
         const oldValue = formatValueWithEntity(log.oldValue, field, log.entityType, entityDetails, log.metadata);
         const newValue = formatValueWithEntity(log.newValue, field, log.entityType, entityDetails, log.metadata);
 
@@ -353,6 +542,20 @@ const TimelineItem = ({
           </View>
         );
       } else if (log.action === CHANGE_ACTION.CREATE && field && log.newValue !== null && log.newValue !== undefined) {
+        // Special handling for file array fields - show thumbnails
+        if (FILE_ARRAY_FIELDS.includes(field)) {
+          const newFiles = parseFileArrayValue(log.newValue);
+          if (newFiles && newFiles.length > 0) {
+            changes.push(
+              <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+                <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+                <FileArrayDisplay files={newFiles} field={field} />
+              </View>
+            );
+          }
+          return;
+        }
+
         const newValue = formatValueWithEntity(log.newValue, field, log.entityType, entityDetails, log.metadata);
         if (newValue && String(newValue) !== "null" && String(newValue) !== "undefined") {
           changes.push(
@@ -441,7 +644,6 @@ export function TaskWithServiceOrdersChangelog({
   serviceOrderIds,
   truckId,
   layoutIds = [],
-  maxHeight = 400,
   limit = 100,
 }: TaskWithServiceOrdersChangelogProps) {
   const { colors } = useTheme();
@@ -600,8 +802,7 @@ export function TaskWithServiceOrdersChangelog({
   }
 
   return (
-    <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
+    <View style={styles.container}>
         {Array.from(dateGroups.entries()).map(([dateKey, groups], dateIdx) => (
           <View key={dateKey} style={styles.dateSection}>
             {/* Date Header */}
@@ -641,7 +842,6 @@ export function TaskWithServiceOrdersChangelog({
           </View>
         )}
       </View>
-    </ScrollView>
   );
 }
 
@@ -717,7 +917,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   changeRow: {
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   fieldLabel: {
     fontSize: fontSize.xs,
@@ -818,6 +1018,51 @@ const styles = StyleSheet.create({
   creationText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
+  },
+  // File thumbnail styles
+  fileThumbnailContainer: {
+    position: "relative",
+  },
+  fileThumbnailImage: {
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  fileThumbnailPlaceholder: {
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fileThumbnailLoading: {
+    position: "absolute",
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // File array display styles
+  fileArrayContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  fileArrayGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  fileArrayCount: {
+    fontSize: fontSize.xs,
+    marginLeft: spacing.xs,
+  },
+  fileArrayEmpty: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  fileValueRow: {
+    flexDirection: "column",
+    gap: spacing.xs,
   },
 });
 

@@ -19,15 +19,16 @@ import { hasAnyPrivilege, isTeamLeader } from '@/utils';
 /**
  * Get visible service order types based on user's sector privilege
  * This controls which service order types a user can view in task details
+ * MATCHES WEB: /web/src/utils/permissions/service-order-permissions.ts
  *
  * Permission Matrix (VISIBILITY):
  * | Sector          | PRODUCTION | FINANCIAL | COMMERCIAL | LOGISTIC | ARTWORK |
  * |-----------------|------------|-----------|------------|----------|---------|
  * | ADMIN           | ✓          | ✓         | ✓          | ✓        | ✓       |
- * | COMMERCIAL      | ✓          | ✓         | ✓          | -        | -       |
+ * | COMMERCIAL      | ✓          | ✓         | ✓          | ✓        | ✓       |
  * | DESIGNER        | ✓          | -         | -          | -        | ✓       |
- * | FINANCIAL       | ✓          | ✓         | -          | -        | -       |
- * | LOGISTIC        | ✓          | -         | -          | ✓        | -       |
+ * | FINANCIAL       | ✓          | ✓         | ✓          | ✓        | ✓       |
+ * | LOGISTIC        | ✓          | -         | ✓          | ✓        | ✓       |
  * | PRODUCTION      | ✓          | -         | -          | -        | -       |
  * | WAREHOUSE       | ✓          | -         | -          | -        | -       |
  * | HUMAN_RESOURCES | ✓          | -         | -          | -        | -       |
@@ -40,6 +41,7 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
 
   switch (privilege) {
     case SECTOR_PRIVILEGES.ADMIN:
+      // ADMIN can see all service order types
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.FINANCIAL,
@@ -49,28 +51,39 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
       ];
 
     case SECTOR_PRIVILEGES.COMMERCIAL:
+      // COMMERCIAL can see all service order types (matches web)
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.FINANCIAL,
         SERVICE_ORDER_TYPE.COMMERCIAL,
+        SERVICE_ORDER_TYPE.LOGISTIC,
+        SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.DESIGNER:
+      // DESIGNER can see PRODUCTION and ARTWORK
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.FINANCIAL:
+      // FINANCIAL can see all service order types (matches web)
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.FINANCIAL,
+        SERVICE_ORDER_TYPE.COMMERCIAL,
+        SERVICE_ORDER_TYPE.LOGISTIC,
+        SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.LOGISTIC:
+      // LOGISTIC can see PRODUCTION, LOGISTIC, COMMERCIAL, ARTWORK (matches web)
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.LOGISTIC,
+        SERVICE_ORDER_TYPE.COMMERCIAL,
+        SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.HUMAN_RESOURCES:
@@ -308,6 +321,75 @@ export function canBatchOperateTasks(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
+  ]);
+}
+
+/**
+ * Can user release tasks (set forecastDate to today)?
+ * ADMIN, LOGISTIC, and COMMERCIAL can release tasks
+ * Matches web canLiberar permission
+ */
+export function canReleaseTasks(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+  ]);
+}
+
+/**
+ * Can user access advanced task menu options (artworks, copy from task)?
+ * ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can access advanced menu
+ * Matches web canAccessAdvancedMenu permission
+ */
+export function canAccessAdvancedTaskMenu(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.LOGISTIC,
+  ]);
+}
+
+/**
+ * Can user add artworks to tasks?
+ * ADMIN, COMMERCIAL, FINANCIAL can add artworks (LOGISTIC excluded)
+ */
+export function canAddArtworks(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
+  ]);
+}
+
+/**
+ * Can user change task sector?
+ * ADMIN and LOGISTIC can change task sector
+ */
+export function canChangeTaskSector(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.LOGISTIC,
+  ]);
+}
+
+/**
+ * Can user cancel tasks (set status to CANCELLED)?
+ * ADMIN, LOGISTIC, FINANCIAL, COMMERCIAL can cancel tasks
+ * Different from delete - cancel just changes status
+ */
+export function canCancelTasks(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.COMMERCIAL,
   ]);
 }
 

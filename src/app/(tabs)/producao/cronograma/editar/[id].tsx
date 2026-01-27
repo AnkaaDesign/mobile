@@ -58,11 +58,12 @@ export default function EditScheduleScreen() {
       generalPainting: true,
       logoPaints: true,
       serviceOrders: true,
-      truck: true, // ✅ Include truck to get truckId
-      artworks: true, // ✅ Include artworks for edit mode
+      truck: true,
+      artworks: true,
+      baseFiles: true,
       observation: {
         include: {
-          files: true, // ✅ Include observation files
+          files: true,
         },
       },
     },
@@ -222,21 +223,35 @@ export default function EditScheduleScreen() {
         initialData={{
           name: task.name,
           customerId: task.customerId || "",
+          invoiceToId: task.invoiceToId ?? null,
+          negotiatingWith: (task as any).negotiatingWith ?? { name: null, phone: null },
           sectorId: task.sectorId ?? undefined,
           serialNumber: task.serialNumber ?? undefined,
           // truck object matches Prisma schema field names
           truck: {
             plate: task.truck?.plate ?? null,
             chassisNumber: task.truck?.chassisNumber ?? null,
+            category: (task.truck as any)?.category ?? null,
+            implementType: (task.truck as any)?.implementType ?? null,
+            spot: (task.truck as any)?.spot ?? null,
           },
           details: task.details ?? undefined,
           entryDate: task.entryDate ? new Date(task.entryDate) : undefined,
           term: task.term ? new Date(task.term) : undefined,
+          forecastDate: task.forecastDate ? new Date(task.forecastDate) : undefined,
           generalPaintingId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
           serviceOrders: task.serviceOrders?.map((s) => ({
+            id: s.id,
             description: s.description,
             status: s.status ?? undefined,
+            statusOrder: s.statusOrder,
+            type: s.type,
+            assignedToId: s.assignedToId || null,
+            observation: s.observation || null,
+            startedAt: s.startedAt ? new Date(s.startedAt) : null,
+            finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
+            shouldSync: (s as any).shouldSync !== false,
           })) || [],
           status: task.status,
           commission: task.commission ?? null,
@@ -250,7 +265,10 @@ export default function EditScheduleScreen() {
           } : null,
           // Include artworks for edit mode
           artworks: (task as any).artworks || [],
-          artworkIds: (task as any).artworks?.map((f: any) => f.id) || [],
+          artworkIds: (task as any).artworks?.map((f: any) => f.fileId || f.file?.id || f.id) || [],
+          // Include base files for edit mode
+          baseFiles: (task as any).baseFiles || [],
+          baseFileIds: (task as any).baseFiles?.map((f: any) => f.id) || [],
         }}
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}

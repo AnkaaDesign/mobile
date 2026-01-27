@@ -33,6 +33,10 @@ import {
   IconVectorBezier,
   IconFile,
   IconPlayerPlay,
+  IconPlayerPause,
+  IconVolume,
+  IconVolumeOff,
+  IconMaximize,
 } from "@tabler/icons-react-native";
 import { SvgUri } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
@@ -43,6 +47,17 @@ try {
   Pdf = require('react-native-pdf').default;
 } catch (error) {
   console.warn('react-native-pdf not available in Expo Go');
+}
+
+// Conditionally import expo-av for video playback
+let VideoComponent: any = null;
+let ResizeModeEnum: any = null;
+try {
+  const expoAv = require('expo-av');
+  VideoComponent = expoAv.Video;
+  ResizeModeEnum = expoAv.ResizeMode;
+} catch (error) {
+  console.warn('expo-av not available');
 }
 
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +116,240 @@ const isPreviewableFile = (file: AnkaaFile): boolean => {
   }
   return isImageFile(file) || (isEpsFile(file) && !!file.thumbnailUrl);
 };
+
+// =====================
+// Inline Video Player Sub-component
+// =====================
+
+interface InlineVideoPlayerProps {
+  file: AnkaaFile;
+  fileUrl: string;
+  colors: any;
+  onShare: () => void;
+  onToggleControls: () => void;
+}
+
+function InlineVideoPlayer({ file, fileUrl, colors, onShare, onToggleControls }: InlineVideoPlayerProps) {
+  const videoRef = React.useRef<any>(null);
+  const [videoStatus, setVideoStatus] = React.useState<any>(null);
+  const [videoLoading, setVideoLoading] = React.useState(true);
+  const [videoError, setVideoError] = React.useState(false);
+  const [isMuted, setIsMuted] = React.useState(false);
+  const [showVideoControls, setShowVideoControls] = React.useState(true);
+  const hideControlsRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const isPlaying = videoStatus?.isLoaded && videoStatus?.isPlaying;
+  const isLoaded = videoStatus?.isLoaded;
+  const durationMillis = videoStatus?.durationMillis || 0;
+  const positionMillis = videoStatus?.positionMillis || 0;
+
+  const resetHideTimer = React.useCallback(() => {
+    if (hideControlsRef.current) clearTimeout(hideControlsRef.current);
+    setShowVideoControls(true);
+    hideControlsRef.current = setTimeout(() => {
+      if (isPlaying) setShowVideoControls(false);
+    }, 3000);
+  }, [isPlaying]);
+
+  React.useEffect(() => {
+    return () => {
+      if (hideControlsRef.current) clearTimeout(hideControlsRef.current);
+    };
+  }, []);
+
+  // Stop video when component unmounts (file changes)
+  React.useEffect(() => {
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.stopAsync().catch(() => {});
+      }
+    };
+  }, []);
+
+  const togglePlayPause = React.useCallback(async () => {
+    if (!videoRef.current) return;
+    try {
+      if (isPlaying) {
+        await videoRef.current.pauseAsync();
+      } else {
+        await videoRef.current.playAsync();
+      }
+      resetHideTimer();
+    } catch (err) {
+      console.error('[InlineVideoPlayer] Toggle play/pause error:', err);
+    }
+  }, [isPlaying, resetHideTimer]);
+
+  const toggleMute = React.useCallback(async () => {
+    if (!videoRef.current) return;
+    try {
+      await videoRef.current.setIsMutedAsync(!isMuted);
+      setIsMuted(!isMuted);
+      resetHideTimer();
+    } catch (err) {
+      console.error('[InlineVideoPlayer] Toggle mute error:', err);
+    }
+  }, [isMuted, resetHideTimer]);
+
+  const toggleFullscreen = React.useCallback(async () => {
+    if (!videoRef.current) return;
+    try {
+      await videoRef.current.presentFullscreenPlayer();
+      resetHideTimer();
+    } catch (err) {
+      console.error('[InlineVideoPlayer] Fullscreen error:', err);
+    }
+  }, [resetHideTimer]);
+
+  const handleScreenPress = React.useCallback(() => {
+    setShowVideoControls(prev => !prev);
+    resetHideTimer();
+    onToggleControls();
+  }, [resetHideTimer, onToggleControls]);
+
+  const handlePlaybackStatusUpdate = React.useCallback((newStatus: any) => {
+    setVideoStatus(newStatus);
+    if (newStatus.isLoaded) {
+      setVideoLoading(false);
+      setVideoError(false);
+      if (newStatus.didJustFinish) {
+        setShowVideoControls(true);
+        if (hideControlsRef.current) clearTimeout(hideControlsRef.current);
+      }
+    } else if (newStatus.error) {
+      setVideoLoading(false);
+      setVideoError(true);
+    }
+  }, []);
+
+  const formatDuration = (millis: number): string => {
+    const totalSeconds = Math.floor(millis / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  if (!VideoComponent) {
+    // expo-av not available - fallback to share
+    return (
+      <View style={styles.videoContainer}>
+        <TouchableOpacity style={styles.videoPreviewWrapper} onPress={onShare} activeOpacity={0.7}>
+          <IconPlayerPlay size={64} color={colors.primary} />
+          <Text style={styles.filePreviewTitle}>{file.filename}</Text>
+          <Text style={styles.filePreviewSubtitle}>Vídeo • {formatFileSize(file.size)}</Text>
+          <Text style={styles.filePreviewNote}>Player não disponível. Toque para abrir externamente.</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (videoError) {
+    return (
+      <View style={styles.videoContainer}>
+        <View style={styles.videoErrorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Erro ao carregar vídeo</Text>
+          <Text style={styles.filePreviewSubtitle}>{file.filename}</Text>
+          <TouchableOpacity style={styles.errorButton} onPress={onShare} activeOpacity={0.7}>
+            <IconExternalLink size={16} color="#ffffff" />
+            <Text style={styles.errorButtonText}>Abrir com...</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable style={styles.videoContainer} onPress={handleScreenPress}>
+      <VideoComponent
+        ref={videoRef}
+        source={{ uri: fileUrl }}
+        rate={1.0}
+        volume={1.0}
+        isMuted={isMuted}
+        resizeMode={ResizeModeEnum?.CONTAIN || 'contain'}
+        shouldPlay={false}
+        isLooping={false}
+        useNativeControls={false}
+        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+        style={styles.inlineVideo}
+      />
+
+      {/* Loading overlay */}
+      {videoLoading && (
+        <View style={styles.videoLoadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Carregando vídeo...</Text>
+        </View>
+      )}
+
+      {/* Center play/pause button */}
+      {showVideoControls && isLoaded && (
+        <TouchableOpacity
+          style={styles.videoCenterControl}
+          onPress={togglePlayPause}
+          activeOpacity={0.7}
+        >
+          {isPlaying ? (
+            <IconPlayerPause size={56} color="#ffffff" />
+          ) : (
+            <IconPlayerPlay size={56} color="#ffffff" />
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* Bottom controls */}
+      {showVideoControls && isLoaded && (
+        <View style={styles.videoBottomControls}>
+          {/* Progress bar */}
+          {durationMillis > 0 && (
+            <View style={styles.videoProgressContainer}>
+              <View style={styles.videoProgressBar}>
+                <View
+                  style={[
+                    styles.videoProgressFill,
+                    { width: `${(positionMillis / durationMillis) * 100}%` },
+                  ]}
+                />
+              </View>
+              <View style={styles.videoTimeContainer}>
+                <Text style={styles.videoTimeText}>{formatDuration(positionMillis)}</Text>
+                <Text style={styles.videoTimeText}>{formatDuration(durationMillis)}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Control buttons */}
+          <View style={styles.videoControlButtons}>
+            <TouchableOpacity onPress={toggleMute} style={styles.videoControlBtn} activeOpacity={0.7}>
+              {isMuted ? (
+                <IconVolumeOff size={22} color="#ffffff" />
+              ) : (
+                <IconVolume size={22} color="#ffffff" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={togglePlayPause} style={styles.videoControlBtn} activeOpacity={0.7}>
+              {isPlaying ? (
+                <IconPlayerPause size={28} color="#ffffff" />
+              ) : (
+                <IconPlayerPlay size={28} color="#ffffff" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={toggleFullscreen} style={styles.videoControlBtn} activeOpacity={0.7}>
+              <IconMaximize size={22} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </Pressable>
+  );
+}
 
 export interface FilePreviewModalProps {
   files: AnkaaFile[];
@@ -732,16 +981,15 @@ export function FilePreviewModal({
                   </Pressable>
                 )}
 
-                {/* Video Preview - Show thumbnail with play button */}
+                {/* Video Player - Inline playback with controls */}
                 {isVideo && (
-                  <View style={styles.videoContainer}>
-                    <TouchableOpacity style={styles.videoPreviewWrapper} onPress={handleShare} activeOpacity={0.7}>
-                      <IconPlayerPlay size={64} color={colors.primary} />
-                      <Text style={styles.filePreviewTitle}>{currentFile.filename}</Text>
-                      <Text style={styles.filePreviewSubtitle}>Vídeo • {formatFileSize(currentFile.size)}</Text>
-                      <Text style={styles.filePreviewNote}>Toque para reproduzir</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <InlineVideoPlayer
+                    file={currentFile}
+                    fileUrl={getFileUrl(currentFile)}
+                    colors={colors}
+                    onShare={handleShare}
+                    onToggleControls={toggleControls}
+                  />
                 )}
 
                 {/* Image/SVG Viewer with gestures */}
@@ -1038,9 +1286,9 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    backgroundColor: "#000000",
   },
   videoPreviewWrapper: {
     alignItems: "center",
@@ -1052,6 +1300,74 @@ const styles = StyleSheet.create({
     maxWidth: SCREEN_WIDTH - 64,
     borderWidth: 1,
     borderColor: "#404040",
+  },
+  videoErrorContainer: {
+    alignItems: "center",
+    gap: 16,
+    paddingHorizontal: 32,
+    backgroundColor: "#262626",
+    borderRadius: 16,
+    padding: 32,
+    maxWidth: SCREEN_WIDTH - 64,
+    borderWidth: 1,
+    borderColor: "#404040",
+  },
+  inlineVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT - 200,
+  },
+  videoLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    gap: 16,
+  },
+  videoCenterControl: {
+    position: "absolute",
+    padding: 16,
+    borderRadius: 50,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  videoBottomControls: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
+  videoProgressContainer: {
+    marginBottom: 12,
+  },
+  videoProgressBar: {
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 2,
+  },
+  videoProgressFill: {
+    height: "100%",
+    backgroundColor: "#15803d",
+    borderRadius: 2,
+  },
+  videoTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  videoTimeText: {
+    color: "#ffffff",
+    fontSize: 12,
+  },
+  videoControlButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  videoControlBtn: {
+    padding: 8,
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,

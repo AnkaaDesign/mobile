@@ -43,9 +43,7 @@ import {
   IconFile,
   IconAlertCircle,
   IconDownload,
-  IconClipboardCopy,
 } from "@tabler/icons-react-native";
-import { CopyFromTaskModal } from "@/components/production/task/schedule";
 
 export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -56,54 +54,62 @@ export default function ScheduleDetailsScreen() {
   const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("list");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
-  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
 
   // Get file viewer context
   const fileViewer = useFileViewer();
 
-  // Check permissions - Use exact privilege checks
+  // Check permissions - Use exact privilege checks (matching web task-edit-form.tsx)
   const userPrivilege = user?.sector?.privileges;
 
-  // Only ADMIN and FINANCIAL can edit tasks
-  const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
-  const canDelete = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+  // Individual sector checks
+  const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+  const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+  const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
+  const isProductionUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
+  const isPlottingUser = userPrivilege === SECTOR_PRIVILEGES.PLOTTING;
 
-  // Check if user can view documents (admin/financial only)
-  const canViewDocuments = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                           userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  // ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC can edit tasks (matches canEditTasks in entity-permissions.ts)
+  const canEdit = isAdminUser || isCommercialUser || isDesignerUser || isFinancialUser || isLogisticUser;
+  const canDelete = isAdminUser;
 
-  // Check if user can view base files (admin/commercial/logistic/designer only)
-  const canViewBaseFiles = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                           userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-                           userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-                           userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  // Check if user can view documents (admin/financial only) - matches web canViewFinancialSections
+  const canViewDocuments = isAdminUser || isFinancialUser;
+
+  // Check if user can view base files - Hidden from WAREHOUSE, FINANCIAL only (matches web)
+  const canViewBaseFiles = !isWarehouseUser && !isFinancialUser;
 
   // Check if user can view artwork badges and non-approved artworks (admin/commercial/financial/logistic/designer only)
-  const canViewArtworkBadges = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                               userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-                               userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-                               userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-                               userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  const canViewArtworkBadges = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isDesignerUser;
 
-  // Check if user can view truck layout (admin/logistic/team leaders only)
-  // Team leadership is now determined by managedSector relationship
-  const canViewTruckLayout = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                              userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-                              isTeamLeader(user);
+  // Check if user can view artworks section - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web)
+  const canViewArtworks = !isWarehouseUser && !isFinancialUser && !isLogisticUser;
 
-  // Check if user is from Financial sector
-  const isFinancialSector = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  // Check if user can view truck layout (admin/commercial/designer/financial/logistic/production manager only)
+  const canViewTruckLayout = isAdminUser || isCommercialUser || isDesignerUser || isFinancialUser || isLogisticUser || (isProductionUser && isTeamLeader(user));
 
   // Check if user can view financial fields (invoiceTo, commission) - ADMIN, FINANCIAL, COMMERCIAL only
-  const canViewFinancialFields = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-                                  userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+  const canViewFinancialFields = isAdminUser || isFinancialUser || isCommercialUser;
 
-  // Check if user can view pricing section - ADMIN, FINANCIAL, COMMERCIAL only
-  const canViewPricingSection = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                                 userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-                                 userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+  // Check if user can view pricing section - ADMIN, FINANCIAL, COMMERCIAL only (matches web canViewPricingSections)
+  const canViewPricingSection = isAdminUser || isFinancialUser || isCommercialUser;
+
+  // Paint sections - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web)
+  const canViewPaintSections = !isWarehouseUser && !isFinancialUser && !isLogisticUser;
+
+  // Logo paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL (matches web)
+  const canViewLogoPaints = !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isCommercialUser;
+
+  // Observation section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
+  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
+
+  // Cuts section - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web)
+  const canViewCuts = !isFinancialUser && !isLogisticUser && !isCommercialUser;
+
+  // Airbrushing section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
+  const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
   // Fetch task details - optimized query to match web pattern
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
@@ -281,15 +287,6 @@ export default function ScheduleDetailsScreen() {
               <View style={styles.headerActions}>
                 {canEdit && (
                   <TouchableOpacity
-                    onPress={() => setIsCopyModalOpen(true)}
-                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border }])}
-                    activeOpacity={0.7}
-                  >
-                    <IconClipboardCopy size={18} color={colors.foreground} />
-                  </TouchableOpacity>
-                )}
-                {canEdit && (
-                  <TouchableOpacity
                     onPress={handleEdit}
                     style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
                     activeOpacity={0.7}
@@ -327,7 +324,7 @@ export default function ScheduleDetailsScreen() {
           }} />
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
-          {canViewTruckLayout && (task as any)?.truck && (
+          {canViewTruckLayout && (task as any)?.truck && layouts && (layouts.leftSideLayout || layouts.rightSideLayout || layouts.backSideLayout) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -357,8 +354,8 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
-          {/* General Painting */}
-          {(task as any)?.generalPainting && (
+          {/* General Painting - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
+          {canViewPaintSections && (task as any)?.generalPainting && (
             <TaskGeneralPaintCard
               paint={(task as any).generalPainting}
               onPaintPress={(_paintId) => {
@@ -368,8 +365,8 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
-          {/* Logo Paints */}
-          {(task as any)?.logoPaints && (task as any).logoPaints.length > 0 && (
+          {/* Logo Paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
+          {canViewLogoPaints && (task as any)?.logoPaints && (task as any).logoPaints.length > 0 && (
             <TaskLogoPaintsCard
               paints={(task as any).logoPaints}
               onPaintPress={(_paintId) => {
@@ -379,8 +376,8 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
-          {/* Ground Paints - Fundos Recomendados */}
-          {(task as any)?.generalPainting?.paintGrounds &&
+          {/* Ground Paints - Fundos Recomendados - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
+          {canViewPaintSections && (task as any)?.generalPainting?.paintGrounds &&
            (task as any).generalPainting.paintGrounds.length > 0 && (
             <TaskGroundPaintsCard
               groundPaints={(task as any).generalPainting.paintGrounds.map(
@@ -389,8 +386,8 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
-          {/* Observation Card - Before Artworks */}
-          {(task as any)?.observation && (
+          {/* Observation Card - Before Artworks - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
+          {canViewObservation && (task as any)?.observation && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -440,8 +437,8 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Observations Table - Before Artworks */}
-          <ObservationsTable taskId={id as string} maxHeight={400} />
+          {/* Observations Table - Before Artworks - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
+          {canViewObservation && <ObservationsTable taskId={id as string} maxHeight={400} />}
 
           {/* Base Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewBaseFiles && (task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
@@ -518,8 +515,8 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Artworks Section */}
-          {(() => {
+          {/* Artworks Section - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
+          {canViewArtworks && (() => {
             // Filter artworks: show all if user can view badges, otherwise only approved
             const filteredArtworks = (task as any)?.artworks?.filter((artwork: any) =>
               canViewArtworkBadges || artwork.status === 'APPROVED'
@@ -805,12 +802,12 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Cuts Table - Hidden for Financial sector users */}
+          {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {/* Team leaders can swipe to request new cuts for tasks in their managed sector */}
-          {!isFinancialSector && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
+          {canViewCuts && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
 
-          {/* Airbrushings Table */}
-          <AirbrushingsTable taskId={id as string} maxHeight={400} />
+          {/* Airbrushings Table - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
+          {canViewAirbrushing && <AirbrushingsTable taskId={id as string} maxHeight={400} />}
 
           {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
           {/* Team leadership is now determined by managedSector relationship */}
@@ -830,7 +827,6 @@ export default function ScheduleDetailsScreen() {
                   serviceOrderIds={(task.serviceOrders || []).map((so: any) => so.id)}
                   truckId={(task as any)?.truck?.id}
                   layoutIds={layouts?.data?.map((l: any) => l.id) || []}
-                  maxHeight={400}
                 />
               </View>
             </Card>
@@ -845,15 +841,6 @@ export default function ScheduleDetailsScreen() {
           by FileViewerProvider - no need to manually render them here!
         */}
       </ScrollView>
-
-      {/* Copy From Task Modal */}
-      <CopyFromTaskModal
-        open={isCopyModalOpen}
-        onOpenChange={setIsCopyModalOpen}
-        targetTask={task}
-        userPrivilege={userPrivilege}
-        onSuccess={() => refetch()}
-      />
     </>
   );
 }

@@ -7,6 +7,7 @@ import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes } from "./user";
 import type { Task, TaskIncludes } from "./task";
 import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";
+import type { BonusExtra, BonusExtraIncludes } from "./bonusExtra";
 
 // =====================
 // Main Entity Interfaces
@@ -29,7 +30,13 @@ export interface Bonus extends BaseEntity {
   users?: User[]; // All users receiving bonuses in the same period (many-to-many)
   tasks?: Task[];
   bonusDiscounts?: BonusDiscount[];
+  bonusExtras?: BonusExtra[];
   payroll?: any; // Payroll type would need to be imported if available
+  _computed?: {
+    ponderedTaskCount?: number;
+    periodStart?: Date;
+    periodEnd?: Date;
+  };
 }
 
 
@@ -57,6 +64,11 @@ export interface BonusIncludes {
     | boolean
     | {
         include?: BonusDiscountIncludes;
+      };
+  bonusExtras?:
+    | boolean
+    | {
+        include?: BonusExtraIncludes;
       };
   payroll?:
     | boolean

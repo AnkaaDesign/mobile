@@ -40,11 +40,73 @@
           "data": [
             {
               "scheme": "https",
-              "host": "ankaadesign.com.br"
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/app/"
             },
             {
               "scheme": "https",
-              "host": "www.ankaadesign.com.br"
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/task/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/order/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/item/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/service-order/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/producao/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/estoque/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/recursos-humanos/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/administracao/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/pintura/"
+            },
+            {
+              "scheme": "https",
+              "host": "ankaadesign.com.br",
+              "pathPrefix": "/financeiro/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/app/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/producao/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ankaadesign.com.br",
+              "pathPrefix": "/estoque/"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

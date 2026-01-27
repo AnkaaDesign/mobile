@@ -48,15 +48,17 @@ export function ServiceOrderProgressBar({ task, compact = false, navigationRoute
     if (navigationRoute === 'preparation' && incompleteAssignedCount === 0) {
       return (
         <View style={styles.outerContainer}>
-          <Text style={[styles.dashText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>-</Text>
-          {/* Corner flag for missing service orders */}
-          <View style={styles.cornerFlagContainer}>
-            <View style={styles.cornerFlag} />
-            <IconAlertTriangle
-              size={10}
-              color="#ffffff"
-              style={styles.cornerIcon}
-            />
+          <View style={styles.dashContainer}>
+            <Text style={[styles.dashText, { color: isDark ? '#9ca3af' : '#6b7280' }]}>-</Text>
+            {/* Corner flag for missing service orders */}
+            <View style={styles.cornerFlagContainer}>
+              <View style={styles.cornerFlag} />
+              <IconAlertTriangle
+                size={7}
+                color="#ffffff"
+                style={styles.cornerIcon}
+              />
+            </View>
           </View>
         </View>
       );
@@ -181,6 +183,16 @@ const styles = StyleSheet.create({
     position: 'relative',
     paddingHorizontal: 4,
     paddingTop: 4, // Space for overlay badge
+    flex: 1,
+    alignSelf: 'stretch',
+  },
+  dashContainer: {
+    position: 'relative',
+    minWidth: 70,
+    maxWidth: 120,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dashText: {
     fontSize: 12,
@@ -243,11 +255,11 @@ const styles = StyleSheet.create({
   },
   cornerFlagContainer: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    overflow: 'visible',
+    top: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    overflow: 'hidden',
   },
   cornerFlag: {
     position: 'absolute',
@@ -255,14 +267,14 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     height: 0,
-    borderTopWidth: 20,
-    borderLeftWidth: 20,
+    borderTopWidth: 14,
+    borderLeftWidth: 14,
     borderLeftColor: 'transparent',
     borderTopColor: '#ef4444', // red-500
   },
   cornerIcon: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 1,
+    right: 1,
   },
 });

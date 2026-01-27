@@ -101,12 +101,12 @@ export function FormActionBar({
         {showPrev ? (
           <Button variant="outline" onPress={onPrev} disabled={isDisabled}>
             <IconArrowLeft size={18} color={colors.foreground} />
-            <Text style={styles.buttonText}>{prevLabel}</Text>
+            <Text style={styles.buttonText} numberOfLines={1}>{prevLabel}</Text>
           </Button>
         ) : showCancelButton ? (
           <Button variant="outline" onPress={onCancel} disabled={isDisabled}>
             <IconX size={18} color={colors.mutedForeground} />
-            <Text style={styles.buttonText}>{cancelLabel}</Text>
+            <Text style={styles.buttonText} numberOfLines={1}>{cancelLabel}</Text>
           </Button>
         ) : (
           <View />
@@ -116,7 +116,7 @@ export function FormActionBar({
       <View style={styles.buttonWrapper}>
         {showNext ? (
           <Button variant="default" onPress={onNext} disabled={!canProceed || isDisabled}>
-            <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+            <Text style={[styles.buttonText, { color: colors.primaryForeground }]} numberOfLines={1}>
               {nextLabel}
             </Text>
             <IconArrowRight size={18} color={colors.primaryForeground} />
@@ -128,7 +128,7 @@ export function FormActionBar({
             ) : (
               <IconCheck size={18} color={colors.primaryForeground} />
             )}
-            <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+            <Text style={[styles.buttonText, { color: colors.primaryForeground }]} numberOfLines={1}>
               {isDisabled ? submittingLabel : submitLabel}
             </Text>
           </Button>
@@ -156,5 +156,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 15,
     fontWeight: "600",
+    flexShrink: 1,
   },
 });

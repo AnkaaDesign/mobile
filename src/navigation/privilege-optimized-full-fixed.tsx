@@ -159,6 +159,7 @@ const ALL_ROUTES = [
   { name: "producao/agenda/index", title: "Agenda" },
   { name: "producao/agenda/cadastrar", title: "Cadastrar Tarefa" },
   { name: "producao/agenda/detalhes/[id]", title: "Detalhes da Tarefa" },
+  { name: "producao/agenda/precificacao/[id]", title: "Or\u00e7amento" },
   { name: "producao/tarefa/[id]", title: "Detalhes da Tarefa" },
   { name: "producao/cronograma/listar", title: "Cronograma" },
   { name: "producao/cronograma/operacoes-em-lote", title: "Operações em Lote" },
@@ -740,6 +741,8 @@ function InnerLayout() {
             backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8", // background colors
             paddingHorizontal: Platform.OS === 'ios' ? 16 : 12,
           },
+          // Unmount screens when navigating away - resets state (search, filters, etc.)
+          unmountOnBlur: true,
         };
       }}
     >

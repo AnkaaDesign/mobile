@@ -1,0 +1,428 @@
+import { View, StyleSheet, Image } from "react-native";
+import { ThemedText } from "@/components/ui/themed-text";
+import { formatCurrency, formatDate } from "@/utils";
+import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
+import { getFileUrl } from "@/utils/file-utils";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import type { TaskPricing } from "@/types/task-pricing";
+
+const COMPANY = {
+  name: "Ankaa Design",
+  address: "Rua: Lu\u00eds Carlos Zani, 2493 - Santa Paula, Ibipor\u00e3-PR",
+  phone: "43 9 8428-3228",
+  website: "ankaadesign.com.br",
+  primaryGreen: "#0a5c1e",
+  directorName: "Sergio Rodrigues",
+  directorTitle: "Diretor Comercial",
+};
+
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s)\S/g, (match) => match.toUpperCase());
+}
+
+interface BudgetPreviewProps {
+  pricing: {
+    budgetNumber?: number;
+    subtotal: number;
+    discountType: string;
+    discountValue: number | null;
+    total: number;
+    expiresAt?: Date | string | null;
+    status: string;
+    paymentCondition?: string | null;
+    customPaymentText?: string | null;
+    guaranteeYears?: number | null;
+    customGuaranteeText?: string | null;
+    layoutFileId?: string | null;
+    layoutFile?: { id: string } | null;
+    items?: Array<{
+      id?: string;
+      description: string;
+      observation?: string | null;
+      amount: number;
+    }>;
+    createdAt?: Date | string;
+  };
+  task?: {
+    name?: string;
+    serialNumber?: string;
+    term?: Date | string | null;
+    customer?: {
+      corporateName?: string;
+      fantasyName?: string;
+    };
+    negotiatingWith?: { name?: string };
+  };
+}
+
+export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
+  const corporateName =
+    task?.customer?.corporateName ||
+    task?.customer?.fantasyName ||
+    "Cliente";
+  const contactName = task?.negotiatingWith?.name || "";
+  const budgetNumber = pricing.budgetNumber
+    ? String(pricing.budgetNumber).padStart(4, "0")
+    : task?.serialNumber || "0000";
+
+  const validityDays = pricing.expiresAt
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(pricing.expiresAt).getTime() - Date.now()) /
+            (1000 * 60 * 60 * 24)
+        )
+      )
+    : 30;
+
+  const termDate = task?.term ? formatDate(task.term as any) : "";
+  const paymentText = generatePaymentText(pricing as TaskPricing);
+  const guaranteeText = generateGuaranteeText(pricing as TaskPricing);
+  const hasDiscount =
+    pricing.discountType !== "NONE" &&
+    pricing.discountValue != null &&
+    pricing.discountValue > 0;
+  const discountAmount =
+    pricing.discountType === "PERCENTAGE"
+      ? (pricing.subtotal * (pricing.discountValue || 0)) / 100
+      : pricing.discountValue || 0;
+
+  const layoutImageUrl =
+    pricing.layoutFile?.id
+      ? getFileUrl(pricing.layoutFile as any)
+      : null;
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <ThemedText style={styles.companyName}>{COMPANY.name}</ThemedText>
+        <View style={styles.headerRight}>
+          <ThemedText style={styles.budgetTitle}>
+            Or\u00e7amento N\u00ba {budgetNumber}
+          </ThemedText>
+          {pricing.createdAt && (
+            <ThemedText style={styles.headerMeta}>
+              Emiss\u00e3o: {formatDate(pricing.createdAt as any)}
+            </ThemedText>
+          )}
+          <ThemedText style={styles.headerMeta}>
+            Validade: {validityDays} dias
+          </ThemedText>
+        </View>
+      </View>
+
+      {/* Green divider */}
+      <View style={styles.divider} />
+
+      {/* Title */}
+      <ThemedText style={styles.sectionTitle}>OR\u00c7AMENTO</ThemedText>
+
+      {/* Customer Info */}
+      <View style={styles.section}>
+        <ThemedText style={styles.customerName}>
+          \u00c0 {corporateName}
+        </ThemedText>
+        {contactName ? (
+          <ThemedText style={styles.bodyText}>
+            Caro {contactName}
+          </ThemedText>
+        ) : null}
+        <ThemedText style={styles.bodyText}>
+          Conforme solicitado, apresentamos nossa proposta de pre\u00e7o para
+          execu\u00e7\u00e3o dos servi\u00e7os abaixo descriminados.
+        </ThemedText>
+      </View>
+
+      {/* Services */}
+      <View style={styles.section}>
+        <ThemedText style={styles.sectionTitle}>Servi\u00e7os</ThemedText>
+        {pricing.items?.map((item, index) => {
+          const description = toTitleCase(item.description || "");
+          const observation = item.observation
+            ? toTitleCase(item.observation)
+            : "";
+          const displayText = observation
+            ? `${description} ${observation}`
+            : description;
+          return (
+            <View key={item.id || index} style={styles.serviceRow}>
+              <ThemedText style={styles.serviceDescription} numberOfLines={2}>
+                {index + 1} - {displayText}
+              </ThemedText>
+              <ThemedText style={styles.serviceAmount}>
+                {formatCurrency(Number(item.amount) || 0)}
+              </ThemedText>
+            </View>
+          );
+        })}
+
+        {/* Totals */}
+        {hasDiscount ? (
+          <View style={styles.totalsContainer}>
+            <View style={styles.totalRow}>
+              <ThemedText style={styles.bodyText}>Subtotal</ThemedText>
+              <ThemedText style={styles.bodyText}>
+                {formatCurrency(pricing.subtotal)}
+              </ThemedText>
+            </View>
+            <View style={styles.totalRow}>
+              <ThemedText style={styles.discountText}>
+                Desconto
+                {pricing.discountType === "PERCENTAGE"
+                  ? ` (${pricing.discountValue}%)`
+                  : ""}
+              </ThemedText>
+              <ThemedText style={styles.discountText}>
+                - {formatCurrency(discountAmount)}
+              </ThemedText>
+            </View>
+            <View style={[styles.totalRow, styles.totalRowFinal]}>
+              <ThemedText style={styles.totalLabel}>Total</ThemedText>
+              <ThemedText style={styles.totalValue}>
+                {formatCurrency(pricing.total)}
+              </ThemedText>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.totalsContainer}>
+            <View style={[styles.totalRow, styles.totalRowFinal]}>
+              <ThemedText style={styles.totalLabel}>Total</ThemedText>
+              <ThemedText style={styles.totalValue}>
+                {formatCurrency(pricing.total)}
+              </ThemedText>
+            </View>
+          </View>
+        )}
+      </View>
+
+      {/* Delivery Term */}
+      {termDate ? (
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>
+            Prazo de entrega
+          </ThemedText>
+          <ThemedText style={styles.bodyText}>
+            O prazo de entrega \u00e9 de {termDate}, desde que o implemento
+            esteja nas condi\u00e7\u00f5es previamente informada e n\u00e3o haja
+            altera\u00e7\u00f5es nos servi\u00e7os descritos.
+          </ThemedText>
+        </View>
+      ) : null}
+
+      {/* Payment Terms */}
+      {paymentText ? (
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>
+            Condi\u00e7\u00f5es de pagamento
+          </ThemedText>
+          <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
+        </View>
+      ) : null}
+
+      {/* Guarantee */}
+      {guaranteeText ? (
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Garantias</ThemedText>
+          <ThemedText style={styles.bodyText}>{guaranteeText}</ThemedText>
+        </View>
+      ) : null}
+
+      {/* Layout Image */}
+      {layoutImageUrl ? (
+        <View style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>
+            Layout aprovado
+          </ThemedText>
+          <Image
+            source={{ uri: layoutImageUrl }}
+            style={styles.layoutImage}
+            resizeMode="contain"
+          />
+        </View>
+      ) : null}
+
+      {/* Signature area */}
+      <View style={styles.signatureSection}>
+        <View style={styles.signatureBlock}>
+          <View style={styles.signatureLine} />
+          <ThemedText style={styles.signatureName}>
+            {COMPANY.directorName}
+          </ThemedText>
+          <ThemedText style={styles.signatureRole}>
+            {COMPANY.directorTitle}
+          </ThemedText>
+        </View>
+        <View style={styles.signatureBlock}>
+          <View style={styles.signatureLine} />
+          <ThemedText style={styles.signatureName}>
+            Respons\u00e1vel CLIENTE
+          </ThemedText>
+        </View>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <View style={styles.divider} />
+        <ThemedText style={styles.footerCompany}>{COMPANY.name}</ThemedText>
+        <ThemedText style={styles.footerText}>{COMPANY.address}</ThemedText>
+        <ThemedText style={[styles.footerText, { color: COMPANY.primaryGreen }]}>
+          {COMPANY.phone}
+        </ThemedText>
+        <ThemedText style={[styles.footerText, { color: COMPANY.primaryGreen }]}>
+          {COMPANY.website}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
+  companyName: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: "#0a5c1e",
+    flex: 1,
+  },
+  headerRight: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  budgetTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: "#111827",
+  },
+  headerMeta: {
+    fontSize: fontSize.xs,
+    color: "#6b7280",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#0a5c1e",
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: "#0a5c1e",
+    marginBottom: spacing.xs,
+  },
+  section: {
+    gap: spacing.xs,
+  },
+  customerName: {
+    fontWeight: fontWeight.bold,
+    color: "#0a5c1e",
+  },
+  bodyText: {
+    fontSize: fontSize.sm,
+    color: "#374151",
+    lineHeight: 20,
+  },
+  serviceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingLeft: spacing.md,
+    gap: spacing.sm,
+  },
+  serviceDescription: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    color: "#1f2937",
+  },
+  serviceAmount: {
+    fontSize: fontSize.sm,
+    color: "#1f2937",
+    flexShrink: 0,
+  },
+  totalsContainer: {
+    marginTop: spacing.md,
+    paddingLeft: spacing.md,
+    gap: spacing.xs,
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+  },
+  totalRowFinal: {
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    marginTop: spacing.xs,
+  },
+  discountText: {
+    fontSize: fontSize.sm,
+    color: "#dc2626",
+  },
+  totalLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: "#111827",
+  },
+  totalValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: "#0a5c1e",
+  },
+  layoutImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 8,
+  },
+  signatureSection: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    gap: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  signatureBlock: {
+    flex: 1,
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  signatureLine: {
+    width: "80%",
+    height: 1,
+    backgroundColor: "#111827",
+    marginBottom: spacing.xs,
+  },
+  signatureName: {
+    fontSize: fontSize.sm,
+    color: "#111827",
+    textAlign: "center",
+  },
+  signatureRole: {
+    fontSize: fontSize.xs,
+    color: "#6b7280",
+    textAlign: "center",
+  },
+  footer: {
+    gap: 2,
+    marginTop: spacing.md,
+  },
+  footerCompany: {
+    fontWeight: fontWeight.bold,
+    color: "#0a5c1e",
+    marginTop: spacing.sm,
+  },
+  footerText: {
+    fontSize: fontSize.xs,
+    color: "#6b7280",
+  },
+});

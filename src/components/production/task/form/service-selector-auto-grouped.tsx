@@ -182,6 +182,14 @@ export function ServiceSelectorAutoGrouped({
 
   return (
     <View style={styles.container}>
+      {/* Add Service Button */}
+      <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
+        <IconPlus size={16} color={colors.foreground} />
+        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
+          Adicionar Serviço
+        </ThemedText>
+      </Button>
+
       {/* Ungrouped services (being edited) */}
       {ungroupedIndices.length > 0 && (
         <View style={[styles.ungroupedSection, { borderBottomColor: colors.border }]}>
@@ -210,14 +218,6 @@ export function ServiceSelectorAutoGrouped({
       <View style={styles.groupedSection}>
         {Object.values(SERVICE_ORDER_TYPE).map((type) => renderServiceGroup(type))}
       </View>
-
-      {/* Add Service Button */}
-      <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
-        <IconPlus size={16} color={colors.foreground} />
-        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
-          Adicionar Serviço
-        </ThemedText>
-      </Button>
 
       {error && (
         <ThemedText style={[styles.error, { color: colors.destructive }]}>

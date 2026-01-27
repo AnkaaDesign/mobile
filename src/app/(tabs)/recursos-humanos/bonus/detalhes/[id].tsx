@@ -96,7 +96,7 @@ export default function BonusDetailScreen() {
               sector: true,
             },
           },
-          bonusDiscounts: true,
+          bonusDiscounts: true, bonusExtras: true,
           users: true,
         } as any,
       });
@@ -205,15 +205,13 @@ export default function BonusDetailScreen() {
     if (!bonus) return 0;
 
     // Primary: Use netBonus directly from API (single source of truth)
-    const netBonus = toNumber((bonus as any).netBonus);
-    if (netBonus > 0) {
-      return netBonus;
+    // Check raw value before conversion since toNumber returns 0 for null/undefined
+    if ((bonus as any).netBonus !== null && (bonus as any).netBonus !== undefined) {
+      return toNumber((bonus as any).netBonus);
     }
 
     // Fallback: If netBonus is not available, use baseBonus
-    // This handles legacy data or edge cases
-    const baseBonus = toNumber(bonus.baseBonus);
-    return baseBonus;
+    return toNumber(bonus.baseBonus);
   }, [bonus, toNumber]);
 
   // Get eligible users count from various sources
@@ -255,6 +253,7 @@ export default function BonusDetailScreen() {
   }
 
   const bonusValue = calculateFinalAmount();
+  const hasExtras = bonus.bonusExtras && bonus.bonusExtras.length > 0;
   const hasDiscounts = bonus.bonusDiscounts && bonus.bonusDiscounts.length > 0;
 
   return (
@@ -311,6 +310,22 @@ export default function BonusDetailScreen() {
                     {formatBonusAmount(bonus.baseBonus)}
                   </ThemedText>
                 </View>
+                {hasExtras && bonus.bonusExtras!.map((extra: any, index: number) => {
+                  const percentageValue = toNumber(extra.percentage);
+                  const hasPercentage = percentageValue > 0;
+                  return (
+                    <View key={extra.id || `extra-${index}`} style={styles.detailRow}>
+                      <ThemedText style={[styles.detailLabel, { color: '#059669' }]}>
+                        {extra.reference || `Extra ${index + 1}`}:
+                      </ThemedText>
+                      <ThemedText style={[styles.detailValue, { color: '#059669' }]}>
+                        +{hasPercentage
+                          ? `${percentageValue}%`
+                          : formatCurrency(toNumber(extra.value))}
+                      </ThemedText>
+                    </View>
+                  );
+                })}
                 {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => {
                   const percentageValue = toNumber(discount.percentage);
                   const hasPercentage = percentageValue > 0;

@@ -1,9 +1,6 @@
-import { Linking, Alert } from 'react-native';
+import { Linking } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// DEBUG: Flag to enable/disable debug alerts for testing
-const DEBUG_DEEP_LINKING = true;
 
 // =====================================================
 // Route Mapping Configuration
@@ -630,14 +627,6 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
 
     const { route, params, requiresAuth } = parseDeepLink(url);
 
-    if (DEBUG_DEEP_LINKING) {
-      Alert.alert(
-        '🧭 Deep Link Parsed',
-        `URL: ${url}\nRoute: ${route || '(empty)'}\nParams: ${JSON.stringify(params) || 'none'}\nRequiresAuth: ${requiresAuth}\nIsAuth: ${isAuthenticated}`,
-        [{ text: 'OK' }]
-      );
-    }
-
     // If route is empty, the URL should be ignored (e.g., Expo dev URLs)
     if (!route) {
       console.log('[Deep Link] Ignoring URL - no route to navigate');
@@ -647,9 +636,6 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     // If route requires auth but user is not authenticated
     if (requiresAuth && !isAuthenticated) {
       console.log('[Deep Link] Storing pending deep link for after login');
-      if (DEBUG_DEEP_LINKING) {
-        Alert.alert('🔒 Auth Required', `Storing deep link for after login:\n${url}`);
-      }
       await storePendingDeepLink(url);
 
       // Navigate to login
@@ -660,14 +646,6 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     // Navigate to the parsed route
     console.log('[Deep Link] Navigating to:', route, 'Params:', params);
 
-    if (DEBUG_DEEP_LINKING) {
-      Alert.alert(
-        '➡️ Navigating',
-        `Route: ${route}\nParams: ${JSON.stringify(params) || 'none'}`,
-        [{ text: 'OK' }]
-      );
-    }
-
     if (params) {
       router.push({ pathname: route as any, params });
     } else {
@@ -675,9 +653,6 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     }
   } catch (error) {
     console.error('[Deep Link] Error handling deep link:', error);
-    if (DEBUG_DEEP_LINKING) {
-      Alert.alert('❌ Deep Link Error', `Error: ${error}`);
-    }
     // Fallback to home on error
     router.push('/(tabs)');
   }
@@ -707,14 +682,6 @@ export async function processPendingDeepLink(isAuthenticated: boolean): Promise<
     if (pendingUrl && isAuthenticated) {
       console.log('[Deep Link] Processing pending deep link:', pendingUrl);
 
-      if (DEBUG_DEEP_LINKING) {
-        Alert.alert(
-          '📦 Processing Pending Deep Link',
-          `URL: ${pendingUrl}\nAuth: ${isAuthenticated ? 'Yes' : 'No'}`,
-          [{ text: 'OK' }]
-        );
-      }
-
       // Clear the pending link
       await AsyncStorage.removeItem(PENDING_DEEP_LINK_KEY);
 
@@ -725,9 +692,6 @@ export async function processPendingDeepLink(isAuthenticated: boolean): Promise<
     }
   } catch (error) {
     console.error('[Deep Link] Error processing pending deep link:', error);
-    if (DEBUG_DEEP_LINKING) {
-      Alert.alert('❌ Pending Deep Link Error', `Error: ${error}`);
-    }
   }
 }
 

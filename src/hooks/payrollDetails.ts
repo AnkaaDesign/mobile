@@ -147,7 +147,7 @@ export const usePayrollUserStats = (
         where: { year, month, userId: options?.userId },
         include: {
           user: { include: { position: true, sector: true } },
-          bonus: { include: { bonusDiscounts: true, tasks: true } },
+          bonus: { include: { bonusDiscounts: true, bonusExtras: true, tasks: true } },
           discounts: true
         }
       });
@@ -163,7 +163,7 @@ export const usePayrollUserStats = (
         baseRemuneration: payroll.baseRemuneration,
         bonus: payroll.bonus?.baseBonus || 0,
         totalDiscounts: payroll.discounts?.reduce((sum: number, d: any) =>
-          sum + (d.percentage ? payroll.baseRemuneration * d.percentage / 100 : d.fixedValue || 0), 0
+          sum + (d.percentage ? payroll.baseRemuneration * d.percentage / 100 : d.value || 0), 0
         ) || 0,
         netSalary: 0, // Calculate based on base + bonus - discounts
         taskCount: payroll.bonus?.tasks?.length || 0,

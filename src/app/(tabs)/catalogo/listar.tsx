@@ -5,6 +5,7 @@ console.log('[CATALOG FILE] Module loaded at:', new Date().toISOString());
 import type { FlatList as FlatListType } from "react-native";
 import { Stack, router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePageTracker } from "@/hooks/use-page-tracker";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -71,6 +72,9 @@ function CatalogViewOnlyListScreen() {
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
   const tagBadgeStyle = isDark ? TAG_BADGE_COLORS.dark : TAG_BADGE_COLORS.light;
   // const { toast } = useToast();
+
+  // Track page access for recents/most accessed
+  usePageTracker({ title: "Catálogo de Tintas" });
 
   // View state - minimized (grid) or maximized (cards)
   const [isMinimized, setIsMinimized] = useState(true); // Default to minimized (grid view)

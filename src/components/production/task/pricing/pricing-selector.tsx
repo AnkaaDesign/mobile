@@ -78,7 +78,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     const [initialized, setInitialized] = useState(false);
     const { setValue, clearErrors, getValues } = useFormContext();
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields, append, prepend, remove } = useFieldArray({
       control,
       name: "pricing.items",
     });
@@ -201,8 +201,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
         setValue("pricing.subtotal", 0);
         setValue("pricing.total", 0);
       }
-      append({ description: "", observation: null, amount: undefined });
-    }, [append, clearErrors, fields.length, setValue]);
+      prepend({ description: "", observation: null, amount: undefined });
+    }, [prepend, clearErrors, fields.length, setValue]);
 
     const clearAll = useCallback(() => {
       for (let i = fields.length - 1; i >= 0; i--) {
@@ -283,6 +283,14 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
 
     return (
       <View style={styles.container}>
+        {/* Add Service Button - Full width above rows */}
+        {!disabled && (
+          <Button variant="outline" size="sm" onPress={handleAddItem} disabled={disabled} style={styles.addButton}>
+            <IconPlus size={16} color={colors.foreground} />
+            <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>Adicionar Serviço</ThemedText>
+          </Button>
+        )}
+
         {/* Services Section */}
         <View style={styles.section}>
           {fields.length > 0 &&
@@ -293,16 +301,9 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 index={index}
                 disabled={disabled}
                 onRemove={() => handleRemoveItem(index)}
-                onAdd={handleAddItem}
                 isLastRow={index === fields.length - 1}
               />
             ))}
-          {fields.length === 0 && !disabled && (
-            <Button variant="outline" size="sm" onPress={handleAddItem} disabled={disabled} style={styles.addButton}>
-              <IconPlus size={16} color={colors.foreground} />
-              <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>Adicionar Serviço</ThemedText>
-            </Button>
-          )}
         </View>
 
         {/* Discount Section */}
@@ -387,7 +388,9 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           <View style={[styles.section, styles.borderedSection, { borderTopColor: colors.border }]}>
             <View style={styles.row}>
               <View style={styles.halfField}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
+                <View style={styles.labelWithIcon}>
+                  <ThemedText style={[styles.label, { color: colors.foreground, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
+                </View>
                 <Combobox
                   value={pricingStatus || "DRAFT"}
                   onValueChange={(value) => setValue("pricing.status", value)}
@@ -400,7 +403,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
               <View style={styles.halfField}>
                 <View style={styles.labelWithIcon}>
                   <IconCalendar size={14} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4 }]}>
+                  <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]}>
                     Validade <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
                   </ThemedText>
                 </View>
@@ -537,11 +540,10 @@ interface PricingItemRowProps {
   index: number;
   disabled?: boolean;
   onRemove: () => void;
-  onAdd: () => void;
   isLastRow: boolean;
 }
 
-function PricingItemRow({ control, index, disabled, onRemove, onAdd, isLastRow }: PricingItemRowProps) {
+function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: PricingItemRowProps) {
   const { colors } = useTheme();
   const { setValue } = useFormContext();
   const [observationModal, setObservationModal] = useState({ visible: false, text: "" });
@@ -620,12 +622,6 @@ function PricingItemRow({ control, index, disabled, onRemove, onAdd, isLastRow }
           </TouchableOpacity>
         )}
 
-        {/* Add Button (only on last row) */}
-        {!disabled && isLastRow && (
-          <TouchableOpacity style={[styles.actionButton, { borderColor: colors.primary }]} onPress={onAdd}>
-            <IconPlus size={16} color={colors.primary} />
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Observation Modal */}

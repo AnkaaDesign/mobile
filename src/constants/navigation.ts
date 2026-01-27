@@ -653,13 +653,31 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // (Direct access shortcuts - kept at end after main menu items)
   // ============================================================
 
-  // Aerografia - Direct access for FINANCIAL only
+  // Aerografia - Direct access for FINANCIAL and COMMERCIAL (matches web)
   {
     id: "aerografia-direct",
     title: "Aerografia",
     icon: "paintBrush",
     path: "/producao/aerografia",
-    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL],
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL],
+  },
+
+  // Barracões - Direct access for LOGISTIC and COMMERCIAL (matches web)
+  {
+    id: "barracoes-direct",
+    title: "Barracões",
+    icon: "warehouse",
+    path: "/producao/garagens",
+    requiredPrivilege: [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL],
+  },
+
+  // Observações - Direct access for COMMERCIAL (matches web)
+  {
+    id: "observacoes-direct",
+    title: "Observações",
+    icon: "note",
+    path: "/producao/observacoes",
+    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL],
   },
 
   // Catalogo de Tintas - Direct access removed for DESIGNER (they use the view-only "/catalogo" menu)

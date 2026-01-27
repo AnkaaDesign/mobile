@@ -29,10 +29,124 @@ import {
   IconCalendar,
   IconTools,
   IconRuler,
-  IconStar
+  IconStar,
+  IconHome,
+  IconActivity,
+  IconMessageCircle,
+  IconChartBar,
 } from "@tabler/icons-react-native";
 import type { Icon } from "@tabler/icons-react-native";
 import { FAVORITE_PAGES } from '../constants';
+
+// Path prefix to icon mapping for dynamic routes
+const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }> = [
+  // Home
+  { prefix: "/", icon: IconHome, color: "#3b82f6" },
+
+  // Produção
+  { prefix: "/producao/agenda", icon: IconClipboardList, color: "#f59e0b" },
+  { prefix: "/producao/cronograma", icon: IconClipboardList, color: "#3b82f6" },
+  { prefix: "/producao/barracoes", icon: IconBuildingWarehouse, color: "#64748b" },
+  { prefix: "/producao/garagens", icon: IconBuildingWarehouse, color: "#64748b" },
+  { prefix: "/producao/historico", icon: IconHistory, color: "#6b7280" },
+  { prefix: "/producao/recorte", icon: IconScissors, color: "#a855f7" },
+  { prefix: "/producao/observacoes", icon: IconNote, color: "#14b8a6" },
+  { prefix: "/producao/aerografia", icon: IconBrush, color: "#ec4899" },
+  { prefix: "/producao/servicos", icon: IconTools, color: "#f97316" },
+  { prefix: "/producao/ordens-de-servico", icon: IconClipboardList, color: "#2563eb" },
+  { prefix: "/producao/dashboard", icon: IconChartBar, color: "#3b82f6" },
+  { prefix: "/producao", icon: IconClipboardList, color: "#3b82f6" },
+
+  // Estoque
+  { prefix: "/estoque/movimentacoes", icon: IconArchive, color: "#22c55e" },
+  { prefix: "/estoque/produtos/categorias", icon: IconTag, color: "#10b981" },
+  { prefix: "/estoque/produtos/marcas", icon: IconTag, color: "#10b981" },
+  { prefix: "/estoque/produtos", icon: IconPackage, color: "#16a34a" },
+  { prefix: "/estoque/fornecedores", icon: IconTruck, color: "#06b6d4" },
+  { prefix: "/estoque/pedidos/agendamentos", icon: IconCalendarEvent, color: "#60a5fa" },
+  { prefix: "/estoque/pedidos/automaticos", icon: IconRepeat, color: "#3b82f6" },
+  { prefix: "/estoque/pedidos", icon: IconShoppingCart, color: "#3b82f6" },
+  { prefix: "/estoque/manutencao/agendamentos", icon: IconCalendar, color: "#ef4444" },
+  { prefix: "/estoque/manutencao", icon: IconTool, color: "#dc2626" },
+  { prefix: "/estoque/retiradas-externas", icon: IconArchive, color: "#f97316" },
+  { prefix: "/estoque/epi/entregas", icon: IconShield, color: "#fbbf24" },
+  { prefix: "/estoque/epi/agendamentos", icon: IconCalendar, color: "#fbbf24" },
+  { prefix: "/estoque/epi", icon: IconShield, color: "#eab308" },
+  { prefix: "/estoque/emprestimos", icon: IconRepeat, color: "#a855f7" },
+  { prefix: "/estoque", icon: IconPackage, color: "#22c55e" },
+
+  // Pintura
+  { prefix: "/pintura/catalogo", icon: IconPaint, color: "#6366f1" },
+  { prefix: "/pintura/producoes", icon: IconFlask, color: "#818cf8" },
+  { prefix: "/pintura/formulas", icon: IconFlask, color: "#6366f1" },
+  { prefix: "/pintura/formulacoes", icon: IconFlask, color: "#6366f1" },
+  { prefix: "/pintura/componentes", icon: IconFlask, color: "#6366f1" },
+  { prefix: "/pintura/tipos-de-tinta", icon: IconPalette, color: "#818cf8" },
+  { prefix: "/pintura/dashboard", icon: IconChartBar, color: "#6366f1" },
+  { prefix: "/pintura", icon: IconPaint, color: "#6366f1" },
+
+  // Administração
+  { prefix: "/administracao/comissoes", icon: IconCoins, color: "#22c55e" },
+  { prefix: "/administracao/clientes", icon: IconUsers, color: "#f97316" },
+  { prefix: "/administracao/colaboradores", icon: IconUsers, color: "#a855f7" },
+  { prefix: "/administracao/orcamentos", icon: IconFileInvoice, color: "#3b82f6" },
+  { prefix: "/administracao/registros-de-alteracoes", icon: IconHistory, color: "#6b7280" },
+  { prefix: "/administracao/arquivos", icon: IconFile, color: "#4b5563" },
+  { prefix: "/administracao/setores", icon: IconBuildingSkyscraper, color: "#14b8a6" },
+  { prefix: "/administracao/notificacoes", icon: IconBell, color: "#ef4444" },
+  { prefix: "/administracao/mensagens", icon: IconMessageCircle, color: "#3b82f6" },
+  { prefix: "/administracao", icon: IconBuildingSkyscraper, color: "#14b8a6" },
+
+  // Recursos Humanos
+  { prefix: "/recursos-humanos/cargos", icon: IconBriefcase, color: "#a855f7" },
+  { prefix: "/recursos-humanos/ferias", icon: IconBeach, color: "#3b82f6" },
+  { prefix: "/recursos-humanos/feriados", icon: IconCalendar, color: "#f97316" },
+  { prefix: "/recursos-humanos/avisos", icon: IconAlertTriangle, color: "#ef4444" },
+  { prefix: "/recursos-humanos/epi/entregas", icon: IconShield, color: "#fbbf24" },
+  { prefix: "/recursos-humanos/epi/agendamentos", icon: IconCalendar, color: "#fbbf24" },
+  { prefix: "/recursos-humanos/epi", icon: IconShield, color: "#eab308" },
+  { prefix: "/recursos-humanos/setores", icon: IconBuildingSkyscraper, color: "#14b8a6" },
+  { prefix: "/recursos-humanos", icon: IconUsers, color: "#a855f7" },
+
+  // Pessoal
+  { prefix: "/pessoal/feriados", icon: IconCalendar, color: "#f97316" },
+  { prefix: "/pessoal/ferias", icon: IconBeach, color: "#3b82f6" },
+  { prefix: "/pessoal/meus-epis", icon: IconShield, color: "#eab308" },
+  { prefix: "/pessoal/meus-emprestimos", icon: IconRepeat, color: "#a855f7" },
+  { prefix: "/pessoal/minhas-atividades", icon: IconActivity, color: "#22c55e" },
+  { prefix: "/pessoal", icon: IconUsers, color: "#3b82f6" },
+
+  // Estatísticas
+  { prefix: "/estatisticas", icon: IconChartBar, color: "#3b82f6" },
+
+  // Favoritos
+  { prefix: "/favoritos", icon: IconStar, color: "#eab308" },
+];
+
+// Get icon and color for a page by path (supports dynamic routes)
+export function getIconInfoByPath(path: string): { icon: Icon; color: string } {
+  // Exact match for home
+  if (path === "/" || path === "") {
+    return { icon: IconHome, color: "#3b82f6" };
+  }
+
+  // Find the most specific matching prefix (longer prefix = more specific)
+  let bestMatch: { icon: Icon; color: string } | null = null;
+  let bestMatchLength = 0;
+
+  for (const entry of PATH_PREFIX_ICON_MAP) {
+    if (path.startsWith(entry.prefix) && entry.prefix.length > bestMatchLength) {
+      bestMatch = { icon: entry.icon, color: entry.color };
+      bestMatchLength = entry.prefix.length;
+    }
+  }
+
+  if (bestMatch) {
+    return bestMatch;
+  }
+
+  return { icon: IconFile, color: "#6b7280" };
+}
 
 // Map of page paths to icons and colors
 export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {

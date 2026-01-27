@@ -310,7 +310,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
                 Período da Bonificação:
               </Text>
               <Text style={[styles.periodValue, { color: colors.mutedForeground }]}>
-                26/{String((form.watch("month") ?? 1) - 1).padStart(2, '0')} a 25/{String(form.watch("month") ?? 1).padStart(2, '0')}/{form.watch("year")}
+                26/{(form.watch("month") ?? 1) === 1 ? '12' : String((form.watch("month") ?? 1) - 1).padStart(2, '0')}/{(form.watch("month") ?? 1) === 1 ? (form.watch("year") ?? new Date().getFullYear()) - 1 : form.watch("year")} a 25/{String(form.watch("month") ?? 1).padStart(2, '0')}/{form.watch("year")}
               </Text>
             </View>
           )}

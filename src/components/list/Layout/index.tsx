@@ -10,6 +10,7 @@ import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useList } from '@/hooks/list/useList'
 import { useAuth } from '@/contexts/auth-context'
+import { usePageTracker } from '@/hooks/use-page-tracker'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters, Tags } from '../Filters'
@@ -32,6 +33,9 @@ export const Layout = memo(function Layout({
   const router = useRouter()
   const { user } = useAuth()
   const list = useList(config)
+
+  // Track page access for recents/most accessed
+  usePageTracker({ title: config.title })
 
   // Handle create action
   const handleCreate = () => {
