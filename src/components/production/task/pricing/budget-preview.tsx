@@ -1,14 +1,16 @@
 import { View, StyleSheet, Image } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 import type { TaskPricing } from "@/types/task-pricing";
 
 const COMPANY = {
   name: "Ankaa Design",
-  address: "Rua: Lu\u00eds Carlos Zani, 2493 - Santa Paula, Ibipor\u00e3-PR",
+  address: "Rua: Luís Carlos Zani, 2493 - Santa Paula, Ibiporã-PR",
   phone: "43 9 8428-3228",
   website: "ankaadesign.com.br",
   primaryGreen: "#0a5c1e",
@@ -58,6 +60,8 @@ interface BudgetPreviewProps {
 }
 
 export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
+  const { colors } = useTheme();
+
   const corporateName =
     task?.customer?.corporateName ||
     task?.customer?.fantasyName ||
@@ -89,23 +93,26 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       ? (pricing.subtotal * (pricing.discountValue || 0)) / 100
       : pricing.discountValue || 0;
 
+  // Handle both uploaded files (with id) and newly selected files (with uri)
   const layoutImageUrl =
-    pricing.layoutFile?.id
+    (pricing.layoutFile as any)?.uri // Newly selected file - use local URI
+      ? (pricing.layoutFile as any).uri
+      : pricing.layoutFile?.id // Uploaded file - use getFileUrl
       ? getFileUrl(pricing.layoutFile as any)
       : null;
 
   return (
-    <View style={styles.container}>
+    <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.companyName}>{COMPANY.name}</ThemedText>
         <View style={styles.headerRight}>
           <ThemedText style={styles.budgetTitle}>
-            Or\u00e7amento N\u00ba {budgetNumber}
+            Orçamento Nº {budgetNumber}
           </ThemedText>
           {pricing.createdAt && (
             <ThemedText style={styles.headerMeta}>
-              Emiss\u00e3o: {formatDate(pricing.createdAt as any)}
+              Emissão: {formatDate(pricing.createdAt as any)}
             </ThemedText>
           )}
           <ThemedText style={styles.headerMeta}>
@@ -118,12 +125,12 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       <View style={styles.divider} />
 
       {/* Title */}
-      <ThemedText style={styles.sectionTitle}>OR\u00c7AMENTO</ThemedText>
+      <ThemedText style={styles.sectionTitle}>ORÇAMENTO</ThemedText>
 
       {/* Customer Info */}
       <View style={styles.section}>
         <ThemedText style={styles.customerName}>
-          \u00c0 {corporateName}
+          À {corporateName}
         </ThemedText>
         {contactName ? (
           <ThemedText style={styles.bodyText}>
@@ -131,14 +138,14 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
           </ThemedText>
         ) : null}
         <ThemedText style={styles.bodyText}>
-          Conforme solicitado, apresentamos nossa proposta de pre\u00e7o para
-          execu\u00e7\u00e3o dos servi\u00e7os abaixo descriminados.
+          Conforme solicitado, apresentamos nossa proposta de preço para
+          execução dos serviços abaixo descriminados.
         </ThemedText>
       </View>
 
       {/* Services */}
       <View style={styles.section}>
-        <ThemedText style={styles.sectionTitle}>Servi\u00e7os</ThemedText>
+        <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
         {pricing.items?.map((item, index) => {
           const description = toTitleCase(item.description || "");
           const observation = item.observation
@@ -205,9 +212,9 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
             Prazo de entrega
           </ThemedText>
           <ThemedText style={styles.bodyText}>
-            O prazo de entrega \u00e9 de {termDate}, desde que o implemento
-            esteja nas condi\u00e7\u00f5es previamente informada e n\u00e3o haja
-            altera\u00e7\u00f5es nos servi\u00e7os descritos.
+            O prazo de entrega é de {termDate}, desde que o implemento
+            esteja nas condições previamente informada e não haja
+            alterações nos serviços descritos.
           </ThemedText>
         </View>
       ) : null}
@@ -216,7 +223,7 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       {paymentText ? (
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Condi\u00e7\u00f5es de pagamento
+            Condições de pagamento
           </ThemedText>
           <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
         </View>
@@ -246,8 +253,16 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
 
       {/* Signature area */}
       <View style={styles.signatureSection}>
+        {/* Company Signature - Sergio */}
         <View style={styles.signatureBlock}>
-          <View style={styles.signatureLine} />
+          <View style={styles.signatureImageContainer}>
+            <Image
+              source={require("../../../../../assets/images/sergio-signature.png")}
+              style={styles.sergioSignature}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
           <ThemedText style={styles.signatureName}>
             {COMPANY.directorName}
           </ThemedText>
@@ -255,11 +270,17 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
             {COMPANY.directorTitle}
           </ThemedText>
         </View>
+
+        {/* Customer Signature */}
         <View style={styles.signatureBlock}>
-          <View style={styles.signatureLine} />
+          <View style={styles.signatureImageContainer}>
+            {/* Placeholder for customer signature */}
+          </View>
+          <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
           <ThemedText style={styles.signatureName}>
-            Respons\u00e1vel CLIENTE
+            Responsável CLIENTE
           </ThemedText>
+          <ThemedText style={styles.signatureRole}>&nbsp;</ThemedText>
         </View>
       </View>
 
@@ -275,13 +296,12 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
           {COMPANY.website}
         </ThemedText>
       </View>
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#ffffff",
     borderRadius: 8,
     padding: spacing.lg,
     gap: spacing.md,
@@ -305,11 +325,10 @@ const styles = StyleSheet.create({
   budgetTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: "#111827",
   },
   headerMeta: {
     fontSize: fontSize.xs,
-    color: "#6b7280",
+    opacity: 0.7,
   },
   divider: {
     height: 1,
@@ -330,8 +349,8 @@ const styles = StyleSheet.create({
   },
   bodyText: {
     fontSize: fontSize.sm,
-    color: "#374151",
     lineHeight: 20,
+    opacity: 0.9,
   },
   serviceRow: {
     flexDirection: "row",
@@ -343,11 +362,9 @@ const styles = StyleSheet.create({
   serviceDescription: {
     flex: 1,
     fontSize: fontSize.sm,
-    color: "#1f2937",
   },
   serviceAmount: {
     fontSize: fontSize.sm,
-    color: "#1f2937",
     flexShrink: 0,
   },
   totalsContainer: {
@@ -363,7 +380,7 @@ const styles = StyleSheet.create({
   totalRowFinal: {
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
     marginTop: spacing.xs,
   },
   discountText: {
@@ -373,7 +390,6 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
-    color: "#111827",
   },
   totalValue: {
     fontSize: fontSize.lg,
@@ -396,20 +412,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.xs,
   },
+  signatureImageContainer: {
+    height: 64,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  sergioSignature: {
+    width: 120,
+    height: 60,
+  },
   signatureLine: {
     width: "80%",
     height: 1,
-    backgroundColor: "#111827",
     marginBottom: spacing.xs,
   },
   signatureName: {
     fontSize: fontSize.sm,
-    color: "#111827",
     textAlign: "center",
   },
   signatureRole: {
     fontSize: fontSize.xs,
-    color: "#6b7280",
+    opacity: 0.7,
     textAlign: "center",
   },
   footer: {
@@ -423,6 +447,6 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: fontSize.xs,
-    color: "#6b7280",
+    opacity: 0.7,
   },
 });

@@ -36,20 +36,20 @@ export default function ProductionPreparationScreen() {
   // - LOGISTIC users: Need PRODUCTION, COMMERCIAL, ARTWORK, LOGISTIC (exclude FINANCIAL)
   // - All other users: Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both FINANCIAL and LOGISTIC)
   const agendaConfig: ListConfig<Task> = useMemo(() => {
-    // Build filter values with agenda display logic
+    // Build filter values with preparation display logic
     // IMPORTANT: Do NOT include status filter - the web deletes it (line 381 of task-history-list.tsx)
-    // and lets shouldDisplayInAgenda handle the filtering. Status grouping happens client-side.
+    // and lets shouldDisplayInPreparation handle the filtering. Status grouping happens client-side.
     const defaultFilters: any = {
-      shouldDisplayInAgenda: true,
+      shouldDisplayInPreparation: true,
     };
 
     // Only FINANCIAL users see FINANCIAL service order requirements
     if (!isFinancialUser) {
-      defaultFilters.agendaExcludeFinancial = true;
+      defaultFilters.preparationExcludeFinancial = true;
     }
     // Only LOGISTIC users see LOGISTIC service order requirements
     if (!isLogisticUser) {
-      defaultFilters.agendaExcludeLogistic = true;
+      defaultFilters.preparationExcludeLogistic = true;
     }
 
     return {

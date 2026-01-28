@@ -61,8 +61,8 @@ const taskFormSchema = z.object({
   customerId: z.string().uuid("Cliente inválido").nullable().optional(),
   invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
   negotiatingWith: z.object({
-    name: z.string().optional(),
-    phone: z.string().optional(),
+    name: z.string().nullable().optional(),
+    phone: z.string().nullable().optional(),
   }).nullable().optional().refine(
     (data) => {
       // If negotiatingWith is provided, both name and phone should be filled or both should be empty
@@ -588,7 +588,15 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
     }],
     // Initialize pricing with default structure - default row is part of initial state, not a change
     pricing: initialData?.pricing ? {
-      expiresAt: initialData.pricing.expiresAt ? new Date(initialData.pricing.expiresAt) : null,
+      expiresAt: initialData.pricing.expiresAt
+        ? new Date(initialData.pricing.expiresAt)
+        : (() => {
+            // Default to 30 days from now if no expiry date exists
+            const defaultExpiry = new Date();
+            defaultExpiry.setDate(defaultExpiry.getDate() + 30);
+            defaultExpiry.setHours(23, 59, 59, 999);
+            return defaultExpiry;
+          })(),
       status: initialData.pricing.status || 'DRAFT',
       subtotal: initialData.pricing.subtotal || 0,
       discountType: initialData.pricing.discountType || 'NONE',
@@ -703,7 +711,15 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
             shouldSync: true,
           }],
           pricing: data?.pricing ? {
-            expiresAt: data.pricing.expiresAt ? new Date(data.pricing.expiresAt) : null,
+            expiresAt: data.pricing.expiresAt
+              ? new Date(data.pricing.expiresAt)
+              : (() => {
+                  // Default to 30 days from now if no expiry date exists
+                  const defaultExpiry = new Date();
+                  defaultExpiry.setDate(defaultExpiry.getDate() + 30);
+                  defaultExpiry.setHours(23, 59, 59, 999);
+                  return defaultExpiry;
+                })(),
             status: data.pricing.status || 'DRAFT',
             subtotal: data.pricing.subtotal || 0,
             discountType: data.pricing.discountType || 'NONE',

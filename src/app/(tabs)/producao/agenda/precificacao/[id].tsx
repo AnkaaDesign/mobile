@@ -8,9 +8,9 @@ export default function TaskPricingScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Or\u00e7amento",
+          title: "Orçamento da Tarefa",
           headerBackTitle: "Voltar",
-          headerShown: false,
+          headerShown: true,
         }}
       />
       <TaskPricingWizard taskId={id} />

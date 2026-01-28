@@ -2,30 +2,27 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   Alert,
   ActivityIndicator,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   TextInput,
   Modal,
   Pressable,
   Text as RNText,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IconArrowLeft, IconArrowRight, IconCheck, IconX, IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto } from "@tabler/icons-react-native";
+import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto } from "@tabler/icons-react-native";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { FormSteps } from "@/components/ui/form-steps";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
+import { MultiStepFormContainer } from "@/components/forms";
 import { BudgetPreview } from "./budget-preview";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -36,6 +33,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { SERVICE_ORDER_TYPE } from "@/constants/enums";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { formatCurrency } from "@/utils";
+import type { FormStep } from "@/components/ui/form-steps";
 
 // Wizard form schema wrapping the nested pricing schema
 const wizardSchema = z.object({
@@ -44,15 +42,15 @@ const wizardSchema = z.object({
 
 type WizardFormData = z.infer<typeof wizardSchema>;
 
-const WIZARD_STEPS = [
-  { id: 1, name: "Configura\u00e7\u00e3o", description: "Dados b\u00e1sicos" },
-  { id: 2, name: "Servi\u00e7os", description: "Itens e valores" },
-  { id: 3, name: "Resumo", description: "Pr\u00e9via" },
+const WIZARD_STEPS: FormStep[] = [
+  { id: 1, name: "Configuração", description: "Dados básicos" },
+  { id: 2, name: "Serviços", description: "Itens e valores" },
+  { id: 3, name: "Resumo", description: "Prévia" },
 ];
 
 // Payment condition options
 const PAYMENT_CONDITIONS = [
-  { value: "CASH", label: "\u00c0 vista" },
+  { value: "CASH", label: "À vista" },
   { value: "INSTALLMENTS_2", label: "Entrada + 20" },
   { value: "INSTALLMENTS_3", label: "Entrada + 20/40" },
   { value: "INSTALLMENTS_4", label: "Entrada + 20/40/60" },
@@ -93,7 +91,6 @@ interface TaskPricingWizardProps {
 export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
   const { colors } = useTheme();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -112,13 +109,12 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
   });
   const task = taskResponse?.data;
 
-  // Fetch existing pricing for edit mode (404 = no pricing yet = create mode)
+  // Fetch existing pricing for edit mode (now returns null data instead of 404)
   const {
     data: pricingResponse,
     isLoading: pricingLoading,
-    isError: pricingError,
   } = useTaskPricingByTask(taskId);
-  const existingPricing = pricingError ? null : pricingResponse?.data;
+  const existingPricing = pricingResponse?.data;
 
   // Task mutations for saving
   const { updateAsync } = useTaskMutations();
@@ -134,7 +130,13 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         discountValue: null,
         subtotal: 0,
         total: 0,
-        expiresAt: null,
+        expiresAt: (() => {
+          // Default to 30 days from now
+          const defaultExpiry = new Date();
+          defaultExpiry.setDate(defaultExpiry.getDate() + 30);
+          defaultExpiry.setHours(23, 59, 59, 999);
+          return defaultExpiry;
+        })(),
         paymentCondition: null,
         customPaymentText: null,
         guaranteeYears: null,
@@ -153,7 +155,13 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
 
     const p = existingPricing;
     setValue("pricing.status", p.status || "DRAFT");
-    setValue("pricing.expiresAt", p.expiresAt ? new Date(p.expiresAt) : null);
+    // Default to 30 days from now if no expiry date exists
+    setValue("pricing.expiresAt", p.expiresAt ? new Date(p.expiresAt) : (() => {
+      const defaultExpiry = new Date();
+      defaultExpiry.setDate(defaultExpiry.getDate() + 30);
+      defaultExpiry.setHours(23, 59, 59, 999);
+      return defaultExpiry;
+    })());
     setValue("pricing.discountType", p.discountType || "NONE");
     setValue("pricing.discountValue", p.discountValue ?? null);
     setValue("pricing.subtotal", p.subtotal || 0);
@@ -191,26 +199,94 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     }
   }, [existingPricing, setValue]);
 
-  // Watch pricing data for preview
+  // Watch pricing data for preview AND validation
   const pricingData = watch("pricing");
+
+  // Watch the entire form to detect ANY changes (including deep array changes)
+  const formValues = watch();
+
 
   // Build preview pricing object
   const previewPricing = useMemo(() => {
     if (!pricingData) return null;
+
+    // Determine layout file for preview
+    let layoutFileForPreview = null;
+    if (layoutFiles.length > 0) {
+      // Use the file from FilePicker (either newly selected or existing)
+      const pickedFile = layoutFiles[0];
+      layoutFileForPreview = pickedFile.uploaded && pickedFile.id
+        ? { id: pickedFile.id } // Uploaded file - use ID for getFileUrl
+        : { uri: pickedFile.uri }; // New file - use local URI
+    } else if (pricingData.layoutFileId) {
+      // Fallback to form data
+      layoutFileForPreview = { id: pricingData.layoutFileId };
+    } else if (existingPricing?.layoutFile) {
+      // Fallback to existing pricing
+      layoutFileForPreview = existingPricing.layoutFile;
+    }
+
     return {
       ...pricingData,
       budgetNumber: existingPricing?.budgetNumber,
       createdAt: existingPricing?.createdAt || new Date(),
-      layoutFile: pricingData.layoutFileId
-        ? { id: pricingData.layoutFileId }
-        : existingPricing?.layoutFile || null,
+      layoutFile: layoutFileForPreview,
     };
-  }, [pricingData, existingPricing]);
+  }, [pricingData, existingPricing, layoutFiles]);
+
+  // Validation for step navigation
+  const canProceedToStep2 = useMemo(() => {
+    return !!pricingData?.expiresAt;
+  }, [pricingData]);
+
+  const canProceedToStep3 = useMemo(() => {
+    // Use formValues.pricing.items to ensure we get updates when items change
+    const items = formValues?.pricing?.items || [];
+
+    if (items.length === 0) {
+      return false;
+    }
+
+    const validationResults = items.map((item: any) => {
+      const hasDescription = !!(item.description?.trim());
+
+      // Check amount is a valid number
+      // Convert to number first to handle string numbers from form
+      const numAmount = typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount;
+
+      // Valid if it's a number >= 0 (including 0 for free items)
+      const hasValidAmount =
+        typeof numAmount === 'number' &&
+        !isNaN(numAmount) &&
+        numAmount >= 0;
+
+      return hasDescription && hasValidAmount;
+    });
+
+    return validationResults.every(v => v === true);
+  }, [formValues]);
+
+  const canSubmit = useMemo(() => {
+    return canProceedToStep3 && currentStep === 3;
+  }, [canProceedToStep3, currentStep]);
 
   // Step navigation
   const goNext = useCallback(() => {
+    if (currentStep === 1 && !canProceedToStep2) {
+      Alert.alert("Campo obrigatório", "Selecione o período de validade do orçamento.");
+      return;
+    }
+    if (currentStep === 2 && !canProceedToStep3) {
+      const items = pricingData?.items || [];
+      if (items.length === 0) {
+        Alert.alert("Orçamento vazio", "Adicione pelo menos um serviço antes de continuar.");
+      } else {
+        Alert.alert("Dados incompletos", "Todos os serviços precisam ter descrição e valor.");
+      }
+      return;
+    }
     if (currentStep < 3) setCurrentStep((s) => s + 1);
-  }, [currentStep]);
+  }, [currentStep, canProceedToStep2, canProceedToStep3, pricingData]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
@@ -222,7 +298,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     const items = data.pricing?.items || [];
 
     if (items.length === 0) {
-      Alert.alert("Or\u00e7amento vazio", "Adicione pelo menos um servi\u00e7o antes de salvar.");
+      Alert.alert("Orçamento vazio", "Adicione pelo menos um serviço antes de salvar.");
       return;
     }
 
@@ -230,34 +306,68 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
       (item: any) => !item.description?.trim() || item.amount == null || item.amount < 0
     );
     if (invalidItems.length > 0) {
-      Alert.alert("Dados incompletos", "Todos os servi\u00e7os precisam ter descri\u00e7\u00e3o e valor.");
+      Alert.alert("Dados incompletos", "Todos os serviços precisam ter descrição e valor.");
       return;
     }
 
     if (!data.pricing?.expiresAt) {
-      Alert.alert("Data de validade", "Selecione o per\u00edodo de validade do or\u00e7amento.");
+      Alert.alert("Data de validade", "Selecione o período de validade do orçamento.");
       return;
     }
 
     try {
       setIsSaving(true);
-      await updateAsync({
-        id: taskId,
-        data: { pricing: data.pricing } as any,
-      });
-      Alert.alert("Sucesso", "Or\u00e7amento salvo com sucesso!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+
+      // Filter only NEW layout files (not already uploaded)
+      const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
+
+      // If we have NEW files to upload, use FormData
+      if (newLayoutFiles.length > 0) {
+        const formData = new FormData();
+
+        // Add layout file - backend expects 'pricingLayoutFile' field name (singular, only 1 file)
+        const layoutFile = newLayoutFiles[0];
+        formData.append('pricingLayoutFile', {
+          uri: layoutFile.uri,
+          type: layoutFile.type,
+          name: layoutFile.name,
+        } as any);
+
+        // Add pricing data as JSON field in FormData
+        formData.append('pricing', JSON.stringify(data.pricing));
+
+        await updateAsync({
+          id: taskId,
+          data: formData as any,
+        });
+      } else {
+        // No new files - send JSON only
+        await updateAsync({
+          id: taskId,
+          data: { pricing: data.pricing } as any,
+        });
+      }
+
+      // Reset form state and navigate back
+      methods.reset();
+      setCurrentStep(1);
+      setLayoutFiles([]);
+      router.back();
     } catch (error: any) {
       console.error("[TaskPricingWizard] Save failed:", error);
-      Alert.alert("Erro ao salvar", error?.message || "N\u00e3o foi poss\u00edvel salvar o or\u00e7amento.");
+      // API client already shows error toast, no need for Alert
     } finally {
       setIsSaving(false);
     }
-  }, [getValues, taskId, updateAsync, router]);
+  }, [getValues, taskId, updateAsync, router, methods, layoutFiles]);
+
+  // Handle cancel
+  const handleCancel = useCallback(() => {
+    router.back();
+  }, [router]);
 
   // Loading state
-  if (taskLoading || (pricingLoading && !pricingError)) {
+  if (taskLoading || pricingLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -273,63 +383,63 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
 
   return (
     <FormProvider {...methods}>
-      <ThemedView style={styles.container}>
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + spacing.sm }]}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-              <IconX size={24} color={colors.foreground} />
-            </TouchableOpacity>
-            <View style={{ flex: 1, alignItems: "center" }}>
-              <ThemedText style={styles.headerTitle}>
-                {existingPricing ? "Editar Or\u00e7amento" : "Novo Or\u00e7amento"}
-              </ThemedText>
-              {task?.name ? (
-                <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }} numberOfLines={1}>
-                  {task.name}
-                </ThemedText>
-              ) : null}
-            </View>
-            <View style={{ width: 40 }} />
+      <MultiStepFormContainer
+        steps={WIZARD_STEPS}
+        currentStep={currentStep}
+        onPrevStep={goPrev}
+        onNextStep={goNext}
+        onSubmit={onSave}
+        onCancel={handleCancel}
+        isSubmitting={isSaving}
+        canProceed={currentStep === 1 ? canProceedToStep2 : currentStep === 2 ? canProceedToStep3 : false}
+        canSubmit={canSubmit}
+        submitLabel="Salvar"
+        cancelLabel="Cancelar"
+        scrollable={true}
+      >
+        {/* Step 1 - Basic Configuration */}
+        {currentStep === 1 && (
+          <View style={styles.stepContainer}>
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Configuração do Orçamento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Step1BasicConfig
+                  control={control}
+                  canEditStatus={canEditStatus}
+                  layoutFiles={layoutFiles}
+                  onLayoutFilesChange={setLayoutFiles}
+                />
+              </CardContent>
+            </Card>
           </View>
-          <FormSteps steps={WIZARD_STEPS} currentStep={currentStep} />
-        </View>
+        )}
 
-        {/* Content */}
-        <KeyboardAvoidingView
-          style={styles.content}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          keyboardVerticalOffset={100}
-        >
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={true}
-          >
-            {/* Step 1 - Basic Configuration */}
-            {currentStep === 1 && (
-              <Step1BasicConfig
-                control={control}
-                canEditStatus={canEditStatus}
-                layoutFiles={layoutFiles}
-                onLayoutFilesChange={setLayoutFiles}
-              />
-            )}
+        {/* Step 2 - Services */}
+        {currentStep === 2 && (
+          <View style={styles.stepContainer}>
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Serviços e Valores</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Step2Services control={control} />
+              </CardContent>
+            </Card>
+          </View>
+        )}
 
-            {/* Step 2 - Services */}
-            {currentStep === 2 && (
-              <Step2Services control={control} />
-            )}
-
-            {/* Step 3 - Preview */}
-            {currentStep === 3 && previewPricing && (
-              <View style={styles.stepContainer}>
-                <ThemedText style={[styles.stepTitle, { color: colors.foreground }]}>
-                  Pr\u00e9via do Or\u00e7amento
-                </ThemedText>
-                <ThemedText style={[styles.stepDescription, { color: colors.mutedForeground }]}>
-                  Revise o or\u00e7amento antes de salvar.
+        {/* Step 3 - Preview */}
+        {currentStep === 3 && previewPricing && (
+          <View style={styles.stepContainer}>
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Prévia do Orçamento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ThemedText style={[styles.stepDescription, { color: colors.mutedForeground, marginBottom: spacing.md }]}>
+                  Revise o orçamento antes de salvar.
                 </ThemedText>
                 <BudgetPreview
                   pricing={previewPricing as any}
@@ -341,50 +451,11 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                     negotiatingWith: (task as any).negotiatingWith,
                   } : undefined}
                 />
-              </View>
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
-
-        {/* Footer */}
-        <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.card, paddingBottom: insets.bottom + spacing.md }]}>
-          <View style={styles.footerButtons}>
-            {currentStep > 1 ? (
-              <Button variant="outline" onPress={goPrev} style={styles.navButton}>
-                <IconArrowLeft size={18} color={colors.foreground} />
-                <ThemedText style={{ marginLeft: 4 }}>Voltar</ThemedText>
-              </Button>
-            ) : (
-              <Button variant="outline" onPress={() => router.back()} style={styles.navButton}>
-                <ThemedText>Cancelar</ThemedText>
-              </Button>
-            )}
-
-            {currentStep < 3 ? (
-              <Button variant="default" onPress={goNext} style={styles.navButton}>
-                <ThemedText style={{ color: "#ffffff", marginRight: 4 }}>Pr\u00f3ximo</ThemedText>
-                <IconArrowRight size={18} color="#ffffff" />
-              </Button>
-            ) : (
-              <Button
-                variant="default"
-                onPress={onSave}
-                disabled={isSaving}
-                style={[styles.navButton, { backgroundColor: "#0a5c1e" }]}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
-                ) : (
-                  <>
-                    <IconCheck size={18} color="#ffffff" />
-                    <ThemedText style={{ color: "#ffffff", marginLeft: 4 }}>Salvar</ThemedText>
-                  </>
-                )}
-              </Button>
-            )}
+              </CardContent>
+            </Card>
           </View>
-        </View>
-      </ThemedView>
+        )}
+      </MultiStepFormContainer>
     </FormProvider>
   );
 }
@@ -487,51 +558,48 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
   }, [setValue, onLayoutFilesChange]);
 
   return (
-    <View style={styles.stepContainer}>
-      <ThemedText style={[styles.stepTitle, { color: colors.foreground }]}>
-        {"Configura\u00e7\u00e3o do Or\u00e7amento"}
-      </ThemedText>
-      <ThemedText style={[styles.stepDescription, { color: colors.mutedForeground }]}>
-        {"Defina status, validade, desconto, pagamento e garantia."}
-      </ThemedText>
-
+    <View style={styles.fieldSection}>
       {/* Status & Validity */}
-      <View style={styles.fieldSection}>
-        <View style={styles.row}>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>Status</ThemedText>
-            <Combobox
-              value={pricingStatus || "DRAFT"}
-              onValueChange={(v) => setValue("pricing.status", v)}
-              disabled={!canEditStatus}
-              options={STATUS_OPTIONS}
-              placeholder="Selecione"
-              searchable={false}
-            />
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
+          <Combobox
+            value={pricingStatus || "DRAFT"}
+            onValueChange={(v) => setValue("pricing.status", v)}
+            disabled={!canEditStatus}
+            options={STATUS_OPTIONS}
+            placeholder="Selecione"
+            searchable={false}
+            avoidKeyboard={false}
+            onOpen={() => {}}
+            onClose={() => {}}
+          />
+        </View>
+        <View style={styles.halfField}>
+          <View style={styles.labelWithIcon}>
+            <IconCalendar size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
+            <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+              Validade <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+            </ThemedText>
           </View>
-          <View style={styles.halfField}>
-            <View style={styles.labelWithIcon}>
-              <IconCalendar size={14} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]}>
-                Validade <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
-              </ThemedText>
-            </View>
-            <Combobox
-              value={validityPeriod}
-              onValueChange={handleValidityChange}
-              options={VALIDITY_PERIOD_OPTIONS}
-              placeholder="Per\u00edodo"
-              searchable={false}
-            />
-          </View>
+          <Combobox
+            value={validityPeriod}
+            onValueChange={handleValidityChange}
+            options={VALIDITY_PERIOD_OPTIONS}
+            placeholder="Período"
+            searchable={false}
+            avoidKeyboard={false}
+            onOpen={() => {}}
+            onClose={() => {}}
+          />
         </View>
       </View>
 
       {/* Discount */}
-      <View style={styles.fieldSection}>
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
         <View style={styles.row}>
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>Tipo de Desconto</ThemedText>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tipo de Desconto</ThemedText>
             <Combobox
               value={discountType || "NONE"}
               onValueChange={(v) => {
@@ -545,10 +613,13 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
               ]}
               placeholder="Selecione"
               searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
             />
           </View>
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">
               Valor do Desconto{" "}
               {discountType === "PERCENTAGE" && <ThemedText style={{ color: colors.mutedForeground }}>(%)</ThemedText>}
               {discountType === "FIXED_VALUE" && <ThemedText style={{ color: colors.mutedForeground }}>(R$)</ThemedText>}
@@ -565,26 +636,32 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       </View>
 
       {/* Payment & Guarantee */}
-      <View style={[styles.fieldSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
+      <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
         <View style={styles.row}>
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>{"Condi\u00e7\u00e3o de Pagamento"}</ThemedText>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
             <Combobox
               value={currentPaymentCondition}
               onValueChange={handlePaymentChange}
               options={PAYMENT_CONDITIONS.map((o) => ({ value: o.value, label: o.label }))}
               placeholder="Selecione"
               searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
             />
           </View>
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]}>{"Per\u00edodo de Garantia"}</ThemedText>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
             <Combobox
               value={currentGuaranteeOption}
               onValueChange={handleGuaranteeChange}
               options={GUARANTEE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
               placeholder="Selecione"
               searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
             />
           </View>
         </View>
@@ -592,12 +669,12 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
 
       {/* Custom Payment Text */}
       {showCustomPayment && (
-        <View style={styles.fieldSection}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]}>Texto Personalizado de Pagamento</ThemedText>
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
           <TextInput
             value={customPaymentText || ""}
             onChangeText={(t) => setValue("pricing.customPaymentText", t || null)}
-            placeholder="Descreva as condi\u00e7\u00f5es de pagamento..."
+            placeholder="Descreva as condições de pagamento..."
             placeholderTextColor={colors.mutedForeground}
             multiline
             numberOfLines={3}
@@ -608,12 +685,12 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
 
       {/* Custom Guarantee Text */}
       {showCustomGuarantee && (
-        <View style={styles.fieldSection}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]}>Texto Personalizado de Garantia</ThemedText>
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Garantia</ThemedText>
           <TextInput
             value={customGuaranteeText || ""}
             onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
-            placeholder="Descreva as condi\u00e7\u00f5es de garantia..."
+            placeholder="Descreva as condições de garantia..."
             placeholderTextColor={colors.mutedForeground}
             multiline
             numberOfLines={3}
@@ -623,10 +700,10 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       )}
 
       {/* Layout Approved */}
-      <View style={[styles.fieldSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
+      <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
         <View style={styles.labelWithIcon}>
-          <IconPhoto size={14} color={colors.mutedForeground} />
-          <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]}>
+          <IconPhoto size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
+          <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
             Layout Aprovado
           </ThemedText>
         </View>
@@ -652,7 +729,7 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
 
 function Step2Services({ control }: { control: any }) {
   const { colors } = useTheme();
-  const { setValue, getValues, clearErrors } = useFormContext();
+  const { setValue, clearErrors } = useFormContext();
 
   const { fields, append, prepend, remove } = useFieldArray({
     control,
@@ -662,6 +739,7 @@ function Step2Services({ control }: { control: any }) {
   const pricingItems = useWatch({ control, name: "pricing.items" });
   const discountType = useWatch({ control, name: "pricing.discountType" }) || "NONE";
   const discountValue = useWatch({ control, name: "pricing.discountValue" });
+
 
   // Calculate subtotal
   const subtotal = useMemo(() => {
@@ -692,22 +770,19 @@ function Step2Services({ control }: { control: any }) {
 
   const handleAddItem = useCallback(() => {
     clearErrors("pricing");
-    prepend({ description: "", observation: null, amount: undefined });
-  }, [prepend, clearErrors]);
+    append({ description: "", observation: null, amount: undefined });
+  }, [append, clearErrors]);
 
   return (
-    <View style={styles.stepContainer}>
-      <ThemedText style={[styles.stepTitle, { color: colors.foreground }]}>
-        {"Servi\u00e7os e Valores"}
-      </ThemedText>
+    <View style={styles.fieldSection}>
       <ThemedText style={[styles.stepDescription, { color: colors.mutedForeground }]}>
-        {"Adicione os servi\u00e7os e defina os valores de cada item."}
+        Adicione os serviços e defina os valores de cada item.
       </ThemedText>
 
       {/* Add Service Button */}
       <Button variant="outline" size="sm" onPress={handleAddItem} style={styles.addButton}>
         <IconPlus size={16} color={colors.foreground} />
-        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>{"Adicionar Servi\u00e7o"}</ThemedText>
+        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>Adicionar Serviço</ThemedText>
       </Button>
 
       {/* Service items */}
@@ -722,12 +797,12 @@ function Step2Services({ control }: { control: any }) {
 
       {/* Totals */}
       {pricingItems && pricingItems.length > 0 && (
-        <View style={[styles.fieldSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
+        <View style={[styles.fieldSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md, marginTop: spacing.md }]}>
           <View style={styles.row}>
             <View style={styles.halfField}>
               <View style={styles.labelWithIcon}>
-                <IconCurrencyReal size={14} color={colors.mutedForeground} />
-                <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4 }]}>Subtotal</ThemedText>
+                <IconCurrencyReal size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
+                <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">Subtotal</ThemedText>
               </View>
               <View style={[styles.readOnlyField, { backgroundColor: colors.muted, borderColor: colors.border }]}>
                 <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500", color: colors.foreground }}>{formatCurrency(subtotal)}</ThemedText>
@@ -735,8 +810,8 @@ function Step2Services({ control }: { control: any }) {
             </View>
             <View style={styles.halfField}>
               <View style={styles.labelWithIcon}>
-                <IconCurrencyReal size={14} color={colors.primary} />
-                <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4 }]}>Valor Total</ThemedText>
+                <IconCurrencyReal size={14} color={colors.primary} style={{ flexShrink: 0 }} />
+                <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">Valor Total</ThemedText>
               </View>
               <View style={[styles.readOnlyField, { borderColor: colors.primary, borderWidth: 2 }]}>
                 <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.primary }}>{formatCurrency(total)}</ThemedText>
@@ -783,9 +858,12 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
           value={description || ""}
           onValueChange={(v) => setValue(`pricing.items.${index}.description`, v || "")}
           options={descriptionOptions}
-          placeholder="Selecione o servi\u00e7o..."
+          placeholder="Selecione o serviço..."
           searchable
           clearable={false}
+          avoidKeyboard={false}
+          onOpen={() => {}}
+          onClose={() => {}}
         />
       </View>
       <View style={styles.amountRow}>
@@ -819,7 +897,7 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
           <Pressable style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={(e) => e.stopPropagation()}>
             <View style={styles.modalHeader}>
               <IconNote size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>{"Observa\u00e7\u00e3o"}</ThemedText>
+              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>Observação</ThemedText>
             </View>
             <TextInput
               value={observationModal.text}
@@ -853,57 +931,20 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
 // ============================================================================
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    textAlign: "center",
-  },
-  content: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
   stepContainer: {
-    gap: spacing.md,
+    flex: 1,
   },
-  stepTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
+  card: {
+    marginBottom: spacing.md,
   },
   stepDescription: {
     fontSize: fontSize.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
   },
   fieldSection: {
     gap: spacing.sm,
@@ -947,6 +988,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    marginVertical: spacing.sm,
   },
   itemRow: {
     gap: spacing.xs,
@@ -965,22 +1007,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-  },
-  footerButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  navButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
   },
   // Modal styles
   modalOverlay: {

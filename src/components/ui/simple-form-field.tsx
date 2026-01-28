@@ -11,6 +11,8 @@ interface SimpleFormFieldProps {
   helperText?: string;
   children: React.ReactNode;
   style?: ViewStyle;
+  labelNumberOfLines?: number;
+  labelEllipsizeMode?: "head" | "middle" | "tail" | "clip";
 }
 
 export function SimpleFormField({
@@ -20,6 +22,8 @@ export function SimpleFormField({
   helperText,
   children,
   style,
+  labelNumberOfLines = 1,
+  labelEllipsizeMode = "tail",
 }: SimpleFormFieldProps) {
   // Use try-catch to safely get theme colors with fallback
   let destructiveColor = "#b91c1c"; // Tailwind red-700 as fallback
@@ -35,7 +39,7 @@ export function SimpleFormField({
   return (
     <View style={StyleSheet.flatten([{ marginBottom: 16 }, style])}>
       {label && (
-        <Label style={{ marginBottom: 8 }}>
+        <Label style={{ marginBottom: 8 }} numberOfLines={labelNumberOfLines} ellipsizeMode={labelEllipsizeMode}>
           {label}
           {required && <ThemedText style={{ color: destructiveColor }}> *</ThemedText>}
         </Label>

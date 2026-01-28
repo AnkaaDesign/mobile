@@ -8,9 +8,11 @@ export interface LabelProps extends Omit<TextProps, "style"> {
   onPress?: () => void;
   onLongPress?: () => void;
   disabled?: boolean;
+  numberOfLines?: number;
+  ellipsizeMode?: "head" | "middle" | "tail" | "clip";
 }
 
-const Label = React.forwardRef<Text, LabelProps>(({ children, style, onPress, onLongPress, disabled, ...props }, ref) => {
+const Label = React.forwardRef<Text, LabelProps>(({ children, style, onPress, onLongPress, disabled, numberOfLines = 1, ellipsizeMode = "tail", ...props }, ref) => {
   const { colors } = useTheme();
 
   const labelStyles: TextStyle = {
@@ -28,7 +30,7 @@ const Label = React.forwardRef<Text, LabelProps>(({ children, style, onPress, on
   if (onPress || onLongPress) {
     return (
       <Pressable onPress={disabled ? undefined : onPress} onLongPress={disabled ? undefined : onLongPress}>
-        <Text ref={ref} style={labelStyles} {...props}>
+        <Text ref={ref} style={labelStyles} numberOfLines={numberOfLines} ellipsizeMode={ellipsizeMode} {...props}>
           {children}
         </Text>
       </Pressable>
@@ -36,7 +38,7 @@ const Label = React.forwardRef<Text, LabelProps>(({ children, style, onPress, on
   }
 
   return (
-    <Text ref={ref} style={labelStyles} {...props}>
+    <Text ref={ref} style={labelStyles} numberOfLines={numberOfLines} ellipsizeMode={ellipsizeMode} {...props}>
       {children}
     </Text>
   );

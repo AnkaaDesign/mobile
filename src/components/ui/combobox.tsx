@@ -87,6 +87,7 @@ interface ComboboxProps<TData = ComboboxOption> {
 
   // UI behavior
   hideDescription?: boolean;
+  avoidKeyboard?: boolean; // Whether to use KeyboardAvoidingView in the modal (default: true)
 
   // Size variant
   size?: "default" | "sm";
@@ -152,6 +153,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   showCount = true,
   hideDefaultBadges = false,
   hideDescription = false,
+  avoidKeyboard = true,
   size = "default",
   triggerStyle,
   onOpen,
@@ -791,7 +793,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   return (
     <View style={styles.container}>
       {label && (
-        <Text style={[styles.label, { color: colors.foreground }]}>{label}</Text>
+        <Text style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">{label}</Text>
       )}
 
       <Pressable
@@ -897,11 +899,171 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
           ]}
           onPress={handleClose}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={inputLayout.width === 0 ? styles.keyboardAvoidingView : undefined}
-            keyboardVerticalOffset={0}
-          >
+          {avoidKeyboard ? (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={inputLayout.width === 0 ? styles.keyboardAvoidingView : undefined}
+              keyboardVerticalOffset={0}
+            >
+              <Pressable
+              style={[
+                inputLayout.width > 0 ? styles.dropdownContent : styles.modalContent,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  ...(inputLayout.width > 0 && {
+                    position: "absolute",
+                    width: inputLayout.width,
+                    left: inputLayout.x,
+                    // Always show below the input - parent is responsible for scrolling to ensure visibility
+                    top: inputLayout.y + inputLayout.height + 4,
+                    // Limit height to available space on screen
+                    maxHeight: Math.min(LIST_MAX_HEIGHT + 100, SCREEN_HEIGHT - inputLayout.y - inputLayout.height - 20),
+                  }),
+                  ...(inputLayout.width === 0 && {
+                    maxHeight: MAX_MODAL_HEIGHT,
+                  }),
+                },
+              ]}
+              onPress={() => {}}
+            >
+            {inputLayout.width === 0 && (
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+                  {label || "Selecione uma opção"}
+                </Text>
+                <Pressable
+                  onPress={handleClose}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fechar"
+                >
+                  <Icon name="x" size={24} color={colors.foreground} />
+                </Pressable>
+              </View>
+            )}
+
+            {searchable && (
+              <View style={[styles.searchContainer, { borderBottomColor: colors.border }]}>
+                <Icon name="search" size={20} color={colors.mutedForeground} />
+                <TextInput
+                  style={[
+                    styles.searchInput,
+                    {
+                      color: colors.foreground,
+                      backgroundColor: colors.input,
+                    },
+                  ]}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={colors.mutedForeground}
+                  value={search}
+                  onChangeText={setSearch}
+                  autoFocus={inputLayout.width === 0}
+                  accessibilityLabel="Campo de pesquisa"
+                />
+              </View>
+            )}
+
+            {isMultiple && filteredOptions.length > 0 && (
+              <View style={[styles.multiSelectActions, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.multiSelectCount, { color: colors.mutedForeground }]}>
+                  {selectedValues.length} de {filteredOptions.length} selecionados
+                </Text>
+                <View style={styles.multiSelectButtons}>
+                  <TouchableOpacity onPress={handleSelectAll} style={styles.actionButton}>
+                    <Text style={[styles.actionButtonText, { color: colors.primary }]}>
+                      Selecionar todos
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleClearAll} style={styles.actionButton}>
+                    <Text style={[styles.actionButtonText, { color: colors.primary }]}>
+                      Limpar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            <FlatList
+              data={filteredOptions}
+              renderItem={renderItem}
+              keyExtractor={(item) => getOptionValue(item)}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
+              onEndReached={handleEndReached}
+              onEndReachedThreshold={0.2}
+              ListFooterComponent={renderFooter}
+              ListHeaderComponent={
+                <>
+                  {!isMultiple && clearable && selectedValues.length > 0 && (
+                    <TouchableOpacity
+                      style={[
+                        styles.clearOption,
+                        { borderBottomColor: colors.border },
+                      ]}
+                      onPress={handleClear}
+                    >
+                      <Icon name="x" size={20} color={colors.destructive} />
+                      <Text style={[styles.clearOptionText, { color: colors.destructive }]}>
+                        Limpar seleção
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {showCreateOption && (
+                    <TouchableOpacity
+                      style={[
+                        styles.createOption,
+                        { borderBottomColor: colors.border },
+                        isCreating && styles.disabledOption,
+                      ]}
+                      onPress={isCreating ? undefined : handleCreate}
+                      disabled={isCreating}
+                    >
+                      <Icon name="plus" size={20} color={colors.primary} />
+                      <Text style={[styles.createOptionText, { color: colors.primary }]}>
+                        {createLabel(search.trim())}
+                      </Text>
+                      {isCreating && (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </>
+              }
+              ListEmptyComponent={
+                loading ? (
+                  <View style={styles.emptyContainer}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+                      {loadingText}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                      {emptyText}
+                    </Text>
+                  </View>
+                )
+              }
+              style={{
+                maxHeight: inputLayout.width > 0 ? LIST_MAX_HEIGHT : undefined,
+              }}
+              contentContainerStyle={{
+                flexGrow: 1,
+                paddingBottom: 8,
+              }}
+              initialNumToRender={15}
+              maxToRenderPerBatch={15}
+              windowSize={11}
+              removeClippedSubviews={Platform.OS === 'android'}
+              updateCellsBatchingPeriod={50}
+            />
+          </Pressable>
+            </KeyboardAvoidingView>
+          ) : (
             <Pressable
               style={[
                 inputLayout.width > 0 ? styles.dropdownContent : styles.modalContent,
@@ -1059,7 +1221,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               updateCellsBatchingPeriod={50}
             />
           </Pressable>
-          </KeyboardAvoidingView>
+          )}
         </Pressable>
       </Modal>
     </View>

@@ -601,8 +601,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [])
 
   const handleFilterClear = useCallback(() => {
-    // When using status-based grouping (agenda 3-table view), don't apply restrictive status filter
-    // The shouldDisplayInAgenda filter handles the logic on the backend
+    // When using status-based grouping (preparation 3-table view), don't apply restrictive status filter
+    // The shouldDisplayInPreparation filter handles the logic on the backend
     if (config.table.groupByStatus) {
       setFilterValues(config.filters?.defaultValues || {})
     } else {
