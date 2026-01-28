@@ -4,7 +4,7 @@ import { useSort } from './useSort'
 import { useSelection } from './useSelection'
 import { useFilters } from './useFilters'
 import { useTable } from './useTable'
-import type { ListConfig, UseListReturn } from '@/components/list/types'
+import type { ListConfig, UseListReturn, ActionMutationsContext } from '@/components/list/types'
 import { useAuth } from '@/contexts/auth-context'
 import * as hooks from '@/hooks'
 
@@ -17,6 +17,18 @@ export function useList<T extends { id: string }>(
 ): UseListReturn<T> {
   // Get the infinite query hook dynamically
   const useInfiniteQuery = getInfiniteQueryHook(config.query.hook)
+
+  // Get mutations hook dynamically if specified
+  const useMutationsHook = config.query.mutationsHook
+    ? getMutationsHook(config.query.mutationsHook)
+    : null
+  const mutationsResult = useMutationsHook?.() || null
+
+  // Get batch mutations hook dynamically if specified
+  const useBatchMutationsHook = config.query.batchMutationsHook
+    ? getMutationsHook(config.query.batchMutationsHook)
+    : null
+  const batchMutationsResult = useBatchMutationsHook?.() || null
 
   // Get current user for permission checks
   const { user } = useAuth()
@@ -141,6 +153,14 @@ export function useList<T extends { id: string }>(
       actions: (config.table.actions || []).filter(
         (action) => !action.canPerform || action.canPerform(user)
       ),
+      // Build mutations context from mutations hook result
+      mutations: (mutationsResult || batchMutationsResult) ? {
+        update: mutationsResult?.updateAsync || mutationsResult?.update,
+        delete: mutationsResult?.deleteAsync || mutationsResult?.delete,
+        batchUpdateAsync: batchMutationsResult?.batchUpdateAsync || mutationsResult?.batchUpdateAsync,
+        batchDeleteAsync: batchMutationsResult?.batchDeleteAsync || mutationsResult?.batchDeleteAsync,
+        user,
+      } as ActionMutationsContext : { user },
       getRowStyle: config.table.getRowStyle,
     },
 
@@ -221,6 +241,18 @@ function getInfiniteQueryHook(hookName: string): any {
       totalCount: 0,
       refresh: async () => {},
     })
+  }
+
+  return hook
+}
+
+// Helper: Get mutations hook by name
+function getMutationsHook(hookName: string): (() => any) | null {
+  const hook = (hooks as any)[hookName]
+
+  if (!hook) {
+    console.warn(`Mutations hook "${hookName}" not found in hooks module.`)
+    return null
   }
 
   return hook

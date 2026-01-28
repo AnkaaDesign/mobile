@@ -648,16 +648,14 @@ export function canViewAirbrushingFinancials(user: User | null): boolean {
 
 /**
  * Can user create/edit/delete observations?
- * ADMIN, COMMERCIAL, FINANCIAL, PRODUCTION, and WAREHOUSE can create/edit observations
+ * ADMIN, COMMERCIAL, and LOGISTIC can create/edit observations
  */
 export function canCreateObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.FINANCIAL,
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.LOGISTIC,
   ]);
 }
 
@@ -666,9 +664,7 @@ export function canEditObservations(user: User | null): boolean {
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.FINANCIAL,
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.LOGISTIC,
   ]);
 }
 

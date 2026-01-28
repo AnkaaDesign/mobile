@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Card } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import {
   IconClock,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { USER_STATUS } from "@/constants";
 
 interface PersonalMenuItem {
   id: string;
@@ -25,14 +27,20 @@ interface PersonalMenuItem {
   icon: React.ReactNode;
   route: string;
   available: boolean;
+  requiresBonifiable?: boolean;
 }
 
 export default function PessoalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { data: currentUser } = useCurrentUser();
 
-  const personalMenuItems: PersonalMenuItem[] = [
+  // Check if user is eligible for bonus (must be EFFECTED and have bonifiable position)
+  const isBonifiable = currentUser?.status === USER_STATUS.EFFECTED &&
+    currentUser?.position?.bonifiable === true;
+
+  const allMenuItems: PersonalMenuItem[] = [
     {
       id: "holidays",
       title: "Meus Feriados",
@@ -80,6 +88,7 @@ export default function PessoalScreen() {
       icon: <IconCoin size={28} color={colors.primary} />,
       route: "/(tabs)/pessoal/meu-bonus",
       available: true,
+      requiresBonifiable: true,
     },
     {
       id: "points",
@@ -98,6 +107,17 @@ export default function PessoalScreen() {
       available: true,
     },
   ];
+
+  // Filter menu items based on bonifiable status
+  const personalMenuItems = useMemo(() => {
+    return allMenuItems.filter(item => {
+      if (item.requiresBonifiable && !isBonifiable) {
+        return false;
+      }
+      return true;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBonifiable, colors.primary]);
 
   const handleMenuPress = (item: PersonalMenuItem) => {
     if (item.available) {

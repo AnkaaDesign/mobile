@@ -22,6 +22,86 @@ import type {
 } from "@/components/ui/message-block-renderer/types";
 
 /**
+ * Parses markdown-style formatting into InlineText array
+ * Supports: **bold**, *italic*, __underline__, and [link](url)
+ */
+function parseMarkdownToInlineText(text: string): InlineText[] {
+  if (!text) return [];
+
+  const result: InlineText[] = [];
+  let currentIndex = 0;
+
+  // Combined regex to match all formatting patterns
+  // Order matters: links first, then bold/underline, then italic
+  const formatRegex = /(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+?)\*\*)|(__([^_]+?)__)|(\*([^*]+?)\*)/g;
+
+  let match: RegExpExecArray | null;
+
+  while ((match = formatRegex.exec(text)) !== null) {
+    // Add any plain text before this match
+    if (match.index > currentIndex) {
+      const plainText = text.substring(currentIndex, match.index);
+      if (plainText) {
+        result.push({ text: plainText });
+      }
+    }
+
+    // Determine which pattern matched
+    if (match[1]) {
+      // Link: [text](url)
+      const linkText = match[2].trim();
+      const linkUrl = match[3].trim();
+      if (linkText && linkUrl) {
+        result.push({ text: linkText, href: linkUrl });
+      } else {
+        result.push({ text: match[0] });
+      }
+    } else if (match[4]) {
+      // Bold: **text**
+      const boldText = match[5];
+      if (boldText.trim()) {
+        result.push({ text: boldText, styles: ["bold"] });
+      } else {
+        result.push({ text: match[0] });
+      }
+    } else if (match[6]) {
+      // Underline: __text__ (treated as bold)
+      const underlineText = match[7];
+      if (underlineText.trim()) {
+        result.push({ text: underlineText, styles: ["bold"] });
+      } else {
+        result.push({ text: match[0] });
+      }
+    } else if (match[8]) {
+      // Italic: *text*
+      const italicText = match[9];
+      if (italicText.trim()) {
+        result.push({ text: italicText, styles: ["italic"] });
+      } else {
+        result.push({ text: match[0] });
+      }
+    }
+
+    currentIndex = match.index + match[0].length;
+  }
+
+  // Add any remaining plain text
+  if (currentIndex < text.length) {
+    const remainingText = text.substring(currentIndex);
+    if (remainingText) {
+      result.push({ text: remainingText });
+    }
+  }
+
+  // If no formatting was found, return the entire text as plain
+  if (result.length === 0) {
+    return [{ text }];
+  }
+
+  return result;
+}
+
+/**
  * Converts plain text string to InlineText array
  * Handles simple text without formatting
  */
@@ -41,9 +121,9 @@ function convertInlineFormatToInlineText(
 ): InlineText[] {
   if (!content) return [];
 
-  // If content is a string, return as plain text
+  // If content is a string, parse markdown formatting
   if (typeof content === "string") {
-    return [{ text: content }];
+    return parseMarkdownToInlineText(content);
   }
 
   // If not an array, return empty
@@ -90,9 +170,9 @@ function convertListItems(items: any[]): ListItemBlock[] {
   if (!items || !Array.isArray(items)) return [];
 
   return items.map((item): ListItemBlock => {
-    // Handle string items
+    // Handle string items - parse markdown
     if (typeof item === "string") {
-      return { content: [{ text: item }] };
+      return { content: parseMarkdownToInlineText(item) };
     }
 
     // Handle items with content property (InlineFormat[] or string)
@@ -104,7 +184,7 @@ function convertListItems(items: any[]): ListItemBlock[] {
     }
 
     // Handle plain text in any other format
-    return { content: [{ text: String(item) }] };
+    return { content: parseMarkdownToInlineText(String(item)) };
   });
 }
 
@@ -180,6 +260,7 @@ function transformBlock(block: any): MessageBlock | null {
         url: block.url,
         action: block.action,
         variant: block.variant || "default",
+        alignment: block.alignment,
         disabled: block.disabled,
         id: block.id,
       } as ButtonBlock;

@@ -114,17 +114,11 @@ export function MessageModalProvider({
 
   // Don't render if no user ID
   if (!userId) {
-    if (debug) {
-      console.log("[MessageModalProvider] No user ID, not rendering modal");
-    }
     return null;
   }
 
-  // Don't render if no messages and not loading
+  // Don't render if no messages and not loading and modal not shown
   if (unviewedMessages.length === 0 && !isLoading && !showModal) {
-    if (debug) {
-      console.log("[MessageModalProvider] No unviewed messages, not rendering modal");
-    }
     return null;
   }
 

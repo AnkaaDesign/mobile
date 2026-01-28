@@ -1,10 +1,11 @@
 // packages/utils/src/navigation.ts
 // Navigation utility functions moved from constants package
 
-import { SECTOR_PRIVILEGES, TABLER_ICONS, type MenuItem } from '../constants';
+import { SECTOR_PRIVILEGES, TABLER_ICONS, USER_STATUS, type MenuItem } from '../constants';
 
 // Define minimal user interface for navigation
 export interface NavigationUser {
+  status?: string;
   sector?: {
     privileges?: SECTOR_PRIVILEGES;
   };
@@ -20,8 +21,10 @@ export interface NavigationUser {
 }
 
 /**
- * Sort menu items alphabetically by title
- * Keeps "Inicio" (home) as the first item, sorts rest alphabetically
+ * Sort menu items by sortOrder (if defined) then alphabetically by title
+ * Keeps "Inicio" (home) as the first item
+ * Items with sortOrder are grouped together and sorted by their sortOrder value
+ * Items without sortOrder are sorted alphabetically after items with sortOrder
  * Recursively sorts children as well
  */
 function sortMenuItemsAlphabetically(menuItems: MenuItem[]): MenuItem[] {
@@ -30,6 +33,15 @@ function sortMenuItemsAlphabetically(menuItems: MenuItem[]): MenuItem[] {
       // "Inicio" (home) always comes first
       if (a.id === 'home') return -1;
       if (b.id === 'home') return 1;
+
+      // If both have sortOrder, sort by sortOrder
+      if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      // Items with sortOrder come before items without
+      if (a.sortOrder !== undefined) return -1;
+      if (b.sortOrder !== undefined) return 1;
 
       // Sort alphabetically by title (case-insensitive)
       return a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' });
@@ -59,7 +71,8 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
   filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege as SECTOR_PRIVILEGES | undefined, isTeamLeader);
 
   // Apply bonifiable filtering - hide menu items that require bonifiable position
-  const isBonifiable = user?.position?.bonifiable ?? false;
+  // User must be EFFECTED and have a bonifiable position to see bonus-related menus
+  const isBonifiable = user?.status === USER_STATUS.EFFECTED && (user?.position?.bonifiable ?? false);
   filteredMenu = filterMenuByBonifiable(filteredMenu, isBonifiable);
 
   // Sort menu items alphabetically (keeping "Inicio" first)

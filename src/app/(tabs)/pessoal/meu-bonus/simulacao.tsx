@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/hooks/useAuth";
 import { usePositions, useTasks, useUsers } from "@/hooks";
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
-import { TASK_STATUS, COMMISSION_STATUS } from "@/constants";
+import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
 
 export default function BonusSimulationScreen() {
   const { colors } = useTheme();
@@ -57,14 +57,28 @@ export default function BonusSimulationScreen() {
     limit: 100,
   });
 
-  // Fetch all eligible users (for calculating average)
-  const { data: eligibleUsersData } = useUsers({
+  // Fetch all EFFECTED users with bonifiable positions (for calculating average)
+  // NOTE: The API does not support nested relation filters like `position: { bonifiable: true }`
+  // So we fetch all effected users and filter client-side
+  const { data: allUsersData } = useUsers({
     where: {
-      performanceLevel: { gt: 0 },
-      position: { bonifiable: true },
+      status: USER_STATUS.EFFECTED,
+    },
+    include: {
+      position: true,
     },
     limit: 100,
   });
+
+  // Filter eligible users client-side (matches API logic)
+  const eligibleUsersData = useMemo(() => {
+    if (!allUsersData?.data) return { data: [] };
+    return {
+      data: allUsersData.data.filter(user =>
+        user.position?.bonifiable === true && (user.performanceLevel || 0) > 0
+      ),
+    };
+  }, [allUsersData]);
 
   // Calculate task counts by commission type
   const tasksByCommission = useMemo(() => {

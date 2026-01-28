@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import { Stack } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconCheck, IconX, IconRotate } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -693,16 +694,21 @@ export default function NotificationPreferencesScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]} edges={[]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={{ marginTop: spacing.md }}>Carregando preferências...</ThemedText>
-      </SafeAreaView>
+      <>
+        <Stack.Screen options={{ title: "Preferências de Notificações" }} />
+        <SafeAreaView style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]} edges={[]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <ThemedText style={{ marginTop: spacing.md }}>Carregando preferências...</ThemedText>
+        </SafeAreaView>
+      </>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <ScrollView
+    <>
+      <Stack.Screen options={{ title: "Preferências de Notificações" }} />
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -835,6 +841,7 @@ export default function NotificationPreferencesScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+    </>
   );
 }
 

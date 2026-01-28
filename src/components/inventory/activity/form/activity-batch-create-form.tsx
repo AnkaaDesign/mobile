@@ -85,6 +85,7 @@ const OPERATION_OPTIONS = [
 
 // Map all 14 ACTIVITY_REASON options
 const REASON_OPTIONS = [
+  { value: "", label: "Sem motivo específico" },
   { value: ACTIVITY_REASON.ORDER_RECEIVED, label: ACTIVITY_REASON_LABELS[ACTIVITY_REASON.ORDER_RECEIVED] },
   { value: ACTIVITY_REASON.PRODUCTION_USAGE, label: ACTIVITY_REASON_LABELS[ACTIVITY_REASON.PRODUCTION_USAGE] },
   { value: ACTIVITY_REASON.PPE_DELIVERY, label: ACTIVITY_REASON_LABELS[ACTIVITY_REASON.PPE_DELIVERY] },
@@ -152,7 +153,7 @@ export function ActivityBatchCreateForm({
     defaultFormData: {
       operation: ACTIVITY_OPERATION.OUTBOUND,
       userId: null,
-      reason: ACTIVITY_REASON.OTHER,
+      reason: null,
       orderId: null,
       orderItemId: null,
     },

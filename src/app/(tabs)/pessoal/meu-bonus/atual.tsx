@@ -23,12 +23,19 @@ const MONTH_NAMES = [
 ];
 
 /**
- * Get the current bonus period for display.
+ * Get the current bonus period for display using the 5th day rule.
  * The bonus period runs from 26th of previous month to 25th of current month.
  *
- * Period logic:
- * - Days 1-25: Current month period (may be in progress or closed)
- * - Days 26-31: Next month period starts
+ * 5th Day Rule:
+ * - Days 1-5: Still in PREVIOUS month's period (payment happens on 5th)
+ * - Days 6-31: Current month's period
+ *
+ * Examples:
+ * - January 5th → Period: December (Nov 26 - Dec 25)
+ * - January 6th → Period: January (Dec 26 - Jan 25)
+ * - January 28th → Period: January (Dec 26 - Jan 25)
+ * - February 5th → Period: January (Dec 26 - Jan 25)
+ * - February 6th → Period: February (Jan 26 - Feb 25)
  */
 function getCurrentBonusPeriod(referenceDate?: Date): {
   year: number;
@@ -37,17 +44,22 @@ function getCurrentBonusPeriod(referenceDate?: Date): {
   startDate: Date;
   endDate: Date;
 } {
-  const date = referenceDate || new Date();
-  const day = date.getDate();
-  let year = date.getFullYear();
-  let month = date.getMonth() + 1; // 1-based month
+  const now = referenceDate || new Date();
+  const currentDay = now.getDate();
+  const currentMonth = now.getMonth() + 1; // 1-based month
+  const currentYear = now.getFullYear();
 
-  // If we're on day 26+, we're in the next month's period
-  if (day >= 26) {
-    month += 1;
-    if (month > 12) {
-      month = 1;
-      year += 1;
+  let year = currentYear;
+  let month = currentMonth;
+
+  // If we're on or before the 5th, we're still in the previous month's period
+  if (currentDay <= 5) {
+    if (currentMonth === 1) {
+      // January 1-5: Previous period is December of previous year
+      year = currentYear - 1;
+      month = 12;
+    } else {
+      month = currentMonth - 1;
     }
   }
 

@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/icon-1024.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a0a0a"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -30,8 +30,8 @@
       "package": "com.ankaadesign.management",
       "jsEngine": "hermes",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#0a0a0a"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundColor": "#FFFFFF"
       },
       "intentFilters": [
         {

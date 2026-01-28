@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { AppState, AppStateStatus } from "react-native";
+import { useQuery } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Notification } from "@/types";
 
@@ -46,14 +47,14 @@ function getTodayDate(): string {
  * Hook for managing unviewed messages and the message modal
  *
  * Features:
- * - Fetches unviewed messages from API
+ * - Uses React Query for data fetching (same as web)
+ * - Automatically refetches on app focus via focusManager
  * - Tracks which messages have been dismissed for today (AsyncStorage)
  * - Manages modal visibility state
  * - Auto-shows modal on first mount if there are unviewed messages
+ * - Auto-shows modal when NEW messages arrive (count increases)
  * - Messages dismissed today will show again tomorrow (automatic cleanup)
- * - Refreshes messages when app comes to foreground (AppState listener)
  * - Periodic polling for new messages (default: 60 seconds)
- * - Debounced refresh to prevent excessive API calls
  */
 export function useUnviewedMessages(
   options: UseUnviewedMessagesOptions = {}
@@ -66,17 +67,13 @@ export function useUnviewedMessages(
     refreshOnFocus = true,
   } = options;
 
-  // Track app state for focus detection
-  const appState = useRef(AppState.currentState);
-  const lastFetchTime = useRef<number>(0);
+  // Track if we've shown the modal in this foreground session
+  // Resets when app goes to background so modal can show again on next focus
+  const hasShownThisSession = useRef<boolean>(false);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  const [messages, setMessages] = useState<Notification[]>([]);
   const [dailyDismissed, setDailyDismissed] = useState<Record<string, string>>({});
   const [showModal, setShowModal] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [hasAutoShown, setHasAutoShown] = useState(false);
-  const [endpointUnavailable, setEndpointUnavailable] = useState(false);
 
   // Load and cleanup daily dismissed messages from storage
   const loadDailyDismissed = useCallback(async () => {
@@ -122,55 +119,72 @@ export function useUnviewedMessages(
     return dismissedDate === getTodayDate();
   }, [dailyDismissed]);
 
-  // Fetch messages from API
-  const loadMessages = useCallback(async () => {
-    if (!fetchMessages || !userId || endpointUnavailable) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const fetchedMessages = await fetchMessages();
-      setMessages(fetchedMessages);
-
-      // Only log in development and if we actually got messages
-      if (__DEV__ && fetchedMessages.length > 0) {
-        console.log("[useUnviewedMessages] Loaded", fetchedMessages.length, "messages");
+  // Use React Query for fetching messages (same pattern as web)
+  const {
+    data: messagesData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["messages", "unviewed", userId],
+    queryFn: async () => {
+      if (!userId || !fetchMessages) {
+        return [];
       }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
-
-      // Check if this is a 404 (endpoint doesn't exist) - disable polling
-      const errorMessage = error.message || "";
-      if (errorMessage.includes("Cannot GET") || errorMessage.includes("404") || errorMessage.includes("Not Found")) {
-        setEndpointUnavailable(true);
-        // Only log once in development
-        if (__DEV__) {
-          console.warn("[useUnviewedMessages] Endpoint unavailable, disabling polling");
+      try {
+        const messages = await fetchMessages();
+        return messages;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        // Check if this is a 404 (endpoint doesn't exist)
+        const errorMessage = error.message || "";
+        if (errorMessage.includes("Cannot GET") || errorMessage.includes("404") || errorMessage.includes("Not Found")) {
+          if (__DEV__) {
+            console.warn("[useUnviewedMessages] Endpoint unavailable");
+          }
         }
+        throw error;
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchMessages, userId, endpointUnavailable]);
+    },
+    enabled: !!userId && !!fetchMessages,
+    refetchInterval: checkInterval, // Poll every 60 seconds (same as web)
+    refetchOnWindowFocus: refreshOnFocus, // Works with AppState via focusManager
+    refetchOnMount: 'always', // Always fetch on mount (same as web)
+    staleTime: 0, // Always considered stale (same as web)
+    gcTime: 0, // No garbage collection (same as web)
+    retry: false, // Don't retry failed requests
+  });
+
+  const messages = Array.isArray(messagesData) ? messagesData : [];
 
   // Filter unviewed messages (exclude those dismissed today)
-  const unviewedMessages = messages.filter(
-    (msg) => !isDismissedToday(msg.id)
-  );
+  const unviewedMessages = useMemo(() => {
+    return messages.filter((msg) => !isDismissedToday(msg.id));
+  }, [messages, isDismissedToday]);
 
   // Open modal
   const openModal = useCallback(() => {
     setShowModal(true);
   }, []);
 
-  // Close modal
-  const closeModal = useCallback(() => {
+  // Close modal - also dismisses all currently shown messages for today
+  // so they won't show again until tomorrow
+  const closeModal = useCallback(async () => {
     setShowModal(false);
-  }, []);
+
+    // Dismiss all current unviewed messages for today so they don't show again on next focus
+    if (unviewedMessages.length > 0) {
+      const today = getTodayDate();
+      const newDismissed = { ...dailyDismissed };
+
+      for (const msg of unviewedMessages) {
+        newDismissed[msg.id] = today;
+      }
+
+      setDailyDismissed(newDismissed);
+      await saveDailyDismissed(newDismissed);
+    }
+  }, [unviewedMessages, dailyDismissed, saveDailyDismissed]);
 
   // Dismiss for today only (store locally, will show again tomorrow)
   const dismissForToday = useCallback(
@@ -207,82 +221,52 @@ export function useUnviewedMessages(
 
   // Refresh messages
   const refresh = useCallback(async () => {
-    await loadMessages();
-  }, [loadMessages]);
+    await refetch();
+  }, [refetch]);
 
   // Load daily dismissed messages on mount
   useEffect(() => {
     loadDailyDismissed();
   }, [loadDailyDismissed]);
 
-  // Load messages when userId changes
+  // Reset session tracking when app goes to background
+  // This allows modal to show again when user returns to the app
   useEffect(() => {
-    if (userId) {
-      loadMessages();
-    }
-  }, [userId, loadMessages]);
-
-  // Auto-show modal if there are unviewed messages (only on first load)
-  useEffect(() => {
-    if (autoShow && !hasAutoShown && unviewedMessages.length > 0 && !isLoading) {
-      setShowModal(true);
-      setHasAutoShown(true);
-    }
-  }, [autoShow, hasAutoShown, unviewedMessages.length, isLoading]);
-
-  // Listen for app state changes (foreground/background)
-  // Refresh messages when app comes to foreground
-  useEffect(() => {
-    if (!refreshOnFocus || !userId || !fetchMessages || endpointUnavailable) {
-      return;
-    }
-
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      // App came to foreground from background/inactive
+      // App went to background - reset session tracking
       if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
+        appState.current === "active" &&
+        nextAppState.match(/inactive|background/)
       ) {
-        // Only refresh if enough time has passed since last fetch (debounce)
-        const now = Date.now();
-        if (now - lastFetchTime.current >= 5000) {
-          lastFetchTime.current = now;
-          loadMessages();
-        }
+        hasShownThisSession.current = false;
       }
       appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
+  }, []);
 
-    return () => {
-      subscription.remove();
-    };
-  }, [refreshOnFocus, userId, fetchMessages, loadMessages, endpointUnavailable]);
-
-  // Periodic polling for new messages (like web's 60s interval)
+  // Auto-show modal when unviewed messages are available
+  // Shows on every app focus if there are unviewed messages (not yet shown this session)
   useEffect(() => {
-    // Don't poll if endpoint is unavailable or missing required params
-    if (!userId || !fetchMessages || checkInterval <= 0 || endpointUnavailable) {
+    if (!autoShow || isLoading) {
       return;
     }
 
-    const intervalId = setInterval(() => {
-      lastFetchTime.current = Date.now();
-      loadMessages();
-    }, checkInterval);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [userId, fetchMessages, checkInterval, loadMessages, endpointUnavailable]);
+    // Show modal if there are unviewed messages and we haven't shown it this session
+    if (!hasShownThisSession.current && unviewedMessages.length > 0) {
+      hasShownThisSession.current = true;
+      setShowModal(true);
+    }
+  }, [autoShow, unviewedMessages.length, isLoading]);
 
   return {
     messages,
     unviewedMessages,
     showModal,
     isLoading,
-    error,
+    error: error as Error | null,
     openModal,
     closeModal,
     dismissForToday,

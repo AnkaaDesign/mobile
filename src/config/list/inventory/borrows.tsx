@@ -17,6 +17,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useBorrowsInfiniteMobile',
+    mutationsHook: 'useBorrowMutations',
+    batchMutationsHook: 'useBorrowBatchMutations',
     defaultSort: [
       { field: 'status', direction: 'asc' },
       { field: 'createdAt', direction: 'desc' },
@@ -155,7 +157,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         onPress: (borrow, router) => {
           router.push(`/estoque/emprestimos/editar/${borrow.id}`)
         },
-        condition: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
       },
       {
         key: 'return',
@@ -175,7 +177,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
             },
           })
         },
-        condition: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
       },
       {
         key: 'mark-lost',
@@ -194,7 +196,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
             },
           })
         },
-        condition: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
+        visible: (borrow) => borrow.status === BORROW_STATUS.ACTIVE,
       },
       {
         key: 'delete',

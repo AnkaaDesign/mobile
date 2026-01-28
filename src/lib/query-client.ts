@@ -1,4 +1,18 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, focusManager } from '@tanstack/react-query'
+import { AppState, AppStateStatus } from 'react-native'
+
+// Set up React Query focus manager to use AppState for mobile
+// This enables refetchOnWindowFocus to work with app foreground/background
+focusManager.setEventListener((handleFocus) => {
+  const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+    // When app becomes active, tell React Query that focus changed
+    handleFocus(state === 'active')
+  })
+
+  return () => {
+    subscription.remove()
+  }
+})
 
 // Create a client outside the component to prevent recreation on renders
 export const queryClient = new QueryClient({
@@ -10,7 +24,7 @@ export const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 60 * 24,
       // Refetch when the app regains connectivity
       refetchOnReconnect: true,
-      refetchOnWindowFocus: false, // Disable for mobile
+      refetchOnWindowFocus: true, // Now works with AppState via focusManager
       // Retry failed queries, but don't retry if they failed due to being offline
       retry: (failureCount, error: any) => {
         if (error?.isOffline) return false

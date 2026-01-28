@@ -9,6 +9,7 @@ import type { BulkActionsProps } from '../types'
 export const BulkActions = memo(function BulkActions({
   selectedIds,
   actions,
+  mutations,
   onClear,
 }: BulkActionsProps) {
   const { colors } = useTheme()
@@ -31,7 +32,7 @@ export const BulkActions = memo(function BulkActions({
             onPress: async () => {
               setIsExecuting(true)
               try {
-                await action.onPress(selectedIds)
+                await action.onPress(selectedIds, mutations)
                 onClear()
               } catch (error) {
                 console.error('Bulk action error:', error)
@@ -46,7 +47,7 @@ export const BulkActions = memo(function BulkActions({
     } else {
       setIsExecuting(true)
       try {
-        await action.onPress(selectedIds)
+        await action.onPress(selectedIds, mutations)
         onClear()
       } catch (error) {
         console.error('Bulk action error:', error)

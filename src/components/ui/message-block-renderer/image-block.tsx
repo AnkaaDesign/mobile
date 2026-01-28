@@ -132,7 +132,6 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
     imageContainer: {
       borderRadius: borderRadius.lg,
       overflow: "hidden",
-      backgroundColor: colors.muted,
       maxWidth: maxWidth,
     },
     image: {

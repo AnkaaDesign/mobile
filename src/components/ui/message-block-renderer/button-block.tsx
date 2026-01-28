@@ -19,10 +19,23 @@ export function ButtonBlockComponent({ block, onButtonPress }: ButtonBlockProps)
     }
   };
 
+  const getAlignmentStyle = () => {
+    switch (block.alignment) {
+      case "left":
+        return "flex-start" as const;
+      case "right":
+        return "flex-end" as const;
+      case "center":
+        return "center" as const;
+      default:
+        return "flex-start" as const;
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       marginVertical: spacing.sm,
-      alignItems: "flex-start",
+      alignItems: getAlignmentStyle(),
     },
   });
 

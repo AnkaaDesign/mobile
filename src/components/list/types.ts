@@ -66,6 +66,20 @@ export interface TableColumn<T = any> {
   canView?: (user: any) => boolean
 }
 
+/** Mutations context passed to action handlers */
+export interface ActionMutationsContext {
+  /** Update an entity by id */
+  update?: (params: { id: string; data: any }) => Promise<any>
+  /** Delete an entity by id */
+  delete?: (id: string) => Promise<any>
+  /** Batch update multiple entities */
+  batchUpdateAsync?: (params: any) => Promise<any>
+  /** Batch delete multiple entities */
+  batchDeleteAsync?: (params: any) => Promise<any>
+  /** Current user */
+  user?: any
+}
+
 export interface TableAction<T = any> {
   key: string
   /** Label can be a string or a function that receives the item and returns a string */
@@ -77,7 +91,7 @@ export interface TableAction<T = any> {
     title: string
     message: string | ((item: T) => string)
   }
-  onPress?: (item: T, router?: any, context?: { mutations?: any; user?: any }) => void | Promise<void>
+  onPress?: (item: T, router?: any, context?: ActionMutationsContext) => void | Promise<void>
   /** Item-level visibility check - receives item and optionally user */
   visible?: (item: T, user?: any) => boolean
   /** Permission check - if provided, action will only be shown if this returns true */
@@ -105,6 +119,8 @@ export interface TableProps<T extends { id: string }> {
   onRefresh?: () => Promise<void>
   refreshing?: boolean
   actions?: TableAction<T>[]
+  /** Mutations for row actions (update, delete, etc.) */
+  mutations?: ActionMutationsContext
   rowHeight?: number
   onRowPress?: (item: T) => void
   emptyState?: {
@@ -235,12 +251,14 @@ export interface BulkAction {
     title: string
     message: string | ((count: number) => string)
   }
-  onPress: (ids: Set<string>, mutations?: any) => void | Promise<void>
+  onPress: (ids: Set<string>, mutations?: ActionMutationsContext) => void | Promise<void>
 }
 
 export interface BulkActionsProps {
   selectedIds: Set<string>
   actions: BulkAction[]
+  /** Mutations for bulk actions (batchUpdateAsync, batchDeleteAsync, etc.) */
+  mutations?: ActionMutationsContext
   onClear: () => void
 }
 
@@ -273,6 +291,10 @@ export interface ListConfig<T extends { id: string }> {
   // Query
   query: {
     hook: string // Name of the infinite query hook
+    /** Name of the mutations hook (e.g., 'useBorrowMutations') - provides update, delete, etc. for row actions */
+    mutationsHook?: string
+    /** Name of the batch mutations hook (e.g., 'useBorrowBatchMutations') - provides batchUpdateAsync, batchDeleteAsync for bulk actions */
+    batchMutationsHook?: string
     defaultSort: SortConfig
     pageSize?: number
     sortOptions?: Array<{ field: string; label: string }> // Available sort options
@@ -375,6 +397,8 @@ export interface UseListReturn<T extends { id: string }> {
     onSort: (field: string) => void
     rowHeight: number
     actions: TableAction<T>[]
+    /** Mutations for row actions (update, delete, etc.) */
+    mutations?: ActionMutationsContext
     getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
   }
 

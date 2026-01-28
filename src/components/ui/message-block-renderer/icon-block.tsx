@@ -10,6 +10,30 @@ interface IconBlockProps {
 }
 
 /**
+ * Converts Tailwind color class to actual color value
+ */
+function getTailwindColor(colorClass: string | undefined, themeColors: any): string {
+  if (!colorClass) return themeColors.foreground;
+
+  // Map Tailwind color classes to actual colors
+  const colorMap: Record<string, string> = {
+    "text-foreground": themeColors.foreground,
+    "text-primary": themeColors.primary,
+    "text-secondary": themeColors.secondary,
+    "text-muted-foreground": themeColors.mutedForeground,
+    "text-green-600": "#16a34a",
+    "text-blue-600": "#2563eb",
+    "text-yellow-600": "#ca8a04",
+    "text-red-600": "#dc2626",
+    "text-purple-600": "#9333ea",
+    "text-orange-600": "#ea580c",
+    "text-pink-600": "#db2777",
+  };
+
+  return colorMap[colorClass] || themeColors.foreground;
+}
+
+/**
  * Renders an icon block using Tabler icons
  * Matches web behavior with size presets and alignment
  */
@@ -50,8 +74,8 @@ export function IconBlockComponent({ block }: IconBlockProps) {
     },
   });
 
-  // Use provided color or default to foreground
-  const iconColor = color || colors.foreground;
+  // Convert Tailwind color class to actual color value
+  const iconColor = getTailwindColor(color, colors);
 
   return (
     <View style={styles.container} accessibilityElementsHidden>

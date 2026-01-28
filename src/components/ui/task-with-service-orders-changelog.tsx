@@ -448,7 +448,7 @@ const TimelineItem = ({
     const metadata = firstLog.metadata as { sourceTaskName?: string } | undefined;
     const actionLabel = getActionLabel(firstLog.action, firstLog.triggeredBy, metadata);
 
-    // Special handling for service orders - show description/type
+    // Special handling for service orders - show description/type/status (matching web)
     if (
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
       firstLog.action === CHANGE_ACTION.CREATE
@@ -459,25 +459,52 @@ const TimelineItem = ({
         const type = metadata.type
           ? SERVICE_ORDER_TYPE_LABELS[metadata.type as keyof typeof SERVICE_ORDER_TYPE_LABELS]
           : null;
+        const status = metadata.status
+          ? SERVICE_ORDER_STATUS_LABELS[metadata.status as keyof typeof SERVICE_ORDER_STATUS_LABELS]
+          : null;
 
         if (description) {
+          // Use feminine form "Criada" for SERVICE_ORDER (matching web)
+          // For batch creates, replace "Criado" with "Criada" in the action label
+          const feminineActionLabel = actionLabel.replace("Criado", "Criada");
+
           return (
             <View>
               <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
-                Ordem de Servico Criada
+                Ordem de Serviço {feminineActionLabel}
               </ThemedText>
               <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {description}
+                Descrição: {description}
               </ThemedText>
               {type && (
                 <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
                   Tipo: {type}
                 </ThemedText>
               )}
+              {status && (
+                <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                  Status: {status}
+                </ThemedText>
+              )}
             </View>
           );
         }
       }
+    }
+
+    // Special handling for service orders UPDATE - use feminine form (matching web)
+    if (
+      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
+      firstLog.action === CHANGE_ACTION.UPDATE
+    ) {
+      // Use feminine form "Atualizada" for SERVICE_ORDER (matching web)
+      const feminineActionLabel = actionLabel.replace("Atualizado", "Atualizada");
+
+      return (
+        <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
+          Ordem de Serviço {feminineActionLabel}
+        </ThemedText>
+      );
     }
 
     return (
@@ -590,24 +617,24 @@ const TimelineItem = ({
 
       {/* Content */}
       <View style={[styles.contentCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        {getTitle()}
+        {/* Header with title and timestamp (matching web) */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerTitle}>{getTitle()}</View>
+          <ThemedText style={[styles.headerTime, { color: colors.mutedForeground }]}>
+            {formatRelativeTime(firstLog.createdAt)}
+          </ThemedText>
+        </View>
 
         {getChanges()}
 
-        {/* Footer with time and user */}
-        <View style={styles.footer}>
-          <View style={styles.footerLeft}>
-            <IconClock size={12} color={colors.mutedForeground} />
-            <ThemedText style={[styles.time, { color: colors.mutedForeground }]}>
-              {formatRelativeTime(firstLog.createdAt)}
+        {/* Footer with user (matching web format: "Por: userName") */}
+        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          <ThemedText style={[styles.footerText, { color: colors.mutedForeground }]}>
+            Por:{" "}
+            <ThemedText style={[styles.footerUserName, { color: colors.foreground }]}>
+              {isAutomatic ? "Sistema" : userName}
             </ThemedText>
-          </View>
-          <View style={styles.footerRight}>
-            <IconUser size={12} color={colors.mutedForeground} />
-            <ThemedText style={[styles.userName, { color: colors.mutedForeground }]}>
-              {isAutomatic ? "Automatico" : userName}
-            </ThemedText>
-          </View>
+          </ThemedText>
         </View>
       </View>
     </View>
@@ -903,6 +930,20 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.xs,
+  },
+  headerTitle: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  headerTime: {
+    fontSize: fontSize.xs,
+    flexShrink: 0,
+  },
   itemTitle: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
@@ -914,7 +955,6 @@ const styles = StyleSheet.create({
   },
   itemType: {
     fontSize: fontSize.xs,
-    fontStyle: "italic",
   },
   changeRow: {
     marginBottom: spacing.sm,
@@ -955,12 +995,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginTop: spacing.sm,
     paddingTop: spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
+  },
+  footerText: {
+    fontSize: fontSize.xs,
+  },
+  footerUserName: {
+    fontWeight: fontWeight.medium,
   },
   footerLeft: {
     flexDirection: "row",

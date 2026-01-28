@@ -13,6 +13,7 @@ interface MenuItem {
   onlyInStaging?: boolean; // Only show in staging environment
   isContextual?: boolean; // Indicates if this is a contextual menu item
   requiresBonifiable?: boolean; // Only show if user's position is bonifiable
+  sortOrder?: number; // Custom sort order (lower numbers appear first, items without sortOrder are sorted alphabetically after items with sortOrder)
 }
 
 export const NAVIGATION_MENU: MenuItem[] = [
@@ -301,13 +302,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // PESSOAL - Only for production workers (PRODUCTION, WAREHOUSE, PLOTTING) - NOT DESIGNER (Designer has flat menu like web)
+  // PESSOAL - For WAREHOUSE and PLOTTING users - NOT DESIGNER (Designer has flat menu like web)
+  // Note: PRODUCTION users see Pessoal at root level after production items (see bottom of file)
   {
     id: "pessoal",
     title: "Pessoal",
     icon: "userCircle",
     path: "/pessoal",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
+    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {
@@ -411,13 +413,13 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // PRODUCAO
+  // PRODUCAO - Note: PRODUCTION users see direct access items at root level instead of this grouped menu
   {
     id: "producao",
     title: "Producao",
     icon: "factory",
     path: "/producao",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "aerografia",
@@ -515,11 +517,10 @@ export const NAVIGATION_MENU: MenuItem[] = [
         id: "bonus",
         title: "Bônus",
         icon: "coins",
-        path: "/recursos-humanos/bonus",
+        path: "/recursos-humanos/bonus/listar",
         children: [
-          { id: "bonus-listar", title: "Listar", icon: "list", path: "/recursos-humanos/bonus/listar" },
-          { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
           { id: "nivel-de-performance", title: "Nível de Performance", icon: "trendingUp", path: "/recursos-humanos/bonus/nivel-de-performance" },
+          { id: "simulacao-bonus", title: "Simulação de Bônus", icon: "calculator", path: "/recursos-humanos/bonus/simulacao" },
         ],
       },
       { id: "calculos", title: "Cálculos de Ponto", icon: "deviceIpadDollar", path: "/recursos-humanos/calculos" },
@@ -788,6 +789,152 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "requisicao-de-recorte-detalhes-direct", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
           { id: "requisicao-de-recorte-editar-direct", title: "Editar", icon: "edit", path: "/producao/recorte/requisicao-de-recorte/editar/:id", isDynamic: true },
         ],
+      },
+    ],
+  },
+
+  // ============================================================
+  // PRODUCTION USER DIRECT ACCESS ITEMS
+  // These are shown at root level for PRODUCTION users only (not ADMIN)
+  // since ADMIN already sees these items inside the "Producao" menu
+  // ============================================================
+
+  // Barracões - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
+  {
+    id: "barracoes-production",
+    title: "Barracões",
+    icon: "warehouse",
+    path: "/producao/garagens",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 1,
+  },
+
+  // Cronograma - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
+  {
+    id: "cronograma-production",
+    title: "Cronograma",
+    icon: "calendarStats",
+    path: "/producao/cronograma",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 2,
+    children: [
+      { id: "cronograma-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/cronograma/detalhes/:id", isDynamic: true },
+    ],
+  },
+
+  // Historico - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
+  {
+    id: "historico-production",
+    title: "Historico",
+    icon: "history",
+    path: "/producao/historico",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 3,
+  },
+
+  // Observacoes - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
+  {
+    id: "observacoes-production",
+    title: "Observacoes",
+    icon: "note",
+    path: "/producao/observacoes",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 4,
+    children: [
+      { id: "observacoes-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/observacoes/detalhes/:id", isDynamic: true },
+    ],
+  },
+
+  // Recorte - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
+  {
+    id: "recorte-production",
+    title: "Recorte",
+    icon: "scissors",
+    path: "/producao/recorte",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 5,
+    children: [
+      {
+        id: "plano-de-recorte-production",
+        title: "Plano de Recorte",
+        icon: "clipboard",
+        path: "/producao/recorte/plano-de-recorte/listar",
+        children: [
+          { id: "plano-de-recorte-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/recorte/plano-de-recorte/detalhes/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "requisicao-de-recorte-production",
+        title: "Requisicao de Recorte",
+        icon: "clipboard",
+        path: "/producao/recorte/requisicao-de-recorte/listar",
+        children: [
+          { id: "requisicao-de-recorte-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/recorte/requisicao-de-recorte/detalhes/:id", isDynamic: true },
+        ],
+      },
+    ],
+  },
+
+  // Pessoal - Direct access for PRODUCTION users (placed after production items to keep them together)
+  {
+    id: "pessoal-production",
+    title: "Pessoal",
+    icon: "userCircle",
+    path: "/pessoal",
+    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
+    sortOrder: 6,
+    children: [
+      { id: "meus-feriados-production", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
+      {
+        id: "meu-bonus-production",
+        title: "Meu Bônus",
+        icon: "dollarSign",
+        path: "/pessoal/meu-bonus",
+        requiresBonifiable: true,
+        children: [
+          { id: "meu-bonus-historico-production", title: "Histórico", icon: "history", path: "/pessoal/meu-bonus/historico", requiresBonifiable: true },
+          { id: "meu-bonus-simulacao-production", title: "Simulação", icon: "calculator", path: "/pessoal/meu-bonus/simulacao", requiresBonifiable: true },
+          { id: "meu-bonus-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/meu-bonus/detalhes/:id", isDynamic: true, requiresBonifiable: true },
+        ],
+      },
+      {
+        id: "meus-emprestimos-production",
+        title: "Meus Emprestimos",
+        icon: "loan",
+        path: "/pessoal/meus-emprestimos",
+        children: [{ id: "meus-emprestimos-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/meus-emprestimos/detalhes/:id", isDynamic: true }],
+      },
+      {
+        id: "meus-epis-production",
+        title: "Meus EPIs",
+        icon: "helmet",
+        path: "/pessoal/meus-epis",
+        children: [
+          { id: "meus-epis-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/meus-epis/detalhes/:id", isDynamic: true },
+          { id: "meus-epis-solicitar-production", title: "Solicitar EPI", icon: "plus", path: "/pessoal/meus-epis/request", isDynamic: true },
+        ],
+      },
+      { id: "meus-pontos-production", title: "Meus Pontos", icon: "fingerprint", path: "/pessoal/meus-pontos" },
+      {
+        id: "minhas-advertencias-production",
+        title: "Minhas Advertencias",
+        icon: "alertTriangle",
+        path: "/pessoal/minhas-advertencias",
+        children: [{ id: "minhas-advertencias-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
+      },
+      {
+        id: "minhas-ferias-production",
+        title: "Minhas Férias",
+        icon: "calendarWeek",
+        path: "/pessoal/minhas-ferias",
+        children: [{ id: "minhas-ferias-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
+      },
+      {
+        id: "minhas-movimentacoes-production",
+        title: "Minhas Movimentacoes",
+        icon: "movement",
+        path: "/pessoal/minhas-movimentacoes",
+        children: [{ id: "minhas-movimentacoes-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-movimentacoes/detalhes/:id", isDynamic: true }],
       },
     ],
   },

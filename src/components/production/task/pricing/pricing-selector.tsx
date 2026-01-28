@@ -148,6 +148,9 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     useEffect(() => {
       if (!initialized) {
         const expiresAt = getValues("pricing.expiresAt");
+        const items = getValues("pricing.items");
+        const hasItems = items && items.length > 0;
+
         if (expiresAt) {
           const today = new Date();
           const diffTime = new Date(expiresAt).getTime() - today.getTime();
@@ -158,11 +161,20 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
             setValidityPeriod(30);
           }
         } else {
+          // Default to 30 days
           setValidityPeriod(30);
+          // If there are items but no expiresAt, set a default expiry date
+          // This fixes validation errors when editing tasks with pricing items but no expiry
+          if (hasItems) {
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+            expiryDate.setHours(23, 59, 59, 999);
+            setValue("pricing.expiresAt", expiryDate, { shouldDirty: false });
+          }
         }
         setInitialized(true);
       }
-    }, [initialized, getValues]);
+    }, [initialized, getValues, setValue]);
 
     // Notify parent about count changes
     useEffect(() => {
@@ -201,8 +213,10 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
         setValue("pricing.subtotal", 0);
         setValue("pricing.total", 0);
       }
-      prepend({ description: "", observation: null, amount: undefined });
-    }, [prepend, clearErrors, fields.length, setValue]);
+      // Use append to preserve addition order (first added = first position)
+      // Incomplete items are displayed at top via the grouping logic
+      append({ description: "", observation: null, amount: undefined });
+    }, [append, clearErrors, fields.length, setValue]);
 
     const clearAll = useCallback(() => {
       for (let i = fields.length - 1; i >= 0; i--) {
@@ -281,6 +295,26 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
 
     const hasPricingItems = pricingItems && pricingItems.length > 0;
 
+    // Separate incomplete items (shown at top) from complete items (shown below in order)
+    // An item is complete if it has a description with at least 3 characters
+    const { incompleteIndices, completeIndices } = useMemo(() => {
+      const incomplete: number[] = [];
+      const complete: number[] = [];
+
+      fields.forEach((field, index) => {
+        const item = pricingItems?.[index];
+        const isComplete = item?.description && item.description.trim().length >= 3;
+
+        if (isComplete) {
+          complete.push(index);
+        } else {
+          incomplete.push(index);
+        }
+      });
+
+      return { incompleteIndices: incomplete, completeIndices: complete };
+    }, [fields, pricingItems]);
+
     return (
       <View style={styles.container}>
         {/* Add Service Button - Full width above rows */}
@@ -291,12 +325,36 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </Button>
         )}
 
-        {/* Services Section */}
-        <View style={styles.section}>
-          {fields.length > 0 &&
-            fields.map((field, index) => (
+        {/* Incomplete Items Section - Items being configured (shown at top) */}
+        {incompleteIndices.length > 0 && (
+          <View style={[styles.section, styles.incompleteSection, { borderColor: colors.border }]}>
+            <View style={styles.sectionHeader}>
+              <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+                Configurando Serviço
+              </ThemedText>
+              <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
+                Preencha a descrição
+              </ThemedText>
+            </View>
+            {incompleteIndices.map((index) => (
               <PricingItemRow
-                key={field.id}
+                key={fields[index].id}
+                control={control}
+                index={index}
+                disabled={disabled}
+                onRemove={() => handleRemoveItem(index)}
+                isLastRow={false}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Complete Items Section - Items with description (in their position order) */}
+        {completeIndices.length > 0 && (
+          <View style={styles.section}>
+            {completeIndices.map((index) => (
+              <PricingItemRow
+                key={fields[index].id}
                 control={control}
                 index={index}
                 disabled={disabled}
@@ -304,7 +362,13 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 isLastRow={index === fields.length - 1}
               />
             ))}
-        </View>
+          </View>
+        )}
+
+        {/* Spacing between items and configuration sections */}
+        {hasPricingItems && (
+          <View style={styles.itemsConfigSpacer} />
+        )}
 
         {/* Discount Section */}
         {hasPricingItems && (
@@ -383,9 +447,12 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
+        {/* Spacing between totals and status */}
+        {hasPricingItems && <View style={styles.itemsConfigSpacer} />}
+
         {/* Status and Validity */}
         {hasPricingItems && (
-          <View style={[styles.section, styles.borderedSection, { borderTopColor: colors.border }]}>
+          <View style={styles.section}>
             <View style={styles.row}>
               <View style={styles.halfField}>
                 <View style={styles.labelWithIcon}>
@@ -504,9 +571,12 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
+        {/* Spacing before layout */}
+        {hasPricingItems && <View style={styles.itemsConfigSpacer} />}
+
         {/* Layout Aprovado - File Upload */}
         {hasPricingItems && (
-          <View style={[styles.section, styles.borderedSection, { borderTopColor: colors.border }]}>
+          <View style={styles.section}>
             <View style={styles.labelWithIcon}>
               <IconPhoto size={14} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">
@@ -554,12 +624,22 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
 
   // Get description options from service descriptions
   const descriptionOptions = useMemo(() => {
-    const descriptions = getServiceDescriptionsByType(SERVICE_ORDER_TYPE.PRODUCTION);
-    return descriptions.map((desc) => ({
+    const baseOptions = getServiceDescriptionsByType(SERVICE_ORDER_TYPE.PRODUCTION).map((desc) => ({
       value: desc,
       label: desc,
     }));
-  }, []);
+
+    // If the current description exists but isn't in the predefined list, add it to options
+    // This ensures existing values can be displayed when editing
+    if (description && description.trim().length > 0) {
+      const descriptionExists = baseOptions.some(opt => opt.value === description);
+      if (!descriptionExists) {
+        return [{ value: description, label: description }, ...baseOptions];
+      }
+    }
+
+    return baseOptions;
+  }, [description]);
 
   const handleSaveObservation = () => {
     setValue(`pricing.items.${index}.observation`, observationModal.text || null);
@@ -677,6 +757,28 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: spacing.sm,
+  },
+  incompleteSection: {
+    paddingBottom: spacing.md,
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  sectionHint: {
+    fontSize: fontSize.xs,
+  },
+  itemsConfigSpacer: {
+    height: spacing.lg,
   },
   borderedSection: {
     paddingTop: spacing.md,

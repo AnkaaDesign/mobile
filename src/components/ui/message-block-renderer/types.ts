@@ -63,6 +63,7 @@ export interface ButtonBlock {
   url?: string;
   action?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive";
+  alignment?: "left" | "center" | "right";
   disabled?: boolean;
   id?: string;
 }

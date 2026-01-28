@@ -98,14 +98,12 @@ export function MessageModal({
     }
   }, [isLastMessage]);
 
-  // Close - dismiss for today only
+  // Close - just close the modal, don't dismiss the message
+  // Message will show again on next app focus
   const handleClose = useCallback(() => {
-    if (currentMessage) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onDismissForToday?.(currentMessage.id);
-    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onClose();
-  }, [currentMessage, onClose, onDismissForToday]);
+  }, [onClose]);
 
   // Don't show this message again (permanent)
   const handleDontShowAgain = useCallback(() => {
@@ -144,17 +142,10 @@ export function MessageModal({
   const messageContent = (currentMessage as any).content;
   const transformedBlocks = transformMessageContent(messageContent);
 
-  // Debug logging - remove after fixing
-  console.log('[MessageModal] currentMessage:', JSON.stringify(currentMessage, null, 2));
-  console.log('[MessageModal] messageContent:', JSON.stringify(messageContent, null, 2));
-  console.log('[MessageModal] transformedBlocks:', transformedBlocks.length, transformedBlocks);
-
   // Fallback text extraction for when blocks are empty
   const fallbackText = transformedBlocks.length === 0 && !currentMessage.body
     ? extractPlainTextFromContent(messageContent)
     : null;
-
-  console.log('[MessageModal] fallbackText:', fallbackText);
 
   return (
     <Modal

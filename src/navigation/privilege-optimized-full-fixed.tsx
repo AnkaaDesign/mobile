@@ -32,6 +32,7 @@ const ALL_ROUTES = [
   { name: "inicio", title: "Início" },
   { name: "perfil", title: "Meu Perfil" },
   { name: "perfil/index", title: "Meu Perfil" },
+  { name: "perfil/notification-preferences", title: "Preferências de Notificações" },
   { name: "configuracoes", title: "Configurações" },
 
   // Catalogo - View-only for Leaders (separate from Pintura module)

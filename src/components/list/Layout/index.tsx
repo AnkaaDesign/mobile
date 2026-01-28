@@ -204,6 +204,7 @@ export const Layout = memo(function Layout({
         <BulkActions
           selectedIds={list.selection.selectedIds}
           actions={config.actions.bulk}
+          mutations={list.table.mutations}
           onClear={list.selection.onClear}
         />
       )}
@@ -230,6 +231,7 @@ export const Layout = memo(function Layout({
         onRefresh={list.pagination.refresh}
         refreshing={list.pagination.refreshing}
         actions={list.table.actions}
+        mutations={list.table.mutations}
         rowHeight={list.table.rowHeight}
         onRowPress={handleRowPress}
         emptyState={config.emptyState}

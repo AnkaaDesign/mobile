@@ -706,42 +706,48 @@ export const parseTime = (timeString: string): Date | null => {
 // =====================
 
 // =====================
-// Payroll Period Utilities
+// Payroll Period Utilities (5th day rule)
 // =====================
 
 /**
- * Get the current payroll period based on today's date.
+ * Get the current payroll/bonus period based on the 5th day rule.
  *
- * Ankaa uses a 26th-to-25th monthly cycle for payroll:
- * - If today is the 26th or later, the current period is for NEXT month
- * - If today is before the 26th, the current period is for CURRENT month
+ * The rule is: The "current" period only changes after the 5th of the month.
+ * - Before day 5 (1st-5th): Current period is the PREVIOUS month
+ * - After day 5 (6th-31st): Current period is the CURRENT month
+ *
+ * This is because:
+ * - Bonus/Payroll period runs from 26th to 25th
+ * - Payment happens on the 5th
+ * - Until payment, we're still in the "previous" period
  *
  * Examples:
- * - September 25th → Period: September (Aug 26 - Sep 25)
- * - September 26th → Period: October (Sep 26 - Oct 25)
- * - September 30th → Period: October (Sep 26 - Oct 25)
- * - October 1st → Period: October (Sep 26 - Oct 25)
+ * - January 5th → Period: December (Nov 26 - Dec 25)
+ * - January 6th → Period: January (Dec 26 - Jan 25)
+ * - January 28th → Period: January (Dec 26 - Jan 25)
+ * - February 5th → Period: January (Dec 26 - Jan 25)
+ * - February 6th → Period: February (Jan 26 - Feb 25)
  *
  * @param referenceDate - Optional date to check (defaults to today)
  * @returns Object with year and month for the current payroll period
  */
 export const getCurrentPayrollPeriod = (referenceDate?: Date): { year: number; month: number } => {
-  const date = referenceDate || new Date();
-  const day = date.getDate();
-  let year = date.getFullYear();
-  let month = date.getMonth() + 1; // getMonth() is 0-based, we want 1-based
+  const now = referenceDate || new Date();
+  const currentDay = now.getDate();
+  const currentMonth = now.getMonth() + 1; // JS months are 0-indexed
+  const currentYear = now.getFullYear();
 
-  // If today is the 26th or later, the period is for the next month
-  if (day >= 26) {
-    month += 1;
-    // Handle year rollover
-    if (month > 12) {
-      month = 1;
-      year += 1;
+  // If we're on or before the 5th, we're still in the previous month's period
+  if (currentDay <= 5) {
+    if (currentMonth === 1) {
+      // January 1-5: Previous period is December of previous year
+      return { year: currentYear - 1, month: 12 };
     }
+    return { year: currentYear, month: currentMonth - 1 };
   }
 
-  return { year, month };
+  // After the 5th, we're in the current month's period
+  return { year: currentYear, month: currentMonth };
 };
 
 // =====================

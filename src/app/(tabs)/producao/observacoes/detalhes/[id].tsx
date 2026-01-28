@@ -26,8 +26,10 @@ export default function ObservationDetailsScreen() {
   const { delete: deleteAsync } = useObservationMutations();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
+  // Check permissions - only ADMIN, COMMERCIAL, and LOGISTIC can edit observations
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
+                  hasPrivilege(user, SECTOR_PRIVILEGES.COMMERCIAL) ||
+                  hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch observation details

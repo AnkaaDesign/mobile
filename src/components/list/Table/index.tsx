@@ -22,6 +22,7 @@ export const Table = memo(function Table<T extends { id: string }>({
   onRefresh,
   refreshing = false,
   actions,
+  mutations,
   rowHeight = 72,
   onRowPress,
   emptyState,
@@ -56,11 +57,12 @@ export const Table = memo(function Table<T extends { id: string }>({
         columns={displayColumns as any}
         selection={selection}
         actions={actions as any}
+        mutations={mutations}
         onPress={onRowPress as any}
         getRowStyle={getRowStyle as any}
       />
     ),
-    [displayColumns, selection, actions, onRowPress, getRowStyle]
+    [displayColumns, selection, actions, mutations, onRowPress, getRowStyle]
   )
 
   const renderFooter = useCallback(

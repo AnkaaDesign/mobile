@@ -129,6 +129,28 @@ export class NotificationService {
     const response = await apiClient.post<NotificationUpdateResponse>(`${this.basePath}/${notificationId}/send`);
     return response.data;
   }
+
+  // Admin: Send notification to multiple users/sectors
+  async adminSendNotification(data: AdminSendNotificationData): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post<{ success: boolean; message: string }>("/admin/notifications/send", data);
+    return response.data;
+  }
+}
+
+// =====================
+// Admin Send Notification Types
+// =====================
+
+export interface AdminSendNotificationData {
+  title: string;
+  body: string;
+  type: string;
+  importance: string;
+  channel: string[];
+  actionUrl?: string;
+  scheduledAt?: string;
+  targetUsers?: string[];
+  targetSectors?: string[];
 }
 
 // =====================
@@ -233,6 +255,7 @@ export const getUnreadNotifications = (userId: string, params?: NotificationGetM
 export const markAsRead = (notificationId: string, userId: string) => notificationService.markAsRead(notificationId, userId);
 export const markAllAsRead = (userId: string) => notificationService.markAllAsRead(userId);
 export const sendNotification = (notificationId: string) => notificationService.sendNotification(notificationId);
+export const adminSendNotification = (data: AdminSendNotificationData) => notificationService.adminSendNotification(data);
 
 // SeenNotification exports
 export const getSeenNotifications = (params?: SeenNotificationGetManyFormData) => seenNotificationService.getSeenNotifications(params || {});

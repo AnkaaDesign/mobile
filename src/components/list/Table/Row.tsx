@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
 import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
-import type { TableColumn, TableAction, RenderContext } from '../types'
+import type { TableColumn, TableAction, RenderContext, ActionMutationsContext } from '../types'
 
 interface RowProps<T extends { id: string }> {
   item: T
@@ -17,6 +17,8 @@ interface RowProps<T extends { id: string }> {
     onToggle: (id: string) => void
   }
   actions?: Array<TableAction<T>>
+  /** Mutations for row actions (update, delete, etc.) */
+  mutations?: ActionMutationsContext
   onPress?: (item: T) => void
   getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
   /** Context passed to render functions for navigation route and other info */
@@ -29,6 +31,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   columns,
   selection,
   actions,
+  mutations,
   onPress,
   getRowStyle,
   renderContext,
@@ -83,7 +86,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   return (
     <View style={[styles.rowWrapper, { backgroundColor }, borderStyle]}>
       {hasActions ? (
-        <RowActions item={item} actions={actions as any}>
+        <RowActions item={item} actions={actions as any} mutations={mutations}>
           {(closeActions) => (
             <View style={{ backgroundColor }}>
               <ScrollView

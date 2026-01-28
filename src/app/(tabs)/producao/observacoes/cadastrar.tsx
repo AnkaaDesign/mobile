@@ -26,12 +26,9 @@ export default function CreateObservationScreen() {
   // Permission check
   const canCreate = React.useMemo(() => {
     if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
+    return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.COMMERCIAL) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
-           Boolean(user.managedSector?.id) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+           hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
   }, [user]);
 
   // Fetch available tasks
@@ -136,7 +133,7 @@ export default function CreateObservationScreen() {
         />
         <ErrorScreen
           message="Acesso negado"
-          detail="Você não tem permissão para criar observações. É necessário privilégio de Produção, Comercial, Financeiro, Almoxarifado, liderança de equipe ou Administrador."
+          detail="Você não tem permissão para criar observações. É necessário privilégio de Administrador, Comercial ou Logística."
         />
       </>
     );

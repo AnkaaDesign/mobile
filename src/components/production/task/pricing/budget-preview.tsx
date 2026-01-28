@@ -257,7 +257,7 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
         <View style={styles.signatureBlock}>
           <View style={styles.signatureImageContainer}>
             <Image
-              source={require("../../../../../assets/images/sergio-signature.png")}
+              source={require("../../../../../assets/sergio-signature.webp")}
               style={styles.sergioSignature}
               resizeMode="contain"
             />

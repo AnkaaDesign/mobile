@@ -731,7 +731,7 @@ function Step2Services({ control }: { control: any }) {
   const { colors } = useTheme();
   const { setValue, clearErrors } = useFormContext();
 
-  const { fields, append, prepend, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "pricing.items",
   });
@@ -739,6 +739,26 @@ function Step2Services({ control }: { control: any }) {
   const pricingItems = useWatch({ control, name: "pricing.items" });
   const discountType = useWatch({ control, name: "pricing.discountType" }) || "NONE";
   const discountValue = useWatch({ control, name: "pricing.discountValue" });
+
+  // Separate incomplete items (shown at top) from complete items (shown below in order)
+  // An item is complete if it has a description with at least 3 characters
+  const { incompleteIndices, completeIndices } = useMemo(() => {
+    const incomplete: number[] = [];
+    const complete: number[] = [];
+
+    fields.forEach((field, index) => {
+      const item = pricingItems?.[index];
+      const isComplete = item?.description && item.description.trim().length >= 3;
+
+      if (isComplete) {
+        complete.push(index);
+      } else {
+        incomplete.push(index);
+      }
+    });
+
+    return { incompleteIndices: incomplete, completeIndices: complete };
+  }, [fields, pricingItems]);
 
 
   // Calculate subtotal
@@ -785,15 +805,41 @@ function Step2Services({ control }: { control: any }) {
         <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>Adicionar Serviço</ThemedText>
       </Button>
 
-      {/* Service items */}
-      {fields.map((field, index) => (
-        <ServiceItemRow
-          key={field.id}
-          control={control}
-          index={index}
-          onRemove={() => remove(index)}
-        />
-      ))}
+      {/* Incomplete Items Section - Items being configured (shown at top) */}
+      {incompleteIndices.length > 0 && (
+        <View style={[styles.incompleteSection, { borderBottomColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+              Configurando Serviço
+            </ThemedText>
+            <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
+              Preencha a descrição
+            </ThemedText>
+          </View>
+          {incompleteIndices.map((index) => (
+            <ServiceItemRow
+              key={fields[index].id}
+              control={control}
+              index={index}
+              onRemove={() => remove(index)}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Complete Items Section - Items with description (in their position order) */}
+      {completeIndices.length > 0 && (
+        <View>
+          {completeIndices.map((index) => (
+            <ServiceItemRow
+              key={fields[index].id}
+              control={control}
+              index={index}
+              onRemove={() => remove(index)}
+            />
+          ))}
+        </View>
+      )}
 
       {/* Totals */}
       {pricingItems && pricingItems.length > 0 && (
@@ -838,11 +884,22 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
   const observation = useWatch({ control, name: `pricing.items.${index}.observation` });
 
   const descriptionOptions = useMemo(() => {
-    return getServiceDescriptionsByType(SERVICE_ORDER_TYPE.PRODUCTION).map((desc) => ({
+    const baseOptions = getServiceDescriptionsByType(SERVICE_ORDER_TYPE.PRODUCTION).map((desc) => ({
       value: desc,
       label: desc,
     }));
-  }, []);
+
+    // If the current description exists but isn't in the predefined list, add it to options
+    // This ensures existing values can be displayed when editing
+    if (description && description.trim().length > 0) {
+      const descriptionExists = baseOptions.some(opt => opt.value === description);
+      if (!descriptionExists) {
+        return [{ value: description, label: description }, ...baseOptions];
+      }
+    }
+
+    return baseOptions;
+  }, [description]);
 
   const handleSaveObservation = () => {
     setValue(`pricing.items.${index}.observation`, observationModal.text || null);
@@ -989,6 +1046,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginVertical: spacing.sm,
+  },
+  incompleteSection: {
+    paddingBottom: spacing.md,
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderStyle: "dashed",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  sectionHint: {
+    fontSize: fontSize.xs,
   },
   itemRow: {
     gap: spacing.xs,

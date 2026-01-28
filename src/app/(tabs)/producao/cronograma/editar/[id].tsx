@@ -66,6 +66,12 @@ export default function EditScheduleScreen() {
           files: true,
         },
       },
+      pricing: {
+        include: {
+          items: true,
+          layoutFile: true,
+        },
+      },
     },
   });
 
@@ -269,6 +275,30 @@ export default function EditScheduleScreen() {
           // Include base files for edit mode
           baseFiles: (task as any).baseFiles || [],
           baseFileIds: (task as any).baseFiles?.map((f: any) => f.id) || [],
+          // Include pricing for edit mode
+          pricing: (task as any).pricing ? {
+            id: (task as any).pricing.id,
+            status: (task as any).pricing.status || 'DRAFT',
+            expiresAt: (task as any).pricing.expiresAt,
+            subtotal: (task as any).pricing.subtotal || 0,
+            discountType: (task as any).pricing.discountType || 'NONE',
+            discountValue: (task as any).pricing.discountValue || null,
+            total: (task as any).pricing.total || 0,
+            paymentCondition: (task as any).pricing.paymentCondition || null,
+            downPaymentDate: (task as any).pricing.downPaymentDate || null,
+            customPaymentText: (task as any).pricing.customPaymentText || null,
+            guaranteeYears: (task as any).pricing.guaranteeYears || null,
+            customGuaranteeText: (task as any).pricing.customGuaranteeText || null,
+            layoutFileId: (task as any).pricing.layoutFileId || null,
+            layoutFile: (task as any).pricing.layoutFile || null,
+            items: (task as any).pricing.items?.map((item: any) => ({
+              id: item.id,
+              description: item.description || '',
+              observation: item.observation || null,
+              amount: item.amount ?? null,
+              shouldSync: true,
+            })) || [],
+          } : undefined,
         }}
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}

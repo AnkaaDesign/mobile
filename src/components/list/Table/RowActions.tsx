@@ -7,17 +7,20 @@ import { useSwipeRow } from '@/contexts/swipe-row-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'expo-router'
 import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal } from '@tabler/icons-react-native'
-import type { TableAction } from '../types'
+import type { TableAction, ActionMutationsContext } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
   item: T
   actions: Array<TableAction<T>>
+  /** Mutations for row actions (update, delete, etc.) */
+  mutations?: ActionMutationsContext
   children: (closeActions: () => void) => React.ReactNode
 }
 
 export const RowActions = memo(function RowActions<T extends { id: string }>({
   item,
   actions,
+  mutations,
   children,
 }: RowActionsProps<T>) {
   const { colors } = useTheme()
@@ -89,6 +92,12 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
     async (action: TableAction<T>) => {
       closeActions()
 
+      // Build the context with mutations for action handlers
+      const actionContext: ActionMutationsContext = {
+        ...mutations,
+        user,
+      }
+
       if (action.confirm) {
         const message = typeof action.confirm.message === 'function'
           ? action.confirm.message(item)
@@ -104,7 +113,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
               style: action.variant === 'destructive' ? 'destructive' : 'default',
               onPress: async () => {
                 if (action.onPress) {
-                  await action.onPress(item, router, { user })
+                  await action.onPress(item, router, actionContext)
                 } else if (action.route) {
                   const route = typeof action.route === 'function' ? action.route(item) : action.route
                   router.push(route as any)
@@ -115,14 +124,14 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         )
       } else {
         if (action.onPress) {
-          await action.onPress(item, router, { user })
+          await action.onPress(item, router, actionContext)
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
           router.push(route as any)
         }
       }
     },
-    [item, closeActions, router]
+    [item, closeActions, router, mutations, user]
   )
 
   const renderRightActions = useCallback(

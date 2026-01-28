@@ -131,7 +131,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
 
   filters: {
     defaultValues: {
-      statuses: [BORROW_STATUS.ACTIVE],
+      statuses: [],
     },
     fields: [
       {

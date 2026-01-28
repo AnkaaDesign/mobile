@@ -3,7 +3,6 @@ import { View, ScrollView, Pressable } from "react-native";
 import { IconSun, IconMoon, IconSettings } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -93,34 +92,55 @@ interface ThemeOptionProps {
 }
 
 function ThemeOption({ mode, title, description, icon, selected, onPress }: ThemeOptionProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => ({
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={`${title}: ${description}`}
+      style={{
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
         borderRadius: 12,
-        backgroundColor: pressed
-          ? (isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)")
-          : "transparent",
         borderWidth: selected ? 2 : 1,
         borderColor: selected ? colors.primary : colors.border,
-      })}
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      accessibilityLabel={`${title}: ${description}`}
+      }}
     >
-      <View style={{ marginRight: 12 }}>
-        <RadioGroupItem value={mode} />
+      {/* Custom Radio Circle */}
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          borderWidth: 2,
+          borderColor: selected ? colors.primary : colors.mutedForeground,
+          backgroundColor: selected ? colors.primary : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 12,
+        }}
+      >
+        {selected && (
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: colors.card,
+            }}
+          />
+        )}
       </View>
 
+      {/* Icon */}
       <View style={{ marginRight: 12 }}>
         {icon}
       </View>
 
+      {/* Text */}
       <View style={{ flex: 1 }}>
         <Text variant="small" style={{ fontWeight: "600", color: colors.foreground }}>
           {title}
@@ -181,19 +201,17 @@ export default function PreferencesThemeScreen() {
             </CardDescription>
           </CardHeader>
           <CardContent style={{ gap: 12 }}>
-            <RadioGroup value={theme} onValueChange={(value) => handleThemeChange(value as ThemeMode)}>
-              {themeOptions.map((option) => (
-                <ThemeOption
-                  key={option.mode}
-                  mode={option.mode}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  selected={theme === option.mode}
-                  onPress={() => handleThemeChange(option.mode)}
-                />
-              ))}
-            </RadioGroup>
+            {themeOptions.map((option) => (
+              <ThemeOption
+                key={option.mode}
+                mode={option.mode}
+                title={option.title}
+                description={option.description}
+                icon={option.icon}
+                selected={theme === option.mode}
+                onPress={() => handleThemeChange(option.mode)}
+              />
+            ))}
           </CardContent>
         </Card>
 
