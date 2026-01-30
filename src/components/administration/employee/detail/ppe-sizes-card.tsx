@@ -15,6 +15,7 @@ const PPE_SIZE_LABELS: Record<string, string> = {
   shirts: "Camisa",
   boots: "Botas",
   pants: "Calça",
+  shorts: "Bermuda",
   sleeves: "Manguito",
   mask: "Máscara",
   gloves: "Luvas",
@@ -51,6 +52,7 @@ export function PpeSizesCard({ employee }: PpeSizesCardProps) {
   const ppeSizes = [
     { key: 'shirts', label: PPE_SIZE_LABELS.shirts, value: ppeSize.shirts },
     { key: 'pants', label: PPE_SIZE_LABELS.pants, value: ppeSize.pants },
+    { key: 'shorts', label: PPE_SIZE_LABELS.shorts, value: ppeSize.shorts },
     { key: 'boots', label: PPE_SIZE_LABELS.boots, value: ppeSize.boots },
     { key: 'rainBoots', label: PPE_SIZE_LABELS.rainBoots, value: ppeSize.rainBoots },
     { key: 'sleeves', label: PPE_SIZE_LABELS.sleeves, value: ppeSize.sleeves },

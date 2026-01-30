@@ -110,30 +110,17 @@ export const observationsListConfig: ListConfig<Observation> = {
         type: 'select',
         multiple: true,
         async: true,
-        queryKey: ['tasks', 'filter'],
+        queryKey: ['tasks', 'filter', 'sector-aware'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
-            const { getTasks } = await import('@/api-client')
-            const pageSize = 20
-            const response = await getTasks({
-              where: searchTerm ? {
-                OR: [
-                  { customer: { fantasyName: { contains: searchTerm, mode: 'insensitive' } } },
-                  { plate: { contains: searchTerm, mode: 'insensitive' } },
-                ]
-              } : undefined,
+            // Use sector-aware task filter (team leaders only see their sector's tasks)
+            const { fetchTasksForFilter } = await import('@/utils/task-filter')
+            return fetchTasksForFilter({
+              searchTerm,
+              page,
+              pageSize: 20,
               orderBy: { createdAt: 'desc' },
-              limit: pageSize,
-              page: page,
             })
-            return {
-              data: (response.data || []).map((task: any) => ({
-                label: `${task.customer?.fantasyName || '-'} - ${task.truck?.plate || '-'}`,
-                value: task.id,
-              })),
-              hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
-            }
           } catch (error) {
             console.error('[Task Filter] Error:', error)
             return { data: [], hasMore: false }

@@ -1,19 +1,20 @@
-import { useEffect, useState } from "react";
-import { View, ScrollView, Modal, ActivityIndicator, Alert } from "react-native";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { View, ScrollView, Modal, ActivityIndicator } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TextArea } from "@/components/ui/text-area";
-// import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
-import { useItems, usePpeSize, useRequestPpeDelivery } from '@/hooks';
+import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
+import { getItems } from '@/api-client';
 import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
 import { PPE_TYPE } from '@/constants';
 import { cn } from "@/lib/utils";
+import type { Item } from '@/types';
 
 interface PpeRequestModalProps {
   visible: boolean;
@@ -27,34 +28,21 @@ export function PpeRequestModal({
   onSuccess,
 }: PpeRequestModalProps) {
   const { user } = useAuth();
-  const [selectedItem, setSelectedItem] = useState<{
-    id: string;
-    name: string;
-    ppeType: string | null;
-    ppeCA?: string;
-    brand?: { name: string };
-    currentStock?: number;
-  } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
+  const [loadedItems, setLoadedItems] = useState<Map<string, Item>>(new Map());
 
-  // Get user's PPE size
-  const ppeSizeId = user?.ppeSize ? String(user.ppeSize) : "";
-  const { data: userPpeSize } = usePpeSize(ppeSizeId, {
-    enabled: !!user?.ppeSize,
+  // Get user's PPE size - user.ppeSize is already the full PpeSize object if included
+  // If it's just an ID reference, fetch it; otherwise use it directly
+  const ppeSizeId = typeof user?.ppeSize === 'object' ? user.ppeSize?.id : user?.ppeSize;
+  const { data: fetchedPpeSize, isLoading: isLoadingPpeSize } = usePpeSize(ppeSizeId || '', {
+    enabled: !!ppeSizeId && typeof user?.ppeSize !== 'object',
   });
 
-  // Get available PPE items
-  const { data: items, isLoading: isLoadingItems } = useItems({
-    where: {
-      category: { type: "PPE" },
-      isActive: true,
-    },
-    include: {
-      category: true,
-      brand: true,
-    },
-    orderBy: { name: "asc" },
-  });
+  // Use directly loaded ppeSize or fetched one
+  const userPpeSize = typeof user?.ppeSize === 'object' && user.ppeSize
+    ? { data: user.ppeSize }
+    : fetchedPpeSize;
 
   const form = useForm<PpeRequestFormData>({
     resolver: zodResolver(ppeRequestSchema),
@@ -69,180 +57,155 @@ export function PpeRequestModal({
   // Request PPE delivery mutation
   const requestMutation = useRequestPpeDelivery();
 
-  // Watch for item changes
-  const watchedItemId = form.watch("itemId");
+  // Memoize the initial options to prevent infinite loops
+  const initialOptions = useMemo(() => {
+    return selectedItem ? [selectedItem] : [];
+  }, [selectedItem?.id]);
 
-  useEffect(() => {
-    if (watchedItemId && items?.data) {
-      const item = items.data.find((i) => i.id === watchedItemId);
-      if (item) {
-        setSelectedItem({
-          id: item.id,
-          name: item.name,
-          ppeType: item.ppeType,
-          ppeCA: item.ppeCA ?? undefined,
-          brand: item.brand,
-          currentStock: ((item as any).currentStock),
-        });
+  // Build size filter conditions based on user's PPE sizes
+  const buildSizeFilterConditions = useCallback(() => {
+    const ppeSizeData = userPpeSize?.data;
+    if (!ppeSizeData) {
+      return null;
+    }
 
-        // Get stock availability
-        if (((item as any).currentStock) !== undefined) {
-          setStockAvailable(((item as any).currentStock));
-        } else {
-          setStockAvailable(null);
-        }
-      } else {
-        setSelectedItem(null);
-        setStockAvailable(null);
+    const sizeConditions: Array<{ ppeType: string; ppeSize: string }> = [];
+
+    if (ppeSizeData.shirts) {
+      sizeConditions.push({ ppeType: PPE_TYPE.SHIRT, ppeSize: ppeSizeData.shirts });
+    }
+    if (ppeSizeData.pants) {
+      sizeConditions.push({ ppeType: PPE_TYPE.PANTS, ppeSize: ppeSizeData.pants });
+    }
+    if (ppeSizeData.boots) {
+      sizeConditions.push({ ppeType: PPE_TYPE.BOOTS, ppeSize: ppeSizeData.boots });
+    }
+    if (ppeSizeData.gloves) {
+      sizeConditions.push({ ppeType: PPE_TYPE.GLOVES, ppeSize: ppeSizeData.gloves });
+    }
+    if (ppeSizeData.mask) {
+      sizeConditions.push({ ppeType: PPE_TYPE.MASK, ppeSize: ppeSizeData.mask });
+    }
+    if (ppeSizeData.sleeves) {
+      sizeConditions.push({ ppeType: PPE_TYPE.SLEEVES, ppeSize: ppeSizeData.sleeves });
+    }
+    if (ppeSizeData.rainBoots) {
+      sizeConditions.push({ ppeType: PPE_TYPE.RAIN_BOOTS, ppeSize: ppeSizeData.rainBoots });
+    }
+
+    return sizeConditions;
+  }, [userPpeSize?.data]);
+
+  // Async query function for PPE items with infinite scrolling and size filtering
+  const searchPpeItems = useCallback(async (
+    search: string,
+    page: number = 1
+  ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
+    const pageSize = 20;
+    const sizeConditions = buildSizeFilterConditions();
+
+    try {
+      const whereClause: any = {
+        ppeType: { not: null },
+        isActive: true,
+      };
+
+      if (sizeConditions && sizeConditions.length > 0) {
+        const userPpeTypes = sizeConditions.map(sc => sc.ppeType);
+
+        whereClause.OR = [
+          { ppeType: PPE_TYPE.OTHERS },
+          { ppeSize: null },
+          { ppeType: { notIn: userPpeTypes } },
+          ...sizeConditions.map(sc => ({
+            AND: [
+              { ppeType: sc.ppeType },
+              { ppeSize: sc.ppeSize },
+            ],
+          })),
+        ];
       }
+
+      const response = await getItems({
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+        where: whereClause,
+        include: {
+          brand: true,
+          category: true,
+          measures: true,
+        },
+        searchingFor: search || undefined,
+        orderBy: { name: 'asc' },
+      });
+
+      const items = response.data || [];
+      const total = response.meta?.total || items.length;
+      const hasMore = (page * pageSize) < total;
+
+      // Cache loaded items
+      setLoadedItems(prev => {
+        const newMap = new Map(prev);
+        items.forEach(item => newMap.set(item.id, item));
+        return newMap;
+      });
+
+      return {
+        data: items,
+        hasMore,
+        total,
+      };
+    } catch (error) {
+      console.error('[PPE Request Modal] Error fetching PPE items:', error);
+      return { data: [], hasMore: false };
+    }
+  }, [buildSizeFilterConditions]);
+
+  // Update stock availability when selected item changes
+  useEffect(() => {
+    if (selectedItem) {
+      const stock = selectedItem.quantity ?? (selectedItem as any).currentStock;
+      setStockAvailable(stock !== undefined ? stock : null);
     } else {
-      setSelectedItem(null);
       setStockAvailable(null);
     }
-  }, [watchedItemId, items?.data]);
+  }, [selectedItem]);
 
-  // Validate PPE size compatibility
-  const validateSizeCompatibility = (itemId: string): { isValid: boolean; message?: string } => {
-    if (!userPpeSize?.data) {
-      return {
-        isValid: false,
-        message: "Você precisa cadastrar seus tamanhos de EPI antes de solicitar",
-      };
-    }
+  // Get option value and label for Combobox
+  const getOptionValue = useCallback((item: Item) => item.id, []);
+  const getOptionLabel = useCallback((item: Item) => {
+    const parts = [item.name];
+    if (item.ppeCA) parts.push(`- CA: ${item.ppeCA}`);
+    if (item.ppeSize) parts.push(`(${item.ppeSize})`);
+    return parts.join(' ');
+  }, []);
 
-    const item = items?.data?.find((i) => i.id === itemId);
-    if (!item) {
-      return { isValid: false, message: "Item não encontrado" };
-    }
-
-    // Check if user has the required size registered
-    const ppeType = item.ppeType;
-    const userSize = userPpeSize.data;
-
-    if (!ppeType) {
-      return { isValid: true }; // No specific type, allow request
-    }
-
-    // Validate based on PPE type
-    switch (ppeType) {
-      case PPE_TYPE.SHIRT:
-      case "UNIFORM" as any:
-        if (!userSize.shirts) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de camisa",
-          };
-        }
-        break;
-      case PPE_TYPE.PANTS:
-        if (!userSize.pants) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de calça",
-          };
-        }
-        break;
-      case PPE_TYPE.BOOTS:
-        if (!userSize.boots) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de bota",
-          };
-        }
-        break;
-      case PPE_TYPE.GLOVES:
-        if (!userSize.gloves) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de luva",
-          };
-        }
-        break;
-      case PPE_TYPE.MASK:
-        if (!userSize.mask) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de máscara",
-          };
-        }
-        break;
-      case PPE_TYPE.SLEEVES:
-        if (!userSize.sleeves) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de manga",
-          };
-        }
-        break;
-      case PPE_TYPE.RAIN_BOOTS:
-        if (!userSize.rainBoots) {
-          return {
-            isValid: false,
-            message: "Você precisa cadastrar seu tamanho de galocha",
-          };
-        }
-        break;
-    }
-
-    return { isValid: true };
-  };
-
-  const handleSubmit = async (data: PpeRequestFormData) => {
-    console.log('[PPE Request Mobile] Submit button pressed');
-    console.log('[PPE Request Mobile] Form data:', data);
-    console.log('[PPE Request Mobile] Selected item:', selectedItem);
-    console.log('[PPE Request Mobile] Stock available:', stockAvailable);
-
-    console.log('[PPE Request Mobile] Preparing request data (no size validation required)');
+  const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
     const requestData = {
       itemId: data.itemId,
       quantity: data.quantity,
       scheduledDate: data.scheduledDate || undefined,
       reason: data.reason,
     };
-    console.log('[PPE Request Mobile] Request data:', requestData);
 
     try {
-      console.log('[PPE Request Mobile] Calling mutation...');
-      const result = await requestMutation.mutateAsync(requestData);
-      console.log('[PPE Request Mobile] Request successful:', result);
-
-      // API client already shows success alert
+      await requestMutation.mutateAsync(requestData);
       form.reset();
       onSuccess();
     } catch (error: any) {
-      console.error('[PPE Request Mobile] Request failed:', error);
-      console.error('[PPE Request Mobile] Error details:', {
-        message: error?.message,
-        response: error?.response,
-        data: error?.response?.data,
-      });
-
-      // API client already shows error alert
+      console.error('[PPE Request Modal] Request failed:', error);
     }
-  };
+  }, [requestMutation, form, onSuccess]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     form.reset();
     setSelectedItem(null);
     setStockAvailable(null);
+    setLoadedItems(new Map());
     onClose();
-  };
-
-  const itemOptions: ComboboxOption[] =
-    items?.data?.map((item) => ({
-      value: item.id,
-      label: `${item.name}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}${item.ppeType ? ` (${item.ppeType})` : ""}`,
-    })) || [];
+  }, [form, onClose]);
 
   const isLoading = requestMutation.isPending;
-
-  // Debug logs for component state
-  console.log('[PPE Request Mobile] Component render');
-  console.log('[PPE Request Mobile] Modal visible:', visible);
-  console.log('[PPE Request Mobile] isLoading:', isLoading);
-  console.log('[PPE Request Mobile] isLoadingItems:', isLoadingItems);
-  console.log('[PPE Request Mobile] Button disabled:', isLoading || isLoadingItems);
 
   return (
     <Modal
@@ -259,7 +222,7 @@ export function PpeRequestModal({
 
           <ScrollView className="flex-1 p-4">
             <View className="gap-4">
-              {/* Item Selection */}
+              {/* Item Selection - Async with infinite scroll */}
               <Controller
                 control={form.control}
                 name="itemId"
@@ -268,15 +231,34 @@ export function PpeRequestModal({
                     <Text className="text-sm font-medium text-foreground">
                       Item <Text className="text-destructive">*</Text>
                     </Text>
-                    <Combobox
-                      options={itemOptions}
+                    <Combobox<Item>
+                      async={true}
+                      queryKey={["ppe-items", "modal", userPpeSize?.data?.id]}
+                      queryFn={searchPpeItems}
+                      initialOptions={initialOptions}
+                      minSearchLength={0}
+                      pageSize={20}
+                      debounceMs={300}
                       value={value}
-                      onValueChange={onChange}
+                      onValueChange={(newValue) => {
+                        const id = Array.isArray(newValue) ? newValue[0] : newValue;
+                        onChange(id || '');
+                        if (id) {
+                          const item = loadedItems.get(id);
+                          if (item) setSelectedItem(item);
+                        } else {
+                          setSelectedItem(null);
+                        }
+                      }}
+                      getOptionValue={getOptionValue}
+                      getOptionLabel={getOptionLabel}
                       placeholder="Selecione o item de EPI"
-                      disabled={isLoading || isLoadingItems}
+                      emptyText="Nenhum EPI encontrado"
+                      searchPlaceholder="Buscar EPI..."
+                      disabled={isLoading || isLoadingPpeSize}
                       searchable={true}
                       clearable={false}
-                      error={error ? error.message : undefined}
+                      error={error?.message}
                     />
                     {error && <Text className="text-sm text-destructive">{error.message}</Text>}
                   </View>
@@ -294,10 +276,7 @@ export function PpeRequestModal({
                     </Text>
                     <Input
                       value={value?.toString()}
-                      onChangeText={(text) => {
-                        const num = parseInt(text) || 1;
-                        onChange(num);
-                      }}
+                      onChangeText={(text) => onChange(parseInt(text) || 1)}
                       onBlur={onBlur}
                       placeholder="1"
                       keyboardType="numeric"
@@ -307,7 +286,7 @@ export function PpeRequestModal({
                     {error && <Text className="text-sm text-destructive">{error.message}</Text>}
                     {stockAvailable !== null && value > stockAvailable && (
                       <Text className="text-sm text-destructive">
-                        Quantidade solicitada excede o estoque disponível
+                        Quantidade excede estoque ({stockAvailable} disponíveis)
                       </Text>
                     )}
                   </View>
@@ -359,10 +338,18 @@ export function PpeRequestModal({
               />
 
               {/* Info about PPE sizes */}
-              {!userPpeSize?.data && (
+              {!userPpeSize?.data && !isLoadingPpeSize && (
                 <View className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <Text className="text-sm text-blue-600 dark:text-blue-400">
-                    💡 Dica: Cadastrar seus tamanhos de EPI ajuda a filtrar e sugerir os EPIs corretos para você.
+                    Dica: Cadastrar seus tamanhos de EPI mostra apenas os itens do seu tamanho.
+                  </Text>
+                </View>
+              )}
+
+              {userPpeSize?.data && (
+                <View className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                  <Text className="text-sm text-green-600 dark:text-green-400">
+                    EPIs filtrados pelo seu tamanho cadastrado.
                   </Text>
                 </View>
               )}
@@ -371,24 +358,8 @@ export function PpeRequestModal({
 
           <View className="p-4 border-t border-border gap-2">
             <Button
-              onPress={() => {
-                console.log('=== [PPE Request Mobile] BUTTON PRESS EVENT FIRED ===');
-                console.log('[PPE Request Mobile] Submit button clicked');
-                console.log('[PPE Request Mobile] Is loading:', isLoading);
-                console.log('[PPE Request Mobile] Is loading items:', isLoadingItems);
-                console.log('[PPE Request Mobile] Button disabled state:', isLoading || isLoadingItems);
-                console.log('[PPE Request Mobile] Form values:', form.getValues());
-                console.log('[PPE Request Mobile] Form errors:', form.formState.errors);
-
-                try {
-                  console.log('[PPE Request Mobile] Calling form.handleSubmit...');
-                  form.handleSubmit(handleSubmit)();
-                  console.log('[PPE Request Mobile] form.handleSubmit called successfully');
-                } catch (error) {
-                  console.error('[PPE Request Mobile] Error calling form.handleSubmit:', error);
-                }
-              }}
-              disabled={isLoading || isLoadingItems}
+              onPress={() => form.handleSubmit(handleSubmit)()}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <View className="flex-row items-center gap-2">
@@ -401,10 +372,7 @@ export function PpeRequestModal({
             </Button>
             <Button
               variant="outline"
-              onPress={() => {
-                console.log('[PPE Request Mobile] Cancel button pressed');
-                handleClose();
-              }}
+              onPress={handleClose}
               disabled={isLoading}
             >
               <Text>Cancelar</Text>

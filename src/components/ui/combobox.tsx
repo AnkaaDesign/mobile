@@ -253,7 +253,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     if (open && async && queryKey && queryFn) {
       // Only reset if we have no data yet
       if (allAsyncOptions.length === 0) {
-        console.log('[Combobox] Refetching data on open (no existing data)');
         setCurrentPage(1);
         refetch();
       }
@@ -278,19 +277,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Update all options when first page loads or search changes
   useEffect(() => {
-    console.log('[Combobox] asyncResponse effect triggered', {
-      hasResponse: !!asyncResponse,
-      responseDataLength: asyncResponse?.data?.length,
-      debouncedSearch,
-      queryKey: JSON.stringify(queryKey)
-    });
-
     if (asyncResponse) {
       let newOptions = asyncResponse.data || [];
-      console.log('[Combobox] Processing asyncResponse', {
-        newOptionsLength: newOptions.length,
-        queryKey: JSON.stringify(queryKey)
-      });
 
       // Add all fetched items to the cache
       newOptions.forEach(item => {
@@ -331,17 +319,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         }
       );
 
-      console.log('[Combobox] Setting allAsyncOptions', {
-        count: deduplicatedData.length,
-        queryKey: JSON.stringify(queryKey),
-        hasMore: asyncResponse.hasMore,
-        sampleItem: deduplicatedData[0]
-      });
       setAllAsyncOptions(deduplicatedData);
       setHasMore(asyncResponse.hasMore || false);
-      console.log('[Combobox] hasMore set to:', asyncResponse.hasMore || false);
     } else if (asyncResponse === null) {
-      console.log('[Combobox] Clearing allAsyncOptions (asyncResponse is null)');
       setAllAsyncOptions([]);
       setHasMore(false);
     }
@@ -349,13 +329,11 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
   // Load more function
   const loadMore = useCallback(async () => {
-    console.log('[Combobox] loadMore called', { hasMore, isLoadingMore, currentPage });
     if (!queryFn || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      console.log('[Combobox] Loading page', nextPage);
       const result = await queryFn(debouncedSearch, nextPage);
 
       // Handle backward compatibility
@@ -377,11 +355,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         });
         setHasMore(false);
       } else {
-        console.log('[Combobox] Loaded page result', {
-          dataLength: result.data?.length,
-          hasMore: result.hasMore,
-          total: result.total
-        });
         (result.data || []).forEach(item => {
           const itemValue = getOptionValue(item);
           allItemsCacheRef.current.set(itemValue, item);
@@ -396,7 +369,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
             seen.add(value);
             return true;
           });
-          console.log('[Combobox] Accumulating options:', { prevCount: prev.length, newCount: result.data?.length, combinedCount: deduplicated.length });
           return deduplicated;
         });
         setHasMore(result.hasMore || false);
@@ -459,7 +431,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   const measureSelect = useCallback(() => {
     return new Promise<{ x: number; y: number; width: number; height: number }>((resolve) => {
       selectRef.current?.measureInWindow((x, y, width, height) => {
-        console.log('[Combobox] Measured input layout:', { x, y, width, height });
         const layout = { x, y, width, height };
         inputLayoutRef.current = layout;
         setInputLayout(layout);
@@ -470,7 +441,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
 
   const handleOpen = useCallback(async () => {
-    console.log('[Combobox] handleOpen called', { disabled, optionsCount: options.length });
     if (disabled) return;
 
     setSearch("");
@@ -494,14 +464,12 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       // So we need to wait at least 50 + 400 = 450ms, adding buffer for safety
       setTimeout(async () => {
         // Re-measure after scroll completed - this updates inputLayoutRef
-        const finalLayout = await measureSelect();
-        console.log('[Combobox] Final measurement after scroll:', finalLayout);
+        await measureSelect();
         // Open immediately after measurement - ref is already updated
         setOpen(true);
       }, 550); // 50ms (parent delay) + 400ms (scroll) + 100ms (buffer)
     } else {
       // No scroll needed, open immediately
-      console.log('[Combobox] Setting open to true immediately');
       setOpen(true);
     }
   }, [disabled, measureSelect, options, effectiveOnOpen]);
@@ -542,7 +510,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       // If onCreate returned the created item, process it
       if (createdItem) {
         const itemValue = getOptionValueRef.current(createdItem as TData);
-        console.log("[Combobox] ✅ Service created, extracted value:", itemValue, "Type:", typeof itemValue);
 
         // Validate the extracted value
         if (!itemValue || (typeof itemValue === "string" && itemValue.trim() === "")) {
@@ -552,7 +519,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
 
         // Add to cache immediately (synchronous)
         allItemsCacheRef.current.set(itemValue, createdItem as TData);
-        console.log("[Combobox] ✅ Added to cache. Cache size:", allItemsCacheRef.current.size);
 
         // Add to allAsyncOptions state FIRST so it's in the options when we select
         if (async) {
@@ -560,10 +526,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
             // Check if it already exists to avoid duplicates
             const exists = prev.some((item) => getOptionValueRef.current(item) === itemValue);
             if (exists) {
-              console.log("[Combobox] ℹ️ Item already exists in options");
               return prev;
             }
-            console.log("[Combobox] ✅ Adding item to options");
             return [createdItem as TData, ...prev];
           });
         }
@@ -581,15 +545,12 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Call onValueChange to update the form field
-        console.log("[Combobox] ✅ Calling onValueChange with value:", itemValue);
         onValueChange?.(itemValue);
-        console.log("[Combobox] ✅ onValueChange called");
 
         // Wait for form to process the update
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         // Close the modal
-        console.log("[Combobox] ✅ Closing modal");
         handleClose();
       } else {
         // Original behavior - just close
@@ -624,9 +585,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   }, [onValueChange]);
 
   const handleEndReached = useCallback(() => {
-    console.log('[Combobox] onEndReached triggered', { async, hasMore, isLoadingMore });
     if (async && hasMore && !isLoadingMore) {
-      console.log('[Combobox] Calling loadMore from onEndReached');
       loadMore();
     }
   }, [async, hasMore, isLoadingMore, loadMore]);
@@ -887,7 +846,6 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         animationType="fade"
         onRequestClose={handleClose}
         statusBarTranslucent
-        onShow={() => console.log('[Combobox] Modal shown', { filteredOptionsCount: filteredOptions.length })}
       >
         <Pressable
           style={[

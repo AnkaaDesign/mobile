@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useItem } from "@/hooks";
@@ -11,6 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import { perfLog } from "@/utils/performance-logger";
 // import { showToast } from "@/components/ui/toast";
 
 // Import modular components
@@ -32,12 +33,19 @@ export default function ItemDetailScreen() {
 
   const id = params?.id || "";
 
+  // Performance logging - track screen mount
+  useEffect(() => {
+    perfLog.screenMount('ItemDetailScreen');
+    perfLog.mark(`Item detail screen mounted for id: ${id}`);
+  }, []);
+
   const {
     data: response,
     isLoading,
     error,
     refetch,
   } = useItem(id, {
+    enabled: !!id && id !== "",
     include: {
       brand: true,
       category: true,
@@ -104,10 +112,27 @@ export default function ItemDetailScreen() {
         },
       },
     },
-    enabled: !!id && id !== "",
   });
 
   const item = response?.data;
+
+  // Performance logging - track when data is ready
+  useEffect(() => {
+    if (!isLoading && item) {
+      perfLog.dataReady('ItemDetailScreen', 'useItem');
+      perfLog.mark(`Item data loaded: ${item.name || item.id}`);
+    }
+  }, [isLoading, item]);
+
+  // Performance logging - track when screen content is rendered
+  useEffect(() => {
+    if (!isLoading && item) {
+      requestAnimationFrame(() => {
+        perfLog.screenRendered('ItemDetailScreen');
+        perfLog.getSummary();
+      });
+    }
+  }, [isLoading, item]);
 
   const handleEdit = () => {
     if (item) {

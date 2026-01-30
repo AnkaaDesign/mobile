@@ -50,6 +50,9 @@ export interface Item extends BaseEntity {
   maxQuantity: number | null;
   reorderPoint: number | null;
   reorderQuantity: number | null;
+  isManualMaxQuantity: boolean;
+  isManualReorderPoint: boolean;
+  lastAutoOrderDate: Date | null;
   boxQuantity: number | null;
   icms: number;
   ipi: number;
@@ -70,6 +73,8 @@ export interface Item extends BaseEntity {
 
   // PPE-specific fields (when item is a PPE)
   ppeType: PPE_TYPE | null;
+  ppeSize: PPE_SIZE | null;
+  ppeSizeOrder: number | null;
   ppeCA: string | null;
   ppeDeliveryMode: PPE_DELIVERY_MODE | null;
   ppeStandardQuantity: number | null;
@@ -227,6 +232,7 @@ export interface ItemWhere {
 
   // PPE-specific enum fields
   ppeType?: PPE_TYPE | { equals?: PPE_TYPE; not?: PPE_TYPE; in?: PPE_TYPE[]; notIn?: PPE_TYPE[] } | null;
+  ppeSize?: PPE_SIZE | { equals?: PPE_SIZE; not?: PPE_SIZE; in?: PPE_SIZE[]; notIn?: PPE_SIZE[] } | null;
   ppeDeliveryMode?: PPE_DELIVERY_MODE | { equals?: PPE_DELIVERY_MODE; not?: PPE_DELIVERY_MODE; in?: PPE_DELIVERY_MODE[]; notIn?: PPE_DELIVERY_MODE[] } | null;
 
   // PPE-specific string fields
@@ -236,6 +242,7 @@ export interface ItemWhere {
     | null;
 
   // PPE-specific number fields
+  ppeSizeOrder?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] } | null;
   ppeStandardQuantity?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] } | null;
 
   // Boolean fields

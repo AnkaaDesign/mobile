@@ -66,6 +66,7 @@ import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
 import { getApiBaseUrl } from '../../utils/file-viewer-utils';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { useFileViewerOrientation } from '@/hooks/use-file-viewer-orientation';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
@@ -401,6 +402,9 @@ export function FilePreviewModal({
 
   // Refs
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Enable orientation change when file viewer is open
+  useFileViewerOrientation({ isOpen: visible });
 
   // Filter previewable files
   const previewableFiles = React.useMemo(() => files.map((file, index) => ({ file, originalIndex: index })).filter(({ file }) => isPreviewableFile(file)), [files]);
@@ -919,7 +923,7 @@ export function FilePreviewModal({
               <>
                 {/* PDF Viewer - Full screen inline */}
                 {isPDF && (
-                  <Pressable style={styles.pdfContainer} onPress={toggleControls}>
+                  <View style={styles.pdfContainer}>
                     {!Pdf ? (
                       <View style={styles.pdfLoadingOverlay}>
                         <Text style={styles.errorIcon}>📄</Text>
@@ -959,6 +963,16 @@ export function FilePreviewModal({
                           enablePaging={true}
                           horizontal={false}
                           spacing={10}
+                          // Zoom configuration - allow much greater zoom for detailed viewing
+                          minScale={0.5}
+                          maxScale={10}
+                          scale={1.0}
+                          // Android rendering quality improvements - fixes blur issue
+                          enableAntialiasing={true}
+                          // Fit width for better initial display and to fix Android blur
+                          fitPolicy={0}
+                          // Enable double-tap zoom gesture
+                          enableDoubleTapZoom={true}
                         />
                         {imageLoading && (
                           <View style={styles.pdfLoadingOverlay}>
@@ -978,7 +992,7 @@ export function FilePreviewModal({
                         )}
                       </>
                     )}
-                  </Pressable>
+                  </View>
                 )}
 
                 {/* Video Player - Inline playback with controls */}

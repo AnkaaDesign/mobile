@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import { SidebarProvider } from "@/contexts/sidebar-context";
 import { SwipeRowProvider } from "@/contexts/swipe-row-context";
 import { NavigationHistoryProvider } from "@/contexts/navigation-history-context";
+import { NavigationLoadingProvider } from "@/contexts/navigation-loading-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { FileViewerProvider } from "@/components/file";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -117,6 +118,20 @@ const asyncStoragePersister = createAsyncStoragePersister({
   key: "react-query-cache",
 });
 
+// Auth-sensitive query keys that should NEVER be persisted
+// Persisting these can cause unexpected logouts or stale auth state
+const AUTH_SENSITIVE_KEYS = [
+  'auth',
+  'users',
+  'user',
+  'navigation',
+  'privileges',
+  'me',
+  'session',
+  'token',
+  'login',
+];
+
 // Only setup persistence in production to avoid auth issues during development
 if (process.env.NODE_ENV === "production") {
   persistQueryClient({
@@ -136,11 +151,28 @@ if (process.env.NODE_ENV === "production") {
     // Exclude auth queries from persistence to avoid stale auth state
     dehydrateOptions: {
       shouldDehydrateQuery: (query) => {
-        // Don't persist auth-related queries
-        const queryKey = query.queryKey[0];
-        if (typeof queryKey === 'string' && (queryKey.includes('auth') || queryKey.includes('users'))) {
+        // Don't persist queries that are in error state
+        // This prevents persisting failed auth checks that could trigger logout on app restart
+        if (query.state.status === 'error') {
           return false;
         }
+
+        // Don't persist queries with no data
+        if (query.state.data === undefined || query.state.data === null) {
+          return false;
+        }
+
+        // Check query key for auth-sensitive keys
+        const queryKeyStr = JSON.stringify(query.queryKey).toLowerCase();
+
+        // Don't persist auth-related queries
+        for (const sensitiveKey of AUTH_SENSITIVE_KEYS) {
+          if (queryKeyStr.includes(sensitiveKey)) {
+            return false;
+          }
+        }
+
+        // Only persist successful, fresh queries
         return true;
       },
     },
@@ -248,10 +280,12 @@ export default function RootLayout() {
                     <SidebarProvider>
                       <FavoritesProvider>
                         <NavigationHistoryProvider>
-                          <SwipeRowProvider>
-                            {/* FileViewerProvider moved to AppContent to use dynamic currentBaseUrl from NetworkContext */}
-                            <AppContent />
-                          </SwipeRowProvider>
+                          <NavigationLoadingProvider>
+                            <SwipeRowProvider>
+                              {/* FileViewerProvider moved to AppContent to use dynamic currentBaseUrl from NetworkContext */}
+                              <AppContent />
+                            </SwipeRowProvider>
+                          </NavigationLoadingProvider>
                         </NavigationHistoryProvider>
                       </FavoritesProvider>
                     </SidebarProvider>

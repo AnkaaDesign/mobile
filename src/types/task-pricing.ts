@@ -38,6 +38,9 @@ export type TaskPricing = {
   guaranteeYears: number | null;
   customGuaranteeText: string | null;
 
+  // Custom Forecast - manual override for production days displayed in budget
+  customForecastDays: number | null;
+
   // Layout File
   layoutFileId: string | null;
   layoutFile?: any; // File type

@@ -127,6 +127,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               shirts: null,
               boots: null,
               pants: null,
+              shorts: null,
               sleeves: null,
               mask: null,
               gloves: null,
@@ -166,6 +167,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               shirts: user.ppeSize.shirts || null,
               boots: user.ppeSize.boots || null,
               pants: user.ppeSize.pants || null,
+              shorts: user.ppeSize.shorts || null,
               sleeves: user.ppeSize.sleeves || null,
               mask: user.ppeSize.mask || null,
               gloves: user.ppeSize.gloves || null,
@@ -174,6 +176,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               shirts: null,
               boots: null,
               pants: null,
+              shorts: null,
               sleeves: null,
               mask: null,
               gloves: null,
@@ -1079,6 +1082,28 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               <Controller
                 control={form.control}
                 name="ppeSize.pants"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <Combobox
+                    options={pantsSizeOptions}
+                    value={value || undefined}
+                    onValueChange={onChange}
+                    placeholder="Selecione"
+                    disabled={isLoading}
+                    searchable={false}
+                    clearable
+                    error={error?.message}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
+            <FormFieldGroup
+              label="Bermuda"
+              error={form.formState.errors.ppeSize?.shorts?.message}
+            >
+              <Controller
+                control={form.control}
+                name="ppeSize.shorts"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <Combobox
                     options={pantsSizeOptions}

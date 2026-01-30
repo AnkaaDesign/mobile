@@ -1,10 +1,11 @@
-import { memo, useMemo, useCallback } from 'react'
-import { View, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-native'
+import { memo, useMemo, useCallback, useState } from 'react'
+import { View, ScrollView, Pressable, StyleSheet, Dimensions, Platform } from 'react-native'
 import { useTheme } from '@/lib/theme'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
 import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
+import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import type { TableColumn, TableAction, RenderContext, ActionMutationsContext } from '../types'
 
 interface RowProps<T extends { id: string }> {
@@ -38,6 +39,10 @@ export const Row = memo(function Row<T extends { id: string }>({
 }: RowProps<T>) {
   const { colors, isDark } = useTheme()
   const { width: screenWidth } = Dimensions.get('window')
+  const { isNavigating, startNavigation } = useNavigationLoading()
+
+  // Local pressed state for immediate visual feedback
+  const [isPressed, setIsPressed] = useState(false)
 
   const tableWidth = useMemo(
     () => columns.reduce((sum, col) => sum + col.width, 0) + (selection?.enabled ? 50 : 0),
@@ -53,7 +58,7 @@ export const Row = memo(function Row<T extends { id: string }>({
     return getRowStyle?.(item, isDark)
   }, [getRowStyle, item, isDark])
 
-  const backgroundColor = useMemo(() => {
+  const normalBackgroundColor = useMemo(() => {
     if (customRowStyle?.backgroundColor) {
       return customRowStyle.backgroundColor
     }
@@ -62,6 +67,11 @@ export const Row = memo(function Row<T extends { id: string }>({
     }
     return index % 2 === 0 ? colors.background : colors.card
   }, [isSelected, index, colors, isDark, customRowStyle])
+
+  // Calculate actual background based on press state
+  const backgroundColor = isPressed
+    ? (isDark ? colors.primary + '25' : colors.primary + '15')
+    : normalBackgroundColor
 
   const borderStyle = useMemo(() => {
     if (customRowStyle?.borderLeftColor) {
@@ -73,65 +83,103 @@ export const Row = memo(function Row<T extends { id: string }>({
     return {}
   }, [customRowStyle])
 
+  // Immediate visual feedback on press start
+  const handlePressIn = useCallback(() => {
+    if (!isNavigating && onPress && !selection?.enabled) {
+      setIsPressed(true)
+    }
+  }, [isNavigating, onPress, selection?.enabled])
+
+  const handlePressOut = useCallback(() => {
+    setIsPressed(false)
+  }, [])
+
+  // Handle press with navigation loading
   const handlePress = useCallback(() => {
     if (selection?.enabled) {
       selection.onToggle(item.id)
-    } else if (onPress) {
+    } else if (onPress && !isNavigating) {
+      // Show loading overlay immediately
+      startNavigation()
+      // Then trigger navigation
       onPress(item)
     }
-  }, [selection, onPress, item])
+  }, [selection, onPress, item, isNavigating, startNavigation])
 
   const hasActions = actions && actions.length > 0 && !selection?.enabled
 
+  // Row style - simple object, not array
+  const rowStyle = useMemo(() => ({
+    ...styles.row,
+    width: Math.max(tableWidth, screenWidth - 32),
+    backgroundColor,
+    opacity: isPressed ? (Platform.OS === 'ios' ? 0.7 : 1) : 1,
+  }), [tableWidth, screenWidth, backgroundColor, isPressed])
+
+  // Ripple config for Android
+  const androidRipple = useMemo(() => ({
+    color: colors.primary + '40',
+    borderless: false,
+  }), [colors.primary])
+
+  const rowContent = (
+    <>
+      {selection?.enabled && (
+        <View style={styles.checkboxCell}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => selection.onToggle(item.id)}
+          />
+        </View>
+      )}
+
+      {columns.map((column, colIndex) => {
+        // Extract raw value from item using column key for badge lookup
+        const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
+        return (
+          <Cell
+            key={column.key}
+            width={column.width}
+            align={column.align}
+            style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
+          >
+            <CellContent
+              value={column.render(item, renderContext)}
+              format={column.format}
+              style={column.style}
+              badgeEntity={column.badgeEntity}
+              rawValue={rawValue}
+              component={column.component}
+              onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
+            />
+          </Cell>
+        )
+      })}
+    </>
+  )
+
   return (
-    <View style={[styles.rowWrapper, { backgroundColor }, borderStyle]}>
+    <View style={[styles.rowWrapper, { backgroundColor: normalBackgroundColor }, borderStyle]}>
       {hasActions ? (
         <RowActions item={item} actions={actions as any} mutations={mutations}>
           {(closeActions) => (
-            <View style={{ backgroundColor }}>
+            <View style={{ backgroundColor: normalBackgroundColor }}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 scrollEnabled={tableWidth > screenWidth - 32}
               >
                 <Pressable
-                  style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32), backgroundColor }]}
+                  style={rowStyle}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
                   onPress={handlePress}
-                  android_ripple={{ color: colors.primary + '20' }}
+                  android_ripple={androidRipple}
+                  disabled={isNavigating}
                 >
-                {selection?.enabled && (
-                  <View style={styles.checkboxCell}>
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => selection.onToggle(item.id)}
-                    />
-                  </View>
-                )}
-
-                {columns.map((column, colIndex) => {
-                  // Extract raw value from item using column key for badge lookup
-                  const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
-                  return (
-                    <Cell
-                      key={column.key}
-                      width={column.width}
-                      align={column.align}
-                      style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
-                    >
-                      <CellContent
-                        value={column.render(item, renderContext)}
-                        format={column.format}
-                        style={column.style}
-                        badgeEntity={column.badgeEntity}
-                        rawValue={rawValue}
-                        component={column.component}
-                        onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
-                      />
-                    </Cell>
-                  )
-                })}
-              </Pressable>
-            </ScrollView>
+                  {rowContent}
+                </Pressable>
+              </ScrollView>
             </View>
           )}
         </RowActions>
@@ -142,41 +190,14 @@ export const Row = memo(function Row<T extends { id: string }>({
           scrollEnabled={tableWidth > screenWidth - 32}
         >
           <Pressable
-            style={[styles.row, { width: Math.max(tableWidth, screenWidth - 32), backgroundColor }]}
+            style={rowStyle}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
             onPress={handlePress}
-            android_ripple={{ color: colors.primary + '20' }}
+            android_ripple={androidRipple}
+            disabled={isNavigating}
           >
-            {selection?.enabled && (
-              <View style={styles.checkboxCell}>
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => selection.onToggle(item.id)}
-                />
-              </View>
-            )}
-
-            {columns.map((column, colIndex) => {
-              // Extract raw value from item using column key for badge lookup
-              const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
-              return (
-                <Cell
-                  key={column.key}
-                  width={column.width}
-                  align={column.align}
-                  style={colIndex === columns.length - 1 ? { paddingLeft: 4 } : undefined}
-                >
-                  <CellContent
-                    value={column.render(item, renderContext)}
-                    format={column.format}
-                    style={column.style}
-                    badgeEntity={column.badgeEntity}
-                    rawValue={rawValue}
-                    component={column.component}
-                    onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
-                  />
-                </Cell>
-              )
-            })}
+            {rowContent}
           </Pressable>
         </ScrollView>
       )}
@@ -192,6 +213,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     minHeight: 48,
+    alignItems: 'center',
   },
   checkboxCell: {
     width: 50,

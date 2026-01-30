@@ -216,7 +216,7 @@ export const SkeletonAvatar: React.FC<SkeletonAvatarProps> = ({ size = "md", sty
   );
 };
 
-// Progress Component
+// Progress Component - Uses Reanimated for better Android performance
 interface ProgressProps {
   value: number;
   max?: number;
@@ -224,18 +224,31 @@ interface ProgressProps {
   style?: ViewStyle | ViewStyle[];
 }
 
+import ReanimatedView, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+
 export const Progress: React.FC<ProgressProps> = ({ value, max = 100, showValue = false, style }) => {
   const { colors } = useTheme();
   const percentage = Math.min((value / max) * 100, 100);
-  const widthAnim = React.useRef(new Animated.Value(0)).current;
+
+  // Use Reanimated shared value for better performance on Android
+  const widthProgress = useSharedValue(0);
 
   React.useEffect(() => {
-    Animated.timing(widthAnim, {
-      toValue: percentage,
+    widthProgress.value = withTiming(percentage, {
       duration: transitions.normal,
-      useNativeDriver: false,
-    }).start();
-  }, [percentage, widthAnim]);
+      easing: Easing.out(Easing.ease),
+    });
+  }, [percentage, widthProgress]);
+
+  // Animated style using Reanimated - runs on UI thread
+  const animatedFillStyle = useAnimatedStyle(() => ({
+    width: `${widthProgress.value}%`,
+  }));
 
   const containerStyles: ViewStyle = {
     width: "100%",
@@ -276,17 +289,7 @@ export const Progress: React.FC<ProgressProps> = ({ value, max = 100, showValue 
         </View>
       )}
       <View style={trackStyles}>
-        <Animated.View
-          style={StyleSheet.flatten([
-            fillStyles,
-            {
-              width: widthAnim.interpolate({
-                inputRange: [0, 100],
-                outputRange: ["0%", "100%"],
-              }),
-            },
-          ])}
-        />
+        <ReanimatedView style={[fillStyles, animatedFillStyle]} />
       </View>
     </View>
   );

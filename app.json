@@ -18,6 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ankaadesign.management",
       "jsEngine": "hermes",
+      "requireFullScreen": true,
       "associatedDomains": [
         "applinks:ankaadesign.com.br",
         "applinks:www.ankaadesign.com.br"
@@ -124,6 +125,12 @@
           "color": "#000000",
           "mode": "production"
         }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "PORTRAIT"
+        }
       ]
     ],
     "experiments": {
@@ -141,7 +148,7 @@
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
       "apiUrl": "https://api.ankaadesign.com.br",
-      "fallbackApiUrl": "https://api.ankaadesign.com.br"
+      "fallbackApiUrl": "http://192.168.10.180:3030"
     }
   }
 }

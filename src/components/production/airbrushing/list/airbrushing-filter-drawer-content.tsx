@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Combobox } from '@/components/ui/combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from '@/constants';
-import { useTasksInfiniteMobile } from '@/hooks/use-tasks-infinite-mobile';
+import { useTasksForSectorLeader } from '@/hooks/use-tasks-for-sector-leader';
 
 interface AirbrushingFilterDrawerContentProps {
   filters: {
@@ -36,8 +36,9 @@ export function AirbrushingFilterDrawerContent({
   // Initialize localFilters with filters value immediately
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
-  // Fetch tasks for the task selector
-  const { data: tasksData } = useTasksInfiniteMobile({
+  // Fetch tasks for the task selector (filtered by sector leadership)
+  // Team leaders only see tasks from their managed sector or tasks without a sector
+  const { data: tasksData } = useTasksForSectorLeader({
     orderBy: { name: 'asc' },
     enabled: true,
   });

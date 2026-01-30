@@ -86,12 +86,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
 
   // CATALOGO - View-only for Designers, Team Leaders, Warehouse, Commercial (NOT ADMIN - admin accesses via Pintura menu)
+  // sortOrder: 15 places it alphabetically between Barracões (10) and Cronograma (20) for PRODUCTION + TEAM_LEADER users
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
     path: "/catalogo",
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL],
+    sortOrder: 15,
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },
 
@@ -285,12 +287,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
 
   // MINHA EQUIPE (for team leaders - manages their sector's staff)
   // Only visible to users who are sector managers (have managedSector relation)
+  // sortOrder: 35 places it alphabetically between Historico (30) and Observacoes (40) for PRODUCTION + TEAM_LEADER users
   {
     id: "minha-equipe",
     title: "Minha Equipe",
     icon: "team",
     path: "/meu-pessoal",
     requiredPrivilege: [SECTOR_PRIVILEGES.TEAM_LEADER], // Only visible to sector managers
+    sortOrder: 35,
     children: [
       { id: "membros-equipe", title: "Membros", icon: "users", path: "/meu-pessoal/usuarios" },
       { id: "emprestimos-equipe", title: "Empréstimos", icon: "loan", path: "/meu-pessoal/emprestimos" },
@@ -806,7 +810,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "warehouse",
     path: "/producao/garagens",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 1,
+    sortOrder: 10,
   },
 
   // Cronograma - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
@@ -816,7 +820,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "calendarStats",
     path: "/producao/cronograma",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 2,
+    sortOrder: 20,
     children: [
       { id: "cronograma-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/cronograma/detalhes/:id", isDynamic: true },
     ],
@@ -829,7 +833,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "history",
     path: "/producao/historico",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 3,
+    sortOrder: 30,
   },
 
   // Observacoes - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
@@ -839,7 +843,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "note",
     path: "/producao/observacoes",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 4,
+    sortOrder: 40,
     children: [
       { id: "observacoes-detalhes-production", title: "Detalhes", icon: "eye", path: "/producao/observacoes/detalhes/:id", isDynamic: true },
     ],
@@ -852,7 +856,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "scissors",
     path: "/producao/recorte",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 5,
+    sortOrder: 60,
     children: [
       {
         id: "plano-de-recorte-production",
@@ -882,7 +886,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "userCircle",
     path: "/pessoal",
     requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 6,
+    sortOrder: 50,
     children: [
       { id: "meus-feriados-production", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
       {

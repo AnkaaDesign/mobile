@@ -540,6 +540,15 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         }
       };
 
+      // Sync height between left and right sides (not back)
+      if (updates.height !== undefined && selectedSide !== 'back') {
+        const oppositeSide = selectedSide === 'left' ? 'right' : 'left';
+        newState[oppositeSide] = {
+          ...newState[oppositeSide],
+          height: updates.height
+        };
+      }
+
       // Schedule the onChange callback to run after state update completes
       // This avoids the "Cannot update a component while rendering" warning
       setTimeout(() => {
@@ -569,6 +578,30 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         });
 
         onChange(selectedSide, layoutData);
+
+        // Also emit changes for the opposite side if height was synced
+        if (updates.height !== undefined && selectedSide !== 'back') {
+          const oppositeSide = selectedSide === 'left' ? 'right' : 'left';
+          const oppositeState = newState[oppositeSide];
+          const oppositeSegments = calculateSegments(oppositeState.doors, oppositeState.totalWidth);
+
+          const oppositeLayoutSections = oppositeSegments.map((segment, index) => ({
+            width: segment.width / 100,
+            isDoor: segment.type === 'door',
+            doorHeight: segment.type === 'door' && segment.door ? segment.door.doorHeight / 100 : null,
+            position: index
+          }));
+
+          const oppositeLayoutData: LayoutDataWithPhoto = {
+            height: oppositeState.height / 100,
+            layoutSections: oppositeLayoutSections,
+            photoId: null,
+            photoUri: undefined,
+          };
+
+          console.log('[LayoutForm Mobile] ✅ Emitting synced height to opposite side:', oppositeSide);
+          onChange(oppositeSide, oppositeLayoutData);
+        }
 
         // Reset saving flag after a delay
         setTimeout(() => {
@@ -621,8 +654,8 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
       let bestGap = 0;
       let bestPosition = 0;
 
-      // Check gap at the beginning
-      if (sortedDoors[0].position > doorWidth + 50) {
+      // Check gap at the beginning (allow doors at edge - no minimum buffer required)
+      if (sortedDoors[0].position >= doorWidth) {
         bestGap = sortedDoors[0].position;
         bestPosition = Math.round((sortedDoors[0].position - doorWidth) / 2);
       }
@@ -633,16 +666,16 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
         const gapEnd = sortedDoors[i + 1].position;
         const gapSize = gapEnd - gapStart;
 
-        if (gapSize > bestGap && gapSize >= doorWidth + 50) {
+        if (gapSize > bestGap && gapSize >= doorWidth) {
           bestGap = gapSize;
           bestPosition = Math.round(gapStart + (gapSize - doorWidth) / 2);
         }
       }
 
-      // Check gap at the end
+      // Check gap at the end (allow doors at edge - no minimum buffer required)
       const lastDoor = sortedDoors[sortedDoors.length - 1];
       const endGap = currentState.totalWidth - (lastDoor.position + lastDoor.width);
-      if (endGap > bestGap && endGap >= doorWidth + 50) {
+      if (endGap > bestGap && endGap >= doorWidth) {
         bestPosition = Math.round(lastDoor.position + lastDoor.width + (endGap - doorWidth) / 2);
       }
 
@@ -946,7 +979,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
           Comprimento Total:
         </ThemedText>
         <ThemedText style={[styles.totalWidthValue, { color: colors.foreground }]}>
-          {(currentState.totalWidth / 100).toFixed(2).replace('.', ',')}m
+          {Math.round(currentState.totalWidth)}cm
         </ThemedText>
       </View>
 
@@ -1112,7 +1145,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     onChange={(value) => updateSegmentWidth(index, value)}
                     placeholder="1,00"
                     disabled={disabled}
-                    min={50}
+                    min={0}
                   />
                 </View>
               </Card>
@@ -1130,7 +1163,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     onChange={(value) => updateSegmentWidth(index, value)}
                     placeholder="1,00"
                     disabled={disabled}
-                    min={50}
+                    min={0}
                   />
                 </View>
               </Card>

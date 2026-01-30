@@ -27,9 +27,11 @@ interface TaskDatesCardProps {
       name: string;
     };
   };
+  /** Whether user can view restricted fields (forecastDate). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
+  canViewRestrictedFields?: boolean;
 }
 
-export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task }) => {
+export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task, canViewRestrictedFields = false }) => {
   const { colors } = useTheme();
 
   const isOverdue = task.term && new Date(task.term) < new Date() &&
@@ -93,8 +95,8 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task }) => {
           </View>
         )}
 
-        {/* Forecast Date */}
-        {task.forecastDate && (
+        {/* Forecast Date - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER */}
+        {canViewRestrictedFields && task.forecastDate && (
           <View style={styles.dateItem}>
             <IconCalendarStats size={20} color={colors.mutedForeground} />
             <View style={styles.dateText}>

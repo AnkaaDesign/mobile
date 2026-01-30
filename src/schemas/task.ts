@@ -1099,7 +1099,7 @@ const taskServiceOrderCreateSchema = z.object({
       errorMap: () => ({ message: "status inválido" }),
     })
     .default(SERVICE_ORDER_STATUS.PENDING),
-  statusOrder: z.number().int().min(1).max(4).default(1).optional(),
+  statusOrder: z.number().int().min(1).max(5).default(1).optional(),
   description: z.string().min(3, { message: "Mínimo de 3 caracteres" }).max(400, { message: "Máximo de 40 caracteres atingido" }),
   // CRITICAL FIX: Added type field (REQUIRED in Prisma model, was missing in mobile schema)
   type: z

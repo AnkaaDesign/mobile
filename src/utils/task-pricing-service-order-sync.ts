@@ -130,28 +130,28 @@ export function getServiceOrdersToAddFromPricingItems(
 
 /**
  * Syncs observations from service orders to matching pricing items.
- * Only syncs when the source HAS an observation value.
+ * This function propagates both set and cleared observations.
  */
 export function syncObservationsFromServiceOrdersToPricing(
   serviceOrders: SyncServiceOrder[],
   pricingItems: SyncPricingItem[],
 ): SyncPricingItem[] {
-  const soObservationMap = new Map<string, string>();
+  const soObservationMap = new Map<string, string | null>();
   for (const so of serviceOrders) {
     if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
     if (!so.description || so.description.trim().length < 3) continue;
-    if (so.observation && so.observation.trim()) {
-      const normalizedDesc = normalizeDescription(so.description);
-      soObservationMap.set(normalizedDesc, so.observation);
-    }
+    const normalizedDesc = normalizeDescription(so.description);
+    const observationValue = so.observation && so.observation.trim() ? so.observation : null;
+    soObservationMap.set(normalizedDesc, observationValue);
   }
 
   return pricingItems.map(item => {
     if (!item.description || item.description.trim().length < 3) return item;
     const normalizedDesc = normalizeDescription(item.description);
     if (soObservationMap.has(normalizedDesc)) {
-      const soObservation = soObservationMap.get(normalizedDesc)!;
-      if (item.observation !== soObservation) {
+      const soObservation = soObservationMap.get(normalizedDesc);
+      const currentObs = item.observation && item.observation.trim() ? item.observation : null;
+      if (currentObs !== soObservation) {
         return { ...item, observation: soObservation };
       }
     }
@@ -161,19 +161,18 @@ export function syncObservationsFromServiceOrdersToPricing(
 
 /**
  * Syncs observations from pricing items to matching service orders.
- * Only syncs when the source HAS an observation value.
+ * This function propagates both set and cleared observations.
  */
 export function syncObservationsFromPricingToServiceOrders(
   pricingItems: SyncPricingItem[],
   serviceOrders: SyncServiceOrder[],
 ): SyncServiceOrder[] {
-  const pricingObservationMap = new Map<string, string>();
+  const pricingObservationMap = new Map<string, string | null>();
   for (const item of pricingItems) {
     if (!item.description || item.description.trim().length < 3) continue;
-    if (item.observation && item.observation.trim()) {
-      const normalizedDesc = normalizeDescription(item.description);
-      pricingObservationMap.set(normalizedDesc, item.observation);
-    }
+    const normalizedDesc = normalizeDescription(item.description);
+    const observationValue = item.observation && item.observation.trim() ? item.observation : null;
+    pricingObservationMap.set(normalizedDesc, observationValue);
   }
 
   return serviceOrders.map(so => {
@@ -181,8 +180,9 @@ export function syncObservationsFromPricingToServiceOrders(
     if (!so.description || so.description.trim().length < 3) return so;
     const normalizedDesc = normalizeDescription(so.description);
     if (pricingObservationMap.has(normalizedDesc)) {
-      const pricingObservation = pricingObservationMap.get(normalizedDesc)!;
-      if (so.observation !== pricingObservation) {
+      const pricingObservation = pricingObservationMap.get(normalizedDesc);
+      const currentObs = so.observation && so.observation.trim() ? so.observation : null;
+      if (currentObs !== pricingObservation) {
         return { ...so, observation: pricingObservation };
       }
     }

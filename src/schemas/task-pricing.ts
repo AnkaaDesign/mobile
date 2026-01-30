@@ -61,6 +61,8 @@ export const taskPricingCreateNestedSchema = z
     // Guarantee Terms
     guaranteeYears: guaranteeYearsSchema.optional().nullable(),
     customGuaranteeText: z.string().max(2000).optional().nullable(),
+    // Custom Forecast - manual override for production days displayed in budget (1-30 days)
+    customForecastDays: z.number().int().min(1).max(30).optional().nullable(),
     // Layout File
     layoutFileId: z.string().uuid().optional().nullable(),
   })

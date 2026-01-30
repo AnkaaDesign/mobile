@@ -133,6 +133,19 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
   // Get status options for a specific service order (filtered by permissions)
   const getStatusOptionsForService = (service: ServiceOrder) => {
     const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
+
+    // For PRODUCTION service orders, apply sector-based restrictions for team leaders
+    if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
+      // ADMIN and LOGISTIC can always get options
+      if (userSectorPrivilege !== SECTOR_PRIVILEGES.ADMIN &&
+          userSectorPrivilege !== SECTOR_PRIVILEGES.LOGISTIC) {
+        // For team leaders, check if the task belongs to their managed sector
+        if (!canLeaderUpdateServiceOrder(user, taskSectorId)) {
+          return []; // No options if user can't edit this task's service orders
+        }
+      }
+    }
+
     const allowedStatuses = getAllowedServiceOrderStatuses(user, serviceType, service.status || '');
 
     return allowedStatuses.map(status => ({
@@ -142,9 +155,32 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
   };
 
   // Check if user can edit a specific service order
+  // This considers both the service order TYPE permission AND sector-based restrictions for team leaders
   const canEditService = (service: ServiceOrder): boolean => {
     const serviceType = (service.type as SERVICE_ORDER_TYPE) || SERVICE_ORDER_TYPE.PRODUCTION;
-    return canEditServiceOrderOfType(user, serviceType);
+
+    // First check if user can edit this type of service order
+    const canEditType = canEditServiceOrderOfType(user, serviceType);
+    if (!canEditType) return false;
+
+    // For PRODUCTION service orders, apply sector-based restrictions for team leaders
+    // This is the key check: a Production 1 manager should NOT be able to edit service orders
+    // for tasks assigned to Production 2
+    if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
+      // ADMIN and LOGISTIC can edit any task's PRODUCTION service orders (no sector restriction)
+      if (userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+          userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC) {
+        return true;
+      }
+
+      // For team leaders (sector managers), check if the task belongs to their managed sector
+      // canLeaderUpdateServiceOrder returns true only when taskSectorId matches managedSector.id
+      return canLeaderUpdateServiceOrder(user, taskSectorId);
+    }
+
+    // For other service order types (FINANCIAL, COMMERCIAL, LOGISTIC, ARTWORK),
+    // the type-based permission is sufficient
+    return true;
   };
 
   // Render a single service item - DETAILED VIEW

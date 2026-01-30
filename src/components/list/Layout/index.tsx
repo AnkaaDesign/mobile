@@ -11,6 +11,7 @@ import { useTheme } from '@/lib/theme'
 import { useList } from '@/hooks/list/useList'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
+import { perfLog } from '@/utils/performance-logger'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters, Tags } from '../Filters'
@@ -46,6 +47,10 @@ export const Layout = memo(function Layout({
 
   // Handle row click - use config's onRowPress if defined, otherwise use 'view' action or first non-destructive action
   const handleRowPress = useCallback((item: any) => {
+    // Performance logging - track navigation start
+    perfLog.navigationClick(`Layout:${config.key}`, `${config.key}:detail`, item.id)
+    perfLog.mark(`Row pressed in ${config.title}: ${item.name || item.id}`)
+
     // If config has a custom onRowPress handler, use it
     if (config.table.onRowPress) {
       config.table.onRowPress(item, router)
@@ -71,6 +76,8 @@ export const Layout = memo(function Layout({
     // Check if action is visible (if visibility function is defined)
     if (action.visible && !action.visible(item)) return
 
+    perfLog.mark(`Navigating via action: ${action.key}`)
+
     // Execute the action
     if (action.onPress) {
       action.onPress(item, router, {})
@@ -78,7 +85,7 @@ export const Layout = memo(function Layout({
       const route = typeof action.route === 'function' ? action.route(item) : action.route
       router.push(route as any)
     }
-  }, [config.table.actions, config.table.onRowPress, router])
+  }, [config.table.actions, config.table.onRowPress, config.key, config.title, router])
 
   // Check if user can create (using permission function if provided)
   const canCreate = config.actions?.create?.canCreate

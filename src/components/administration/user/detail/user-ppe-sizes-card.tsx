@@ -33,6 +33,7 @@ export function UserPpeSizesCard({ user }: UserPpeSizesCardProps) {
     user.ppeSize.shirts ||
     user.ppeSize.boots ||
     user.ppeSize.pants ||
+    user.ppeSize.shorts ||
     user.ppeSize.sleeves ||
     user.ppeSize.mask ||
     user.ppeSize.gloves ||
@@ -83,6 +84,21 @@ export function UserPpeSizesCard({ user }: UserPpeSizesCardProps) {
                 </View>
                 <ThemedText style={[styles.sizeValue, { color: colors.foreground }]}>
                   {PANTS_SIZE_LABELS[user.ppeSize.pants]}
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Shorts */}
+            {user.ppeSize?.shorts && (
+              <View style={styles.sizeItem}>
+                <View style={styles.sizeItemHeader}>
+                  <IconHanger size={18} color={colors.mutedForeground} />
+                  <ThemedText style={[styles.sizeLabel, { color: colors.mutedForeground }]}>
+                    Bermuda
+                  </ThemedText>
+                </View>
+                <ThemedText style={[styles.sizeValue, { color: colors.foreground }]}>
+                  {PANTS_SIZE_LABELS[user.ppeSize.shorts]}
                 </ThemedText>
               </View>
             )}

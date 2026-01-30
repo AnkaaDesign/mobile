@@ -36,27 +36,20 @@
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
-        <data android:scheme="https" android:host="ankaadesign.com.br"/>
-        <data android:scheme="https" android:host="www.ankaadesign.com.br"/>
-        <data android:pathPrefix="/app/"/>
-        <data android:pathPrefix="/task/"/>
-        <data android:pathPrefix="/order/"/>
-        <data android:pathPrefix="/item/"/>
-        <data android:pathPrefix="/service-order/"/>
-        <data android:pathPrefix="/user/"/>
-        <data android:pathPrefix="/customer/"/>
-        <data android:pathPrefix="/supplier/"/>
-        <data android:pathPrefix="/employee/"/>
-        <data android:pathPrefix="/borrow/"/>
-        <data android:pathPrefix="/maintenance/"/>
-        <data android:pathPrefix="/notification/"/>
-        <data android:pathPrefix="/financial/"/>
-        <data android:pathPrefix="/producao/"/>
-        <data android:pathPrefix="/estoque/"/>
-        <data android:pathPrefix="/recursos-humanos/"/>
-        <data android:pathPrefix="/administracao/"/>
-        <data android:pathPrefix="/pintura/"/>
-        <data android:pathPrefix="/financeiro/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/app/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/task/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/order/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/item/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/service-order/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/producao/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/estoque/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/recursos-humanos/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/administracao/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/pintura/"/>
+        <data android:scheme="https" android:host="ankaadesign.com.br" android:pathPrefix="/financeiro/"/>
+        <data android:scheme="https" android:host="www.ankaadesign.com.br" android:pathPrefix="/app/"/>
+        <data android:scheme="https" android:host="www.ankaadesign.com.br" android:pathPrefix="/producao/"/>
+        <data android:scheme="https" android:host="www.ankaadesign.com.br" android:pathPrefix="/estoque/"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>

@@ -6,6 +6,7 @@
 export * from "./queryKeys";
 export * from "./createEntityHooks";
 export * from "./useEditForm";
+export * from "./use-screen-ready";
 
 // =====================================================
 // Authentication Hooks
@@ -161,6 +162,7 @@ export * from "./use-sectors-infinite-mobile";
 export * from "./use-service-orders-infinite-mobile";
 export * from "./use-suppliers-infinite-mobile";
 export * from "./use-tasks-infinite-mobile";
+export * from "./use-tasks-for-sector-leader";
 export * from "./use-users-infinite-mobile";
 export * from "./use-vacations-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
@@ -218,6 +220,17 @@ export * from "./useKeyboardAwareScroll";
 // Dialog & Modal Hooks
 // =====================================================
 export * from "./use-batch-result-dialog";
+
+// =====================================================
+// Performance & Navigation Optimization Hooks
+// =====================================================
+export * from "./use-after-interactions";
+export * from "./use-navigation-prefetch";
+
+// =====================================================
+// File Viewer & Media Hooks
+// =====================================================
+export * from "./use-file-viewer-orientation";
 
 // =====================================================
 // Monitoring & Utilities

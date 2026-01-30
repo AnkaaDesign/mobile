@@ -6,6 +6,7 @@ import { useEditForm } from "@/hooks/useEditForm";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { createFormDataWithContext } from "@/utils/form-data-context";
+import { toTitleCase } from "@/utils/formatters";
 import { Card } from "@/components/ui/card";
 import { FormCard } from "@/components/ui/form-section";
 import { Button } from "@/components/ui/button";
@@ -41,8 +42,6 @@ import { canViewPricing } from "@/utils/permissions/pricing-permissions";
 import {
   getPricingItemsToAddFromServiceOrders,
   getServiceOrdersToAddFromPricingItems,
-  syncObservationsFromServiceOrdersToPricing,
-  syncObservationsFromPricingToServiceOrders,
   normalizeDescription,
   type SyncServiceOrder,
   type SyncPricingItem,
@@ -130,7 +129,7 @@ const taskFormSchema = z.object({
     id: z.string().uuid().optional(), // For existing service orders (updates)
     description: z.string().min(3, "Mínimo de 3 caracteres").max(400, "Máximo de 400 caracteres"),
     status: z.enum(Object.values(SERVICE_ORDER_STATUS) as [string, ...string[]]).default(SERVICE_ORDER_STATUS.PENDING),
-    statusOrder: z.number().int().min(1).max(4).default(1).optional(),
+    statusOrder: z.number().int().min(1).max(5).default(1).optional(),
     // CRITICAL: Type field is REQUIRED in Prisma schema (default PRODUCTION)
     type: z.enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]]).default(SERVICE_ORDER_TYPE.PRODUCTION),
     assignedToId: z.string().uuid("Usuário inválido").nullable().optional(),
@@ -515,10 +514,10 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       const leftTotalWidth = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const rightTotalWidth = rightSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const widthDifference = Math.abs(leftTotalWidth - rightTotalWidth);
-      const maxAllowedDifference = 0.04; // 4cm in meters
+      const maxAllowedDifference = 0.02; // 2cm in meters
 
       if (widthDifference > maxAllowedDifference) {
-        const errorMessage = `O layout possui diferença de largura maior que 4cm entre os lados. Lado Motorista: ${leftTotalWidth.toFixed(2)}m, Lado Sapo: ${rightTotalWidth.toFixed(2)}m (diferença de ${(widthDifference * 100).toFixed(1)}cm). Ajuste as medidas antes de enviar o formulário.`;
+        const errorMessage = `O layout possui diferença de largura maior que 2cm entre os lados. Lado Motorista: ${(leftTotalWidth * 100).toFixed(0)}cm, Lado Sapo: ${(rightTotalWidth * 100).toFixed(0)}cm (diferença de ${(widthDifference * 100).toFixed(1)}cm). Ajuste as medidas antes de enviar o formulário.`;
         setLayoutWidthError(errorMessage);
       } else {
         setLayoutWidthError(null);
@@ -819,6 +818,10 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   const deletedPricingItemDescriptionsRef = useRef(new Set<string>());
   const deletedServiceOrderDescriptionsRef = useRef(new Set<string>());
 
+  // Track previous observation values to detect which side changed
+  const prevSOObservationsRef = useRef<Map<string, string | null>>(new Map());
+  const prevPIObservationsRef = useRef<Map<string, string | null>>(new Map());
+
   // Watch service orders and pricing for sync
   const watchedServiceOrders = form.watch('serviceOrders');
   const watchedPricing = form.watch('pricing');
@@ -829,15 +832,34 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
       const currentServiceOrders = (watchedServiceOrders as any[]) || [];
       const currentPricingItems = ((watchedPricing as any)?.items as any[]) || [];
 
-      const validSOCount = currentServiceOrders.filter(
+      const validServiceOrders = currentServiceOrders.filter(
         (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
-      ).length;
-      const validPricingCount = currentPricingItems.filter(
+      );
+      const validPricingItems = currentPricingItems.filter(
         (item: any) => item.description?.trim().length >= 3
-      ).length;
+      );
 
-      lastSyncedServiceOrderCountRef.current = validSOCount;
-      lastSyncedPricingItemCountRef.current = validPricingCount;
+      lastSyncedServiceOrderCountRef.current = validServiceOrders.length;
+      lastSyncedPricingItemCountRef.current = validPricingItems.length;
+
+      // Initialize previous observation maps
+      const initialSOObsMap = new Map<string, string | null>();
+      for (const so of validServiceOrders) {
+        const normalizedDesc = normalizeDescription(so.description);
+        if (normalizedDesc) {
+          initialSOObsMap.set(normalizedDesc, so.observation || null);
+        }
+      }
+      prevSOObservationsRef.current = initialSOObsMap;
+
+      const initialPIObsMap = new Map<string, string | null>();
+      for (const item of validPricingItems) {
+        const normalizedDesc = normalizeDescription(item.description);
+        if (normalizedDesc) {
+          initialPIObsMap.set(normalizedDesc, item.observation || null);
+        }
+      }
+      prevPIObservationsRef.current = initialPIObsMap;
 
       setTimeout(() => {
         isFormInitializedRef.current = true;
@@ -903,7 +925,87 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           return so.description && so.description.trim().length >= 3;
         });
 
-        // SYNC 1: Service Orders → Pricing Items
+        // =====================================================================
+        // OBSERVATION SYNC WITH CHANGE DETECTION
+        // Track which side changed and only sync FROM the changed side.
+        // =====================================================================
+
+        // Build current observation maps
+        const currentSOObsMap = new Map<string, string | null>();
+        for (const so of syncServiceOrders) {
+          const normalizedDesc = normalizeDescription(so.description);
+          if (normalizedDesc) {
+            currentSOObsMap.set(normalizedDesc, so.observation || null);
+          }
+        }
+
+        const currentPIObsMap = new Map<string, string | null>();
+        for (const item of syncPricingItems) {
+          const normalizedDesc = normalizeDescription(item.description);
+          if (normalizedDesc) {
+            currentPIObsMap.set(normalizedDesc, item.observation || null);
+          }
+        }
+
+        // Detect which side changed for each description
+        const soObsChangedDescs = new Set<string>();
+        const piObsChangedDescs = new Set<string>();
+
+        for (const [desc, obs] of currentSOObsMap) {
+          const prevObs = prevSOObservationsRef.current.get(desc);
+          const normalizedPrev = prevObs || null;
+          const normalizedCurrent = obs || null;
+          if (normalizedPrev !== normalizedCurrent) {
+            soObsChangedDescs.add(desc);
+          }
+        }
+
+        for (const [desc, obs] of currentPIObsMap) {
+          const prevObs = prevPIObservationsRef.current.get(desc);
+          const normalizedPrev = prevObs || null;
+          const normalizedCurrent = obs || null;
+          if (normalizedPrev !== normalizedCurrent) {
+            piObsChangedDescs.add(desc);
+          }
+        }
+
+        // Sync observations based on which side changed
+        let pricingObservationsUpdated = false;
+        const pricingItemsWithSyncedObs = currentPricingItems.map((item: any) => {
+          if (!item.description || item.description.trim().length < 3) return item;
+          const normalizedDesc = normalizeDescription(item.description);
+
+          if (soObsChangedDescs.has(normalizedDesc) && !piObsChangedDescs.has(normalizedDesc)) {
+            const soObs = currentSOObsMap.get(normalizedDesc);
+            const currentItemObs = item.observation || null;
+            if (currentItemObs !== soObs) {
+              pricingObservationsUpdated = true;
+              console.log('[MOBILE PRICING↔SO SYNC] Syncing SO→PI observation:', normalizedDesc, soObs);
+              return { ...item, observation: soObs };
+            }
+          }
+          return item;
+        });
+
+        let soObservationsUpdated = false;
+        const serviceOrdersWithSyncedObs = currentServiceOrders.map((so: any) => {
+          if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) return so;
+          if (!so.description || so.description.trim().length < 3) return so;
+          const normalizedDesc = normalizeDescription(so.description);
+
+          if (piObsChangedDescs.has(normalizedDesc) && !soObsChangedDescs.has(normalizedDesc)) {
+            const piObs = currentPIObsMap.get(normalizedDesc);
+            const currentSOObs = so.observation || null;
+            if (currentSOObs !== piObs) {
+              soObservationsUpdated = true;
+              console.log('[MOBILE PRICING↔SO SYNC] Syncing PI→SO observation:', normalizedDesc, piObs);
+              return { ...so, observation: piObs };
+            }
+          }
+          return so;
+        });
+
+        // SYNC 1: Service Orders → Pricing Items (NEW ITEMS)
         const pricingItemsToAddRaw = serviceOrdersAdded
           ? getPricingItemsToAddFromServiceOrders(syncServiceOrders, syncPricingItems)
           : [];
@@ -912,30 +1014,23 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           return !deletedPricingItemDescriptionsRef.current.has(normalizedDesc);
         });
 
-        const pricingWithSyncedObs = syncObservationsFromServiceOrdersToPricing(
-          syncServiceOrders,
-          currentPricingItems,
-        );
-
-        const pricingObservationsChanged = JSON.stringify(pricingWithSyncedObs) !== JSON.stringify(currentPricingItems);
-
-        if (pricingItemsToAdd.length > 0 || pricingObservationsChanged) {
+        if (pricingItemsToAdd.length > 0 || pricingObservationsUpdated) {
           const basePricingItems = pricingItemsToAdd.length > 0
-            ? filterEmptyPricingItems(pricingWithSyncedObs)
-            : pricingWithSyncedObs;
+            ? filterEmptyPricingItems(pricingItemsWithSyncedObs)
+            : pricingItemsWithSyncedObs;
 
           const finalPricingItems = [...basePricingItems, ...pricingItemsToAdd];
 
           console.log('[MOBILE PRICING↔SO SYNC] Updating pricing items:', {
             added: pricingItemsToAdd.length,
-            observationsChanged: pricingObservationsChanged,
+            observationsUpdated: pricingObservationsUpdated,
           });
           form.setValue('pricing.items', finalPricingItems as any, {
             shouldDirty: true,
           });
         }
 
-        // SYNC 2: Pricing Items → Service Orders
+        // SYNC 2: Pricing Items → Service Orders (NEW ITEMS)
         const serviceOrdersToAddRaw = pricingItemsAdded
           ? getServiceOrdersToAddFromPricingItems(syncPricingItems, syncServiceOrders)
           : [];
@@ -944,14 +1039,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
           return !deletedServiceOrderDescriptionsRef.current.has(normalizedDesc);
         });
 
-        const serviceOrdersWithSyncedObs = syncObservationsFromPricingToServiceOrders(
-          syncPricingItems,
-          currentServiceOrders,
-        );
-
-        const soObservationsChanged = JSON.stringify(serviceOrdersWithSyncedObs) !== JSON.stringify(currentServiceOrders);
-
-        if (serviceOrdersToAdd.length > 0 || soObservationsChanged) {
+        if (serviceOrdersToAdd.length > 0 || soObservationsUpdated) {
           const baseServiceOrders = serviceOrdersToAdd.length > 0
             ? filterEmptyServiceOrders(serviceOrdersWithSyncedObs)
             : serviceOrdersWithSyncedObs;
@@ -960,12 +1048,34 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
           console.log('[MOBILE PRICING↔SO SYNC] Updating service orders:', {
             added: serviceOrdersToAdd.length,
-            observationsChanged: soObservationsChanged,
+            observationsUpdated: soObservationsUpdated,
           });
           form.setValue('serviceOrders', finalServiceOrders as any, {
             shouldDirty: true,
           });
         }
+
+        // Update previous observation refs to TARGET values
+        const newPrevSOMap = new Map<string, string | null>();
+        const finalSOsForPrevMap = soObservationsUpdated ? serviceOrdersWithSyncedObs : currentServiceOrders;
+        for (const so of finalSOsForPrevMap) {
+          if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
+          const normalizedDesc = normalizeDescription(so.description);
+          if (normalizedDesc) {
+            newPrevSOMap.set(normalizedDesc, so.observation || null);
+          }
+        }
+        prevSOObservationsRef.current = newPrevSOMap;
+
+        const newPrevPIMap = new Map<string, string | null>();
+        const finalPIsForPrevMap = pricingObservationsUpdated ? pricingItemsWithSyncedObs : currentPricingItems;
+        for (const item of finalPIsForPrevMap) {
+          const normalizedDesc = normalizeDescription(item.description);
+          if (normalizedDesc) {
+            newPrevPIMap.set(normalizedDesc, item.observation || null);
+          }
+        }
+        prevPIObservationsRef.current = newPrevPIMap;
 
         lastSyncedServiceOrderCountRef.current = currentSOCount + serviceOrdersToAdd.length;
         lastSyncedPricingItemCountRef.current = currentPricingCount + pricingItemsToAdd.length;
@@ -1399,7 +1509,13 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                     <Input
                       value={value}
                       onChangeText={onChange}
-                      onBlur={onBlur}
+                      onBlur={() => {
+                        // Apply title case formatting when user finishes typing
+                        if (value) {
+                          onChange(toTitleCase(value));
+                        }
+                        onBlur();
+                      }}
                       placeholder="Ex: Pintura completa do caminhão"
                       maxLength={200}
                       error={!!errors.name}

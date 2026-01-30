@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { FileViewMode } from "@/components/file";
 import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
@@ -7,11 +7,11 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
-import { useMemo } from "react";
+import { perfLog } from "@/utils/performance-logger";
 // import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
@@ -55,6 +55,16 @@ export default function ScheduleDetailsScreen() {
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
+  // Performance logging - track screen mount
+  const mountTime = useRef(performance.now());
+  useEffect(() => {
+    perfLog.screenMount('ScheduleDetailsScreen');
+    perfLog.mark(`Task detail screen mounted for id: ${id}`);
+  }, []);
+
   // Get file viewer context
   const fileViewer = useFileViewer();
 
@@ -78,8 +88,8 @@ export default function ScheduleDetailsScreen() {
   // Check if user can view documents (admin/financial only) - matches web canViewFinancialSections
   const canViewDocuments = isAdminUser || isFinancialUser;
 
-  // Check if user can view base files - Hidden from WAREHOUSE, FINANCIAL only (matches web)
-  const canViewBaseFiles = !isWarehouseUser && !isFinancialUser;
+  // Check if user can view base files (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER only) - matches web
+  const canViewBaseFiles = isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser;
 
   // Check if user can view artwork badges and non-approved artworks (admin/commercial/financial/logistic/designer only)
   const canViewArtworkBadges = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isDesignerUser;
@@ -92,6 +102,9 @@ export default function ScheduleDetailsScreen() {
 
   // Check if user can view financial fields (invoiceTo, commission) - ADMIN, FINANCIAL, COMMERCIAL only
   const canViewFinancialFields = isAdminUser || isFinancialUser || isCommercialUser;
+
+  // Check if user can view restricted fields (negotiatingWith, forecastDate) - ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER only (matches web)
+  const canViewRestrictedFields = isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser;
 
   // Check if user can view pricing section - ADMIN, FINANCIAL, COMMERCIAL only (matches web canViewPricingSections)
   const canViewPricingSection = isAdminUser || isFinancialUser || isCommercialUser;
@@ -111,66 +124,94 @@ export default function ScheduleDetailsScreen() {
   // Airbrushing section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
   const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
-  // Fetch task details - optimized query to match web pattern
-  const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
-    include: {
+  // Build optimized include object based on user permissions
+  // This reduces API payload by only fetching data the user can actually view
+  const taskInclude = useMemo(() => {
+    const include: Record<string, any> = {
+      // Always needed for basic display
       sector: true,
       customer: true,
       createdBy: true,
       serviceOrders: true,
-      baseFiles: true,
-      artworks: true,
-      budget: {
+      truck: true,
+    };
+
+    // Base files - only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER
+    if (canViewBaseFiles) {
+      include.baseFiles = true;
+    }
+
+    // Artworks - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC
+    if (canViewArtworks) {
+      include.artworks = true;
+    }
+
+    // Documents - admin/financial only
+    if (canViewDocuments) {
+      include.budget = { include: { items: true } };
+      include.budgets = true;
+      include.invoices = true;
+      include.receipts = true;
+    }
+
+    // Observation - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL
+    if (canViewObservation) {
+      include.observation = { include: { files: true } };
+    }
+
+    // Airbrushing - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL
+    if (canViewAirbrushing) {
+      include.airbrushings = {
         include: {
-          items: true,
-        },
-      },
-      budgets: true,
-      invoices: true,
-      receipts: true,
-      observation: {
-        include: {
-          files: true,
-        },
-      },
-      airbrushings: {
-        include: {
-          receipts: true,
-          invoices: true,
+          receipts: canViewDocuments,
+          invoices: canViewDocuments,
           artworks: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
-      generalPainting: {
+        orderBy: { createdAt: "desc" },
+      };
+    }
+
+    // Paint sections - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC
+    if (canViewPaintSections) {
+      include.generalPainting = {
         include: {
           paintType: true,
-          paintGrounds: {
-            include: {
-              groundPaint: true,
-            },
-          },
+          paintGrounds: { include: { groundPaint: true } },
         },
-      },
-      logoPaints: {
-        include: {
-          paintType: true,
-          paintBrand: true,
-        },
-      },
-      truck: true,
-      pricing: {
-        include: {
-          items: true,
-          layoutFile: true,
-          customerSignature: true,
-        },
-      },
-    },
+      };
+    }
+
+    // Logo paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL
+    if (canViewLogoPaints) {
+      include.logoPaints = {
+        include: { paintType: true, paintBrand: true },
+      };
+    }
+
+    // Pricing - ADMIN, FINANCIAL, COMMERCIAL only
+    if (canViewPricingSection) {
+      include.pricing = {
+        include: { items: true, layoutFile: true, customerSignature: true },
+      };
+    }
+
+    return include;
+  }, [canViewBaseFiles, canViewArtworks, canViewDocuments, canViewObservation, canViewAirbrushing, canViewPaintSections, canViewLogoPaints, canViewPricingSection]);
+
+  // Fetch task details - start immediately, don't defer
+  const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
+    include: taskInclude,
   });
 
   const task = response?.data;
+
+  // Performance logging - track when data is ready
+  useEffect(() => {
+    if (!isLoading && task) {
+      perfLog.dataReady('ScheduleDetailsScreen', 'useTaskDetail');
+      perfLog.mark(`Task data loaded: ${task.name || task.id}`);
+    }
+  }, [isLoading, task]);
 
   // Get display name with fallbacks
   const getTaskDisplayName = (task: any) => {
@@ -249,7 +290,19 @@ export default function ScheduleDetailsScreen() {
     );
   };
 
+  // Performance logging - track when screen content is rendered
+  useEffect(() => {
+    if (!isLoading && task) {
+      // Use requestAnimationFrame to measure after paint
+      requestAnimationFrame(() => {
+        perfLog.screenRendered('ScheduleDetailsScreen');
+        perfLog.getSummary();
+      });
+    }
+  }, [isLoading, task]);
+
   if (isLoading) {
+    perfLog.mark('Showing loading screen for ScheduleDetailsScreen');
     return <LoadingScreen message="Carregando detalhes da tarefa..." />;
   }
 
@@ -313,7 +366,7 @@ export default function ScheduleDetailsScreen() {
             truck: task.truck,
             customer: task.customer,
             details: task.details ?? "",
-          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} />
+          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} />
 
           {/* Dates Card - Datas */}
           <TaskDatesCard task={{
@@ -321,7 +374,7 @@ export default function ScheduleDetailsScreen() {
             entryDate: task.entryDate ?? new Date(),
             term: task.term ?? new Date(),
             createdBy: task.createdBy,
-          }} />
+          }} canViewRestrictedFields={canViewRestrictedFields} />
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
           {canViewTruckLayout && (task as any)?.truck && layouts && (layouts.leftSideLayout || layouts.rightSideLayout || layouts.backSideLayout) && (

@@ -1,11 +1,12 @@
-import { memo, useRef, useEffect, useCallback } from 'react'
-import { View, TouchableOpacity, StyleSheet, Alert, Animated } from 'react-native'
+import { memo, useRef, useEffect, useCallback, useState } from 'react'
+import { View, TouchableOpacity, StyleSheet, Alert, Animated, ActivityIndicator } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { ThemedText } from '@/components/ui/themed-text'
 import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'expo-router'
+import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal } from '@tabler/icons-react-native'
 import type { TableAction, ActionMutationsContext } from '../types'
 
@@ -26,9 +27,11 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   const { colors } = useTheme()
   const router = useRouter()
   const { user } = useAuth()
+  const { startNavigation, isNavigating } = useNavigationLoading()
   const swipeableRef = useRef<Swipeable>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [activeActionKey, setActiveActionKey] = useState<string | null>(null)
 
   // Filter visible actions, excluding 'view' since it's handled by row click
   // Pass user to visible function for permission checks
@@ -90,12 +93,29 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
 
   const handleAction = useCallback(
     async (action: TableAction<T>) => {
+      // Prevent double-clicks while navigating
+      if (isNavigating) return
+
       closeActions()
+      setActiveActionKey(action.key)
 
       // Build the context with mutations for action handlers
       const actionContext: ActionMutationsContext = {
         ...mutations,
         user,
+      }
+
+      // Helper to execute the action (with navigation loading for route actions)
+      const executeAction = async () => {
+        if (action.onPress) {
+          await action.onPress(item, router, actionContext)
+          setActiveActionKey(null)
+        } else if (action.route) {
+          const route = typeof action.route === 'function' ? action.route(item) : action.route
+          // Show loading immediately then navigate
+          startNavigation()
+          router.push(route as any)
+        }
       }
 
       if (action.confirm) {
@@ -107,31 +127,23 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
           action.confirm.title,
           message,
           [
-            { text: 'Cancelar', style: 'cancel' },
+            {
+              text: 'Cancelar',
+              style: 'cancel',
+              onPress: () => setActiveActionKey(null)
+            },
             {
               text: 'Confirmar',
               style: action.variant === 'destructive' ? 'destructive' : 'default',
-              onPress: async () => {
-                if (action.onPress) {
-                  await action.onPress(item, router, actionContext)
-                } else if (action.route) {
-                  const route = typeof action.route === 'function' ? action.route(item) : action.route
-                  router.push(route as any)
-                }
-              },
+              onPress: executeAction,
             },
           ]
         )
       } else {
-        if (action.onPress) {
-          await action.onPress(item, router, actionContext)
-        } else if (action.route) {
-          const route = typeof action.route === 'function' ? action.route(item) : action.route
-          router.push(route as any)
-        }
+        await executeAction()
       }
     },
-    [item, closeActions, router, mutations, user]
+    [item, closeActions, router, mutations, user, isNavigating, startNavigation]
   )
 
   const renderRightActions = useCallback(
@@ -187,14 +199,25 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             // Resolve dynamic label if it's a function
             const label = typeof action.label === 'function' ? action.label(item) : action.label
 
+            const isActionActive = activeActionKey === action.key
+
             return (
               <TouchableOpacity
                 key={action.key}
-                style={[styles.actionButton, { backgroundColor }]}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor },
+                  (isNavigating || isActionActive) && { opacity: 0.6 }
+                ]}
                 onPress={() => handleAction(action)}
                 activeOpacity={0.7}
+                disabled={isNavigating || isActionActive}
               >
-                <Icon size={20} color="#fff" />
+                {isActionActive ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Icon size={20} color="#fff" />
+                )}
                 {label && (
                   <ThemedText style={styles.actionText}>{label}</ThemedText>
                 )}
@@ -204,7 +227,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         </View>
       )
     },
-    [visibleActions, colors, handleAction]
+    [visibleActions, colors, handleAction, activeActionKey, isNavigating]
   )
 
   if (visibleActions.length === 0) {

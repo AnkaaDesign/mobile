@@ -70,6 +70,7 @@ interface RequestMetadata {
   isCached?: boolean;
   isReactQueryRetry?: boolean; // Track if this is a React Query retry attempt
   suppressToast?: boolean; // Suppress toast for this request
+  is401Retry?: boolean; // Track if this is a 401 retry attempt (to prevent infinite loops)
 }
 
 // Extend AxiosRequestConfig to include metadata
@@ -796,17 +797,55 @@ const createApiClient = (
       if (
         !isLoggingOut &&
         errorInfo.category === ErrorCategory.AUTHENTICATION &&
-        globalAuthErrorHandler &&
         errorInfo._statusCode === 401 &&
         !config.url?.includes("/auth/login")
       ) {
-        try {
-          globalAuthErrorHandler({
-            statusCode: errorInfo._statusCode,
-            message: errorInfo.message,
-            category: errorInfo.category,
-          });
-        } catch {}
+        // SMART 401 RETRY: Before triggering logout, try to get a fresh token
+        // This handles race conditions where token might have been refreshed by another request
+        // Only attempt ONE retry to prevent infinite loops
+        if (!metadata?.is401Retry && globalTokenProvider) {
+          try {
+            const freshToken = await globalTokenProvider();
+
+            // Only retry if we got a token and it's different from what was used
+            const usedToken = config.headers?.Authorization?.toString()?.replace('Bearer ', '');
+
+            if (freshToken && freshToken !== usedToken) {
+              console.log('[AxiosClient] 401 received, retrying with fresh token');
+
+              // Mark this as a 401 retry to prevent infinite loops
+              const retryConfig = { ...config };
+              retryConfig.metadata = {
+                ...metadata,
+                is401Retry: true,
+                startTime: Date.now(),
+                retryCount: (metadata?.retryCount || 0) + 1,
+              };
+              retryConfig.headers = { ...config.headers };
+              retryConfig.headers.Authorization = `Bearer ${freshToken}`;
+
+              // Create new cancel token for retry
+              const newCancelToken = axios.CancelToken.source();
+              retryConfig.cancelToken = newCancelToken.token;
+
+              return client.request(retryConfig);
+            }
+          } catch (retryError) {
+            // Fresh token retrieval failed, proceed with logout
+            console.log('[AxiosClient] Failed to get fresh token for 401 retry');
+          }
+        }
+
+        // No fresh token available or retry already attempted - trigger logout
+        if (globalAuthErrorHandler) {
+          try {
+            globalAuthErrorHandler({
+              statusCode: errorInfo._statusCode,
+              message: errorInfo.message,
+              category: errorInfo.category,
+            });
+          } catch {}
+        }
       }
 
       // Show error notification with detailed messages

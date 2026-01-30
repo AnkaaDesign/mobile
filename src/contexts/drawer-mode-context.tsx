@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 
 export type DrawerMode = 'menu' | 'notifications';
 
@@ -21,8 +21,14 @@ export function DrawerModeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Memoize context value to prevent unnecessary re-renders of all consumers
+  const value = useMemo(
+    () => ({ drawerMode, setDrawerMode, openDrawerWithMode }),
+    [drawerMode, setDrawerMode, openDrawerWithMode]
+  );
+
   return (
-    <DrawerModeContext.Provider value={{ drawerMode, setDrawerMode, openDrawerWithMode }}>
+    <DrawerModeContext.Provider value={value}>
       {children}
     </DrawerModeContext.Provider>
   );

@@ -269,7 +269,32 @@ PODS:
     - Yoga
   - ExpoPrint (15.0.7):
     - ExpoModulesCore
+  - ExpoScreenOrientation (9.0.8):
+    - ExpoModulesCore
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - ExpoSharing (14.0.7):
+    - ExpoModulesCore
+  - ExpoWebBrowser (15.0.10):
     - ExpoModulesCore
   - EXStructuredHeaders (5.0.0)
   - EXUpdates (29.0.12):
@@ -1785,6 +1810,28 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - react-native-webview (13.16.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - React-NativeModulesApple (0.81.4):
     - hermes-engine
     - React-callinvoker
@@ -2460,7 +2507,7 @@ DEPENDENCIES:
   - "EXJSONUtils (from `../node_modules/.pnpm/expo-json-utils@0.15.0/node_modules/expo-json-utils/ios`)"
   - "EXManifests (from `../node_modules/.pnpm/expo-manifests@1.0.8_expo@54.0.21/node_modules/expo-manifests/ios`)"
   - "EXNotifications (from `../node_modules/.pnpm/expo-notifications@0.32.15_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@1_nxg3xkv7lullmyoo4xuee43iuq/node_modules/expo-notifications/ios`)"
-  - "Expo (from `../node_modules/.pnpm/expo@54.0.21_@babel+core@7.28.5_@expo+metro-runtime@6.1.2_expo-router@6.0.14_react-native@0.8_n7doyyhthhslzgsd2w2fmeelaa/node_modules/expo`)"
+  - "Expo (from `../node_modules/.pnpm/expo@54.0.21_@babel+core@7.28.5_@expo+metro-runtime@6.1.2_expo-router@6.0.14_react-native-web_ovds5ck5uf33e3332zylizx7y4/node_modules/expo`)"
   - "expo-dev-client (from `../node_modules/.pnpm/expo-dev-client@6.0.17_expo@54.0.21/node_modules/expo-dev-client/ios`)"
   - "expo-dev-launcher (from `../node_modules/.pnpm/expo-dev-launcher@6.0.17_expo@54.0.21/node_modules/expo-dev-launcher`)"
   - "expo-dev-menu (from `../node_modules/.pnpm/expo-dev-menu@7.0.16_expo@54.0.21/node_modules/expo-dev-menu`)"
@@ -2480,7 +2527,9 @@ DEPENDENCIES:
   - "ExpoLinking (from `../node_modules/.pnpm/expo-linking@8.0.8_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-linking/ios`)"
   - "ExpoModulesCore (from `../node_modules/.pnpm/expo-modules-core@3.0.23_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core`)"
   - "ExpoPrint (from `../node_modules/.pnpm/expo-print@15.0.7_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-print/ios`)"
+  - "ExpoScreenOrientation (from `../node_modules/.pnpm/expo-screen-orientation@9.0.8_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-screen-orientation/ios`)"
   - "ExpoSharing (from `../node_modules/.pnpm/expo-sharing@14.0.7_expo@54.0.21/node_modules/expo-sharing/ios`)"
+  - "ExpoWebBrowser (from `../node_modules/.pnpm/expo-web-browser@15.0.10_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-web-browser/ios`)"
   - "EXStructuredHeaders (from `../node_modules/.pnpm/expo-structured-headers@5.0.0/node_modules/expo-structured-headers/ios`)"
   - "EXUpdates (from `../node_modules/.pnpm/expo-updates@29.0.12_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-updates/ios`)"
   - "EXUpdatesInterface (from `../node_modules/.pnpm/expo-updates-interface@2.0.0_expo@54.0.21/node_modules/expo-updates-interface/ios`)"
@@ -2526,6 +2575,7 @@ DEPENDENCIES:
   - "react-native-pdf (from `../node_modules/.pnpm/react-native-pdf@7.0.3_react-native-blob-util@0.22.2_react-native@0.81.4_@babel+core@7.28.5_@_py2g7d66ukb5ayrmlrvfp2cynm/node_modules/react-native-pdf`)"
   - "react-native-safe-area-context (from `../node_modules/.pnpm/react-native-safe-area-context@5.6.1_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1_aydgr3ril2t3j6rk3c2cyretxy/node_modules/react-native-safe-area-context`)"
   - "react-native-slider (from `../node_modules/.pnpm/@react-native-community+slider@5.1.0/node_modules/@react-native-community/slider`)"
+  - "react-native-webview (from `../node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-webview`)"
   - "React-NativeModulesApple (from `../node_modules/.pnpm/react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)"
   - "React-oscompat (from `../node_modules/.pnpm/react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactCommon/oscompat`)"
   - "React-perflogger (from `../node_modules/.pnpm/react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactCommon/reactperflogger`)"
@@ -2595,7 +2645,7 @@ EXTERNAL SOURCES:
   EXNotifications:
     :path: "../node_modules/.pnpm/expo-notifications@0.32.15_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@1_nxg3xkv7lullmyoo4xuee43iuq/node_modules/expo-notifications/ios"
   Expo:
-    :path: "../node_modules/.pnpm/expo@54.0.21_@babel+core@7.28.5_@expo+metro-runtime@6.1.2_expo-router@6.0.14_react-native@0.8_n7doyyhthhslzgsd2w2fmeelaa/node_modules/expo"
+    :path: "../node_modules/.pnpm/expo@54.0.21_@babel+core@7.28.5_@expo+metro-runtime@6.1.2_expo-router@6.0.14_react-native-web_ovds5ck5uf33e3332zylizx7y4/node_modules/expo"
   expo-dev-client:
     :path: "../node_modules/.pnpm/expo-dev-client@6.0.17_expo@54.0.21/node_modules/expo-dev-client/ios"
   expo-dev-launcher:
@@ -2634,8 +2684,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/expo-modules-core@3.0.23_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/expo-modules-core"
   ExpoPrint:
     :path: "../node_modules/.pnpm/expo-print@15.0.7_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-print/ios"
+  ExpoScreenOrientation:
+    :path: "../node_modules/.pnpm/expo-screen-orientation@9.0.8_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-screen-orientation/ios"
   ExpoSharing:
     :path: "../node_modules/.pnpm/expo-sharing@14.0.7_expo@54.0.21/node_modules/expo-sharing/ios"
+  ExpoWebBrowser:
+    :path: "../node_modules/.pnpm/expo-web-browser@15.0.10_expo@54.0.21_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0_/node_modules/expo-web-browser/ios"
   EXStructuredHeaders:
     :path: "../node_modules/.pnpm/expo-structured-headers@5.0.0/node_modules/expo-structured-headers/ios"
   EXUpdates:
@@ -2725,6 +2779,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/.pnpm/react-native-safe-area-context@5.6.1_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1_aydgr3ril2t3j6rk3c2cyretxy/node_modules/react-native-safe-area-context"
   react-native-slider:
     :path: "../node_modules/.pnpm/@react-native-community+slider@5.1.0/node_modules/@react-native-community/slider"
+  react-native-webview:
+    :path: "../node_modules/.pnpm/react-native-webview@13.16.0_react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0__react@19.1.0/node_modules/react-native-webview"
   React-NativeModulesApple:
     :path: "../node_modules/.pnpm/react-native@0.81.4_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-oscompat:
@@ -2833,7 +2889,9 @@ SPEC CHECKSUMS:
   ExpoLinking: f051f28e50ea9269ff539317c166adec81d9342d
   ExpoModulesCore: 5f20603cf25698682d7c43c05fbba8c748b189d2
   ExpoPrint: 3fa0bd322ea8effa81893a099803c914e59ad46f
+  ExpoScreenOrientation: c68bd20f210d0616960638c787889e07787e5adb
   ExpoSharing: 032c01bb034319e2374badf082ae935be866d2e9
+  ExpoWebBrowser: 17b064c621789e41d4816c95c93f429b84971f52
   EXStructuredHeaders: c951e77f2d936f88637421e9588c976da5827368
   EXUpdates: ef83273afc231a627b170358c90689ac30a4429d
   EXUpdatesInterface: 5adf50cb41e079c861da6d9b4b954c3db9a50734
@@ -2882,6 +2940,7 @@ SPEC CHECKSUMS:
   react-native-pdf: 70836b3b48595c7f85a3aa2b5d122b175c455733
   react-native-safe-area-context: 42a1b4f8774b577d03b53de7326e3d5757fe9513
   react-native-slider: 2fdd2c77773a91470d3e6b8338a9a6f9e23b0aee
+  react-native-webview: 3e303e80cadb5f17118c8c1502aa398e9287e415
   React-NativeModulesApple: a9464983ccc0f66f45e93558671f60fc7536e438
   React-oscompat: 73db7dbc80edef36a9d6ed3c6c4e1724ead4236d
   React-perflogger: 123272debf907cc423962adafcf4513320e43757

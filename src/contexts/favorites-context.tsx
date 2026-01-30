@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "@ankaa_favorites";
@@ -126,19 +126,23 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     setShowFavorites((prev) => !prev);
   }, []);
 
+  // Memoize context value to prevent unnecessary re-renders of all consumers
+  const value = useMemo(
+    () => ({
+      favorites,
+      showFavorites,
+      addFavorite,
+      removeFavorite,
+      isFavorite,
+      toggleFavorite,
+      toggleShowFavorites,
+      isLoading,
+    }),
+    [favorites, showFavorites, addFavorite, removeFavorite, isFavorite, toggleFavorite, toggleShowFavorites, isLoading]
+  );
+
   return (
-    <FavoritesContext.Provider
-      value={{
-        favorites,
-        showFavorites,
-        addFavorite,
-        removeFavorite,
-        isFavorite,
-        toggleFavorite,
-        toggleShowFavorites,
-        isLoading,
-      }}
-    >
+    <FavoritesContext.Provider value={value}>
       {children}
     </FavoritesContext.Provider>
   );

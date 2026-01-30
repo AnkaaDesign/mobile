@@ -331,6 +331,30 @@ function ServiceRow({
     }];
   }, [initialAssignedUser?.id]);
 
+  // Determine which sector privileges to include based on service order type
+  // Each service order type has specific sectors that can be assigned
+  const includeSectorPrivileges = useMemo(() => {
+    switch (service.type) {
+      case SERVICE_ORDER_TYPE.PRODUCTION:
+        // Production service orders: only production sector users
+        return [SECTOR_PRIVILEGES.PRODUCTION];
+      case SERVICE_ORDER_TYPE.LOGISTIC:
+        // Logistic service orders: logistic and admin users
+        return [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.ADMIN];
+      case SERVICE_ORDER_TYPE.COMMERCIAL:
+        // Commercial service orders: commercial and admin users
+        return [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN];
+      case SERVICE_ORDER_TYPE.ARTWORK:
+        // Artwork service orders: designer and admin users
+        return [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.ADMIN];
+      case SERVICE_ORDER_TYPE.FINANCIAL:
+        // Financial service orders: commercial, financial, and admin users
+        return [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN];
+      default:
+        return undefined;
+    }
+  }, [service.type]);
+
   // Search function for users
   const searchUsers = useCallback(async (
     searchTerm: string,
@@ -355,6 +379,11 @@ function ServiceRow({
         queryParams.searchingFor = searchTerm.trim();
       }
 
+      // Add sector privilege filter to include only specific sectors based on service order type
+      if (includeSectorPrivileges && includeSectorPrivileges.length > 0) {
+        queryParams.includeSectorPrivileges = includeSectorPrivileges;
+      }
+
       const response = await getUsers(queryParams);
       const users = response.data || [];
       const hasMore = response.meta?.hasNextPage || false;
@@ -370,7 +399,7 @@ function ServiceRow({
       console.error("[ServiceRow] Error fetching users:", error);
       return { data: [], hasMore: false };
     }
-  }, []);
+  }, [includeSectorPrivileges]);
 
   // Handle saving observation from modal
   const handleSaveObservation = () => {
@@ -429,7 +458,7 @@ function ServiceRow({
             searchPlaceholder="Buscar usuário..."
             disabled={disabled}
             async={true}
-            queryKey={["users", "service-order", index]}
+            queryKey={["users", "service-order", index, includeSectorPrivileges?.join(",") ?? ""]}
             queryFn={searchUsers}
             initialOptions={getUserInitialOptions}
             minSearchLength={0}

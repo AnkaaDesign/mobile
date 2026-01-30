@@ -18,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
+import { useFileViewerOrientation } from '@/hooks/use-file-viewer-orientation';
 
 // Conditionally import react-native-pdf (not supported in Expo Go)
 let Pdf: any = null;
@@ -58,6 +59,9 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const pdfUrl = getFileUrl(file, baseUrl);
+
+  // Enable orientation change when PDF viewer is open
+  useFileViewerOrientation({ isOpen: open });
 
   // Auto-hide controls after 3 seconds
   const resetControlsTimeout = useCallback(() => {
@@ -267,16 +271,25 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                 enablePaging={true}
                 horizontal={false}
                 spacing={10}
+                // Zoom configuration - allow much greater zoom for detailed viewing
+                minScale={0.5}
+                maxScale={10}
+                scale={1.0}
+                // Android rendering quality improvements
+                enableAntialiasing={true}
+                // Fit width for better initial display and to fix Android blur
+                fitPolicy={0}
+                // Enable double-tap zoom gesture
+                enableDoubleTapZoom={true}
+                // Use PDF's native single tap to toggle controls (allows zoom gestures to work)
+                onPageSingleTap={toggleControls}
                 renderActivityIndicator={() => (
                   <ActivityIndicator size="large" color="#0066cc" style={styles.loader} />
                 )}
                 onLoadProgress={handleLoadProgress}
               />
-              {/* Transparent overlay to capture taps for toggling controls */}
-              <Pressable
-                style={styles.tapOverlay}
-                onPress={toggleControls}
-              />
+              {/* NOTE: Removed tapOverlay - it was blocking PDF zoom gestures.
+                  Using onPageSingleTap instead for controls toggle */}
             </>
           )}
         </View>
@@ -533,15 +546,6 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginTop: 8,
-  },
-  tapOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    zIndex: 10,
   },
 });
 

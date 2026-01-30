@@ -25,8 +25,8 @@ import {
 // Clothing sizes (P to XG) - used for shirts, sleeves, and masks
 const CLOTHING_SIZES: PPE_SIZE[] = [PPE_SIZE.P, PPE_SIZE.M, PPE_SIZE.G, PPE_SIZE.GG, PPE_SIZE.XG];
 
-// Numeric sizes (36 to 48) - used for pants and boots
-const NUMERIC_SIZES: PPE_SIZE[] = [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_48];
+// Numeric sizes (36 to 50) - used for pants, shorts, and boots
+const NUMERIC_SIZES: PPE_SIZE[] = [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46, PPE_SIZE.SIZE_48, PPE_SIZE.SIZE_50];
 
 /**
  * Validates if a given size is valid for a specific PPE type.
@@ -52,12 +52,10 @@ export function isValidSizeForPpeType(size: PPE_SIZE, ppeType: PPE_TYPE): boolea
       return [PPE_SIZE.P, PPE_SIZE.M, PPE_SIZE.G].includes(size);
 
     case PPE_TYPE.PANTS:
+    case PPE_TYPE.SHORT:
     case PPE_TYPE.BOOTS:
-      return NUMERIC_SIZES.includes(size);
-
     case PPE_TYPE.RAIN_BOOTS:
-      // Galocha uses 36-46 sizes (not 48)
-      return [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46].includes(size);
+      return NUMERIC_SIZES.includes(size);
 
     default:
       return false;
@@ -86,12 +84,10 @@ export function getValidSizesForPpeType(ppeType: PPE_TYPE): PPE_SIZE[] {
       return [PPE_SIZE.P, PPE_SIZE.M, PPE_SIZE.G];
 
     case PPE_TYPE.PANTS:
+    case PPE_TYPE.SHORT:
     case PPE_TYPE.BOOTS:
-      return [...NUMERIC_SIZES];
-
     case PPE_TYPE.RAIN_BOOTS:
-      // Galocha uses 36-46 sizes (not 48)
-      return [PPE_SIZE.SIZE_36, PPE_SIZE.SIZE_38, PPE_SIZE.SIZE_40, PPE_SIZE.SIZE_42, PPE_SIZE.SIZE_44, PPE_SIZE.SIZE_46];
+      return [...NUMERIC_SIZES];
 
     default:
       return [];
@@ -163,6 +159,7 @@ export function formatPpeSizeDisplay(size: PpeSize): string {
 
   if (size.shirts) parts.push(`Camisa: ${size.shirts}`);
   if (size.pants) parts.push(`Calça: ${size.pants}`);
+  if (size.shorts) parts.push(`Bermuda: ${size.shorts}`);
   if (size.boots) parts.push(`Bota: ${size.boots}`);
   if (size.sleeves) parts.push(`Manga: ${size.sleeves}`);
 
@@ -530,6 +527,8 @@ export function getPpeSizeByType(ppeSize: PpeSize, ppeType: PPE_TYPE): string | 
       return ppeSize.shirts;
     case PPE_TYPE.PANTS:
       return ppeSize.pants;
+    case PPE_TYPE.SHORT:
+      return ppeSize.shorts;
     case PPE_TYPE.BOOTS:
       return ppeSize.boots;
     case PPE_TYPE.SLEEVES:

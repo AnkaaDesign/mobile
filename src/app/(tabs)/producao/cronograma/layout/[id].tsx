@@ -156,10 +156,10 @@ export default function LayoutOnlyEditScreen() {
       const leftTotalWidth = leftSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const rightTotalWidth = rightSections.reduce((sum: number, s: any) => sum + (s.width || 0), 0);
       const widthDifference = Math.abs(leftTotalWidth - rightTotalWidth);
-      const maxAllowedDifference = 0.04; // 4cm in meters
+      const maxAllowedDifference = 0.02; // 2cm in meters
 
       if (widthDifference > maxAllowedDifference) {
-        const errorMessage = `O layout possui diferença de largura maior que 4cm entre os lados. Lado Motorista: ${leftTotalWidth.toFixed(2)}m, Lado Sapo: ${rightTotalWidth.toFixed(2)}m (diferença de ${(widthDifference * 100).toFixed(1)}cm). Ajuste as medidas antes de enviar o formulário.`;
+        const errorMessage = `O layout possui diferença de largura maior que 2cm entre os lados. Lado Motorista: ${(leftTotalWidth * 100).toFixed(0)}cm, Lado Sapo: ${(rightTotalWidth * 100).toFixed(0)}cm (diferença de ${(widthDifference * 100).toFixed(1)}cm). Ajuste as medidas antes de enviar o formulário.`;
         setLayoutWidthError(errorMessage);
       } else {
         setLayoutWidthError(null);

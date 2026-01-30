@@ -72,7 +72,7 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
       forecastDate: null,
       serviceOrderDescription: DEFAULT_TASK_SERVICE_ORDER.description,
       category: "",
-      implementType: IMPLEMENT_TYPE.CORRUGATED,
+      implementType: IMPLEMENT_TYPE.REFRIGERATED,
     },
   });
 

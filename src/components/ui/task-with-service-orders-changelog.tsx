@@ -61,21 +61,21 @@ interface TaskWithServiceOrdersChangelogProps {
 type IconComponent = React.ComponentType<any>;
 
 const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
-  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#22c55e" },
+  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
   [CHANGE_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
   [CHANGE_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
   [CHANGE_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
   [CHANGE_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
-  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#22c55e" },
+  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
   [CHANGE_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
-  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#22c55e" },
+  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
   [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#22c55e" },
+  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
   [CHANGE_ACTION.RESCHEDULE]: { icon: IconCalendar, color: "#3b82f6" },
-  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#22c55e" },
+  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
   [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
@@ -222,7 +222,7 @@ const FileArrayDisplay = ({
       <ThemedText
         style={[
           styles.fileArrayEmpty,
-          { color: isOldValue ? colors.destructive : "#22c55e" },
+          { color: isOldValue ? colors.destructive : colors.success },
         ]}
       >
         Nenhum arquivo
@@ -393,29 +393,46 @@ const formatValueWithEntity = (
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (typeof parsedValue === "string" && uuidRegex.test(parsedValue)) {
     if (entityDetails) {
+      // Customer fields
       if (field === "customerId" && entityDetails.customers?.has(parsedValue)) {
         return entityDetails.customers.get(parsedValue) || "Cliente";
-      }
-      if (field === "sectorId" && entityDetails.sectors?.has(parsedValue)) {
-        return entityDetails.sectors.get(parsedValue) || "Setor";
-      }
-      if (field === "paintId" && entityDetails.paints?.has(parsedValue)) {
-        const paint = entityDetails.paints.get(parsedValue);
-        return paint?.name || "Tinta";
       }
       if (field === "invoiceToId" && entityDetails.customers?.has(parsedValue)) {
         return entityDetails.customers.get(parsedValue) || "Cliente";
       }
+      // Sector field
+      if (field === "sectorId" && entityDetails.sectors?.has(parsedValue)) {
+        return entityDetails.sectors.get(parsedValue) || "Setor";
+      }
+      // Paint field
+      if (field === "paintId" && entityDetails.paints?.has(parsedValue)) {
+        const paint = entityDetails.paints.get(parsedValue);
+        return paint?.name || "Tinta";
+      }
+      // Truck field
       if (field === "truckId" && entityDetails.trucks?.has(parsedValue)) {
-        return entityDetails.trucks.get(parsedValue) || "Caminhao";
+        return entityDetails.trucks.get(parsedValue) || "Caminhão";
+      }
+      // User fields - resolve from users map
+      const userFields = [
+        "assignedToId", "createdById", "startedById", "approvedById", "completedById",
+        "userId", "reviewedBy", "rejectedBy", "cancelledBy", "responsibleUserId"
+      ];
+      if (userFields.includes(field) && entityDetails.users?.has(parsedValue)) {
+        return entityDetails.users.get(parsedValue) || "Usuário";
       }
     }
 
-    if (field === "customerId") return "Cliente (carregando...)";
+    // Fallback loading messages
+    if (field === "customerId" || field === "invoiceToId") return "Cliente (carregando...)";
     if (field === "sectorId") return "Setor (carregando...)";
     if (field === "paintId") return "Tinta (carregando...)";
-    if (field === "invoiceToId") return "Cliente (carregando...)";
-    if (field === "truckId") return "Caminhao (carregando...)";
+    if (field === "truckId") return "Caminhão (carregando...)";
+    const userFields = [
+      "assignedToId", "createdById", "startedById", "approvedById", "completedById",
+      "userId", "reviewedBy", "rejectedBy", "cancelledBy", "responsibleUserId"
+    ];
+    if (userFields.includes(field)) return "Usuário (carregando...)";
   }
 
   return formatFieldValue(parsedValue, field, entityType, metadata);
@@ -453,46 +470,63 @@ const TimelineItem = ({
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
       firstLog.action === CHANGE_ACTION.CREATE
     ) {
-      const metadata = firstLog.metadata as any;
-      if (metadata) {
-        const description = metadata.description;
-        const type = metadata.type
-          ? SERVICE_ORDER_TYPE_LABELS[metadata.type as keyof typeof SERVICE_ORDER_TYPE_LABELS]
-          : null;
-        const status = metadata.status
-          ? SERVICE_ORDER_STATUS_LABELS[metadata.status as keyof typeof SERVICE_ORDER_STATUS_LABELS]
-          : null;
-
-        if (description) {
-          // Use feminine form "Criada" for SERVICE_ORDER (matching web)
-          // For batch creates, replace "Criado" with "Criada" in the action label
-          const feminineActionLabel = actionLabel.replace("Criado", "Criada");
-
-          return (
-            <View>
-              <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
-                Ordem de Serviço {feminineActionLabel}
-              </ThemedText>
-              <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]} numberOfLines={1}>
-                Descrição: {description}
-              </ThemedText>
-              {type && (
-                <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
-                  Tipo: {type}
-                </ThemedText>
-              )}
-              {status && (
-                <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
-                  Status: {status}
-                </ThemedText>
-              )}
-            </View>
-          );
+      // Extract entity details from newValue (matching web implementation)
+      let createdEntityData: any = null;
+      try {
+        if (firstLog.newValue) {
+          createdEntityData =
+            typeof firstLog.newValue === "string"
+              ? JSON.parse(firstLog.newValue)
+              : firstLog.newValue;
         }
+      } catch (e) {
+        // Fall back to metadata if newValue parsing fails
+        createdEntityData = firstLog.metadata as any;
+      }
+
+      // Also try metadata as fallback
+      if (!createdEntityData) {
+        createdEntityData = firstLog.metadata as any;
+      }
+
+      if (createdEntityData) {
+        const description = createdEntityData.description;
+        const type = createdEntityData.type
+          ? SERVICE_ORDER_TYPE_LABELS[createdEntityData.type as keyof typeof SERVICE_ORDER_TYPE_LABELS]
+          : null;
+        const status = createdEntityData.status
+          ? SERVICE_ORDER_STATUS_LABELS[createdEntityData.status as keyof typeof SERVICE_ORDER_STATUS_LABELS]
+          : null;
+
+        // Use feminine form "Criada" for SERVICE_ORDER (matching web)
+        const feminineActionLabel = actionLabel.replace("Criado", "Criada");
+
+        return (
+          <View>
+            <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
+              Ordem de Serviço {feminineActionLabel}
+            </ThemedText>
+            {description && (
+              <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]} numberOfLines={2}>
+                Descrição: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{description}</ThemedText>
+              </ThemedText>
+            )}
+            {type && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Tipo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{type}</ThemedText>
+              </ThemedText>
+            )}
+            {status && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Status: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{status}</ThemedText>
+              </ThemedText>
+            )}
+          </View>
+        );
       }
     }
 
-    // Special handling for service orders UPDATE - use feminine form (matching web)
+    // Special handling for service orders UPDATE - use feminine form and show description/type (matching web)
     if (
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
       firstLog.action === CHANGE_ACTION.UPDATE
@@ -500,10 +534,33 @@ const TimelineItem = ({
       // Use feminine form "Atualizada" for SERVICE_ORDER (matching web)
       const feminineActionLabel = actionLabel.replace("Atualizado", "Atualizada");
 
+      // Extract description and type changes from the group (matching web)
+      const descriptionChange = group.find((c) => c.field === "description");
+      const typeChange = group.find((c) => c.field === "type");
+
+      // Get values from changes or metadata
+      const description = descriptionChange?.newValue || (firstLog.metadata as any)?.description;
+      const typeValue = typeChange?.newValue || (firstLog.metadata as any)?.type;
+      const typeLabel = typeValue
+        ? SERVICE_ORDER_TYPE_LABELS[typeValue as keyof typeof SERVICE_ORDER_TYPE_LABELS] || typeValue
+        : null;
+
       return (
-        <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
-          Ordem de Serviço {feminineActionLabel}
-        </ThemedText>
+        <View>
+          <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
+            Ordem de Serviço {feminineActionLabel}
+          </ThemedText>
+          {description && (
+            <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]} numberOfLines={2}>
+              Descrição: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{description}</ThemedText>
+            </ThemedText>
+          )}
+          {typeLabel && (
+            <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+              Tipo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{typeLabel}</ThemedText>
+            </ThemedText>
+          )}
+        </View>
       );
     }
 
@@ -514,12 +571,115 @@ const TimelineItem = ({
     );
   };
 
+  // Helper to parse pricing/budget value (matching web implementation)
+  const parsePricingValue = (val: any) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === "object" && val.id) return val;
+    if (typeof val === "string") {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && typeof parsed === "object" && parsed.id) return parsed;
+        // If it's just a UUID string, return it as id
+        return { id: val, budgetNumber: null, total: null, items: null };
+      } catch {
+        // It's a raw UUID string
+        return { id: val, budgetNumber: null, total: null, items: null };
+      }
+    }
+    return null;
+  };
+
+  // Helper to format currency (matching web implementation)
+  const formatCurrency = (value: number | null) => {
+    if (value === null || value === undefined) return null;
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  // Render pricing value display (matching web implementation)
+  const renderPricingValue = (pricing: any, isOld: boolean) => {
+    if (!pricing || !pricing.id) {
+      return (
+        <ThemedText style={{ fontSize: fontSize.xs, color: isOld ? colors.destructive : colors.success, fontWeight: "500" }}>
+          Nenhum
+        </ThemedText>
+      );
+    }
+
+    const hasBudgetInfo = pricing.budgetNumber || pricing.total !== null;
+    const items = pricing.items || [];
+
+    if (hasBudgetInfo) {
+      return (
+        <View style={[styles.pricingCard, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+          <View style={styles.pricingHeader}>
+            {pricing.budgetNumber && (
+              <ThemedText style={[styles.pricingTitle, { color: isOld ? colors.destructive : colors.success }]}>
+                Orçamento #{pricing.budgetNumber}
+              </ThemedText>
+            )}
+            {pricing.total !== null && pricing.total !== undefined && (
+              <ThemedText style={[styles.pricingTotal, { color: colors.mutedForeground }]}>
+                {formatCurrency(pricing.total)}
+              </ThemedText>
+            )}
+          </View>
+          {items.length > 0 && (
+            <View style={[styles.pricingItems, { borderTopColor: colors.border }]}>
+              <ThemedText style={[styles.pricingItemsLabel, { color: colors.mutedForeground }]}>
+                Itens:
+              </ThemedText>
+              {items.map((item: any, itemIdx: number) => (
+                <View key={itemIdx} style={styles.pricingItemRow}>
+                  <ThemedText style={[styles.pricingItemDesc, { color: colors.foreground }]} numberOfLines={1}>
+                    {item.description}
+                  </ThemedText>
+                  <ThemedText style={[styles.pricingItemAmount, { color: colors.mutedForeground }]}>
+                    {formatCurrency(item.amount)}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      );
+    }
+
+    // Fallback to showing just the ID if no budget info
+    return (
+      <ThemedText style={{ color: isOld ? colors.destructive : colors.success, fontFamily: "monospace", fontSize: fontSize.xs }}>
+        {pricing.id}
+      </ThemedText>
+    );
+  };
+
   // Get field changes
   const getChanges = () => {
     const changes: React.ReactNode[] = [];
 
+    // Separate status change, timestamp changes, and user changes like the web does
+    const statusChange = group.find(c => c.field === 'status');
+    const timestampFields = ['startedAt', 'finishedAt', 'approvedAt', 'completedAt'];
+    const userFields = ['startedById', 'completedById', 'approvedById'];
+
+    // Fields to skip from individual display (they're summarized with status change)
+    const fieldsToSkip = new Set<string>();
+    if (statusChange) {
+      // If there's a status change, skip related timestamp and user fields
+      timestampFields.forEach(f => fieldsToSkip.add(f));
+      userFields.forEach(f => fieldsToSkip.add(f));
+    }
+
     group.forEach((log, idx) => {
       const field = log.field;
+
+      // Skip fields that are summarized with status change
+      if (field && fieldsToSkip.has(field)) {
+        return;
+      }
+
       const fieldLabel = getFieldLabel(field, log.entityType);
 
       if (log.action === CHANGE_ACTION.UPDATE && field) {
@@ -546,6 +706,82 @@ const TimelineItem = ({
           return;
         }
 
+        // Special handling for pricingId (Orçamento) - matching web implementation
+        if (field === "pricingId") {
+          const oldPricing = parsePricingValue(log.oldValue);
+          const newPricing = parsePricingValue(log.newValue);
+
+          changes.push(
+            <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
+              <View style={styles.changeValuesVertical}>
+                <View style={styles.pricingValueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes:</ThemedText>
+                  {renderPricingValue(oldPricing, true)}
+                </View>
+                <View style={styles.pricingValueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Depois:</ThemedText>
+                  {renderPricingValue(newPricing, false)}
+                </View>
+              </View>
+            </View>
+          );
+          return;
+        }
+
+        // Special handling for status field - show "Status: old → new" format (matching web)
+        if (field === "status") {
+          const oldStatusLabel = log.oldValue
+            ? SERVICE_ORDER_STATUS_LABELS[log.oldValue as keyof typeof SERVICE_ORDER_STATUS_LABELS] || String(log.oldValue)
+            : "Nenhum";
+          const newStatusLabel = log.newValue
+            ? SERVICE_ORDER_STATUS_LABELS[log.newValue as keyof typeof SERVICE_ORDER_STATUS_LABELS] || String(log.newValue)
+            : "Nenhum";
+
+          changes.push(
+            <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
+                Status:{" "}
+                <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive }}>{oldStatusLabel}</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}> → </ThemedText>
+                <ThemedText style={{ fontSize: fontSize.xs, color: colors.success }}>{newStatusLabel}</ThemedText>
+              </ThemedText>
+            </View>
+          );
+          return;
+        }
+
+        // Special handling for type field - show formatted label
+        if (field === "type" && log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
+          const oldTypeLabel = log.oldValue
+            ? SERVICE_ORDER_TYPE_LABELS[log.oldValue as keyof typeof SERVICE_ORDER_TYPE_LABELS] || String(log.oldValue)
+            : "Nenhum";
+          const newTypeLabel = log.newValue
+            ? SERVICE_ORDER_TYPE_LABELS[log.newValue as keyof typeof SERVICE_ORDER_TYPE_LABELS] || String(log.newValue)
+            : "Nenhum";
+
+          changes.push(
+            <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+              <View style={styles.changeValuesVertical}>
+                <View style={styles.valueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes: </ThemedText>
+                  <ThemedText style={[styles.oldValue, { color: colors.destructive }]}>
+                    {oldTypeLabel}
+                  </ThemedText>
+                </View>
+                <View style={styles.valueRow}>
+                  <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Depois: </ThemedText>
+                  <ThemedText style={[styles.newValue, { color: colors.success }]}>
+                    {newTypeLabel}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          );
+          return;
+        }
+
         const oldValue = formatValueWithEntity(log.oldValue, field, log.entityType, entityDetails, log.metadata);
         const newValue = formatValueWithEntity(log.newValue, field, log.entityType, entityDetails, log.metadata);
 
@@ -561,7 +797,7 @@ const TimelineItem = ({
               </View>
               <View style={styles.valueRow}>
                 <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Depois: </ThemedText>
-                <ThemedText style={[styles.newValue, { color: "#22c55e" }]}>
+                <ThemedText style={[styles.newValue, { color: colors.success }]}>
                   {String(newValue || "Nenhum")}
                 </ThemedText>
               </View>
@@ -580,6 +816,20 @@ const TimelineItem = ({
               </View>
             );
           }
+          return;
+        }
+
+        // Special handling for pricingId on CREATE
+        if (field === "pricingId") {
+          const newPricing = parsePricingValue(log.newValue);
+          changes.push(
+            <View key={`${log.id}-${idx}`} style={styles.changeRow}>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
+              <View style={styles.pricingValueRow}>
+                {renderPricingValue(newPricing, false)}
+              </View>
+            </View>
+          );
           return;
         }
 
@@ -738,6 +988,19 @@ export function TaskWithServiceOrdersChangelog({
 
   const isLoading = taskLoading || serviceOrdersLoading || truckLoading || layoutLoading;
 
+  // Check if user can view financial fields (ADMIN, FINANCIAL only)
+  const canViewFinancialFields =
+    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+  // Check if user can view restricted fields (ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER only)
+  const canViewRestrictedFields =
+    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+
   // Combine and sort all changelogs
   const allChangelogs = useMemo(() => {
     const logs: ChangeLog[] = [];
@@ -750,8 +1013,15 @@ export function TaskWithServiceOrdersChangelog({
     // Sort by createdAt descending
     logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // Filter service orders by visible types
+    // Define fields to filter (matching web changelog-history.tsx)
+    const internalFields = ["statusOrder", "colorOrder"];
+    const sensitiveFields = ["sessionToken", "verificationCode", "verificationExpiresAt", "verificationType", "password", "token", "apiKey", "secret"];
+    const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "pricingId", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "budget", "pricing"];
+    const restrictedFields = ["forecastDate", "negotiatingWith", "invoiceTo", "invoiceToId"];
+
+    // Filter logs based on user permissions (matching web)
     const filteredLogs = logs.filter((log) => {
+      // Filter service orders by visible types
       if (log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
         const metadata = log.metadata as any;
         const serviceType = metadata?.type;
@@ -759,11 +1029,37 @@ export function TaskWithServiceOrdersChangelog({
           return false;
         }
       }
+
+      // Skip logs without field (CREATE/DELETE actions are ok)
+      if (!log.field) return true;
+
+      const fieldLower = log.field.toLowerCase();
+
+      // Always filter out internal system fields
+      if (internalFields.includes(log.field)) {
+        return false;
+      }
+
+      // Always filter out sensitive fields
+      if (sensitiveFields.some((sensitive) => fieldLower.includes(sensitive.toLowerCase()))) {
+        return false;
+      }
+
+      // Filter out financial fields for non-FINANCIAL/ADMIN users
+      if (!canViewFinancialFields && financialFields.some((financial) => fieldLower.includes(financial.toLowerCase()))) {
+        return false;
+      }
+
+      // Filter out restricted fields (forecastDate, negotiatingWith, invoiceTo) for non-privileged users
+      if (!canViewRestrictedFields && restrictedFields.some((restricted) => fieldLower.includes(restricted.toLowerCase()))) {
+        return false;
+      }
+
       return true;
     });
 
     return filteredLogs.slice(0, limit);
-  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, visibleServiceOrderTypes, limit]);
+  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, visibleServiceOrderTypes, limit, canViewFinancialFields, canViewRestrictedFields]);
 
   // Extract entity IDs for detail fetching - grouped by entity type
   const entityIdsByType = useMemo(() => {
@@ -774,6 +1070,12 @@ export function TaskWithServiceOrdersChangelog({
     const userIds = new Set<string>();
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    // User fields that should resolve to user names
+    const userFields = [
+      "userId", "assignedToId", "createdById", "startedById", "approvedById",
+      "completedById", "reviewedBy", "rejectedBy", "cancelledBy", "responsibleUserId"
+    ];
 
     allChangelogs.forEach((log) => {
       // Check field type and extract relevant IDs
@@ -788,7 +1090,7 @@ export function TaskWithServiceOrdersChangelog({
           paintIds.add(value);
         } else if (field === "truckId") {
           truckIds.add(value);
-        } else if (field === "userId" || field === "assignedToId" || field === "createdById") {
+        } else if (field && userFields.includes(field)) {
           userIds.add(value);
         }
       };
@@ -858,9 +1160,9 @@ export function TaskWithServiceOrdersChangelog({
         {taskCreatedAt && (
           <View style={styles.creationMarker}>
             <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
-            <View style={[styles.creationBadge, { backgroundColor: "#22c55e20", borderColor: "#22c55e" }]}>
-              <IconPlus size={12} color="#22c55e" />
-              <ThemedText style={[styles.creationText, { color: "#22c55e" }]}>
+            <View style={[styles.creationBadge, { backgroundColor: colors.success + "20", borderColor: colors.success }]}>
+              <IconPlus size={12} color={colors.success} />
+              <ThemedText style={[styles.creationText, { color: colors.success }]}>
                 {taskName || "Tarefa"} criada em{" "}
                 {new Date(taskCreatedAt).toLocaleDateString("pt-BR")}
               </ThemedText>
@@ -1003,6 +1305,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
   },
   footerUserName: {
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
   footerLeft: {
@@ -1106,6 +1409,58 @@ const styles = StyleSheet.create({
   fileValueRow: {
     flexDirection: "column",
     gap: spacing.xs,
+  },
+  // Pricing/Budget card styles (matching web)
+  pricingCard: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  pricingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  pricingTitle: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+  },
+  pricingTotal: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  pricingItems: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+  },
+  pricingItemsLabel: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    marginBottom: spacing.xs,
+  },
+  pricingItemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  pricingItemDesc: {
+    fontSize: fontSize.xs,
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  pricingItemAmount: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  pricingValueRow: {
+    marginTop: spacing.xs,
+  },
+  // Status change text style (matching web "Status: old → new" format)
+  statusChangeText: {
+    fontSize: fontSize.xs,
   },
 });
 

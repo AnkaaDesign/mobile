@@ -70,6 +70,8 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       reorderPoint: apiData.reorderPoint,
       reorderQuantity: apiData.reorderQuantity,
       maxQuantity: apiData.maxQuantity,
+      isManualMaxQuantity: apiData.isManualMaxQuantity ?? false,
+      isManualReorderPoint: apiData.isManualReorderPoint ?? false,
       boxQuantity: apiData.boxQuantity,
       icms: apiData.icms,
       ipi: apiData.ipi,
@@ -183,7 +185,7 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           <FormCard title="Controle de Estoque" icon="IconClipboardList">
             <View style={styles.fieldGroup}>
               <QuantityInput disabled={isSubmitting} required={false} />
-              <MaxQuantityInput disabled={isSubmitting} />
+              <MaxQuantityInput disabled={isSubmitting} isManual={item.isManualMaxQuantity ?? false} />
               <BoxQuantityInput disabled={isSubmitting} />
               <LeadTimeInput disabled={isSubmitting} />
             </View>

@@ -269,6 +269,9 @@ export const PPE_DELIVERY_STATUS_LABELS: Record<PPE_DELIVERY_STATUS, string> = {
   [PPE_DELIVERY_STATUS.PENDING]: "Pendente",
   [PPE_DELIVERY_STATUS.APPROVED]: "Aprovado",
   [PPE_DELIVERY_STATUS.DELIVERED]: "Entregue",
+  [PPE_DELIVERY_STATUS.WAITING_SIGNATURE]: "Aguardando Assinatura",
+  [PPE_DELIVERY_STATUS.COMPLETED]: "Concluído",
+  [PPE_DELIVERY_STATUS.SIGNATURE_REJECTED]: "Assinatura Rejeitada",
   [PPE_DELIVERY_STATUS.REPROVED]: "Reprovado",
   [PPE_DELIVERY_STATUS.CANCELLED]: "Cancelado",
 };
@@ -329,7 +332,8 @@ export const TRUCK_CATEGORY_LABELS: Record<TRUCK_CATEGORY, string> = {
 };
 
 export const IMPLEMENT_TYPE_LABELS: Record<IMPLEMENT_TYPE, string> = {
-  [IMPLEMENT_TYPE.CORRUGATED]: 'Corrugado',
+  [IMPLEMENT_TYPE.DRY_CARGO]: 'Carga Seca',
+  [IMPLEMENT_TYPE.REFRIGERATED]: 'Refrigerado',
   [IMPLEMENT_TYPE.INSULATED]: 'Isoplastic',
   [IMPLEMENT_TYPE.CURTAIN_SIDE]: 'Sider',
   [IMPLEMENT_TYPE.TANK]: 'Tanque',
@@ -813,6 +817,7 @@ export const PANTS_SIZE_LABELS: Record<PANTS_SIZE, string> = {
   [PANTS_SIZE.SIZE_44]: "44",
   [PANTS_SIZE.SIZE_46]: "46",
   [PANTS_SIZE.SIZE_48]: "48",
+  [PANTS_SIZE.SIZE_50]: "50",
 };
 
 export const SHIRT_SIZE_LABELS: Record<SHIRT_SIZE, string> = {
@@ -864,6 +869,7 @@ export const RAIN_BOOTS_SIZE_LABELS: Record<RAIN_BOOTS_SIZE, string> = {
 export const PPE_TYPE_LABELS: Record<PPE_TYPE, string> = {
   [PPE_TYPE.SHIRT]: "Camisa",
   [PPE_TYPE.PANTS]: "Calça",
+  [PPE_TYPE.SHORT]: "Bermuda",
   [PPE_TYPE.BOOTS]: "Botas",
   [PPE_TYPE.SLEEVES]: "Manguito",
   [PPE_TYPE.MASK]: "Máscara",
@@ -899,6 +905,7 @@ export const PPE_SIZE_LABELS: Record<PPE_SIZE, string> = {
   [PPE_SIZE.SIZE_44]: "44",
   [PPE_SIZE.SIZE_46]: "46",
   [PPE_SIZE.SIZE_48]: "48",
+  [PPE_SIZE.SIZE_50]: "50",
 };
 
 export const PPE_DELIVERY_MODE_LABELS: Record<PPE_DELIVERY_MODE, string> = {

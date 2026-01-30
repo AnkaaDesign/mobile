@@ -39,7 +39,9 @@
         }
       },
       "env": {
-        "NODE_OPTIONS": "--max-old-space-size=4096"
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "EXPO_PUBLIC_API_URL": "https://api.ankaadesign.com.br",
+        "EXPO_PUBLIC_FALLBACK_API_URL": "http://192.168.10.180:3030"
       }
     },
     "production-aab": {

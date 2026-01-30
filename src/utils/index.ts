@@ -1,6 +1,9 @@
 export * from "./activity";
 export * from "./airbrushing";
 
+// Performance Debugging
+export * from "./performance-logger";
+
 // Analytics Utilities
 // export * from "./statistics/data-transformers"; // Disabled - files don't exist
 // export * from "./statistics/export-formatters"; // Disabled - files don't exist
@@ -63,6 +66,7 @@ export {
   formatCurrency,
   formatPixKey,
   detectPixKeyType,
+  toTitleCase,
   // Note: formatDate, formatDateTime are exported from date.ts
 } from "./formatters";
 export type { PixKeyType, PixKeyInfo } from "./formatters";
@@ -100,6 +104,7 @@ export * from "./stock-level";
 export * from "./storage";
 export * from "./supplier";
 export * from "./task";
+export * from "./task-filter";
 export * from "./truck";
 export * from "./uiStateEnumGetters";
 export * from "./user";

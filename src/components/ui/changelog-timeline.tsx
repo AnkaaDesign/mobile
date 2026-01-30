@@ -53,20 +53,20 @@ interface ChangelogTimelineProps {
 type IconComponent = React.ComponentType<any>;
 
 const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
-  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#22c55e" },
+  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
   [CHANGE_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
   [CHANGE_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
   [CHANGE_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
   [CHANGE_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
-  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#22c55e" },
+  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
   [CHANGE_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
-  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#22c55e" },
+  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
   [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
   [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#22c55e" },
-  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#22c55e" },
+  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
+  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
   [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
   [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
   [CHANGE_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
@@ -134,7 +134,7 @@ const Badge = ({
 }) => {
   const variantStyles: Record<string, { bg: string; text: string }> = {
     default: { bg: colors.muted + "60", text: colors.mutedForeground },
-    success: { bg: "#22c55e20", text: "#22c55e" },
+    success: { bg: "#16a34a20", text: "#16a34a" },
     warning: { bg: "#f9731620", text: "#f97316" },
     destructive: { bg: "#ef444420", text: "#ef4444" },
   };
@@ -260,7 +260,7 @@ const PaintColorPreview = ({ paint, size = 40, colors }: { paint: any; size?: nu
 // Render cuts as cards
 const renderCutsCards = (cuts: any[], colors: any) => {
   if (!Array.isArray(cuts) || cuts.length === 0) {
-    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+    return <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
   }
 
   return (
@@ -325,7 +325,7 @@ const renderCutsCards = (cuts: any[], colors: any) => {
 // Render services as cards
 const renderServicesCards = (services: any[], colors: any) => {
   if (!Array.isArray(services) || services.length === 0) {
-    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+    return <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
   }
 
   return (
@@ -360,7 +360,7 @@ const renderServicesCards = (services: any[], colors: any) => {
 // Render airbrushings as cards
 const renderAirbrushingsCards = (airbrushings: any[], colors: any) => {
   if (!Array.isArray(airbrushings) || airbrushings.length === 0) {
-    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+    return <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
   }
 
   return (
@@ -395,7 +395,7 @@ const renderAirbrushingsCards = (airbrushings: any[], colors: any) => {
 // Render paints as cards
 const renderPaintsCards = (paints: any[], colors: any) => {
   if (!Array.isArray(paints) || paints.length === 0) {
-    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
+    return <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>;
   }
 
   return (
@@ -443,7 +443,7 @@ const renderPaintsCards = (paints: any[], colors: any) => {
 // Render artworks/files as thumbnails
 const renderArtworksCards = (artworks: any[], colors: any) => {
   if (!Array.isArray(artworks) || artworks.length === 0) {
-    return <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>Nenhum arquivo</ThemedText>;
+    return <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>Nenhum arquivo</ThemedText>;
   }
 
   return (
@@ -1229,10 +1229,10 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                   <View key={changelog.id} style={styles.changeItem}>
                                     <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field, entityType)}: </ThemedText>
                                     <View style={styles.inlineValues}>
-                                      <ThemedText style={{ color: colors.destructive, textDecorationLine: 'line-through', marginRight: 8 }}>
+                                      <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, textDecorationLine: 'line-through', marginRight: 8 }}>
                                         {formatFieldValue(changelog.oldValue, changelog.field, entityType) || 'Nenhum'}
                                       </ThemedText>
-                                      <ThemedText style={{ color: '#22c55e' }}>
+                                      <ThemedText style={{ fontSize: fontSize.xs, color: colors.success }}>
                                         {formatFieldValue(changelog.newValue, changelog.field, entityType) || 'Nenhum'}
                                       </ThemedText>
                                     </View>
@@ -1397,13 +1397,13 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                               <View>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
                                                 {oldPaint ? renderPaintsCards([oldPaint], colors) : (
-                                                  <ThemedText style={{ color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
+                                                  <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
                                                 )}
                                               </View>
                                               <View style={{ marginTop: spacing.sm }}>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
                                                 {newPaint ? renderPaintsCards([newPaint], colors) : (
-                                                  <ThemedText style={{ color: "#22c55e", fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
+                                                  <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500", marginLeft: 4 }}>—</ThemedText>
                                                 )}
                                               </View>
                                             </View>
@@ -1448,7 +1448,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             {changelog.oldValue ? (
                                               <FileThumbnail fileId={changelog.oldValue as string} size={40} colors={colors} />
                                             ) : (
-                                              <ThemedText style={{ color: colors.destructive, fontWeight: "500" }}>—</ThemedText>
+                                              <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>—</ThemedText>
                                             )}
                                           </View>
                                           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs }}>
@@ -1456,7 +1456,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             {changelog.newValue ? (
                                               <FileThumbnail fileId={changelog.newValue as string} size={40} colors={colors} />
                                             ) : (
-                                              <ThemedText style={{ color: "#22c55e", fontWeight: "500" }}>—</ThemedText>
+                                              <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>—</ThemedText>
                                             )}
                                           </View>
                                         </View>
@@ -1759,8 +1759,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   actionText: {
-    fontSize: fontSize.base,
-    fontWeight: "500",
+    fontSize: fontSize.sm,
+    fontWeight: "600",
   },
   timeText: {
     fontSize: fontSize.xs,
@@ -1786,7 +1786,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   statusTitle: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
   statusDetail: {
@@ -1796,7 +1796,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   statusDetailText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   inlineValues: {
     flexDirection: "row",
@@ -1804,7 +1804,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   fieldLabel: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontWeight: "500",
   },
   fieldValues: {
@@ -1816,11 +1816,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   valueLabel: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontWeight: "500",
   },
   valueText: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontWeight: "600",
     flex: 1,
   },
@@ -1841,10 +1841,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   arrayLabel: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
   },
   arrayValue: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
 
@@ -1860,12 +1860,12 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   userName: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
+    fontSize: fontSize.xs,
+    fontWeight: "400",
   },
   userNameValue: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: "500",
   },
 
   // Detail row styles for CREATE action
@@ -1874,12 +1874,12 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   detailLabel: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontWeight: "500",
   },
   detailValue: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: "500",
     flex: 1,
   },
 });

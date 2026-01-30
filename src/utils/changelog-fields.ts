@@ -237,6 +237,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "ppeSize.shirts": "Tamanho de Camiseta",
     "ppeSize.boots": "Tamanho de Botas",
     "ppeSize.pants": "Tamanho de Calças",
+    "ppeSize.shorts": "Tamanho de Bermudas",
     "ppeSize.sleeves": "Tamanho de Mangas",
     "ppeSize.mask": "Tamanho de Máscara",
     "ppeSize.gloves": "Tamanho de Luvas",
@@ -404,6 +405,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     userId: "Funcionário",
     shirts: "Tamanho de Camisa",
     pants: "Tamanho de Calça",
+    shorts: "Tamanho de Bermuda",
     boots: "Tamanho de Bota",
     sleeves: "Tamanho de Manga",
     mask: "Tamanho de Máscara",
@@ -1123,6 +1125,22 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     return serviceOrderStatusLabels[value] || value;
   }
 
+  // Handle service order type
+  if (field === "type" && entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && typeof value === "string") {
+    const serviceOrderTypeLabels: Record<string, string> = {
+      GENERAL_PAINTING: "Pintura Geral",
+      LOGO_PAINTING: "Pintura de Logo",
+      GROUND_PAINTING: "Pintura de Fundo",
+      REPAIR: "Reparo",
+      POLISHING: "Polimento",
+      WASHING: "Lavagem",
+      VINYL_APPLICATION: "Aplicação de Vinil",
+      AIRBRUSHING: "Aerografia",
+      OTHER: "Outro",
+    };
+    return serviceOrderTypeLabels[value] || value;
+  }
+
   // Handle maintenance status
   if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.MAINTENANCE && typeof value === "string") {
     const maintenanceStatusLabels: Record<string, string> = {
@@ -1155,6 +1173,9 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       return BOOT_SIZE_LABELS[value as keyof typeof BOOT_SIZE_LABELS] || value;
     }
     if (field === "ppeSize.pants") {
+      return PANTS_SIZE_LABELS[value as keyof typeof PANTS_SIZE_LABELS] || value;
+    }
+    if (field === "ppeSize.shorts") {
       return PANTS_SIZE_LABELS[value as keyof typeof PANTS_SIZE_LABELS] || value;
     }
     if (field === "ppeSize.sleeves") {
@@ -1330,7 +1351,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   // Handle truck implement type
   if ((field === "implementType" || field === "truck.implementType") && typeof value === "string") {
     const implementTypeLabels: Record<string, string> = {
-      CORRUGATED: "Corrugado",
+      DRY_CARGO: "Carga Seca",
+      REFRIGERATED: "Refrigerado",
       INSULATED: "Isoplastic",
       CURTAIN_SIDE: "Sider",
       TANK: "Tanque",
@@ -1424,6 +1446,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       LEAD: "Líder",
       HUMAN_RESOURCES: "Recursos Humanos",
       ADMIN: "Administrador",
+      PRODUCTION: "Produção",
+      COMMERCIAL: "Comercial",
+      FINANCIAL: "Financeiro",
+      WAREHOUSE: "Almoxarifado",
+      DESIGNER: "Designer",
+      LOGISTIC: "Logística",
+      PLOTTING: "Plotagem",
+      MAINTENANCE: "Manutenção",
+      EXTERNAL: "Externo",
     };
     return privilegeLabels[value] || value;
   }
@@ -1540,7 +1571,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
   // Handle PPE sizes
   if (
-    (field === "size" || field === "shirts" || field === "pants" || field === "boots" || field === "sleeves" || field === "mask" || field === "gloves" || field === "rainBoots") &&
+    (field === "size" || field === "shirts" || field === "pants" || field === "shorts" || field === "boots" || field === "sleeves" || field === "mask" || field === "gloves" || field === "rainBoots") &&
     typeof value === "string"
   ) {
     // Size values are already in Portuguese format (PP, P, M, G, GG, XGG, etc.)
@@ -1979,6 +2010,81 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         return `${data.name} ${formatBrazilianPhone(data.phone)}`;
       }
       return data.name || "Nenhum";
+    }
+
+    // Special handling for budget field in TASK - format as human readable
+    if ((field === "budget" || field === "pricing") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { id?: string; budgetNumber?: number; total?: string | number; items?: Array<{ description?: string; amount?: string | number }> };
+      if (!data) return "Nenhum";
+
+      // Format budget number and total
+      const parts: string[] = [];
+      if (data.budgetNumber) {
+        parts.push(`Orçamento #${data.budgetNumber}`);
+      }
+      if (data.total) {
+        const totalValue = typeof data.total === "string" ? parseFloat(data.total) : data.total;
+        if (!isNaN(totalValue)) {
+          parts.push(`Total: ${formatCurrency(totalValue)}`);
+        }
+      }
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        parts.push(`${data.items.length} ${data.items.length === 1 ? "item" : "itens"}`);
+      }
+
+      if (parts.length > 0) {
+        return parts.join(" - ");
+      }
+
+      // If no meaningful data, show a summary
+      if (data.id) {
+        return `Orçamento (${data.id.slice(0, 8)}...)`;
+      }
+      return "Orçamento";
+    }
+
+    // Special handling for invoiceTo field in TASK - format as human readable
+    if (field === "invoiceTo" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { fantasyName?: string; corporateName?: string; cnpj?: string };
+      if (!data) return "Nenhum";
+      if (data.fantasyName) return data.fantasyName;
+      if (data.corporateName) return data.corporateName;
+      if (data.cnpj) return formatCNPJ(data.cnpj);
+      return "Cliente";
+    }
+
+    // Special handling for customer field in TASK - format as human readable
+    if (field === "customer" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { fantasyName?: string; corporateName?: string; cnpj?: string };
+      if (!data) return "Nenhum";
+      if (data.fantasyName) return data.fantasyName;
+      if (data.corporateName) return data.corporateName;
+      if (data.cnpj) return formatCNPJ(data.cnpj);
+      return "Cliente";
+    }
+
+    // Special handling for sector field in TASK - format as human readable
+    if (field === "sector" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { name?: string };
+      if (!data) return "Nenhum";
+      if (data.name) return data.name;
+      return "Setor";
+    }
+
+    // Special handling for createdBy field in TASK - format as human readable
+    if (field === "createdBy" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { name?: string };
+      if (!data) return "Nenhum";
+      if (data.name) return data.name;
+      return "Usuário";
+    }
+
+    // Special handling for assignedTo field in SERVICE_ORDER - format as human readable
+    if ((field === "assignedTo" || field === "startedBy" || field === "approvedBy" || field === "completedBy") && entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
+      const data = value as { name?: string };
+      if (!data) return "Nenhum";
+      if (data.name) return data.name;
+      return "Usuário";
     }
 
     // Special handling for componentImpact field in PAINT_PRODUCTION

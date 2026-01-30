@@ -392,6 +392,12 @@ export const ppeSizeCreateSchema = z.object({
     })
     .nullable()
     .optional(),
+  shorts: z
+    .nativeEnum(PANTS_SIZE, {
+      errorMap: () => ({ message: "Tamanho da bermuda inválido" }),
+    })
+    .nullable()
+    .optional(),
   sleeves: z
     .nativeEnum(SLEEVES_SIZE, {
       errorMap: () => ({ message: "Tamanho da manga inválido" }),
@@ -435,6 +441,12 @@ export const ppeSizeUpdateSchema = z.object({
   pants: z
     .nativeEnum(PANTS_SIZE, {
       errorMap: () => ({ message: "Tamanho da calça inválido" }),
+    })
+    .nullable()
+    .optional(),
+  shorts: z
+    .nativeEnum(PANTS_SIZE, {
+      errorMap: () => ({ message: "Tamanho da bermuda inválido" }),
     })
     .nullable()
     .optional(),
@@ -1722,8 +1734,11 @@ export const mapPpeSizeToFormData = createMapToFormDataHelper<PpeSize, PpeSizeUp
   shirts: ppeSize.shirts,
   boots: ppeSize.boots,
   pants: ppeSize.pants,
+  shorts: ppeSize.shorts,
   sleeves: ppeSize.sleeves,
   mask: ppeSize.mask,
+  gloves: ppeSize.gloves,
+  rainBoots: ppeSize.rainBoots,
 }));
 
 export const mapPpeDeliveryToFormData = createMapToFormDataHelper<PpeDelivery, PpeDeliveryUpdateFormData>((ppeDelivery) => ({

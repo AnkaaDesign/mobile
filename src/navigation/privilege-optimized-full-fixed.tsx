@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
 import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
@@ -412,6 +413,38 @@ const ALL_ROUTES = [
   { name: "servidor/usuarios/index", title: "Usuários" },
 ];
 
+// Pre-computed route lookup map for O(1) title lookups instead of O(n) array.find()
+// This significantly improves navigation performance, especially on Android
+const ROUTE_TITLE_MAP = new Map<string, string>();
+ALL_ROUTES.forEach(route => {
+  ROUTE_TITLE_MAP.set(route.name, route.title);
+});
+
+/**
+ * Fast O(1) route title lookup - replaces O(n) array.find() in screenOptions
+ * Handles both normalized route names and (tabs) prefixed routes
+ */
+function getRouteTitle(routeName: string): string {
+  // Try direct lookup first (most common case)
+  const directTitle = ROUTE_TITLE_MAP.get(routeName);
+  if (directTitle) return directTitle;
+
+  // Try without (tabs) prefix
+  const normalizedName = routeName.replace(/^\(tabs\)\//, '');
+  const normalizedTitle = ROUTE_TITLE_MAP.get(normalizedName);
+  if (normalizedTitle) return normalizedTitle;
+
+  // Try to find by suffix match (for deeply nested dynamic routes)
+  for (const [name, title] of ROUTE_TITLE_MAP) {
+    if (routeName.endsWith(name)) {
+      return title;
+    }
+  }
+
+  // Fallback to normalized name if no title found
+  return normalizedName;
+}
+
 // Filter routes based on user privileges
 function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): typeof ALL_ROUTES {
   const startTime = Date.now();
@@ -550,6 +583,7 @@ function InnerLayout() {
   const { user, isAuthReady, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
+  const { startNavigation, isNavigating } = useNavigationLoading();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
   const { setDrawerMode } = useDrawerMode();
@@ -645,16 +679,9 @@ function InnerLayout() {
         </Suspense>
       )}
       screenOptions={({ navigation, route }) => {
-        // Find the route config to get the proper title from ALL_ROUTES
-        // This works with file-based routing by mapping route names to titles
-        // Handle both with and without (tabs) prefix
-        const normalizedRouteName = route.name.replace(/^\(tabs\)\//, '');
-        const routeConfig = ALL_ROUTES.find(r =>
-          r.name === route.name ||
-          r.name === normalizedRouteName ||
-          route.name.endsWith(r.name)
-        );
-        const title = routeConfig?.title || normalizedRouteName;
+        // Use optimized O(1) route title lookup instead of O(n) array.find()
+        // This significantly improves navigation performance on Android
+        const title = getRouteTitle(route.name);
 
         // Header theme colors - matching your app's theme palette
         const headerBackground = isDark ? "#262626" : "#fafafa"; // card/surface colors
@@ -683,10 +710,17 @@ function InnerLayout() {
             canGoBack ? (
               <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
                 <Pressable
-                  onPress={goBack}
+                  onPress={() => {
+                    if (!isNavigating) {
+                      startNavigation();
+                      goBack();
+                    }
+                  }}
+                  disabled={isNavigating}
                   style={({ pressed }) => [
                     styles.headerButton,
-                    pressed && { backgroundColor: buttonPressed }
+                    pressed && { backgroundColor: buttonPressed },
+                    isNavigating && { opacity: 0.5 }
                   ]}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >

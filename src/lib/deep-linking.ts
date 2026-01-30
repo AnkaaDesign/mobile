@@ -61,6 +61,8 @@ export const ROUTE_MAP = {
   MyVacation: '/(tabs)/pessoal/minhas-ferias/detalhes/[id]',
   MyHoliday: '/(tabs)/pessoal/meus-feriados/detalhes/[id]',
   MyNotification: '/(tabs)/pessoal/minhas-notificacoes/detalhes/[id]',
+  MyPpe: '/(tabs)/pessoal/meus-epis/detalhes/[id]',
+  PpeDelivery: '/(tabs)/pessoal/meus-epis/detalhes/[id]',
 
   // Catalog
   CatalogItem: '/(tabs)/catalogo/detalhes/[id]',
@@ -93,6 +95,9 @@ export const LIST_ROUTE_MAP = {
   users: '/(tabs)/administracao/usuarios',
   customers: '/(tabs)/administracao/clientes',
   notifications: '/(tabs)/pessoal/minhas-notificacoes',
+
+  // Personal List Pages
+  myPpes: '/(tabs)/pessoal/meus-epis',
 } as const;
 
 /**
@@ -145,6 +150,7 @@ export const LIST_ALIAS_MAP: Record<string, keyof typeof LIST_ROUTE_MAP> = {
   // Notifications list
   notifications: 'notifications',
   notificacoes: 'notifications',
+
 };
 
 /**
@@ -197,6 +203,12 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   CATALOGITEM: 'CatalogItem',
   FINANCIAL_CUSTOMER: 'FinancialCustomer',
   FINANCIALCUSTOMER: 'FinancialCustomer',
+  PPE_DELIVERY: 'PpeDelivery',
+  PPEDELIVERY: 'PpeDelivery',
+  MY_PPE: 'MyPpe',
+  MYPPE: 'MyPpe',
+  PENDING_SIGNATURE: 'PendingSignature',
+  PENDINGSIGNATURE: 'PendingSignature',
 
   // PascalCase variants (for direct entity type matching)
   Task: 'Task',
@@ -233,6 +245,9 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   Position: 'Position',
   CatalogItem: 'CatalogItem',
   FinancialCustomer: 'FinancialCustomer',
+  PpeDelivery: 'PpeDelivery',
+  MyPpe: 'MyPpe',
+  PendingSignature: 'PendingSignature',
 
   // Lowercase variants (existing)
   task: 'Task',
@@ -316,6 +331,14 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   notifications: 'Notification',
   notificacao: 'Notification',
   notificacoes: 'Notification',
+
+  // PPE routes
+  'ppe-delivery': 'PpeDelivery',
+  'ppe-deliveries': 'PpeDelivery',
+  'entrega-epi': 'PpeDelivery',
+  'entregas-epi': 'PpeDelivery',
+  'meu-epi': 'MyPpe',
+  'meus-epis': 'MyPpe',
 };
 
 // =====================================================

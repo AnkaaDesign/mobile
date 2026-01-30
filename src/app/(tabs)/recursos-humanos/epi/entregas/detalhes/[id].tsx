@@ -15,7 +15,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 // Import modular components
-import { DeliveryCard, EmployeeCard, ItemDetailsCard, SignatureCard } from "@/components/human-resources/ppe/delivery/detail";
+import { DeliveryCard, EmployeeCard, ItemDetailsCard } from "@/components/human-resources/ppe/delivery/detail";
 import { PpeDeliveryDetailSkeleton } from "@/components/human-resources/ppe/delivery/skeleton";
 
 export default function HRPPEDeliveryDetailsScreen() {
@@ -160,7 +160,6 @@ export default function HRPPEDeliveryDetailsScreen() {
           <DeliveryCard delivery={delivery} />
           <EmployeeCard delivery={delivery} />
           <ItemDetailsCard delivery={delivery} />
-          <SignatureCard delivery={delivery} />
 
           {/* Changelog Timeline */}
           <Card>

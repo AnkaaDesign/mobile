@@ -18,6 +18,7 @@ import { ErrorScreen } from '@/components/ui/error-screen'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
+import { perfLog } from '@/utils/performance-logger'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { isTeamLeader } from '@/utils/user'
@@ -565,6 +566,10 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [refreshTasks])
 
   const handleRowPress = useCallback((item: Task) => {
+    // Performance logging - track navigation start
+    perfLog.navigationClick('TaskScheduleLayout', 'ScheduleDetailsScreen', item.id)
+    perfLog.mark(`Row pressed: ${item.name || item.id}`)
+
     if (config.table.onRowPress) {
       config.table.onRowPress(item, router)
       return
@@ -581,6 +586,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
 
     if (action.visible && !action.visible(item)) return
+
+    perfLog.mark(`Navigating via action: ${action.key}`)
 
     if (action.onPress) {
       action.onPress(item, router, {})

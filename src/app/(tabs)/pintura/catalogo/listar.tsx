@@ -304,7 +304,6 @@ export default function CatalogListScreen() {
                                    filters.similarColor !== "#000000";
 
     if (hasSimilarColorFilter) {
-      console.log('[Catalog Sort] Using API similarity sorting');
       return rawPaints;
     }
 
@@ -316,12 +315,10 @@ export default function CatalogListScreen() {
 
     switch (currentSort) {
       case "color":
-        console.log('[Catalog Sort] Sorting by colorOrder');
         sorted.sort((a, b) => getColorOrder(a) - getColorOrder(b));
         break;
 
       case "paintBrand":
-        console.log('[Catalog Sort] Sorting by brand name, then colorOrder');
         sorted.sort((a, b) => {
           const brandA = a.paintBrand?.name || '';
           const brandB = b.paintBrand?.name || '';
@@ -332,7 +329,6 @@ export default function CatalogListScreen() {
         break;
 
       case "type":
-        console.log('[Catalog Sort] Sorting by type name, then colorOrder');
         sorted.sort((a, b) => {
           const typeA = a.paintType?.name || '';
           const typeB = b.paintType?.name || '';
@@ -343,7 +339,6 @@ export default function CatalogListScreen() {
         break;
 
       case "finish":
-        console.log('[Catalog Sort] Sorting by finish, then colorOrder');
         sorted.sort((a, b) => {
           const finishA = a.finish || '';
           const finishB = b.finish || '';
@@ -354,7 +349,6 @@ export default function CatalogListScreen() {
         break;
 
       case "manufacturer":
-        console.log('[Catalog Sort] Sorting by manufacturer, then colorOrder');
         sorted.sort((a, b) => {
           const manuA = a.manufacturer || '';
           const manuB = b.manufacturer || '';
@@ -365,7 +359,6 @@ export default function CatalogListScreen() {
         break;
 
       case "name":
-        console.log('[Catalog Sort] Sorting by name');
         sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
     }

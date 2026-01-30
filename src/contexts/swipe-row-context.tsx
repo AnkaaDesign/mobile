@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
 
 interface SwipeRowContextType {
   activeRowId: string | null;
@@ -41,13 +41,17 @@ export const SwipeRowProvider = ({ children }: SwipeRowProviderProps) => {
     setActiveRowIdState(null);
   }, [openRowCloseFunction]);
 
-  const value = {
-    activeRowId,
-    setActiveRowId,
-    closeActiveRow,
-    setOpenRow,
-    closeOpenRow,
-  };
+  // Memoize context value to prevent unnecessary re-renders of all consumers
+  const value = useMemo(
+    () => ({
+      activeRowId,
+      setActiveRowId,
+      closeActiveRow,
+      setOpenRow,
+      closeOpenRow,
+    }),
+    [activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow]
+  );
 
   return <SwipeRowContext.Provider value={value}>{children}</SwipeRowContext.Provider>;
 };

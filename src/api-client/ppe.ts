@@ -240,25 +240,26 @@ export class PpeDeliveryService {
     return response.data;
   }
 
-  async requestPpeDelivery(data: Omit<PpeDeliveryCreateFormData, "userId" | "status" | "statusOrder">, query?: PpeDeliveryQueryFormData): Promise<PpeDeliveryCreateResponse> {
-    console.log('[PPE API Client] requestPpeDelivery called');
-    console.log('[PPE API Client] Request URL: /personal/my-epis/request');
-    console.log('[PPE API Client] Request data:', data);
-    console.log('[PPE API Client] Query params:', query);
+  async batchMarkAsDelivered(
+    deliveryIds: string[],
+    deliveryDate?: Date,
+  ): Promise<{ success: number; failed: number; results: any[] }> {
+    const response = await apiClient.post<{ success: number; failed: number; results: any[] }>(
+      `${this.basePath}/batch-mark-delivered`,
+      {
+        deliveryIds,
+        deliveryDate,
+      },
+    );
+    return response.data;
+  }
 
-    try {
-      console.log('[PPE API Client] Making POST request...');
-      // Use the personal endpoint which automatically uses the authenticated user
-      const response = await apiClient.post<PpeDeliveryCreateResponse>('/personal/my-epis/request', data, {
-        params: query,
-      });
-      console.log('[PPE API Client] Request successful');
-      console.log('[PPE API Client] Response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('[PPE API Client] Request failed:', error);
-      throw error;
-    }
+  async requestPpeDelivery(data: Omit<PpeDeliveryCreateFormData, "userId" | "status" | "statusOrder">, query?: PpeDeliveryQueryFormData): Promise<PpeDeliveryCreateResponse> {
+    // Use the personal endpoint which automatically uses the authenticated user
+    const response = await apiClient.post<PpeDeliveryCreateResponse>('/personal/my-epis/request', data, {
+      params: query,
+    });
+    return response.data;
   }
 
   async getMyPpeDeliveries(params?: PpeDeliveryGetManyFormData): Promise<PpeDeliveryGetManyResponse> {
@@ -325,6 +326,7 @@ export class PpeDeliveryService {
     });
     return response.data;
   }
+
 }
 
 // =====================
@@ -404,6 +406,33 @@ export class PpeDeliveryScheduleService {
     });
     return response.data;
   }
+
+  // =====================
+  // Execute Schedule Now
+  // =====================
+
+  async executeScheduleNow(id: string): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      deliveriesCreated: number;
+      userCount: number;
+      ppeTypes: string[];
+      errors?: string[];
+    };
+  }> {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+      data: {
+        deliveriesCreated: number;
+        userCount: number;
+        ppeTypes: string[];
+        errors?: string[];
+      };
+    }>(`${this.basePath}/execute/${id}`);
+    return response.data;
+  }
 }
 
 // =====================
@@ -436,6 +465,7 @@ export const batchCreatePpeDeliveries = (data: PpeDeliveryBatchCreateFormData, q
 export const batchUpdatePpeDeliveries = (data: PpeDeliveryBatchUpdateFormData, query?: PpeDeliveryQueryFormData) => ppeDeliveryService.batchUpdatePpeDeliveries(data, query);
 export const batchDeletePpeDeliveries = (data: PpeDeliveryBatchDeleteFormData, query?: PpeDeliveryQueryFormData) => ppeDeliveryService.batchDeletePpeDeliveries(data, query);
 export const markPpeDeliveryAsDelivered = (id: string, deliveryDate?: Date) => ppeDeliveryService.markAsDelivered(id, deliveryDate);
+export const batchMarkPpeDeliveriesAsDelivered = (deliveryIds: string[], deliveryDate?: Date) => ppeDeliveryService.batchMarkAsDelivered(deliveryIds, deliveryDate);
 export const requestPpeDelivery = (data: Omit<PpeDeliveryCreateFormData, "userId" | "status" | "statusOrder">, query?: PpeDeliveryQueryFormData) =>
   ppeDeliveryService.requestPpeDelivery(data, query);
 export const getMyPpeDeliveries = (params?: PpeDeliveryGetManyFormData) => ppeDeliveryService.getMyPpeDeliveries(params);
@@ -459,3 +489,4 @@ export const batchUpdatePpeDeliverySchedules = (data: PpeDeliveryScheduleBatchUp
   ppeDeliveryScheduleService.batchUpdatePpeDeliverySchedules(data, query);
 export const batchDeletePpeDeliverySchedules = (data: PpeDeliveryScheduleBatchDeleteFormData, query?: PpeDeliveryScheduleQueryFormData) =>
   ppeDeliveryScheduleService.batchDeletePpeDeliverySchedules(data, query);
+export const executeScheduleNow = (id: string) => ppeDeliveryScheduleService.executeScheduleNow(id);

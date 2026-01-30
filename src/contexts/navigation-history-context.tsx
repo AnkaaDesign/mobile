@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
 
 interface NavigationHistoryContextType {
@@ -28,7 +28,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     }
   }, [pathname]);
 
-  const addToHistory = (path: string) => {
+  const addToHistory = useCallback((path: string) => {
     setHistory((prev) => {
       // Clear history when navigating to auth routes (logout scenario)
       if (path.startsWith("/(autenticacao)")) {
@@ -55,11 +55,11 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
 
       return newHistory;
     });
-  };
+  }, []);
 
   const canGoBack = history.length > 1;
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     if (history.length > 1) {
       const previousRoute = history[history.length - 2];
       if (previousRoute && !previousRoute.startsWith("/(autenticacao)")) {
@@ -72,30 +72,34 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     } else {
       router.push("/(tabs)/inicio" as any);
     }
-  };
+  }, [history, router]);
 
-  const getBackPath = (): string | null => {
+  const getBackPath = useCallback((): string | null => {
     if (history.length > 1) {
       return history[history.length - 2];
     }
     return null;
-  };
+  }, [history]);
 
-  const clearHistory = () => {
+  const clearHistory = useCallback(() => {
     setHistory([]);
-  };
+  }, []);
 
-  const pushToHistory = (path: string) => {
+  const pushToHistory = useCallback((path: string) => {
     addToHistory(path);
-  };
+  }, [addToHistory]);
 
-  const value: NavigationHistoryContextType = {
-    canGoBack,
-    goBack,
-    getBackPath,
-    clearHistory,
-    pushToHistory,
-  };
+  // Memoize context value to prevent unnecessary re-renders of all consumers
+  const value = useMemo<NavigationHistoryContextType>(
+    () => ({
+      canGoBack,
+      goBack,
+      getBackPath,
+      clearHistory,
+      pushToHistory,
+    }),
+    [canGoBack, goBack, getBackPath, clearHistory, pushToHistory]
+  );
 
   return <NavigationHistoryContext.Provider value={value}>{children}</NavigationHistoryContext.Provider>;
 }

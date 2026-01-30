@@ -226,6 +226,9 @@ export enum PPE_DELIVERY_STATUS {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   DELIVERED = "DELIVERED",
+  WAITING_SIGNATURE = "WAITING_SIGNATURE",
+  COMPLETED = "COMPLETED",
+  SIGNATURE_REJECTED = "SIGNATURE_REJECTED",
   REPROVED = "REPROVED",
   CANCELLED = "CANCELLED",
 }
@@ -549,6 +552,7 @@ export enum PANTS_SIZE {
   SIZE_44 = "SIZE_44",
   SIZE_46 = "SIZE_46",
   SIZE_48 = "SIZE_48",
+  SIZE_50 = "SIZE_50",
 }
 
 export enum SHIRT_SIZE {
@@ -632,6 +636,7 @@ export enum PPE_SIZE {
   SIZE_44 = "SIZE_44",
   SIZE_46 = "SIZE_46",
   SIZE_48 = "SIZE_48",
+  SIZE_50 = "SIZE_50",
 }
 
 // Alias for Prisma compatibility
@@ -1036,12 +1041,12 @@ export enum FILE_ENTITY_TYPE {
 export enum PPE_TYPE {
   SHIRT = "SHIRT",
   PANTS = "PANTS",
+  SHORT = "SHORT",
   BOOTS = "BOOTS",
   SLEEVES = "SLEEVES",
   MASK = "MASK",
   GLOVES = "GLOVES",
   RAIN_BOOTS = "RAIN_BOOTS",
-  OUTROS = "OUTROS",
   OTHERS = "OTHERS",
 }
 
@@ -2106,8 +2111,9 @@ export enum TRUCK_CATEGORY {
  * Defines the type of body or implement mounted on the truck
  */
 export enum IMPLEMENT_TYPE {
-  CORRUGATED = 'CORRUGATED', // Corrugado - Corrugated body
-  INSULATED = 'INSULATED', // Isoplastic - Insulated/refrigerated body
+  DRY_CARGO = 'DRY_CARGO', // Carga Seca - Dry cargo body
+  REFRIGERATED = 'REFRIGERATED', // Refrigerado - Refrigerated body
+  INSULATED = 'INSULATED', // Isoplastic - Insulated body
   CURTAIN_SIDE = 'CURTAIN_SIDE', // Sider - Curtain-side body
   TANK = 'TANK', // Tanque - Tank truck
   FLATBED = 'FLATBED', // Carroceria - Open flatbed/stake body

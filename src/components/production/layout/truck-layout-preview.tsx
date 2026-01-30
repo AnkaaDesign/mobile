@@ -1,6 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { SvgXml } from "react-native-svg";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
+import {
+  GestureDetector,
+  Gesture,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { useLayoutsByTruck } from "@/hooks";
-// import { showToast } from "@/components/ui/toast";
+import { IconZoomIn, IconZoomOut, IconZoomReset } from "@tabler/icons-react-native";
 
 interface TruckLayoutPreviewProps {
   truckId: string;
@@ -16,12 +26,80 @@ interface TruckLayoutPreviewProps {
 }
 
 export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { data: layouts } = useLayoutsByTruck(truckId, {
     include: { layoutSections: true },
     enabled: !!truckId,
   });
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
+
+  // Zoom state
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 3;
+
+  // Pinch gesture for zooming
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      const newScale = savedScale.value * e.scale;
+      scale.value = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+    });
+
+  // Pan gesture for moving around when zoomed
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = savedTranslateX.value + e.translationX;
+      translateY.value = savedTranslateY.value + e.translationY;
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
+
+  // Combine gestures
+  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+
+  // Animated style for zoom and pan
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    } as any;
+  });
+
+  // Zoom control functions
+  const handleZoomIn = () => {
+    const newScale = Math.min(scale.value + 0.5, MAX_SCALE);
+    scale.value = withSpring(newScale);
+    savedScale.value = newScale;
+  };
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(scale.value - 0.5, MIN_SCALE);
+    scale.value = withSpring(newScale);
+    savedScale.value = newScale;
+  };
+
+  const handleResetZoom = () => {
+    scale.value = withSpring(1);
+    savedScale.value = 1;
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+  };
 
   // Check if any layouts exist
   const hasLayouts = useMemo(() => {
@@ -40,8 +118,18 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     }
   }, [layouts, selectedSide]);
 
+  // Theme-aware SVG colors
+  const svgColors = useMemo(() => ({
+    // Main border color - use foreground color for good contrast
+    stroke: isDark ? '#e5e5e5' : '#171717',
+    // Section divider color - slightly lighter/darker than main stroke
+    divider: isDark ? '#a3a3a3' : '#525252',
+    // Dimension lines and text color
+    dimension: isDark ? '#60a5fa' : '#0066cc',
+  }), [isDark]);
+
   // Generate SVG for preview
-  const generatePreviewSVG = (layout: any, side: string) => {
+  const generatePreviewSVG = (layout: any, side: string, strokeColors: typeof svgColors) => {
     const getSideLabel = (s: string) => {
       switch (s) {
         case 'left': return 'Motorista';
@@ -63,7 +151,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
 
     svg += `
       <!-- Main container -->
-      <rect x="${margin}" y="${margin}" width="${totalWidth}" height="${height}" fill="none" stroke="#000" stroke-width="3"/>`;
+      <rect x="${margin}" y="${margin}" width="${totalWidth}" height="${height}" fill="none" stroke="${strokeColors.stroke}" stroke-width="3"/>`;
 
     // Add section dividers (vertical lines between non-door sections)
     let currentPos = 0;
@@ -77,7 +165,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           const lineX = margin + currentPos;
           svg += `
           <line x1="${lineX}" y1="${margin}" x2="${lineX}" y2="${margin + height}"
-                stroke="#333" stroke-width="2"/>`;
+                stroke="${strokeColors.divider}" stroke-width="2"/>`;
         }
       }
 
@@ -96,17 +184,17 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
         // Left vertical line of door
         svg += `
         <line x1="${doorX}" y1="${doorY}" x2="${doorX}" y2="${margin + height}"
-              stroke="#000" stroke-width="3"/>`;
+              stroke="${strokeColors.stroke}" stroke-width="3"/>`;
 
         // Right vertical line of door
         svg += `
         <line x1="${doorX + doorWidth}" y1="${doorY}" x2="${doorX + doorWidth}" y2="${margin + height}"
-              stroke="#000" stroke-width="3"/>`;
+              stroke="${strokeColors.stroke}" stroke-width="3"/>`;
 
         // Top horizontal line of door
         svg += `
         <line x1="${doorX}" y1="${doorY}" x2="${doorX + doorWidth}" y2="${doorY}"
-              stroke="#000" stroke-width="3"/>`;
+              stroke="${strokeColors.stroke}" stroke-width="3"/>`;
       });
     } else if (layout.layoutSections) {
       // Handle LayoutSection entity format with doorHeight
@@ -124,17 +212,17 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           // Left vertical line of door
           svg += `
           <line x1="${sectionX}" y1="${doorTopY}" x2="${sectionX}" y2="${margin + height}"
-                stroke="#000" stroke-width="3"/>`;
+                stroke="${strokeColors.stroke}" stroke-width="3"/>`;
 
           // Right vertical line of door
           svg += `
           <line x1="${sectionX + sectionWidth}" y1="${doorTopY}" x2="${sectionX + sectionWidth}" y2="${margin + height}"
-                stroke="#000" stroke-width="3"/>`;
+                stroke="${strokeColors.stroke}" stroke-width="3"/>`;
 
           // Top horizontal line of door
           svg += `
           <line x1="${sectionX}" y1="${doorTopY}" x2="${sectionX + sectionWidth}" y2="${doorTopY}"
-                stroke="#000" stroke-width="3"/>`;
+                stroke="${strokeColors.stroke}" stroke-width="3"/>`;
         }
 
         sectionPos += sectionWidth;
@@ -151,10 +239,10 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
       const dimY = margin + height + 20;
 
       svg += `
-      <line x1="${startX}" y1="${dimY}" x2="${endX}" y2="${dimY}" stroke="#0066cc" stroke-width="2"/>
-      <polygon points="${startX},${dimY} ${startX + 5},${dimY - 3} ${startX + 5},${dimY + 3}" fill="#0066cc"/>
-      <polygon points="${endX},${dimY} ${endX - 5},${dimY - 3} ${endX - 5},${dimY + 3}" fill="#0066cc"/>
-      <text x="${centerX}" y="${dimY + 18}" text-anchor="middle" font-size="16" font-weight="bold" fill="#0066cc">${Math.round(sectionWidth)}</text>`;
+      <line x1="${startX}" y1="${dimY}" x2="${endX}" y2="${dimY}" stroke="${strokeColors.dimension}" stroke-width="2"/>
+      <polygon points="${startX},${dimY} ${startX + 5},${dimY - 3} ${startX + 5},${dimY + 3}" fill="${strokeColors.dimension}"/>
+      <polygon points="${endX},${dimY} ${endX - 5},${dimY - 3} ${endX - 5},${dimY + 3}" fill="${strokeColors.dimension}"/>
+      <text x="${centerX}" y="${dimY + 18}" text-anchor="middle" font-size="16" font-weight="bold" fill="${strokeColors.dimension}">${Math.round(sectionWidth)}</text>`;
 
       currentPos += sectionWidth;
     });
@@ -162,10 +250,10 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     // Height dimension
     const dimX = margin - 30;
     svg += `
-    <line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="#0066cc" stroke-width="2"/>
-    <polygon points="${dimX},${margin} ${dimX - 3},${margin + 5} ${dimX + 3},${margin + 5}" fill="#0066cc"/>
-    <polygon points="${dimX},${margin + height} ${dimX - 3},${margin + height - 5} ${dimX + 3},${margin + height - 5}" fill="#0066cc"/>
-    <text x="${dimX - 10}" y="${margin + height / 2}" text-anchor="middle" font-size="16" font-weight="bold" fill="#0066cc" transform="rotate(-90, ${dimX - 10}, ${margin + height / 2})">${Math.round(height)}</text>
+    <line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="${strokeColors.dimension}" stroke-width="2"/>
+    <polygon points="${dimX},${margin} ${dimX - 3},${margin + 5} ${dimX + 3},${margin + 5}" fill="${strokeColors.dimension}"/>
+    <polygon points="${dimX},${margin + height} ${dimX - 3},${margin + height - 5} ${dimX + 3},${margin + height - 5}" fill="${strokeColors.dimension}"/>
+    <text x="${dimX - 10}" y="${margin + height / 2}" text-anchor="middle" font-size="16" font-weight="bold" fill="${strokeColors.dimension}" transform="rotate(-90, ${dimX - 10}, ${margin + height / 2})">${Math.round(height)}</text>
     </svg>`;
 
     return svg;
@@ -176,7 +264,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     if (!currentLayout) return;
 
     try {
-      const svgContent = generatePreviewSVG(currentLayout, selectedSide);
+      const svgContent = generatePreviewSVG(currentLayout, selectedSide, svgColors);
 
       const getSideLabel = (s: string) => {
         switch (s) {
@@ -223,7 +311,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     return null;
   }
 
-  const svgContent = currentLayout ? generatePreviewSVG(currentLayout, selectedSide) : null;
+  const svgContent = currentLayout ? generatePreviewSVG(currentLayout, selectedSide, svgColors) : null;
 
   return (
     <View style={styles.container}>
@@ -273,16 +361,51 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
         </Button>
       </View>
 
-      {/* SVG Preview */}
+      {/* SVG Preview with Zoom */}
       {svgContent && (
-        <View style={[styles.previewContainer, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-          <SvgXml
-            xml={svgContent}
-            width="100%"
-            height={300}
-            preserveAspectRatio="xMidYMid meet"
-            style={{ maxWidth: '100%' }}
-          />
+        <View style={[styles.previewWrapper, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+          {/* Zoom Controls */}
+          <View style={[styles.zoomControls, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={handleZoomOut}
+              style={styles.zoomButton}
+            >
+              <IconZoomOut size={20} color={colors.foreground} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={handleResetZoom}
+              style={styles.zoomButton}
+            >
+              <IconZoomReset size={20} color={colors.foreground} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={handleZoomIn}
+              style={styles.zoomButton}
+            >
+              <IconZoomIn size={20} color={colors.foreground} />
+            </Button>
+          </View>
+
+          {/* Zoomable SVG Container */}
+          <GestureHandlerRootView style={styles.gestureContainer}>
+            <GestureDetector gesture={composedGesture}>
+              <Animated.View style={[styles.previewContainer, animatedStyle]}>
+                <SvgXml
+                  xml={svgContent}
+                  width="100%"
+                  height={300}
+                  preserveAspectRatio="xMidYMid meet"
+                  style={{ maxWidth: '100%' }}
+                />
+              </Animated.View>
+            </GestureDetector>
+          </GestureHandlerRootView>
         </View>
       )}
     </View>
@@ -300,13 +423,33 @@ const styles = StyleSheet.create({
   downloadButton: {
     alignSelf: 'flex-start',
   },
-  previewContainer: {
+  previewWrapper: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  zoomControls: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    gap: spacing.xs,
+  },
+  zoomButton: {
+    padding: spacing.xs,
+    minWidth: 36,
+    minHeight: 36,
+  },
+  gestureContainer: {
+    minHeight: 300,
+    overflow: 'hidden',
+  },
+  previewContainer: {
     padding: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 300,
-    overflow: 'hidden',
   },
 });

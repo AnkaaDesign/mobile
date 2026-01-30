@@ -30,8 +30,6 @@ import {
   IconCoin,
 } from "@tabler/icons-react-native";
 import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
-import { Badge } from "@/components/ui/badge";
-import { COMMISSION_STATUS } from "@/constants/enums";
 
 interface TaskInfoCardProps {
   task: Task & {
@@ -54,9 +52,11 @@ interface TaskInfoCardProps {
   } | null;
   /** Whether user can view financial fields (invoiceTo, commission). Defaults to false for safety. */
   canViewFinancialFields?: boolean;
+  /** Whether user can view restricted fields (negotiatingWith, forecastDate). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
+  canViewRestrictedFields?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions, canViewFinancialFields = false }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false }) => {
   const { colors } = useTheme();
 
   return (
@@ -92,8 +92,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
           </View>
         )}
 
-        {/* Negotiating With Contact */}
-        {task.negotiatingWith && (
+        {/* Negotiating With Contact - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER */}
+        {canViewRestrictedFields && task.negotiatingWith && (
           <View style={styles.infoItem}>
             <IconUser size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
@@ -125,17 +125,9 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
             <IconCoin size={20} color={colors.mutedForeground} />
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Comissão</ThemedText>
-              <Badge
-                variant={
-                  task.commission === COMMISSION_STATUS.FULL_COMMISSION ? "success" :
-                  task.commission === COMMISSION_STATUS.PARTIAL_COMMISSION ? "blue" :
-                  task.commission === COMMISSION_STATUS.NO_COMMISSION ? "orange" :
-                  task.commission === COMMISSION_STATUS.SUSPENDED_COMMISSION ? "destructive" :
-                  "secondary"
-                }
-              >
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
-              </Badge>
+              </ThemedText>
             </View>
           </View>
         )}

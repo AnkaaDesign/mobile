@@ -62,7 +62,7 @@ export default function PessoalScreen() {
       title: "Meus EPIs",
       description: "Equipamentos de proteção",
       icon: <IconShield size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/meus-epis/listar",
+      route: "/(tabs)/pessoal/meus-epis",
       available: true,
     },
     {
