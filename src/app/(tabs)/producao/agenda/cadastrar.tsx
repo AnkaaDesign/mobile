@@ -6,6 +6,7 @@ import { SimpleTaskCreateForm } from "@/components/production/task/form/simple-t
 import { useTaskMutations } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
@@ -14,7 +15,8 @@ export default function CreateAgendaTaskScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { goBack, getBackPath } = useNavigationHistory();
+  const { replaceWithLoading } = useNavigationLoading();
+  const { goBack } = useNavigationHistory();
   const { createAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
@@ -36,33 +38,27 @@ export default function CreateAgendaTaskScreen() {
           "Acesso negado",
           "Você não tem permissão para criar tarefas"
         );
-        router.replace("/producao/agenda");
+        // Use direct replace for permission denials (no loading needed)
+        router.replace("/(tabs)/producao/agenda" as any);
       }
     }
   }, [user, canCreate, router]);
 
-  // Show loading while checking permission
-  if (checkingPermission || !user) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={{ marginTop: 16 }}>Verificando permissões...</ThemedText>
-      </View>
-    );
-  }
-
-  // If no permission, show nothing (redirect will happen)
-  if (!canCreate) {
+  // Don't show anything while checking permissions - the navigation overlay is already showing
+  // The form will appear instantly when ready, or redirect will happen if no permission
+  if (checkingPermission || !user || !canCreate) {
     return null;
   }
 
   const handleNavigateBack = () => {
-    const backPath = getBackPath();
-    if (backPath) {
-      goBack();
+    console.log('[CreateAgendaTask] handleNavigateBack called');
+
+    // Use router.back() for proper stack navigation
+    if (router.canGoBack()) {
+      router.back();
     } else {
-      // Fallback if no history
-      router.replace(routeToMobilePath(routes.production.agenda.root) as any);
+      // Fallback to agenda list if can't go back
+      router.push("/(tabs)/producao/agenda" as any);
     }
   };
 
@@ -93,6 +89,7 @@ export default function CreateAgendaTaskScreen() {
   };
 
   const handleCancel = () => {
+    console.log('[CreateAgendaTask] handleCancel called');
     handleNavigateBack();
   };
 

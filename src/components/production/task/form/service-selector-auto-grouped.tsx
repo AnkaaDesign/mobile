@@ -373,6 +373,11 @@ function ServiceRow({
         orderBy: { name: "asc" },
         page: page,
         take: 50,
+        // Use minimal select for 95% data reduction in dropdowns
+        select: {
+          id: true,
+          name: true,
+        },
       };
 
       if (searchTerm && searchTerm.trim()) {

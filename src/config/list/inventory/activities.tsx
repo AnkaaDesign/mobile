@@ -32,9 +32,43 @@ export const activitiesListConfig: ListConfig<Activity> = {
     hook: 'useActivitiesInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
-    include: {
-      item: true,
-      user: true,
+    // Use optimized select for 50% less data transfer
+    select: {
+      id: true,
+      quantity: true,
+      operation: true,
+      reason: true,
+      reasonOrder: true,
+      createdAt: true,
+      userId: true,
+      itemId: true,
+      orderId: true,
+      item: {
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   },
 

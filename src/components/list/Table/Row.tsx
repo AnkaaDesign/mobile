@@ -1,11 +1,12 @@
 import { memo, useMemo, useCallback, useState } from 'react'
-import { View, ScrollView, Pressable, StyleSheet, Dimensions, Platform } from 'react-native'
+import { View, ScrollView, Pressable, StyleSheet, Dimensions, Platform, InteractionManager } from 'react-native'
 import { useTheme } from '@/lib/theme'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
 import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
+import { lightImpactHaptic } from '@/utils/haptics'
 import type { TableColumn, TableAction, RenderContext, ActionMutationsContext } from '../types'
 
 interface RowProps<T extends { id: string }> {
@@ -68,9 +69,9 @@ export const Row = memo(function Row<T extends { id: string }>({
     return index % 2 === 0 ? colors.background : colors.card
   }, [isSelected, index, colors, isDark, customRowStyle])
 
-  // Calculate actual background based on press state
+  // Calculate actual background based on press state - use subtle gray instead of green
   const backgroundColor = isPressed
-    ? (isDark ? colors.primary + '25' : colors.primary + '15')
+    ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)')
     : normalBackgroundColor
 
   const borderStyle = useMemo(() => {
@@ -94,15 +95,23 @@ export const Row = memo(function Row<T extends { id: string }>({
     setIsPressed(false)
   }, [])
 
-  // Handle press with navigation loading
-  const handlePress = useCallback(() => {
+  // Handle press with navigation loading and haptic feedback
+  const handlePress = useCallback(async () => {
     if (selection?.enabled) {
+      // Light haptic for selection toggle
+      await lightImpactHaptic()
       selection.onToggle(item.id)
     } else if (onPress && !isNavigating) {
-      // Show loading overlay immediately
-      startNavigation()
-      // Then trigger navigation
-      onPress(item)
+      // Show loading overlay INSTANTLY - NO DELAY AT ALL
+      startNavigation("Carregando...")
+
+      // Haptic feedback
+      lightImpactHaptic() // Don't await - let it run async
+
+      // Navigate after a micro-task to ensure overlay shows first
+      setTimeout(() => {
+        onPress(item)
+      }, 0)
     }
   }, [selection, onPress, item, isNavigating, startNavigation])
 
@@ -161,7 +170,7 @@ export const Row = memo(function Row<T extends { id: string }>({
   return (
     <View style={[styles.rowWrapper, { backgroundColor: normalBackgroundColor }, borderStyle]}>
       {hasActions ? (
-        <RowActions item={item} actions={actions as any} mutations={mutations}>
+        <RowActions item={item} actions={actions as any} mutations={mutations} renderContext={renderContext}>
           {(closeActions) => (
             <View style={{ backgroundColor: normalBackgroundColor }}>
               <ScrollView

@@ -9,11 +9,11 @@ import { Easing } from 'react-native-reanimated';
 
 export const duration = {
   instant: 0,
-  fast: 150,
-  normal: 250,
-  slow: 350,
-  slower: 500,
-  slowest: 800,
+  fast: 100,    // Reduced from 150 for snappier feedback
+  normal: 180,  // Reduced from 250 for faster transitions
+  slow: 280,    // Reduced from 350
+  slower: 400,  // Reduced from 500
+  slowest: 600, // Reduced from 800
 } as const;
 
 export const delay = {
@@ -263,8 +263,8 @@ export const transitions = {
 export const gestureConfigs = {
   // Swipe gestures
   swipe: {
-    minVelocity: 500,
-    minDistance: 50,
+    minVelocity: 350,  // Reduced from 500 for easier swipes
+    minDistance: 40,   // Reduced from 50 for more responsive swipes
     maxDuration: 400,
   },
 
@@ -276,13 +276,13 @@ export const gestureConfigs = {
 
   // Long press gestures
   longPress: {
-    minDuration: 500,
+    minDuration: 400,  // Reduced from 500 for faster activation
     maxDistance: 10,
   },
 
   // Tap gestures
   tap: {
-    maxDuration: 250,
+    maxDuration: 200,  // Reduced from 250 for snappier taps
     maxDistance: 10,
   },
 } as const;

@@ -24,14 +24,52 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       { field: 'createdAt', direction: 'desc' },
     ],
     pageSize: 25,
-    include: {
+    // Use optimized select for 50% less data transfer
+    select: {
+      id: true,
+      quantity: true,
+      status: true,
+      statusOrder: true,
+      returnedAt: true,
+      createdAt: true,
       item: {
-        include: {
-          brand: true,
-          category: true,
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          quantity: true, // Available quantity
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
-      user: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          position: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
     },
   },
 

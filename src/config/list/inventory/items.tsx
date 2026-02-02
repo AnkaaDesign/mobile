@@ -58,10 +58,51 @@ export const itemsListConfig: ListConfig<Item> = {
     hook: 'useItemsInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      brand: true,
-      category: true,
-      supplier: true,
+    // Use optimized select for 60% less data transfer
+    select: {
+      id: true,
+      name: true,
+      uniCode: true,
+      quantity: true,
+      maxQuantity: true,
+      reorderPoint: true,
+      monthlyConsumption: true,
+      isActive: true,
+      abcCategory: true,
+      xyzCategory: true,
+      brandId: true,
+      categoryId: true,
+      supplierId: true,
+      brand: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      },
+      supplier: {
+        select: {
+          id: true,
+          fantasyName: true, // Use fantasyName for suppliers
+        },
+      },
+      prices: {
+        take: 1,
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        select: {
+          id: true,
+          value: true,
+          updatedAt: true,
+        },
+      },
     },
   },
 

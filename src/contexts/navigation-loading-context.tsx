@@ -6,43 +6,48 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Pressable, Animated, BackHandler } from 'react-native';
 import { useTheme } from '@/lib/theme';
-import { ThemedText } from '@/components/ui/themed-text';
 import { router, usePathname } from 'expo-router';
 
 interface NavigationLoadingContextType {
   /** Whether navigation is in progress */
   isNavigating: boolean;
   /** Start navigation with loading overlay */
-  startNavigation: (message?: string) => void;
+  startNavigation: () => void;
   /** End navigation and hide overlay */
   endNavigation: () => void;
+  /** Force reset all navigation state (emergency use only) */
+  forceReset: () => void;
   /** Navigate with automatic loading state management */
   navigateWithLoading: (
     action: () => void,
-    options?: { message?: string; timeout?: number }
+    options?: { timeout?: number }
   ) => void;
   /** Push route with loading overlay */
-  pushWithLoading: (route: string, options?: { message?: string }) => void;
+  pushWithLoading: (route: string) => void;
   /** Replace route with loading overlay */
-  replaceWithLoading: (route: string, options?: { message?: string }) => void;
-  /** Go back with loading overlay */
-  goBackWithLoading: (options?: { message?: string; fallbackRoute?: string }) => void;
+  replaceWithLoading: (route: string) => void;
+  /** Go back with loading overlay (deprecated - use goBack instead) */
+  goBackWithLoading: (options?: { fallbackRoute?: string }) => void;
+  /** Go back without loading overlay (instant) */
+  goBack: (options?: { fallbackRoute?: string }) => void;
 }
 
 const NavigationLoadingContext = createContext<NavigationLoadingContextType | null>(null);
 
-const DEFAULT_TIMEOUT = 8000; // Max time to show loading overlay
-const MIN_DISPLAY_TIME = 100; // Minimum time to show overlay for perceived feedback
+const DEFAULT_TIMEOUT = 1500; // 1.5 seconds max for any navigation
+const MIN_DISPLAY_TIME = 0; // No artificial delay for instant feedback
 
 export function NavigationLoadingProvider({ children }: { children: React.ReactNode }) {
   const { colors, isDark } = useTheme();
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [overlayVisible, setOverlayVisible] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const previousPathnameRef = useRef<string | null>(null);
+  const isHidingRef = useRef(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -50,41 +55,52 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
     };
   }, []);
+
+  // Failsafe: Monitor overlay state and force hide if stuck
+  useEffect(() => {
+    if (overlayVisible) {
+      // Set a maximum time any overlay can be visible
+      const maxVisibleTime = setTimeout(() => {
+        console.warn('[NavigationLoading] FAILSAFE: Overlay stuck for too long, forcing hide');
+        hideOverlay();
+      }, 3000); // 3 seconds max
+
+      return () => clearTimeout(maxVisibleTime);
+    }
+  }, [overlayVisible, hideOverlay]);
+
+  // Additional failsafe: Check for state mismatch
+  useEffect(() => {
+    // If isNavigating is true but overlay is not visible, clear it
+    if (isNavigating && !overlayVisible) {
+      console.warn('[NavigationLoading] State mismatch detected: isNavigating=true but overlay not visible');
+      setIsNavigating(false);
+    }
+  }, [isNavigating, overlayVisible]);
 
   // Auto-end navigation when pathname changes (navigation completed)
   useEffect(() => {
     if (pathname && previousPathnameRef.current !== pathname) {
-      // Pathname changed - navigation completed
-      if (isNavigating && previousPathnameRef.current !== null) {
-        // Small delay to ensure smooth transition
-        const hideTimer = setTimeout(() => {
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
-          // Ensure minimum display time for perceived feedback
-          const elapsed = Date.now() - startTimeRef.current;
-          const remaining = Math.max(0, MIN_DISPLAY_TIME - elapsed);
+      console.log('[NavigationLoading] Pathname changed:', {
+        from: previousPathnameRef.current,
+        to: pathname,
+        overlayVisible
+      });
 
-          setTimeout(() => {
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 150,
-              useNativeDriver: true,
-            }).start(() => {
-              setIsNavigating(false);
-              setMessage(null);
-            });
-          }, remaining);
-        }, 50);
-
-        return () => clearTimeout(hideTimer);
-      }
       previousPathnameRef.current = pathname;
+
+      // If overlay is visible, hide it immediately
+      if (overlayVisible || isNavigating) {
+        console.log('[NavigationLoading] Auto-hiding overlay due to pathname change');
+        hideOverlay();
+      }
     }
-  }, [pathname, isNavigating, fadeAnim]);
+  }, [pathname, overlayVisible, isNavigating, hideOverlay]);
 
   // Block back button while navigating
   useEffect(() => {
@@ -98,64 +114,123 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     return () => subscription.remove();
   }, [isNavigating]);
 
-  const showOverlay = useCallback((msg?: string) => {
-    setMessage(msg || null);
-    setIsNavigating(true);
-    startTimeRef.current = Date.now();
-    // Instant show - no animation delay
+  const showOverlay = useCallback(() => {
+    console.log('[NavigationLoading] showOverlay called');
+
+    // Clear any existing timeouts
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Stop any existing animations and show immediately
+    fadeAnim.stopAnimation();
     fadeAnim.setValue(1);
+
+    setIsNavigating(true);
+    setOverlayVisible(true);
+    isHidingRef.current = false;
+    startTimeRef.current = Date.now();
   }, [fadeAnim]);
 
   const hideOverlay = useCallback(() => {
-    // Ensure minimum display time for perceived feedback
-    const elapsed = Date.now() - startTimeRef.current;
-    const remaining = Math.max(0, MIN_DISPLAY_TIME - elapsed);
+    console.log('[NavigationLoading] hideOverlay called - forcing immediate hide');
 
-    setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsNavigating(false);
-        setMessage(null);
-      });
-    }, remaining);
-  }, [fadeAnim]);
+    // FIRST: Immediately clear navigation state to unblock UI
+    setIsNavigating(false);
+    setOverlayVisible(false);
+    isHidingRef.current = false;
 
-  const startNavigation = useCallback((msg?: string) => {
-    // Clear any existing timeout
+    // Clear any pending timeouts
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
-    showOverlay(msg);
+    // Stop any existing animations and reset fade
+    fadeAnim.stopAnimation();
+    fadeAnim.setValue(0);
 
-    // Safety timeout to prevent stuck overlay
+    console.log('[NavigationLoading] State cleared - UI should be interactive');
+  }, [fadeAnim]);
+
+  const startNavigation = useCallback(() => {
+    console.log('[NavigationLoading] startNavigation called');
+
+    showOverlay();
+
+    // Aggressive safety timeout - always hide after timeout
     timeoutRef.current = setTimeout(() => {
+      console.log('[NavigationLoading] Safety timeout - forcing hide');
       hideOverlay();
     }, DEFAULT_TIMEOUT);
   }, [showOverlay, hideOverlay]);
 
   const endNavigation = useCallback(() => {
+    console.log('[NavigationLoading] endNavigation called - forcing immediate end');
+
+    // Immediately clear the navigation state
+    setIsNavigating(false);
+
+    // Then hide the overlay
+    hideOverlay();
+  }, [hideOverlay]);
+
+  // Emergency reset function
+  const forceReset = useCallback(() => {
+    console.warn('[NavigationLoading] FORCE RESET - clearing all state');
+
+    // Clear all timeouts
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    hideOverlay();
-  }, [hideOverlay]);
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
+    // Stop animations
+    fadeAnim.stopAnimation();
+    fadeAnim.setValue(0);
+
+    // Clear all state
+    setIsNavigating(false);
+    setOverlayVisible(false);
+    isHidingRef.current = false;
+
+    console.log('[NavigationLoading] Force reset complete');
+  }, [fadeAnim]);
 
   const navigateWithLoading = useCallback((
     action: () => void,
-    options?: { message?: string; timeout?: number }
+    options?: { timeout?: number }
   ) => {
-    // Prevent double navigation
-    if (isNavigating) return;
+    console.log('[NavigationLoading] navigateWithLoading called:', {
+      timeout: options?.timeout,
+      isNavigating,
+      currentPathname: pathname
+    });
 
-    startNavigation(options?.message);
+    // Prevent double navigation
+    if (isNavigating) {
+      console.log('[NavigationLoading] Navigation already in progress, skipping');
+      return;
+    }
+
+    startNavigation();
 
     // Execute the navigation action
     try {
+      console.log('[NavigationLoading] Executing navigation action');
       action();
     } catch (error) {
       console.error('[NavigationLoading] Navigation error:', error);
@@ -164,93 +239,123 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
 
     // Set custom timeout if provided
     if (options?.timeout && timeoutRef.current) {
+      console.log('[NavigationLoading] Setting custom timeout:', options.timeout);
       clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
+        console.log('[NavigationLoading] Custom timeout triggered');
         hideOverlay();
       }, options.timeout);
     }
-  }, [isNavigating, startNavigation, endNavigation, hideOverlay]);
+  }, [isNavigating, startNavigation, endNavigation, hideOverlay, pathname]);
 
-  const pushWithLoading = useCallback((route: string, options?: { message?: string }) => {
+  const pushWithLoading = useCallback((route: string) => {
+    console.log('[NavigationLoading] pushWithLoading:', { route });
     navigateWithLoading(() => {
       router.push(route as any);
-    }, options);
+    });
   }, [navigateWithLoading]);
 
-  const replaceWithLoading = useCallback((route: string, options?: { message?: string }) => {
+  const replaceWithLoading = useCallback((route: string) => {
+    console.log('[NavigationLoading] replaceWithLoading:', { route });
     navigateWithLoading(() => {
       router.replace(route as any);
-    }, options);
+    });
   }, [navigateWithLoading]);
 
-  const goBackWithLoading = useCallback((options?: { message?: string; fallbackRoute?: string }) => {
+  const goBackWithLoading = useCallback((options?: { fallbackRoute?: string }) => {
+    console.log('[NavigationLoading] goBackWithLoading (deprecated):', {
+      canGoBack: router.canGoBack(),
+      fallbackRoute: options?.fallbackRoute
+    });
     navigateWithLoading(() => {
       if (router.canGoBack()) {
+        console.log('[NavigationLoading] Executing router.back()');
         router.back();
       } else if (options?.fallbackRoute) {
+        console.log('[NavigationLoading] Using fallback route:', options.fallbackRoute);
         router.replace(options.fallbackRoute as any);
       }
-    }, options);
+    });
   }, [navigateWithLoading]);
 
-  const contextValue = useMemo(() => ({
+  // New instant back navigation without loading overlay
+  const goBack = useCallback((options?: { fallbackRoute?: string }) => {
+    console.log('[NavigationLoading] goBack (instant):', {
+      canGoBack: router.canGoBack(),
+      fallbackRoute: options?.fallbackRoute
+    });
+
+    if (router.canGoBack()) {
+      console.log('[NavigationLoading] Executing instant router.back()');
+      router.back();
+    } else if (options?.fallbackRoute) {
+      console.log('[NavigationLoading] Using fallback route:', options.fallbackRoute);
+      // Use pushWithLoading for fallback since it's navigating to a new page
+      pushWithLoading(options.fallbackRoute);
+    }
+  }, [pushWithLoading]);
+
+  const contextValue = useMemo(() => {
+    // Debug log when context value changes
+    console.log('[NavigationLoading] Context value update:', {
+      isNavigating,
+      overlayVisible,
+      timestamp: new Date().toISOString()
+    });
+
+    return {
+      isNavigating,
+      startNavigation,
+      endNavigation,
+      forceReset,
+      navigateWithLoading,
+      pushWithLoading,
+      replaceWithLoading,
+      goBackWithLoading,
+      goBack,
+    };
+  }, [
     isNavigating,
     startNavigation,
     endNavigation,
+    forceReset,
     navigateWithLoading,
     pushWithLoading,
     replaceWithLoading,
     goBackWithLoading,
-  }), [
-    isNavigating,
-    startNavigation,
-    endNavigation,
-    navigateWithLoading,
-    pushWithLoading,
-    replaceWithLoading,
-    goBackWithLoading,
+    goBack,
   ]);
 
   return (
     <NavigationLoadingContext.Provider value={contextValue}>
       {children}
 
-      {/* Global Loading Overlay */}
-      {isNavigating && (
-        <Animated.View
-          style={[
-            styles.overlay,
-            {
-              opacity: fadeAnim,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.8)',
-            },
-          ]}
-          pointerEvents="auto"
+      {/* Global Loading Overlay - Always mounted for instant display */}
+      <Animated.View
+        style={[
+          styles.overlay,
+          {
+            opacity: fadeAnim,
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+          },
+        ]}
+        pointerEvents={overlayVisible ? "auto" : "none"}
+      >
+        <Pressable
+          style={styles.touchBlocker}
+          onPress={() => {/* Block all touches */}}
         >
-          <Pressable
-            style={styles.touchBlocker}
-            onPress={() => {/* Block all touches */}}
-          >
-            <View style={[
-              styles.loadingContainer,
-              { backgroundColor: isDark ? colors.card : colors.background }
-            ]}>
-              <ActivityIndicator
-                size="large"
-                color={colors.primary}
-              />
-              {message && (
-                <ThemedText
-                  style={styles.message}
-                  variant="muted"
-                >
-                  {message}
-                </ThemedText>
-              )}
-            </View>
-          </Pressable>
-        </Animated.View>
-      )}
+          <View style={[
+            styles.loadingContainer,
+            { backgroundColor: isDark ? colors.card : colors.background }
+          ]}>
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+            />
+          </View>
+        </Pressable>
+      </Animated.View>
     </NavigationLoadingContext.Provider>
   );
 }
@@ -292,11 +397,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
-    minWidth: 120,
-  },
-  message: {
-    marginTop: 12,
-    fontSize: 14,
-    textAlign: 'center',
+    minWidth: 80,
+    minHeight: 80,
   },
 });

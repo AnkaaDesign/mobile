@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native'
 import { IconFilter, IconBuildingFactory2, IconEye, IconEyeOff } from '@tabler/icons-react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, usePathname } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -19,6 +19,7 @@ import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
 import { perfLog } from '@/utils/performance-logger'
+import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { isTeamLeader } from '@/utils/user'
@@ -52,7 +53,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 }: TaskScheduleLayoutProps) {
   const { colors } = useTheme()
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useAuth()
+  const { pushWithLoading, startNavigation, isNavigating } = useNavigationLoading()
   const { width: screenWidth } = Dimensions.get('window')
   const insets = useSafeAreaInsets()
 
@@ -147,110 +150,99 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       ...(searchText ? { searchingFor: searchText } : {}),
       ...filterValuesWithoutStatus,
       include: config.query.include,
-      limit: 1000, // Get all tasks for grouping
+      limit: shouldGroupByStatus ? 300 : 100, // Optimized: Reduced initial load
     };
   }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include])
 
-  // For agenda view (groupByStatus=true), make 3 separate API calls like the web does
-  // This ensures we get the same results as the web
-  const preparationQueryParams = useMemo(() => {
-    if (!shouldGroupByStatus) return null;
-    return {
-      ...baseQueryParams,
-      status: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION],
-    };
-  }, [shouldGroupByStatus, baseQueryParams]);
+  // Optimized: Single API call for both agenda and standard views
+  const queryParams = useMemo(() => {
+    // For agenda view, use multi-column sorting like the web: forecastDate ASC, then name ASC, then serialNumber ASC
+    // For other views, use the single sortConfig
+    const orderBy = shouldGroupByStatus
+      ? [
+          { forecastDate: { sort: 'asc' as const, nulls: 'last' as const } },
+          { name: 'asc' as const },
+          { serialNumber: { sort: 'asc' as const, nulls: 'last' as const } },
+        ]
+      : { [sortConfig.field]: sortConfig.direction };
 
-  const inProductionQueryParams = useMemo(() => {
-    if (!shouldGroupByStatus) return null;
-    return {
-      ...baseQueryParams,
-      status: [TASK_STATUS.IN_PRODUCTION],
-    };
-  }, [shouldGroupByStatus, baseQueryParams]);
-
-  const completedQueryParams = useMemo(() => {
-    if (!shouldGroupByStatus) return null;
-    return {
-      ...baseQueryParams,
-      status: [TASK_STATUS.COMPLETED],
-    };
-  }, [shouldGroupByStatus, baseQueryParams]);
-
-  // Non-agenda query params (includes status from filterValues)
-  const standardQueryParams = useMemo(() => {
-    if (shouldGroupByStatus) return null;
-    return {
-      orderBy: { [sortConfig.field]: sortConfig.direction },
+    const params: any = {
+      orderBy,
       ...(searchText ? { searchingFor: searchText } : {}),
-      ...filterValues,
       include: config.query.include,
-      limit: 1000,
+      limit: shouldGroupByStatus ? 300 : 100, // Optimized: Reduced initial load
     };
+
+    // For agenda view, use preparation filters but remove status filter (like web)
+    if (shouldGroupByStatus) {
+      // Copy all filters except status to match web behavior
+      // The preparation logic in the API will handle status filtering
+      const { status, ...filterValuesWithoutStatus } = filterValues as any;
+      Object.assign(params, filterValuesWithoutStatus);
+    } else {
+      // For standard view, use filters as-is
+      Object.assign(params, filterValues);
+    }
+
+    return params;
   }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include]);
 
-  // Fetch tasks - for agenda view, make 3 separate calls
-  // For non-agenda view, make a single call
+  // Single API call for all tasks
   const {
-    items: preparationTasks,
-    isLoading: preparationLoading,
-    error: preparationError,
-    refresh: refreshPreparation,
-  } = useTasksInfiniteMobile(preparationQueryParams || { enabled: false });
+    items: allTasksFromAPI,
+    isLoading: tasksLoading,
+    error: tasksError,
+    refresh: refreshTasks,
+  } = useTasksInfiniteMobile(queryParams);
 
-  const {
-    items: inProductionTasks,
-    isLoading: inProductionLoading,
-    error: inProductionError,
-    refresh: refreshInProduction,
-  } = useTasksInfiniteMobile(inProductionQueryParams || { enabled: false });
+  // Group tasks by status for agenda view (client-side grouping is fast)
+  const { preparationTasks, inProductionTasks, completedTasks } = useMemo(() => {
+    if (!shouldGroupByStatus) {
+      return { preparationTasks: [], inProductionTasks: [], completedTasks: [] };
+    }
 
-  const {
-    items: completedTasks,
-    isLoading: completedLoading,
-    error: completedError,
-    refresh: refreshCompleted,
-  } = useTasksInfiniteMobile(completedQueryParams || { enabled: false });
+    const preparation: Task[] = [];
+    const inProduction: Task[] = [];
+    const completed: Task[] = [];
 
-  const {
-    items: standardTasks,
-    isLoading: standardLoading,
-    error: standardError,
-    refresh: refreshStandard,
-  } = useTasksInfiniteMobile(standardQueryParams || { enabled: false });
+    allTasksFromAPI.forEach((task) => {
+      // Group tasks based on their status
+      // Note: When using shouldDisplayInPreparation filter, the API returns tasks that need preparation
+      // regardless of their actual status (except CANCELLED which is never shown)
+      if (task.status === TASK_STATUS.PREPARATION || task.status === TASK_STATUS.WAITING_PRODUCTION) {
+        preparation.push(task);
+      } else if (task.status === TASK_STATUS.IN_PRODUCTION) {
+        inProduction.push(task);
+      } else if (task.status === TASK_STATUS.COMPLETED) {
+        // Completed tasks only appear in preparation when they're missing required service orders
+        completed.push(task);
+      }
+      // Other statuses (DELAYED, WAITING_CUSTOMER, etc.) go to preparation if returned by API
+      else if (task.status && task.status !== TASK_STATUS.CANCELLED) {
+        preparation.push(task);
+      }
+    });
 
-  // Combine results based on view type
+    return { preparationTasks: preparation, inProductionTasks: inProduction, completedTasks: completed };
+  }, [shouldGroupByStatus, allTasksFromAPI]);
+
+  // Use the appropriate tasks based on view type
   const allTasks = useMemo(() => {
     if (shouldGroupByStatus) {
       return [...preparationTasks, ...inProductionTasks, ...completedTasks];
     }
-    return standardTasks;
-  }, [shouldGroupByStatus, preparationTasks, inProductionTasks, completedTasks, standardTasks]);
+    return allTasksFromAPI;
+  }, [shouldGroupByStatus, preparationTasks, inProductionTasks, completedTasks, allTasksFromAPI]);
 
-  const tasksLoading = shouldGroupByStatus
-    ? (preparationLoading || inProductionLoading || completedLoading)
-    : standardLoading;
-
-  const tasksError = shouldGroupByStatus
-    ? (preparationError || inProductionError || completedError)
-    : standardError;
-
-  const refreshTasks = useCallback(async () => {
-    if (shouldGroupByStatus) {
-      await Promise.all([refreshPreparation(), refreshInProduction(), refreshCompleted()]);
-    } else {
-      await refreshStandard();
-    }
-  }, [shouldGroupByStatus, refreshPreparation, refreshInProduction, refreshCompleted, refreshStandard]);
-
-  // DEBUG: Log task counts for comparison with web
+  // DEBUG: Log task counts for performance tracking
   useEffect(() => {
-    if (shouldGroupByStatus) {
-      console.log('[TaskScheduleLayout] Agenda view - Separate API calls:');
+    if (__DEV__ && shouldGroupByStatus) {
+      console.log('[TaskScheduleLayout] Optimized agenda view - Single API call:');
       console.log('  Preparation tasks:', preparationTasks.length);
       console.log('  In Production tasks:', inProductionTasks.length);
       console.log('  Completed tasks:', completedTasks.length);
       console.log('  Total:', allTasks.length);
+      console.log('  [PERFORMANCE] Single API call instead of 3 separate calls');
     }
   }, [shouldGroupByStatus, preparationTasks.length, inProductionTasks.length, completedTasks.length, allTasks.length]);
 
@@ -566,12 +558,17 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [refreshTasks])
 
   const handleRowPress = useCallback((item: Task) => {
+    // Prevent double-clicks while navigating
+    if (isNavigating) return
+
     // Performance logging - track navigation start
     perfLog.navigationClick('TaskScheduleLayout', 'ScheduleDetailsScreen', item.id)
     perfLog.mark(`Row pressed: ${item.name || item.id}`)
 
     if (config.table.onRowPress) {
+      startNavigation()
       config.table.onRowPress(item, router)
+      // Navigation loading will auto-hide when pathname changes
       return
     }
 
@@ -590,18 +587,20 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     perfLog.mark(`Navigating via action: ${action.key}`)
 
     if (action.onPress) {
+      startNavigation()
       action.onPress(item, router, {})
+      // Navigation loading will auto-hide when pathname changes
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
-      router.push(route as any)
+      pushWithLoading(route)
     }
-  }, [config.table.actions, config.table.onRowPress, router])
+  }, [config.table.actions, config.table.onRowPress, router, isNavigating, startNavigation, pushWithLoading])
 
   const handleCreate = useCallback(() => {
     if (config.actions?.create?.route) {
-      router.push(config.actions.create.route as any)
+      pushWithLoading(config.actions.create.route)
     }
-  }, [config.actions?.create?.route, router])
+  }, [config.actions?.create?.route, pushWithLoading])
 
   const handleFilterChange = useCallback((values: FilterValue) => {
     setFilterValues(values)
@@ -799,6 +798,22 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 tintColor={colors.primary}
               />
             }
+            // Critical performance optimizations for large lists
+            removeClippedSubviews={true} // Unmount offscreen rows
+            maxToRenderPerBatch={10} // Render 10 items per batch
+            windowSize={10} // Keep 10 screens of data in memory
+            initialNumToRender={15} // Initial batch size
+            updateCellsBatchingPeriod={50} // Batch updates every 50ms
+            legacyImplementation={false} // Use modern implementation
+            // Optimize scroll performance
+            scrollEventThrottle={16} // 60fps scrolling
+            directionalLockEnabled={true} // Prevent diagonal scrolling
+            disableVirtualization={false} // Keep virtualization enabled
+            // Memory optimization
+            maintainVisibleContentPosition={{
+              minIndexForVisible: 0,
+              autoscrollToTopThreshold: 10
+            }}
             renderSectionHeader={({ section }) => {
               // Determine section color based on status grouping
               const getSectionColor = () => {
@@ -868,6 +883,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
               // Create render context for cell rendering
               const renderContext: RenderContext = {
                 navigationRoute: shouldGroupByStatus ? 'preparation' : 'schedule',
+                route: pathname, // Pass the actual current route
                 user,
                 rowIndex: index,
               }

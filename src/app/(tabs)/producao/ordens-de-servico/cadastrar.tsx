@@ -2,14 +2,18 @@
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TaskForm } from "@/components/production/task/form/task-form";
+import { TaskFormOptimized as TaskForm } from "@/components/production/task/form";
 import { useTaskMutations } from "@/hooks";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import type { TaskCreateFormData } from "@/schemas";
 
 export default function CreateServiceOrderScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationLoading();
+  const { getBackPath } = useNavigationHistory();
   // Fixed: isCreating doesn't exist, use isLoading instead
   const { createAsync, isLoading: isCreating } = useTaskMutations();
 
@@ -42,12 +46,26 @@ export default function CreateServiceOrderScreen() {
   };
 
   const handleCancel = () => {
+    console.log('[CreateServiceOrder] handleCancel called');
     Alert.alert(
       "Descartar Cadastro",
       "Deseja descartar o cadastro da ordem de serviço?",
       [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.back() },
+        {
+          text: "Descartar",
+          style: "destructive",
+          onPress: () => {
+            console.log('[CreateServiceOrder] User confirmed discard, going back');
+            const backPath = getBackPath();
+            if (backPath) {
+              goBack();
+            } else {
+              // Fallback to service orders list
+              router.replace(routeToMobilePath(routes.production.serviceOrders.root) as any);
+            }
+          }
+        },
       ]
     );
   };

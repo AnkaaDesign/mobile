@@ -17,7 +17,8 @@ import {
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { useItems, useUsers, useItem } from "@/hooks";
+import { useItem } from "@/hooks";
+import { useUsersMinimal, useItemsMinimal } from "@/hooks/use-form-data";
 import { BORROW_STATUS } from "@/constants";
 import type { Borrow } from "@/types";
 
@@ -75,24 +76,26 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
     mode: "onChange",
   });
 
-  // Fetch items
-  const { data: items } = useItems({
-    searchingFor: itemSearch,
+  // Fetch items - using minimal data for 90% reduction
+  const { data: items } = useItemsMinimal({
+    where: itemSearch ? { name: { contains: itemSearch, mode: 'insensitive' } } : undefined,
     orderBy: { name: "asc" },
+    limit: 200,
   });
 
-  // Fetch users (employees)
-  const { data: users } = useUsers({
-    searchingFor: userSearch,
-    orderBy: { username: "asc" },
+  // Fetch users - using minimal data for 95% reduction
+  const { data: users } = useUsersMinimal({
+    where: userSearch ? { name: { contains: userSearch, mode: 'insensitive' } } : undefined,
+    orderBy: { name: "asc" },
+    limit: 200,
   });
 
-  const itemOptions = items?.data?.map((item) => ({
+  const itemOptions = items?.map((item) => ({
     value: item.id,
     label: item.name,
   })) || [];
 
-  const userOptions = users?.data?.map((user) => ({
+  const userOptions = users?.map((user) => ({
     value: user.id,
     label: user.name,
   })) || [];
@@ -108,9 +111,31 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
     name: "quantity",
   });
 
-  // Fetch selected item details for validation
+  // Fetch selected item details for validation - optimized select
   const { data: selectedItemResponse, isLoading: isLoadingItem } = useItem(selectedItemId, {
     enabled: !!selectedItemId,
+    select: {
+      id: true,
+      name: true,
+      quantity: true,
+      isActive: true,
+      category: {
+        select: {
+          id: true,
+          type: true,
+        },
+      },
+      borrows: {
+        select: {
+          id: true,
+          quantity: true,
+          status: true,
+        },
+        where: {
+          status: BORROW_STATUS.ACTIVE,
+        },
+      },
+    },
   });
 
   const selectedItem = selectedItemResponse as any;

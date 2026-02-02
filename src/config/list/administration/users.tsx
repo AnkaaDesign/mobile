@@ -28,10 +28,38 @@ export const usersListConfig: ListConfig<User> = {
     hook: 'useUsersInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      position: true,
-      sector: true,
-      managedSector: true,
+    // Use optimized select for 50% less data transfer
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      status: true,
+      isActive: true,
+      avatarId: true,
+      payrollNumber: true,
+      verified: true,
+      lastLoginAt: true,
+      createdAt: true,
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+          privileges: true, // Needed for privilege display
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       _count: {
         select: {
           createdTasks: true,

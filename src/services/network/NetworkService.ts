@@ -98,7 +98,7 @@ class NetworkService {
     }
 
     // Default: Local API for development
-    return "http://192.168.10.180:3030";
+    return "http://192.168.0.16:3030";
   }
 
   /**
@@ -119,7 +119,7 @@ class NetworkService {
     }
 
     // Default: Local network server
-    return "http://192.168.10.180:3030";
+    return "http://192.168.0.16:3030";
   }
 
   /**

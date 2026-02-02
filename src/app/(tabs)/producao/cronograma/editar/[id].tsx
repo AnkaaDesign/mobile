@@ -5,9 +5,10 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { TaskForm } from "@/components/production/task/form/task-form";
+import { TaskFormWithProviderUnified as TaskForm } from "@/components/production/task/form/task-form-with-provider-unified";
 import { SkeletonCard } from "@/components/ui/loading";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck } from "@/hooks";
+import { useTaskMutations, useLayoutsByTruck } from "@/hooks";
+import { useTaskDetailOptimized } from "@/hooks/use-task-detail-optimized";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
@@ -20,7 +21,7 @@ export default function EditScheduleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { goBack, getBackPath } = useNavigationHistory();
+  const { goBack } = useNavigationHistory();
   const { updateAsync, isLoading } = useTaskMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
@@ -42,38 +43,17 @@ export default function EditScheduleScreen() {
           "Acesso negado",
           "Você não tem permissão para editar tarefas"
         );
-        router.replace("/producao/cronograma");
+        router.replace("/(tabs)/producao/cronograma");
       }
     }
   }, [user, canEdit, router]);
 
+  // Use optimized task detail hook - loads minimal data for edit form
   const {
     data: response,
     isLoading: isLoadingTask,
     error,
-  } = useTaskDetail(id!, {
-    include: {
-      customer: true,
-      sector: true,
-      generalPainting: true,
-      logoPaints: true,
-      serviceOrders: true,
-      truck: true,
-      artworks: true,
-      baseFiles: true,
-      observation: {
-        include: {
-          files: true,
-        },
-      },
-      pricing: {
-        include: {
-          items: true,
-          layoutFile: true,
-        },
-      },
-    },
-  });
+  } = useTaskDetailOptimized(id!);
 
   const task = response?.data;
 
@@ -137,12 +117,12 @@ export default function EditScheduleScreen() {
   }, [layoutsData]);
 
   const handleNavigateBack = () => {
-    const backPath = getBackPath();
-    if (backPath) {
-      goBack();
+    // Use router.back() for proper stack navigation
+    if (router.canGoBack()) {
+      router.back();
     } else {
-      // Fallback if no history
-      router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+      // Fallback to detail page if can't go back
+      router.push(`/(tabs)/producao/cronograma/detalhes/${id}` as any);
     }
   };
 
@@ -177,19 +157,17 @@ export default function EditScheduleScreen() {
     handleNavigateBack();
   };
 
-  // Show loading while checking permission
-  if (checkingPermission || !user) {
+  // If still checking permission or no permission, show skeleton while redirect happens
+  if (checkingPermission || !user || !canEdit) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={{ marginTop: 16 }}>Verificando permissões...</ThemedText>
-      </View>
+      <ThemedView style={styles.container}>
+        <View style={styles.skeletonContainer}>
+          <SkeletonCard style={styles.skeleton} />
+          <SkeletonCard style={styles.skeleton} />
+          <SkeletonCard style={styles.skeleton} />
+        </View>
+      </ThemedView>
     );
-  }
-
-  // If no permission, show nothing (redirect will happen)
-  if (!canEdit) {
-    return null;
   }
 
   if (isLoadingTask) {
@@ -226,6 +204,7 @@ export default function EditScheduleScreen() {
     <ThemedView className="flex-1">
       <TaskForm
         mode="edit"
+        task={task}
         initialData={{
           name: task.name,
           customerId: task.customerId || "",

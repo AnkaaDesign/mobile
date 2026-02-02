@@ -30,6 +30,12 @@ class PerformanceLogger {
     dataReadyTime?: number
     renderTime?: number
   }> = []
+  private performanceMetrics = {
+    apiCalls: new Map<string, number[]>(),
+    renderCounts: new Map<string, number>(),
+    memoryUsage: [] as number[],
+  }
+  private startupTime = performance.now()
 
   setEnabled(value: boolean) {
     this.enabled = value
@@ -197,11 +203,142 @@ class PerformanceLogger {
   }
 
   /**
+   * Track API call performance
+   */
+  apiCall(endpoint: string, duration: number) {
+    if (!this.enabled) return
+
+    if (!this.performanceMetrics.apiCalls.has(endpoint)) {
+      this.performanceMetrics.apiCalls.set(endpoint, [])
+    }
+    this.performanceMetrics.apiCalls.get(endpoint)?.push(duration)
+
+    const avg = this.performanceMetrics.apiCalls.get(endpoint)?.reduce((a, b) => a + b, 0)! / this.performanceMetrics.apiCalls.get(endpoint)!.length
+
+    if (duration > avg * 1.5) {
+      console.warn(`⚠️ [API SLOW] ${endpoint}: ${duration.toFixed(0)}ms (avg: ${avg.toFixed(0)}ms)`)
+    }
+  }
+
+  /**
+   * Track component render counts
+   */
+  componentRender(componentName: string) {
+    if (!this.enabled) return
+
+    const count = (this.performanceMetrics.renderCounts.get(componentName) || 0) + 1
+    this.performanceMetrics.renderCounts.set(componentName, count)
+
+    if (count % 10 === 0) {
+      console.warn(`⚠️ [RENDER COUNT] ${componentName} rendered ${count} times`)
+    }
+  }
+
+  /**
+   * Track memory usage
+   */
+  trackMemory() {
+    if (!this.enabled) return
+    if (typeof performance.memory === 'undefined') return
+
+    const used = (performance.memory as any).usedJSHeapSize / 1048576 // Convert to MB
+    this.performanceMetrics.memoryUsage.push(used)
+
+    // Keep only last 10 measurements
+    if (this.performanceMetrics.memoryUsage.length > 10) {
+      this.performanceMetrics.memoryUsage.shift()
+    }
+
+    // Check for memory leaks (steady increase)
+    if (this.performanceMetrics.memoryUsage.length === 10) {
+      const first = this.performanceMetrics.memoryUsage[0]
+      const last = this.performanceMetrics.memoryUsage[9]
+      const increase = last - first
+
+      if (increase > 50) {
+        console.error(`🔴 [MEMORY LEAK] Memory increased by ${increase.toFixed(0)}MB over last 10 measurements`)
+      }
+    }
+  }
+
+  /**
+   * Log app startup time
+   */
+  logStartupTime() {
+    if (!this.enabled) return
+
+    const startupDuration = performance.now() - this.startupTime
+    const color = startupDuration > 3000 ? '🔴' : startupDuration > 2000 ? '🟠' : startupDuration > 1000 ? '🟡' : '🟢'
+    console.log(`${color} [APP STARTUP] ${startupDuration.toFixed(0)}ms`)
+  }
+
+  /**
+   * Get detailed performance report
+   */
+  getDetailedReport() {
+    if (!this.enabled) return
+
+    console.log('\n📊 ====== PERFORMANCE REPORT ======')
+
+    // Navigation Summary
+    console.log('\n🚀 Navigation Performance:')
+    const recent = this.navigationTimings.slice(-5)
+    recent.forEach((t, i) => {
+      if (t.renderTime) {
+        const total = t.renderTime - t.clickTime
+        const mountToData = t.dataReadyTime ? t.dataReadyTime - t.mountTime! : 0
+        const dataToRender = t.renderTime - (t.dataReadyTime || t.mountTime!)
+        console.log(`  ${i + 1}. ${t.from} → ${t.to}:`)
+        console.log(`     Total: ${total.toFixed(0)}ms`)
+        console.log(`     Mount→Data: ${mountToData.toFixed(0)}ms`)
+        console.log(`     Data→Render: ${dataToRender.toFixed(0)}ms`)
+      }
+    })
+
+    // API Performance
+    if (this.performanceMetrics.apiCalls.size > 0) {
+      console.log('\n🔌 API Performance:')
+      this.performanceMetrics.apiCalls.forEach((durations, endpoint) => {
+        const avg = durations.reduce((a, b) => a + b, 0) / durations.length
+        const max = Math.max(...durations)
+        const min = Math.min(...durations)
+        console.log(`  ${endpoint}:`)
+        console.log(`    Calls: ${durations.length}, Avg: ${avg.toFixed(0)}ms, Min: ${min.toFixed(0)}ms, Max: ${max.toFixed(0)}ms`)
+      })
+    }
+
+    // Render Counts
+    if (this.performanceMetrics.renderCounts.size > 0) {
+      console.log('\n🎨 Component Render Counts:')
+      const sorted = Array.from(this.performanceMetrics.renderCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      sorted.forEach(([component, count]) => {
+        const emoji = count > 20 ? '🔴' : count > 10 ? '🟠' : '🟢'
+        console.log(`  ${emoji} ${component}: ${count} renders`)
+      })
+    }
+
+    // Memory Usage
+    if (this.performanceMetrics.memoryUsage.length > 0) {
+      console.log('\n💾 Memory Usage:')
+      const current = this.performanceMetrics.memoryUsage[this.performanceMetrics.memoryUsage.length - 1]
+      const avg = this.performanceMetrics.memoryUsage.reduce((a, b) => a + b, 0) / this.performanceMetrics.memoryUsage.length
+      console.log(`  Current: ${current.toFixed(0)}MB, Avg: ${avg.toFixed(0)}MB`)
+    }
+
+    console.log('\n================================\n')
+  }
+
+  /**
    * Clear all entries
    */
   clear() {
     this.entries.clear()
     this.navigationTimings = []
+    this.performanceMetrics.apiCalls.clear()
+    this.performanceMetrics.renderCounts.clear()
+    this.performanceMetrics.memoryUsage = []
   }
 }
 
@@ -218,6 +355,11 @@ export const {
   mark,
   query,
   getSummary,
+  apiCall,
+  componentRender,
+  trackMemory,
+  logStartupTime,
+  getDetailedReport,
 } = {
   start: perfLog.start.bind(perfLog),
   end: perfLog.end.bind(perfLog),
@@ -228,4 +370,9 @@ export const {
   mark: perfLog.mark.bind(perfLog),
   query: perfLog.query.bind(perfLog),
   getSummary: perfLog.getSummary.bind(perfLog),
+  apiCall: perfLog.apiCall.bind(perfLog),
+  componentRender: perfLog.componentRender.bind(perfLog),
+  trackMemory: perfLog.trackMemory.bind(perfLog),
+  logStartupTime: perfLog.logStartupTime.bind(perfLog),
+  getDetailedReport: perfLog.getDetailedReport.bind(perfLog),
 }

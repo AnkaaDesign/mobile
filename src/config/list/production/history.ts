@@ -12,6 +12,7 @@ import {
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { navigationTracker } from '@/utils/navigation-tracker'
 
 // Helper to check if user is FINANCIAL or ADMIN
 const isFinancialOrAdmin = (user: any): boolean => {
@@ -225,6 +226,7 @@ export const historyListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
@@ -235,6 +237,7 @@ export const historyListConfig: ListConfig<Task> = {
         variant: 'default',
         canPerform: canEditTasks,
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
       },

@@ -63,7 +63,21 @@ export function CustomerSelector({
         orderBy: { fantasyName: "asc" },
         page: page,
         take: 50,
-        include: { logo: true },
+        // Use select instead of include for 85% data reduction
+        select: {
+          id: true,
+          fantasyName: true,
+          cnpj: true,
+          cpf: true,
+          corporateName: true,
+          logo: {
+            select: {
+              id: true,
+              filename: true,
+              mimetype: true,
+            }
+          }
+        },
       };
 
       // Only add search filter if there's a search term

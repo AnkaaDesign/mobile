@@ -40,7 +40,9 @@ export type CellFormat =
 /** Context passed to render functions for additional information */
 export interface RenderContext {
   /** Navigation route context - affects cell rendering (e.g., 'preparation' vs 'schedule') */
-  navigationRoute?: 'preparation' | 'schedule'
+  navigationRoute?: 'preparation' | 'schedule' | 'history'
+  /** Actual current route path for navigation tracking */
+  route?: string
   /** Current user for permission checks */
   user?: any
   /** Row index for alternating colors */
@@ -78,6 +80,8 @@ export interface ActionMutationsContext {
   batchDeleteAsync?: (params: any) => Promise<any>
   /** Current user */
   user?: any
+  /** Current route for navigation tracking */
+  route?: string
 }
 
 export interface TableAction<T = any> {
@@ -130,6 +134,8 @@ export interface TableProps<T extends { id: string }> {
   }
   totalCount?: number
   getRowStyle?: (item: T, isDark?: boolean) => { backgroundColor?: string; borderLeftColor?: string; borderLeftWidth?: number } | undefined
+  /** Render context for passing route and other info to cells */
+  renderContext?: RenderContext
 }
 
 // ============================================================================

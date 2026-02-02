@@ -501,10 +501,13 @@ export function canEditLayoutForTask(user: User | null, taskSectorId: string | n
   // ADMIN can edit any task's layout
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Check if user has layout editing privilege (team leader or LOGISTIC)
-  if (!canEditLayoutsOnly(user)) return false;
+  // LOGISTIC can edit any task's layout
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC) return true;
 
-  // Task has no sector - anyone with layout privilege can edit
+  // Team leaders need to check sector
+  if (!isTeamLeader(user)) return false;
+
+  // Task has no sector - team leader can edit
   if (!taskSectorId) return true;
 
   // Check if task is in user's MANAGED sector (not their own sector)

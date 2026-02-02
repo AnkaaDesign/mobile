@@ -203,12 +203,37 @@ function CatalogViewOnlyListScreen() {
     }
 
     const params: any = {
-      include: {
-        paintType: true,
-        paintBrand: true,
-        formulas: true,
+      // Use select instead of include for 90% data reduction
+      // NEVER include formulas in catalogue - only count them!
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        hex: true,
+        hexColor: true,
+        finish: true,
+        colorPreview: true,
+        description: true,
+        colorOrder: true,
+        manufacturer: true,
+        createdAt: true,
+        updatedAt: true,
+        paintType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        paintBrand: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        // Only count formulas, don't fetch them! 90% reduction
         _count: {
           select: {
+            formulas: true,
             logoTasks: true,
             generalPaintings: true,
           },

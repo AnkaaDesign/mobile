@@ -14,6 +14,7 @@ const Text = RNText; // Use React Native's Text directly
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -27,7 +28,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptics";
-import { useRouter, usePathname } from "expo-router";
+import { useRouter, usePathname, useNavigation } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
@@ -61,6 +62,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { user: authUser, logout, refreshUserData } = useAuth();
   const { theme, setTheme, isDark: isDarkMode } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { clearHistory } = useNavigationHistory();
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -279,26 +281,26 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
       const tabRoute = routeToMobilePath(path);
 
+      console.log('📱 [MENU NAV] ========== START ==========');
+      console.log('📱 [MENU NAV] Current pathname:', pathname);
+      console.log('📱 [MENU NAV] Target route:', tabRoute);
+
       try {
+        // Always use push for consistent behavior
+        // The navigation history context will track the proper history
+        console.log('📱 [MENU NAV] Navigating with push');
         router.push(tabRoute as any);
+
         props.navigation?.closeDrawer?.();
-        // Keep expanded menus open - don't reset them on navigation
-        // This allows users to stay in context when navigating within a domain
-        // Close user dropdown menu if open
         closeUserMenu();
+        console.log('📱 [MENU NAV] Navigation successful');
       } catch (error) {
-        console.warn("Navigation failed for route:", tabRoute, error);
-        try {
-          router.push('/(tabs)/home' as any);
-          props.navigation?.closeDrawer?.();
-          // Close user dropdown menu if open
-          closeUserMenu();
-        } catch (fallbackError) {
-          console.error("Fallback navigation also failed:", fallbackError);
-        }
+        console.error('📱 [MENU NAV] Navigation failed:', error);
       }
+
+      console.log('📱 [MENU NAV] ========== END ==========');
     },
-    [router, props.navigation, closeUserMenu],
+    [router, props.navigation, closeUserMenu, pathname],
   );
 
   // Get first submenu path for navigation

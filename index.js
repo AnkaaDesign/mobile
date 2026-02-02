@@ -1,27 +1,54 @@
 // Import global polyfills first (before any other imports)
 import "./src/lib/global-polyfills";
 
+// Import performance optimizations early
+import { initializePerformanceOptimizations } from "./src/config/performance-config";
+
+// Initialize performance optimizations before React
+initializePerformanceOptimizations();
+
 import { registerRootComponent } from "expo";
 import { ExpoRoot } from "expo-router";
-import { LogBox } from "react-native";
+import { LogBox, Platform } from "react-native";
 
-// Ignore specific warnings
-LogBox.ignoreLogs(["[Reanimated] Reading from `value` during component render"]);
-LogBox.ignoreLogs(["Require cycle:"]);
+// Configure LogBox for production
+if (__DEV__) {
+  // In development, ignore specific warnings
+  LogBox.ignoreLogs([
+    "[Reanimated] Reading from `value` during component render",
+    "Require cycle:",
+    "ViewPropTypes will be removed",
+    "ColorPropType will be removed",
+  ]);
+} else {
+  // In production, disable all logs for better performance
+  LogBox.ignoreAllLogs();
+}
 
-// Filter console warnings without modifying the console object
-// This avoids "property is not configurable" errors in Hermes
-const originalWarn = console.warn;
-console.warn = function (...args) {
-  if (typeof args[0] === "string" && args[0].includes("[Reanimated]")) {
-    return;
+// Optimize console methods for production
+if (!__DEV__) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
+  // Keep console.error for critical issues
+}
+
+// Platform-specific optimizations
+if (Platform.OS === 'android') {
+  // Enable layout animation on Android
+  if (Platform.constants?.reactNativeVersion) {
+    const { UIManager } = require('react-native');
+    if (UIManager?.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
   }
-  return originalWarn.apply(console, args);
-};
+}
 
 // Must be exported or Fast Refresh won't update the context
 export function App() {
   const ctx = require.context("./src/app/");
   return <ExpoRoot context={ctx} />;
 }
+
 registerRootComponent(App);

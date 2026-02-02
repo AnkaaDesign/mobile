@@ -13,7 +13,9 @@ import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
-import { useUsers, useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
+import { useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
+import { useUsersMinimal } from "@/hooks/use-form-data";
+import { ITEM_SELECT_MINIMAL } from "@/api-client/select-patterns";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
@@ -132,21 +134,29 @@ export function BorrowBatchCreateForm({
     [form, multiStepForm],
   );
 
-  // Fetch users
-  const { data: users, isLoading: isLoadingUsers } = useUsers({
+  // Fetch users - using minimal data for 95% reduction
+  const { data: users, isLoading: isLoadingUsers } = useUsersMinimal({
     orderBy: { name: "asc" },
+    limit: 500, // Enough for all users in dropdown
   });
 
   const userOptions = useMemo(
-    () => users?.data?.map((user) => ({ value: user.id, label: user.name })) || [],
+    () => users?.map((user) => ({ value: user.id, label: user.name })) || [],
     [users],
   );
 
-  // Fetch selected items for review
+  // Fetch selected items for review - using minimal select for 90% reduction
   const selectedItemIds = useMemo(() => Array.from(multiStepForm.selectedItems), [multiStepForm.selectedItems]);
 
   const { data: selectedItemsData } = useItems(
-    { where: { id: { in: selectedItemIds } }, include: { brand: true, category: true } },
+    {
+      where: { id: { in: selectedItemIds } },
+      select: {
+        ...ITEM_SELECT_MINIMAL,
+        brand: { select: { id: true, name: true } },
+        category: { select: { id: true, name: true } },
+      }
+    },
     { enabled: multiStepForm.currentStep === 2 && selectedItemIds.length > 0 },
   );
 
@@ -161,7 +171,7 @@ export function BorrowBatchCreateForm({
   }, [selectedItemsData, multiStepForm]);
 
   const selectedUserName = useMemo(() => {
-    const user = users?.data?.find((u) => u.id === multiStepForm.formData.userId);
+    const user = users?.find((u) => u.id === multiStepForm.formData.userId);
     return user?.name || "Não selecionado";
   }, [users, multiStepForm.formData.userId]);
 

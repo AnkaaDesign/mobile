@@ -31,7 +31,7 @@ interface TaskDatesCardProps {
   canViewRestrictedFields?: boolean;
 }
 
-export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task, canViewRestrictedFields = false }) => {
+export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, canViewRestrictedFields = false }) => {
   const { colors } = useTheme();
 
   const isOverdue = task.term && new Date(task.term) < new Date() &&
@@ -136,7 +136,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = ({ task, canViewRestr
       </View>
     </Card>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

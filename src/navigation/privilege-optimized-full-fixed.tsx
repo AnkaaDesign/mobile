@@ -13,8 +13,9 @@ import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
-import { router } from "expo-router";
+import { router, usePathname, useNavigation } from "expo-router";
 import * as Haptics from 'expo-haptics';
+import { navigationTracker } from '@/utils/navigation-tracker';
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -587,6 +588,7 @@ function InnerLayout() {
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
   const { setDrawerMode } = useDrawerMode();
+  const pathname = usePathname();
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
@@ -706,15 +708,177 @@ function InnerLayout() {
           },
           // Disable drawer swipe on notifications screen to allow notification item swipes
           swipeEnabled: !route.name.includes('notifications'),
-          headerLeft: () => (
-            canGoBack ? (
+          headerLeft: () => {
+            // Determine if we should show back button
+            const showBackButton = canGoBack || pathname !== '/(tabs)/inicio';
+
+            if (!showBackButton) {
+              // Add spacing even when there's no back button for consistency
+              return <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />;
+            }
+
+            return (
               <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
                 <Pressable
                   onPress={() => {
+                    console.log('🔙 [BACK BTN] ========== START ==========');
+                    console.log('🔙 [BACK BTN] Current pathname:', pathname);
+
+                    // Show loading overlay for visual feedback
                     if (!isNavigating) {
-                      startNavigation();
-                      goBack();
+                      startNavigation("Voltando...");
                     }
+
+                    // NEVER use router.back() - it's broken with Drawer navigator
+                    // Always use explicit navigation to the correct parent route
+
+                    if (pathname.includes('/detalhes/')) {
+                      // From detail page, always go back to the parent list
+                      let targetRoute = '/(tabs)/inicio';
+
+                      if (pathname.includes('/producao/agenda/detalhes/')) {
+                        targetRoute = '/(tabs)/producao/agenda';
+                      } else if (pathname.includes('/producao/cronograma/detalhes/')) {
+                        targetRoute = '/(tabs)/producao/cronograma';
+                      } else if (pathname.includes('/producao/ordens-de-servico/detalhes/')) {
+                        targetRoute = '/(tabs)/producao/ordens-de-servico';
+                      } else {
+                        // Generic detail page - extract parent path
+                        const pathParts = pathname.split('/');
+                        const section = pathParts.slice(0, pathParts.indexOf('detalhes')).join('/');
+                        targetRoute = section;
+                      }
+
+                      console.log('🔙 [BACK BTN] Detail → List:', targetRoute);
+                      router.push(targetRoute as any);
+
+                    } else if (pathname.includes('/layout/')) {
+                      // From layout page, check where we came from
+                      let targetRoute = '/(tabs)/inicio';
+
+                      // Check if we have a stored navigation source
+                      if (navigationTracker.hasSource()) {
+                        const source = navigationTracker.getSource();
+                        console.log('🔙 [BACK BTN] Found navigation source:', source);
+
+                        // Go back to where we came from
+                        if (source) {
+                          targetRoute = source;
+                          // Clear the source after using it
+                          navigationTracker.clearSource();
+                        }
+                      } else {
+                        // No source stored, layout forms are typically accessed from cronograma
+                        if (pathname.includes('/producao/cronograma/layout/')) {
+                          targetRoute = '/(tabs)/producao/cronograma';
+                        } else {
+                          // Generic layout - go to parent section
+                          const pathParts = pathname.split('/');
+                          const section = pathParts.slice(0, pathParts.indexOf('layout')).join('/');
+                          targetRoute = section;
+                        }
+                      }
+
+                      console.log('🔙 [BACK BTN] Layout → Source:', targetRoute);
+                      router.push(targetRoute as any);
+
+                    } else if (pathname.includes('/precificacao/')) {
+                      // From pricing page, check where we came from
+                      let targetRoute = '/(tabs)/inicio';
+
+                      // Check if we have a stored navigation source
+                      if (navigationTracker.hasSource()) {
+                        const source = navigationTracker.getSource();
+                        console.log('🔙 [BACK BTN] Found navigation source:', source);
+
+                        // Go back to where we came from
+                        if (source) {
+                          targetRoute = source;
+                          // Clear the source after using it
+                          navigationTracker.clearSource();
+                        }
+                      } else {
+                        // No source stored, pricing is typically accessed from agenda
+                        if (pathname.includes('/producao/agenda/precificacao/')) {
+                          targetRoute = '/(tabs)/producao/agenda';
+                        } else {
+                          // Generic pricing - go to parent section
+                          const pathParts = pathname.split('/');
+                          const section = pathParts.slice(0, pathParts.indexOf('precificacao')).join('/');
+                          targetRoute = section;
+                        }
+                      }
+
+                      console.log('🔙 [BACK BTN] Pricing → Source:', targetRoute);
+                      router.push(targetRoute as any);
+
+                    } else if (pathname.includes('/editar/')) {
+                      // From edit page, check where we came from
+                      let targetRoute = '/(tabs)/inicio';
+
+                      // Check if we have a stored navigation source
+                      if (navigationTracker.hasSource()) {
+                        const source = navigationTracker.getSource();
+                        console.log('🔙 [BACK BTN] Found navigation source:', source);
+
+                        // Go back to where we came from
+                        if (source) {
+                          targetRoute = source;
+                          // Clear the source after using it
+                          navigationTracker.clearSource();
+                        }
+                      } else {
+                        // No source stored, determine from URL
+                        // The edit URL might be /producao/cronograma/editar/ but we came from agenda
+                        // So we should look at the task's actual module, not the URL
+
+                        // For production tasks, they can be accessed from agenda, cronograma, or historico
+                        // Without stored source, default to agenda as it's the main entry point
+                        if (pathname.includes('/producao/')) {
+                          targetRoute = '/(tabs)/producao/agenda';
+                        } else if (pathname.includes('/ordens-de-servico/')) {
+                          targetRoute = '/(tabs)/producao/ordens-de-servico';
+                        } else {
+                          // Generic edit - go to parent section
+                          const pathParts = pathname.split('/');
+                          const section = pathParts.slice(0, pathParts.indexOf('editar')).join('/');
+                          targetRoute = section;
+                        }
+                      }
+
+                      console.log('🔙 [BACK BTN] Edit → Source:', targetRoute);
+                      router.push(targetRoute as any);
+
+                    } else if (pathname.includes('/cadastrar')) {
+                      // From create page, go back to the parent list
+                      let targetRoute = '/(tabs)/inicio';
+
+                      if (pathname.includes('/producao/agenda/cadastrar')) {
+                        targetRoute = '/(tabs)/producao/agenda';
+                      } else if (pathname.includes('/producao/cronograma/cadastrar')) {
+                        targetRoute = '/(tabs)/producao/cronograma';
+                      } else if (pathname.includes('/producao/ordens-de-servico/cadastrar')) {
+                        targetRoute = '/(tabs)/producao/ordens-de-servico';
+                      } else {
+                        // Generic create - extract parent path
+                        const section = pathname.replace('/cadastrar', '');
+                        targetRoute = section;
+                      }
+
+                      console.log('🔙 [BACK BTN] Create → List:', targetRoute);
+                      router.push(targetRoute as any);
+
+                    } else if (pathname === '/(tabs)/inicio' || pathname === '/inicio') {
+                      // Already at home, do nothing
+                      console.log('🔙 [BACK BTN] Already at home');
+
+                    } else {
+                      // For list pages, go to home
+                      console.log('🔙 [BACK BTN] List → Home');
+                      router.push('/(tabs)/inicio' as any);
+                    }
+
+                    console.log('🔙 [BACK BTN] ========== END ==========');
                   }}
                   disabled={isNavigating}
                   style={({ pressed }) => [
@@ -732,11 +896,8 @@ function InnerLayout() {
                   />
                 </Pressable>
               </View>
-            ) : (
-              // Add spacing even when there's no back button for consistency
-              <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />
-            )
-          ),
+            );
+          },
           headerRight: () => (
             <View style={styles.headerRight}>
               <NotificationBell
@@ -776,8 +937,10 @@ function InnerLayout() {
             backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8", // background colors
             paddingHorizontal: Platform.OS === 'ios' ? 16 : 12,
           },
-          // Unmount screens when navigating away - resets state (search, filters, etc.)
-          unmountOnBlur: true,
+          // Keep screens mounted for better performance
+          // Use detachInactiveScreens for memory optimization while keeping state
+          unmountOnBlur: false,
+          detachInactiveScreens: true, // Detach from view hierarchy but keep in memory
         };
       }}
     >

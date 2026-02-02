@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react'
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { IconFilter } from '@tabler/icons-react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, usePathname } from 'expo-router'
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Icon } from '@/components/ui/icon'
@@ -12,6 +12,7 @@ import { useList } from '@/hooks/list/useList'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
 import { perfLog } from '@/utils/performance-logger'
+import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters, Tags } from '../Filters'
@@ -32,7 +33,9 @@ export const Layout = memo(function Layout({
 }: LayoutProps) {
   const { colors } = useTheme()
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useAuth()
+  const { pushWithLoading, startNavigation, endNavigation, isNavigating } = useNavigationLoading()
   const list = useList(config)
 
   // Track page access for recents/most accessed
@@ -41,19 +44,24 @@ export const Layout = memo(function Layout({
   // Handle create action
   const handleCreate = () => {
     if (config.actions?.create?.route) {
-      router.push(config.actions.create.route as any)
+      pushWithLoading(config.actions.create.route)
     }
   }
 
   // Handle row click - use config's onRowPress if defined, otherwise use 'view' action or first non-destructive action
   const handleRowPress = useCallback((item: any) => {
+    // Prevent double-clicks while navigating
+    if (isNavigating) return
+
     // Performance logging - track navigation start
     perfLog.navigationClick(`Layout:${config.key}`, `${config.key}:detail`, item.id)
     perfLog.mark(`Row pressed in ${config.title}: ${item.name || item.id}`)
 
-    // If config has a custom onRowPress handler, use it
+    // If config has a custom onRowPress handler, use it with loading
     if (config.table.onRowPress) {
+      startNavigation()
       config.table.onRowPress(item, router)
+      // Navigation loading will auto-hide when pathname changes
       return
     }
 
@@ -78,29 +86,48 @@ export const Layout = memo(function Layout({
 
     perfLog.mark(`Navigating via action: ${action.key}`)
 
-    // Execute the action
+    // Execute the action with loading overlay
     if (action.onPress) {
+      startNavigation()
       action.onPress(item, router, {})
+      // Navigation loading will auto-hide when pathname changes
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
-      router.push(route as any)
+      pushWithLoading(route)
     }
-  }, [config.table.actions, config.table.onRowPress, config.key, config.title, router])
+  }, [config.table.actions, config.table.onRowPress, config.key, config.title, router, isNavigating, startNavigation, pushWithLoading])
 
   // Check if user can create (using permission function if provided)
   const canCreate = config.actions?.create?.canCreate
     ? config.actions.create.canCreate(user)
     : true // Default to true if no permission check is provided
 
-  // Show loading on initial load
+  // Show skeleton loader on initial load instead of spinner
   if (list.isLoading && list.items.length === 0) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-            Carregando {config.title.toLowerCase()}...
-          </ThemedText>
+        <View style={styles.content}>
+          {/* Search bar skeleton */}
+          <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
+            <View style={{ height: 40, backgroundColor: colors.muted, borderRadius: 8, opacity: 0.3 }} />
+          </View>
+
+          {/* List items skeletons */}
+          <View style={{ padding: 16 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={[
+                styles.skeletonItem,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  marginBottom: 12
+                }
+              ]}>
+                <View style={{ height: 20, backgroundColor: colors.muted, borderRadius: 4, opacity: 0.3, marginBottom: 8 }} />
+                <View style={{ height: 16, backgroundColor: colors.muted, borderRadius: 4, opacity: 0.3, width: '60%' }} />
+              </View>
+            ))}
+          </View>
         </View>
       </ThemedView>
     )
@@ -244,6 +271,11 @@ export const Layout = memo(function Layout({
         emptyState={config.emptyState}
         totalCount={list.totalCount}
         getRowStyle={list.table.getRowStyle}
+        renderContext={{
+          route: pathname,
+          navigationRoute: pathname?.includes('historico') ? 'history' : undefined,
+          user,
+        }}
       />
 
       {/* FAB for Create */}
@@ -293,6 +325,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchContainer: {
+    flex: 1,
+  },
+  skeletonItem: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  content: {
     flex: 1,
   },
   actions: {

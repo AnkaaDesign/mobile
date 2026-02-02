@@ -28,6 +28,7 @@ export const Table = memo(function Table<T extends { id: string }>({
   emptyState,
   totalCount = 0,
   getRowStyle,
+  renderContext,
 }: TableProps<T>) {
   const { colors } = useTheme()
   const { width: screenWidth } = Dimensions.get('window')
@@ -60,9 +61,10 @@ export const Table = memo(function Table<T extends { id: string }>({
         mutations={mutations}
         onPress={onRowPress as any}
         getRowStyle={getRowStyle as any}
+        renderContext={renderContext}
       />
     ),
-    [displayColumns, selection, actions, mutations, onRowPress, getRowStyle]
+    [displayColumns, selection, actions, mutations, onRowPress, getRowStyle, renderContext]
   )
 
   const renderFooter = useCallback(

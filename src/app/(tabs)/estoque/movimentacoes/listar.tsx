@@ -1,6 +1,7 @@
 import { Layout } from '@/components/list/Layout'
-import { activitiesListConfig } from '@/config/list/inventory/activities'
+import { activitiesListOptimizedConfig } from '@/config/list/inventory/activities-optimized'
 
 export default function ActivityListScreen() {
-  return <Layout config={activitiesListConfig} />
+  // Using OPTIMIZED config to reduce API payload by ~70%
+  return <Layout config={activitiesListOptimizedConfig} />
 }

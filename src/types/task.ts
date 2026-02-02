@@ -16,6 +16,7 @@ import type { Truck, TruckIncludes } from "./truck";
 import type { Bonus, BonusIncludes } from "./bonus";
 import type { BonusDiscount, BonusDiscountIncludes } from "./bonusDiscount";
 import type { TaskPricing } from "./task-pricing";
+import type { Representative } from "./representative";
 
 // =====================
 // Task Interface
@@ -39,7 +40,8 @@ export interface Task extends BaseEntity {
   customerId: string | null;
   invoiceToId: string | null;
   sectorId: string | null;
-  negotiatingWith: { name: string; phone: string } | null;
+  representatives?: Representative[];
+  representativeIds?: string[];
   budgetIds?: string[];
   invoiceIds?: string[];
   receiptIds?: string[];

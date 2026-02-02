@@ -1196,25 +1196,8 @@ export const taskCreateSchema = z
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    // ENHANCED: negotiatingWith now has validation to require both fields or neither (matches web logic)
-    negotiatingWith: z
-      .object({
-        name: z.string().optional(),
-        phone: z.string().optional(),
-      })
-      .nullable()
-      .optional()
-      .refine(
-        (data) => {
-          if (!data) return true;
-          const hasName = data.name && data.name.trim().length > 0;
-          const hasPhone = data.phone && data.phone.trim().length > 0;
-          return (hasName && hasPhone) || (!hasName && !hasPhone);
-        },
-        {
-          message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
-        }
-      ),
+    // Representatives relationship
+    representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
@@ -1296,25 +1279,8 @@ export const taskUpdateSchema = z
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    // ENHANCED: negotiatingWith now has validation to require both fields or neither (matches web logic)
-    negotiatingWith: z
-      .object({
-        name: z.string().optional(),
-        phone: z.string().optional(),
-      })
-      .nullable()
-      .optional()
-      .refine(
-        (data) => {
-          if (!data) return true;
-          const hasName = data.name && data.name.trim().length > 0;
-          const hasPhone = data.phone && data.phone.trim().length > 0;
-          return (hasName && hasPhone) || (!hasName && !hasPhone);
-        },
-        {
-          message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
-        }
-      ),
+    // Representatives relationship
+    representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),

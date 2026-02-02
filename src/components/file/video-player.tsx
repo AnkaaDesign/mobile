@@ -16,7 +16,28 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+// Using conditional import for backward compatibility
+let VideoComponent: any = null;
+let ResizeModeEnum: any = null;
+let AVPlaybackStatusType: any = null;
+
+try {
+  // Try to use the new expo-video if available
+  const expoVideo = require('expo-video');
+  VideoComponent = expoVideo.Video;
+  ResizeModeEnum = expoVideo.ResizeMode;
+  AVPlaybackStatusType = expoVideo.AVPlaybackStatus;
+} catch (error) {
+  try {
+    // Fallback to expo-av if expo-video is not available
+    const expoAv = require('expo-av');
+    VideoComponent = expoAv.Video;
+    ResizeModeEnum = expoAv.ResizeMode;
+    AVPlaybackStatusType = expoAv.AVPlaybackStatus;
+  } catch (error2) {
+    console.warn('Video playback not available');
+  }
+}
 import {
   IconX,
   IconPlayerPlay,
@@ -49,8 +70,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   baseUrl,
 }) => {
   const insets = useSafeAreaInsets();
-  const videoRef = useRef<Video>(null);
-  const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
+  const videoRef = useRef<any>(null);
+  const [status, setStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -286,7 +307,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               rate={1.0}
               volume={1.0}
               isMuted={isMuted}
-              resizeMode={ResizeMode.CONTAIN}
+              resizeMode={ResizeModeEnum ? ResizeModeEnum.CONTAIN : 'contain'}
               shouldPlay={false}
               isLooping={false}
               useNativeControls={false} // We use custom controls

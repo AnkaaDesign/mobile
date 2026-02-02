@@ -2,16 +2,19 @@
 import { Alert, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TaskForm } from "@/components/production/task/form/task-form";
+import { TaskFormOptimized as TaskForm } from "@/components/production/task/form";
 import { useTaskDetail, useTaskMutations } from "@/hooks";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { ErrorScreen, Skeleton, ThemedScrollView, Card, CardContent } from "@/components/ui";
 import { spacing } from "@/constants/design-system";
 
 export default function EditServiceOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { goBack: goBackHistory } = useNavigationHistory();
   // Fixed: isUpdating doesn't exist, use isLoading instead
   const { updateAsync, isLoading: isUpdating } = useTaskMutations();
 
@@ -55,12 +58,26 @@ export default function EditServiceOrderScreen() {
   };
 
   const handleCancel = () => {
+    console.log('[EditServiceOrder] handleCancel called');
     Alert.alert(
       "Descartar Alterações",
       "Você tem alterações não salvas. Deseja descartá-las?",
       [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.back() },
+        {
+          text: "Descartar",
+          style: "destructive",
+          onPress: () => {
+            console.log('[EditServiceOrder] User confirmed discard, going back');
+            // Use router.back() for proper stack navigation
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              // Fallback to detail page if can't go back
+              router.push(routeToMobilePath(routes.production.serviceOrders.details(id!)) as any);
+            }
+          }
+        },
       ]
     );
   };

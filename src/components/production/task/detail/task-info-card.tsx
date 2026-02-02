@@ -56,7 +56,7 @@ interface TaskInfoCardProps {
   canViewRestrictedFields?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false }) => {
   const { colors } = useTheme();
 
   return (
@@ -235,7 +235,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = ({ task, truckDimension
       </View>
     </Card>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {

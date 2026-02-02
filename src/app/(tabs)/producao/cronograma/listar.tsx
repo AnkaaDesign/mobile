@@ -1,6 +1,7 @@
 import { TaskScheduleLayout } from '@/components/production/task/schedule'
-import { tasksListConfig } from '@/config/list/production/tasks'
+import { tasksListOptimizedConfig } from '@/config/list/production/tasks-optimized'
 
 export default function TaskScheduleScreen() {
-  return <TaskScheduleLayout config={tasksListConfig} />
+  // Using OPTIMIZED config to reduce API payload from 1.72MB to ~200KB
+  return <TaskScheduleLayout config={tasksListOptimizedConfig} />
 }

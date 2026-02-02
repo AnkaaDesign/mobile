@@ -12,6 +12,7 @@ import qs from "qs";
 import Constants from "expo-constants";
 import { notify } from "./notify";
 import { safeLocalStorage } from "./platform-utils";
+import { apiPerformanceLogger } from "@/utils/api-performance-logger";
 
 // =====================
 // Enhanced Type Definitions
@@ -533,6 +534,14 @@ const createApiClient = (
 
       config.metadata = metadata;
 
+      // Log API request start
+      apiPerformanceLogger.startRequest(
+        requestId,
+        config.url || '',
+        config.method?.toUpperCase() || 'GET',
+        config.data
+      );
+
       // Auto-attach token if tokenProvider is configured
       const tokenProvider =
         (client as any).__tokenProvider ||
@@ -684,6 +693,15 @@ const createApiClient = (
         cancelTokens.delete(requestId);
       }
 
+      // Log API request completion
+      if (requestId) {
+        apiPerformanceLogger.endRequest(
+          requestId,
+          response.status,
+          response.data
+        );
+      }
+
       // Cache successful GET responses
       if (
         finalConfig.enableCache &&
@@ -741,6 +759,16 @@ const createApiClient = (
       // Clean up cancel token
       if (requestId) {
         cancelTokens.delete(requestId);
+      }
+
+      // Log API error
+      if (requestId) {
+        apiPerformanceLogger.endRequest(
+          requestId,
+          error.response?.status || 0,
+          error.response?.data,
+          error
+        );
       }
 
       // NOTE: Network-based URL switching is now handled centrally by NetworkContext.

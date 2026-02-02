@@ -6,6 +6,7 @@ import type { Task } from '@/types'
 import { canCreateTasks, canEditTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks } from '@/utils/permissions/entity-permissions'
 import { canViewPricing } from '@/utils/permissions/pricing-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants'
+import { navigationTracker } from '@/utils/navigation-tracker'
 
 // Column visibility helpers matching web task-edit-form.tsx
 const canViewRestrictedFields = (user: any) => {
@@ -114,23 +115,89 @@ export const tasksListConfig: ListConfig<Task> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'term', direction: 'asc' },
     pageSize: 25,
-    include: {
-      customer: true,
-      sector: true,
-      generalPainting: {
-        include: {
-          paintType: true,
-          paintBrand: true,
+    // Use optimized select instead of include for better performance
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      statusOrder: true,
+      serialNumber: true,
+      details: true,
+      entryDate: true,
+      term: true,
+      startedAt: true,
+      finishedAt: true,
+      forecastDate: true,
+      commission: true,
+      measures: true,
+      price: true,
+      createdAt: true,
+      updatedAt: true,
+      sectorId: true,
+      customerId: true,
+      paintId: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true, // Only fantasy name for lists - 60% less data
         },
       },
-      truck: true,
-      serviceOrders: {
+      sector: {
         select: {
           id: true,
           name: true,
         },
       },
-      createdBy: true,
+      generalPainting: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+          finish: true,
+          // NO formulas - major performance improvement
+          paintType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          paintBrand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+          chassisNumber: true,
+          leftSideLayoutId: true,
+          rightSideLayoutId: true,
+          backSideLayoutId: true,
+        },
+      },
+      serviceOrders: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          status: true,
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          managedSector: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
     },
   },
 
@@ -350,6 +417,7 @@ export const tasksListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/cronograma')
           router.push(`/producao/cronograma/detalhes/${task.id}`)
         },
       },
@@ -454,7 +522,11 @@ export const tasksListConfig: ListConfig<Task> = {
         // ADMIN, LOGISTIC, or Team Leaders can view/edit layouts
         canPerform: canViewLayouts,
         visible: (task: Task, user: any) => canEditLayoutForTask(user, task.sectorId),
-        onPress: (task, router) => {
+        onPress: (task, router, context) => {
+          // Store navigation source for proper back navigation
+          const currentPath = context?.route || '/(tabs)/producao/cronograma'
+          console.log('[Tasks] Storing navigation source for layout:', currentPath)
+          navigationTracker.setSource(currentPath)
           router.push(`/producao/cronograma/layout/${task.id}`)
         },
       },
@@ -491,7 +563,11 @@ export const tasksListConfig: ListConfig<Task> = {
         icon: 'currency-real',
         variant: 'default',
         canPerform: (user: any) => canViewPricing(user?.sector?.privileges || ''),
-        onPress: (task, router) => {
+        onPress: (task, router, context) => {
+          // Store navigation source for proper back navigation
+          const currentPath = context?.route || '/(tabs)/producao/agenda'
+          console.log('[Tasks] Storing navigation source for pricing:', currentPath)
+          navigationTracker.setSource(currentPath)
           router.push(`/producao/agenda/precificacao/${task.id}`)
         },
       },
@@ -501,7 +577,12 @@ export const tasksListConfig: ListConfig<Task> = {
         icon: 'pencil',
         variant: 'default',
         canPerform: canEditTasks,
-        onPress: (task, router) => {
+        onPress: (task, router, context) => {
+          // Store navigation source for proper back navigation
+          // The context should have the route from renderContext
+          const currentPath = context?.route || '/(tabs)/producao/cronograma'
+          console.log('[Tasks] Storing navigation source for edit:', currentPath)
+          navigationTracker.setSource(currentPath)
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
       },

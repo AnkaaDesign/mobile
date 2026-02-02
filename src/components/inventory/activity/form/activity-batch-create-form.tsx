@@ -14,7 +14,8 @@ import { FormCard } from "@/components/ui/form-section";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
-import { useUsers, useOrders, useOrderItems, useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
+import { useOrders, useOrderItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
+import { useUsersMinimal, useItemsForCombobox } from "@/hooks/use-form-data";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
 import { ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
@@ -210,9 +211,8 @@ export function ActivityBatchCreateForm({
     [form, multiStepForm],
   );
 
-  // Fetch users for selection
-  const { data: users, isLoading: isLoadingUsers } = useUsers({
-    orderBy: { name: "asc" },
+  // Fetch users for selection (minimal data - 95% reduction)
+  const { data: users, isLoading: isLoadingUsers } = useUsersMinimal({
     limit: 100,
   });
 

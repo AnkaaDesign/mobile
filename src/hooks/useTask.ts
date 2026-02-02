@@ -125,14 +125,15 @@ export function useTasks(params?: UseTasksParams) {
 // -------------------------------------
 export function useTaskDetail(id: string, params?: UseTaskDetailParams) {
   const queryClient = useQueryClient();
-  const { enabled = true, include } = params ?? {};
+  const { enabled = true, include, staleTime = 1000 * 60 * 10 } = params ?? {};
 
   const query = useQuery({
     queryKey: taskKeys.detail(id, include),
     queryFn: () => getTaskById(id, { include }),
     enabled: enabled && !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
+    staleTime, // Use provided staleTime or default to 10 minutes
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    retry: 1, // Reduce retries for faster failure
   });
 
   const refresh = () => {

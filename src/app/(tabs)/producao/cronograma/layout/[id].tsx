@@ -51,9 +51,23 @@ export default function LayoutOnlyEditScreen() {
 
   // Fetch truck layouts if task has a truck
   const truckId = task?.truck?.id;
-  const { data: layoutsData, isLoading: isLoadingLayouts } = useLayoutsByTruck(truckId || "", {
+  const layoutsQuery = useLayoutsByTruck(truckId || "", {
     include: { layoutSections: true },
     enabled: !!truckId,
+  });
+  const layoutsData = layoutsQuery.data;
+  const isLoadingLayouts = layoutsQuery.isLoading;
+
+  // Debug the layouts query
+  console.log('[Layout Page] Layouts Query:', {
+    truckId,
+    enabled: !!truckId,
+    isLoading: layoutsQuery.isLoading,
+    isFetching: layoutsQuery.isFetching,
+    isSuccess: layoutsQuery.isSuccess,
+    isError: layoutsQuery.isError,
+    hasData: !!layoutsQuery.data,
+    dataKeys: layoutsQuery.data ? Object.keys(layoutsQuery.data) : null,
   });
 
   // Layout state - Include photoUri for new photos that need to be uploaded
@@ -265,42 +279,62 @@ export default function LayoutOnlyEditScreen() {
   // Check if user can edit this specific task's layout (managed sector check)
   const canEditThisTaskLayout = canEditLayoutForTask(user, task?.sectorId);
 
+  // Debug logging
+  console.log('[Layout Page] State:', {
+    checkingPermission,
+    hasUser: !!user,
+    hasTask: !!task,
+    hasTruck: !!task?.truck,
+    truckId: task?.truck?.id,
+    isLoadingTask,
+    isLoadingLayouts,
+    layoutsQueryEnabled: !!truckId,
+    canEditLayout,
+    canEditThisTaskLayout,
+    taskSectorId: task?.sectorId,
+    userPrivilege: user?.sector?.privileges,
+  });
+
   // Permission check effect - redirect if no permission for this task
   useEffect(() => {
+    console.log('[Layout Page] Permission check effect:', {
+      userDefined: user !== undefined,
+      taskDefined: task !== undefined,
+      isLoadingTask,
+    });
+
     if (user !== undefined && task !== undefined && !isLoadingTask) {
       setCheckingPermission(false);
 
       // Check basic layout permission first
       if (!canEditLayout) {
+        console.log('[Layout Page] No basic layout permission');
         Alert.alert("Acesso negado", "Voce nao tem permissao para editar layouts");
-        router.replace("/producao/cronograma");
+        router.replace("/(tabs)/producao/cronograma");
         return;
       }
 
       // Check if user can edit THIS task's layout (managed sector validation)
       if (!canEditThisTaskLayout) {
+        console.log('[Layout Page] Cannot edit this task layout');
         Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor gerenciado ou tarefas sem setor definido");
-        router.replace("/producao/cronograma");
+        router.replace("/(tabs)/producao/cronograma");
       }
     }
   }, [user, task, isLoadingTask, canEditLayout, canEditThisTaskLayout, router]);
 
-  // Show loading while checking permission or loading task
+  // Show skeleton while checking permission or loading data
+  // TEMPORARILY: Skip layouts loading check to see if that's the issue
+  const shouldCheckLayoutsLoading = false; // !!truckId;
+  const stillLoadingLayouts = shouldCheckLayoutsLoading && isLoadingLayouts;
+
   if (checkingPermission || !user || isLoadingTask) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={{ marginTop: 16 }}>Verificando permissoes...</ThemedText>
-      </View>
-    );
-  }
-
-  // If no permission, show nothing (redirect will happen)
-  if (!canEditLayout || !canEditThisTaskLayout) {
-    return null;
-  }
-
-  if (isLoadingLayouts) {
+    console.log('[Layout Page] Showing skeleton - still loading', {
+      checkingPermission,
+      noUser: !user,
+      isLoadingTask,
+      stillLoadingLayouts,
+    });
     return (
       <ThemedView style={styles.container}>
         <View style={styles.skeletonContainer}>
@@ -310,6 +344,14 @@ export default function LayoutOnlyEditScreen() {
       </ThemedView>
     );
   }
+
+  // If no permission after loading, return null (the useEffect will handle redirect)
+  if (!canEditLayout || !canEditThisTaskLayout) {
+    console.log('[Layout Page] No permission - redirecting');
+    return null;
+  }
+
+  console.log('[Layout Page] Rendering main content');
 
   if (error || !task) {
     return (

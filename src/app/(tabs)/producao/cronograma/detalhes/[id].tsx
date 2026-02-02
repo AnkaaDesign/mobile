@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { FileViewMode } from "@/components/file";
-import { View, ScrollView, RefreshControl, Alert , StyleSheet} from "react-native";
+import { View, ScrollView, RefreshControl, Alert, StyleSheet, InteractionManager, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
+import { SkeletonCard, SkeletonText, SkeletonListItem } from "@/components/ui/skeleton-card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady } from "@/hooks";
@@ -12,6 +13,8 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
 import { perfLog } from "@/utils/performance-logger";
+import { useScreenPerformance } from "@/utils/screen-performance-monitor";
+import { apiPerformanceLogger } from "@/utils/api-performance-logger";
 // import { showToast } from "@/components/ui/toast";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
@@ -27,7 +30,6 @@ import { TaskPricingCard } from "@/components/production/task/detail/task-pricin
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TouchableOpacity } from "react-native";
 import { TaskWithServiceOrdersChangelog } from "@/components/ui/task-with-service-orders-changelog";
 import { FileItem, useFileViewer} from "@/components/file";
 import {
@@ -55,6 +57,9 @@ export default function ScheduleDetailsScreen() {
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
 
+  // Track screen performance
+  const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
+
   // End navigation loading overlay when screen mounts
   useScreenReady();
 
@@ -63,6 +68,7 @@ export default function ScheduleDetailsScreen() {
   useEffect(() => {
     perfLog.screenMount('ScheduleDetailsScreen');
     perfLog.mark(`Task detail screen mounted for id: ${id}`);
+    console.log(`📱 [SCREEN] ScheduleDetailsScreen mounted for task: ${id}`);
   }, []);
 
   // Get file viewer context
@@ -124,83 +130,74 @@ export default function ScheduleDetailsScreen() {
   // Airbrushing section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
   const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
-  // Build optimized include object based on user permissions
-  // This reduces API payload by only fetching data the user can actually view
-  const taskInclude = useMemo(() => {
-    const include: Record<string, any> = {
-      // Always needed for basic display
-      sector: true,
-      customer: true,
-      createdBy: true,
-      serviceOrders: true,
-      truck: true,
-    };
+  // SINGLE OPTIMIZED INCLUDE - Only fetch what's needed
+  const taskInclude = useMemo(() => ({
+    // Core data - always needed
+    sector: true,
+    customer: true,
+    createdBy: true,
+    truck: true,
+    serviceOrders: {
+      select: {
+        id: true,
+        description: true,
+        status: true,
+        type: true,
+        statusOrder: true,
+        assignedToId: true,
+      }
+    },
 
-    // Base files - only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER
-    if (canViewBaseFiles) {
-      include.baseFiles = true;
-    }
+    // Only include what user can view - reduces payload
+    ...(canViewObservation && {
+      observation: { select: { id: true, description: true } }
+    }),
 
-    // Artworks - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC
-    if (canViewArtworks) {
-      include.artworks = true;
-    }
+    ...(canViewBaseFiles && {
+      baseFiles: {
+        select: { id: true, filename: true, size: true, mimetype: true },
+        take: 20 // Limit initial files
+      }
+    }),
 
-    // Documents - admin/financial only
-    if (canViewDocuments) {
-      include.budget = { include: { items: true } };
-      include.budgets = true;
-      include.invoices = true;
-      include.receipts = true;
-    }
+    ...(canViewArtworks && {
+      artworks: {
+        select: { id: true, file: { select: { id: true, filename: true } } },
+        take: 20 // Limit initial artworks
+      }
+    }),
 
-    // Observation - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL
-    if (canViewObservation) {
-      include.observation = { include: { files: true } };
-    }
+    ...(canViewPricingSection && {
+      pricing: {
+        select: {
+          id: true,
+          total: true,
+          status: true,
+          items: { take: 10 } // Limit items
+        }
+      }
+    }),
 
-    // Airbrushing - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL
-    if (canViewAirbrushing) {
-      include.airbrushings = {
-        include: {
-          receipts: canViewDocuments,
-          invoices: canViewDocuments,
-          artworks: true,
-        },
-        orderBy: { createdAt: "desc" },
-      };
-    }
+    ...(canViewPaintSections && {
+      generalPainting: true
+    }),
 
-    // Paint sections - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC
-    if (canViewPaintSections) {
-      include.generalPainting = {
-        include: {
-          paintType: true,
-          paintGrounds: { include: { groundPaint: true } },
-        },
-      };
-    }
+    ...(canViewLogoPaints && {
+      logoPaints: { take: 10 }
+    }),
+  }), [
+    canViewObservation,
+    canViewBaseFiles,
+    canViewArtworks,
+    canViewPricingSection,
+    canViewPaintSections,
+    canViewLogoPaints
+  ]);
 
-    // Logo paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL
-    if (canViewLogoPaints) {
-      include.logoPaints = {
-        include: { paintType: true, paintBrand: true },
-      };
-    }
-
-    // Pricing - ADMIN, FINANCIAL, COMMERCIAL only
-    if (canViewPricingSection) {
-      include.pricing = {
-        include: { items: true, layoutFile: true, customerSignature: true },
-      };
-    }
-
-    return include;
-  }, [canViewBaseFiles, canViewArtworks, canViewDocuments, canViewObservation, canViewAirbrushing, canViewPaintSections, canViewLogoPaints, canViewPricingSection]);
-
-  // Fetch task details - start immediately, don't defer
+  // SINGLE OPTIMIZED API CALL - Much faster!
   const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
     include: taskInclude,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
   });
 
   const task = response?.data;
@@ -210,8 +207,16 @@ export default function ScheduleDetailsScreen() {
     if (!isLoading && task) {
       perfLog.dataReady('ScheduleDetailsScreen', 'useTaskDetail');
       perfLog.mark(`Task data loaded: ${task.name || task.id}`);
+
+      // Track data loaded with API details
+      const apiSummary = apiPerformanceLogger.getSummary();
+      trackDataLoaded({
+        url: `/tasks/${id}`,
+        duration: apiSummary.averageDuration,
+        size: JSON.stringify(task).length,
+      });
     }
-  }, [isLoading, task]);
+  }, [isLoading, task, id, trackDataLoaded]);
 
   // Get display name with fallbacks
   const getTaskDisplayName = (task: any) => {
@@ -224,8 +229,8 @@ export default function ScheduleDetailsScreen() {
 
   const taskDisplayName = task ? getTaskDisplayName(task) : "Carregando...";
 
-  // Fetch layouts for truck dimensions
-  const { data: layouts } = useLayoutsByTruck((task as any)?.truck?.id || '', {
+  // Fetch layouts for truck dimensions - load in parallel with phase 1
+  const { data: layouts, isLoading: layoutsLoading } = useLayoutsByTruck((task as any)?.truck?.id || '', {
     include: { layoutSections: true },
     enabled: !!(task as any)?.truck?.id,
   });
@@ -297,13 +302,42 @@ export default function ScheduleDetailsScreen() {
       requestAnimationFrame(() => {
         perfLog.screenRendered('ScheduleDetailsScreen');
         perfLog.getSummary();
+        trackRenderComplete();
+
+        // Log API performance summary after render
+        console.log('📊 [API SUMMARY FOR THIS SCREEN]');
+        apiPerformanceLogger.logSummary();
       });
     }
-  }, [isLoading, task]);
+  }, [isLoading, task, trackRenderComplete]);
 
   if (isLoading) {
-    perfLog.mark('Showing loading screen for ScheduleDetailsScreen');
-    return <LoadingScreen message="Carregando detalhes da tarefa..." />;
+    perfLog.mark('Showing skeleton screen for ScheduleDetailsScreen');
+    // Show skeleton instead of blank loading screen
+    return (
+      <ScrollView
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Header skeleton */}
+          <SkeletonCard height={80} style={{ marginBottom: 16 }} />
+
+          {/* Info card skeleton */}
+          <SkeletonCard height={200} style={{ marginBottom: 16 }} />
+
+          {/* Dates card skeleton */}
+          <SkeletonCard height={150} style={{ marginBottom: 16 }} />
+
+          {/* Services skeleton */}
+          <SkeletonCard height={300} style={{ marginBottom: 16 }} />
+
+          {/* Additional sections */}
+          <SkeletonCard height={200} style={{ marginBottom: 16 }} />
+          <SkeletonCard height={250} />
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !task) {

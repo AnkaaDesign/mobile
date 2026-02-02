@@ -5,16 +5,19 @@ import { ThemedText } from '@/components/ui/themed-text'
 import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
 import { useAuth } from '@/contexts/auth-context'
-import { useRouter } from 'expo-router'
+import { useRouter, usePathname } from 'expo-router'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
+import { navigationTracker } from '@/utils/navigation-tracker'
 import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal } from '@tabler/icons-react-native'
-import type { TableAction, ActionMutationsContext } from '../types'
+import type { TableAction, ActionMutationsContext, RenderContext } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
   item: T
   actions: Array<TableAction<T>>
   /** Mutations for row actions (update, delete, etc.) */
   mutations?: ActionMutationsContext
+  /** Render context with current route */
+  renderContext?: RenderContext
   children: (closeActions: () => void) => React.ReactNode
 }
 
@@ -22,12 +25,51 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   item,
   actions,
   mutations,
+  renderContext,
   children,
 }: RowActionsProps<T>) {
   const { colors } = useTheme()
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useAuth()
-  const { startNavigation, isNavigating } = useNavigationLoading()
+  const { pushWithLoading, isNavigating, startNavigation, endNavigation } = useNavigationLoading()
+
+  // Get current path - with multiple fallback strategies
+  const getCurrentPath = useCallback(() => {
+    // First try: usePathname hook
+    if (pathname) return pathname
+
+    // Second try: renderContext might have route info
+    if (renderContext?.route) return renderContext.route
+
+    // Third try: Infer from renderContext.navigationRoute
+    if (renderContext?.navigationRoute) {
+      // Map navigationRoute to actual paths
+      if (renderContext.navigationRoute === 'preparation') {
+        return '/(tabs)/producao/agenda'
+      } else if (renderContext.navigationRoute === 'schedule') {
+        return '/(tabs)/producao/cronograma'
+      } else if (renderContext.navigationRoute === 'history') {
+        return '/(tabs)/producao/historico'
+      }
+    }
+
+    // Fourth try: get from router state
+    const state = router as any
+    if (state?.state?.routes && state.state.routes.length > 0) {
+      const currentRoute = state.state.routes[state.state.index]
+      if (currentRoute?.name) {
+        // Map route names to paths
+        if (currentRoute.name.includes('agenda')) return '/(tabs)/producao/agenda'
+        if (currentRoute.name.includes('cronograma')) return '/(tabs)/producao/cronograma'
+        if (currentRoute.name.includes('historico')) return '/(tabs)/producao/historico'
+        return currentRoute.name
+      }
+    }
+
+    // Last resort fallback
+    return '/(tabs)/inicio'
+  }, [pathname, router, renderContext])
   const swipeableRef = useRef<Swipeable>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -99,22 +141,39 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
       closeActions()
       setActiveActionKey(action.key)
 
-      // Build the context with mutations for action handlers
+      // Build the context with mutations and render context for action handlers
       const actionContext: ActionMutationsContext = {
         ...mutations,
         user,
+        route: renderContext?.route || getCurrentPath(), // Pass the current route
       }
 
       // Helper to execute the action (with navigation loading for route actions)
       const executeAction = async () => {
         if (action.onPress) {
-          await action.onPress(item, router, actionContext)
+          // Start navigation for custom onPress handlers
+          startNavigation()
+          try {
+            // Store navigation source for proper back navigation
+            const currentPath = getCurrentPath()
+            console.log('[RowActions] Storing navigation source:', currentPath)
+            navigationTracker.setSource(currentPath)
+            await action.onPress(item, router, actionContext)
+          } catch (error) {
+            console.error('[RowActions] Action error:', error)
+            // Make sure to end navigation on error
+            endNavigation()
+          }
           setActiveActionKey(null)
+          // Navigation will auto-end when pathname changes, or safety timeout will kick in
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
-          // Show loading immediately then navigate
-          startNavigation()
-          router.push(route as any)
+          // Store navigation source for proper back navigation
+          const currentPath = getCurrentPath()
+          console.log('[RowActions] Storing navigation source:', currentPath)
+          navigationTracker.setSource(currentPath)
+          // Use pushWithLoading for proper navigation management
+          pushWithLoading(route)
         }
       }
 
@@ -143,7 +202,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         await executeAction()
       }
     },
-    [item, closeActions, router, mutations, user, isNavigating, startNavigation]
+    [item, closeActions, router, mutations, user, isNavigating, pushWithLoading, startNavigation, endNavigation]
   )
 
   const renderRightActions = useCallback(

@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { Stack, router } from "expo-router";
 import { TaskScheduleLayout } from "@/components/production/task/schedule/TaskScheduleLayout";
-import { tasksListConfig } from "@/config/list/production/tasks";
+import { tasksListOptimizedConfig } from "@/config/list/production/tasks-optimized";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { FAB } from "@/components/ui/fab";
@@ -10,9 +10,12 @@ import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
 import { hasPrivilege } from "@/utils/user";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { navigationTracker } from "@/utils/navigation-tracker";
 
 export default function ProductionPreparationScreen() {
   const { user } = useAuth();
+  const { pushWithLoading } = useNavigationLoading();
 
   // ADMIN, COMMERCIAL, and LOGISTIC can create tasks
   const canCreateTasks =
@@ -21,7 +24,7 @@ export default function ProductionPreparationScreen() {
     user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
 
   const handleCreateTask = () => {
-    router.push("/producao/agenda/cadastrar");
+    pushWithLoading("/(tabs)/producao/agenda/cadastrar");
   };
 
   // Determine user privileges for agenda filtering
@@ -53,31 +56,33 @@ export default function ProductionPreparationScreen() {
     }
 
     return {
-      ...tasksListConfig,
+      ...tasksListOptimizedConfig,
       // Override default sort to forecastDate (like web agenda)
       query: {
-        ...tasksListConfig.query,
+        ...tasksListOptimizedConfig.query,
         defaultSort: { field: 'forecastDate', direction: 'asc' },
       },
       filters: {
-        ...tasksListConfig.filters,
+        ...tasksListOptimizedConfig.filters,
         defaultValues: defaultFilters,
       },
     // Configure default visible columns for agenda
     table: {
-      ...tasksListConfig.table,
+      ...tasksListOptimizedConfig.table,
       groupBySector: false, // Agenda should not group by sector
       groupByStatus: true, // Enable 3-table workflow: Preparation, In Production, Completed
       defaultVisible: ['name', 'forecastDate', 'services'],
       // Disable term-based row coloring for agenda - use neutral alternating colors for all tables
       getRowStyle: () => undefined,
       // Override view action to navigate to agenda details
-      actions: tasksListConfig.table.actions?.map(action =>
+      actions: tasksListOptimizedConfig.table.actions?.map(action =>
         action.key === 'view'
           ? {
               ...action,
               onPress: (task, router) => {
-                router.push(routes.production.agenda.details(task.id) as any);
+                // Store where we came from for proper back navigation
+                navigationTracker.setSource('/(tabs)/producao/agenda');
+                router.push(`/(tabs)/producao/agenda/detalhes/${task.id}` as any);
               },
             }
           : action
@@ -85,10 +90,10 @@ export default function ProductionPreparationScreen() {
     },
     // Add create action for agenda page
     actions: {
-      ...tasksListConfig.actions,
+      ...tasksListOptimizedConfig.actions,
       create: {
         label: 'Criar Tarefa',
-        route: '/producao/agenda/cadastrar',
+        route: '/(tabs)/producao/agenda/cadastrar',
         canCreate: (user) =>
           user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN ||
           user?.sector?.privileges === SECTOR_PRIVILEGES.COMMERCIAL ||

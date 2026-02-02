@@ -134,8 +134,10 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
+    "newArchEnabled": true,
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
@@ -148,7 +150,7 @@
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
       "apiUrl": "https://api.ankaadesign.com.br",
-      "fallbackApiUrl": "http://192.168.10.180:3030"
+      "fallbackApiUrl": "http://192.168.0.16:3030"
     }
   }
 }

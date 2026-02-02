@@ -18,23 +18,25 @@ focusManager.setEventListener((handleFocus) => {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Keep data fresh for 5 minutes
-      staleTime: 1000 * 60 * 5,
+      // Keep data fresh for 10 minutes (increased for better performance)
+      staleTime: 1000 * 60 * 10,
       // Keep data in cache for 24 hours
       gcTime: 1000 * 60 * 60 * 24,
       // Refetch when the app regains connectivity
       refetchOnReconnect: true,
-      refetchOnWindowFocus: true, // Now works with AppState via focusManager
-      // Retry failed queries, but don't retry if they failed due to being offline
+      // Disable auto-refetch on window focus for better performance
+      // Users can manually refresh with pull-to-refresh when needed
+      refetchOnWindowFocus: false,
+      // Retry failed queries less aggressively
       retry: (failureCount, error: any) => {
         if (error?.isOffline) return false
         // Don't retry on 4xx errors (client errors)
         if (error?.response?.status >= 400 && error?.response?.status < 500) {
           return false
         }
-        return failureCount < 3
+        return failureCount < 2 // Reduced from 3 to 2 for faster failure
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+      retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 5000), // Faster exponential backoff
     },
     mutations: {
       retry: (failureCount, error: any) => {
