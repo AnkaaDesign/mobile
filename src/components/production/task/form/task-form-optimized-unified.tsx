@@ -19,6 +19,7 @@ import { SECTOR_PRIVILEGES } from '@/constants';
 
 // Import essential sections immediately
 import CustomerSection from './sections/CustomerSection';
+import RepresentativesSection from './sections/RepresentativesSection';
 import VehicleSection from './sections/VehicleSection';
 import DatesSection from './sections/DatesSection';
 import ServicesSection from './sections/ServicesSection';
@@ -115,6 +116,13 @@ export function TaskFormOptimizedUnified({
         isSubmitting={isSubmitting}
         initialCustomer={task?.customer}
         errors={form.formState.errors}
+      />
+
+      {/* Representatives Section - Separate section like web version */}
+      <RepresentativesSection
+        isSubmitting={isSubmitting}
+        errors={form.formState.errors}
+        initialRepresentatives={task?.representatives}
       />
 
       <DatesSection

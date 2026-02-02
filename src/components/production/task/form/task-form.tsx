@@ -50,6 +50,9 @@ import { useAuth } from "@/hooks/useAuth";
 import type { LayoutCreateFormData } from "@/schemas";
 import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
 import type { Customer, Paint } from "@/types";
+import { RepresentativeManager } from "@/components/representatives";
+import type { RepresentativeRowData } from "@/types/representative";
+import { RepresentativeRole } from "@/types/representative";
 
 // Enhanced Task Form Schema for Mobile with Cross-field Validation
 // MATCHES: Web version (web/src/schemas/task.ts) and Backend API (api/src/schemas/task.ts)
@@ -74,6 +77,15 @@ const taskFormSchema = z.object({
       message: "Preencha ambos nome e telefone do contato, ou deixe ambos vazios",
     }
   ),
+  // Representative IDs for existing representatives
+  representativeIds: z.array(z.string().uuid()).optional(),
+  // New representatives to create inline
+  newRepresentatives: z.array(z.object({
+    name: z.string().min(1, "Nome é obrigatório"),
+    phone: z.string().min(1, "Telefone é obrigatório"),
+    email: z.string().email("Email inválido").nullable().optional(),
+    role: z.enum(Object.values(RepresentativeRole) as [string, ...string[]]),
+  })).optional(),
   sectorId: z.string().uuid().nullable().optional(),
   serialNumber: z.string()
     .nullable()
@@ -444,6 +456,23 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   const [isObservationOpen, setIsObservationOpen] = useState(
     () => mode === "edit" && !!initialData?.observation?.description
   );
+
+  // Representative rows state - Initialize from existing representatives in edit mode
+  const [representativeRows, setRepresentativeRows] = useState<RepresentativeRowData[]>(() => {
+    if (mode === "edit" && initialData?.representatives && initialData.representatives.length > 0) {
+      return initialData.representatives.map((rep: any) => ({
+        id: rep.id,
+        name: rep.name,
+        phone: rep.phone,
+        email: rep.email || null,
+        role: rep.role,
+        isActive: rep.isActive ?? true,
+        isNew: false,
+        isEditing: false,
+      }));
+    }
+    return [];
+  });
 
   // Pricing section state
   const [pricingItemCount, setPricingItemCount] = useState(0);
@@ -825,6 +854,7 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
   // Watch service orders and pricing for sync
   const watchedServiceOrders = form.watch('serviceOrders');
   const watchedPricing = form.watch('pricing');
+  const watchedCustomerId = form.watch('customerId');
 
   // Initialize sync refs on first render
   useEffect(() => {
@@ -1193,10 +1223,35 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
 
       // Add optional fields
       if (data.invoiceToId) formDataFields.invoiceToId = data.invoiceToId;
-      // Only include negotiatingWith if both name and phone are filled
+      // Only include negotiatingWith if both name and phone are filled (legacy support)
       if (data.negotiatingWith && data.negotiatingWith.name && data.negotiatingWith.phone) {
         formDataFields.negotiatingWith = data.negotiatingWith;
       }
+
+      // Handle representatives - separate existing from new
+      if (representativeRows.length > 0) {
+        const existingRepIds = representativeRows
+          .filter((row) => !row.isNew && row.id && !row.id.startsWith('temp_'))
+          .map((row) => row.id);
+
+        const newReps = representativeRows
+          .filter((row) => row.isNew && row.name && row.phone)
+          .map((row) => ({
+            name: row.name,
+            phone: row.phone,
+            email: row.email || null,
+            role: row.role,
+          }));
+
+        if (existingRepIds.length > 0) {
+          formDataFields.representativeIds = existingRepIds;
+        }
+
+        if (newReps.length > 0) {
+          formDataFields.newRepresentatives = newReps;
+        }
+      }
+
       if (data.sectorId) formDataFields.sectorId = data.sectorId;
       if (data.serialNumber) formDataFields.serialNumber = data.serialNumber.toUpperCase();
 
@@ -1375,11 +1430,38 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
         serialNumber: data.serialNumber?.toUpperCase() || null,
       };
 
-      // Only include negotiatingWith if both name and phone are filled
+      // Only include negotiatingWith if both name and phone are filled (legacy support)
       if (cleanedData.negotiatingWith) {
         if (!cleanedData.negotiatingWith.name || !cleanedData.negotiatingWith.phone) {
           cleanedData.negotiatingWith = null;
         }
+      }
+
+      // Handle representatives - separate existing from new
+      if (representativeRows.length > 0) {
+        const existingRepIds = representativeRows
+          .filter((row) => !row.isNew && row.id && !row.id.startsWith('temp_'))
+          .map((row) => row.id);
+
+        const newReps = representativeRows
+          .filter((row) => row.isNew && row.name && row.phone)
+          .map((row) => ({
+            name: row.name,
+            phone: row.phone,
+            email: row.email || null,
+            role: row.role,
+          }));
+
+        if (existingRepIds.length > 0) {
+          cleanedData.representativeIds = existingRepIds;
+        }
+
+        if (newReps.length > 0) {
+          cleanedData.newRepresentatives = newReps;
+        }
+      } else {
+        // Clear representatives if all removed
+        cleanedData.representativeIds = [];
       }
 
       // Handle truck object structure
@@ -1562,46 +1644,6 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
                 </FormFieldGroup>
               )}
 
-              {/* Negotiating With - Contact Person (only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER - matches web canViewRestrictedFields) */}
-              {canViewRestrictedFields && (
-              <>
-              <SimpleFormField label="Negociando Com" error={errors.negotiatingWith?.name?.message || (errors.negotiatingWith as any)?.message}>
-                <Controller
-                  control={form.control}
-                  name="negotiatingWith.name"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      value={value || ""}
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                      placeholder="Nome do contato"
-                      error={!!errors.negotiatingWith}
-                      editable={!isSubmitting}
-                    />
-                  )}
-                />
-              </SimpleFormField>
-
-              <SimpleFormField label="Telefone do Contato" error={errors.negotiatingWith?.phone?.message}>
-                <Controller
-                  control={form.control}
-                  name="negotiatingWith.phone"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      type="phone"
-                      value={value || ""}
-                      onChange={onChange}
-                      onBlur={onBlur}
-                      placeholder="Ex: (11) 99999-9999"
-                      error={!!errors.negotiatingWith}
-                      editable={!isSubmitting}
-                      keyboardType="phone-pad"
-                    />
-                  )}
-                />
-              </SimpleFormField>
-              </>
-              )}
 
               {/* Serial Number */}
               <SimpleFormField label="Número de Série" error={errors.serialNumber}>
@@ -1815,6 +1857,22 @@ export function TaskForm({ mode, initialData, initialCustomer, initialGeneralPai
               </SimpleFormField>
 
             </FormCard>
+
+          {/* Representatives Section - Dedicated section like web version */}
+          {/* Visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER (matches web canViewRestrictedFields) */}
+          {canViewRestrictedFields && (
+            <FormCard title="Representantes" icon="IconUser">
+              <RepresentativeManager
+                customerId={watchedCustomerId}
+                value={representativeRows}
+                onChange={setRepresentativeRows}
+                disabled={isSubmitting || isDesignerSector}
+                readOnly={isDesignerSector}
+                minRows={0}
+                maxRows={10}
+              />
+            </FormCard>
+          )}
 
           {/* Dates Card - All date fields grouped together like web version */}
           <FormCard title="Datas" icon="IconCalendar">

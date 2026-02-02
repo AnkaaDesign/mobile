@@ -15,14 +15,14 @@ export interface Representative {
   phone: string;
   name: string;
   password?: string | null;
-  customerId: string;
+  customerId?: string | null; // Made optional to match web - representatives can be global or customer-specific
   role: RepresentativeRole;
   isActive: boolean;
   lastLogin?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
-  customer?: Customer;
+  customer?: Customer | null;
   tasks?: Task[];
 }
 
@@ -31,7 +31,17 @@ export interface RepresentativeCreateFormData {
   phone: string;
   name: string;
   password?: string;
-  customerId: string;
+  customerId?: string | null; // Made optional to match web - can create global representatives
+  role: RepresentativeRole;
+  isActive?: boolean;
+}
+
+// For inline representative creation within task forms (matches web)
+export interface RepresentativeCreateInline {
+  email?: string;
+  phone: string;
+  name: string;
+  password?: string;
   role: RepresentativeRole;
   isActive?: boolean;
 }
@@ -105,3 +115,17 @@ export const REPRESENTATIVE_ROLE_COLORS: Record<RepresentativeRole, string> = {
   [RepresentativeRole.FINANCIAL]: '#FF9800', // Orange
   [RepresentativeRole.FLEET_MANAGER]: '#757575', // Gray
 };
+
+// Row-based state management for representative form
+export interface RepresentativeRowData {
+  id: string;
+  email?: string | null;
+  phone: string;
+  name: string;
+  role: RepresentativeRole;
+  isActive: boolean;
+  isEditing?: boolean;
+  isNew?: boolean;
+  isSaving?: boolean;
+  error?: string | null;
+}

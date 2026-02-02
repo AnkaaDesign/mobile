@@ -32,11 +32,21 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
     }
   };
 
-  const handleWhatsAppPress = () => {
+  const handleWhatsAppPress = async () => {
     if (employee.phone) {
       const phoneNumber = employee.phone.replace(/\D/g, "");
       const fullNumber = phoneNumber.startsWith("55") ? phoneNumber : `55${phoneNumber}`;
-      Linking.openURL(`https://wa.me/${fullNumber}`);
+      // Try opening WhatsApp app directly first
+      try {
+        await Linking.openURL(`whatsapp://send?phone=${fullNumber}`);
+      } catch {
+        // Fallback to web WhatsApp
+        try {
+          await Linking.openURL(`https://wa.me/${fullNumber}`);
+        } catch {
+          // Silent fail
+        }
+      }
     }
   };
 

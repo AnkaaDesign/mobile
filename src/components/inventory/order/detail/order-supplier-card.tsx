@@ -20,10 +20,20 @@ export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }
     Linking.openURL(`tel:${cleanPhone}`);
   };
 
-  const handleWhatsAppPress = (phone: string) => {
+  const handleWhatsAppPress = async (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {});
+    // Try opening WhatsApp app directly first
+    try {
+      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
+    } catch {
+      // Fallback to web WhatsApp
+      try {
+        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
+      } catch {
+        // Silent fail
+      }
+    }
   };
 
   const handleSendEmail = (email: string) => {

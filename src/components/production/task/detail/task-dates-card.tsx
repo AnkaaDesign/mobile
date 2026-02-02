@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatDate, formatDateTime } from "@/utils";
 import type { Task } from '../../../../types';
 import {
@@ -46,10 +46,12 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
       <View style={styles.content}>
         {/* Created At */}
-        <View style={styles.dateItem}>
-          <IconCalendarPlus size={20} color={colors.mutedForeground} />
-          <View style={styles.dateText}>
+        <View style={styles.dateSection}>
+          <View style={styles.dateHeader}>
+            <IconCalendarPlus size={18} color={colors.mutedForeground} />
             <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Criado</ThemedText>
+          </View>
+          <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
             <ThemedText style={[styles.value, { color: colors.foreground }]}>
               {formatDateTime(task.createdAt)}
             </ThemedText>
@@ -63,10 +65,12 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
         {/* Entry Date */}
         {task.entryDate && (
-          <View style={styles.dateItem}>
-            <IconCalendar size={20} color={colors.mutedForeground} />
-            <View style={styles.dateText}>
+          <View style={styles.dateSection}>
+            <View style={styles.dateHeader}>
+              <IconCalendar size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Entrada</ThemedText>
+            </View>
+            <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {formatDate(task.entryDate)}
               </ThemedText>
@@ -76,13 +80,15 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
         {/* Term/Deadline */}
         {task.term && (
-          <View style={styles.dateItem}>
-            <IconCalendarEvent
-              size={20}
-              color={isOverdue ? colors.destructive : colors.mutedForeground}
-            />
-            <View style={styles.dateText}>
+          <View style={styles.dateSection}>
+            <View style={styles.dateHeader}>
+              <IconCalendarEvent
+                size={18}
+                color={isOverdue ? colors.destructive : colors.mutedForeground}
+              />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Prazo</ThemedText>
+            </View>
+            <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[
                 styles.value,
                 { color: isOverdue ? colors.destructive : colors.foreground },
@@ -97,10 +103,12 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
         {/* Forecast Date - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER */}
         {canViewRestrictedFields && task.forecastDate && (
-          <View style={styles.dateItem}>
-            <IconCalendarStats size={20} color={colors.mutedForeground} />
-            <View style={styles.dateText}>
+          <View style={styles.dateSection}>
+            <View style={styles.dateHeader}>
+              <IconCalendarStats size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Previsão</ThemedText>
+            </View>
+            <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {formatDate(task.forecastDate)}
               </ThemedText>
@@ -110,10 +118,12 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
         {/* Started At */}
         {task.startedAt && (
-          <View style={styles.dateItem}>
-            <IconCalendarStats size={20} color={colors.mutedForeground} />
-            <View style={styles.dateText}>
+          <View style={styles.dateSection}>
+            <View style={styles.dateHeader}>
+              <IconCalendarStats size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Iniciado</ThemedText>
+            </View>
+            <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {formatDateTime(task.startedAt)}
               </ThemedText>
@@ -123,10 +133,12 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
 
         {/* Finished At */}
         {task.finishedAt && (
-          <View style={styles.dateItem}>
-            <IconCalendarCheck size={20} color="#10b981" />
-            <View style={styles.dateText}>
+          <View style={styles.dateSection}>
+            <View style={styles.dateHeader}>
+              <IconCalendarCheck size={18} color="#10b981" />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Finalizado</ThemedText>
+            </View>
+            <View style={[styles.dateCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
                 {formatDateTime(task.finishedAt)}
               </ThemedText>
@@ -156,6 +168,19 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
+  },
+  dateSection: {
+    gap: spacing.xs,
+  },
+  dateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  dateCard: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    padding: spacing.sm,
   },
   dateItem: {
     flexDirection: "row",

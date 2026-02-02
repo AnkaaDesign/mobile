@@ -24,7 +24,8 @@
         "applinks:www.ankaadesign.com.br"
       ],
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "fetch"]
+        "UIBackgroundModes": ["remote-notification", "fetch"],
+        "LSApplicationQueriesSchemes": ["whatsapp"]
       }
     },
     "android": {
@@ -149,8 +150,8 @@
       "eas": {
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
-      "apiUrl": "https://api.ankaadesign.com.br",
-      "fallbackApiUrl": "http://192.168.0.16:3030"
+      "apiUrl": "http://192.168.10.163:3030",
+      "fallbackApiUrl": "https://api.ankaadesign.com.br"
     }
   }
 }

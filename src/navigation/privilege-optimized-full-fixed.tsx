@@ -709,8 +709,8 @@ function InnerLayout() {
           // Disable drawer swipe on notifications screen to allow notification item swipes
           swipeEnabled: !route.name.includes('notifications'),
           headerLeft: () => {
-            // Determine if we should show back button
-            const showBackButton = canGoBack || pathname !== '/(tabs)/inicio';
+            // Determine if we should show back button - never show on home page
+            const showBackButton = pathname !== '/(tabs)/inicio';
 
             if (!showBackButton) {
               // Add spacing even when there's no back button for consistency

@@ -78,11 +78,15 @@ export function useTaskDetailOptimized(
               type: true,
             }
           },
-          // Representatives - only IDs
+          // Representatives - essential fields for RepresentativeManager
           representatives: {
             select: {
               id: true,
               name: true,
+              phone: true,
+              email: true,
+              role: true,
+              isActive: true,
             }
           },
         }

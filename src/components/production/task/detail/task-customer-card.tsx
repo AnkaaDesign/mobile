@@ -25,12 +25,20 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
     Linking.openURL(`mailto:${email}`);
   };
 
-  const handleWhatsApp = (phone: string) => {
+  const handleWhatsApp = async (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
-    const whatsappUrl = `whatsapp://send?phone=55${cleanPhone}`;
-    Linking.openURL(whatsappUrl).catch(() => {
-      Linking.openURL(`https://wa.me/55${cleanPhone}`);
-    });
+    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
+    // Try opening WhatsApp app directly first
+    try {
+      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
+    } catch {
+      // Fallback to web WhatsApp
+      try {
+        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
+      } catch {
+        // Silent fail
+      }
+    }
   };
 
   const formattedDocument = customer.cpf
@@ -89,10 +97,10 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => handleWhatsApp(customer.phones[0])}
-                style={StyleSheet.flatten([styles.phoneButton, { backgroundColor: "#25D36620" }])}
+                style={StyleSheet.flatten([styles.phoneButton, { backgroundColor: "#16a34a20" }])}
                 activeOpacity={0.7}
               >
-                <Icon name="message-circle" size={16} color="#25D366" />
+                <Icon name="message-circle" size={16} color="#16a34a" />
               </TouchableOpacity>
             </View>
           </View>

@@ -148,6 +148,20 @@ export default function ScheduleDetailsScreen() {
       }
     },
 
+    // Representatives - only for users with restricted fields access
+    ...(canViewRestrictedFields && {
+      representatives: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          role: true,
+          isActive: true,
+        }
+      }
+    }),
+
     // Only include what user can view - reduces payload
     ...(canViewObservation && {
       observation: { select: { id: true, description: true } }
@@ -186,6 +200,7 @@ export default function ScheduleDetailsScreen() {
       logoPaints: { take: 10 }
     }),
   }), [
+    canViewRestrictedFields,
     canViewObservation,
     canViewBaseFiles,
     canViewArtworks,
@@ -399,6 +414,7 @@ export default function ScheduleDetailsScreen() {
             ...task,
             truck: task.truck,
             customer: task.customer,
+            representatives: (task as any).representatives,
             details: task.details ?? "",
           }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} />
 

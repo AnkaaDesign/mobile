@@ -1,6 +1,7 @@
 /**
  * Customer Section Component
- * Handles customer, invoice, and negotiating contact information
+ * Handles customer and invoice information
+ * Note: Representatives are now in a separate RepresentativesSection (matching web structure)
  */
 
 import React from 'react';
@@ -10,7 +11,6 @@ import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField, FormFieldGroup } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { CustomerSelectorOptimized } from '../customer-selector-optimized';
-import { RepresentativeSelector } from '@/components/representatives/RepresentativeSelector';
 import { toTitleCase } from '@/utils/formatters';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -101,25 +101,6 @@ export default function CustomerSection({
             )}
           />
         </FormFieldGroup>
-      )}
-
-      {/* Representatives */}
-      {canViewRestrictedFields && (
-        <Controller
-          control={control}
-          name="representativeIds"
-          render={({ field: { onChange, value } }) => (
-            <RepresentativeSelector
-              customerId={control._formValues?.customerId || initialCustomer?.id || ""}
-              value={value || []}
-              onChange={onChange}
-              error={errors.representativeIds?.message}
-              disabled={isSubmitting}
-              label="Representantes"
-              multiple={true}
-            />
-          )}
-        />
       )}
     </FormCard>
   );

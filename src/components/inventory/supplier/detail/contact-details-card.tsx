@@ -22,12 +22,20 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
     });
   };
 
-  const handleWhatsAppPress = (phone: string) => {
+  const handleWhatsAppPress = async (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, "");
     const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    Linking.openURL(`https://wa.me/${whatsappNumber}`).catch(() => {
-      Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
-    });
+    // Try opening WhatsApp app directly first
+    try {
+      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
+    } catch {
+      // Fallback to web WhatsApp
+      try {
+        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
+      } catch {
+        Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
+      }
+    }
   };
 
   const handleEmailPress = (email: string) => {
@@ -121,7 +129,7 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
                       activeOpacity={0.7}
                       style={styles.whatsappIcon}
                     >
-                      <IconBrandWhatsapp size={18} color="#16a34a" />
+                      <IconBrandWhatsapp size={20} color="#16a34a" />
                     </TouchableOpacity>
                   </View>
                 </View>
