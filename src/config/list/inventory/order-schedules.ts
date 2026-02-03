@@ -206,7 +206,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
 
   search: {
     placeholder: 'Buscar agendamentos...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

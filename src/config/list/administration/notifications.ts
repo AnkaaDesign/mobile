@@ -197,7 +197,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
 
   search: {
     placeholder: 'Buscar notificações...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -1,13 +1,12 @@
 /**
  * Task Form with FormProvider wrapper
- * This wrapper ensures TaskFormOptimized has access to form context
+ * Provides form context for all child components
  */
 
 import React, { memo } from 'react';
-import { View, Alert } from 'react-native';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { TaskFormOptimized } from './task-form-optimized';
+import { TaskForm } from './task-form';
 import { taskFormSchema } from '@/schemas/task';
 import type { TaskFormData } from '@/types/task';
 
@@ -16,25 +15,20 @@ interface TaskFormWithProviderProps {
   onSubmit: (data: any) => void | Promise<void>;
   onCancel?: () => void;
   initialData?: any;
-  initialCustomer?: any;
-  initialGeneralPaint?: any;
-  initialLogoPaints?: any[];
+  task?: any;
   existingLayouts?: any;
   isSubmitting?: boolean;
 }
 
 /**
  * Task Form with built-in FormProvider
- * This ensures the optimized form sections have access to form context
  */
 export const TaskFormWithProvider = memo(function TaskFormWithProvider({
   mode = 'create',
   onSubmit,
   onCancel,
   initialData,
-  initialCustomer,
-  initialGeneralPaint,
-  initialLogoPaints,
+  task,
   existingLayouts,
   isSubmitting = false,
 }: TaskFormWithProviderProps) {
@@ -50,40 +44,19 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         items: [],
       },
     },
-    mode: 'onChange', // Validate on change for better UX
-  });
-
-  // Handle form submission
-  const handleSubmit = form.handleSubmit(async (data) => {
-    try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error('[TaskFormWithProvider] Submit error:', error);
-      Alert.alert(
-        'Erro ao salvar',
-        'Ocorreu um erro ao salvar a tarefa. Por favor, tente novamente.'
-      );
-    }
+    mode: 'onBlur',
   });
 
   return (
     <FormProvider {...form}>
-      <View style={{ flex: 1 }}>
-        <TaskFormOptimized
-          mode={mode}
-          onSubmit={handleSubmit}
-          onCancel={onCancel}
-          initialData={initialData}
-          initialCustomer={initialCustomer}
-          initialGeneralPaint={initialGeneralPaint}
-          initialLogoPaints={initialLogoPaints}
-          existingLayouts={existingLayouts}
-          isSubmitting={isSubmitting}
-        />
-      </View>
+      <TaskForm
+        mode={mode}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        task={task}
+        existingLayouts={existingLayouts}
+        isSubmitting={isSubmitting}
+      />
     </FormProvider>
   );
 });
-
-// Also export the original for backward compatibility
-export { TaskFormOptimized } from './task-form-optimized';

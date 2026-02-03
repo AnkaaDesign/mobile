@@ -184,7 +184,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
 
   search: {
     placeholder: 'Buscar EPIs...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

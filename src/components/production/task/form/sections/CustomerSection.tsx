@@ -10,7 +10,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField, FormFieldGroup } from '@/components/ui';
 import { Input } from '@/components/ui/input';
-import { CustomerSelectorOptimized } from '../customer-selector-optimized';
+import { CustomerSelector } from '../customer-selector';
 import { toTitleCase } from '@/utils/formatters';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -72,7 +72,7 @@ export default function CustomerSection({
           control={control}
           name="customerId"
           render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <CustomerSelectorOptimized
+            <CustomerSelector
               value={value}
               onValueChange={onChange}
               initialCustomer={initialCustomer}
@@ -91,7 +91,7 @@ export default function CustomerSection({
             control={control}
             name="invoiceToId"
             render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <CustomerSelectorOptimized
+              <CustomerSelector
                 value={value}
                 onValueChange={onChange}
                 disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}

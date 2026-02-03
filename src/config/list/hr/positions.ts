@@ -168,7 +168,7 @@ export const positionsListConfig: ListConfig<Position> = {
 
   search: {
     placeholder: 'Buscar cargos...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

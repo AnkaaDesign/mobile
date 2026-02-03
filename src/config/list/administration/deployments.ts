@@ -152,7 +152,7 @@ export const deploymentsListConfig: ListConfig<Deployment> = {
 
   search: {
     placeholder: 'Buscar implantações...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

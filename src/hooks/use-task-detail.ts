@@ -7,21 +7,21 @@ import { getTaskById } from '@/api-client';
  * Loads only essential data for editing, reducing payload by ~80%
  */
 
-interface UseTaskDetailOptimizedParams {
+interface UseTaskDetailParams {
   enabled?: boolean;
   staleTime?: number;
 }
 
-export function useTaskDetailOptimized(
+export function useTaskDetail(
   id: string,
-  params?: UseTaskDetailOptimizedParams
+  params?: UseTaskDetailParams
 ) {
   const { enabled = true, staleTime = 1000 * 60 * 10 } = params || {};
 
   return useQuery({
     queryKey: ['task', id, 'optimized'],
     queryFn: async () => {
-      console.log(`🚀 [Task Detail Optimized] Loading minimal data for ${id}`);
+      console.log(`🚀 [Task Detail] Loading minimal data for ${id}`);
       const startTime = performance.now();
 
       // Fetch task with minimal includes for edit form

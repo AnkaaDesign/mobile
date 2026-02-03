@@ -182,7 +182,7 @@ export const externalWithdrawalsListConfig: ListConfig<ExternalWithdrawal> = {
 
   search: {
     placeholder: 'Buscar retiradas...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

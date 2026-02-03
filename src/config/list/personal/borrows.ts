@@ -16,19 +16,50 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
       { field: 'status', direction: 'asc' },
       { field: 'createdAt', direction: 'desc' },
     ],
-    pageSize: 25,
-    include: {
+    pageSize: 20,
+    select: {
+      id: true,
+      quantity: true,
+      status: true,
+      statusOrder: true,
+      returnedAt: true,
+      createdAt: true,
       item: {
-        include: {
-          brand: true,
-          category: true,
-          supplier: true,
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          quantity: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       user: {
-        include: {
-          position: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          position: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -204,7 +235,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
 
   search: {
     placeholder: 'Buscar empréstimos...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

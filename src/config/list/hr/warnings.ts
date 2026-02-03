@@ -260,7 +260,7 @@ export const warningsListConfig: ListConfig<Warning> = {
 
   search: {
     placeholder: 'Buscar advertências...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

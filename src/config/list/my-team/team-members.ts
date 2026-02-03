@@ -189,7 +189,7 @@ export const teamMembersListConfig: ListConfig<User> = {
 
   search: {
     placeholder: 'Buscar membros...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

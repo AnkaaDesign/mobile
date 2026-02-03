@@ -249,7 +249,7 @@ export const ordersListConfig: ListConfig<Order> = {
 
   search: {
     placeholder: 'Buscar pedidos...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

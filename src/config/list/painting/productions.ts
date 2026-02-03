@@ -269,7 +269,7 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
 
   search: {
     placeholder: 'Buscar produções...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

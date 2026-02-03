@@ -115,7 +115,7 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
 
   search: {
     placeholder: 'Buscar categorias...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

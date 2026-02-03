@@ -196,7 +196,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
 
   search: {
     placeholder: 'Buscar backups...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

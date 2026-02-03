@@ -107,7 +107,7 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
 
   search: {
     placeholder: 'Buscar marcas...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

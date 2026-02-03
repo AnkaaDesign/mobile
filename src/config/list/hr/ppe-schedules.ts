@@ -263,7 +263,7 @@ export const ppeSchedulesListConfig: ListConfig<PpeDeliverySchedule> = {
 
   search: {
     placeholder: 'Buscar agendamentos...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

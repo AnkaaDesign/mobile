@@ -194,7 +194,7 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
 
   search: {
     placeholder: 'Buscar por cliente, veículo ou descrição...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

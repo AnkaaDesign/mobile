@@ -49,7 +49,7 @@ export function BorrowUserSelector({
 
   // Async query function for Combobox with pagination
   const queryFn = useCallback(async (searchTerm: string, page: number = 1) => {
-    const pageSize = 50;
+    const pageSize = 20;
     const response = await getUsers({
       take: pageSize,
       skip: (page - 1) * pageSize,
@@ -64,10 +64,23 @@ export function BorrowUserSelector({
         } : {}),
       },
       orderBy: { name: "asc" },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        cpf: true,
+        status: true,
+        isActive: true,
         position: {
-          include: {
-            sector: true,
+          select: {
+            id: true,
+            name: true,
+            sector: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -144,8 +157,9 @@ export function BorrowUserSelector({
         queryFn={queryFn}
         initialOptions={initialOptions}
         minSearchLength={0}
-        pageSize={50}
-        debounceMs={300}
+        pageSize={20}
+        debounceMs={500}
+        loadOnMount={false}
         value={value || ""}
         onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val)}
         placeholder="Selecione um usuário"

@@ -281,7 +281,7 @@ export const cutsListConfig: ListConfig<Cut> = {
 
   search: {
     placeholder: 'Buscar cortes...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

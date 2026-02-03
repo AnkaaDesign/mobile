@@ -231,7 +231,7 @@ export function createFormulaComponentsListConfig(
 
     search: {
       placeholder: 'Buscar componentes...',
-      debounce: 300,
+      debounce: 500,
     },
 
     export: {

@@ -10,13 +10,39 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
   query: {
     hook: 'useActivitiesInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
-    pageSize: 25,
-    include: {
-      item: true,
+    pageSize: 20,
+    select: {
+      id: true,
+      quantity: true,
+      operation: true,
+      reason: true,
+      reasonOrder: true,
+      createdAt: true,
+      userId: true,
+      itemId: true,
+      item: {
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+        },
+      },
       user: {
-        include: {
-          position: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          position: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -56,7 +82,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (activity) => activityquantity || '-',
+        render: (activity) => activity.quantity || '-',
         format: 'number',
       },
       {
@@ -121,6 +147,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
+        loadOnMount: false,
         queryKey: ['items', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -153,6 +180,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
+        loadOnMount: false,
         queryKey: ['users', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -196,7 +224,7 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
 
   search: {
     placeholder: 'Buscar atividades...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -5,10 +5,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { TaskFormWithProviderUnified as TaskForm } from "@/components/production/task/form/task-form-with-provider-unified";
+import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form/task-form-with-provider";
 import { SkeletonCard } from "@/components/ui/loading";
-import { useTaskMutations, useLayoutsByTruck } from "@/hooks";
-import { useTaskDetailOptimized } from "@/hooks/use-task-detail-optimized";
+import { useTaskMutations, useLayoutsByTruck, useTaskDetail } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
@@ -53,7 +52,47 @@ export default function EditScheduleScreen() {
     data: response,
     isLoading: isLoadingTask,
     error,
-  } = useTaskDetailOptimized(id!);
+  } = useTaskDetail(id!, {
+    include: {
+      // Only include essential fields for edit form
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
+      invoiceTo: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
+      representatives: true,
+      generalPainting: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+        }
+      },
+      logoPaints: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+        }
+      },
+      serviceOrders: true,
+      sector: true,
+      truck: true,
+      observation: true,
+      pricing: {
+        include: {
+          items: true,
+        }
+      },
+    }
+  });
 
   const task = response?.data;
 

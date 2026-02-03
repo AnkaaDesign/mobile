@@ -11,7 +11,7 @@ import { FormFieldGroup } from '@/components/ui';
 import { Textarea } from '@/components/ui/textarea';
 import { SimpleFormField } from '@/components/ui';
 import { ServiceSelectorAutoGrouped } from '../service-selector-auto-grouped';
-import { GeneralPaintingSelectorOptimized, LogoPaintsSelectorOptimized } from '../paint-selector-optimized';
+import { GeneralPaintingSelector, LogoPaintsSelector } from '../paint-selector';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ServicesSectionProps {
@@ -78,7 +78,7 @@ export default function ServicesSection({
           control={control}
           name="paintId"
           render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <GeneralPaintingSelectorOptimized
+            <GeneralPaintingSelector
               value={value || undefined}
               onValueChange={onChange}
               disabled={isSubmitting}
@@ -94,7 +94,7 @@ export default function ServicesSection({
             control={control}
             name="paintIds"
             render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <LogoPaintsSelectorOptimized
+              <LogoPaintsSelector
                 selectedValues={value || []}
                 onValueChange={onChange}
                 disabled={isSubmitting}

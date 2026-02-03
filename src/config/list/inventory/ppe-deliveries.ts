@@ -264,7 +264,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
 
   search: {
     placeholder: 'Buscar entregas de EPI...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

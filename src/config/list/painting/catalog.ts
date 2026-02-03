@@ -282,7 +282,7 @@ export const catalogListConfig: ListConfig<Paint> = {
 
   search: {
     placeholder: 'Buscar por nome, código hex, marca, tags...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

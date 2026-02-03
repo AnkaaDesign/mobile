@@ -203,7 +203,7 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
 
   search: {
     placeholder: 'Buscar por funcionário...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

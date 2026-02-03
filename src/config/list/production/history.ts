@@ -28,13 +28,52 @@ export const historyListConfig: ListConfig<Task> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'finishedAt', direction: 'desc' },
     pageSize: 25,
-    include: {
-      customer: true,
-      sector: true,
+    // Use select instead of include for optimal performance
+    select: {
+      // Core task fields needed for history display
+      id: true,
+      name: true,
+      status: true,
+      serialNumber: true,
+      details: true,
+      entryDate: true,
+      startedAt: true,
+      finishedAt: true,
+      term: true,
+      commission: true,
+      createdAt: true,
+      updatedAt: true,
+
+      // Relations with only needed fields
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       generalPainting: {
-        include: {
-          paintType: true,
-          paintBrand: true,
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+          paintType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          paintBrand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       updatedBy: {
@@ -47,6 +86,20 @@ export const historyListConfig: ListConfig<Task> = {
         select: {
           id: true,
           name: true,
+          status: true,
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+          chassisNumber: true,
+        },
+      },
+      observation: {
+        select: {
+          id: true,
+          description: true,
         },
       },
     },
@@ -407,7 +460,7 @@ export const historyListConfig: ListConfig<Task> = {
 
   search: {
     placeholder: 'Buscar por cliente, placa, chassi...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

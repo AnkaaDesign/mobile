@@ -171,7 +171,7 @@ export const teamCuttingListConfig: ListConfig<Cut> = {
 
   search: {
     placeholder: 'Buscar recortes...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -174,9 +174,8 @@ export const tasksListConfig: ListConfig<Task> = {
           id: true,
           plate: true,
           chassisNumber: true,
-          leftSideLayoutId: true,
-          rightSideLayoutId: true,
-          backSideLayoutId: true,
+          // Layout IDs removed - not displayed in list views
+          // This reduces unnecessary data transfer
         },
       },
       serviceOrders: {
@@ -668,7 +667,7 @@ export const tasksListConfig: ListConfig<Task> = {
 
   search: {
     placeholder: 'Buscar por nome, cliente, número de série, placa, setor...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

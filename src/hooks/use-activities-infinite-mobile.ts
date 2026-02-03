@@ -6,30 +6,57 @@ import type { ActivityGetManyFormData } from '@/schemas';
 const DEFAULT_MOBILE_PAGE_SIZE = 40;
 
 export const useActivitiesInfiniteMobile = (filters: Partial<ActivityGetManyFormData> = {}) => {
-  // Base infinite query with mobile-optimized page size and includes
+  // Base infinite query with mobile-optimized page size and select patterns
   const baseQuery = useActivitiesInfinite({
     limit: DEFAULT_MOBILE_PAGE_SIZE,
     ...filters,
-    include: {
+    select: {
+      id: true,
+      quantity: true,
+      operation: true,
+      reason: true,
+      reasonOrder: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+      itemId: true,
+      orderId: true,
       item: {
-        include: {
-          brand: true,
-          category: true,
-          supplier: true,
-          prices: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
       },
       user: {
-        include: {
-          position: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       },
-      order: true,
-      orderItem: true,
+      order: {
+        select: {
+          id: true,
+        },
+      },
+      orderItem: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 

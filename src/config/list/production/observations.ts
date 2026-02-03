@@ -139,7 +139,7 @@ export const observationsListConfig: ListConfig<Observation> = {
 
   search: {
     placeholder: 'Buscar observações...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

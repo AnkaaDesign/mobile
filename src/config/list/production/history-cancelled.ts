@@ -346,7 +346,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
 
   search: {
     placeholder: 'Buscar por cliente, placa, chassi...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -132,7 +132,7 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
 
   search: {
     placeholder: 'Buscar tipos de tinta...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -2,7 +2,7 @@
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TaskFormOptimized as TaskForm } from "@/components/production/task/form";
+import { TaskForm } from "@/components/production/task/form";
 import { useTaskMutations } from "@/hooks";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';

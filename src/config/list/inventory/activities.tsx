@@ -31,7 +31,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
   query: {
     hook: 'useActivitiesInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
-    pageSize: 25,
+    pageSize: 20,
     // Use optimized select for 50% less data transfer
     select: {
       id: true,
@@ -245,6 +245,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
+        loadOnMount: false,
         queryKey: ['users', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -277,6 +278,7 @@ export const activitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
+        loadOnMount: false,
         queryKey: ['items', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {

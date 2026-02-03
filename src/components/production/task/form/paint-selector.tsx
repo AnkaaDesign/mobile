@@ -216,7 +216,7 @@ export function GeneralPaintingSelector({
     const params: any = {
       orderBy: { name: "asc" },
       page: page,
-      take: 50,
+      take: 20, // OPTIMIZED: Reduced from 50 to 20
       // Use select instead of include for 90% data reduction
       // NEVER include formulas in dropdowns - only count them
       select: {
@@ -227,6 +227,7 @@ export function GeneralPaintingSelector({
         hexColor: true,
         finish: true,
         colorPreview: true,
+        manufacturer: true, // Added for truck manufacturer display
         paintType: {
           select: {
             id: true,
@@ -287,8 +288,9 @@ export function GeneralPaintingSelector({
       renderOption={renderOption}
       clearable={!required}
       minSearchLength={0}
-      pageSize={50}
+      pageSize={20}
       debounceMs={300}
+      loadOnMount={false}
     />
   );
 }
@@ -323,7 +325,7 @@ export function LogoPaintsSelector({
     const params: any = {
       orderBy: { name: "asc" },
       page: page,
-      take: 50,
+      take: 20, // OPTIMIZED: Reduced from 50 to 20
       // Use select instead of include for 90% data reduction
       // NEVER include formulas in dropdowns - only count them
       select: {
@@ -334,6 +336,7 @@ export function LogoPaintsSelector({
         hexColor: true,
         finish: true,
         colorPreview: true,
+        manufacturer: true, // Added for truck manufacturer display
         paintType: {
           select: {
             id: true,
@@ -395,9 +398,10 @@ export function LogoPaintsSelector({
       renderOption={renderOption}
       clearable={true}
       minSearchLength={0}
-      pageSize={50}
+      pageSize={20}
       debounceMs={300}
       showCount={true}
+      loadOnMount={false}
     />
   );
 }

@@ -123,7 +123,7 @@ export const holidaysListConfig: ListConfig<Holiday> = {
 
   search: {
     placeholder: 'Buscar feriados...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

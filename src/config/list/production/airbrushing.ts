@@ -218,7 +218,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
 
   search: {
     placeholder: 'Buscar airbrushings...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

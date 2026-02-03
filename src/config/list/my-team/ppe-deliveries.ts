@@ -195,7 +195,7 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
 
   search: {
     placeholder: 'Buscar entregas...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

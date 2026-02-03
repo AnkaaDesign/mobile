@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { Stack, router } from "expo-router";
 import { TaskScheduleLayout } from "@/components/production/task/schedule/TaskScheduleLayout";
-import { tasksListOptimizedConfig } from "@/config/list/production/tasks-optimized";
+import { tasksListAgendaConfig } from "@/config/list/production/tasks-agenda";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { FAB } from "@/components/ui/fab";
@@ -56,26 +56,26 @@ export default function ProductionPreparationScreen() {
     }
 
     return {
-      ...tasksListOptimizedConfig,
+      ...tasksListAgendaConfig,
       // Override default sort to forecastDate (like web agenda)
       query: {
-        ...tasksListOptimizedConfig.query,
+        ...tasksListAgendaConfig.query,
         defaultSort: { field: 'forecastDate', direction: 'asc' },
       },
       filters: {
-        ...tasksListOptimizedConfig.filters,
+        ...tasksListAgendaConfig.filters,
         defaultValues: defaultFilters,
       },
     // Configure default visible columns for agenda
     table: {
-      ...tasksListOptimizedConfig.table,
+      ...tasksListAgendaConfig.table,
       groupBySector: false, // Agenda should not group by sector
       groupByStatus: true, // Enable 3-table workflow: Preparation, In Production, Completed
       defaultVisible: ['name', 'forecastDate', 'services'],
       // Disable term-based row coloring for agenda - use neutral alternating colors for all tables
       getRowStyle: () => undefined,
       // Override view action to navigate to agenda details
-      actions: tasksListOptimizedConfig.table.actions?.map(action =>
+      actions: tasksListAgendaConfig.table.actions?.map(action =>
         action.key === 'view'
           ? {
               ...action,
@@ -90,7 +90,7 @@ export default function ProductionPreparationScreen() {
     },
     // Add create action for agenda page
     actions: {
-      ...tasksListOptimizedConfig.actions,
+      ...tasksListAgendaConfig.actions,
       create: {
         label: 'Criar Tarefa',
         route: '/(tabs)/producao/agenda/cadastrar',

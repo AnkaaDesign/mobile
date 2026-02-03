@@ -213,7 +213,7 @@ export const changeLogsListConfig: ListConfig<ChangeLog> = {
 
   search: {
     placeholder: 'Buscar por campo, motivo...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

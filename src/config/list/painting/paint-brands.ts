@@ -106,7 +106,7 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
 
   search: {
     placeholder: 'Buscar marcas de tinta...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

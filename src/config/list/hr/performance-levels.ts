@@ -224,7 +224,7 @@ export const performanceLevelsListConfig: ListConfig<User> = {
 
   search: {
     placeholder: 'Buscar funcionários...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

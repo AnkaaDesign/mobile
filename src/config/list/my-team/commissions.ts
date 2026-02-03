@@ -223,7 +223,7 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
 
   search: {
     placeholder: 'Buscar por tarefa, colaborador ou cliente...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

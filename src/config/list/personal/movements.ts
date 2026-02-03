@@ -144,7 +144,7 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
 
   search: {
     placeholder: 'Buscar movimentações...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

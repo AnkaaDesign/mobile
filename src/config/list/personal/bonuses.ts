@@ -235,7 +235,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
 
   search: {
     placeholder: 'Buscar bônus por período...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

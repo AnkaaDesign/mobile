@@ -1,3 +1,3 @@
+// Export the main task form
 export { TaskForm } from './task-form';
-export { TaskFormOptimized } from './task-form-optimized';
-export { TaskFormOptimizedUnified } from './task-form-optimized-unified';
+export { TaskFormWithProvider } from './task-form-with-provider';

@@ -155,7 +155,7 @@ export const personalVacationsListConfig: ListConfig<Vacation> = {
 
   search: {
     placeholder: 'Buscar férias...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

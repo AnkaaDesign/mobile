@@ -227,7 +227,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
 
   search: {
     placeholder: 'Buscar fornecedores...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

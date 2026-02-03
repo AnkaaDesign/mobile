@@ -218,7 +218,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
 
   search: {
     placeholder: 'Buscar planos de corte...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

@@ -58,7 +58,7 @@ export function BorrowItemSelector({
 
   // Async query function for Combobox with pagination
   const queryFn = useCallback(async (searchTerm: string, page: number = 1) => {
-    const pageSize = 50;
+    const pageSize = 20;
     const response = await getItems({
       take: pageSize,
       skip: (page - 1) * pageSize,
@@ -76,9 +76,25 @@ export function BorrowItemSelector({
         } : {}),
       },
       orderBy: { name: "asc" },
-      include: {
-        itemCategory: true,
-        itemBrand: true,
+      select: {
+        id: true,
+        name: true,
+        uniCode: true,
+        quantity: true,
+        isActive: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        brand: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -151,8 +167,9 @@ export function BorrowItemSelector({
         queryFn={queryFn}
         initialOptions={initialOptions}
         minSearchLength={0}
-        pageSize={50}
-        debounceMs={300}
+        pageSize={20}
+        debounceMs={500}
+        loadOnMount={false}
         value={value || ""}
         onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val || undefined)}
         placeholder="Selecione um item"

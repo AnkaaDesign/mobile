@@ -359,7 +359,7 @@ export const payrollListConfig: ListConfig<Payroll> = {
 
   search: {
     placeholder: 'Buscar colaborador...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

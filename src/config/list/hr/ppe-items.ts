@@ -266,7 +266,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
 
   search: {
     placeholder: 'Buscar EPIs...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

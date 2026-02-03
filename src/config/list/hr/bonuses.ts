@@ -326,7 +326,7 @@ export const bonusesListConfig: ListConfig<Bonus> = {
 
   search: {
     placeholder: 'Buscar bônus...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

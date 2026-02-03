@@ -167,7 +167,7 @@ export const paintsListConfig: ListConfig<Paint> = {
 
   search: {
     placeholder: 'Buscar tintas...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

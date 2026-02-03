@@ -1,7 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
-import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
 import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
 import type { Customer } from "@/types";
@@ -50,7 +49,7 @@ export function CustomerSelector({
   const getOptionLabel = useCallback((customer: Customer) => customer.fantasyName, []);
   const getOptionValue = useCallback((customer: Customer) => customer.id, []);
 
-  // Search function for Combobox
+  // Search function for Combobox - optimized for performance
   const searchCustomers = useCallback(async (
     search: string,
     page: number = 1,
@@ -62,21 +61,16 @@ export function CustomerSelector({
       const params: any = {
         orderBy: { fantasyName: "asc" },
         page: page,
-        take: 50,
-        // Use select instead of include for 85% data reduction
+        take: 20, // Reduced from 50 for faster loads
+        // Optimized select - only essential fields
         select: {
           id: true,
           fantasyName: true,
           cnpj: true,
           cpf: true,
           corporateName: true,
-          logo: {
-            select: {
-              id: true,
-              filename: true,
-              mimetype: true,
-            }
-          }
+          // NO logo field in dropdown - saves significant bandwidth
+          // Logo can be loaded separately if needed for selected customer
         },
       };
 
@@ -113,13 +107,15 @@ export function CustomerSelector({
 
       return (
         <View style={styles.optionContainer}>
-          {/* Customer Logo - ensure it's always rendered */}
-          <CustomerLogoDisplay
-            logo={customer?.logo || null}
-            customerName={customer?.fantasyName || ""}
-            size="sm"
-            shape="rounded"
-          />
+          {/* Customer Logo - Simple colored circle for performance */}
+          <View style={[
+            styles.simpleLogo,
+            { backgroundColor: colors.primary + '20', borderColor: colors.primary }
+          ]}>
+            <Text style={[styles.logoText, { color: colors.primary }]}>
+              {customer?.fantasyName?.charAt(0)?.toUpperCase() || "?"}
+            </Text>
+          </View>
 
           {/* Customer Info */}
           <View style={styles.customerInfo}>
@@ -190,8 +186,9 @@ export function CustomerSelector({
       renderOption={renderOption}
       clearable={!required}
       minSearchLength={0}
-      pageSize={50}
-      debounceMs={300}
+      pageSize={20}
+      debounceMs={500}
+      loadOnMount={false} // Only load when dropdown opens
     />
   );
 }
@@ -200,8 +197,20 @@ const styles = StyleSheet.create({
   optionContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16, // spacing.md
+    gap: 12,
     flex: 1,
+  },
+  simpleLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  logoText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   customerInfo: {
     flex: 1,

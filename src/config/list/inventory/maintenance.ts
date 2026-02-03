@@ -203,7 +203,7 @@ export const maintenanceListConfig: ListConfig<Maintenance> = {
 
   search: {
     placeholder: 'Buscar manutenções...',
-    debounce: 300,
+    debounce: 500,
   },
 
   export: {

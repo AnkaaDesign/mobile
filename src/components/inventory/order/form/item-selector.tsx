@@ -83,7 +83,7 @@ export function OrderItemSelector({
 
   // Async query function for Combobox with pagination and advanced filters
   const queryFn = useCallback(async (searchTerm: string, page: number = 1) => {
-    const pageSize = 50;
+    const pageSize = 20;
 
     // Build where clause with all filters
     const where: any = {
@@ -110,11 +110,38 @@ export function OrderItemSelector({
       skip: (page - 1) * pageSize,
       where,
       orderBy: { name: "asc" },
-      include: {
-        itemCategory: true,
-        itemBrand: true,
-        supplier: true,
+      select: {
+        id: true,
+        name: true,
+        uniCode: true,
+        quantity: true,
+        isActive: true,
+        icms: true,
+        ipi: true,
+        itemCategory: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        itemBrand: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        supplier: {
+          select: {
+            id: true,
+            fantasyName: true,
+            corporateName: true,
+          },
+        },
         prices: {
+          select: {
+            id: true,
+            value: true,
+          },
           orderBy: { createdAt: "desc" },
           take: 1,
         },
@@ -226,8 +253,9 @@ export function OrderItemSelector({
         queryFn={queryFn}
         initialOptions={initialOptions}
         minSearchLength={0}
-        pageSize={50}
-        debounceMs={300}
+        pageSize={20}
+        debounceMs={500}
+        loadOnMount={false}
         value={value || ""}
         onValueChange={onValueChange}
         placeholder="Selecione um item"
