@@ -39,6 +39,11 @@ export default function CustomerSection({
     user?.sector?.privileges || ''
   );
 
+  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
+  const canViewInvoiceToField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC'].includes(
+    user?.sector?.privileges || ''
+  );
+
   return (
     <FormCard title="Informações do Cliente" icon="IconUser">
       {/* Name - Disabled for financial, warehouse, designer, logistic */}
@@ -84,8 +89,8 @@ export default function CustomerSection({
         />
       </FormFieldGroup>
 
-      {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER */}
-      {canViewRestrictedFields && (
+      {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC (NOT Designer) */}
+      {canViewInvoiceToField && (
         <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
           <Controller
             control={control}

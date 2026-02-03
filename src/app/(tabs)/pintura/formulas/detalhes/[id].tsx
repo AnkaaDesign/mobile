@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormula, usePaintFormulaMutations } from "@/hooks";
+import { usePaintFormula, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatDateTime } from "@/utils";
@@ -23,9 +23,18 @@ export default function FormulaDetailsScreen() {
   const { delete: deleteFormula } = usePaintFormulaMutations();
   const [refreshing, setRefreshing] = useState(false);
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const userPrivilege = user?.sector?.privileges;
+
+  // Only COMMERCIAL, ADMIN, FINANCIAL can see prices (WAREHOUSE excluded)
+  const canSeePrices = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
 
   // Fetch formula details
   const { data: response, isLoading, error, refetch } = usePaintFormula(id as string, {
@@ -116,7 +125,7 @@ export default function FormulaDetailsScreen() {
       <View style={styles.content}>
         {/* Production Calculator - Main Focus (already displays components inline) */}
         {formula.components && formula.components.length > 0 && (
-          <MobilePaintFormulaCalculator formula={formula} />
+          <MobilePaintFormulaCalculator formula={formula} allowPriceVisibility={canSeePrices} />
         )}
 
         {/* Productions Summary Card - Simple and Clean */}

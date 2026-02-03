@@ -11,8 +11,8 @@ import type {
   TaskBatchUpdateFormData,
   TaskBatchDeleteFormData,
   TaskDuplicateFormData,
-  TaskCopyFromFormData,
 } from '@/schemas';
+import type { TaskCopyFromFormData } from '@/types/task-copy';
 import {
   taskKeys,
   serviceOrderKeys,

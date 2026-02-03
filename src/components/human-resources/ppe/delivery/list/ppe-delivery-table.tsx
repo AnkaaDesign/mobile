@@ -7,7 +7,7 @@ import { IconUser, IconPackage, IconCircleCheck, IconClock, IconAlertCircle, Ico
 import { PpeDeliveryListSkeleton } from "../skeleton/ppe-delivery-list-skeleton";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { PpeDelivery } from '../../../../../types';
 
@@ -26,35 +26,42 @@ interface PpeDeliveryTableProps {
 export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDeliveryPress, onRefresh, refreshing, onEndReached, canLoadMore, loadingMore }: PpeDeliveryTableProps) => {
   const { colors } = useTheme();
 
+  // Badge colors using centralized config (matching web version exactly)
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case PPE_DELIVERY_STATUS.PENDING:
-        return "#f59e0b"; // amber
-      case PPE_DELIVERY_STATUS.APPROVED:
-        return "#3b82f6"; // blue
-      case PPE_DELIVERY_STATUS.DELIVERED:
-        return "#10b981"; // green
-      case PPE_DELIVERY_STATUS.REPROVED:
-        return "#ef4444"; // red
-      case PPE_DELIVERY_STATUS.CANCELLED:
-        return "#6b7280"; // gray
-      default:
-        return colors.mutedForeground;
+    const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[status as PPE_DELIVERY_STATUS];
+    if (variant) {
+      return BADGE_COLORS[variant]?.bg || colors.mutedForeground;
     }
+    return colors.mutedForeground;
+  };
+
+  // Get text color for status badge
+  const getStatusTextColor = (status: string) => {
+    const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[status as PPE_DELIVERY_STATUS];
+    if (variant) {
+      return BADGE_COLORS[variant]?.text || "#ffffff";
+    }
+    return "#ffffff";
   };
 
   const getStatusIcon = (status: string) => {
+    const textColor = getStatusTextColor(status);
     switch (status) {
       case PPE_DELIVERY_STATUS.PENDING:
-        return <IconClock size={12} color="white" />;
+        return <IconClock size={12} color={textColor} />;
       case PPE_DELIVERY_STATUS.APPROVED:
-        return <IconCircleCheck size={12} color="white" />;
+        return <IconCircleCheck size={12} color={textColor} />;
       case PPE_DELIVERY_STATUS.DELIVERED:
-        return <IconCircleCheck size={12} color="white" />;
+        return <IconCircleCheck size={12} color={textColor} />;
+      case PPE_DELIVERY_STATUS.WAITING_SIGNATURE:
+        return <IconClock size={12} color={textColor} />;
+      case PPE_DELIVERY_STATUS.COMPLETED:
+        return <IconCircleCheck size={12} color={textColor} />;
       case PPE_DELIVERY_STATUS.REPROVED:
-        return <IconAlertCircle size={12} color="white" />;
+      case PPE_DELIVERY_STATUS.SIGNATURE_REJECTED:
+        return <IconAlertCircle size={12} color={textColor} />;
       case PPE_DELIVERY_STATUS.CANCELLED:
-        return <IconX size={12} color="white" />;
+        return <IconX size={12} color={textColor} />;
       default:
         return null;
     }
@@ -70,9 +77,6 @@ export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDelivery
             <View style={styles.userInfo}>
               <ThemedText style={styles.userName} numberOfLines={1}>
                 {delivery.user?.name || "Funcionário"}
-              </ThemedText>
-              <ThemedText style={styles.userPosition} numberOfLines={1}>
-                {delivery.user?.position?.name || "-"}
               </ThemedText>
             </View>
           </View>
@@ -93,10 +97,10 @@ export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDelivery
 
           {/* Right Section - Status and Date */}
           <View style={styles.rightSection}>
-            <Badge variant="default" style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: getStatusColor(delivery.status) }])}>
+            <Badge variant="default" style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: getStatusColor(delivery.status), flexShrink: 0 }])}>
               <View style={styles.badgeContent}>
                 {getStatusIcon(delivery.status)}
-                <ThemedText style={styles.statusText}>{PPE_DELIVERY_STATUS_LABELS[delivery.status]}</ThemedText>
+                <ThemedText style={[styles.statusText, { color: getStatusTextColor(delivery.status) }]} numberOfLines={1}>{PPE_DELIVERY_STATUS_LABELS[delivery.status]}</ThemedText>
               </View>
             </Badge>
 
@@ -247,7 +251,6 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "white",
   },
   signatureRow: {
     flexDirection: "row",

@@ -21,7 +21,8 @@ import { maintenanceCreateSchema, maintenanceUpdateSchema } from "@/schemas/main
 import type { MaintenanceCreateFormData, MaintenanceUpdateFormData } from "@/schemas/maintenance";
 import type { Maintenance } from "@/types";
 import { useMaintenanceMutations } from "@/hooks/useMaintenance";
-import { useItems, useKeyboardAwareScroll } from "@/hooks/useItem";
+import { useItems } from "@/hooks/useItem";
+import { useKeyboardAwareScroll } from "@/hooks";
 import { MAINTENANCE_STATUS } from "@/constants";
 import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";

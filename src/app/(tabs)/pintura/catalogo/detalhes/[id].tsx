@@ -1,7 +1,7 @@
 import React from "react";
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, RefreshControl, StyleSheet, TouchableOpacity, Alert as RNAlert } from "react-native";
-import { usePaintDetail, usePaintMutations } from "@/hooks";
+import { usePaintDetail, usePaintMutations, useScreenReady } from "@/hooks";
 import {
   PaintFormulasCard,
   PaintTasksCard,
@@ -31,9 +31,20 @@ export default function CatalogDetailsScreen() {
   const { delete: deletePaint } = usePaintMutations();
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  const userPrivilege = user?.sector?.privileges;
+
+  // Only WAREHOUSE and ADMIN can see production history (full catalogue only accessible by these roles)
+  const canSeeProductionHistory = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE ||
+    userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+
+  // Formula navigation always allowed in full catalogue (restricted to WAREHOUSE/ADMIN)
+  const canNavigateToFormulas = true;
 
   const {
     data: paintResponse,
@@ -70,19 +81,65 @@ export default function CatalogDetailsScreen() {
         },
       },
       generalPaintings: {
-        include: {
-          customer: true,
-          createdBy: true,
-          sector: true,
-          services: true,
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          services: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       logoTasks: {
-        include: {
-          customer: true,
-          createdBy: true,
-          sector: true,
-          services: true,
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          services: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },
@@ -274,13 +331,15 @@ export default function CatalogDetailsScreen() {
           <PaintGroundPaintsCard paint={paint!} />
 
           {/* Formulas Card */}
-          <PaintFormulasCard paint={paint!} />
+          <PaintFormulasCard paint={paint!} canNavigate={canNavigateToFormulas} />
 
           {/* Tasks Table Card */}
           <PaintTasksCard paint={paint!} maxHeight={500} />
 
-          {/* Production History Card */}
-          <PaintProductionHistoryCard paint={paint!} maxHeight={400} />
+          {/* Production History Card - Only for WAREHOUSE and ADMIN */}
+          {canSeeProductionHistory && (
+            <PaintProductionHistoryCard paint={paint!} maxHeight={400} />
+          )}
 
           {/* Related Paints Card */}
           <PaintRelatedPaintsCard paint={paint!} />

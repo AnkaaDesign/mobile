@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { usePaint, usePaintMutations, usePaintFormulaMutations } from "@/hooks";
+import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
@@ -18,6 +18,9 @@ export default function EditPaintScreen() {
   const { updateAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,

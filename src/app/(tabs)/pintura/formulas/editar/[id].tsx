@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormula } from "@/hooks";
+import { usePaintFormula, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -13,6 +13,9 @@ export default function EditFormulaScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

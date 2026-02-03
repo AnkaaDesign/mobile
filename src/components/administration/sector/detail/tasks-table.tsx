@@ -52,9 +52,26 @@ export function TasksTable({ sector, maxHeight = 500 }: TasksTableProps) {
       sectorId: sector.id,
     },
     include: {
-      customer: true,
-      sector: true,
-      generalPainting: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      generalPainting: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+          hexColor: true,
+        },
+      },
       services: {
         select: {
           id: true,

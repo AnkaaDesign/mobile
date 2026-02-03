@@ -61,6 +61,55 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     };
   }, []);
 
+  // Define callbacks BEFORE useEffects that depend on them
+  const showOverlay = useCallback(() => {
+    console.log('[NavigationLoading] showOverlay called');
+
+    // Clear any existing timeouts
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Stop any existing animations and show immediately
+    fadeAnim.stopAnimation();
+    fadeAnim.setValue(1);
+
+    setIsNavigating(true);
+    setOverlayVisible(true);
+    isHidingRef.current = false;
+    startTimeRef.current = Date.now();
+  }, [fadeAnim]);
+
+  const hideOverlay = useCallback(() => {
+    console.log('[NavigationLoading] hideOverlay called - forcing immediate hide');
+
+    // FIRST: Immediately clear navigation state to unblock UI
+    setIsNavigating(false);
+    setOverlayVisible(false);
+    isHidingRef.current = false;
+
+    // Clear any pending timeouts
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Stop any existing animations and reset fade
+    fadeAnim.stopAnimation();
+    fadeAnim.setValue(0);
+
+    console.log('[NavigationLoading] State cleared - UI should be interactive');
+  }, [fadeAnim]);
+
   // Failsafe: Monitor overlay state and force hide if stuck
   useEffect(() => {
     if (overlayVisible) {
@@ -113,54 +162,6 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
 
     return () => subscription.remove();
   }, [isNavigating]);
-
-  const showOverlay = useCallback(() => {
-    console.log('[NavigationLoading] showOverlay called');
-
-    // Clear any existing timeouts
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    // Stop any existing animations and show immediately
-    fadeAnim.stopAnimation();
-    fadeAnim.setValue(1);
-
-    setIsNavigating(true);
-    setOverlayVisible(true);
-    isHidingRef.current = false;
-    startTimeRef.current = Date.now();
-  }, [fadeAnim]);
-
-  const hideOverlay = useCallback(() => {
-    console.log('[NavigationLoading] hideOverlay called - forcing immediate hide');
-
-    // FIRST: Immediately clear navigation state to unblock UI
-    setIsNavigating(false);
-    setOverlayVisible(false);
-    isHidingRef.current = false;
-
-    // Clear any pending timeouts
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    // Stop any existing animations and reset fade
-    fadeAnim.stopAnimation();
-    fadeAnim.setValue(0);
-
-    console.log('[NavigationLoading] State cleared - UI should be interactive');
-  }, [fadeAnim]);
 
   const startNavigation = useCallback(() => {
     console.log('[NavigationLoading] startNavigation called');

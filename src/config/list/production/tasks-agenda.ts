@@ -13,24 +13,8 @@ export const tasksListAgendaConfig: ListConfig<Task> = {
     ...tasksListConfig.query,
     pageSize: 15, // Reduce from 25 to 15 for much faster loads
 
-    // Use SELECT pattern for optimal performance - only fetch needed fields
-    select: {
-      // Core task fields needed for agenda display
-      id: true,
-      name: true,
-      status: true,
-      statusOrder: true,
-      serialNumber: true,
-      details: true,
-      entryDate: true,
-      startedAt: true,
-      finishedAt: true,
-      term: true,
-      forecastDate: true,
-      commission: true,
-      createdAt: true,
-      updatedAt: true,
-
+    // Use include for relations - scalar fields (including commission) are automatically included
+    include: {
       // Customer - only essential fields
       customer: {
         select: {

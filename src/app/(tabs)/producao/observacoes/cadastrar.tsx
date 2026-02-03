@@ -39,8 +39,18 @@ export default function CreateObservationScreen() {
   } = useTasks({
     orderBy: { createdAt: "desc" },
     include: {
-      customer: true,
-      truck: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+        },
+      },
     },
   });
 

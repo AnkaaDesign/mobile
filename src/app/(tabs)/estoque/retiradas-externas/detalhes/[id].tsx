@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { IconEdit, IconTrash, IconCheck, IconX, IconHistory } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash, IconCheck, IconX, IconHistory, IconCurrencyReal, IconTruckDelivery } from "@tabler/icons-react-native";
 import { useExternalWithdrawal, useExternalWithdrawalMutations } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -13,7 +13,7 @@ import { ExternalWithdrawalItemsCard } from "@/components/inventory/external-wit
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { EXTERNAL_WITHDRAWAL_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { EXTERNAL_WITHDRAWAL_STATUS, EXTERNAL_WITHDRAWAL_TYPE, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
@@ -159,6 +159,35 @@ export default function ExternalWithdrawalDetailScreen() {
     );
   };
 
+  const handleMarkAsDelivered = async () => {
+    if (!canManage) {
+      Alert.alert("Sem permissão", "Você não tem permissão para alterar retiradas externas");
+      return;
+    }
+
+    Alert.alert(
+      "Confirmar Entrega",
+      "Deseja marcar esta retirada como entregue?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            try {
+              await updateWithdrawal({
+                id: id!,
+                data: { status: EXTERNAL_WITHDRAWAL_STATUS.DELIVERED },
+              });
+              await refetch();
+            } catch (_error) {
+              Alert.alert("Erro", "Não foi possível atualizar o status");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleCancel = async () => {
     if (!canManage) {
       Alert.alert("Sem permissão", "Você não tem permissão para cancelar retiradas externas");
@@ -205,18 +234,31 @@ export default function ExternalWithdrawalDetailScreen() {
     );
   }
 
-  // Determine available actions based on status
+  // Determine available actions based on status and type
+  // RETURNABLE type: Show "Marcar como Devolvido" action
   const showMarkAsFullyReturned =
-    withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING && canManage;
+    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE &&
+    (withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING || withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED) &&
+    canManage;
+  // CHARGEABLE type: Show "Marcar como Cobrado" action
   const showMarkAsCharged =
-    withdrawal?.willReturn === false &&
+    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE &&
     withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
     canManage;
-  const showCancel =
-    withdrawal?.status !== EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED &&
-    withdrawal?.status !== EXTERNAL_WITHDRAWAL_STATUS.CHARGED &&
-    withdrawal?.status !== EXTERNAL_WITHDRAWAL_STATUS.CANCELLED &&
+  // COMPLIMENTARY type: Show "Marcar como Entregue" action
+  const showMarkAsDelivered =
+    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.COMPLIMENTARY &&
+    withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
     canManage;
+  // Show cancel for any type that is not in a final state
+  const finalStatuses = [
+    EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED,
+    EXTERNAL_WITHDRAWAL_STATUS.CHARGED,
+    EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED,
+    EXTERNAL_WITHDRAWAL_STATUS.DELIVERED,
+    EXTERNAL_WITHDRAWAL_STATUS.CANCELLED,
+  ];
+  const showCancel = withdrawal?.status && !finalStatuses.includes(withdrawal.status) && canManage;
 
   // Generate page title
   const pageTitle = `Retirada #${withdrawal?.id?.slice(-8).toUpperCase()}`;
@@ -269,7 +311,7 @@ export default function ExternalWithdrawalDetailScreen() {
           <ExternalWithdrawalInfoCard withdrawal={withdrawal} />
 
           {/* Withdrawal Items */}
-          <ExternalWithdrawalItemsCard items={withdrawal?.items || []} />
+          <ExternalWithdrawalItemsCard items={withdrawal?.items || []} withdrawalType={withdrawal?.type} withdrawalStatus={withdrawal?.status} />
 
           {/* Changelog */}
           <Card style={styles.card}>
@@ -291,7 +333,7 @@ export default function ExternalWithdrawalDetailScreen() {
           </Card>
 
           {/* Action Buttons */}
-          {(showMarkAsFullyReturned || showMarkAsCharged || showCancel) && (
+          {(showMarkAsFullyReturned || showMarkAsCharged || showMarkAsDelivered || showCancel) && (
             <View style={styles.actionsCard}>
               {showMarkAsFullyReturned && (
                 <Button
@@ -310,9 +352,21 @@ export default function ExternalWithdrawalDetailScreen() {
                   style={styles.actionButtonLarge}
                   variant="default"
                 >
-                  <IconCheck size={20} color={colors.primaryForeground} />
+                  <IconCurrencyReal size={20} color={colors.primaryForeground} />
                   <ThemedText style={{ color: colors.primaryForeground }}>
                     Marcar como Cobrado
+                  </ThemedText>
+                </Button>
+              )}
+              {showMarkAsDelivered && (
+                <Button
+                  onPress={handleMarkAsDelivered}
+                  style={styles.actionButtonLarge}
+                  variant="default"
+                >
+                  <IconTruckDelivery size={20} color={colors.primaryForeground} />
+                  <ThemedText style={{ color: colors.primaryForeground }}>
+                    Marcar como Entregue
                   </ThemedText>
                 </Button>
               )}

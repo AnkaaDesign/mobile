@@ -12,8 +12,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
-import { PPE_TYPE } from '@/constants';
+import { PPE_TYPE, PPE_TYPE_LABELS, SECTOR_PRIVILEGES, ITEM_CATEGORY_TYPE } from '@/constants';
+import { getItemPpeSize } from '@/utils/ppe-size-mapping';
+import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
+import { hasPrivilege } from "@/utils/user";
 import type { Item } from '@/types';
 
 interface PpeRequestModalProps {
@@ -62,74 +65,35 @@ export function PpeRequestModal({
     return selectedItem ? [selectedItem] : [];
   }, [selectedItem?.id]);
 
-  // Build size filter conditions based on user's PPE sizes
-  const buildSizeFilterConditions = useCallback(() => {
+  // Check if user has PPE sizes configured
+  const hasSizesConfigured = useMemo(() => {
     const ppeSizeData = userPpeSize?.data;
-    if (!ppeSizeData) {
-      return null;
-    }
-
-    const sizeConditions: Array<{ ppeType: string; ppeSize: string }> = [];
-
-    if (ppeSizeData.shirts) {
-      sizeConditions.push({ ppeType: PPE_TYPE.SHIRT, ppeSize: ppeSizeData.shirts });
-    }
-    if (ppeSizeData.pants) {
-      sizeConditions.push({ ppeType: PPE_TYPE.PANTS, ppeSize: ppeSizeData.pants });
-    }
-    if (ppeSizeData.boots) {
-      sizeConditions.push({ ppeType: PPE_TYPE.BOOTS, ppeSize: ppeSizeData.boots });
-    }
-    if (ppeSizeData.gloves) {
-      sizeConditions.push({ ppeType: PPE_TYPE.GLOVES, ppeSize: ppeSizeData.gloves });
-    }
-    if (ppeSizeData.mask) {
-      sizeConditions.push({ ppeType: PPE_TYPE.MASK, ppeSize: ppeSizeData.mask });
-    }
-    if (ppeSizeData.sleeves) {
-      sizeConditions.push({ ppeType: PPE_TYPE.SLEEVES, ppeSize: ppeSizeData.sleeves });
-    }
-    if (ppeSizeData.rainBoots) {
-      sizeConditions.push({ ppeType: PPE_TYPE.RAIN_BOOTS, ppeSize: ppeSizeData.rainBoots });
-    }
-
-    return sizeConditions;
+    if (!ppeSizeData) return false;
+    return !!(ppeSizeData.shirts || ppeSizeData.pants || ppeSizeData.boots ||
+              ppeSizeData.gloves || ppeSizeData.mask || ppeSizeData.sleeves ||
+              ppeSizeData.rainBoots || ppeSizeData.shorts);
   }, [userPpeSize?.data]);
 
-  // Async query function for PPE items with infinite scrolling and size filtering
+  // Async query function for PPE items with CLIENT-SIDE size filtering (like web)
   const searchPpeItems = useCallback(async (
     search: string,
     page: number = 1
   ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    const pageSize = 20;
-    const sizeConditions = buildSizeFilterConditions();
+    const pageSize = 50; // Fetch more items to filter client-side
 
     try {
-      const whereClause: any = {
-        ppeType: { not: null },
-        isActive: true,
-      };
-
-      if (sizeConditions && sizeConditions.length > 0) {
-        const userPpeTypes = sizeConditions.map(sc => sc.ppeType);
-
-        whereClause.OR = [
-          { ppeType: PPE_TYPE.OTHERS },
-          { ppeSize: null },
-          { ppeType: { notIn: userPpeTypes } },
-          ...sizeConditions.map(sc => ({
-            AND: [
-              { ppeType: sc.ppeType },
-              { ppeSize: sc.ppeSize },
-            ],
-          })),
-        ];
-      }
-
+      // Fetch ALL PPE items with stock > 0 (like web version)
       const response = await getItems({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: whereClause,
+        where: {
+          category: {
+            type: ITEM_CATEGORY_TYPE.PPE,
+          },
+          quantity: {
+            gt: 0,
+          },
+        },
         include: {
           brand: true,
           category: true,
@@ -139,9 +103,49 @@ export function PpeRequestModal({
         orderBy: { name: 'asc' },
       });
 
-      const items = response.data || [];
+      let items = response.data || [];
+
+      // CLIENT-SIDE FILTERING (exactly like web version)
+      if (hasSizesConfigured && userPpeSize?.data) {
+        items = items.filter((item: Item) => {
+          // 1. Only allow items with ON_DEMAND or BOTH delivery mode (or legacy null)
+          if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
+            return false;
+          }
+
+          // 2. If item doesn't have a ppeType, include it
+          if (!item.ppeType) return true;
+
+          // 3. For OTHERS type, always include (no size requirement)
+          if (item.ppeType === PPE_TYPE.OTHERS) return true;
+
+          // 4. Get user's size for this PPE type
+          const userSize = getPpeSizeByType(userPpeSize.data, item.ppeType);
+
+          // 5. Get item's size from measures array
+          const itemSize = getItemPpeSize(item);
+
+          // 6. If item has no size defined, include it
+          if (!itemSize) return true;
+
+          // 7. If user has no size configured for this type, include item
+          if (!userSize) return true;
+
+          // 8. Match user's size with item's size
+          return itemSize === userSize;
+        });
+      } else {
+        // User has no sizes configured - only filter by delivery mode
+        items = items.filter((item: Item) => {
+          if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
+            return false;
+          }
+          return true;
+        });
+      }
+
       const total = response.meta?.total || items.length;
-      const hasMore = (page * pageSize) < total;
+      const hasMore = response.meta?.hasNextPage || false;
 
       // Cache loaded items
       setLoadedItems(prev => {
@@ -159,7 +163,7 @@ export function PpeRequestModal({
       console.error('[PPE Request Modal] Error fetching PPE items:', error);
       return { data: [], hasMore: false };
     }
-  }, [buildSizeFilterConditions]);
+  }, [hasSizesConfigured, userPpeSize?.data]);
 
   // Update stock availability when selected item changes
   useEffect(() => {
@@ -171,12 +175,23 @@ export function PpeRequestModal({
     }
   }, [selectedItem]);
 
+  // Check if user can see stock info (warehouse/admin only)
+  const canSeeStock = useMemo(() => {
+    return hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
+  }, [user]);
+
   // Get option value and label for Combobox
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => {
     const parts = [item.name];
-    if (item.ppeCA) parts.push(`- CA: ${item.ppeCA}`);
-    if (item.ppeSize) parts.push(`(${item.ppeSize})`);
+    // Get size from measures
+    const itemSize = getItemPpeSize(item);
+    if (itemSize) parts.push(`- ${itemSize}`);
+    // Show PPE type with proper label
+    if (item.ppeType) {
+      const typeLabel = PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType;
+      parts.push(`(${typeLabel})`);
+    }
     return parts.join(' ');
   }, []);
 
@@ -284,7 +299,8 @@ export function PpeRequestModal({
                       className={cn(error && "border-destructive")}
                     />
                     {error && <Text className="text-sm text-destructive">{error.message}</Text>}
-                    {stockAvailable !== null && value > stockAvailable && (
+                    {/* Only show stock warning for warehouse/admin users */}
+                    {canSeeStock && stockAvailable !== null && value > stockAvailable && (
                       <Text className="text-sm text-destructive">
                         Quantidade excede estoque ({stockAvailable} disponíveis)
                       </Text>
@@ -338,7 +354,7 @@ export function PpeRequestModal({
               />
 
               {/* Info about PPE sizes */}
-              {!userPpeSize?.data && !isLoadingPpeSize && (
+              {!hasSizesConfigured && !isLoadingPpeSize && (
                 <View className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <Text className="text-sm text-blue-600 dark:text-blue-400">
                     Dica: Cadastrar seus tamanhos de EPI mostra apenas os itens do seu tamanho.
@@ -346,7 +362,7 @@ export function PpeRequestModal({
                 </View>
               )}
 
-              {userPpeSize?.data && (
+              {hasSizesConfigured && (
                 <View className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                   <Text className="text-sm text-green-600 dark:text-green-400">
                     EPIs filtrados pelo seu tamanho cadastrado.

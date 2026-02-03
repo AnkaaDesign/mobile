@@ -270,15 +270,21 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   // Reset pagination when search changes
   useEffect(() => {
     setCurrentPage(1);
+    consecutiveEmptyLoadsRef.current = 0; // Reset empty loads counter
     if (debouncedSearch !== '') {
       setAllAsyncOptions([]);
     }
   }, [debouncedSearch]);
 
+  // Track last search to know when to reset vs merge
+  const lastSearchRef = useRef<string>('');
+
   // Update all options when first page loads or search changes
   useEffect(() => {
     if (asyncResponse) {
       let newOptions = asyncResponse.data || [];
+      const searchChanged = lastSearchRef.current !== debouncedSearch;
+      lastSearchRef.current = debouncedSearch;
 
       // Add all fetched items to the cache
       newOptions.forEach(item => {
@@ -311,25 +317,55 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         }
       });
 
-      // Deduplicate items
-      const deduplicatedData = newOptions.filter(
-        (item, index, self) => {
-          const itemValue = getOptionValueRef.current(item);
-          return index === self.findIndex((t) => getOptionValueRef.current(t) === itemValue);
-        }
-      );
+      // If search changed, replace all options with new page 1 data
+      // If search didn't change (e.g., value changed), MERGE with existing options to preserve loadMore data
+      if (searchChanged || currentPage === 1) {
+        // Deduplicate items
+        const deduplicatedData = newOptions.filter(
+          (item, index, self) => {
+            const itemValue = getOptionValueRef.current(item);
+            return index === self.findIndex((t) => getOptionValueRef.current(t) === itemValue);
+          }
+        );
+        setAllAsyncOptions(deduplicatedData);
+      } else {
+        // Merge: keep existing options, add any new ones from page 1 that aren't already present
+        setAllAsyncOptions(prev => {
+          const existingValues = new Set(prev.map(item => getOptionValueRef.current(item)));
+          const newItems = newOptions.filter(item => !existingValues.has(getOptionValueRef.current(item)));
+          // Also add selected items that aren't in existing
+          const combined = [...prev, ...newItems];
+          // Deduplicate
+          const seen = new Set<string>();
+          return combined.filter(item => {
+            const itemValue = getOptionValueRef.current(item);
+            if (seen.has(itemValue)) return false;
+            seen.add(itemValue);
+            return true;
+          });
+        });
+      }
 
-      setAllAsyncOptions(deduplicatedData);
       setHasMore(asyncResponse.hasMore || false);
     } else if (asyncResponse === null) {
       setAllAsyncOptions([]);
       setHasMore(false);
     }
-  }, [asyncResponse, debouncedSearch, value]);
+  }, [asyncResponse, debouncedSearch, value, currentPage]);
+
+  // Track consecutive empty loads to prevent infinite loops with client-side filtering
+  const consecutiveEmptyLoadsRef = useRef(0);
+  const MAX_CONSECUTIVE_EMPTY_LOADS = 3;
 
   // Load more function
   const loadMore = useCallback(async () => {
     if (!queryFn || isLoadingMore || !hasMore) return;
+
+    // Prevent infinite loops when client-side filtering yields empty results
+    if (consecutiveEmptyLoadsRef.current >= MAX_CONSECUTIVE_EMPTY_LOADS) {
+      setHasMore(false);
+      return;
+    }
 
     setIsLoadingMore(true);
     try {
@@ -343,6 +379,13 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
           allItemsCacheRef.current.set(itemValue, item);
         });
 
+        const newItemsCount = result.length;
+        if (newItemsCount === 0) {
+          consecutiveEmptyLoadsRef.current++;
+        } else {
+          consecutiveEmptyLoadsRef.current = 0;
+        }
+
         setAllAsyncOptions((prev) => {
           const combined = [...prev, ...result];
           const seen = new Set();
@@ -355,13 +398,20 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         });
         setHasMore(false);
       } else {
-        (result.data || []).forEach(item => {
+        const newData = result.data || [];
+        newData.forEach(item => {
           const itemValue = getOptionValue(item);
           allItemsCacheRef.current.set(itemValue, item);
         });
 
+        // Track if we got any new unique items
+        let addedCount = 0;
         setAllAsyncOptions((prev) => {
-          const combined = [...prev, ...(result.data || [])];
+          const existingValues = new Set(prev.map(item => getOptionValue(item)));
+          const newUniqueItems = newData.filter(item => !existingValues.has(getOptionValue(item)));
+          addedCount = newUniqueItems.length;
+
+          const combined = [...prev, ...newUniqueItems];
           const seen = new Set();
           const deduplicated = combined.filter((item) => {
             const value = getOptionValue(item);
@@ -371,12 +421,23 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
           });
           return deduplicated;
         });
-        setHasMore(result.hasMore || false);
+
+        // Track consecutive empty loads for client-side filtering scenarios
+        if (addedCount === 0 && newData.length === 0) {
+          consecutiveEmptyLoadsRef.current++;
+        } else {
+          consecutiveEmptyLoadsRef.current = 0;
+        }
+
+        // Stop if server says no more OR if we've had too many empty loads
+        const shouldStopLoading = !result.hasMore || consecutiveEmptyLoadsRef.current >= MAX_CONSECUTIVE_EMPTY_LOADS;
+        setHasMore(!shouldStopLoading);
       }
 
       setCurrentPage(nextPage);
     } catch (error) {
       console.error("Error loading more options:", error);
+      setHasMore(false); // Stop trying on error
     } finally {
       setIsLoadingMore(false);
     }

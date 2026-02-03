@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, StyleSheet, RefreshControl, Alert } from "react-native";
 import { useState, useCallback } from "react";
-import { usePaintProductionDetail } from "@/hooks";
+import { usePaintProductionDetail, useScreenReady } from "@/hooks";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
@@ -18,6 +18,9 @@ export default function ProductionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: productionResponse,

@@ -38,9 +38,19 @@ export default function ServiceOrderDetailScreen() {
     refetch,
   } = useServiceOrderDetail(id, {
     include: {
+      // Only essential task fields for display - optimized with select patterns
       task: {
-        include: {
-          customer: true,
+        select: {
+          id: true,
+          name: true,
+          details: true,
+          term: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            }
+          },
         },
       },
     },

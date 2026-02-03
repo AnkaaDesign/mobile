@@ -1,7 +1,7 @@
 
 import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, StyleSheet, TouchableOpacity } from "react-native";
-import { usePaintDetail } from '../../../../../hooks';
+import { usePaintDetail, useScreenReady } from '../../../../../hooks';
 import { PaintCatalogCard, PaintFormulaDetail, MobileProductionCalculator } from "@/components/painting";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -56,6 +56,9 @@ export default function PaintDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

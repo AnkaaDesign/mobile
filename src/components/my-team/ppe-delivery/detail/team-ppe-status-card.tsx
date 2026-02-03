@@ -4,10 +4,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconCircleCheck, IconAlertCircle, IconClock, IconX } from "@tabler/icons-react-native";
+import { IconCircleCheck, IconAlertCircle, IconClock, IconX, IconSignature, IconFileCheck } from "@tabler/icons-react-native";
 import type { PpeDelivery } from '@/types';
-import { PPE_DELIVERY_STATUS_LABELS } from '@/constants';
-import { badgeColors } from "@/lib/theme/extended-colors";
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from '@/constants';
+import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
 
 interface TeamPpeStatusCardProps {
   delivery: PpeDelivery;
@@ -17,47 +17,79 @@ export function TeamPpeStatusCard({ delivery }: TeamPpeStatusCardProps) {
   const { colors } = useTheme();
 
   const getStatusInfo = () => {
-    switch (delivery.status) {
-      case "PENDING":
+    const status = delivery.status as PPE_DELIVERY_STATUS;
+    const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[status] || "gray";
+    const badgeColor = BADGE_COLORS[variant];
+
+    // Create a color object compatible with the card styling (background with transparency)
+    const colorStyle = {
+      background: badgeColor.bg + "20", // 20% opacity for background
+      text: badgeColor.text === "#ffffff" ? badgeColor.bg : badgeColor.text, // Use bg color as text when text is white
+      border: badgeColor.border || badgeColor.bg + "40", // 40% opacity for border
+    };
+
+    switch (status) {
+      case PPE_DELIVERY_STATUS.PENDING:
         return {
-          icon: <IconClock size={24} color={badgeColors.warning.text} />,
+          icon: <IconClock size={24} color={colorStyle.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.PENDING || "Pendente",
-          color: badgeColors.warning,
+          color: colorStyle,
           description: "Aguardando aprovação do responsável",
         };
-      case "APPROVED":
+      case PPE_DELIVERY_STATUS.APPROVED:
         return {
-          icon: <IconCircleCheck size={24} color={badgeColors.info.text} />,
+          icon: <IconCircleCheck size={24} color={colorStyle.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.APPROVED || "Aprovado",
-          color: badgeColors.info,
+          color: colorStyle,
           description: "Solicitação aprovada, aguardando entrega",
         };
-      case "DELIVERED":
+      case PPE_DELIVERY_STATUS.DELIVERED:
         return {
-          icon: <IconCircleCheck size={24} color={badgeColors.success.text} />,
+          icon: <IconCircleCheck size={24} color={colorStyle.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.DELIVERED || "Entregue",
-          color: badgeColors.success,
+          color: colorStyle,
           description: "EPI entregue ao colaborador",
         };
-      case "REPROVED":
+      case PPE_DELIVERY_STATUS.WAITING_SIGNATURE:
         return {
-          icon: <IconX size={24} color={badgeColors.error.text} />,
+          icon: <IconSignature size={24} color={colorStyle.text} />,
+          label: PPE_DELIVERY_STATUS_LABELS.WAITING_SIGNATURE || "Aguardando Assinatura",
+          color: colorStyle,
+          description: "Aguardando assinatura do colaborador",
+        };
+      case PPE_DELIVERY_STATUS.COMPLETED:
+        return {
+          icon: <IconFileCheck size={24} color={colorStyle.text} />,
+          label: PPE_DELIVERY_STATUS_LABELS.COMPLETED || "Concluído",
+          color: colorStyle,
+          description: "Entrega finalizada com sucesso",
+        };
+      case PPE_DELIVERY_STATUS.SIGNATURE_REJECTED:
+        return {
+          icon: <IconX size={24} color={colorStyle.text} />,
+          label: PPE_DELIVERY_STATUS_LABELS.SIGNATURE_REJECTED || "Assinatura Rejeitada",
+          color: colorStyle,
+          description: "Assinatura foi rejeitada pelo colaborador",
+        };
+      case PPE_DELIVERY_STATUS.REPROVED:
+        return {
+          icon: <IconX size={24} color={colorStyle.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.REPROVED || "Reprovado",
-          color: badgeColors.error,
+          color: colorStyle,
           description: "Solicitação reprovada",
         };
-      case "CANCELLED":
+      case PPE_DELIVERY_STATUS.CANCELLED:
         return {
-          icon: <IconX size={24} color={badgeColors.muted.text} />,
+          icon: <IconX size={24} color={colorStyle.text} />,
           label: PPE_DELIVERY_STATUS_LABELS.CANCELLED || "Cancelado",
-          color: badgeColors.muted,
+          color: colorStyle,
           description: "Solicitação cancelada",
         };
       default:
         return {
-          icon: <IconAlertCircle size={24} color={badgeColors.muted.text} />,
-          label: delivery.status,
-          color: badgeColors.muted,
+          icon: <IconAlertCircle size={24} color={colorStyle.text} />,
+          label: PPE_DELIVERY_STATUS_LABELS[status] || delivery.status,
+          color: colorStyle,
           description: "Status desconhecido",
         };
     }
@@ -108,13 +140,13 @@ export function TeamPpeStatusCard({ delivery }: TeamPpeStatusCardProps) {
           </View>
         )}
 
-        {/* Review Reason (if reproved) */}
-        {delivery.status === "REPROVED" && delivery.reason && (
-          <View style={[styles.reasonContainer, { backgroundColor: badgeColors.error.background, borderColor: badgeColors.error.border }]}>
-            <ThemedText style={[styles.reasonLabel, { color: badgeColors.error.text }]}>
-              Motivo da Reprovação
+        {/* Review Reason (if reproved or signature rejected) */}
+        {(delivery.status === PPE_DELIVERY_STATUS.REPROVED || delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED) && delivery.reason && (
+          <View style={[styles.reasonContainer, { backgroundColor: BADGE_COLORS.red.bg + "20", borderColor: BADGE_COLORS.red.bg + "40" }]}>
+            <ThemedText style={[styles.reasonLabel, { color: BADGE_COLORS.red.bg }]}>
+              {delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED ? "Motivo da Rejeição" : "Motivo da Reprovação"}
             </ThemedText>
-            <ThemedText style={[styles.reasonText, { color: badgeColors.error.text }]}>
+            <ThemedText style={[styles.reasonText, { color: BADGE_COLORS.red.bg }]}>
               {delivery.reason}
             </ThemedText>
           </View>

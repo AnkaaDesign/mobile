@@ -81,36 +81,79 @@ export default function EmployeeDetailScreen() {
     error,
     refetch,
   } = useUser(id, {
-    include: {
-      position: true,
-      sector: true,
-      ppeConfig: true,
-      createdTasks: {
-        include: {
-          customer: {
-            select: {
-              fantasyName: true,
-              id: true,
-            },
-          },
+    // Use optimized select for better performance - fetches only fields needed for HR employee detail view
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      birth: true,
+      status: true,
+      statusOrder: true,
+      isActive: true,
+      verified: true,
+      avatarId: true,
+      payrollNumber: true,
+      performanceLevel: true,
+      admissional: true,
+      // Status tracking dates
+      effectedAt: true,
+      exp1StartAt: true,
+      exp1EndAt: true,
+      exp2StartAt: true,
+      exp2EndAt: true,
+      dismissedAt: true,
+      // Timestamps
+      createdAt: true,
+      updatedAt: true,
+      // Relations with minimal select
+      position: {
+        select: {
+          id: true,
+          name: true,
+          hierarchy: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 10,
       },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      ppeSize: true, // Full PPE size for detail display
       vacations: {
-        orderBy: { startAt: "desc" },
+        select: {
+          id: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { startDate: "desc" },
         take: 5,
       },
       warningsCollaborator: {
+        select: {
+          id: true,
+          type: true,
+          reason: true,
+          createdAt: true,
+        },
         orderBy: { createdAt: "desc" },
         take: 5,
       },
       borrows: {
-        include: {
+        select: {
+          id: true,
+          quantity: true,
+          status: true,
+          createdAt: true,
           item: {
             select: {
-              name: true,
               id: true,
+              name: true,
             },
           },
         },
@@ -120,11 +163,23 @@ export default function EmployeeDetailScreen() {
         take: 5,
       },
       ppeDeliveries: {
+        select: {
+          id: true,
+          quantity: true,
+          createdAt: true,
+          item: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
         orderBy: { createdAt: "desc" },
         take: 5,
       },
       _count: {
         select: {
+          tasks: true,
           createdTasks: true,
           vacations: true,
           warningsCollaborator: true,

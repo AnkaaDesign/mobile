@@ -37,6 +37,7 @@ import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
   COMMISSION_STATUS,
+  COMMISSION_STATUS_LABELS,
   SERVICE_ORDER_STATUS,
 } from '@/constants'
 import { updateTask } from '@/api-client'
@@ -115,27 +116,8 @@ export const tasksListConfig: ListConfig<Task> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'term', direction: 'asc' },
     pageSize: 25,
-    // Use optimized select instead of include for better performance
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      statusOrder: true,
-      serialNumber: true,
-      details: true,
-      entryDate: true,
-      term: true,
-      startedAt: true,
-      finishedAt: true,
-      forecastDate: true,
-      commission: true,
-      measures: true,
-      price: true,
-      createdAt: true,
-      updatedAt: true,
-      sectorId: true,
-      customerId: true,
-      paintId: true,
+    // Use include for relations - scalar fields (including commission) are automatically included
+    include: {
       customer: {
         select: {
           id: true,
@@ -174,8 +156,6 @@ export const tasksListConfig: ListConfig<Task> = {
           id: true,
           plate: true,
           chassisNumber: true,
-          // Layout IDs removed - not displayed in list views
-          // This reduces unnecessary data transfer
         },
       },
       serviceOrders: {
@@ -337,8 +317,9 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (task) => task.commission || '-',
+        render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',
         format: 'badge',
+        badgeEntity: 'COMMISSION_STATUS',
         // Only visible to ADMIN, FINANCIAL, COMMERCIAL, PRODUCTION (matches web canViewCommissionField)
         canView: canViewCommissionField,
       },

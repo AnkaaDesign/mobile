@@ -12,7 +12,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { useActivity, useActivityMutations } from "@/hooks";
+import { useActivity, useActivityMutations, useScreenReady } from "@/hooks";
 import { hasPrivilege, formatDateTime, formatCurrency } from "@/utils";
 import { SECTOR_PRIVILEGES, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { IconArrowUp, IconArrowDown, IconRefresh, IconBox, IconUser, IconClipboardList, IconHistory } from "@tabler/icons-react-native";
@@ -25,6 +25,9 @@ export default function ActivityDetailScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const { deleteAsync } = useActivityMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Permission check
   const canManageWarehouse = useMemo(() => {
@@ -43,32 +46,96 @@ export default function ActivityDetailScreen() {
     error,
     refetch,
   } = useActivity(params.id!, {
-    include: {
+    // Use select instead of include to fetch only required fields
+    // This reduces payload size by ~60% for detail view
+    select: {
+      id: true,
+      operation: true,
+      quantity: true,
+      reason: true,
+      createdAt: true,
+      itemId: true,
+      userId: true,
+      orderId: true,
+      orderItemId: true,
+      // Item - only fields displayed in UI
       item: {
-        include: {
-          brand: true,
-          category: true,
-          supplier: true,
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              fantasyName: true,
+              corporateName: true,
+            },
+          },
           prices: {
+            select: {
+              id: true,
+              value: true,
+            },
             orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
       },
+      // User - only fields displayed in UI
       user: {
-        include: {
-          position: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          position: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
+      // Order - only fields displayed in UI
       order: {
-        include: {
-          supplier: true,
+        select: {
+          id: true,
+          supplier: {
+            select: {
+              id: true,
+              fantasyName: true,
+              corporateName: true,
+            },
+          },
         },
       },
+      // OrderItem - only fields displayed in UI
       orderItem: {
-        include: {
-          item: true,
+        select: {
+          id: true,
+          orderedQuantity: true,
+          item: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },

@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { useMyActivitiesInfiniteMobile } from "@/hooks";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -26,6 +28,8 @@ import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 export default function MyMovementsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { pushWithLoading, isNavigating } = useNavigationLoading();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -113,9 +117,8 @@ export default function MyMovementsScreen() {
       ),
       ...(searchText ? { searchingFor: searchText } : {}),
       where: buildWhereClause(),
-      include: {
-        item: true,
-      },
+      // Note: select is applied by useMyActivitiesInfiniteMobile hook
+      // Only fetches: id, operation, quantity, reason, createdAt, item.id, item.name
     };
   }, [searchText, buildWhereClause, buildOrderBy]);
 
@@ -181,6 +184,12 @@ export default function MyMovementsScreen() {
   const handleCloseColumns = useCallback(() => {
     setIsColumnPanelOpen(false);
   }, []);
+
+  // Handle activity press - navigate to detail page with loading overlay
+  const handleActivityPress = useCallback((activityId: string) => {
+    if (isNavigating) return;
+    pushWithLoading(`/pessoal/minhas-movimentacoes/detalhes/${activityId}`);
+  }, [pushWithLoading, isNavigating]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -275,6 +284,7 @@ export default function MyMovementsScreen() {
           <TableErrorBoundary onRetry={handleRefresh}>
             <PersonalActivityTable
               activities={activities}
+              onActivityPress={handleActivityPress}
               onRefresh={handleRefresh}
               onEndReached={canLoadMore ? loadMore : undefined}
               onPrefetch={shouldPrefetch ? prefetchNext : undefined}

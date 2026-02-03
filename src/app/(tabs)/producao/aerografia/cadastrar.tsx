@@ -45,8 +45,18 @@ export default function AirbrushingCreateScreen() {
   } = useTasks({
     orderBy: { createdAt: "desc" },
     include: {
-      customer: true,
-      truck: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+        },
+      },
     },
     // Only show tasks that don't have airbrushing yet
     where: {

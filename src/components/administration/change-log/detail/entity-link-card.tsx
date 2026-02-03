@@ -72,8 +72,6 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
       // Production
       case CHANGE_LOG_ENTITY_TYPE.TASK:
         return routes.production.schedule.details(entityId);
-      case CHANGE_LOG_ENTITY_TYPE.SERVICE:
-        return routes.production.services.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER:
         return routes.production.serviceOrders.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.TRUCK:

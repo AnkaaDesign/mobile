@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { formatDate } from '../../../../../utils';
-import type { LogFilterState } from "./log-filter-modal";
+import type { LogFilterState } from "./log-filter-drawer-content";
 
 interface LogFilterTagsProps {
   filters: LogFilterState;

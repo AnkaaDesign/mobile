@@ -1798,7 +1798,6 @@ export enum FAVORITE_PAGES {
   // Production - Create Pages
   PRODUCAO_CRONOGRAMA_CADASTRAR = "/producao/cronograma/cadastrar",
   PRODUCAO_RECORTE_CADASTRAR = "/producao/recorte/plano-de-recorte/cadastrar",
-  PRODUCAO_SERVICOS_CADASTRAR = "/producao/servicos/cadastrar",
   PRODUCAO_OBSERVACOES_CADASTRAR = "/producao/observacoes/cadastrar",
   PRODUCAO_AEROGRAFIA_CADASTRAR = "/producao/aerografia/cadastrar",
   PRODUCAO_GARAGENS_CADASTRAR = "/producao/garagens/cadastrar",

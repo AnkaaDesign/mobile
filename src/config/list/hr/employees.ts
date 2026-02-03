@@ -15,12 +15,63 @@ export const employeesListConfig: ListConfig<User> = {
     hook: 'useUsersInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      position: true,
-      sector: true,
-      ppeConfig: true,
-      managedSector: true,
-      avatar: true,
+    // Use optimized select for better performance - fetches only fields needed for HR employee list
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      status: true,
+      isActive: true,
+      avatarId: true,
+      payrollNumber: true,
+      verified: true,
+      performanceLevel: true,
+      birth: true,
+      admissional: true,
+      dismissedAt: true,
+      lastLoginAt: true,
+      requirePasswordChange: true,
+      // Address fields for list display
+      city: true,
+      state: true,
+      zipCode: true,
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      // Timestamps
+      createdAt: true,
+      updatedAt: true,
+      // Relations with minimal select for list display
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      avatar: {
+        select: {
+          id: true,
+          filename: true,
+          url: true,
+          thumbnailUrl: true,
+        },
+      },
       _count: {
         select: {
           activities: true,

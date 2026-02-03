@@ -576,13 +576,6 @@ export const routes = {
       edit: (id: string) => `/producao/ordens-de-servico/editar/${id}`,
       root: "/producao/ordens-de-servico",
     },
-    services: {
-      create: "/producao/servicos/cadastrar",
-      details: (id: string) => `/producao/servicos/detalhes/${id}`,
-      edit: (id: string) => `/producao/servicos/editar/${id}`,
-      list: "/producao/servicos",
-      root: "/producao/servicos",
-    },
     trucks: {
       create: "/producao/caminhoes/cadastrar",
       details: (id: string) => `/producao/caminhoes/detalhes/${id}`,

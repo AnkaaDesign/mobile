@@ -133,16 +133,31 @@ export function ActivityEditForm({
     mode: "onChange",
   });
 
-  // Fetch users for selection
+  // Fetch users for selection - isActive: true includes all active users regardless of status
+  // (includes dismissed third-party workers who still have isActive: true)
   const { data: users, isLoading: isLoadingUsers } = useUsers({
     orderBy: { name: "asc" },
     limit: 100,
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+    },
   });
 
   // Fetch item details with borrow information
+  // Use select to fetch only required fields for stock calculation
   const { data: itemData } = useItem(activity.itemId, {
-    include: {
+    select: {
+      id: true,
+      quantity: true,
       borrows: {
+        select: {
+          id: true,
+          quantity: true,
+          status: true,
+        },
         where: { status: "ACTIVE" },
       },
     },

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItemBrand } from "@/hooks";
+import { useItemBrand, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
   IconTags,
@@ -23,9 +24,9 @@ import {
   IconCalendar,
   IconHistory,
   IconInfoCircle,
-  
+
   IconBox,
-  
+
   IconAlertCircle,
   IconAlertTriangle,
 } from "@tabler/icons-react-native";
@@ -36,9 +37,13 @@ import { TouchableOpacity } from "react-native";
 export default function BrandDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
+  const { pushWithLoading, goBack } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,
@@ -46,17 +51,34 @@ export default function BrandDetailScreen() {
     error,
     refetch,
   } = useItemBrand(id, {
-    include: {
+    // Use select to fetch only fields needed for detail view
+    select: {
+      // Core brand fields
+      id: true,
+      name: true,
+      createdAt: true,
+      updatedAt: true,
+      // Items - only fields displayed in the UI
       items: {
-        include: {
-          category: true,
-          supplier: true,
-          prices: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          reorderPoint: true,
+          maxQuantity: true,
+          totalPrice: true,
+          isActive: true,
+          ppeCA: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
+          // Only need order status for stock level calculation
           orderItems: {
-            include: {
+            select: {
               order: {
                 select: {
                   status: true,
@@ -65,14 +87,12 @@ export default function BrandDetailScreen() {
             },
           },
         },
-        orderBy: { name: "asc" },
       },
-      changelogs: {
-        include: {
-          user: true,
+      // Count for statistics
+      _count: {
+        select: {
+          items: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 10,
       },
     },
     enabled: !!id && id !== "",
@@ -140,7 +160,7 @@ export default function BrandDetailScreen() {
 
   const handleEdit = () => {
     if (brand) {
-      router.push(routeToMobilePath(routes.inventory.products.brands.edit(brand.id)) as any);
+      pushWithLoading(routeToMobilePath(routes.inventory.products.brands.edit(brand.id)));
     }
   };
 
@@ -153,13 +173,13 @@ export default function BrandDetailScreen() {
   }, [refetch]);
 
   const handleItemPress = (itemId: string) => {
-    router.push(routeToMobilePath(routes.inventory.products.details(itemId)) as any);
+    pushWithLoading(routeToMobilePath(routes.inventory.products.details(itemId)));
   };
 
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Carregando..." showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Carregando..." showBackButton={true} onBackPress={() => goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <SkeletonCard style={styles.fullWidthSkeleton} />
@@ -173,7 +193,7 @@ export default function BrandDetailScreen() {
   if (error || !brand || !id || id === "") {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Erro" showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Erro" showBackButton={true} onBackPress={() => goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <Card>
@@ -183,7 +203,7 @@ export default function BrandDetailScreen() {
                 </View>
                 <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>Marca não encontrada</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>A marca solicitada não foi encontrada ou pode ter sido removida.</ThemedText>
-                <Button onPress={() => router.back()}>
+                <Button onPress={() => goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </CardContent>
@@ -199,7 +219,7 @@ export default function BrandDetailScreen() {
       <Header
         title={brand.name}
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

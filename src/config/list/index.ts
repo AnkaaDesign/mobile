@@ -38,11 +38,10 @@ export {
   orderSchedulesListConfig,
 } from './inventory'
 
-// Production Module (7 configs)
+// Production Module (6 configs)
 export {
   tasksListConfig,
   airbrushingListConfig,
-  servicesListConfig,
   paintsListConfig,
   observationsListConfig,
   cutsListConfig,

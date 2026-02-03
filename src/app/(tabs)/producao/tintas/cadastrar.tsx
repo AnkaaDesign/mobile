@@ -3,7 +3,7 @@ import { Stack, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { usePaintMutations, usePaintFormulaMutations } from "@/hooks";
+import { usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 
@@ -12,6 +12,9 @@ export default function CreatePaintScreen() {
   const { createAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);

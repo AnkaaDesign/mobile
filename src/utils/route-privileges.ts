@@ -194,14 +194,14 @@ export const ROUTE_PRIVILEGES: Record<
   // =====================
   // PINTURA (PAINT)
   // =====================
-  
-  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'ADMIN'],
 
-  // Catalog (Catálogo) - COMMERCIAL has access
-  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
+
+  // Catalog (Catálogo) - COMMERCIAL and LOGISTIC have access
+  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
   '/(tabs)/pintura/catalogo/cadastrar': ['WAREHOUSE', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
   '/(tabs)/pintura/catalogo/editar/[id]': ['WAREHOUSE', 'ADMIN'],
 
   // Formulas

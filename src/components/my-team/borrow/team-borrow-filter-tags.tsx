@@ -7,7 +7,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { User } from '../../../types';
-import type { TeamBorrowFilters } from './team-borrow-filter-modal';
+import type { TeamBorrowFilters } from './team-borrow-filter-drawer-content';
 
 interface TeamBorrowFilterTagsProps {
   filters: TeamBorrowFilters;

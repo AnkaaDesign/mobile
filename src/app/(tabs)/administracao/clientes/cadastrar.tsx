@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCustomerMutations, useKeyboardAwareScroll } from "@/hooks";
+import { useCustomerMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerCreateSchema, type CustomerCreateFormData } from "@/schemas";
@@ -37,6 +37,9 @@ export default function CreateCustomerScreen() {
   const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
   const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();

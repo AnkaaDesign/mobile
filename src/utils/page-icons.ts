@@ -305,9 +305,6 @@ export function getPageIconName(path: string): string {
     "/producao/aerografia": "brush",
     "/producao/aerografia/listar": "brush",
     "/producao/aerografia/cadastrar": "brush",
-    "/producao/servicos": "tools",
-    "/producao/servicos/cadastrar": "tools",
-
     // Estoque
     "/estoque/movimentacoes": "archive",
     "/estoque/movimentacoes/cadastrar": "archive",

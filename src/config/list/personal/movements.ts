@@ -15,17 +15,31 @@ export const personalMovementsListConfig: ListConfig<Activity> = {
     hook: 'useMyActivitiesInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
-    include: {
+    // Use select to fetch only fields displayed in table columns
+    select: {
+      id: true,
+      operation: true,
+      reason: true,
+      quantity: true,
+      createdAt: true,
+      // Item - fields displayed in columns
       item: {
-        include: {
-          category: true,
-          brand: true,
-        },
-      },
-      user: {
-        include: {
-          position: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          uniCode: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },

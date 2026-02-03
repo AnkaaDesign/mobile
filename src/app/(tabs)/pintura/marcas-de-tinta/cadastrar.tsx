@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrandMutations } from "@/hooks";
+import { usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { paintBrandCreateSchema } from '../../../../schemas';
 import type { PaintBrandCreateFormData } from '../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -24,6 +24,9 @@ export default function CreatePaintBrandScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { create } = usePaintBrandMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { SkeletonCard } from "@/components/ui/loading";
-import { usePaint, usePaintMutations, usePaintFormulaMutations } from "@/hooks";
+import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
@@ -20,6 +20,9 @@ export default function EditCatalogScreen() {
   const { updateAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,

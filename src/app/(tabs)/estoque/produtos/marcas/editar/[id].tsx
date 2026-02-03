@@ -6,12 +6,13 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItemBrand, useItemBrandMutations } from "@/hooks";
+import { useItemBrand, useItemBrandMutations, useScreenReady } from "@/hooks";
 import { type ItemBrandUpdateFormData } from '../../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 export default function BrandEditScreenWrapper() {
   return (
@@ -26,14 +27,21 @@ function BrandEditScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { updateAsync } = useItemBrandMutations();
+  const { goBack } = useNavigationLoading();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,
     isLoading,
     error,
   } = useItemBrand(id!, {
-    include: {
-      items: true,
+    // Use select to fetch only fields needed for the edit form
+    // No need to include items - only editing name
+    select: {
+      id: true,
+      name: true,
     },
   });
 
@@ -59,7 +67,7 @@ function BrandEditScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.brands.root) as any);
+    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.brands.root) });
   };
 
   if (isLoading) {

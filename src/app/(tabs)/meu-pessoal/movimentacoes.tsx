@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useTeamStaffActivitiesInfiniteMobile } from "@/hooks";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -28,7 +30,9 @@ import { isTeamLeader } from "@/utils/user";
 export default function TeamActivitiesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user: currentUser } = useAuth();
+  const { pushWithLoading, isNavigating } = useNavigationLoading();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -131,14 +135,8 @@ export default function TeamActivitiesScreen() {
       ),
       ...(searchText ? { searchingFor: searchText } : {}),
       where: buildWhereClause(),
-      include: {
-        user: {
-          include: {
-            position: true,
-          },
-        },
-        item: true,
-      },
+      // Note: select is applied by useTeamStaffActivitiesInfiniteMobile hook
+      // Only fetches: id, operation, quantity, reason, createdAt, item.{id,name,uniCode}, user.{id,name}
     };
   }, [isTeamLeader, searchText, buildWhereClause, buildOrderBy]);
 
@@ -204,6 +202,13 @@ export default function TeamActivitiesScreen() {
   const handleCloseColumns = useCallback(() => {
     setIsColumnPanelOpen(false);
   }, []);
+
+  // Handle activity press - navigate to detail page with loading overlay
+  // Note: Team staff activities navigate to the main inventory activity detail page
+  const handleActivityPress = useCallback((activityId: string) => {
+    if (isNavigating) return;
+    pushWithLoading(`/estoque/movimentacoes/detalhes/${activityId}`);
+  }, [pushWithLoading, isNavigating]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);
@@ -318,6 +323,7 @@ export default function TeamActivitiesScreen() {
           <TableErrorBoundary onRetry={handleRefresh}>
             <TeamActivityTable
               activities={activities}
+              onActivityPress={handleActivityPress}
               onRefresh={handleRefresh}
               onEndReached={canLoadMore ? loadMore : undefined}
               onPrefetch={shouldPrefetch ? prefetchNext : undefined}

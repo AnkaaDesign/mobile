@@ -79,14 +79,20 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
   const [scheduleLater, setScheduleLater] = useState(false);
 
   // Async query function for paginated user fetching (matching web version)
+  // Filter by isActive: true to only show active users for notifications
   const fetchUsers = useCallback(async (searchTerm: string, page: number = 1) => {
     const pageSize = 50;
     const response = await getUsers({
       searchingFor: searchTerm || undefined,
-      where: { status: { not: USER_STATUS.DISMISSED } },
+      where: { isActive: true },
       orderBy: { name: "asc" },
       page,
       limit: pageSize,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
     });
 
     return {

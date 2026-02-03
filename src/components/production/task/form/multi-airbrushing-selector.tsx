@@ -273,7 +273,7 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             type="currency"
                             value={airbrushing.price ? String(airbrushing.price) : ""}
                             onChangeText={(value) => {
-                              const numValue = parseFloat(value.replace(/[^0-9.-]/g, ""));
+                              const numValue = parseFloat((value ?? '').replace(/[^0-9.-]/g, ""));
                               updateAirbrushing(airbrushing.id, {
                                 price: isNaN(numValue) ? null : numValue,
                               });

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItemCategory } from "@/hooks";
+import { useItemCategory, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
   IconLayout,
@@ -37,9 +38,13 @@ import { TouchableOpacity } from "react-native";
 export default function CategoryDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
+  const { pushWithLoading, goBack } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,
@@ -47,17 +52,35 @@ export default function CategoryDetailScreen() {
     error,
     refetch,
   } = useItemCategory(id, {
-    include: {
+    // Use select to fetch only fields needed for detail view
+    select: {
+      // Core category fields
+      id: true,
+      name: true,
+      type: true,
+      createdAt: true,
+      updatedAt: true,
+      // Items - only fields displayed in the UI
       items: {
-        include: {
-          brand: true,
-          supplier: true,
-          prices: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          reorderPoint: true,
+          maxQuantity: true,
+          totalPrice: true,
+          isActive: true,
+          ppeCA: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
+          // Only need order status for stock level calculation
           orderItems: {
-            include: {
+            select: {
               order: {
                 select: {
                   status: true,
@@ -66,14 +89,12 @@ export default function CategoryDetailScreen() {
             },
           },
         },
-        orderBy: { name: "asc" },
       },
-      changelogs: {
-        include: {
-          user: true,
+      // Count for statistics
+      _count: {
+        select: {
+          items: true,
         },
-        orderBy: { createdAt: "desc" },
-        take: 10,
       },
     },
     enabled: !!id && id !== "",
@@ -141,7 +162,7 @@ export default function CategoryDetailScreen() {
 
   const handleEdit = () => {
     if (category) {
-      router.push(routeToMobilePath(routes.inventory.products.categories.edit(category.id)) as any);
+      pushWithLoading(routeToMobilePath(routes.inventory.products.categories.edit(category.id)));
     }
   };
 
@@ -154,13 +175,13 @@ export default function CategoryDetailScreen() {
   }, [refetch]);
 
   const handleItemPress = (itemId: string) => {
-    router.push(routeToMobilePath(routes.inventory.products.details(itemId)) as any);
+    pushWithLoading(routeToMobilePath(routes.inventory.products.details(itemId)));
   };
 
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Carregando..." showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Carregando..." showBackButton={true} onBackPress={() => goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <SkeletonCard style={styles.fullWidthSkeleton} />
@@ -174,7 +195,7 @@ export default function CategoryDetailScreen() {
   if (error || !category || !id || id === "") {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Erro" showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Erro" showBackButton={true} onBackPress={() => goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <Card>
@@ -184,7 +205,7 @@ export default function CategoryDetailScreen() {
                 </View>
                 <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>Categoria não encontrada</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>A categoria solicitada não foi encontrada ou pode ter sido removida.</ThemedText>
-                <Button onPress={() => router.back()}>
+                <Button onPress={() => goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </CardContent>
@@ -200,7 +221,7 @@ export default function CategoryDetailScreen() {
       <Header
         title={category.name}
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

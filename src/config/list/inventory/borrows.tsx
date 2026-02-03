@@ -19,10 +19,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
     hook: 'useBorrowsInfiniteMobile',
     mutationsHook: 'useBorrowMutations',
     batchMutationsHook: 'useBorrowBatchMutations',
-    defaultSort: [
-      { field: 'status', direction: 'asc' },
-      { field: 'createdAt', direction: 'desc' },
-    ],
+    defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 25,
     // Use optimized select for 50% less data transfer
     select: {
@@ -130,6 +127,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
+        sortField: 'statusOrder',
         width: 1.2,
         align: 'left',
         render: (borrow) => {
@@ -177,6 +175,9 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       ? ['item.name', 'user.name', 'status', 'createdAt']
       : ['item.name', 'user.name', 'status'],
     rowHeight: 48,
+    onRowPress: (borrow, router) => {
+      router.push(`/estoque/emprestimos/detalhes/${borrow.id}`)
+    },
     actions: [
       {
         key: 'view',

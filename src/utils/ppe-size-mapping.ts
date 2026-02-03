@@ -3,12 +3,26 @@ import { PPE_SIZE, MEASURE_TYPE } from '../constants';
 
 /**
  * Helper utilities for working with PPE sizes stored in the measures array.
- * PPE sizes are now stored as measures with measureType: "SIZE" and unit: [PPE_SIZE_VALUE]
+ * PPE sizes are now stored as measures with measureType: "SIZE"
+ * - Letter sizes (P, M, G, GG, XG) are stored in the unit field
+ * - Numeric sizes (36, 38, 40, etc.) are stored in the value field
  */
+
+// Letter sizes that are stored in unit field
+const LETTER_SIZES = ["P", "M", "G", "GG", "XG"];
+
+// Maps numeric values to PPE size enum values (SIZE_36, SIZE_38, etc.)
+const NUMERIC_TO_PPE_SIZE: Record<number, string> = {
+  35: "SIZE_35", 36: "SIZE_36", 37: "SIZE_37", 38: "SIZE_38", 39: "SIZE_39",
+  40: "SIZE_40", 41: "SIZE_41", 42: "SIZE_42", 43: "SIZE_43", 44: "SIZE_44",
+  45: "SIZE_45", 46: "SIZE_46", 47: "SIZE_47", 48: "SIZE_48", 50: "SIZE_50",
+};
 
 /**
  * Extract PPE size from item's measures array
- * Returns the size value from the first SIZE measure found
+ * Matches web implementation: getPpeSizeFromMeasures()
+ * - Letter sizes (P, M, G, GG, XG) are stored in unit field
+ * - Numeric sizes (36, 38, 40, etc.) are stored in value field
  */
 export function getItemPpeSize(item: Item): string | null {
   if (!item.measures || item.measures.length === 0) {
@@ -16,7 +30,25 @@ export function getItemPpeSize(item: Item): string | null {
   }
 
   const sizeMeasure = item.measures.find(m => m.measureType === MEASURE_TYPE.SIZE);
-  return sizeMeasure?.unit || null;
+  if (!sizeMeasure) return null;
+
+  // Letter sizes are stored in unit field (P, M, G, GG, XG)
+  if (sizeMeasure.unit && LETTER_SIZES.includes(sizeMeasure.unit)) {
+    return sizeMeasure.unit;
+  }
+
+  // Numeric sizes are stored in value field (36, 38, 40, etc.)
+  // Convert to SIZE_XX format to match user's ppeSize values
+  if (sizeMeasure.value !== null && sizeMeasure.value !== undefined) {
+    return NUMERIC_TO_PPE_SIZE[sizeMeasure.value] || `SIZE_${sizeMeasure.value}`;
+  }
+
+  // Fallback: check if unit has a non-letter value (shouldn't happen but handle it)
+  if (sizeMeasure.unit) {
+    return sizeMeasure.unit;
+  }
+
+  return null;
 }
 
 /**

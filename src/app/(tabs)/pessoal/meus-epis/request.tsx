@@ -12,7 +12,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema } from '@/schemas/ppe-request';
-import { PPE_TYPE } from '@/constants';
+import { PPE_TYPE, PPE_DELIVERY_MODE, PPE_TYPE_LABELS, ITEM_CATEGORY_TYPE } from '@/constants';
+import { getItemPpeSize } from '@/utils/ppe-size-mapping';
+import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
 import type { PpeRequestFormData } from '@/schemas/ppe-request';
 import type { Item } from '@/types';
@@ -56,87 +58,35 @@ export default function RequestPPEScreen() {
     return selectedItem ? [selectedItem] : [];
   }, [selectedItem?.id]);
 
-  // Build size filter conditions based on user's PPE sizes
-  const buildSizeFilterConditions = useCallback(() => {
+  // Check if user has PPE sizes configured
+  const hasSizesConfigured = useMemo(() => {
     const ppeSizeData = userPpeSize?.data;
-    if (!ppeSizeData) {
-      // If user has no PPE sizes registered, return null to show all items
-      return null;
-    }
-
-    // Map user's sizes to their corresponding PPE types
-    const sizeConditions: Array<{ ppeType: string; ppeSize: string }> = [];
-
-    if (ppeSizeData.shirts) {
-      sizeConditions.push({ ppeType: PPE_TYPE.SHIRT, ppeSize: ppeSizeData.shirts });
-    }
-    if (ppeSizeData.pants) {
-      sizeConditions.push({ ppeType: PPE_TYPE.PANTS, ppeSize: ppeSizeData.pants });
-    }
-    if (ppeSizeData.boots) {
-      sizeConditions.push({ ppeType: PPE_TYPE.BOOTS, ppeSize: ppeSizeData.boots });
-    }
-    if (ppeSizeData.gloves) {
-      sizeConditions.push({ ppeType: PPE_TYPE.GLOVES, ppeSize: ppeSizeData.gloves });
-    }
-    if (ppeSizeData.mask) {
-      sizeConditions.push({ ppeType: PPE_TYPE.MASK, ppeSize: ppeSizeData.mask });
-    }
-    if (ppeSizeData.sleeves) {
-      sizeConditions.push({ ppeType: PPE_TYPE.SLEEVES, ppeSize: ppeSizeData.sleeves });
-    }
-    if (ppeSizeData.rainBoots) {
-      sizeConditions.push({ ppeType: PPE_TYPE.RAIN_BOOTS, ppeSize: ppeSizeData.rainBoots });
-    }
-
-    return sizeConditions;
+    if (!ppeSizeData) return false;
+    return !!(ppeSizeData.shirts || ppeSizeData.pants || ppeSizeData.boots ||
+              ppeSizeData.gloves || ppeSizeData.mask || ppeSizeData.sleeves ||
+              ppeSizeData.rainBoots || ppeSizeData.shorts);
   }, [userPpeSize?.data]);
 
-  // Async query function for PPE items with infinite scrolling and size filtering
+  // Async query function for PPE items with CLIENT-SIDE size filtering (matching web implementation)
   const searchPpeItems = useCallback(async (
     search: string,
     page: number = 1
   ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    const pageSize = 20;
-    const sizeConditions = buildSizeFilterConditions();
+    const pageSize = 50; // Fetch more items to filter client-side
 
     try {
-      // Build the where clause - aligned with web (ppeType: { not: null })
-      const whereClause: any = {
-        ppeType: { not: null },
-        isActive: true,
-      };
-
-      // If user has PPE sizes registered, filter items to show:
-      // 1. Items with ppeType = OTHERS (no size requirement)
-      // 2. Items matching user's sizes for their PPE type
-      // 3. Items that don't have a specific size set (ppeSize is null)
-      if (sizeConditions && sizeConditions.length > 0) {
-        // Get the PPE types the user has sizes for
-        const userPpeTypes = sizeConditions.map(sc => sc.ppeType);
-
-        whereClause.OR = [
-          // Always include OTHERS type items (no size requirement)
-          { ppeType: PPE_TYPE.OTHERS },
-          // Include items without a specific size set
-          { ppeSize: null },
-          // Include items with PPE types the user doesn't have sizes for
-          // (they might need them, and we shouldn't hide them)
-          { ppeType: { notIn: userPpeTypes } },
-          // Include items matching user's registered sizes
-          ...sizeConditions.map(sc => ({
-            AND: [
-              { ppeType: sc.ppeType },
-              { ppeSize: sc.ppeSize },
-            ],
-          })),
-        ];
-      }
-
+      // Fetch PPE items with stock > 0
       const response = await getItems({
         take: pageSize,
         skip: (page - 1) * pageSize,
-        where: whereClause,
+        where: {
+          category: {
+            type: ITEM_CATEGORY_TYPE.PPE,
+          },
+          quantity: {
+            gt: 0,
+          },
+        },
         include: {
           brand: true,
           category: true,
@@ -146,9 +96,44 @@ export default function RequestPPEScreen() {
         orderBy: { name: 'asc' },
       });
 
-      const items = response.data || [];
+      let items = response.data || [];
+
+      // CLIENT-SIDE FILTERING (matching web implementation)
+      items = items.filter((item: Item) => {
+        // 1. Filter by delivery mode - only allow ON_DEMAND or BOTH (or legacy null)
+        if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
+          return false;
+        }
+
+        // 2. If user has no sizes configured, include all items (filtered only by delivery mode above)
+        if (!hasSizesConfigured || !userPpeSize?.data) {
+          return true;
+        }
+
+        // 3. If item doesn't have a ppeType, include it
+        if (!item.ppeType) return true;
+
+        // 4. For OTHERS type, always include (no size requirement)
+        if (item.ppeType === PPE_TYPE.OTHERS) return true;
+
+        // 5. Get user's size for this PPE type
+        const userSize = getPpeSizeByType(userPpeSize.data, item.ppeType);
+
+        // 6. Get item's size from measures array (handles both letter and numeric sizes)
+        const itemSize = getItemPpeSize(item);
+
+        // 7. If item has no size defined, include it (size is optional)
+        if (!itemSize) return true;
+
+        // 8. If user has no size configured for this type, include item
+        if (!userSize) return true;
+
+        // 9. Match user's size with item's size (e.g., "SIZE_38" === "SIZE_38")
+        return itemSize === userSize;
+      });
+
       const total = response.meta?.total || items.length;
-      const hasMore = (page * pageSize) < total;
+      const hasMore = response.meta?.hasNextPage || false;
 
       // Cache loaded items for lookup when selecting
       setLoadedItems(prev => {
@@ -166,7 +151,7 @@ export default function RequestPPEScreen() {
       console.error('[PPE Request Screen] Error fetching PPE items:', error);
       return { data: [], hasMore: false };
     }
-  }, [buildSizeFilterConditions]);
+  }, [hasSizesConfigured, userPpeSize?.data]);
 
   // Update stock availability when selected item changes
   useEffect(() => {
@@ -186,8 +171,14 @@ export default function RequestPPEScreen() {
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => {
     const parts = [item.name];
-    if (item.ppeCA) parts.push(`- CA: ${item.ppeCA}`);
-    if (item.ppeSize) parts.push(`(${item.ppeSize})`);
+    // Get size from measures
+    const itemSize = getItemPpeSize(item);
+    if (itemSize) parts.push(`- ${itemSize}`);
+    // Add PPE type label
+    if (item.ppeType) {
+      const typeLabel = PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType;
+      parts.push(`(${typeLabel})`);
+    }
     return parts.join(' ');
   }, []);
 
@@ -258,31 +249,36 @@ export default function RequestPPEScreen() {
                   searchable={true}
                   clearable={false}
                   error={error?.message}
-                  renderOption={(item, isSelected) => (
-                    <View style={{ flex: 1 }}>
-                      <ThemedText style={{ fontWeight: isSelected ? "600" : "400" }}>
-                        {item.name}
-                        {item.ppeCA ? ` - CA: ${item.ppeCA}` : ''}
-                      </ThemedText>
-                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
-                        {item.ppeType && (
-                          <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                            {item.ppeType}
-                          </ThemedText>
-                        )}
-                        {item.ppeSize && (
-                          <ThemedText style={{ fontSize: 12, color: colors.primary }}>
-                            Tamanho: {item.ppeSize}
-                          </ThemedText>
-                        )}
-                        {item.quantity !== undefined && (
-                          <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
-                            Estoque: {item.quantity}
-                          </ThemedText>
-                        )}
+                  renderOption={(item, isSelected) => {
+                    const itemSize = getItemPpeSize(item);
+                    const typeLabel = item.ppeType ? (PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType) : null;
+
+                    return (
+                      <View style={{ flex: 1 }}>
+                        <ThemedText style={{ fontWeight: isSelected ? "600" : "400" }}>
+                          {item.name}
+                          {itemSize ? ` - ${itemSize}` : ''}
+                        </ThemedText>
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                          {typeLabel && (
+                            <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                              {typeLabel}
+                            </ThemedText>
+                          )}
+                          {item.ppeCA && (
+                            <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                              CA: {item.ppeCA}
+                            </ThemedText>
+                          )}
+                          {item.quantity !== undefined && (
+                            <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
+                              Estoque: {item.quantity}
+                            </ThemedText>
+                          )}
+                        </View>
                       </View>
-                    </View>
-                  )}
+                    );
+                  }}
                 />
                 {error && (
                   <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
@@ -307,12 +303,20 @@ export default function RequestPPEScreen() {
               </ThemedText>
               <ThemedText style={{ fontSize: 13 }}>
                 {selectedItem.name}
+                {getItemPpeSize(selectedItem) ? ` - ${getItemPpeSize(selectedItem)}` : ''}
               </ThemedText>
-              {selectedItem.ppeCA && (
-                <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                  CA: {selectedItem.ppeCA}
-                </ThemedText>
-              )}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                {selectedItem.ppeType && (
+                  <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                    {PPE_TYPE_LABELS[selectedItem.ppeType as PPE_TYPE] || selectedItem.ppeType}
+                  </ThemedText>
+                )}
+                {selectedItem.ppeCA && (
+                  <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                    CA: {selectedItem.ppeCA}
+                  </ThemedText>
+                )}
+              </View>
               {stockAvailable !== null && (
                 <ThemedText style={{
                   fontSize: 12,
@@ -353,7 +357,7 @@ export default function RequestPPEScreen() {
           />
 
           {/* Info about PPE sizes */}
-          {!userPpeSize?.data && !isLoadingPpeSize && (
+          {!hasSizesConfigured && !isLoadingPpeSize && (
             <View style={{
               padding: 12,
               backgroundColor: "#dbeafe",
@@ -372,7 +376,7 @@ export default function RequestPPEScreen() {
           )}
 
           {/* Info when user has PPE sizes */}
-          {userPpeSize?.data && (
+          {hasSizesConfigured && (
             <View style={{
               padding: 12,
               backgroundColor: "#dcfce7",

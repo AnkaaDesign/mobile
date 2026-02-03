@@ -81,6 +81,7 @@ export function TaskForm({
   const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
+  const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
   const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.isTeamLeader && user?.sector?.privileges === 'PRODUCTION');
@@ -89,8 +90,6 @@ export function TaskForm({
   const canViewFinancialInfo = isAdminUser || isFinancialUser;
   const canViewFiles = !isWarehouseUser && !isFinancialUser;
   const canViewObservation = !isWarehouseUser && !isFinancialUser && !isCommercialUser && !isLogisticUser;
-
-  const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
   const handleFormSubmit = form.handleSubmit(async (data: any) => {
     console.log('[TaskForm] Submitting form data:', data);
@@ -128,6 +127,7 @@ export function TaskForm({
         isSubmitting={isSubmitting}
         errors={form.formState.errors}
         initialRepresentatives={task?.representatives}
+        task={task}
       />
 
       {/* 3. Dates */}
@@ -175,7 +175,19 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 8. Airbrushing */}
+      {/* 8. Base Files & Artworks */}
+      <Suspense fallback={<SectionPlaceholder title="Carregando arquivos..." />}>
+        {canViewFiles && (
+          <FilesSection
+            isSubmitting={isSubmitting}
+            errors={form.formState.errors}
+            baseFiles={task?.baseFiles}
+            artworks={task?.artworks}
+          />
+        )}
+      </Suspense>
+
+      {/* 9. Airbrushing */}
       <Suspense fallback={<SectionPlaceholder title="Carregando aerografias..." />}>
         {canViewAirbrushing && (
           <AirbrushingSection
@@ -186,7 +198,7 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 9. Financial Information */}
+      {/* 10. Financial Information */}
       <Suspense fallback={<SectionPlaceholder title="Carregando informações financeiras..." />}>
         {canViewFinancialInfo && (
           <FinancialInfoSection
@@ -199,25 +211,13 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 10. Observation */}
+      {/* 11. Observation - Last section */}
       <Suspense fallback={<SectionPlaceholder title="Carregando observações..." />}>
         {canViewObservation && (
           <ObservationSection
             isSubmitting={isSubmitting}
             errors={form.formState.errors}
             observation={task?.observation}
-          />
-        )}
-      </Suspense>
-
-      {/* 11. Base Files */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando arquivos..." />}>
-        {canViewFiles && (
-          <FilesSection
-            isSubmitting={isSubmitting}
-            errors={form.formState.errors}
-            baseFiles={task?.baseFiles}
-            artworks={task?.artworks}
           />
         )}
       </Suspense>

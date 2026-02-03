@@ -28,6 +28,54 @@ export default function EmployeeEditScreen() {
     data: response,
     isLoading: isFetching,
   } = useUser(id, {
+    // Use optimized select for better performance - fetches only fields needed for edit form
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      birth: true,
+      status: true,
+      isActive: true,
+      payrollNumber: true,
+      performanceLevel: true,
+      admissional: true,
+      // Address fields for form
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // IDs for form selectors
+      sectorId: true,
+      positionId: true,
+      // Status tracking dates
+      exp1StartAt: true,
+      exp1EndAt: true,
+      exp2StartAt: true,
+      exp2EndAt: true,
+      effectedAt: true,
+      dismissedAt: true,
+      // Relations for form dropdowns
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // PPE size for form
+      ppeSize: true,
+    },
     enabled: !!id && id !== "",
   });
 

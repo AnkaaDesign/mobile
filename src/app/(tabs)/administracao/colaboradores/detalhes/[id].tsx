@@ -50,13 +50,92 @@ export default function EmployeeDetailsScreen() {
     error,
     refetch,
   } = useUser(id, {
-    include: {
-      position: true,
-      sector: true,
-      managedSector: true,
-      ppeSize: true,
-      changeLogs: true,
-      vacations: true,
+    // Use optimized select for better performance - fetches only fields needed for detail view
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      birth: true,
+      status: true,
+      statusOrder: true,
+      isActive: true,
+      verified: true,
+      avatarId: true,
+      payrollNumber: true,
+      performanceLevel: true,
+      admissional: true,
+      // Address fields
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // Status tracking dates
+      effectedAt: true,
+      exp1StartAt: true,
+      exp1EndAt: true,
+      exp2StartAt: true,
+      exp2EndAt: true,
+      dismissedAt: true,
+      // Login info
+      lastLoginAt: true,
+      requirePasswordChange: true,
+      // Timestamps
+      createdAt: true,
+      updatedAt: true,
+      // Relations with select
+      avatar: {
+        select: {
+          id: true,
+          filename: true,
+          path: true,
+          url: true,
+          thumbnailUrl: true,
+        },
+      },
+      position: {
+        select: {
+          id: true,
+          name: true,
+          hierarchy: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      ppeSize: true, // Full PPE size data for detail display
+      vacations: {
+        select: {
+          id: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+          createdAt: true,
+        },
+      },
+      _count: {
+        select: {
+          tasks: true,
+          activities: true,
+          borrows: true,
+          vacations: true,
+          changeLogs: true,
+        },
+      },
     },
     enabled: !!id && id !== "",
   });

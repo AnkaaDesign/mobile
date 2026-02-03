@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations } from "@/hooks";
+import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatDateTime } from "@/utils";
@@ -27,6 +27,9 @@ export default function ComponentDetailsScreen() {
   const { user } = useAuth();
   const { formulaId, id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { delete: deleteComponent } = usePaintFormulaComponentMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

@@ -9,8 +9,9 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyPpeDeliveryTableRowSwipe } from "./my-ppe-delivery-table-row-swipe";
 import { formatDate } from '@/utils';
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { PPE_DELIVERY_STATUS_LABELS } from '@/constants';
+import { extendedColors } from "@/lib/theme/extended-colors";
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from '@/constants';
+import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from '@/constants/badge-colors';
 
 export interface TableColumn {
   key: string;
@@ -111,32 +112,21 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (delivery: PpeDelivery) => {
-      const getStatusColor = () => {
-        switch (delivery.status) {
-          case "PENDING":
-            return { bg: badgeColors.warning.background, text: badgeColors.warning.text };
-          case "APPROVED":
-            return { bg: badgeColors.info.background, text: badgeColors.info.text };
-          case "DELIVERED":
-            return { bg: badgeColors.success.background, text: badgeColors.success.text };
-          case "REPROVED":
-            return { bg: badgeColors.error.background, text: badgeColors.error.text };
-          case "CANCELLED":
-            return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
-          default:
-            return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
-        }
-      };
+      // Get badge variant from entity config, then get colors
+      const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[delivery.status as PPE_DELIVERY_STATUS] || "gray";
+      const badgeColor = BADGE_COLORS[variant];
 
-      const colors = getStatusColor();
       return (
         <Badge
           variant="secondary"
           size="sm"
-          style={{ backgroundColor: colors.bg, borderWidth: 0 }}
+          style={{ backgroundColor: badgeColor.bg, borderWidth: 0, flexShrink: 0 }}
         >
-          <ThemedText style={{ color: colors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
-            {PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status}
+          <ThemedText
+            style={{ color: badgeColor.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}
+            numberOfLines={1}
+          >
+            {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
           </ThemedText>
         </Badge>
       );
@@ -183,6 +173,7 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
     visibleColumnKeys = ["itemName", "quantity", "deliveryDate", "status"],
   }) => {
     const { colors } = useTheme();
+    const { activeRowId: activeRow } = useSwipeRow();
 
     const allColumns = useMemo(() => createColumnDefinitions(), []);
 
@@ -196,7 +187,7 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
       quantity: 0.8,
       deliveryDate: 1.5,
       reviewedBy: 1.5,
-      status: 1.2,
+      status: 1.8, // Increased for longer status labels like "Aguardando Assinatura"
       ca: 1.0,
       validity: 1.2,
     };

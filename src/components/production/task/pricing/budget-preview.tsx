@@ -55,7 +55,7 @@ interface BudgetPreviewProps {
       corporateName?: string;
       fantasyName?: string;
     };
-    negotiatingWith?: { name?: string };
+    representatives?: { id: string; name?: string }[];
   };
 }
 
@@ -66,7 +66,7 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     task?.customer?.corporateName ||
     task?.customer?.fantasyName ||
     "Cliente";
-  const contactName = task?.negotiatingWith?.name || "";
+  const contactName = task?.representatives?.[0]?.name || "";
   const budgetNumber = pricing.budgetNumber
     ? String(pricing.budgetNumber).padStart(4, "0")
     : task?.serialNumber || "0000";

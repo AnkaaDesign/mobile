@@ -60,6 +60,8 @@ export default function BasicInfoSection({
   // Check if user can view restricted fields
   const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER'].includes(userPrivilege || '');
   const canViewCommissionField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
+  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
+  const canViewInvoiceToField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC'].includes(userPrivilege || '');
 
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
@@ -95,7 +97,7 @@ export default function BasicInfoSection({
   return (
     <FormCard title="Informações Básicas" icon="IconFileText">
       {/* Task Name */}
-      <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
+      <SimpleFormField label="Nome da Tarefa" error={errors.name}>
         <Controller
           control={control}
           name="name"
@@ -136,8 +138,8 @@ export default function BasicInfoSection({
         />
       </FormFieldGroup>
 
-      {/* Invoice To - Only visible to restricted roles */}
-      {canViewRestrictedFields && (
+      {/* Invoice To - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC (NOT Designer) */}
+      {canViewInvoiceToField && (
         <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
           <Controller
             control={control}
@@ -200,7 +202,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange(text.toUpperCase())}
+              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: ABC123456"
               maxLength={50}
@@ -220,7 +222,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange(text.toUpperCase())}
+              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: ABC-1234"
               maxLength={10}
@@ -240,7 +242,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange(text.toUpperCase())}
+              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: 9BWZZZ377VT004251"
               maxLength={17}
@@ -253,7 +255,7 @@ export default function BasicInfoSection({
       </SimpleFormField>
 
       {/* Sector */}
-      <SimpleFormField label="Setor" required error={errors.sectorId}>
+      <SimpleFormField label="Setor" error={errors.sectorId}>
         <Controller
           control={control}
           name="sectorId"

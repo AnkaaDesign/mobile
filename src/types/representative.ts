@@ -128,4 +128,5 @@ export interface RepresentativeRowData {
   isNew?: boolean;
   isSaving?: boolean;
   error?: string | null;
+  customerId?: string | null; // Which customer this representative belongs to (for new representatives)
 }

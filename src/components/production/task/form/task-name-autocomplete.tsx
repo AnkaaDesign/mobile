@@ -66,10 +66,11 @@ export function TaskNameAutocomplete({ control, disabled }: TaskNameAutocomplete
               <Input
                 value={inputValue}
                 onChangeText={(text) => {
-                  setInputValue(text);
-                  field.onChange(text);
+                  const value = text ?? '';
+                  setInputValue(value);
+                  field.onChange(value);
                   // Show dropdown when typing 2+ characters
-                  if (text.length >= 2) {
+                  if (value.length >= 2) {
                     setIsOpen(true);
                   } else {
                     setIsOpen(false);

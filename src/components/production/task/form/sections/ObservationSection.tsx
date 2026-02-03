@@ -26,7 +26,7 @@ export default function ObservationSection({
   const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>(initialFiles);
 
   return (
-    <FormCard title="Observações" icon="IconNotes">
+    <FormCard title="Observações" icon="note">
       {/* Observation Description */}
       <SimpleFormField label="Descrição da Observação" error={errors.observation?.description}>
         <Controller

@@ -20,5 +20,5 @@ export type { BatchOperationResultModalProps } from './batch-operation-result-mo
 export { DateRangeFilter } from './filters/DateRangeFilter';
 export type { DateRange, DateRangeFilterProps } from './filters/DateRangeFilter';
 
-export { GenericTableRowSwipe } from './generic-table-row-swipe';
-export type { GenericSwipeAction } from './generic-table-row-swipe';
+export { TableRowSwipe } from './table-row-swipe';
+export type { SwipeAction } from './table-row-swipe';

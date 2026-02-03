@@ -35,6 +35,7 @@ export function ActivitiesTable({ item, maxHeight = 500 }: ActivitiesTableProps)
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch activities for this specific item with infinite scroll
+  // Use select to fetch only fields displayed in the table
   const {
     items: activities,
     isLoading,
@@ -47,8 +48,20 @@ export function ActivitiesTable({ item, maxHeight = 500 }: ActivitiesTableProps)
     where: {
       itemId: item.id,
     },
-    include: {
-      user: true,
+    // Use select instead of include for optimized data fetching
+    select: {
+      id: true,
+      operation: true,
+      quantity: true,
+      reason: true,
+      createdAt: true,
+      // User - only name is displayed
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
     enabled: !!item.id,

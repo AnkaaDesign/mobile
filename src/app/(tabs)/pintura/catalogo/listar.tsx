@@ -530,7 +530,7 @@ export default function CatalogListScreen() {
 
   // Render paint card
   const renderPaintCard = ({ item: paint }: { item: Paint }) => {
-    const formulaCount = paint.formulas?.length || 0;
+    const formulaCount = paint._count?.formulas || 0;
     const taskCount = (paint._count?.logoTasks || 0) + (paint._count?.generalPaintings || 0);
     const codeOverlayStyle = getCodeOverlayStyle(paint.hex);
 

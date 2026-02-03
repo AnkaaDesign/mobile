@@ -2262,18 +2262,22 @@ export const priceUpdateSchema = z
 
 export const itemGetByIdSchema = z.object({
   include: itemIncludeSchema.optional(),
+  select: z.any().optional(), // Allow any select clause for optimized field selection
 });
 
 export const itemBrandGetByIdSchema = z.object({
   include: itemBrandIncludeSchema.optional(),
+  select: z.any().optional(), // Allow any select clause for optimized field selection
 });
 
 export const itemCategoryGetByIdSchema = z.object({
   include: itemCategoryIncludeSchema.optional(),
+  select: z.any().optional(), // Allow any select clause for optimized field selection
 });
 
 export const priceGetByIdSchema = z.object({
   include: priceIncludeSchema.optional(),
+  select: z.any().optional(), // Allow any select clause for optimized field selection
 });
 
 // =====================

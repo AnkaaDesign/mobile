@@ -89,7 +89,6 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "producao/garagens/index", title: "Barracões", module: "production" },
     { name: "producao/observacoes/index", title: "Observações", module: "production" },
     { name: "producao/ordens-de-servico/listar", title: "Ordens de Serviço", module: "production" },
-    { name: "producao/servicos/listar", title: "Serviços", module: "production" },
   ],
 
   // WAREHOUSE routes

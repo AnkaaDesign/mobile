@@ -31,28 +31,36 @@ export default function ProductionPreparationScreen() {
   // Use hasPrivilege to match web behavior - ADMIN users have all privileges
   const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
   const isLogisticUser = hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
+  const isDesignerUser = user?.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER;
 
   // Create a config specifically for the agenda page
   // Role-based agenda display logic (matching web behavior):
   // - ADMIN users: See ALL tasks (no exclusions - hasPrivilege returns true for all privileges)
   // - FINANCIAL users: Need PRODUCTION, COMMERCIAL, ARTWORK, FINANCIAL (exclude LOGISTIC)
   // - LOGISTIC users: Need PRODUCTION, COMMERCIAL, ARTWORK, LOGISTIC (exclude FINANCIAL)
+  // - DESIGNER users: Only see tasks with incomplete ARTWORK SOs or no ARTWORK SOs
   // - All other users: Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both FINANCIAL and LOGISTIC)
   const agendaConfig: ListConfig<Task> = useMemo(() => {
     // Build filter values with preparation display logic
     // IMPORTANT: Do NOT include status filter - the web deletes it (line 381 of task-history-list.tsx)
     // and lets shouldDisplayInPreparation handle the filtering. Status grouping happens client-side.
-    const defaultFilters: any = {
-      shouldDisplayInPreparation: true,
-    };
+    const defaultFilters: any = {};
 
-    // Only FINANCIAL users see FINANCIAL service order requirements
-    if (!isFinancialUser) {
-      defaultFilters.preparationExcludeFinancial = true;
-    }
-    // Only LOGISTIC users see LOGISTIC service order requirements
-    if (!isLogisticUser) {
-      defaultFilters.preparationExcludeLogistic = true;
+    // DESIGNER users have special display logic: only show tasks with incomplete artwork SOs or no artwork SOs
+    if (isDesignerUser) {
+      defaultFilters.shouldDisplayForDesigner = true;
+    } else {
+      // Non-designer users use the standard preparation display logic
+      defaultFilters.shouldDisplayInPreparation = true;
+
+      // Only FINANCIAL users see FINANCIAL service order requirements
+      if (!isFinancialUser) {
+        defaultFilters.preparationExcludeFinancial = true;
+      }
+      // Only LOGISTIC users see LOGISTIC service order requirements
+      if (!isLogisticUser) {
+        defaultFilters.preparationExcludeLogistic = true;
+      }
     }
 
     return {
@@ -101,7 +109,7 @@ export default function ProductionPreparationScreen() {
       },
     },
   };
-  }, [isFinancialUser, isLogisticUser]);
+  }, [isFinancialUser, isLogisticUser, isDesignerUser]);
 
   return (
     <>

@@ -1,13 +1,14 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useUser } from "@/hooks";
+import { useUser, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 
 import {
@@ -35,7 +36,11 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function UserDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { pushWithLoading } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const id = params?.id || "";
 
@@ -45,17 +50,74 @@ export default function UserDetailScreen() {
     error,
     refetch,
   } = useUser(id, {
-    include: {
-      avatar: true,
-      position: true,
-      sector: true,
-      managedSector: true,
-      ppeSize: true,
+    // Use optimized select for better performance - fetches only fields needed for system user detail view
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      birth: true,
+      status: true,
+      statusOrder: true,
+      isActive: true,
+      verified: true,
+      avatarId: true,
+      payrollNumber: true,
+      performanceLevel: true,
+      // Address fields
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // Login info
+      lastLoginAt: true,
+      requirePasswordChange: true,
+      // Timestamps
+      createdAt: true,
+      updatedAt: true,
+      // Relations with minimal select
+      avatar: {
+        select: {
+          id: true,
+          filename: true,
+          path: true,
+          url: true,
+          thumbnailUrl: true,
+        },
+      },
+      position: {
+        select: {
+          id: true,
+          name: true,
+          hierarchy: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+          privileges: true, // Needed for privilege display
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      ppeSize: true, // Full PPE size for detail display
       _count: {
-        tasks: true,
-        createdTasks: true,
-        activities: true,
-        changeLogs: true,
+        select: {
+          tasks: true,
+          createdTasks: true,
+          activities: true,
+          changeLogs: true,
+        },
       },
     },
     enabled: !!id && id !== "",
@@ -65,7 +127,7 @@ export default function UserDetailScreen() {
 
   const handleEdit = () => {
     if (user) {
-      router.push(routeToMobilePath(routes.administration.collaborators.edit(user.id)) as any);
+      pushWithLoading(routeToMobilePath(routes.administration.collaborators.edit(user.id)));
     }
   };
 

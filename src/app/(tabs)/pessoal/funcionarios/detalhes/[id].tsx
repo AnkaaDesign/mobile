@@ -89,10 +89,43 @@ export default function EmployeeDetailScreen() {
     error,
     refetch,
   } = useUser(id, {
-    include: {
-      position: true,
-      sector: true,
-      managedSector: true,
+    // Use optimized select for better performance - fetches only fields needed for personal employee detail view
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      status: true,
+      avatarId: true,
+      performanceLevel: true,
+      admissional: true,
+      dismissedAt: true,
+      // Relations with minimal select
+      avatar: {
+        select: {
+          id: true,
+          url: true,
+          thumbnailUrl: true,
+        },
+      },
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     enabled: !!id && id !== "",
   });

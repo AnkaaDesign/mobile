@@ -19,8 +19,16 @@ import {
 } from '@/types/representative';
 import { RepresentativeRow } from './RepresentativeRow';
 
+interface CustomerOption {
+  id: string;
+  name: string;
+}
+
 interface RepresentativeManagerProps {
   customerId?: string | null;
+  customerName?: string; // Display name for primary customer
+  invoiceToId?: string | null; // Billing customer - representatives from this customer should also be available
+  invoiceToName?: string; // Display name for billing customer
   value: RepresentativeRowData[];
   onChange: (rows: RepresentativeRowData[]) => void;
   disabled?: boolean;
@@ -39,6 +47,9 @@ const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).su
 
 export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
   customerId,
+  customerName,
+  invoiceToId,
+  invoiceToName,
   value = [],
   onChange,
   disabled = false,
@@ -55,19 +66,48 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
   const [availableRepresentatives, setAvailableRepresentatives] = useState<Representative[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Load available representatives - either for customer or all if no customer selected (matches web)
+  // Build customer options for the dropdown when creating new representatives
+  const customerOptions: CustomerOption[] = useMemo(() => {
+    const options: CustomerOption[] = [];
+    if (customerId && customerName) {
+      options.push({ id: customerId, name: customerName });
+    }
+    if (invoiceToId && invoiceToName && invoiceToId !== customerId) {
+      options.push({ id: invoiceToId, name: invoiceToName });
+    }
+    return options;
+  }, [customerId, customerName, invoiceToId, invoiceToName]);
+
+  // Load available representatives - for customer, invoiceTo, or all if no customer selected
   useEffect(() => {
     loadRepresentatives();
-  }, [customerId]);
+  }, [customerId, invoiceToId]);
 
   const loadRepresentatives = async () => {
     setLoading(true);
     try {
       let reps: Representative[] = [];
 
-      if (customerId) {
-        // Get representatives for the specific customer
-        reps = await representativeService.getByCustomer(customerId);
+      // Collect unique customer IDs to fetch representatives from
+      const customerIds = new Set<string>();
+      if (customerId) customerIds.add(customerId);
+      if (invoiceToId) customerIds.add(invoiceToId);
+
+      if (customerIds.size > 0) {
+        // Fetch representatives for each customer in parallel
+        const promises = Array.from(customerIds).map(cId =>
+          representativeService.getByCustomer(cId)
+        );
+        const results = await Promise.all(promises);
+
+        // Merge and deduplicate representatives by ID
+        const repsMap = new Map<string, Representative>();
+        results.flat().forEach(rep => {
+          if (!repsMap.has(rep.id)) {
+            repsMap.set(rep.id, rep);
+          }
+        });
+        reps = Array.from(repsMap.values());
       } else {
         // Get all representatives if no customer selected (matches web behavior)
         const response = await representativeService.getAll({ pageSize: 1000 });
@@ -105,11 +145,12 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
           isEditing: false, // Start with combobox visible, not edit mode (matches web)
           isSaving: false,
           error: null,
+          customerId: customerId || null, // Default to primary customer
         })
       );
       onChange([...value, ...emptyRows]);
     }
-  }, [value.length, minRows, onChange, allowedRoles]);
+  }, [value.length, minRows, onChange, allowedRoles, customerId]);
 
   // Add a new representative row
   const handleAddRow = useCallback(() => {
@@ -129,10 +170,11 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
       isEditing: false, // Start with combobox visible, not edit mode (matches web)
       isSaving: false,
       error: null,
+      customerId: customerId || null, // Default to primary customer
     };
 
     onChange([...value, newRow]);
-  }, [value, maxRows, allowedRoles, onChange]);
+  }, [value, maxRows, allowedRoles, onChange, customerId]);
 
   // Update a specific row (using index like web version)
   const handleUpdateRow = useCallback(
@@ -192,6 +234,8 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
               row={row}
               index={index}
               customerId={customerId || ''}
+              invoiceToId={invoiceToId || ''}
+              customerOptions={customerOptions}
               availableRepresentatives={getFilteredRepresentativesForRow(index)}
               loadingRepresentatives={loading}
               onUpdate={(updates) => handleUpdateRow(index, updates)}

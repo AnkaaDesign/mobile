@@ -137,8 +137,39 @@ export function ServiceSelectorAutoGrouped({
     [services, onChange]
   );
 
+  // Determine which service order types should be visible for the current user
+  const visibleServiceOrderTypes = useMemo(() => {
+    if (!userPrivilege) return Object.values(SERVICE_ORDER_TYPE);
+
+    if (userPrivilege === SECTOR_PRIVILEGES.ADMIN) {
+      return Object.values(SERVICE_ORDER_TYPE);
+    }
+    if (userPrivilege === SECTOR_PRIVILEGES.FINANCIAL) {
+      // Financial can only see COMMERCIAL, LOGISTIC, FINANCIAL (not PRODUCTION, ARTWORK)
+      return [
+        SERVICE_ORDER_TYPE.COMMERCIAL,
+        SERVICE_ORDER_TYPE.LOGISTIC,
+        SERVICE_ORDER_TYPE.FINANCIAL,
+      ];
+    }
+    if (userPrivilege === SECTOR_PRIVILEGES.DESIGNER) {
+      // Designer can only see PRODUCTION, ARTWORK (not COMMERCIAL, LOGISTIC, FINANCIAL)
+      return [
+        SERVICE_ORDER_TYPE.PRODUCTION,
+        SERVICE_ORDER_TYPE.ARTWORK,
+      ];
+    }
+    // All other sectors see all types
+    return Object.values(SERVICE_ORDER_TYPE);
+  }, [userPrivilege]);
+
   // Render a service group (no card wrapper)
   const renderServiceGroup = (type: string) => {
+    // Skip if this type is not visible for the current user
+    if (!visibleServiceOrderTypes.includes(type as SERVICE_ORDER_TYPE)) {
+      return null;
+    }
+
     const serviceIndices = groupedServices[type];
 
     if (!serviceIndices || serviceIndices.length === 0) {
@@ -173,6 +204,7 @@ export function ServiceSelectorAutoGrouped({
               isGrouped={true}
               userPrivilege={userPrivilege}
               currentUserId={currentUserId}
+              allowedServiceOrderTypes={visibleServiceOrderTypes}
             />
           ))}
         </View>
@@ -209,6 +241,7 @@ export function ServiceSelectorAutoGrouped({
               isGrouped={false}
               userPrivilege={userPrivilege}
               currentUserId={currentUserId}
+              allowedServiceOrderTypes={visibleServiceOrderTypes}
             />
           ))}
         </View>
@@ -243,6 +276,7 @@ interface ServiceRowProps {
   initialAssignedUser?: User;
   userPrivilege?: string;
   currentUserId?: string;
+  allowedServiceOrderTypes: string[];
 }
 
 function ServiceRow({
@@ -259,6 +293,7 @@ function ServiceRow({
   isGrouped,
   initialAssignedUser,
   userPrivilege,
+  allowedServiceOrderTypes,
 }: ServiceRowProps) {
   const { colors } = useTheme();
   const [observationModal, setObservationModal] = useState<{ visible: boolean; text: string }>({
@@ -423,7 +458,7 @@ function ServiceRow({
             value={service.type || SERVICE_ORDER_TYPE.PRODUCTION}
             onValueChange={(value) => onTypeChange(index, value as string)}
             disabled={disabled}
-            options={Object.values(SERVICE_ORDER_TYPE).map((t) => ({
+            options={allowedServiceOrderTypes.map((t) => ({
               value: t,
               label: SERVICE_ORDER_TYPE_LABELS[t as keyof typeof SERVICE_ORDER_TYPE_LABELS],
             }))}

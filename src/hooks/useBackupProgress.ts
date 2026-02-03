@@ -1,6 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import io, { Socket } from 'socket.io-client';
-import Config from 'react-native-config';
+// TODO: Install socket.io-client and react-native-config to enable this feature
+// import io, { Socket } from 'socket.io-client';
+// import Config from 'react-native-config';
+
+// Temporary placeholder types until packages are installed
+type Socket = any;
+const io = (_url: string, _opts?: any): Socket => {
+  console.warn('[useBackupProgress] Socket.io not installed. Install socket.io-client to enable real-time backup progress.');
+  return null as any;
+};
+const Config = { WEBHOOK_URL: '' };
 
 export interface BackupProgressData {
   backupId: string;

@@ -155,12 +155,24 @@ export function VacationForm({
   }, [isValid, isDirty, onFormStateChange]);
 
   // Async query function for users
+  // Filter: isActive: true includes all active users regardless of status
   const userQueryFn = useCallback(async (search: string, page: number = 1) => {
     const queryParams: any = {
       page,
       take: 50,
       where: { isActive: true },
-      include: { position: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        position: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     };
 
     if (search && search.trim()) {

@@ -4,7 +4,14 @@ import { Chip } from "@/components/ui/chip";
 import { spacing } from "@/constants/design-system";
 import { WARNING_CATEGORY, WARNING_CATEGORY_LABELS, WARNING_SEVERITY, WARNING_SEVERITY_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
-import type { PersonalWarningFilters } from "./personal-warning-filter-modal";
+
+export interface PersonalWarningFilters {
+  isActive?: boolean;
+  severities?: WARNING_SEVERITY[];
+  categories?: WARNING_CATEGORY[];
+  startDate?: Date;
+  endDate?: Date;
+}
 
 interface PersonalWarningFilterTagsProps {
   filters: PersonalWarningFilters;

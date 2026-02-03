@@ -6,7 +6,8 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { PpeDelivery } from "@/types";
-import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
+import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
 import { formatDate } from "@/utils";
 
 interface PpeDeliveryCardProps {
@@ -16,22 +17,9 @@ interface PpeDeliveryCardProps {
 export function PpeDeliveryCard({ delivery }: PpeDeliveryCardProps) {
   const { colors } = useTheme();
 
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return "warning";
-      case "APPROVED":
-        return "info";
-      case "DELIVERED":
-        return "success";
-      case "REPROVED":
-        return "destructive";
-      case "CANCELLED":
-        return "secondary";
-      default:
-        return "secondary";
-    }
-  };
+  // Get badge colors from centralized configuration
+  const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[delivery.status as PPE_DELIVERY_STATUS] || "gray";
+  const badgeColor = BADGE_COLORS[variant];
 
   return (
     <Card style={styles.card}>
@@ -49,8 +37,13 @@ export function PpeDeliveryCard({ delivery }: PpeDeliveryCardProps) {
             <Icon name="info-circle" size={16} color={colors.mutedForeground} />
             <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Status</ThemedText>
           </View>
-          <Badge variant={getStatusVariant(delivery.status)}>
-            <ThemedText>{PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status}</ThemedText>
+          <Badge
+            variant="secondary"
+            style={{ backgroundColor: badgeColor.bg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}
+          >
+            <ThemedText style={{ color: badgeColor.text, fontSize: fontSize.sm, fontWeight: fontWeight.medium }}>
+              {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
+            </ThemedText>
           </Badge>
         </View>
 

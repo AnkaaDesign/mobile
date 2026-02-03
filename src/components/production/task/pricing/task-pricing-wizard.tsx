@@ -102,9 +102,28 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     isLoading: taskLoading,
   } = useTaskDetail(taskId, {
     include: {
-      customer: true,
-      truck: true,
-      sector: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+          corporateName: true,
+          cnpj: true,
+          cpf: true,
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+          model: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
   const task = taskResponse?.data;
@@ -448,7 +467,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                     serialNumber: task.serialNumber,
                     term: task.term,
                     customer: task.customer,
-                    negotiatingWith: (task as any).negotiatingWith,
+                    representatives: task.representatives,
                   } : undefined}
                 />
               </CardContent>

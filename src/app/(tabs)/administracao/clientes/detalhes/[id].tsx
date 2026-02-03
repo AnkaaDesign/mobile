@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useCustomer } from "@/hooks";
+import { useCustomer, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,9 @@ export default function CustomerDetailScreen() {
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
   const id = params?.id || "";
 
   const {
@@ -43,12 +46,51 @@ export default function CustomerDetailScreen() {
     error,
     refetch,
   } = useCustomer(id, {
-    include: {
-      logo: true,
-      tasks: {
-        include: {
-          services: true,
+    // Use top-level select for optimized data fetching - only fetch fields needed for the detail view
+    select: {
+      // Basic identification
+      id: true,
+      fantasyName: true,
+      corporateName: true,
+      cnpj: true,
+      cpf: true,
+      registrationStatus: true,
+      tags: true,
+      // Contact info
+      email: true,
+      phones: true,
+      site: true,
+      // Address
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // Metadata
+      createdAt: true,
+      logoId: true,
+      // Logo relation with minimal fields for display
+      logo: {
+        select: {
+          id: true,
+          url: true,
+          name: true,
+          mimeType: true,
         },
+      },
+      // Tasks with minimal fields for display
+      tasks: {
+        select: {
+          id: true,
+          serialNumber: true,
+          description: true,
+          status: true,
+          finishedAt: true,
+          term: true,
+        },
+        take: 10, // Limit initial tasks loaded
       },
     },
     enabled: !!id && id !== "",

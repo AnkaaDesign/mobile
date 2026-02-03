@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useTaskDetail } from "@/hooks";
+import { useTaskDetail, useScreenReady } from "@/hooks";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,9 @@ export default function MovementDetailScreen() {
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
   const id = params?.id || "";
 
   const {
@@ -35,9 +38,25 @@ export default function MovementDetailScreen() {
     refetch,
   } = useTaskDetail(id, {
     include: {
-      sector: true,
-      customer: true,
-      createdBy: true,
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+          name: true,
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     enabled: !!id && id !== "",
   });
@@ -132,7 +151,7 @@ export default function MovementDetailScreen() {
                   Cliente
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {task.customer.name}
+                  {task.customer.fantasyName}
                 </ThemedText>
               </View>
             )}

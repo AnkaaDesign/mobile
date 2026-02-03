@@ -106,12 +106,20 @@ export function CutRequestModal({
         {
           file: true,
           task: {
-            include: {
-              customer: true,
+            select: {
+              id: true,
+              name: true,
+              customer: {
+                select: {
+                  id: true,
+                  fantasyName: true,
+                },
+              },
             },
           },
           parentCut: {
-            include: {
+            select: {
+              id: true,
               file: true,
             },
           },

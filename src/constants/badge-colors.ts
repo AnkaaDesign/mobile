@@ -264,8 +264,8 @@ export const BADGE_COLORS: Record<
     text: "#ffffff",
   },
   yellow: {
-    bg: "#eab308", // yellow-500
-    text: "#ffffff",
+    bg: "#eab308", // yellow-500 (matching web: bg-yellow-500)
+    text: "#ffffff", // White text (matching web: text-white)
   },
   amber: {
     bg: "#f59e0b", // amber-500
@@ -465,12 +465,12 @@ export const ENTITY_BADGE_CONFIG = {
     [PPE_REQUEST_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
   },
 
-  // PPE Delivery Status
+  // PPE Delivery Status (matching web version)
   PPE_DELIVERY: {
     [PPE_DELIVERY_STATUS.PENDING]: "gray" as BadgeVariant,
     [PPE_DELIVERY_STATUS.APPROVED]: "blue" as BadgeVariant,
     [PPE_DELIVERY_STATUS.DELIVERED]: "delivered" as BadgeVariant,
-    [PPE_DELIVERY_STATUS.WAITING_SIGNATURE]: "warning" as BadgeVariant,
+    [PPE_DELIVERY_STATUS.WAITING_SIGNATURE]: "amber" as BadgeVariant,
     [PPE_DELIVERY_STATUS.COMPLETED]: "green" as BadgeVariant,
     [PPE_DELIVERY_STATUS.SIGNATURE_REJECTED]: "red" as BadgeVariant,
     [PPE_DELIVERY_STATUS.REPROVED]: "red" as BadgeVariant,

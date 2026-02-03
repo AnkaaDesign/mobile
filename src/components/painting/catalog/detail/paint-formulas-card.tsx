@@ -19,12 +19,31 @@ import { useAuth } from '@/contexts/auth-context';
 
 interface PaintFormulasCardProps {
   paint: Paint;
+  /** If false, formulas are displayed but not clickable */
+  canNavigate?: boolean;
 }
 
-export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
+// Helper to get component count from either _count or components array
+// Supports both optimized select queries (with _count) and full include queries (with components array)
+function getFormulaComponentCount(formula: PaintFormula): number {
+  // Prefer _count.components (from optimized select query) if available
+  if (formula._count?.components !== undefined) {
+    return formula._count.components;
+  }
+  // Fall back to components array length (from include query)
+  return formula.components?.length || 0;
+}
+
+export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCardProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const isWarehouseUser = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
+  const userPrivilege = user?.sector?.privileges;
+
+  // Only COMMERCIAL, ADMIN, FINANCIAL can see prices (WAREHOUSE excluded)
+  const canSeePrices = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
   const hasFormulas = paint.formulas && paint.formulas.length > 0;
 
   const handleFormulaClick = (formulaId: string) => {
@@ -33,11 +52,12 @@ export function PaintFormulasCard({ paint }: PaintFormulasCardProps) {
 
   const handleFormulaCopy = async (formula: PaintFormula) => {
     try {
+      const componentCount = getFormulaComponentCount(formula);
       let formulaText = `Fórmula: ${formula.description || 'Sem descrição'}
-Componentes: ${formula.components?.length || 0}`;
+Componentes: ${componentCount}`;
 
-      // Only include price in copy if not warehouse user
-      if (!isWarehouseUser) {
+      // Only include price in copy if user can see prices
+      if (canSeePrices) {
         formulaText += `\nPreço/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.pricePerLiter)) : '-'}`;
       }
 
@@ -77,8 +97,9 @@ Componentes: ${formula.components?.length || 0}`;
           {[...paint.formulas!].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((formula, index) => (
             <View key={formula.id}>
               <TouchableOpacity
-                onPress={() => handleFormulaClick(formula.id)}
+                onPress={canNavigate ? () => handleFormulaClick(formula.id) : undefined}
                 onLongPress={() => handleFormulaCopy(formula)}
+                disabled={!canNavigate}
                 style={{ backgroundColor: 'rgba(0, 0, 0, 0.03)', borderColor: colors.border, borderWidth: 1 }}
                 className="rounded-lg p-3 active:opacity-70"
               >
@@ -87,18 +108,23 @@ Componentes: ${formula.components?.length || 0}`;
                   {formula.description || "Sem descrição"}
                 </Text>
 
-                {/* Component Count */}
-                <View className="flex-row items-center gap-2 mb-3">
-                  <Icon name="package" size={14} className="text-muted-foreground" />
-                  <Text className="text-xs text-muted-foreground">
-                    {formula.components?.length || 0} {(formula.components?.length || 0) === 1 ? 'componente' : 'componentes'}
-                  </Text>
-                </View>
+                {/* Component Count - supports both _count (select) and components array (include) */}
+                {(() => {
+                  const count = getFormulaComponentCount(formula);
+                  return (
+                    <View className="flex-row items-center gap-2 mb-3">
+                      <Icon name="package" size={14} className="text-muted-foreground" />
+                      <Text className="text-xs text-muted-foreground">
+                        {count} {count === 1 ? 'componente' : 'componentes'}
+                      </Text>
+                    </View>
+                  );
+                })()}
 
                 {/* Metrics Row */}
                 <View className="flex-row gap-4">
-                  {/* Price per Liter - Hidden for warehouse users */}
-                  {!isWarehouseUser && (
+                  {/* Price per Liter - Only show if user can see prices */}
+                  {canSeePrices && (
                     <View className="flex-1">
                       <View className="flex-row items-center gap-1 mb-1">
                         <Icon name="currency-dollar" size={14} className="text-muted-foreground" />
@@ -129,31 +155,33 @@ Componentes: ${formula.components?.length || 0}`;
             </View>
           ))}
 
-          {/* Actions */}
-          <View className="flex-row gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleShowAll}
-              className="flex-1"
-            >
-              <View className="flex-row items-center gap-2">
-                <Icon name="list" size={16} />
-                <Text className="text-sm">Mostrar Todos</Text>
-              </View>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={handleCreateFormula}
-              className="flex-1"
-            >
-              <View className="flex-row items-center gap-2">
-                <Icon name="plus" size={16} />
-                <Text className="text-sm">Nova Fórmula</Text>
-              </View>
-            </Button>
-          </View>
+          {/* Actions - Only show if can navigate */}
+          {canNavigate && (
+            <View className="flex-row gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={handleShowAll}
+                className="flex-1"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Icon name="list" size={16} />
+                  <Text className="text-sm">Mostrar Todos</Text>
+                </View>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onPress={handleCreateFormula}
+                className="flex-1"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Icon name="plus" size={16} />
+                  <Text className="text-sm">Nova Fórmula</Text>
+                </View>
+              </Button>
+            </View>
+          )}
         </View>
       ) : (
         <View className="items-center py-6 gap-3">
@@ -161,20 +189,22 @@ Componentes: ${formula.components?.length || 0}`;
           <Text className="text-sm text-muted-foreground">
             Nenhuma fórmula cadastrada
           </Text>
-          <View className="flex-row gap-2">
-            <Button variant="outline" size="sm" onPress={handleShowAll}>
-              <View className="flex-row items-center gap-2">
-                <Icon name="list" size={16} />
-                <Text className="text-sm">Mostrar Todos</Text>
-              </View>
-            </Button>
-            <Button variant="outline" size="sm" onPress={handleCreateFormula}>
-              <View className="flex-row items-center gap-2">
-                <Icon name="plus" size={16} />
-                <Text className="text-sm">Nova Fórmula</Text>
-              </View>
-            </Button>
-          </View>
+          {canNavigate && (
+            <View className="flex-row gap-2">
+              <Button variant="outline" size="sm" onPress={handleShowAll}>
+                <View className="flex-row items-center gap-2">
+                  <Icon name="list" size={16} />
+                  <Text className="text-sm">Mostrar Todos</Text>
+                </View>
+              </Button>
+              <Button variant="outline" size="sm" onPress={handleCreateFormula}>
+                <View className="flex-row items-center gap-2">
+                  <Icon name="plus" size={16} />
+                  <Text className="text-sm">Nova Fórmula</Text>
+                </View>
+              </Button>
+            </View>
+          )}
         </View>
       )}
       </View>

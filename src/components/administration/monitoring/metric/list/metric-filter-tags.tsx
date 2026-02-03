@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import type { MetricFilters } from "./metric-filter-modal";
+import type { MetricFilters } from "./metric-filter-drawer-content";
 import type { MetricCategory } from "./metric-table";
 
 interface MetricFilterTagsProps {

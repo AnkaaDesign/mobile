@@ -14,6 +14,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintTypeMutations } from "@/hooks/paintType";
 import { useItems } from "@/hooks/useItem";
+import { useScreenReady } from "@/hooks";
 import { paintTypeCreateSchema } from '../../../../schemas';
 import type { PaintTypeCreateFormData } from '../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -30,6 +31,9 @@ export default function CreatePaintTypeScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { create } = usePaintTypeMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemSearch] = useState("");

@@ -812,6 +812,20 @@ const userTransform = (data: any) => {
 // Query Schema
 // =====================
 
+// =====================
+// Select Schema for Performance Optimization
+// =====================
+
+export const userSelectSchema = z.record(z.union([
+  z.boolean(),
+  z.object({
+    select: z.record(z.any()).optional(),
+    orderBy: z.any().optional(),
+    take: z.number().optional(),
+    where: z.any().optional(),
+  }),
+])).optional();
+
 export const userGetManySchema = z
   .object({
     // Pagination
@@ -824,6 +838,8 @@ export const userGetManySchema = z
     where: userWhereSchema.optional(),
     orderBy: userOrderBySchema.optional(),
     include: userIncludeSchema.optional(),
+    // Select for performance optimization - fetch only needed fields
+    select: userSelectSchema,
 
     // Convenience filters
     ...userFilters,
@@ -1130,9 +1146,10 @@ export const userBatchDeleteSchema = z.object({
   userIds: z.array(z.string().uuid("Usuário inválido")).min(1, "Pelo menos um ID deve ser fornecido"),
 });
 
-// Query schema for include parameter
+// Query schema for include/select parameter
 export const userQuerySchema = z.object({
   include: userIncludeSchema.optional(),
+  select: userSelectSchema,
 });
 
 // =====================
@@ -1141,6 +1158,8 @@ export const userQuerySchema = z.object({
 
 export const userGetByIdSchema = z.object({
   include: userIncludeSchema.optional(),
+  // Select for performance optimization - fetch only needed fields
+  select: userSelectSchema,
 });
 
 // =====================
@@ -1159,6 +1178,7 @@ export type UserBatchUpdateFormData = z.infer<typeof userBatchUpdateSchema>;
 export type UserBatchDeleteFormData = z.infer<typeof userBatchDeleteSchema>;
 
 export type UserInclude = z.infer<typeof userIncludeSchema>;
+export type UserSelect = z.infer<typeof userSelectSchema>;
 export type UserOrderBy = z.infer<typeof userOrderBySchema>;
 export type UserWhere = z.infer<typeof userWhereSchema>;
 

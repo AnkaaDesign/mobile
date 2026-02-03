@@ -23,11 +23,24 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
         COMMISSION_STATUS.SUSPENDED_COMMISSION,
       ],
     },
+    // Use optimized select patterns for better performance
     include: {
-      customer: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
       createdBy: {
-        include: {
-          position: true,
+        select: {
+          id: true,
+          name: true,
+          position: {
+            select: {
+              id: true,
+              name: true,
+            }
+          },
         },
       },
     },

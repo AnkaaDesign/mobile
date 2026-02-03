@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { usePaintMutations, usePaintFormulaMutations } from "@/hooks";
+import { usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import type { PaintFormula } from "@/types";
@@ -14,6 +14,9 @@ export default function CreateCatalogScreen() {
   const { createAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);

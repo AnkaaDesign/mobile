@@ -11,18 +11,10 @@ export const catalogListConfig: ListConfig<Paint> = {
     hook: 'usePaintsInfiniteMobile',
     defaultSort: { field: 'colorOrder', direction: 'asc' },
     pageSize: 25,
-    include: {
-      paintType: true,
-      paintBrand: true,
-      formulas: true,
-      _count: {
-        select: {
-          logoTasks: true,
-          generalPaintings: true,
-          formulas: true,
-        },
-      },
-    },
+    // NOTE: Don't pass include here - the backend's getDefaultInclude() already provides
+    // paintType, paintBrand, and _count for formulas, generalPaintings, logoTasks.
+    // Passing include from mobile can cause issues with nested object serialization
+    // in query params, leading to _count being stripped or not properly parsed.
   },
 
   table: {

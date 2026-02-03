@@ -305,6 +305,8 @@ export interface ListConfig<T extends { id: string }> {
     pageSize?: number
     sortOptions?: Array<{ field: string; label: string }> // Available sort options
     include?: any // Prisma include object
+    /** Prisma select object for partial field selection - reduces data transfer */
+    select?: any
     where?: any // Base Prisma where clause (will be merged with filters)
     /** Forced API params that will be merged with user filters (e.g., sectorIds, statuses) */
     forcedParams?: Record<string, any>

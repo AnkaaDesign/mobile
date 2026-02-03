@@ -17,6 +17,7 @@ import {
   PPE_DELIVERY_STATUS_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
   CUT_STATUS_LABELS,
+  COMMISSION_STATUS_LABELS,
 } from '@/constants/enum-labels'
 import type { CellFormat } from '../types'
 import type { File as AnkaaFile } from '@/types'
@@ -114,6 +115,7 @@ const ENTITY_LABEL_MAPS: Record<string, Record<string, string>> = {
   PPE_DELIVERY: PPE_DELIVERY_STATUS_LABELS,
   SERVICE_ORDER: SERVICE_ORDER_STATUS_LABELS,
   CUT: CUT_STATUS_LABELS,
+  COMMISSION_STATUS: COMMISSION_STATUS_LABELS,
 }
 
 /**

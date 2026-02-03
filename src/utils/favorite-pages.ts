@@ -17,7 +17,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
   // Production - Create Pages
   "/producao/cronograma/cadastrar": FAVORITE_PAGES.PRODUCAO_CRONOGRAMA_CADASTRAR,
   "/producao/recorte/plano-de-recorte/cadastrar": FAVORITE_PAGES.PRODUCAO_RECORTE_CADASTRAR,
-  "/producao/servicos/cadastrar": FAVORITE_PAGES.PRODUCAO_SERVICOS_CADASTRAR,
   "/producao/observacoes/cadastrar": FAVORITE_PAGES.PRODUCAO_OBSERVACOES_CADASTRAR,
   "/producao/aerografia/cadastrar": FAVORITE_PAGES.PRODUCAO_AEROGRAFIA_CADASTRAR,
   "/producao/garagens/cadastrar": FAVORITE_PAGES.PRODUCAO_GARAGENS_CADASTRAR,

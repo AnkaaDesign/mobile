@@ -10,8 +10,13 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
     hook: 'useItemBrandsInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      items: true,
+    // Use select to fetch only fields needed for list display
+    // Remove items: true to avoid fetching all items for each brand
+    select: {
+      id: true,
+      name: true,
+      createdAt: true,
+      updatedAt: true,
       _count: {
         select: {
           items: true,

@@ -22,7 +22,7 @@ import { perfLog } from '@/utils/performance-logger'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
-import { isTeamLeader } from '@/utils/user'
+import { isTeamLeader, hasPrivilege } from '@/utils/user'
 import { Search } from '@/components/list/Search'
 import { Filters } from '@/components/list/Filters'
 import { BulkActions } from '@/components/list/BulkActions'
@@ -352,36 +352,70 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
   }, [shouldGroupByStatus, filteredPreparationTasks, filteredInProductionTasks, filteredCompletedTasks])
 
+  // Check if user is financial for section ordering
+  const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL)
+
   const sections: SectionData[] = useMemo(() => {
     // If grouping by status (agenda 3-table workflow), create 3 sections
     if (shouldGroupByStatus && tasksByStatus) {
       const result: SectionData[] = []
 
-      // Section 1: Em Preparação (PREPARATION + WAITING_PRODUCTION)
-      if (tasksByStatus.preparation.length > 0) {
-        result.push({
-          title: 'Em Preparação',
-          sectorId: 'preparation',
-          data: tasksByStatus.preparation,
-        })
-      }
+      // For FINANCIAL users: Show Completed first, then In Production, then Preparation
+      if (isFinancialUser) {
+        // Section 1: Concluído (COMPLETED) - First for financial
+        if (tasksByStatus.completed.length > 0) {
+          result.push({
+            title: 'Concluído',
+            sectorId: 'completed',
+            data: tasksByStatus.completed,
+          })
+        }
 
-      // Section 2: Em Produção (IN_PRODUCTION)
-      if (tasksByStatus.inProduction.length > 0) {
-        result.push({
-          title: 'Em Produção',
-          sectorId: 'in-production',
-          data: tasksByStatus.inProduction,
-        })
-      }
+        // Section 2: Em Produção (IN_PRODUCTION)
+        if (tasksByStatus.inProduction.length > 0) {
+          result.push({
+            title: 'Em Produção',
+            sectorId: 'in-production',
+            data: tasksByStatus.inProduction,
+          })
+        }
 
-      // Section 3: Concluído (COMPLETED)
-      if (tasksByStatus.completed.length > 0) {
-        result.push({
-          title: 'Concluído',
-          sectorId: 'completed',
-          data: tasksByStatus.completed,
-        })
+        // Section 3: Em Preparação (PREPARATION + WAITING_PRODUCTION)
+        if (tasksByStatus.preparation.length > 0) {
+          result.push({
+            title: 'Em Preparação',
+            sectorId: 'preparation',
+            data: tasksByStatus.preparation,
+          })
+        }
+      } else {
+        // Default order for other users: Preparation, In Production, Completed
+        // Section 1: Em Preparação (PREPARATION + WAITING_PRODUCTION)
+        if (tasksByStatus.preparation.length > 0) {
+          result.push({
+            title: 'Em Preparação',
+            sectorId: 'preparation',
+            data: tasksByStatus.preparation,
+          })
+        }
+
+        // Section 2: Em Produção (IN_PRODUCTION)
+        if (tasksByStatus.inProduction.length > 0) {
+          result.push({
+            title: 'Em Produção',
+            sectorId: 'in-production',
+            data: tasksByStatus.inProduction,
+          })
+        }
+
+        // Section 3: Concluído (COMPLETED)
+        if (tasksByStatus.completed.length > 0) {
+          result.push({
+            title: 'Concluído',
+            sectorId: 'completed',
+            data: tasksByStatus.completed,
+          })
+        }
       }
 
       return result
@@ -447,7 +481,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
 
     return result
-  }, [shouldGroupByStatus, tasksByStatus, shouldGroupBySector, filteredTasks, tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors])
+  }, [shouldGroupByStatus, tasksByStatus, shouldGroupBySector, filteredTasks, tasksBySector, sectors, userSectorId, isLeaderOrProduction, showOtherSectors, isFinancialUser])
 
   // Calculate display columns
   const displayColumns = useMemo(() => {

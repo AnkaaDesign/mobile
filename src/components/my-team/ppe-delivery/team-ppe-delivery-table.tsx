@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { PPE_DELIVERY_STATUS } from "@/constants";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS } from "@/constants";
 import { formatDate } from "@/utils";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface TeamPpeDeliveryTableProps {
   deliveries: PpeDelivery[];
@@ -19,40 +19,19 @@ interface TeamPpeDeliveryTableProps {
   loading?: boolean;
 }
 
-// Helper function to get status colors
+// Helper function to get status colors using centralized config (matching web version)
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case PPE_DELIVERY_STATUS.PENDING:
-      return { background: badgeColors.warning.background, text: badgeColors.warning.text };
-    case PPE_DELIVERY_STATUS.APPROVED:
-      return { background: badgeColors.info.background, text: badgeColors.info.text };
-    case PPE_DELIVERY_STATUS.DELIVERED:
-      return { background: badgeColors.success.background, text: badgeColors.success.text };
-    case PPE_DELIVERY_STATUS.REPROVED:
-      return { background: badgeColors.error.background, text: badgeColors.error.text };
-    case PPE_DELIVERY_STATUS.CANCELLED:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
-    default:
-      return { background: badgeColors.muted.background, text: badgeColors.muted.text };
+  const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[status as PPE_DELIVERY_STATUS];
+  if (variant) {
+    const badgeColor = BADGE_COLORS[variant];
+    return { background: badgeColor?.bg || "#6b7280", text: badgeColor?.text || "#ffffff" };
   }
+  return { background: "#6b7280", text: "#ffffff" };
 };
 
-// Helper function to get status label
+// Helper function to get status label using centralized labels
 const getStatusLabel = (status: string) => {
-  switch (status) {
-    case PPE_DELIVERY_STATUS.PENDING:
-      return "Pendente";
-    case PPE_DELIVERY_STATUS.APPROVED:
-      return "Aprovado";
-    case PPE_DELIVERY_STATUS.DELIVERED:
-      return "Entregue";
-    case PPE_DELIVERY_STATUS.REPROVED:
-      return "Reprovado";
-    case PPE_DELIVERY_STATUS.CANCELLED:
-      return "Cancelado";
-    default:
-      return status;
-  }
+  return PPE_DELIVERY_STATUS_LABELS[status as PPE_DELIVERY_STATUS] || status;
 };
 
 export const TeamPpeDeliveryTable = React.memo<TeamPpeDeliveryTableProps>(

@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCustomer, useCustomerMutations, useKeyboardAwareScroll } from "@/hooks";
+import { useCustomer, useCustomerMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
 import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
@@ -39,6 +39,9 @@ export default function CustomerEditScreen() {
   const [economicActivityInitialOptions, setEconomicActivityInitialOptions] = useState<Array<{ value: string; label: string }>>([]);
   const queryClient = useQueryClient();
 
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
+
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
 
@@ -51,8 +54,39 @@ export default function CustomerEditScreen() {
   }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
 
   const { data: customer, isLoading, error, refetch } = useCustomer(id!, {
-    include: {
-      logo: true,
+    // Use select for optimized data fetching - only fetch fields needed for the form
+    select: {
+      // All editable fields
+      id: true,
+      fantasyName: true,
+      cnpj: true,
+      cpf: true,
+      corporateName: true,
+      email: true,
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      site: true,
+      phones: true,
+      tags: true,
+      logoId: true,
+      situacaoCadastral: true,
+      inscricaoEstadual: true,
+      economicActivityId: true,
+      logradouro: true,
+      // Logo relation for display
+      logo: {
+        select: {
+          id: true,
+          url: true,
+          name: true,
+          mimeType: true,
+        },
+      },
     },
   });
 

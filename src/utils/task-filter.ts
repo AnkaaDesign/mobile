@@ -160,8 +160,18 @@ export async function fetchTasksForFilter(
     const response = await getTasks({
       where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       include: {
-        customer: true,
-        sector: true,
+        customer: {
+          select: {
+            id: true,
+            fantasyName: true,
+          },
+        },
+        sector: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy,
       limit: managedSectorId ? pageSize * 3 : pageSize, // Fetch more if filtering

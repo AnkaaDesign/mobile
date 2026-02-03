@@ -11,7 +11,7 @@ import { SimpleFormField } from '@/components/ui';
 import { Combobox } from '@/components/ui/combobox';
 import { useAuth } from '@/hooks/useAuth';
 import { SECTOR_PRIVILEGES } from '@/constants';
-import { getSpots } from '@/api-client';
+import { getParkingSpots } from '@/api-client';
 
 interface TruckSpotSectionProps {
   isSubmitting?: boolean;
@@ -55,7 +55,7 @@ export default function TruckSpotSection({
         params.where.name = { contains: search, mode: 'insensitive' };
       }
 
-      const response = await getSpots(params);
+      const response = await getParkingSpots(params);
 
       return {
         data: response?.data || [],

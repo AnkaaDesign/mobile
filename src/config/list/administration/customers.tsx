@@ -82,11 +82,45 @@ export const customersListConfig: ListConfig<Customer> = {
     hook: 'useCustomersInfiniteMobile',
     defaultSort: { field: 'fantasyName', direction: 'asc' },
     pageSize: 25,
-    include: {
-      logo: true,
-      economicActivity: true,
+    // Use select to fetch only the fields needed for the list view
+    // This reduces data transfer and improves performance
+    select: {
+      id: true,
+      fantasyName: true,
+      corporateName: true,
+      cnpj: true,
+      cpf: true,
+      email: true,
+      phones: true,
+      city: true,
+      state: true,
+      registrationStatus: true,
+      tags: true,
+      createdAt: true,
+      updatedAt: true,
+      logoId: true,
+      economicActivityId: true,
+      // Include logo relation for display
+      logo: {
+        select: {
+          id: true,
+          url: true,
+          name: true,
+        },
+      },
+      // Include economicActivity relation for display
+      economicActivity: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+        },
+      },
+      // Include task count
       _count: {
-        tasks: true,
+        select: {
+          tasks: true,
+        },
       },
     },
   },

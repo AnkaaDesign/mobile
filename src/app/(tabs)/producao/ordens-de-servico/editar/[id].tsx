@@ -20,14 +20,68 @@ export default function EditServiceOrderScreen() {
 
   const { data: task, isLoading, error, refetch } = useTaskDetail(id!, {
     include: {
-      customer: true,
-      sector: true,
-      generalPainting: true,
-      paints: true,
-      serviceOrders: true,
-      budgets: true,
-      invoices: true,
-      receipts: true,
+      // Only essential fields for service order edit - optimized with select patterns
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      generalPainting: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+        }
+      },
+      logoPaints: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+        }
+      },
+      serviceOrders: {
+        select: {
+          id: true,
+          description: true,
+          status: true,
+          statusOrder: true,
+          type: true,
+          assignedToId: true,
+          observation: true,
+        }
+      },
+      budgets: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
+      invoices: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
+      receipts: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
     },
   });
 

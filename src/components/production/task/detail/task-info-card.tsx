@@ -73,9 +73,11 @@ interface TaskInfoCardProps {
   canViewFinancialFields?: boolean;
   /** Whether user can view restricted fields (negotiatingWith, forecastDate, representatives). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
   canViewRestrictedFields?: boolean;
+  /** Whether user can view truck details (chassisNumber, category, implementType). Hidden from PRODUCTION users except team leaders. Defaults to true. */
+  canViewTruckDetails?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true }) => {
   const { colors } = useTheme();
 
   // Handle phone call
@@ -303,8 +305,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         )}
 
-        {/* Chassis Number */}
-        {task.truck?.chassisNumber && (
+        {/* Chassis Number - Hidden from PRODUCTION users except team leaders */}
+        {canViewTruckDetails && task.truck?.chassisNumber && (
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconBarcode size={18} color={colors.mutedForeground} />
@@ -316,8 +318,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         )}
 
-        {/* Truck Category */}
-        {task.truck?.category && (
+        {/* Truck Category - Hidden from PRODUCTION users except team leaders */}
+        {canViewTruckDetails && task.truck?.category && (
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconCategory size={18} color={colors.mutedForeground} />
@@ -331,8 +333,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         )}
 
-        {/* Implement Type */}
-        {task.truck?.implementType && (
+        {/* Implement Type - Hidden from PRODUCTION users except team leaders */}
+        {canViewTruckDetails && task.truck?.implementType && (
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconTool size={18} color={colors.mutedForeground} />

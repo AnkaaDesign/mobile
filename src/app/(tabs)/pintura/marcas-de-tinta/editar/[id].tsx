@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrand, usePaintBrandMutations } from "@/hooks";
+import { usePaintBrand, usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { paintBrandUpdateSchema } from '../../../../../schemas';
 import type { PaintBrandUpdateFormData } from '../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -25,6 +25,9 @@ export default function EditPaintBrandScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintBrandMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

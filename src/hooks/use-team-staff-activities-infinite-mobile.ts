@@ -5,6 +5,31 @@ import { useInfiniteMobile } from "./use-infinite-mobile";
 // Mobile-optimized page size for team staff activities
 const MOBILE_TEAM_STAFF_ACTIVITIES_PAGE_SIZE = 40;
 
+// Optimized select for team staff activities list
+// Only fetch fields actually displayed in TeamActivityTable
+const TEAM_STAFF_ACTIVITY_LIST_SELECT = {
+  id: true,
+  operation: true,
+  quantity: true,
+  reason: true,
+  createdAt: true,
+  // Item - only code and name are displayed
+  item: {
+    select: {
+      id: true,
+      name: true,
+      uniCode: true,
+    },
+  },
+  // User - only name is displayed
+  user: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
 // Query keys for team staff activities
 export const teamStaffActivitiesKeys = {
   all: ["team-staff", "activities"] as const,
@@ -15,6 +40,7 @@ export const teamStaffActivitiesKeys = {
  * Hook for infinite scrolling team staff activities
  * Automatically filters activities by the current user's managed sector on the backend
  * Requires team leader privileges
+ * Uses select to fetch only fields displayed in TeamActivityTable
  */
 export function useTeamStaffActivitiesInfinite(
   params?: any,
@@ -30,6 +56,8 @@ export function useTeamStaffActivitiesInfinite(
         ...params,
         page: pageParam,
         limit: params?.limit || MOBILE_TEAM_STAFF_ACTIVITIES_PAGE_SIZE,
+        // Use optimized select if not provided in params
+        select: params?.select || TEAM_STAFF_ACTIVITY_LIST_SELECT,
       };
       return getTeamStaffActivities(queryParams);
     },
@@ -60,11 +88,13 @@ export function useTeamStaffActivitiesInfinite(
 /**
  * Mobile-optimized hook for infinite scrolling team staff activities
  * Uses smaller page sizes and provides flattened data for FlatList
+ * Uses select to fetch only fields displayed in TeamActivityTable
  */
 export function useTeamStaffActivitiesInfiniteMobile(params?: any) {
   const queryParams = {
     ...params,
     limit: MOBILE_TEAM_STAFF_ACTIVITIES_PAGE_SIZE,
+    // Note: select is applied in useTeamStaffActivitiesInfinite
   };
 
   const infiniteQuery = useTeamStaffActivitiesInfinite(queryParams);

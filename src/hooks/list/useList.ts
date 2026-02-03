@@ -74,11 +74,13 @@ export function useList<T extends { id: string }>(
       ...(search.text ? { searchingFor: search.text } : {}),
       ...filters.apiParams,
       ...(config.query.forcedParams || {}), // Forced params (e.g., sectorIds for team filtering)
-      include: config.query.include,
+      // Prefer select over include for optimized data fetching
+      ...(config.query.select ? { select: config.query.select } : {}),
+      ...(config.query.include && !config.query.select ? { include: config.query.include } : {}),
       where: config.query.where, // Base where clause
       limit: config.query.pageSize || 25,
     }),
-    [sort.orderBy, search.text, filters.apiParams, config.query.forcedParams, config.query.include, config.query.where, config.query.pageSize]
+    [sort.orderBy, search.text, filters.apiParams, config.query.forcedParams, config.query.select, config.query.include, config.query.where, config.query.pageSize]
   )
 
   // Data fetching

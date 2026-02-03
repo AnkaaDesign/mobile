@@ -4,9 +4,9 @@ import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Icon from "@/components/ui/icon";
-import { useAuth } from "@/contexts/auth-context";
-import { usePpeDeliveriesInfiniteMobile } from '@/hooks/use-ppe-deliveries-infinite-mobile';
-import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from '@/constants';
+import { useMyPpeDeliveriesInfinite } from '@/hooks/use-my-ppe-deliveries-infinite';
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS, PPE_TYPE_LABELS, PPE_TYPE } from '@/constants';
+import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from '@/constants/badge-colors';
 import { formatDate } from '@/utils';
 import { cn } from "@/lib/utils";
 import { PersonalPpeDeliveryFilterModal } from "./personal-ppe-delivery-filter-modal";
@@ -18,17 +18,12 @@ interface PersonalPpeDeliveryListProps {
 }
 
 export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListProps) {
-  const { user } = useAuth();
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState<any>({});
 
-  // Build query filters
+  // Build query filters - the /my-requests endpoint automatically filters by current user
   const queryFilters = useMemo(() => {
-    const baseFilters: any = {
-      where: {
-        userId: user?.id,
-      },
-    };
+    const baseFilters: any = {};
 
     if (filters.status && filters.status.length > 0) {
       baseFilters.status = filters.status;
@@ -47,8 +42,9 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
     }
 
     return baseFilters;
-  }, [user?.id, filters]);
+  }, [filters]);
 
+  // Use the my-requests endpoint which automatically filters by current user
   const {
     deliveries,
     isLoading,
@@ -57,21 +53,12 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
     canLoadMore,
     isFetchingNextPage,
     refresh,
-  } = usePpeDeliveriesInfiniteMobile(queryFilters);
+  } = useMyPpeDeliveriesInfinite(queryFilters);
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case PPE_DELIVERY_STATUS.DELIVERED:
-        return "success";
-      case PPE_DELIVERY_STATUS.APPROVED:
-        return "info";
-      case PPE_DELIVERY_STATUS.PENDING:
-        return "warning";
-      case PPE_DELIVERY_STATUS.REPROVED:
-        return "destructive";
-      default:
-        return "secondary";
-    }
+  // Get badge colors from centralized configuration
+  const getStatusBadgeColors = (status: string) => {
+    const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[status as PPE_DELIVERY_STATUS] || "gray";
+    return BADGE_COLORS[variant];
   };
 
   const renderPpeDelivery = ({ item: delivery }: { item: any }) => {
@@ -83,15 +70,20 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
               <Text className="text-base font-semibold">{delivery.item?.name || "Item não encontrado"}</Text>
               {delivery.item?.ppeType && (
                 <Text className="text-sm text-muted-foreground">
-                  Tipo: {delivery.item.ppeType}
+                  Tipo: {PPE_TYPE_LABELS[delivery.item.ppeType as PPE_TYPE] || delivery.item.ppeType}
                 </Text>
               )}
               {delivery.item?.ppeCA && (
                 <Text className="text-sm text-muted-foreground">CA: {delivery.item.ppeCA}</Text>
               )}
             </View>
-            <Badge variant={getStatusBadgeVariant(delivery.status)}>
-              {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS]}
+            <Badge
+              variant="secondary"
+              style={{ backgroundColor: getStatusBadgeColors(delivery.status).bg }}
+            >
+              <Text style={{ color: getStatusBadgeColors(delivery.status).text, fontSize: 12, fontWeight: '500' }}>
+                {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
+              </Text>
             </Badge>
           </View>
 

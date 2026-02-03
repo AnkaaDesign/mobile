@@ -7,7 +7,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import type { AlertFilters } from "./alert-filter-modal";
+import type { AlertFilters } from "./alert-filter-drawer-content";
 
 interface AlertFilterTagsProps {
   filters: AlertFilters;

@@ -287,6 +287,188 @@ export const TASK_SELECT_DETAIL = {
 } as const;
 
 // ============================================
+// CUSTOMER SELECT PATTERNS
+// ============================================
+
+/**
+ * Minimal customer select - for lists and references where only name is needed
+ */
+export const CUSTOMER_SELECT_MINIMAL = {
+  id: true,
+  fantasyName: true,
+} as const;
+
+/**
+ * Customer select for combobox/selector components
+ */
+export const CUSTOMER_SELECT_COMBOBOX = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  logoId: true,
+  logo: {
+    select: {
+      id: true,
+      url: true,
+    },
+  },
+} as const;
+
+/**
+ * Customer select for list views - includes essential display fields
+ */
+export const CUSTOMER_SELECT_LIST = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  email: true,
+  phones: true,
+  city: true,
+  state: true,
+  registrationStatus: true,
+  tags: true,
+  createdAt: true,
+  updatedAt: true,
+  logoId: true,
+  economicActivityId: true,
+  logo: {
+    select: {
+      id: true,
+      url: true,
+      name: true,
+    },
+  },
+  economicActivity: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+    },
+  },
+  _count: {
+    select: {
+      tasks: true,
+    },
+  },
+} as const;
+
+/**
+ * Customer select for task context - when customer is referenced by tasks
+ */
+export const CUSTOMER_SELECT_FOR_TASK = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  phones: true,
+  email: true,
+} as const;
+
+/**
+ * Customer select for card display in task/service context
+ */
+export const CUSTOMER_SELECT_CARD = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  email: true,
+  phones: true,
+  address: true,
+  addressNumber: true,
+  neighborhood: true,
+  city: true,
+  state: true,
+  zipCode: true,
+} as const;
+
+/**
+ * Customer select for form editing
+ */
+export const CUSTOMER_SELECT_FORM = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  email: true,
+  phones: true,
+  site: true,
+  address: true,
+  addressNumber: true,
+  addressComplement: true,
+  neighborhood: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  registrationStatus: true,
+  tags: true,
+  economicActivityId: true,
+  logoId: true,
+  logo: {
+    select: {
+      id: true,
+      url: true,
+      name: true,
+      mimeType: true,
+    },
+  },
+  economicActivity: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+    },
+  },
+} as const;
+
+/**
+ * Customer select for detail view - includes most fields needed for display
+ */
+export const CUSTOMER_SELECT_DETAIL = {
+  id: true,
+  fantasyName: true,
+  corporateName: true,
+  cnpj: true,
+  cpf: true,
+  email: true,
+  phones: true,
+  site: true,
+  address: true,
+  addressNumber: true,
+  addressComplement: true,
+  neighborhood: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  registrationStatus: true,
+  tags: true,
+  createdAt: true,
+  logoId: true,
+  logo: {
+    select: {
+      id: true,
+      url: true,
+      name: true,
+      mimeType: true,
+    },
+  },
+  _count: {
+    select: {
+      tasks: true,
+      serviceOrders: true,
+      services: true,
+    },
+  },
+} as const;
+
+// ============================================
 // USER SELECT PATTERNS
 // ============================================
 
@@ -905,6 +1087,7 @@ export const BORROW_SELECT_DETAIL = {
         select: {
           id: true,
           fantasyName: true,
+          corporateName: true, // Fallback for display
         },
       },
     },
@@ -915,6 +1098,7 @@ export const BORROW_SELECT_DETAIL = {
       name: true,
       email: true,
       phone: true,
+      cpf: true, // Used in personal borrow detail
       status: true,
       isActive: true,
       sectorId: true,
@@ -939,7 +1123,7 @@ export const BORROW_SELECT_DETAIL = {
 // HELPER FUNCTION TO GET SELECT BY CONTEXT
 // ============================================
 
-export type EntityType = 'task' | 'user' | 'item' | 'activity' | 'borrow';
+export type EntityType = 'task' | 'user' | 'item' | 'activity' | 'borrow' | 'customer';
 export type ViewType = 'minimal' | 'combobox' | 'list' | 'table' | 'card' | 'form' | 'detail' | 'schedule' | 'preparation';
 
 export function getSelectPattern(entity: EntityType, view: ViewType): any {
@@ -953,6 +1137,15 @@ export function getSelectPattern(entity: EntityType, view: ViewType): any {
       preparation: TASK_SELECT_PREPARATION,
       form: TASK_SELECT_DETAIL,
       detail: TASK_SELECT_DETAIL,
+    },
+    customer: {
+      minimal: CUSTOMER_SELECT_MINIMAL,
+      combobox: CUSTOMER_SELECT_COMBOBOX,
+      list: CUSTOMER_SELECT_LIST,
+      table: CUSTOMER_SELECT_LIST,
+      card: CUSTOMER_SELECT_CARD,
+      form: CUSTOMER_SELECT_FORM,
+      detail: CUSTOMER_SELECT_DETAIL,
     },
     user: {
       minimal: USER_SELECT_MINIMAL,

@@ -1,13 +1,16 @@
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ActivityBatchCreateForm } from "@/components/inventory/activity/form";
-import { useActivityBatchMutations } from "@/hooks";
+import { useActivityBatchMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, ACTIVITY_OPERATION } from "@/constants";
 
 export default function InventoryMovementsCreateScreen() {
   const router = useRouter();
   const { batchCreateAsync, isBatchCreating } = useActivityBatchMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: {
     operation: typeof ACTIVITY_OPERATION.INBOUND | typeof ACTIVITY_OPERATION.OUTBOUND;

@@ -6,12 +6,13 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItemCategory, useItemCategoryMutations } from "@/hooks";
+import { useItemCategory, useItemCategoryMutations, useScreenReady } from "@/hooks";
 import { type ItemCategoryUpdateFormData } from '../../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 export default function CategoryEditScreenWrapper() {
   return (
@@ -26,14 +27,22 @@ function CategoryEditScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { updateAsync } = useItemCategoryMutations();
+  const { goBack } = useNavigationLoading();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,
     isLoading,
     error,
   } = useItemCategory(id!, {
-    include: {
-      items: true,
+    // Use select to fetch only fields needed for the edit form
+    // No need to include items - only editing name and type
+    select: {
+      id: true,
+      name: true,
+      type: true,
     },
   });
 
@@ -59,7 +68,7 @@ function CategoryEditScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.categories.root) as any);
+    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.categories.root) });
   };
 
   if (isLoading) {

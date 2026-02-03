@@ -42,8 +42,22 @@ export default function LayoutOnlyEditScreen() {
     error,
   } = useTaskDetail(id!, {
     include: {
-      customer: true,
-      truck: true,
+      // Only essential fields for layout page - optimized with select patterns
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+          chassisNumber: true,
+          category: true,
+          implementType: true,
+        }
+      },
     },
   });
 
@@ -212,7 +226,7 @@ export default function LayoutOnlyEditScreen() {
             taskId: id!,
           };
           const truckResponse = await truckService.createTruck(truckData);
-          activeTruckId = truckResponse.data.id;
+          activeTruckId = truckResponse.data!.id;
           console.log('[Layout] Auto-created truck:', activeTruckId);
         } catch (error) {
           console.error('[Layout] Failed to auto-create truck:', error);
@@ -412,7 +426,7 @@ export default function LayoutOnlyEditScreen() {
                 {task.customer && (
                   <SimpleFormField label="Cliente">
                     <Input
-                      value={task.customer.fantasyName || task.customer.name || ""}
+                      value={task.customer.fantasyName || ""}
                       editable={false}
                       style={[styles.disabledInput, { backgroundColor: colors.muted }]}
                     />

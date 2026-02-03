@@ -197,58 +197,6 @@ export default function ServerMetricsScreen() {
     }
   };
 
-  // Export metrics data
-  const handleExport = useCallback(async () => {
-    try {
-      const exportData = {
-        timestamp: new Date().toISOString(),
-        timeRange: selectedTimeRange,
-        currentMetrics: {
-          cpu: metrics?.cpu,
-          memory: metrics?.memory,
-          disk: metrics?.disk,
-          temperature: temperatureData?.data,
-          uptime: metrics?.uptime,
-          hostname: metrics?.hostname,
-        },
-        ssdHealth: ssdData?.data,
-        raidStatus: raidData?.data,
-        historicalData: history.map((h) => ({
-          timestamp: h.timestamp,
-          cpu: h.resources?.cpu || 0,
-          memory: h.resources?.memory || 0,
-          disk: h.resources?.disk || 0,
-        })),
-        alerts: alerts,
-      };
-
-      const jsonString = JSON.stringify(exportData, null, 2);
-      const fileName = `metricas-servidor-${new Date().toISOString().split('T')[0]}.json`;
-      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-
-      await FileSystem.writeAsStringAsync(fileUri, jsonString, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
-
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType: 'application/json',
-            dialogTitle: 'Exportar Métricas do Servidor',
-          });
-        } else {
-          Alert.alert('Arquivo salvo', `Salvo em: ${fileName}`);
-        }
-      }
-
-      Alert.alert('Sucesso', 'Métricas exportadas com sucesso');
-    } catch (error) {
-      console.error('Export error:', error);
-      Alert.alert('Erro', 'Erro ao exportar métricas');
-    }
-  }, [metrics, temperatureData, ssdData, raidData, history, alerts, selectedTimeRange]);
-
   // Utility functions
   const formatBytes = (bytes: number) => {
     if (!bytes || bytes === 0) return '0 B';
@@ -435,6 +383,58 @@ export default function ServerMetricsScreen() {
       disk: diskSum / history.length,
     };
   }, [history]);
+
+  // Export metrics data (defined after metrics, history, alerts)
+  const handleExport = useCallback(async () => {
+    try {
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        timeRange: selectedTimeRange,
+        currentMetrics: {
+          cpu: metrics?.cpu,
+          memory: metrics?.memory,
+          disk: metrics?.disk,
+          temperature: temperatureData?.data,
+          uptime: metrics?.uptime,
+          hostname: metrics?.hostname,
+        },
+        ssdHealth: ssdData?.data,
+        raidStatus: raidData?.data,
+        historicalData: history.map((h) => ({
+          timestamp: h.timestamp,
+          cpu: h.resources?.cpu || 0,
+          memory: h.resources?.memory || 0,
+          disk: h.resources?.disk || 0,
+        })),
+        alerts: alerts,
+      };
+
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const fileName = `metricas-servidor-${new Date().toISOString().split('T')[0]}.json`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+      await FileSystem.writeAsStringAsync(fileUri, jsonString, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/json',
+            dialogTitle: 'Exportar Métricas do Servidor',
+          });
+        } else {
+          Alert.alert('Arquivo salvo', `Salvo em: ${fileName}`);
+        }
+      }
+
+      Alert.alert('Sucesso', 'Métricas exportadas com sucesso');
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert('Erro', 'Erro ao exportar métricas');
+    }
+  }, [metrics, temperatureData, ssdData, raidData, history, alerts, selectedTimeRange]);
 
   if (isLoading && !metricsData) {
     return <LoadingScreen message="Carregando métricas do servidor..." />;

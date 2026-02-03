@@ -130,12 +130,41 @@ export default function ScheduleDetailsScreen() {
   // Airbrushing section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
   const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
+  // Truck details (chassis, category, implement) - Hidden from PRODUCTION users except team leaders (privilege managers)
+  const canViewTruckDetails = !isProductionUser || isTeamLeader(user);
+
   // SINGLE OPTIMIZED INCLUDE - Only fetch what's needed
   const taskInclude = useMemo(() => ({
     // Core data - always needed
-    sector: true,
-    customer: true,
-    createdBy: true,
+    sector: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    customer: {
+      select: {
+        id: true,
+        fantasyName: true,
+        corporateName: true,
+        cnpj: true,
+        cpf: true,
+        phones: true,
+        email: true,
+        address: true,
+        addressNumber: true,
+        neighborhood: true,
+        city: true,
+        state: true,
+        zipCode: true,
+      },
+    },
+    createdBy: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
     truck: true,
     serviceOrders: {
       select: {
@@ -416,7 +445,7 @@ export default function ScheduleDetailsScreen() {
             customer: task.customer,
             representatives: (task as any).representatives,
             details: task.details ?? "",
-          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} />
+          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} />
 
           {/* Dates Card - Datas */}
           <TaskDatesCard task={{

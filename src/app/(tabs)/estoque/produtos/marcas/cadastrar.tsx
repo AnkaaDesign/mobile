@@ -1,14 +1,19 @@
 import { useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
-import { useItemBrandMutations } from "@/hooks";
+import { useItemBrandMutations, useScreenReady } from "@/hooks";
 import { itemBrandCreateSchema, type ItemBrandCreateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 export default function BrandCreateScreen() {
   const router = useRouter();
   const { createAsync, createMutation } = useItemBrandMutations();
+  const { goBack } = useNavigationLoading();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: ItemBrandCreateFormData) => {
     try {
@@ -28,7 +33,7 @@ export default function BrandCreateScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.brands.root) as any);
+    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.brands.root) });
   };
 
   return <ItemBrandForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;

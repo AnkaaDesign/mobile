@@ -14,7 +14,7 @@ import { FormCard } from "@/components/ui/form-section";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
-import { useOrders, useOrderItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
+import { useOrders, useOrderItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog, useItems } from "@/hooks";
 import { useUsersMinimal, useItemsForCombobox } from "@/hooks/use-form-data";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
 import { ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
@@ -116,6 +116,9 @@ export function ActivityBatchCreateForm({
   // Batch result dialog state
   const { isOpen: isResultModalOpen, result: batchResult, openDialog: openResultModal, closeDialog: closeResultModal } = useBatchResultDialog<ActivityBatchResult, ActivityBatchResult>();
 
+  // Cache item metadata when selecting items to avoid "Item XXXX" fallback display
+  const [itemMetadataCache, setItemMetadataCache] = useState<Record<string, { name: string; brand?: string; uniCode?: string }>>({});
+
   // Keyboard visibility tracking
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -211,31 +214,69 @@ export function ActivityBatchCreateForm({
     [form, multiStepForm],
   );
 
+  // Handle item selection and cache metadata
+  const handleItemSelect = useCallback(
+    (itemId: string, item?: any) => {
+      multiStepForm.toggleItemSelection(itemId);
+      // Cache item metadata when selecting
+      if (item && !itemMetadataCache[itemId]) {
+        setItemMetadataCache((prev) => ({
+          ...prev,
+          [itemId]: {
+            name: item.name,
+            brand: item.brand?.name,
+            uniCode: item.uniCode,
+          },
+        }));
+      }
+    },
+    [multiStepForm, itemMetadataCache],
+  );
+
   // Fetch users for selection (minimal data - 95% reduction)
   const { data: users, isLoading: isLoadingUsers } = useUsersMinimal({
     limit: 100,
   });
 
   // Fetch orders for selection (when reason is ORDER_RECEIVED)
+  // Use select to only fetch fields needed for dropdown display
   const { data: orders, isLoading: isLoadingOrders } = useOrders({
     orderBy: { createdAt: "desc" },
-    include: { supplier: true },
+    select: {
+      id: true,
+      supplier: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+    },
     limit: 100,
   }, {
     enabled: multiStepForm.formData.reason === ACTIVITY_REASON.ORDER_RECEIVED,
   });
 
   // Fetch order items when an order is selected
+  // Use select to only fetch fields needed for dropdown display
   const { data: orderItems, isLoading: isLoadingOrderItems } = useOrderItems({
     where: { orderId: multiStepForm.formData.orderId || undefined },
-    include: { item: true },
+    select: {
+      id: true,
+      orderedQuantity: true,
+      item: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   }, {
     enabled: !!multiStepForm.formData.orderId && multiStepForm.formData.reason === ACTIVITY_REASON.ORDER_RECEIVED,
   });
 
   const userOptions = useMemo(
     () =>
-      users?.data?.map((user) => ({
+      users?.map((user) => ({
         value: user.id,
         label: user.name,
       })) || [],
@@ -269,30 +310,48 @@ export function ActivityBatchCreateForm({
     [multiStepForm.selectedItems],
   );
 
+  // Fetch selected items for review with optimized select
+  // Only need name, brand.name, uniCode for display
   const { data: selectedItemsData } = useItems(
     {
       where: { id: { in: selectedItemIds } },
-      include: { brand: true, category: true },
+      select: {
+        id: true,
+        name: true,
+        uniCode: true,
+        brand: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     },
     { enabled: multiStepForm.currentStep === 2 && selectedItemIds.length > 0 },
   );
 
   // Map items with their names for review
   const selectedItemsWithNames = useMemo(() => {
+    // Use fetched data as secondary source (for data not in cache)
     const itemsMap = new Map(
       selectedItemsData?.data?.map((item) => [item.id, item]) || [],
     );
-    return multiStepForm.getSelectedItemsWithData().map((item) => ({
-      ...item,
-      name: itemsMap.get(item.id)?.name || `Item ${item.id.slice(0, 8)}`,
-      brand: itemsMap.get(item.id)?.brand?.name,
-      uniCode: itemsMap.get(item.id)?.uniCode,
-    }));
-  }, [selectedItemsData, multiStepForm]);
+    return multiStepForm.getSelectedItemsWithData().map((item) => {
+      // Priority: cached metadata > fetched data > fallback
+      const cached = itemMetadataCache[item.id];
+      const fetched = itemsMap.get(item.id);
+      return {
+        ...item,
+        name: cached?.name || fetched?.name || `Item ${item.id.slice(0, 8)}`,
+        brand: cached?.brand || fetched?.brand?.name,
+        uniCode: cached?.uniCode || fetched?.uniCode,
+      };
+    });
+  }, [selectedItemsData, multiStepForm, itemMetadataCache]);
 
   // Get selected user name for review
   const selectedUserName = useMemo(() => {
-    const user = users?.data?.find((u) => u.id === multiStepForm.formData.userId);
+    const user = users?.find((u) => u.id === multiStepForm.formData.userId);
     return user?.name || "Não selecionado";
   }, [users, multiStepForm.formData.userId]);
 
@@ -401,7 +460,7 @@ export function ActivityBatchCreateForm({
                 style={styles.itemSelector}
                 selectedItems={multiStepForm.selectedItems}
                 quantities={multiStepForm.quantities}
-                onSelectItem={(itemId) => multiStepForm.toggleItemSelection(itemId)}
+                onSelectItem={handleItemSelect}
                 onQuantityChange={multiStepForm.setItemQuantity}
                 showQuantityInput
                 minQuantity={1}

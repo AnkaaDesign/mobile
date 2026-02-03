@@ -20,10 +20,17 @@ import {
 
 const CREATE_NEW_OPTION = '__CREATE_NEW__';
 
+interface CustomerOption {
+  id: string;
+  name: string;
+}
+
 interface RepresentativeRowProps {
   row: RepresentativeRowData;
   index: number;
   customerId: string;
+  invoiceToId?: string; // Billing customer - representatives from this customer are also valid
+  customerOptions?: CustomerOption[]; // Options for customer selection when creating new representatives
   availableRepresentatives: Representative[];
   loadingRepresentatives: boolean;
   onUpdate: (updates: Partial<RepresentativeRowData>) => void;
@@ -38,6 +45,8 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   row,
   index,
   customerId,
+  invoiceToId,
+  customerOptions = [],
   availableRepresentatives,
   loadingRepresentatives,
   onUpdate,
@@ -52,6 +61,28 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   // Determine if we're in create mode based on the value (matches web logic)
   const showCreateInputs = row.isEditing && row.id?.startsWith('temp-');
 
+  // Show customer selector only when:
+  // 1. In create mode (showCreateInputs)
+  // 2. There are multiple customer options (customer and invoiceTo are different)
+  const showCustomerSelector = showCreateInputs && customerOptions.length > 1;
+
+  // Handle customer selection for new representatives
+  const handleCustomerChange = useCallback(
+    (value: string | string[] | null | undefined) => {
+      const selectedCustomerId = Array.isArray(value) ? value[0] : value;
+      onUpdate({ customerId: selectedCustomerId || null });
+    },
+    [onUpdate]
+  );
+
+  // Build customer options for the dropdown
+  const customerSelectOptions = useMemo(() => {
+    return customerOptions.map(opt => ({
+      value: opt.id,
+      label: opt.name,
+    }));
+  }, [customerOptions]);
+
   // Role options for dropdown
   const roleOptions = useMemo(() => {
     return Object.values(RepresentativeRole).map((role) => ({
@@ -61,7 +92,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   }, []);
 
   // Filter representatives by selected role AND customer (matches web logic)
-  // Show: reps matching the role that either belong to this customer OR have no customer (global)
+  // Show: reps matching the role that belong to customer, invoiceTo, or are global
   const filteredRepresentatives = useMemo(() => {
     if (!row.role) return [];
 
@@ -69,17 +100,22 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
       // Filter by role first
       if (rep.role !== row.role) return false;
 
-      // If task has a customer, show reps that:
-      // 1. Belong to this customer, OR
-      // 2. Have no customer (global representatives)
-      if (customerId) {
-        return rep.customerId === customerId || !rep.customerId;
+      // If task has a customer or invoiceTo, show reps that:
+      // 1. Belong to the primary customer (customerId), OR
+      // 2. Belong to the billing customer (invoiceToId), OR
+      // 3. Have no customer (global representatives)
+      if (customerId || invoiceToId) {
+        return (
+          rep.customerId === customerId ||
+          rep.customerId === invoiceToId ||
+          !rep.customerId
+        );
       }
 
       // If no customer on task, show all representatives with this role
       return true;
     });
-  }, [availableRepresentatives, row.role, customerId]);
+  }, [availableRepresentatives, row.role, customerId, invoiceToId]);
 
 
   // Handle role change (matches web - resets representative selection when role changes)
@@ -251,27 +287,43 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
       {/* Row 2: Representative Selection OR Create Mode Inputs */}
       {showCreateInputs ? (
         /* Inline Create Representative Inputs */
-        <View style={styles.createInputsRow}>
-          <View style={styles.nameInput}>
-            <Input
-              value={row.name}
-              onChangeText={handleNameChange}
-              placeholder="Nome"
-              editable={!isDisabled}
-              autoFocus
-            />
+        <>
+          <View style={styles.createInputsRow}>
+            <View style={styles.nameInput}>
+              <Input
+                value={row.name}
+                onChangeText={handleNameChange}
+                placeholder="Nome"
+                editable={!isDisabled}
+                autoFocus
+              />
+            </View>
+            <View style={styles.phoneInput}>
+              <Input
+                type="phone"
+                value={row.phone}
+                onChange={handlePhoneChange}
+                placeholder="Telefone"
+                keyboardType="phone-pad"
+                editable={!isDisabled}
+              />
+            </View>
           </View>
-          <View style={styles.phoneInput}>
-            <Input
-              type="phone"
-              value={row.phone}
-              onChange={handlePhoneChange}
-              placeholder="Telefone"
-              keyboardType="phone-pad"
-              editable={!isDisabled}
+          {/* Customer Selector - only shown when there are multiple customer options */}
+          {showCustomerSelector && (
+            <Combobox
+              value={row.customerId || customerOptions[0]?.id || ''}
+              onValueChange={handleCustomerChange}
+              options={customerSelectOptions}
+              placeholder="Selecione o cliente"
+              disabled={isDisabled}
+              searchable={false}
+              clearable={false}
+              getOptionValue={(opt) => opt.value}
+              getOptionLabel={(opt) => opt.label}
             />
-          </View>
-        </View>
+          )}
+        </>
       ) : (
         /* Representative Selection */
         <Combobox

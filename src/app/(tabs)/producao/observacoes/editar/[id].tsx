@@ -40,9 +40,21 @@ export default function EditObservationScreen() {
   } = useObservation(id as string, {
     include: {
       task: {
-        include: {
-          customer: true,
-          truck: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          truck: {
+            select: {
+              id: true,
+              plate: true,
+            },
+          },
         },
       },
       files: true,

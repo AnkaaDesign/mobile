@@ -12,8 +12,15 @@ export const paintsListConfig: ListConfig<Paint> = {
     pageSize: 25,
     include: {
       task: {
-        include: {
-          customer: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
         },
       },
       catalogPaint: true,

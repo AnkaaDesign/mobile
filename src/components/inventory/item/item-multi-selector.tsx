@@ -36,6 +36,13 @@ export function ItemMultiSelector({
       }),
     },
     orderBy: { name: "asc" },
+    // Use select to fetch only fields displayed in the UI
+    select: {
+      id: true,
+      name: true,
+      uniCode: true,
+      quantity: true,
+    },
   });
 
   const items = data?.data || [];

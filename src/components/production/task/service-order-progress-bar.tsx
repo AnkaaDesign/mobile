@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { IconAlertTriangle } from '@tabler/icons-react-native';
+import { SECTOR_PRIVILEGES, SERVICE_ORDER_TYPE } from '@/constants';
+import { hasPrivilege } from '@/utils/user';
 import type { Task } from '@/types';
 
 interface ServiceOrderProgressBarProps {
@@ -31,7 +33,35 @@ export function ServiceOrderProgressBar({ task, compact = false, navigationRoute
   const { isDark } = useTheme();
   const { user } = useAuth();
 
-  const serviceOrders = task.serviceOrders || [];
+  const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
+  const isDesignerUser = hasPrivilege(user, SECTOR_PRIVILEGES.DESIGNER);
+
+  // Filter service orders based on user privilege
+  // FINANCIAL users: don't see PRODUCTION, ARTWORK
+  // DESIGNER users: only see PRODUCTION, ARTWORK
+  const filteredServiceOrders = useMemo(() => {
+    const allServiceOrders = task.serviceOrders || [];
+
+    if (isFinancialUser) {
+      return allServiceOrders.filter(
+        (so: any) =>
+          so.type !== SERVICE_ORDER_TYPE.PRODUCTION &&
+          so.type !== SERVICE_ORDER_TYPE.ARTWORK
+      );
+    }
+
+    if (isDesignerUser) {
+      return allServiceOrders.filter(
+        (so: any) =>
+          so.type === SERVICE_ORDER_TYPE.PRODUCTION ||
+          so.type === SERVICE_ORDER_TYPE.ARTWORK
+      );
+    }
+
+    return allServiceOrders;
+  }, [task.serviceOrders, isFinancialUser, isDesignerUser]);
+
+  const serviceOrders = filteredServiceOrders;
   const totalCount = serviceOrders.length;
 
   // Count incomplete orders assigned to current user (needed for both empty and non-empty cases)

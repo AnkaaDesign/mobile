@@ -12,10 +12,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useTeamStaffBorrowsInfiniteMobile',
-    defaultSort: [
-      { field: 'status', direction: 'asc' },
-      { field: 'createdAt', direction: 'desc' },
-    ],
+    defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 20,
     select: {
       id: true,
@@ -96,6 +93,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
+        sortField: 'statusOrder',
         width: 1.3,
         align: 'center',
         render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
@@ -189,6 +187,9 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
     ],
     defaultVisible: ['user.name', 'item.name', 'status'],
     rowHeight: 72,
+    onRowPress: (borrow, router) => {
+      router.push(`/estoque/emprestimos/detalhes/${borrow.id}` as any)
+    },
     actions: [
       {
         key: 'view',

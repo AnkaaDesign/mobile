@@ -9,8 +9,8 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamPpeDeliveryTableRowSwipe } from "./team-ppe-delivery-table-row-swipe";
 import { formatDate } from "@/utils";
-import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { extendedColors } from "@/lib/theme/extended-colors";
+import { PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS, PPE_DELIVERY_STATUS } from "@/constants";
 
 export interface TableColumn {
   key: string;
@@ -54,21 +54,9 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (delivery: PpeDelivery) => (
       <View style={styles.nameContainer}>
-        <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
-          <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
-            {delivery.user?.name?.charAt(0)?.toUpperCase() || "?"}
-          </ThemedText>
-        </View>
-        <View style={styles.nameDetails}>
-          <ThemedText style={styles.nameText} numberOfLines={1}>
-            {delivery.user?.name || "Usuário"}
-          </ThemedText>
-          {delivery.user?.position && (
-            <ThemedText style={styles.positionText} numberOfLines={1}>
-              {delivery.user.position.name}
-            </ThemedText>
-          )}
-        </View>
+        <ThemedText style={styles.nameText} numberOfLines={1}>
+          {delivery.user?.name || "Usuário"}
+        </ThemedText>
       </View>
     ),
   },
@@ -107,21 +95,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (delivery: PpeDelivery) => {
+      // Badge colors using centralized config (matching web version exactly)
       const getStatusColor = () => {
-        switch (delivery.status) {
-          case "PENDING":
-            return { bg: badgeColors.warning.background, text: badgeColors.warning.text };
-          case "APPROVED":
-            return { bg: badgeColors.info.background, text: badgeColors.info.text };
-          case "DELIVERED":
-            return { bg: badgeColors.success.background, text: badgeColors.success.text };
-          case "REPROVED":
-            return { bg: badgeColors.error.background, text: badgeColors.error.text };
-          case "CANCELLED":
-            return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
-          default:
-            return { bg: badgeColors.muted.background, text: badgeColors.muted.text };
+        const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[delivery.status as PPE_DELIVERY_STATUS];
+        if (variant) {
+          const badgeColor = BADGE_COLORS[variant];
+          return { bg: badgeColor?.bg || "#6b7280", text: badgeColor?.text || "#ffffff" };
         }
+        return { bg: "#6b7280", text: "#ffffff" };
       };
 
       const colors = getStatusColor();
@@ -129,9 +110,12 @@ export const createColumnDefinitions = (): TableColumn[] => [
         <Badge
           variant="secondary"
           size="sm"
-          style={{ backgroundColor: colors.bg, borderWidth: 0 }}
+          style={{ backgroundColor: colors.bg, borderWidth: 0, flexShrink: 0 }}
         >
-          <ThemedText style={{ color: colors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}>
+          <ThemedText
+            style={{ color: colors.text, fontSize: fontSize.xs, fontWeight: fontWeight.medium }}
+            numberOfLines={1}
+          >
             {PPE_DELIVERY_STATUS_LABELS[delivery.status] || delivery.status}
           </ThemedText>
         </Badge>
@@ -223,7 +207,7 @@ export const TeamPpeDeliveryTable = React.memo<TeamPpeDeliveryTableProps>(
         userName: 2.0,
         itemName: 2.0,
         quantity: 0.8,
-        status: 1.2,
+        status: 1.8, // Increased to fit longer status labels like "Aguardando Assinatura"
         deliveryDate: 1.5,
         scheduledDate: 1.5,
         reviewedBy: 1.5,

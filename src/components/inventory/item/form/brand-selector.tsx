@@ -41,6 +41,11 @@ export function BrandSelector({ disabled, required, initialBrand }: BrandSelecto
       orderBy: { name: "asc" },
       page: page,
       take: 50,
+      // Use select to fetch only fields needed for the combobox
+      select: {
+        id: true,
+        name: true,
+      },
     };
 
     if (search && search.trim()) {

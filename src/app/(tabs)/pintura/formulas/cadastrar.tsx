@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -17,6 +18,9 @@ import {
 export default function CreateFormulaScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

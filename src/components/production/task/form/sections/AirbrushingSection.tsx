@@ -76,7 +76,7 @@ export default function AirbrushingSection({
   return (
     <FormCard
       title="Aerografias"
-      icon="IconSpray"
+      icon="paint"
       badge={airbrushingCount > 0 ? airbrushingCount : undefined}
     >
       {/* List of Airbrushings */}
@@ -161,7 +161,7 @@ export default function AirbrushingSection({
         disabled={isSubmitting}
         style={styles.addButton}
       >
-        <IconPlus size={18} color={colors.primary} />
+        <IconPlus size={18} color={colors.foreground} />
         <ThemedText style={{ marginLeft: 8 }}>Adicionar Aerografia</ThemedText>
       </Button>
     </FormCard>

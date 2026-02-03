@@ -10,10 +10,64 @@ export default function EditCollaboratorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: user, isLoading, error } = useUser(id, {
-    include: {
-      sector: true,
-      position: true,
-      managedSector: true,
+    // Use optimized select for better performance - fetches only fields needed for form
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      birth: true,
+      status: true,
+      isActive: true,
+      verified: true,
+      avatarId: true,
+      payrollNumber: true,
+      performanceLevel: true,
+      admissional: true,
+      // Address fields for form
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // Status tracking dates for form
+      effectedAt: true,
+      exp1StartAt: true,
+      exp1EndAt: true,
+      exp2StartAt: true,
+      exp2EndAt: true,
+      dismissedAt: true,
+      // IDs for form selectors
+      sectorId: true,
+      positionId: true,
+      // Timestamps
+      createdAt: true,
+      updatedAt: true,
+      // Relations with minimal select for form dropdowns
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // PPE size for form
+      ppeSize: true,
     },
   });
 

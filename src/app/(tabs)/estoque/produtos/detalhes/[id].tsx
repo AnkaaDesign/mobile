@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useItem } from "@/hooks";
+import { useItem, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SkeletonCard } from "@/components/ui/loading";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/utils/route-mapper";
@@ -29,9 +30,13 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function ItemDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { pushWithLoading } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Performance logging - track screen mount
   useEffect(() => {
@@ -46,60 +51,108 @@ export default function ItemDetailScreen() {
     refetch,
   } = useItem(id, {
     enabled: !!id && id !== "",
-    include: {
-      brand: true,
-      category: true,
-      supplier: true,
-      measures: true,
+    // Use select to fetch only the fields needed for the detail view
+    select: {
+      // Core item fields needed for display
+      id: true,
+      name: true,
+      uniCode: true,
+      quantity: true,
+      maxQuantity: true,
+      reorderPoint: true,
+      monthlyConsumption: true,
+      totalPrice: true,
+      isActive: true,
+      abcCategory: true,
+      xyzCategory: true,
+      boxQuantity: true,
+      estimatedLeadTime: true,
+      barcodes: true,
+      ppeType: true,
+      ppeSize: true,
+      ppeCA: true,
+      ppeDeliveryMode: true,
+      ppeStandardQuantity: true,
+      shouldAssignToUser: true,
+      createdAt: true,
+      // Related entities with only needed fields
+      brand: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      supplier: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      measures: {
+        select: {
+          id: true,
+          value: true,
+          unit: true,
+          measureType: true,
+        },
+      },
       prices: {
-        orderBy: { createdAt: "desc" },
         take: 10,
-      },
-      activities: {
-        include: {
-          user: { select: { name: true, id: true } },
-        },
         orderBy: { createdAt: "desc" },
-        take: 20,
+        select: {
+          id: true,
+          value: true,
+          createdAt: true,
+        },
       },
+      // Related items - only fields shown in RelatedItemsCard
       relatedItems: {
-        include: {
-          brand: true,
-          category: true,
-        },
-      },
-      relatedTo: {
-        include: {
-          brand: true,
-          category: true,
-        },
-      },
-      orderItems: {
-        include: {
-          order: {
-            include: {
-              supplier: true,
-              items: true,
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          isActive: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
-        orderBy: { createdAt: "desc" },
-        take: 50,
       },
-      borrows: {
-        include: {
-          user: { select: { name: true, id: true } },
+      relatedTo: {
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          isActive: true,
+          brand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
-        orderBy: { createdAt: "desc" },
-        take: 50,
       },
-      changeLogs: {
-        include: {
-          user: { select: { name: true, id: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      },
+      // Counts only - tables fetch their own data via separate hooks
       _count: {
         select: {
           activities: true,
@@ -136,7 +189,7 @@ export default function ItemDetailScreen() {
 
   const handleEdit = () => {
     if (item) {
-      router.push(routeToMobilePath(routes.inventory.products.edit(item.id)) as any);
+      pushWithLoading(routeToMobilePath(routes.inventory.products.edit(item.id)));
     }
   };
 

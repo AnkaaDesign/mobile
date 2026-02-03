@@ -15,6 +15,7 @@ import {
   IconCurrencyReal,
   IconPackage,
   IconArrowBack,
+  IconTruckDelivery,
 } from "@tabler/icons-react-native";
 
 interface ExternalWithdrawalTimelineCardProps {
@@ -34,6 +35,10 @@ export const ExternalWithdrawalTimelineCard: React.FC<ExternalWithdrawalTimeline
         return IconCircleCheck;
       case EXTERNAL_WITHDRAWAL_STATUS.CHARGED:
         return IconCurrencyReal;
+      case EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED:
+        return IconCircleCheck;
+      case EXTERNAL_WITHDRAWAL_STATUS.DELIVERED:
+        return IconTruckDelivery;
       case EXTERNAL_WITHDRAWAL_STATUS.CANCELLED:
         return IconX;
       default:
@@ -51,6 +56,10 @@ export const ExternalWithdrawalTimelineCard: React.FC<ExternalWithdrawalTimeline
         return colors.success;
       case EXTERNAL_WITHDRAWAL_STATUS.CHARGED:
         return colors.primary;
+      case EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED:
+        return colors.success;
+      case EXTERNAL_WITHDRAWAL_STATUS.DELIVERED:
+        return colors.success;
       case EXTERNAL_WITHDRAWAL_STATUS.CANCELLED:
         return colors.destructive;
       default:
@@ -89,6 +98,10 @@ export const ExternalWithdrawalTimelineCard: React.FC<ExternalWithdrawalTimeline
       description = "Alguns itens foram devolvidos";
     } else if (withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.CHARGED) {
       description = "Valor cobrado do responsável";
+    } else if (withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED) {
+      description = "Cobrança liquidada";
+    } else if (withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.DELIVERED) {
+      description = "Itens entregues (cortesia)";
     } else if (withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.CANCELLED) {
       description = "Retirada foi cancelada";
     }

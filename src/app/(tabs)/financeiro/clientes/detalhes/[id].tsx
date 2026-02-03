@@ -61,12 +61,47 @@ export default function FinancialCustomerDetailScreen() {
     error,
     refetch,
   } = useCustomer(id, {
-    include: {
-      logo: true,
+    // Use select for optimized data fetching - only fetch fields needed for the detail view
+    select: {
+      // Basic identification
+      id: true,
+      fantasyName: true,
+      corporateName: true,
+      cnpj: true,
+      cpf: true,
+      registrationStatus: true,
+      tags: true,
+      // Contact info
+      email: true,
+      phones: true,
+      site: true,
+      // Address
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      // Metadata
+      createdAt: true,
+      logoId: true,
+      // Logo relation with minimal fields for display
+      logo: {
+        select: {
+          id: true,
+          url: true,
+          name: true,
+          mimeType: true,
+        },
+      },
+      // Counts for display
       _count: {
-        tasks: true,
-        serviceOrders: true,
-        services: true,
+        select: {
+          tasks: true,
+          serviceOrders: true,
+          services: true,
+        },
       },
     },
     enabled: !!id && id !== "",

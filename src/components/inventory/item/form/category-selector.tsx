@@ -46,6 +46,12 @@ export function CategorySelector({ disabled, required, initialCategory, onCatego
       orderBy: { name: "asc" },
       page: page,
       take: 50,
+      // Use select to fetch only fields needed for the combobox
+      select: {
+        id: true,
+        name: true,
+        type: true,
+      },
     };
 
     if (search && search.trim()) {

@@ -173,6 +173,15 @@ export class PpeDeliveryService {
     return response.data;
   }
 
+  /**
+   * Get PPE deliveries for the current user's team (managed sector)
+   * Only returns deliveries for users in the manager's sector
+   */
+  async getMyTeamPpeDeliveries(params: PpeDeliveryGetManyFormData = {}): Promise<PpeDeliveryGetManyResponse> {
+    const response = await apiClient.get<PpeDeliveryGetManyResponse>(`${this.basePath}/my-team`, { params });
+    return response.data;
+  }
+
   async getPpeDeliveryById(id: string, params?: Omit<PpeDeliveryGetByIdFormData, "id">): Promise<PpeDeliveryGetUniqueResponse> {
     const response = await apiClient.get<PpeDeliveryGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,

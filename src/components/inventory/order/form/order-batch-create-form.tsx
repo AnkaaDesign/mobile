@@ -13,8 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useSuppliers } from "@/hooks";
-import { useMultiStepForm, FormStep } from "@/hooks";
+import { useSuppliers, useMultiStepForm } from "@/hooks";
+import type { FormStep } from "@/components/ui/form-steps";
 import { formatCurrency } from "@/utils";
 import {
   MultiStepFormContainer,

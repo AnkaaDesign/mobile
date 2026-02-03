@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ItemEditForm } from "@/components/inventory/item/form/item-edit-form";
 import { ItemEditSkeleton } from "@/components/inventory/item/skeleton/item-edit-skeleton";
 import { PrivilegeGuard } from "@/components/privilege-guard";
-import { useItem, useItemMutations } from "@/hooks";
+import { useItem, useItemMutations, useScreenReady } from "@/hooks";
 import { type ItemUpdateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 export default function ItemEditScreenWrapper() {
   return (
@@ -26,18 +27,82 @@ function ItemEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { updateAsync } = useItemMutations();
+  const { goBack } = useNavigationLoading();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const {
     data: response,
     isLoading,
     error,
   } = useItem(id!, {
-    include: {
-      brand: true,
-      category: true,
-      supplier: true,
+    // Use select to fetch only fields needed for the edit form
+    select: {
+      // Core item fields for editing
+      id: true,
+      name: true,
+      uniCode: true,
+      quantity: true,
+      reorderPoint: true,
+      reorderQuantity: true,
+      maxQuantity: true,
+      isManualMaxQuantity: true,
+      isManualReorderPoint: true,
+      boxQuantity: true,
+      icms: true,
+      ipi: true,
+      barcodes: true,
+      shouldAssignToUser: true,
+      abcCategory: true,
+      xyzCategory: true,
+      brandId: true,
+      categoryId: true,
+      supplierId: true,
+      estimatedLeadTime: true,
+      isActive: true,
+      // PPE fields
+      ppeType: true,
+      ppeSize: true,
+      ppeCA: true,
+      ppeDeliveryMode: true,
+      ppeStandardQuantity: true,
+      // Related entities - only fields needed to display in selectors
+      brand: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+      },
+      supplier: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      measures: {
+        select: {
+          id: true,
+          value: true,
+          unit: true,
+          measureType: true,
+        },
+      },
       prices: {
+        take: 1,
         orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          value: true,
+          createdAt: true,
+        },
       },
     },
   });
@@ -64,7 +129,7 @@ function ItemEditScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.root) as any);
+    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.root) });
   };
 
   if (isLoading) {

@@ -1,6 +1,5 @@
 export { tasksListConfig } from './tasks'
 export { airbrushingListConfig } from './airbrushing'
-export { servicesListConfig } from './services'
 export { paintsListConfig } from './paints'
 export { observationsListConfig } from './observations'
 export { cutsListConfig } from './cuts'

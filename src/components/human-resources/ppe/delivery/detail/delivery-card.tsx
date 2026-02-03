@@ -1,4 +1,3 @@
-
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -7,7 +6,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconCalendar, IconNumber } from "@tabler/icons-react-native";
 import { formatDate } from "@/utils";
-import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
+import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
+import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
 import type { PpeDelivery } from '../../../../../types';
 
 interface DeliveryCardProps {
@@ -17,21 +17,9 @@ interface DeliveryCardProps {
 export function DeliveryCard({ delivery }: DeliveryCardProps) {
   const { colors } = useTheme();
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "DELIVERED":
-        return "success";
-      case "APPROVED":
-        return "info";
-      case "PENDING":
-        return "warning";
-      case "REPROVED":
-      case "CANCELLED":
-        return "destructive";
-      default:
-        return "secondary";
-    }
-  };
+  // Get badge colors from centralized configuration
+  const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[delivery.status as PPE_DELIVERY_STATUS] || "gray";
+  const badgeColor = BADGE_COLORS[variant];
 
   return (
     <Card style={styles.card}>
@@ -45,8 +33,13 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
         <View style={styles.infoContainer}>
           <View style={styles.infoRow}>
             <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Status</ThemedText>
-            <Badge variant={getStatusBadgeVariant(delivery.status)}>
-              <ThemedText style={styles.badgeText}>{PPE_DELIVERY_STATUS_LABELS[delivery.status]}</ThemedText>
+            <Badge
+              variant="secondary"
+              style={{ backgroundColor: badgeColor.bg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}
+            >
+              <ThemedText style={[styles.badgeText, { color: badgeColor.text }]}>
+                {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
+              </ThemedText>
             </Badge>
           </View>
 

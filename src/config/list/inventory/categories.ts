@@ -10,8 +10,14 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
     hook: 'useItemCategoriesInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      items: true,
+    // Use select to fetch only fields needed for list display
+    // Remove items: true to avoid fetching all items for each category
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      createdAt: true,
+      updatedAt: true,
       _count: {
         select: {
           items: true,

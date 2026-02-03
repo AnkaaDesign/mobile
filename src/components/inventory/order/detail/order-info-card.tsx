@@ -138,15 +138,15 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
                   </View>
                   <View style={styles.phoneContainer}>
                     <TouchableOpacity
-                      onPress={() => handlePhonePress(order.supplier.phones[0])}
+                      onPress={() => handlePhonePress(order.supplier!.phones[0])}
                       activeOpacity={0.7}
                     >
                       <ThemedText style={[styles.phoneValue, { color: "#16a34a" }]}>
-                        {formatBrazilianPhone(order.supplier.phones[0])}
+                        {formatBrazilianPhone(order.supplier!.phones[0])}
                       </ThemedText>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => handleWhatsAppPress(order.supplier.phones[0])}
+                      onPress={() => handleWhatsAppPress(order.supplier!.phones[0])}
                       activeOpacity={0.7}
                     >
                       <IconBrandWhatsapp size={20} color="#16a34a" />

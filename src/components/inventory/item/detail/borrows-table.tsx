@@ -38,6 +38,7 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch borrows for this specific item with infinite scroll
+  // Use optimized select for embedded table (minimal fields needed)
   const {
     items: borrows,
     isLoading,
@@ -50,8 +51,20 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
     where: {
       itemId: item.id,
     },
-    include: {
-      user: true,
+    // Optimized select for embedded table - only fetch what's displayed
+    select: {
+      id: true,
+      quantity: true,
+      status: true,
+      statusOrder: true,
+      createdAt: true,
+      returnedAt: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
     enabled: !!item.id,

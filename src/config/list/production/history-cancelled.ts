@@ -20,12 +20,36 @@ export const historyCancelledListConfig: ListConfig<Task> = {
     defaultSort: { field: 'updatedAt', direction: 'desc' },
     pageSize: 25,
     include: {
-      customer: true,
-      sector: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       generalPainting: {
-        include: {
-          paintType: true,
-          paintBrand: true,
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+          hexColor: true,
+          paintType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          paintBrand: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       updatedBy: {

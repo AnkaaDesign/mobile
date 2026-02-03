@@ -46,9 +46,22 @@ export default function AirbrushingEditScreen() {
   } = useAirbrushingDetail(id as string, {
     include: {
       task: {
-        include: {
-          customer: true,
-          truck: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          truck: {
+            select: {
+              id: true,
+              model: true,
+              plate: true,
+            },
+          },
         },
       },
     },
@@ -63,8 +76,18 @@ export default function AirbrushingEditScreen() {
   } = useTasks({
     orderBy: { createdAt: "desc" },
     include: {
-      customer: true,
-      truck: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+        },
+      },
     },
     // Show tasks that don't have airbrushing OR the current task
     where: {

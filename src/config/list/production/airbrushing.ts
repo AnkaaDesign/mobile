@@ -21,15 +21,45 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
     pageSize: 25,
     include: {
       task: {
-        include: {
-          customer: true,
-          sector: true,
-          user: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
-      artworks: true,
-      receipts: true,
-      invoices: true,
+      artworks: {
+        select: {
+          id: true,
+          fileId: true,
+        },
+      },
+      receipts: {
+        select: {
+          id: true,
+        },
+      },
+      invoices: {
+        select: {
+          id: true,
+        },
+      },
     },
   },
 

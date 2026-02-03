@@ -12,10 +12,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
 
   query: {
     hook: 'useMyBorrowsInfiniteMobile',
-    defaultSort: [
-      { field: 'status', direction: 'asc' },
-      { field: 'createdAt', direction: 'desc' },
-    ],
+    defaultSort: { field: 'status', direction: 'asc' },
     pageSize: 20,
     select: {
       id: true,
@@ -80,6 +77,7 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
         key: 'status',
         label: 'STATUS',
         sortable: true,
+        sortField: 'statusOrder',
         width: 1.5,
         align: 'center',
         render: (borrow) => BORROW_STATUS_LABELS[borrow.status] || borrow.status,
@@ -158,6 +156,9 @@ export const personalBorrowsListConfig: ListConfig<Borrow> = {
     defaultVisible: ['item.name', 'status', 'createdAt'],
     rowHeight: 72,
     actions: [],
+    onRowPress: (borrow, router) => {
+      router.push(`/(tabs)/pessoal/meus-emprestimos/detalhes/${borrow.id}` as any)
+    },
   },
 
   filters: {

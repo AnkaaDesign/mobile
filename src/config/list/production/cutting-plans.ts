@@ -28,15 +28,35 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
       },
     },
     include: {
-      file: true,
+      file: {
+        select: {
+          id: true,
+          fileName: true,
+          key: true,
+        },
+      },
       task: {
-        include: {
-          customer: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
         },
       },
       parentCut: {
-        include: {
-          file: true,
+        select: {
+          id: true,
+          file: {
+            select: {
+              id: true,
+              fileName: true,
+              key: true,
+            },
+          },
         },
       },
     },

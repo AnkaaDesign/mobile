@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
-import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
+import { useMyTeamPpeDeliveriesInfinite } from "@/hooks/use-my-team-ppe-deliveries-infinite";
 import { deletePpeDelivery } from "@/api-client";
 // import { showToast } from "@/components/ui/toast";
 
@@ -72,13 +72,9 @@ export default function TeamEPIsScreen() {
     ["userName", "itemName", "quantity", "status", "deliveryDate", "scheduledDate", "reviewedBy", "createdAt"]
   );
 
-  // Build API query with filters
+  // Build API query with filters (sector filtering is handled by the API endpoint)
   const buildWhereClause = useCallback(() => {
-    const where: any = {
-      user: {
-        sectorId: managedSectorId,
-      },
-    };
+    const where: any = {};
 
     if (filters.status?.length) {
       where.status = { in: filters.status };
@@ -90,7 +86,6 @@ export default function TeamEPIsScreen() {
 
     if (filters.userName) {
       where.user = {
-        ...where.user,
         name: { contains: filters.userName, mode: "insensitive" },
       };
     }
@@ -110,7 +105,7 @@ export default function TeamEPIsScreen() {
     }
 
     return where;
-  }, [filters, managedSectorId]);
+  }, [filters]);
 
   const queryParams = useMemo(() => {
     if (!userIsTeamLeader || !managedSectorId) return null;
@@ -154,7 +149,7 @@ export default function TeamEPIsScreen() {
     totalItemsLoaded,
     totalCount,
     refresh,
-  } = usePpeDeliveriesInfiniteMobile(queryParams || {});
+  } = useMyTeamPpeDeliveriesInfinite(queryParams || {});
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -259,7 +254,7 @@ export default function TeamEPIsScreen() {
   }, [filters]);
 
   // Show access denied if not a team leader
-  if (!isTeamLeader) {
+  if (!userIsTeamLeader) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.emptyContainer}>

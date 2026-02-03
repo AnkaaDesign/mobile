@@ -37,13 +37,13 @@ export const activitiesListOptimizedConfig: ListConfig<Activity> = {
 
     // CRITICAL: Only select essential fields for list view
     // This reduces response size from ~2KB per activity to ~400 bytes
+    // Fields displayed: CÓDIGO, PRODUTO, COLABORADOR, QNT, MOTIVO, DATA
     select: {
       id: true,
       operation: true,
       quantity: true,
       reason: true,
       createdAt: true,
-      updatedAt: true,
 
       // Item - only essential fields (saves ~800 bytes per activity)
       item: {

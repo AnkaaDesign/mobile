@@ -36,15 +36,33 @@ export default function ObservationDetailsScreen() {
   const { data: response, isLoading, error, refetch } = useObservationDetail(id as string, {
     include: {
       task: {
-        include: {
-          customer: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       files: true,
       commissions: {
-        include: {
-          user: true,
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
     },

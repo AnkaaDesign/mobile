@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
@@ -62,15 +62,21 @@ export function CustomerSelector({
         orderBy: { fantasyName: "asc" },
         page: page,
         take: 20, // Reduced from 50 for faster loads
-        // Optimized select - only essential fields
+        // Use select for optimized data fetching - only fields needed for selector display
         select: {
           id: true,
           fantasyName: true,
           cnpj: true,
           cpf: true,
           corporateName: true,
-          // NO logo field in dropdown - saves significant bandwidth
-          // Logo can be loaded separately if needed for selected customer
+          logoId: true,
+          // Include logo with minimal fields for display
+          logo: {
+            select: {
+              id: true,
+              url: true,
+            },
+          },
         },
       };
 
@@ -105,17 +111,28 @@ export function CustomerSelector({
         return null;
       }
 
+      // Get logo URL if available
+      const logoUrl = customer?.logo?.url;
+
       return (
         <View style={styles.optionContainer}>
-          {/* Customer Logo - Simple colored circle for performance */}
-          <View style={[
-            styles.simpleLogo,
-            { backgroundColor: colors.primary + '20', borderColor: colors.primary }
-          ]}>
-            <Text style={[styles.logoText, { color: colors.primary }]}>
-              {customer?.fantasyName?.charAt(0)?.toUpperCase() || "?"}
-            </Text>
-          </View>
+          {/* Customer Logo */}
+          {logoUrl ? (
+            <Image
+              source={{ uri: logoUrl }}
+              style={styles.logoImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[
+              styles.simpleLogo,
+              { backgroundColor: colors.primary + '20', borderColor: colors.primary }
+            ]}>
+              <Text style={[styles.logoText, { color: colors.primary }]}>
+                {customer?.fantasyName?.charAt(0)?.toUpperCase() || "?"}
+              </Text>
+            </View>
+          )}
 
           {/* Customer Info */}
           <View style={styles.customerInfo}>
@@ -199,6 +216,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     flex: 1,
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   simpleLogo: {
     width: 32,

@@ -72,11 +72,21 @@ export function useTasksForSectorLeader(params?: UseTasksForSectorLeaderParams) 
   // Fetch all tasks (we'll filter client-side for the OR condition: managed sector OR null sector)
   const { data: rawTasks, ...queryResult } = useTasksInfiniteMobile({
     ...params,
-    // Include sector info for filtering
+    // Include sector info for filtering - use optimized select patterns
     include: {
       ...params?.include,
-      sector: true,
-      customer: true,
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        },
+      },
     },
   });
 

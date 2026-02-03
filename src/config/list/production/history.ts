@@ -28,23 +28,8 @@ export const historyListConfig: ListConfig<Task> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'finishedAt', direction: 'desc' },
     pageSize: 25,
-    // Use select instead of include for optimal performance
-    select: {
-      // Core task fields needed for history display
-      id: true,
-      name: true,
-      status: true,
-      serialNumber: true,
-      details: true,
-      entryDate: true,
-      startedAt: true,
-      finishedAt: true,
-      term: true,
-      commission: true,
-      createdAt: true,
-      updatedAt: true,
-
-      // Relations with only needed fields
+    // Use include for relations - scalar fields (including commission) are automatically included
+    include: {
       customer: {
         select: {
           id: true,

@@ -86,7 +86,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         sortable: false,
         width: 1.5,
         align: 'left',
-        render: (item) => item.measures?.length > 0 ? `${item.measures.length} medida(s)` : '-',
+        render: (item) => (item.measures?.length ?? 0) > 0 ? `${item.measures!.length} medida(s)` : '-',
       },
       {
         key: 'description',

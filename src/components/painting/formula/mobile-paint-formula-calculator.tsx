@@ -19,6 +19,8 @@ import { formSpacing } from "@/constants/form-styles";
 
 interface MobilePaintFormulaCalculatorProps {
   formula: PaintFormula;
+  /** If false, the price toggle and all price columns will be hidden */
+  allowPriceVisibility?: boolean;
 }
 
 // Quick volume buttons (mobile optimized)
@@ -44,7 +46,7 @@ interface ComponentCalculation {
   hasError?: boolean;
 }
 
-export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalculatorProps) {
+export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = true }: MobilePaintFormulaCalculatorProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const { createAsync: createProduction } = usePaintProductionMutations();
@@ -55,6 +57,9 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
   // Main state - VOLUME based like web
   const [desiredVolume, setDesiredVolume] = useState("2000");
   const [showPrices, setShowPrices] = useState(false);
+
+  // Effective price visibility: user must have permission AND toggle must be on
+  const effectiveShowPrices = allowPriceVisibility && showPrices;
   const [isProducing, setIsProducing] = useState(false);
   const [selectedComponents, setSelectedComponents] = useState<string[]>([]);
 
@@ -408,22 +413,25 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
 
             {/* Icon Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setShowPrices(!showPrices)}
-                style={[
-                  styles.iconButton,
-                  {
-                    backgroundColor: showPrices ? colors.primary : colors.card,
-                    borderColor: showPrices ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <IconCurrencyDollar
-                  size={20}
-                  color={showPrices ? colors.primaryForeground : colors.foreground}
-                />
-              </TouchableOpacity>
+              {/* Price toggle - only show if user has permission */}
+              {allowPriceVisibility && (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setShowPrices(!showPrices)}
+                  style={[
+                    styles.iconButton,
+                    {
+                      backgroundColor: showPrices ? colors.primary : colors.card,
+                      borderColor: showPrices ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <IconCurrencyDollar
+                    size={20}
+                    color={showPrices ? colors.primaryForeground : colors.foreground}
+                  />
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -479,7 +487,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
             <Text style={[styles.headerText, { color: colors.foreground }]}>Item</Text>
             <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Peso (g)</Text>
             {correctionMode && <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Correção</Text>}
-            {showPrices && <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Preço</Text>}
+            {effectiveShowPrices && <Text style={[styles.headerTextRight, { color: colors.foreground }]}>Preço</Text>}
           </View>
 
           {/* Rows */}
@@ -549,7 +557,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                     ) : null}
                   </View>
                 )}
-                {showPrices && (
+                {effectiveShowPrices && (
                   <View style={styles.priceCell}>
                     <Text style={[styles.priceText, { color: colors.foreground }]}>
                       {formatCurrency(component.price)}
@@ -579,7 +587,7 @@ export function MobilePaintFormulaCalculator({ formula }: MobilePaintFormulaCalc
                   </Text>
                 </View>
               )}
-              {showPrices && (
+              {effectiveShowPrices && (
                 <View style={styles.priceCell}>
                   <Text style={[styles.totalText, { color: colors.primary }]}>
                     {formatCurrency(totals.price)}

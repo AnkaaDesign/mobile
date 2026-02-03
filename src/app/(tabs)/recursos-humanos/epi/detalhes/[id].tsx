@@ -45,9 +45,20 @@ export default function PPEDetailsScreen() {
         orderBy: { createdAt: "desc" },
         take: 10,
       },
+      // Activities - use select to only fetch fields needed by ActivityHistoryCard
       activities: {
-        include: {
-          user: { select: { name: true, id: true } },
+        select: {
+          id: true,
+          operation: true,
+          quantity: true,
+          reason: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         take: 20,

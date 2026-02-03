@@ -40,7 +40,7 @@ export default function DatesSection({
   return (
     <FormCard title="Datas" icon="IconCalendar">
       {/* Deadline */}
-      <SimpleFormField label="Prazo" required error={errors.deadline}>
+      <SimpleFormField label="Prazo" error={errors.deadline}>
         <Controller
           control={control}
           name="deadline"

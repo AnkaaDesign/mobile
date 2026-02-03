@@ -7,8 +7,11 @@ import React, { memo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskForm } from './task-form';
-import { taskFormSchema } from '@/schemas/task';
-import type { TaskFormData } from '@/types/task';
+import { taskCreateSchema } from '@/schemas/task';
+import type { TaskCreateFormData } from '@/schemas/task';
+
+// Use TaskCreateFormData as the base form type
+type TaskFormData = TaskCreateFormData;
 
 interface TaskFormWithProviderProps {
   mode?: 'create' | 'edit';
@@ -34,7 +37,7 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
 }: TaskFormWithProviderProps) {
   // Initialize form with default values and schema validation
   const form = useForm<TaskFormData>({
-    resolver: zodResolver(taskFormSchema),
+    resolver: zodResolver(taskCreateSchema),
     defaultValues: initialData || {
       name: '',
       customerId: '',

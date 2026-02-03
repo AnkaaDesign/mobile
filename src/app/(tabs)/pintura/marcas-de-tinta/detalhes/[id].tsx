@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintBrand, usePaintBrandMutations } from "@/hooks";
+import { usePaintBrand, usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import { hasPrivilege, formatDate } from "@/utils";
@@ -32,6 +32,9 @@ export default function PaintBrandDetailsScreen() {
   const { user } = useAuth();
   const { delete: deleteAsync } = usePaintBrandMutations();
   const [refreshing, setRefreshing] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);

@@ -16,11 +16,14 @@ export type BaseEntity = {
 // Base Response Types
 // =====================
 
-export interface BaseGetUniqueResponse<T> {
+export interface BaseResponse {
   success: boolean;
   message: string;
-  data?: T;
   error?: string;
+}
+
+export interface BaseGetUniqueResponse<T> extends BaseResponse {
+  data?: T;
 }
 
 export interface BaseGetManyResponse<T> {

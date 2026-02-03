@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -25,6 +25,7 @@ interface UserActivitiesTableProps {
 
 export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTableProps) {
   const { colors } = useTheme();
+  const { pushWithLoading } = useNavigationLoading();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -39,6 +40,7 @@ export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTab
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch activities for this specific user with infinite scroll
+  // Use select to fetch only fields displayed in the table
   const {
     items: activities,
     isLoading,
@@ -51,10 +53,27 @@ export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTab
     where: {
       userId: user.id,
     },
-    include: {
-      item: true,
-      user: true,
-      order: true,
+    // Use select instead of include for optimized data fetching
+    select: {
+      id: true,
+      operation: true,
+      quantity: true,
+      reason: true,
+      createdAt: true,
+      // Item - only name is displayed
+      item: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // User - only name is displayed
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
     enabled: !!user.id,
@@ -96,7 +115,7 @@ export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTab
   }, []);
 
   const handleActivityPress = (activityId: string) => {
-    router.push(routeToMobilePath(routes.inventory.activities.details(activityId)) as any);
+    pushWithLoading(routeToMobilePath(routes.inventory.activities.details(activityId)));
   };
 
   // Don't show if no activities and not loading

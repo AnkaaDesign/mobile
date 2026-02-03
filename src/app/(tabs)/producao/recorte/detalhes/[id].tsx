@@ -73,18 +73,32 @@ export default function CuttingDetailsScreen() {
     include: {
       file: true,
       task: {
-        include: {
-          customer: true,
-          sector: true,
+        select: {
+          id: true,
+          name: true,
+          customer: {
+            select: {
+              id: true,
+              fantasyName: true,
+            },
+          },
+          sector: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       parentCut: {
-        include: {
+        select: {
+          id: true,
           file: true,
         },
       },
       childCuts: {
-        include: {
+        select: {
+          id: true,
           file: true,
         },
       },

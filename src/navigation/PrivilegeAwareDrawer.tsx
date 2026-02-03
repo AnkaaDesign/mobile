@@ -10,25 +10,25 @@ import { SECTOR_PRIVILEGES } from '@/constants/enums';
  */
 const ROUTE_PRIVILEGES: Record<string, string[]> = {
   // Administration routes
-  'administracao': [SECTOR_PRIVILEGES.ADMINISTRATOR],
+  'administracao': [SECTOR_PRIVILEGES.ADMIN],
 
   // HR routes
-  'recursos-humanos': [SECTOR_PRIVILEGES.HUMANRESOURCES],
+  'recursos-humanos': [SECTOR_PRIVILEGES.HUMAN_RESOURCES],
 
   // Production routes
   'producao': [SECTOR_PRIVILEGES.PRODUCTION],
 
   // Inventory routes
-  'estoque': [SECTOR_PRIVILEGES.INVENTORY],
+  'estoque': [SECTOR_PRIVILEGES.WAREHOUSE],
 
   // Painting routes
-  'pintura': [SECTOR_PRIVILEGES.PAINTING],
+  'pintura': [SECTOR_PRIVILEGES.PLOTTING],
 
   // Financial routes
   'financeiro': [SECTOR_PRIVILEGES.FINANCIAL],
 
   // Server/Admin routes
-  'servidor': [SECTOR_PRIVILEGES.ADMINISTRATOR],
+  'servidor': [SECTOR_PRIVILEGES.ADMIN],
 };
 
 /**

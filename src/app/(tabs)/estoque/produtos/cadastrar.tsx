@@ -1,14 +1,19 @@
 import { useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ItemForm } from "@/components/inventory/item/form/item-form";
-import { useItemMutations } from "@/hooks";
+import { useItemMutations, useScreenReady } from "@/hooks";
 import { itemCreateSchema, type ItemCreateFormData } from '../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 export default function ItemCreateScreen() {
   const router = useRouter();
   const { createAsync, createMutation } = useItemMutations();
+  const { goBack } = useNavigationLoading();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: ItemCreateFormData) => {
     try {
@@ -28,7 +33,7 @@ export default function ItemCreateScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.root) });
   };
 
   return (

@@ -36,6 +36,11 @@ export function SupplierSelector({ disabled, initialSupplier }: SupplierSelector
       orderBy: { fantasyName: "asc" },
       page: page,
       take: 50,
+      // Use select to fetch only fields needed for the combobox
+      select: {
+        id: true,
+        fantasyName: true,
+      },
     };
 
     if (search && search.trim()) {

@@ -1,13 +1,16 @@
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { BorrowBatchCreateForm } from "@/components/inventory/borrow/form";
-import { useBorrowBatchMutations } from "@/hooks";
+import { useBorrowBatchMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 
 export default function EstoqueEmprestimosCadastrarScreen() {
   const router = useRouter();
   const { batchCreateAsync, isLoading: isBatchCreating } = useBorrowBatchMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const handleSubmit = async (data: {
     userId: string;

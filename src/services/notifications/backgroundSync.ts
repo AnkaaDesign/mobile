@@ -3,10 +3,36 @@
  *
  * Manages background fetch and notification synchronization.
  * Fetches new notifications periodically even when app is closed.
+ *
+ * NOTE: Requires expo-background-fetch and expo-task-manager packages.
+ * Install with: pnpm add expo-background-fetch expo-task-manager
  */
 
-import * as BackgroundFetch from 'expo-background-fetch';
-import * as TaskManager from 'expo-task-manager';
+// TODO: Uncomment when packages are installed
+// import * as BackgroundFetch from 'expo-background-fetch';
+// import * as TaskManager from 'expo-task-manager';
+
+// Stub types until packages are installed
+const BackgroundFetch = {
+  BackgroundFetchResult: {
+    NewData: 1,
+    NoData: 2,
+    Failed: 3,
+  },
+  BackgroundFetchStatus: {
+    Denied: 1,
+    Restricted: 2,
+    Available: 3,
+  },
+  registerTaskAsync: async (_taskName: string, _options?: any) => {},
+  unregisterTaskAsync: async (_taskName: string) => {},
+  getStatusAsync: async () => BackgroundFetch.BackgroundFetchStatus.Available,
+};
+
+const TaskManager = {
+  defineTask: (_taskName: string, _taskExecutor: any) => {},
+  isTaskRegisteredAsync: async (_taskName: string) => false,
+};
 import { updateBadgeCount } from './localNotifications';
 import { getUnreadNotifications } from '@/api-client/notification';
 

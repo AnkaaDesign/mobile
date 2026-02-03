@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -25,6 +25,7 @@ interface UserTasksTableProps {
 
 export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
   const { colors } = useTheme();
+  const { pushWithLoading } = useNavigationLoading();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -39,6 +40,7 @@ export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch tasks assigned to this specific user with infinite scroll
+  // Uses optimized select patterns for better performance
   const {
     items: tasks,
     isLoading,
@@ -52,9 +54,25 @@ export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
       userId: user.id,
     },
     include: {
-      customer: true,
-      sector: true,
-      generalPainting: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      generalPainting: {
+        select: {
+          id: true,
+          name: true,
+          hex: true,
+        }
+      },
     },
     orderBy: { createdAt: "desc" },
     enabled: !!user.id,
@@ -97,7 +115,7 @@ export function UserTasksTable({ user, maxHeight = 500 }: UserTasksTableProps) {
   }, []);
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+    pushWithLoading(routeToMobilePath(routes.production.schedule.details(taskId)));
   };
 
   // Don't show if no tasks and not loading

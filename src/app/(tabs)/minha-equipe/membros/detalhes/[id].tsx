@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useTeamStaffUsers } from "@/hooks/use-team-staff-users";
+import { useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -30,6 +31,9 @@ export default function TeamMemberDetailsScreen() {
   const { colors } = useTheme();
   const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const id = params?.id || "";
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;

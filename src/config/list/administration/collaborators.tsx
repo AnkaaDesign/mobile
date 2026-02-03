@@ -21,10 +21,52 @@ export const collaboratorsListConfig: ListConfig<User> = {
     hook: 'useUsersInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
-    include: {
-      position: true,
-      sector: true,
-      managedSector: true,
+    // Use optimized select for better performance - fetches only required fields
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      cpf: true,
+      pis: true,
+      status: true,
+      isActive: true,
+      avatarId: true,
+      payrollNumber: true,
+      verified: true,
+      lastLoginAt: true,
+      requirePasswordChange: true,
+      performanceLevel: true,
+      birth: true,
+      admissional: true,
+      dismissedAt: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      createdAt: true,
+      updatedAt: true,
+      position: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      managedSector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       _count: {
         select: {
           createdTasks: true,

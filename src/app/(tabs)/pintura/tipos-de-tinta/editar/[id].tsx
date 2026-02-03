@@ -12,7 +12,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintType, usePaintTypeMutations } from "@/hooks";
+import { usePaintType, usePaintTypeMutations, useScreenReady } from "@/hooks";
 import { useItems } from "@/hooks/useItem";
 import { paintTypeUpdateSchema } from '../../../../../schemas';
 import type { PaintTypeUpdateFormData } from '../../../../../schemas';
@@ -31,6 +31,9 @@ export default function EditPaintTypeScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintTypeMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemSearch] = useState("");

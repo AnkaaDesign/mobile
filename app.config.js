@@ -19,8 +19,7 @@ module.exports = ({ config }) => {
   const apiUrl =
     process.env.EXPO_PUBLIC_API_URL || "https://api.ankaadesign.com.br";
   const fallbackApiUrl =
-    process.env.EXPO_PUBLIC_FALLBACK_API_URL ||
-    "http://192.168.0.16:3030";
+    process.env.EXPO_PUBLIC_FALLBACK_API_URL || "http://192.168.10.154:3030";
 
   return {
     ...config,

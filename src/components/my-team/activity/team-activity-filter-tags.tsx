@@ -7,7 +7,14 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON, ACTIVITY_REASON_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import type { User } from '../../../types';
-import type { TeamActivityFilters } from './team-activity-filter-modal';
+
+export interface TeamActivityFilters {
+  userIds?: string[];
+  operations?: ACTIVITY_OPERATION[];
+  reasons?: ACTIVITY_REASON[];
+  startDate?: Date;
+  endDate?: Date;
+}
 
 interface TeamActivityFilterTagsProps {
   filters: TeamActivityFilters;

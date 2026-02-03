@@ -212,7 +212,7 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange(text.toUpperCase())}
+                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
                     placeholder="Ex: ABC-123"
                     autoCapitalize="characters"
                     error={errors.serialNumber?.message}
@@ -235,7 +235,7 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange(text.toUpperCase())}
+                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
                     placeholder="Ex: ABC1D23"
                     autoCapitalize="characters"
                   />
@@ -252,7 +252,7 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange(text.toUpperCase())}
+                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
                     placeholder="Ex: 9BWZZZ377VT004251"
                     autoCapitalize="characters"
                   />

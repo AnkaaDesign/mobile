@@ -196,13 +196,4 @@ export const whatsAppService = {
     apiClient.post<WhatsAppDisconnectResponse>("/whatsapp/disconnect"),
 };
 
-// Export types for external use
-export type {
-  UserNotificationPreference,
-  UserNotificationPreferenceGetManyResponse,
-  UserNotificationPreferenceUpdateResponse,
-  WhatsAppStatus,
-  WhatsAppQRResponse,
-  WhatsAppStatusResponse,
-  WhatsAppDisconnectResponse,
-};
+// Types are already exported via their interface/type declarations above

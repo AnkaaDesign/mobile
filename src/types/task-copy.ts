@@ -1,5 +1,13 @@
 // Types and constants for task copy functionality
 
+/**
+ * Form data for copying fields from one task to another
+ */
+export interface TaskCopyFromFormData {
+  sourceTaskId: string;
+  fields: CopyableTaskField[];
+}
+
 // CopyableTaskField uses API schema field names (e.g., baseFileIds, artworkIds)
 // to match the backend validation schema for the copy-from endpoint
 export type CopyableTaskField =
@@ -10,7 +18,7 @@ export type CopyableTaskField =
   | 'term'
   | 'forecastDate'
   | 'commission'
-  | 'negotiatingWith'
+  | 'representatives'
   | 'customerId'
   | 'invoiceToId'
   | 'pricingId'
@@ -42,7 +50,7 @@ export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
   'term',
   'forecastDate',
   'commission',
-  'negotiatingWith',
+  'representatives',
   'customerId',
   'invoiceToId',
   'pricingId',
@@ -71,7 +79,7 @@ export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'
   entryDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   term: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   forecastDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
-  negotiatingWith: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  representatives: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   customerId: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
   // Commission - disabled for Financial, Designer, Logistic, Warehouse
@@ -202,11 +210,11 @@ export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMet
     isShared: false,
     createNewInstances: false,
   },
-  negotiatingWith: {
-    label: 'Negociando Com',
-    description: 'Informacoes de contato da negociacao',
+  representatives: {
+    label: 'Representantes',
+    description: 'Representantes associados a tarefa',
     category: 'Basico',
-    isShared: false,
+    isShared: true,
     createNewInstances: false,
   },
   customerId: {

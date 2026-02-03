@@ -1,14 +1,13 @@
 import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { usePpeDelivery, usePpeDeliveryMutations } from '@/hooks';
+import { usePpeDelivery } from '@/hooks';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconShieldCheck, IconEdit, IconTrash } from "@tabler/icons-react-native";
-// import { showToast } from "@/components/ui/toast";
+import { IconShieldCheck } from "@tabler/icons-react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
 import { isTeamLeader } from "@/utils/user";
@@ -58,43 +57,9 @@ export default function TeamPpeDeliveryDetailScreen() {
 
   const delivery = response?.data;
 
-  const { deleteMutation } = usePpeDeliveryMutations();
-
-  const handleEdit = () => {
-    if (delivery) {
-      // TODO: Navigate to edit page when implemented
-      Alert.alert("Informação", "Edição ainda não implementada");
-    }
-  };
-
-  const handleDelete = useCallback(() => {
-    if (!delivery) return;
-
-    Alert.alert(
-      "Excluir Entrega",
-      `Tem certeza que deseja excluir a entrega de ${delivery.item?.name || "item"} para ${delivery.user?.name || "usuário"}?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteMutation.mutateAsync(delivery.id);
-              // API client already shows success alert
-              router.back();
-            } catch (error) {
-              // API client already shows error alert
-              console.error("Error deleting delivery:", error);
-            }
-          },
-        },
-      ]
-    );
-  }, [delivery, deleteMutation]);
+  // Note: Team leaders can only VIEW deliveries, not edit or delete them.
+  // Edit/delete actions are only available for Warehouse (edit PENDING) and Admin (delete PENDING)
+  // in the HR/Warehouse PPE delivery pages.
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -187,7 +152,7 @@ export default function TeamPpeDeliveryDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.container}>
-        {/* Header Card */}
+        {/* Header Card - Team leaders can only view, not edit/delete */}
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <View style={[styles.headerLeft, { flex: 1 }]}>
@@ -200,22 +165,6 @@ export default function TeamPpeDeliveryDetailScreen() {
                   {delivery.user?.name}
                 </ThemedText>
               </View>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary, marginRight: spacing.xs }])}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleDelete}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
-                activeOpacity={0.7}
-              >
-                <IconTrash size={18} color={colors.destructiveForeground} />
-              </TouchableOpacity>
             </View>
           </View>
         </Card>
@@ -280,17 +229,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
   },
   deliveryTitle: {
     fontSize: fontSize.lg,

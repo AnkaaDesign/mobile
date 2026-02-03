@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePaintFormulaComponentMutations, useKeyboardAwareScroll } from "@/hooks";
+import { usePaintFormulaComponentMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useItems } from "@/hooks";
 import { paintFormulaComponentCreateSchema } from '../../../../../../schemas';
 import type { PaintFormulaComponentCreateFormData } from '../../../../../../schemas';
@@ -32,6 +32,9 @@ export default function CreateComponentScreen() {
   const { user } = useAuth();
   const { formulaId } = useLocalSearchParams<{ formulaId: string }>();
   const { create: createComponent, isLoading } = usePaintFormulaComponentMutations();
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady();
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();

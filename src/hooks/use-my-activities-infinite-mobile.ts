@@ -1,23 +1,44 @@
 import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { apiClient } from "@/api-client/axiosClient";
-import type { ActivityGetManyFormData, ActivityGetManyResponse } from "@/types";
+import type { ActivityGetManyFormData } from "@/schemas";
+import type { ActivityGetManyResponse } from "@/types";
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import { activityKeys } from "./queryKeys";
 
 // Mobile-optimized page size for activities
 const MOBILE_ACTIVITIES_PAGE_SIZE = 25;
 
+// Optimized select for personal activities list
+// Only fetch fields actually displayed in PersonalActivityTable
+const PERSONAL_ACTIVITY_LIST_SELECT = {
+  id: true,
+  operation: true,
+  quantity: true,
+  reason: true,
+  createdAt: true,
+  // Item - only name is displayed in the table
+  item: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+};
+
 /**
  * Mobile-optimized hook for infinite scrolling user's OWN activities
  * Automatically filters by current user via /personal/my-activities endpoint
+ * Uses select to fetch only fields displayed in PersonalActivityTable
  */
 export function useMyActivitiesInfiniteMobile(params?: Partial<ActivityGetManyFormData> & { enabled?: boolean }) {
-  // Prepare parameters with mobile-optimized page size
+  // Prepare parameters with mobile-optimized page size and select
   const queryParams = useMemo(
     () => ({
       ...params,
       limit: MOBILE_ACTIVITIES_PAGE_SIZE,
+      // Use optimized select if not provided in params
+      select: params?.select || PERSONAL_ACTIVITY_LIST_SELECT,
     }),
     [params],
   );

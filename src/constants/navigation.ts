@@ -85,14 +85,14 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
-  // CATALOGO - View-only for Designers, Team Leaders, Warehouse, Commercial (NOT ADMIN - admin accesses via Pintura menu)
+  // CATALOGO - View-only for Designers, Team Leaders, Warehouse, Commercial, Logistic (NOT ADMIN - admin accesses via Pintura menu)
   // sortOrder: 15 places it alphabetically between Barracões (10) and Cronograma (20) for PRODUCTION + TEAM_LEADER users
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
     path: "/catalogo",
-    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL],
+    requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC],
     sortOrder: 15,
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },

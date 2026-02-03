@@ -96,8 +96,39 @@ export default function FinancialCustomerEditScreen() {
   });
 
   const { data: customer, isLoading, error, refetch } = useCustomer(id!, {
-    include: {
-      logo: true,
+    // Use select for optimized data fetching - only fetch fields needed for the form
+    select: {
+      // All editable fields
+      id: true,
+      fantasyName: true,
+      cnpj: true,
+      cpf: true,
+      corporateName: true,
+      email: true,
+      address: true,
+      addressNumber: true,
+      addressComplement: true,
+      neighborhood: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      site: true,
+      phones: true,
+      tags: true,
+      logoId: true,
+      situacaoCadastral: true,
+      inscricaoEstadual: true,
+      economicActivityId: true,
+      logradouro: true,
+      // Logo relation for display
+      logo: {
+        select: {
+          id: true,
+          url: true,
+          name: true,
+          mimeType: true,
+        },
+      },
     },
   });
 

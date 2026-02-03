@@ -38,6 +38,7 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch tasks for this specific paint with infinite scroll
+  // Uses optimized select patterns for better performance
   const {
     items: tasks,
     isLoading,
@@ -54,7 +55,12 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
       ],
     },
     include: {
-      customer: true,
+      customer: {
+        select: {
+          id: true,
+          fantasyName: true,
+        }
+      },
     },
     orderBy: { createdAt: "desc" },
     enabled: !!paint.id,

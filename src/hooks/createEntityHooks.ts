@@ -204,16 +204,19 @@ export function createEntityHooks<
     options?: {
       enabled?: boolean;
       include?: Record<string, unknown>;
-    } & Omit<UseQueryOptions<TGetByIdResponse>, "queryKey" | "queryFn">,
+      select?: Record<string, unknown>;
+    } & Omit<UseQueryOptions<TGetByIdResponse>, "queryKey" | "queryFn" | "select">,
   ) {
     const queryClient = useQueryClient();
-    const { enabled = true, include, ...queryOptions } = options || {};
+    const { enabled = true, include, select, ...queryOptions } = options || {};
+
+    // Build query params - prefer select over include for better performance
+    const queryParams = select ? { select } : include ? { include } : undefined;
 
     const query = useQuery({
-      queryKey: queryKeys.detail(id, include),
+      queryKey: queryKeys.detail(id, queryParams),
       queryFn: () => {
-        const params = include ? { include } : undefined;
-        return service.getById(id, params);
+        return service.getById(id, queryParams);
       },
       enabled: enabled && !!id,
       staleTime,
@@ -223,7 +226,7 @@ export function createEntityHooks<
 
     const refresh = () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.detail(id, include),
+        queryKey: queryKeys.detail(id, queryParams),
       });
     };
 

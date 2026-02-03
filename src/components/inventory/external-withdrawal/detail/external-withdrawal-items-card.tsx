@@ -7,17 +7,21 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconHash, IconCurrencyReal, IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
 import type { ExternalWithdrawalItem } from "@/types";
 import { formatCurrency } from "@/utils";
-import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
+import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_STATUS } from "@/constants";
 
 interface ExternalWithdrawalItemsCardProps {
   items: ExternalWithdrawalItem[];
   withdrawalType?: EXTERNAL_WITHDRAWAL_TYPE;
+  withdrawalStatus?: EXTERNAL_WITHDRAWAL_STATUS;
 }
 
-export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalWithdrawalItemsCardProps) {
+export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalStatus }: ExternalWithdrawalItemsCardProps) {
   const { colors } = useTheme();
 
   const isReturnable = withdrawalType === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE;
+  const isDelivered = withdrawalStatus === EXTERNAL_WITHDRAWAL_STATUS.DELIVERED;
+  const isCharged = withdrawalStatus === EXTERNAL_WITHDRAWAL_STATUS.CHARGED;
+  const isLiquidated = withdrawalStatus === EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED;
 
   // Calculate summary statistics
   const summary = items.reduce(
@@ -150,8 +154,8 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
                   </ThemedText>
                 </View>
 
-                {/* Returned Quantity */}
-                {hasReturned && (
+                {/* Returned Quantity - only for returnable types */}
+                {isReturnable && hasReturned && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLeft}>
                       <IconArrowBack size={14} color={colors.success} style={{ transform: [{ rotate: "180deg" }] }} />
@@ -165,8 +169,8 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
                   </View>
                 )}
 
-                {/* Still Out */}
-                {stillOut > 0 && (
+                {/* Still Out - only for returnable types */}
+                {isReturnable && stillOut > 0 && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLeft}>
                       <IconHash size={14} color={colors.warning} />
@@ -176,6 +180,21 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType }: ExternalW
                     </View>
                     <ThemedText style={[styles.detailValue, { color: colors.warning }]}>
                       {stillOut}
+                    </ThemedText>
+                  </View>
+                )}
+
+                {/* Status for non-returnable types */}
+                {!isReturnable && (
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLeft}>
+                      <IconCircleCheck size={14} color={isDelivered || isLiquidated ? colors.success : isCharged ? colors.primary : colors.warning} />
+                      <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                        Status
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.detailValue, { color: isDelivered || isLiquidated ? colors.success : isCharged ? colors.primary : colors.warning }]}>
+                      {isDelivered ? "Entregue" : isCharged ? "Cobrado" : isLiquidated ? "Liquidado" : "Pendente"}
                     </ThemedText>
                   </View>
                 )}

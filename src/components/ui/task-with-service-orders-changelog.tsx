@@ -1001,6 +1001,13 @@ export function TaskWithServiceOrdersChangelog({
     userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
     userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
+  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
+  const canViewInvoiceToField =
+    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+    userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+
   // Combine and sort all changelogs
   const allChangelogs = useMemo(() => {
     const logs: ChangeLog[] = [];
@@ -1017,7 +1024,8 @@ export function TaskWithServiceOrdersChangelog({
     const internalFields = ["statusOrder", "colorOrder"];
     const sensitiveFields = ["sessionToken", "verificationCode", "verificationExpiresAt", "verificationType", "password", "token", "apiKey", "secret"];
     const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "pricingId", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "budget", "pricing"];
-    const restrictedFields = ["forecastDate", "negotiatingWith", "invoiceTo", "invoiceToId"];
+    const restrictedFields = ["forecastDate", "negotiatingWith"]; // invoiceTo removed - has its own check
+    const invoiceToFields = ["invoiceTo", "invoiceToId"]; // Separate check - DESIGNER cannot see
 
     // Filter logs based on user permissions (matching web)
     const filteredLogs = logs.filter((log) => {
@@ -1050,8 +1058,13 @@ export function TaskWithServiceOrdersChangelog({
         return false;
       }
 
-      // Filter out restricted fields (forecastDate, negotiatingWith, invoiceTo) for non-privileged users
+      // Filter out restricted fields (forecastDate, negotiatingWith) for non-privileged users
       if (!canViewRestrictedFields && restrictedFields.some((restricted) => fieldLower.includes(restricted.toLowerCase()))) {
+        return false;
+      }
+
+      // Filter out invoiceTo fields - DESIGNER cannot see (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
+      if (!canViewInvoiceToField && invoiceToFields.some((invoiceTo) => fieldLower.includes(invoiceTo.toLowerCase()))) {
         return false;
       }
 
@@ -1059,7 +1072,7 @@ export function TaskWithServiceOrdersChangelog({
     });
 
     return filteredLogs.slice(0, limit);
-  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, visibleServiceOrderTypes, limit, canViewFinancialFields, canViewRestrictedFields]);
+  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, visibleServiceOrderTypes, limit, canViewFinancialFields, canViewRestrictedFields, canViewInvoiceToField]);
 
   // Extract entity IDs for detail fetching - grouped by entity type
   const entityIdsByType = useMemo(() => {

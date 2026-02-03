@@ -54,7 +54,7 @@ export default function EditScheduleScreen() {
     error,
   } = useTaskDetail(id!, {
     include: {
-      // Only include essential fields for edit form
+      // Only include essential fields for edit form - optimized with select patterns
       customer: {
         select: {
           id: true,
@@ -67,7 +67,16 @@ export default function EditScheduleScreen() {
           fantasyName: true,
         }
       },
-      representatives: true,
+      representatives: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+          role: true,
+          isActive: true,
+        }
+      },
       generalPainting: {
         select: {
           id: true,
@@ -82,13 +91,74 @@ export default function EditScheduleScreen() {
           hex: true,
         }
       },
-      serviceOrders: true,
-      sector: true,
-      truck: true,
-      observation: true,
+      serviceOrders: {
+        select: {
+          id: true,
+          description: true,
+          status: true,
+          statusOrder: true,
+          type: true,
+          assignedToId: true,
+          observation: true,
+          startedAt: true,
+          finishedAt: true,
+          shouldSync: true,
+        }
+      },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      truck: {
+        select: {
+          id: true,
+          plate: true,
+          chassisNumber: true,
+          category: true,
+          implementType: true,
+          spot: true,
+        }
+      },
+      observation: {
+        select: {
+          id: true,
+          description: true,
+          files: {
+            select: {
+              id: true,
+              filename: true,
+              mimetype: true,
+              size: true,
+            }
+          },
+        }
+      },
       pricing: {
-        include: {
-          items: true,
+        select: {
+          id: true,
+          status: true,
+          expiresAt: true,
+          subtotal: true,
+          discountType: true,
+          discountValue: true,
+          total: true,
+          paymentCondition: true,
+          downPaymentDate: true,
+          customPaymentText: true,
+          guaranteeYears: true,
+          customGuaranteeText: true,
+          layoutFileId: true,
+          layoutFile: true,
+          items: {
+            select: {
+              id: true,
+              description: true,
+              observation: true,
+              amount: true,
+            }
+          },
         }
       },
     }
@@ -170,9 +240,20 @@ export default function EditScheduleScreen() {
 
     try {
       console.log('[EditSchedule] Starting task update for id:', id);
-      console.log('[EditSchedule] Update data:', JSON.stringify(data, null, 2));
+      console.log('[EditSchedule] Raw form data:', JSON.stringify(data, null, 2));
 
-      const result = await updateAsync({ id, data });
+      // Process form data: filter empty items and prepare for API
+      const processedData = processFormDataForSubmission(data, task);
+      console.log('[EditSchedule] Processed data:', JSON.stringify(processedData, null, 2));
+
+      // Check if there are any actual changes
+      if (Object.keys(processedData).length === 0) {
+        console.log('[EditSchedule] No changes detected, skipping update');
+        handleNavigateBack();
+        return;
+      }
+
+      const result = await updateAsync({ id, data: processedData });
       console.log('[EditSchedule] API result:', result);
 
       if (result.success) {
@@ -190,6 +271,221 @@ export default function EditScheduleScreen() {
       console.error("[EditSchedule] Error updating task:", error);
       // API client already shows error alert
     }
+  };
+
+  /**
+   * Process form data before submission:
+   * 1. Filter empty service orders (no description)
+   * 2. Filter empty pricing items (no description)
+   * 3. Filter empty airbrushings (no meaningful data)
+   * 4. Compare with original task and only include changed fields
+   *
+   * This matches the web version's useEditForm + handleFormSubmit logic
+   */
+  const processFormDataForSubmission = (formData: any, originalTask: any): any => {
+    const processed: any = {};
+
+    // Helper: Check if a value has changed (handles dates, arrays, objects)
+    const hasChanged = (current: any, original: any): boolean => {
+      // Normalize null/undefined/empty
+      const normalize = (val: any) => {
+        if (val === null || val === undefined || val === '') return null;
+        return val;
+      };
+
+      const curr = normalize(current);
+      const orig = normalize(original);
+
+      if (curr === null && orig === null) return false;
+      if (curr === null || orig === null) return true;
+
+      // Date comparison
+      if (curr instanceof Date || orig instanceof Date) {
+        const currTime = curr instanceof Date ? curr.getTime() : new Date(curr).getTime();
+        const origTime = orig instanceof Date ? orig.getTime() : new Date(orig).getTime();
+        return currTime !== origTime;
+      }
+
+      // Array comparison
+      if (Array.isArray(curr) && Array.isArray(orig)) {
+        return JSON.stringify(curr) !== JSON.stringify(orig);
+      }
+
+      // Object comparison
+      if (typeof curr === 'object' && typeof orig === 'object') {
+        return JSON.stringify(curr) !== JSON.stringify(orig);
+      }
+
+      return curr !== orig;
+    };
+
+    // Helper: Filter empty service orders
+    const filterServiceOrders = (orders: any[]): any[] => {
+      if (!orders || !Array.isArray(orders)) return [];
+      return orders.filter(order => {
+        // Keep if it has an ID (existing record) - might have status/field changes
+        if (order.id && !order.id.startsWith('temp-')) return true;
+        // For new service orders (no ID), require description >= 3 chars
+        return order.description && order.description.trim().length >= 3;
+      });
+    };
+
+    // Helper: Filter empty pricing items
+    const filterPricingItems = (items: any[]): any[] => {
+      if (!items || !Array.isArray(items)) return [];
+      return items.filter(item => {
+        // Keep if it has an ID (existing record)
+        if (item.id && !item.id.startsWith('temp-')) return true;
+        // For new items, require description
+        return item.description && item.description.trim() !== '';
+      });
+    };
+
+    // Helper: Filter empty airbrushings
+    const filterAirbrushings = (airbrushings: any[]): any[] => {
+      if (!airbrushings || !Array.isArray(airbrushings)) return [];
+      return airbrushings.filter(a => {
+        // Keep if it has an ID (existing record)
+        if (a.id && !a.id.startsWith('temp-') && !a.id.startsWith('airbrushing-')) return true;
+        // For new airbrushings, require some meaningful data
+        const hasPrice = a.price !== null && a.price !== undefined;
+        const hasDates = a.startDate || a.finishDate;
+        const hasFiles = (a.receiptIds?.length > 0) || (a.invoiceIds?.length > 0) || (a.artworkIds?.length > 0);
+        return hasPrice || hasDates || hasFiles;
+      });
+    };
+
+    // Process simple scalar fields
+    const scalarFields = [
+      'name', 'status', 'serialNumber', 'details', 'commission',
+      'customerId', 'invoiceToId', 'sectorId', 'paintId'
+    ];
+
+    for (const field of scalarFields) {
+      if (formData[field] !== undefined && hasChanged(formData[field], originalTask[field])) {
+        processed[field] = formData[field];
+      }
+    }
+
+    // Process date fields
+    const dateFields = ['entryDate', 'term', 'forecastDate', 'startedAt', 'finishedAt'];
+    for (const field of dateFields) {
+      if (formData[field] !== undefined && hasChanged(formData[field], originalTask[field])) {
+        processed[field] = formData[field];
+      }
+    }
+
+    // Process negotiatingWith (embedded object)
+    if (formData.negotiatingWith !== undefined) {
+      const orig = originalTask.negotiatingWith || { name: null, phone: null };
+      if (hasChanged(formData.negotiatingWith, orig)) {
+        processed.negotiatingWith = formData.negotiatingWith;
+      }
+    }
+
+    // Process truck (embedded object)
+    if (formData.truck !== undefined) {
+      const orig = originalTask.truck || {};
+      if (hasChanged(formData.truck, orig)) {
+        processed.truck = formData.truck;
+      }
+    }
+
+    // Process paintIds (logo paints)
+    if (formData.paintIds !== undefined) {
+      const origIds = (originalTask.logoPaints || []).map((p: any) => p.id).sort();
+      const currIds = [...(formData.paintIds || [])].sort();
+      if (JSON.stringify(currIds) !== JSON.stringify(origIds)) {
+        processed.paintIds = formData.paintIds;
+      }
+    }
+
+    // Process serviceOrders - filter empty and check for changes
+    if (formData.serviceOrders !== undefined) {
+      const filteredOrders = filterServiceOrders(formData.serviceOrders);
+      const origOrders = (originalTask.serviceOrders || []).map((s: any) => ({
+        id: s.id,
+        description: s.description,
+        status: s.status,
+        statusOrder: s.statusOrder,
+        type: s.type,
+        assignedToId: s.assignedToId,
+        observation: s.observation,
+      }));
+
+      // Compare filtered orders with original (ignoring non-essential fields)
+      const currForCompare = filteredOrders.map((s: any) => ({
+        id: s.id,
+        description: s.description,
+        status: s.status,
+        statusOrder: s.statusOrder,
+        type: s.type,
+        assignedToId: s.assignedToId,
+        observation: s.observation,
+      }));
+
+      if (JSON.stringify(currForCompare) !== JSON.stringify(origOrders)) {
+        processed.serviceOrders = filteredOrders;
+        console.log('[EditSchedule] Service orders changed:', {
+          original: origOrders.length,
+          filtered: filteredOrders.length,
+        });
+      }
+    }
+
+    // Process pricing - filter empty items and check for changes
+    if (formData.pricing !== undefined) {
+      const currPricing = formData.pricing;
+      const origPricing = originalTask.pricing;
+
+      if (currPricing && currPricing.items) {
+        currPricing.items = filterPricingItems(currPricing.items);
+      }
+
+      // Only include pricing if it has valid items or if there are changes
+      if (currPricing?.items?.length > 0 || (origPricing && hasChanged(currPricing, origPricing))) {
+        processed.pricing = currPricing;
+      }
+    }
+
+    // Process airbrushings - filter empty and check for changes
+    if (formData.airbrushings !== undefined) {
+      const filteredAirbrushings = filterAirbrushings(formData.airbrushings);
+      const origAirbrushings = originalTask.airbrushings || [];
+
+      if (filteredAirbrushings.length > 0 || origAirbrushings.length > 0) {
+        if (JSON.stringify(filteredAirbrushings) !== JSON.stringify(origAirbrushings)) {
+          processed.airbrushings = filteredAirbrushings;
+        }
+      }
+    }
+
+    // Process observation
+    if (formData.observation !== undefined) {
+      if (hasChanged(formData.observation, originalTask.observation)) {
+        processed.observation = formData.observation;
+      }
+    }
+
+    // Process file IDs (artworkIds, baseFileIds, etc.)
+    // These are handled by their respective sections and passed through
+    const fileIdFields = ['artworkIds', 'baseFileIds', 'budgetIds', 'invoiceIds', 'receiptIds'];
+    for (const field of fileIdFields) {
+      if (formData[field] !== undefined) {
+        processed[field] = formData[field];
+      }
+    }
+
+    // representativeIds and newRepresentatives are handled by RepresentativesSection
+    // They are only set when there's an actual change (via shouldDirty flag)
+    if (formData.representativeIds !== undefined) {
+      processed.representativeIds = formData.representativeIds;
+    }
+    if (formData.newRepresentatives !== undefined && formData.newRepresentatives.length > 0) {
+      processed.newRepresentatives = formData.newRepresentatives;
+    }
+
+    return processed;
   };
 
   const handleCancel = () => {
@@ -265,18 +561,31 @@ export default function EditScheduleScreen() {
           forecastDate: task.forecastDate ? new Date(task.forecastDate) : undefined,
           generalPaintingId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
-          serviceOrders: task.serviceOrders?.map((s) => ({
-            id: s.id,
-            description: s.description,
-            status: s.status ?? undefined,
-            statusOrder: s.statusOrder,
-            type: s.type,
-            assignedToId: s.assignedToId || null,
-            observation: s.observation || null,
-            startedAt: s.startedAt ? new Date(s.startedAt) : null,
-            finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
-            shouldSync: (s as any).shouldSync !== false,
-          })) || [],
+          // Initialize serviceOrders with default empty row if none exist (matches web)
+          serviceOrders: task.serviceOrders && task.serviceOrders.length > 0
+            ? task.serviceOrders.map((s) => ({
+                id: s.id,
+                description: s.description,
+                status: s.status ?? undefined,
+                statusOrder: s.statusOrder,
+                type: s.type,
+                assignedToId: s.assignedToId || null,
+                observation: s.observation || null,
+                startedAt: s.startedAt ? new Date(s.startedAt) : null,
+                finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
+                shouldSync: (s as any).shouldSync !== false,
+              }))
+            : [{
+                // Default empty service order row
+                status: 'PENDING',
+                statusOrder: 1,
+                description: '',
+                type: 'PRODUCTION',
+                assignedToId: null,
+                observation: null,
+                startedAt: null,
+                finishedAt: null,
+              }],
           status: task.status,
           commission: task.commission ?? null,
           startedAt: task.startedAt ? new Date(task.startedAt) : null,
@@ -293,7 +602,7 @@ export default function EditScheduleScreen() {
           // Include base files for edit mode
           baseFiles: (task as any).baseFiles || [],
           baseFileIds: (task as any).baseFiles?.map((f: any) => f.id) || [],
-          // Include pricing for edit mode
+          // Include pricing for edit mode (with default empty item row, matches web)
           pricing: (task as any).pricing ? {
             id: (task as any).pricing.id,
             status: (task as any).pricing.status || 'DRAFT',
@@ -309,14 +618,38 @@ export default function EditScheduleScreen() {
             customGuaranteeText: (task as any).pricing.customGuaranteeText || null,
             layoutFileId: (task as any).pricing.layoutFileId || null,
             layoutFile: (task as any).pricing.layoutFile || null,
-            items: (task as any).pricing.items?.map((item: any) => ({
-              id: item.id,
-              description: item.description || '',
-              observation: item.observation || null,
-              amount: item.amount ?? null,
-              shouldSync: true,
-            })) || [],
-          } : undefined,
+            // Include default empty row if no items exist (matches web)
+            items: (task as any).pricing.items && (task as any).pricing.items.length > 0
+              ? (task as any).pricing.items.map((item: any) => ({
+                  id: item.id,
+                  description: item.description || '',
+                  observation: item.observation || null,
+                  amount: item.amount ?? null,
+                  shouldSync: true,
+                }))
+              : [{ description: '', amount: null, observation: null, shouldSync: true }],
+          } : {
+            // Default pricing structure when no pricing exists (matches web)
+            status: 'DRAFT',
+            expiresAt: (() => {
+              const date = new Date();
+              date.setDate(date.getDate() + 30);
+              date.setHours(23, 59, 59, 999);
+              return date;
+            })(),
+            subtotal: 0,
+            discountType: 'NONE',
+            discountValue: null,
+            total: 0,
+            paymentCondition: null,
+            downPaymentDate: null,
+            customPaymentText: null,
+            guaranteeYears: null,
+            customGuaranteeText: null,
+            layoutFileId: null,
+            layoutFile: null,
+            items: [{ description: '', amount: null, observation: null, shouldSync: true }],
+          },
         }}
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}
