@@ -325,6 +325,20 @@ export function canBatchOperateTasks(user: User | null): boolean {
 }
 
 /**
+ * Can user view cancelled tasks in task history?
+ * ADMIN, COMMERCIAL, and FINANCIAL can view cancelled tasks via status filter
+ * By default, only COMPLETED tasks are shown - user must explicitly select CANCELLED
+ */
+export function canViewCancelledTasks(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.FINANCIAL,
+  ]);
+}
+
+/**
  * Can user release tasks (set forecastDate to today)?
  * ADMIN, LOGISTIC, and COMMERCIAL can release tasks
  * Matches web canLiberar permission

@@ -26,20 +26,16 @@ interface NotificationCardProps {
 
 const getNotificationTypeIcon = (type: string, size: number, color: string) => {
   switch (type) {
-    case NOTIFICATION_TYPE.TASK:
-      return <IconCheck size={size} color={color} />;
-    case NOTIFICATION_TYPE.ORDER:
-      return <IconPackage size={size} color={color} />;
-    case NOTIFICATION_TYPE.PPE:
-      return <IconSettings size={size} color={color} />;
-    case NOTIFICATION_TYPE.VACATION:
-      return <IconCalendar size={size} color={color} />;
-    case NOTIFICATION_TYPE.WARNING:
-      return <IconAlertTriangle size={size} color={color} />;
-    case NOTIFICATION_TYPE.STOCK:
-      return <IconPackage size={size} color={color} />;
     case NOTIFICATION_TYPE.SYSTEM:
       return <IconSettings size={size} color={color} />;
+    case NOTIFICATION_TYPE.PRODUCTION:
+      return <IconCheck size={size} color={color} />;
+    case NOTIFICATION_TYPE.STOCK:
+      return <IconPackage size={size} color={color} />;
+    case NOTIFICATION_TYPE.USER:
+      return <IconSettings size={size} color={color} />;
+    case NOTIFICATION_TYPE.GENERAL:
+      return <IconBell size={size} color={color} />;
     default:
       return <IconBell size={size} color={color} />;
   }
@@ -47,20 +43,14 @@ const getNotificationTypeIcon = (type: string, size: number, color: string) => {
 
 const getNotificationTypeLabel = (type: string): string => {
   switch (type) {
-    case NOTIFICATION_TYPE.TASK:
-      return "Tarefa";
-    case NOTIFICATION_TYPE.ORDER:
-      return "Pedido";
-    case NOTIFICATION_TYPE.PPE:
-      return "EPI";
-    case NOTIFICATION_TYPE.VACATION:
-      return "Férias";
-    case NOTIFICATION_TYPE.WARNING:
-      return "Aviso";
-    case NOTIFICATION_TYPE.STOCK:
-      return "Estoque";
     case NOTIFICATION_TYPE.SYSTEM:
       return "Sistema";
+    case NOTIFICATION_TYPE.PRODUCTION:
+      return "Produção";
+    case NOTIFICATION_TYPE.STOCK:
+      return "Estoque";
+    case NOTIFICATION_TYPE.USER:
+      return "Usuário";
     case NOTIFICATION_TYPE.GENERAL:
       return "Geral";
     default:

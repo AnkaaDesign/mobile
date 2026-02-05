@@ -12,12 +12,9 @@ const IMPORTANCE_LABELS: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   SYSTEM: 'Sistema',
-  TASK: 'Tarefa',
-  ORDER: 'Pedido',
-  PPE: 'EPI',
-  VACATION: 'Férias',
-  WARNING: 'Advertência',
+  PRODUCTION: 'Produção',
   STOCK: 'Estoque',
+  USER: 'Usuário',
   GENERAL: 'Geral',
 }
 

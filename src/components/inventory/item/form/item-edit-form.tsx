@@ -70,6 +70,8 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       reorderPoint: apiData.reorderPoint,
       reorderQuantity: apiData.reorderQuantity,
       maxQuantity: apiData.maxQuantity,
+      isManualMaxQuantity: apiData.isManualMaxQuantity ?? false,
+      isManualReorderPoint: apiData.isManualReorderPoint ?? false,
       boxQuantity: apiData.boxQuantity,
       icms: apiData.icms,
       ipi: apiData.ipi,

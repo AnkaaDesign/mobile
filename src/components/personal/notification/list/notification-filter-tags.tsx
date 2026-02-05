@@ -22,20 +22,14 @@ interface NotificationFilterTagsProps {
 
 const getTypeLabel = (type: string): string => {
   switch (type) {
-    case NOTIFICATION_TYPE.TASK:
-      return "Tarefa";
-    case NOTIFICATION_TYPE.ORDER:
-      return "Pedido";
-    case NOTIFICATION_TYPE.PPE:
-      return "EPI";
-    case NOTIFICATION_TYPE.VACATION:
-      return "Férias";
-    case NOTIFICATION_TYPE.WARNING:
-      return "Aviso";
-    case NOTIFICATION_TYPE.STOCK:
-      return "Estoque";
     case NOTIFICATION_TYPE.SYSTEM:
       return "Sistema";
+    case NOTIFICATION_TYPE.PRODUCTION:
+      return "Produção";
+    case NOTIFICATION_TYPE.STOCK:
+      return "Estoque";
+    case NOTIFICATION_TYPE.USER:
+      return "Usuário";
     case NOTIFICATION_TYPE.GENERAL:
       return "Geral";
     default:

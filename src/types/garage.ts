@@ -21,8 +21,17 @@ export const GARAGE_CONFIG = {
   LANE_SPACING: 4,
   TRUCK_MIN_SPACING: 1,
   TRUCK_WIDTH_TOP_VIEW: 2.8,
-  CABIN_LENGTH: 1.8,
-  CABIN_THRESHOLD: 10,
+
+  // Cabin dimensions - two-tier system based on truck body length
+  CABIN_LENGTH_SMALL: 2.0, // meters - for trucks with body < 7m
+  CABIN_LENGTH_LARGE: 2.4, // meters - for trucks with body >= 7m and < 10m
+  CABIN_THRESHOLD_SMALL: 7, // meters - below this uses small cabin (2m)
+  CABIN_THRESHOLD_LARGE: 10, // meters - below this but >= 7m uses large cabin (2.4m), >= 10m no cabin
+
+  // Legacy constants (deprecated - use the new two-tier system above)
+  CABIN_LENGTH: 1.8, // DEPRECATED
+  CABIN_THRESHOLD: 10, // DEPRECATED
+
   MAX_TRUCKS_PER_LANE: 3,
   MIN_TRUCK_LENGTH: 5,
 } as const;
@@ -166,11 +175,17 @@ export function getLane(laneId: LaneId): StaticLane | undefined {
 
 /**
  * Calculate truck length for garage display
- * Trucks under 10m need an extra 2.8m for the cabin
+ * Two-tier cabin system:
+ * - Trucks with body < 7m: add 2.0m cabin (small trucks)
+ * - Trucks with body >= 7m and < 10m: add 2.4m cabin (larger trucks)
+ * - Trucks with body >= 10m: no cabin added (semi-trailers)
  */
 export function calculateTruckGarageLength(layoutSectionsWidthSum: number): number {
-  if (layoutSectionsWidthSum < GARAGE_CONFIG.CABIN_THRESHOLD) {
-    return layoutSectionsWidthSum + GARAGE_CONFIG.CABIN_LENGTH;
+  if (layoutSectionsWidthSum < GARAGE_CONFIG.CABIN_THRESHOLD_SMALL) {
+    return layoutSectionsWidthSum + GARAGE_CONFIG.CABIN_LENGTH_SMALL;
+  }
+  if (layoutSectionsWidthSum < GARAGE_CONFIG.CABIN_THRESHOLD_LARGE) {
+    return layoutSectionsWidthSum + GARAGE_CONFIG.CABIN_LENGTH_LARGE;
   }
   return layoutSectionsWidthSum;
 }

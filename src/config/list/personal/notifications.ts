@@ -8,18 +8,10 @@ import {
 // Local labels with Record<string, string> for flexible indexing
 const TYPE_LABELS: Record<string, string> = {
   [NOTIFICATION_TYPE.SYSTEM]: 'Sistema',
-  [NOTIFICATION_TYPE.TASK]: 'Tarefa',
-  [NOTIFICATION_TYPE.ORDER]: 'Pedido',
-  [NOTIFICATION_TYPE.SERVICE_ORDER]: 'Ordem de Serviço',
-  [NOTIFICATION_TYPE.PPE]: 'EPI',
-  [NOTIFICATION_TYPE.VACATION]: 'Férias',
-  [NOTIFICATION_TYPE.WARNING]: 'Advertência',
+  [NOTIFICATION_TYPE.PRODUCTION]: 'Produção',
   [NOTIFICATION_TYPE.STOCK]: 'Estoque',
-  [NOTIFICATION_TYPE.GENERAL]: 'Geral',
-  [NOTIFICATION_TYPE.CUT]: 'Recorte',
   [NOTIFICATION_TYPE.USER]: 'Usuário',
-  [NOTIFICATION_TYPE.MAINTENANCE]: 'Manutenção',
-  [NOTIFICATION_TYPE.FINANCIAL]: 'Financeiro',
+  [NOTIFICATION_TYPE.GENERAL]: 'Geral',
 }
 
 const IMPORTANCE_LABELS: Record<string, string> = {

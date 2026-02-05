@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { View, StyleSheet } from "react-native";
 import { Label } from "@/components/ui/label";
@@ -18,13 +17,13 @@ interface MaxQuantityInputProps {
   isManual?: boolean;
 }
 
-export function MaxQuantityInput({ disabled, isManual: initialIsManual = false }: MaxQuantityInputProps) {
-  const { control, setValue, getValues } = useFormContext<ItemFormData>();
+export function MaxQuantityInput({ disabled, isManual: fallbackIsManual = false }: MaxQuantityInputProps) {
+  const { control, setValue, getValues, watch } = useFormContext<ItemFormData>();
   const { colors } = useTheme();
-  const [isManualMode, setIsManualMode] = useState(initialIsManual);
+  // Watch the form value directly to stay in sync with form resets and data refetches
+  const isManualMode = watch('isManualMaxQuantity' as any) ?? fallbackIsManual;
 
   const handleModeToggle = (checked: boolean) => {
-    setIsManualMode(checked);
     setValue('isManualMaxQuantity' as any, checked, { shouldDirty: true });
 
     // If switching to automatic, clear the manual value

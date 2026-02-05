@@ -44,7 +44,7 @@ const orderCreateFormSchema = z.object({
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
   itemMode: z.enum(["inventory", "temporary"]).default("inventory"),
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
-  paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").optional().nullable(),
+  paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
 });
 

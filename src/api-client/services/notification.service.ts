@@ -16,14 +16,18 @@ export interface ChannelPreferenceDetail {
 
 export interface UserPreferenceConfig {
   configKey: string;
+  name: string | null;
   description: string;
   importance: NOTIFICATION_IMPORTANCE;
   channels: ChannelPreferenceDetail[];
 }
 
-export interface GroupedConfigurationsResponse {
-  [notificationType: string]: UserPreferenceConfig[];
+export interface NotificationTypeGroup {
+  notificationType: string;
+  configurations: UserPreferenceConfig[];
 }
+
+export type GroupedConfigurationsResponse = NotificationTypeGroup[];
 
 export interface AvailableConfigurationsApiResponse {
   success: boolean;

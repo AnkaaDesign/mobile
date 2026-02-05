@@ -68,18 +68,14 @@ function getNotificationIcon(type: NOTIFICATION_TYPE): string {
   switch (type) {
     case NOTIFICATION_TYPE.SYSTEM:
       return 'bell';
-    case NOTIFICATION_TYPE.TASK:
-      return 'clipboard-check';
-    case NOTIFICATION_TYPE.ORDER:
-      return 'package';
+    case NOTIFICATION_TYPE.PRODUCTION:
+      return 'building-factory-2';
     case NOTIFICATION_TYPE.STOCK:
-      return 'warehouse';
+      return 'package';
+    case NOTIFICATION_TYPE.USER:
+      return 'users';
     case NOTIFICATION_TYPE.GENERAL:
       return 'bell';
-    case NOTIFICATION_TYPE.SERVICE_ORDER:
-      return 'tool';
-    case NOTIFICATION_TYPE.PPE:
-      return 'shield';
     default:
       return 'bell';
   }
@@ -92,18 +88,14 @@ function getNotificationIconColor(type: NOTIFICATION_TYPE, isDark: boolean): str
   switch (type) {
     case NOTIFICATION_TYPE.SYSTEM:
       return extendedColors.blue[600];
-    case NOTIFICATION_TYPE.TASK:
+    case NOTIFICATION_TYPE.PRODUCTION:
       return extendedColors.purple[600];
-    case NOTIFICATION_TYPE.ORDER:
-      return extendedColors.green[600];
     case NOTIFICATION_TYPE.STOCK:
       return extendedColors.orange[600];
+    case NOTIFICATION_TYPE.USER:
+      return extendedColors.teal[600];
     case NOTIFICATION_TYPE.GENERAL:
       return extendedColors.indigo[600];
-    case NOTIFICATION_TYPE.SERVICE_ORDER:
-      return extendedColors.yellow[700];
-    case NOTIFICATION_TYPE.PPE:
-      return extendedColors.teal[600];
     default:
       return isDark ? extendedColors.neutral[400] : extendedColors.neutral[600];
   }
@@ -116,18 +108,14 @@ function getNotificationIconBgColor(type: NOTIFICATION_TYPE, isDark: boolean): s
   switch (type) {
     case NOTIFICATION_TYPE.SYSTEM:
       return isDark ? extendedColors.blue[900] : extendedColors.blue[100];
-    case NOTIFICATION_TYPE.TASK:
+    case NOTIFICATION_TYPE.PRODUCTION:
       return isDark ? extendedColors.purple[900] : extendedColors.purple[100];
-    case NOTIFICATION_TYPE.ORDER:
-      return isDark ? extendedColors.green[900] : extendedColors.green[100];
     case NOTIFICATION_TYPE.STOCK:
       return isDark ? extendedColors.orange[900] : extendedColors.orange[100];
+    case NOTIFICATION_TYPE.USER:
+      return isDark ? extendedColors.teal[900] : extendedColors.teal[100];
     case NOTIFICATION_TYPE.GENERAL:
       return isDark ? extendedColors.indigo[900] : extendedColors.indigo[100];
-    case NOTIFICATION_TYPE.SERVICE_ORDER:
-      return isDark ? extendedColors.yellow[900] : extendedColors.yellow[100];
-    case NOTIFICATION_TYPE.PPE:
-      return isDark ? extendedColors.teal[900] : extendedColors.teal[100];
     default:
       return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100];
   }

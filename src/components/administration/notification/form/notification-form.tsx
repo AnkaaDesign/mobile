@@ -42,7 +42,7 @@ import {
 const notificationFormSchema = z.object({
   title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
   body: z.string().min(10, "Mensagem deve ter no mínimo 10 caracteres"),
-  type: z.enum(["SYSTEM", "GENERAL", "WARNING"]),
+  type: z.enum(["SYSTEM", "PRODUCTION", "STOCK", "USER", "GENERAL"]),
   importance: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]),
   channels: z.array(z.enum(["IN_APP", "EMAIL", "PUSH", "WHATSAPP"])).min(1, "Selecione pelo menos um canal"),
   actionUrl: z.string().optional(),
@@ -209,8 +209,10 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
     (targetType === "sectors" && targetSectors.length > 0);
 
   const typeOptions: ComboboxOption[] = [
-    { value: "SYSTEM", label: "Sistema (Obrigatória)" },
-    { value: "WARNING", label: "Aviso" },
+    { value: "SYSTEM", label: "Sistema" },
+    { value: "PRODUCTION", label: "Produção" },
+    { value: "STOCK", label: "Estoque" },
+    { value: "USER", label: "Usuário" },
     { value: "GENERAL", label: "Geral" },
   ];
 

@@ -1276,7 +1276,7 @@ export const orderCreateSchema = z
       })
       .nullable()
       .optional(),
-    paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
+    paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").nullable().optional(),
     paymentDueDays: z
       .number()
       .int("Prazo de vencimento deve ser um número inteiro")
@@ -1363,7 +1363,7 @@ export const orderUpdateSchema = z
       })
       .nullable()
       .optional(),
-    paymentPix: z.string().max(100, "Chave Pix deve ter no máximo 100 caracteres").nullable().optional(),
+    paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").nullable().optional(),
     paymentDueDays: z
       .number()
       .int("Prazo de vencimento deve ser um número inteiro")

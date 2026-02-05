@@ -53,6 +53,7 @@ export {
   whatsAppService,
   type ChannelPreferenceDetail,
   type UserPreferenceConfig,
+  type NotificationTypeGroup,
   type GroupedConfigurationsResponse,
   type AvailableConfigurationsApiResponse,
   type UpdateUserPreferencePayload,

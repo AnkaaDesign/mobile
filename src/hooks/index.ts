@@ -178,6 +178,7 @@ export * from "./use-deployments-infinite-mobile";
 export * from "./use-paint-productions-infinite-mobile";
 export * from "./use-paint-formula-components-infinite-mobile";
 export * from "./use-payrolls-infinite-mobile";
+export * from "./use-secullum-horarios-infinite-mobile";
 
 // =====================================================
 // Team Staff Hooks (Secure Backend-Filtered Endpoints)

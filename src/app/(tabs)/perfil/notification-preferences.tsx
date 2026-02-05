@@ -41,17 +41,57 @@ import { useAuth } from "@/contexts/auth-context";
 
 type NotificationChannel = "IN_APP" | "EMAIL" | "PUSH" | "WHATSAPP";
 
-const ALL_CHANNELS: NotificationChannel[] = ["IN_APP", "EMAIL", "PUSH", "WHATSAPP"];
+const ALL_CHANNELS: NotificationChannel[] = ["IN_APP", "PUSH", "EMAIL", "WHATSAPP"];
 
 // =====================
 // Channel Metadata
 // =====================
 
-const channelMetadata: Record<NotificationChannel, { label: string; icon: string; color: string }> = {
-  IN_APP: { label: "In-App", icon: "bell", color: "#f97316" },
-  EMAIL: { label: "E-mail", icon: "mail", color: "#a855f7" },
-  PUSH: { label: "Push", icon: "device-mobile", color: "#3b82f6" },
-  WHATSAPP: { label: "WhatsApp", icon: "brand-whatsapp", color: "#22c55e" },
+const channelMetadata: Record<NotificationChannel, {
+  label: string;
+  icon: string;
+  color: string;
+  bgColor: string;
+  bgColorDark: string;
+  borderColor: string;
+  borderColorDark: string;
+}> = {
+  IN_APP: {
+    label: "In-App",
+    icon: "bell",
+    color: "#f97316",
+    bgColor: "#fff7ed", // orange-50
+    bgColorDark: "#431407", // orange-950
+    borderColor: "#fed7aa", // orange-200
+    borderColorDark: "#9a3412", // orange-800
+  },
+  EMAIL: {
+    label: "E-mail",
+    icon: "mail",
+    color: "#a855f7",
+    bgColor: "#faf5ff", // purple-50
+    bgColorDark: "#3b0764", // purple-950
+    borderColor: "#e9d5ff", // purple-200
+    borderColorDark: "#6b21a8", // purple-800
+  },
+  PUSH: {
+    label: "Push",
+    icon: "device-mobile",
+    color: "#3b82f6",
+    bgColor: "#eff6ff", // blue-50
+    bgColorDark: "#172554", // blue-950
+    borderColor: "#bfdbfe", // blue-200
+    borderColorDark: "#1e40af", // blue-800
+  },
+  WHATSAPP: {
+    label: "WhatsApp",
+    icon: "brand-whatsapp",
+    color: "#22c55e",
+    bgColor: "#f0fdf4", // green-50
+    bgColorDark: "#052e16", // green-950
+    borderColor: "#bbf7d0", // green-200
+    borderColorDark: "#166534", // green-800
+  },
 };
 
 // =====================
@@ -59,27 +99,12 @@ const channelMetadata: Record<NotificationChannel, { label: string; icon: string
 // =====================
 
 const TYPE_LABELS: Record<string, { title: string; icon: string }> = {
-  TASK: { title: "Tarefas", icon: "clipboard-list" },
-  ORDER: { title: "Pedidos", icon: "shopping-cart" },
-  SERVICE_ORDER: { title: "Ordens de Serviço", icon: "clipboard-check" },
-  STOCK: { title: "Estoque", icon: "package" },
-  CUT: { title: "Recortes", icon: "scissors" },
-  PPE: { title: "Entrega de EPI", icon: "shield" },
+  // Domain-based types
+  PRODUCTION: { title: "Produção", icon: "building-factory-2" }, // Tasks, cuts, service orders
+  STOCK: { title: "Estoque", icon: "package" }, // Items, orders, activities
+  USER: { title: "Usuário", icon: "users" }, // Warnings, vacation, PPE, bonus
   SYSTEM: { title: "Sistema", icon: "settings" },
-  VACATION: { title: "Férias", icon: "calendar" },
   GENERAL: { title: "Geral", icon: "bell" },
-  WARNING: { title: "Advertências", icon: "alert-triangle" },
-};
-
-// =====================
-// Importance Labels
-// =====================
-
-const IMPORTANCE_LABELS: Record<string, { label: string; color: string }> = {
-  LOW: { label: "Baixa", color: "#9CA3AF" },
-  NORMAL: { label: "Normal", color: "#3B82F6" },
-  HIGH: { label: "Alta", color: "#F59E0B" },
-  URGENT: { label: "Urgente", color: "#EF4444" },
 };
 
 // =====================
@@ -107,10 +132,12 @@ interface PreferenceRowProps {
 function PreferenceRow({ config, userChannels, onChange, isSaving }: PreferenceRowProps) {
   const { colors, isDark } = useTheme();
 
+  // Mandatory channels - those marked as mandatory (regardless of enabled status)
   const mandatoryChannels = config.channels
-    .filter((ch) => ch.mandatory && ch.enabled)
+    .filter((ch) => ch.mandatory)
     .map((ch) => ch.channel as NotificationChannel);
 
+  // Available channels - those enabled in the system configuration
   const availableChannels = config.channels
     .filter((ch) => ch.enabled)
     .map((ch) => ch.channel as NotificationChannel);
@@ -122,12 +149,14 @@ function PreferenceRow({ config, userChannels, onChange, isSaving }: PreferenceR
     const isSelected = userChannels.includes(channel);
     const isAvailable = availableChannels.includes(channel);
 
+    // Cannot toggle unavailable channels
     if (!isAvailable) {
       Alert.alert("Canal Indisponível", "Este canal não está disponível para este tipo de notificação.");
       return;
     }
 
-    if (isMandatory && isSelected) {
+    // Cannot disable mandatory channels
+    if (isMandatory) {
       Alert.alert(
         "Canal Obrigatório",
         `O canal ${channelMetadata[channel].label} é obrigatório para este tipo de notificação e não pode ser desativado.`
@@ -139,8 +168,9 @@ function PreferenceRow({ config, userChannels, onChange, isSaving }: PreferenceR
       ? userChannels.filter((c) => c !== channel)
       : [...userChannels, channel];
 
-    // Ensure at least one channel is selected
-    if (newChannels.length === 0) {
+    // Only show "at least one channel" error if there are no mandatory channels
+    // When mandatory channels exist, they're always enabled so this check is unnecessary
+    if (newChannels.length === 0 && mandatoryChannels.length === 0) {
       Alert.alert("Aviso", "Pelo menos um canal deve estar selecionado");
       return;
     }
@@ -148,29 +178,15 @@ function PreferenceRow({ config, userChannels, onChange, isSaving }: PreferenceR
     onChange(config.configKey, newChannels);
   };
 
-  const importanceConfig = IMPORTANCE_LABELS[config.importance] || IMPORTANCE_LABELS.NORMAL;
-
   return (
     <View style={[styles.preferenceRow, { borderBottomColor: colors.border }]}>
       <View style={styles.preferenceInfo}>
         <View style={styles.labelRow}>
-          <ThemedText style={styles.preferenceLabel}>{config.configKey}</ThemedText>
-          {mandatoryChannels.length > 0 && (
-            <View style={[styles.mandatoryBadge, { backgroundColor: isDark ? "#7c3aed20" : "#7c3aed15" }]}>
-              <Icon name="lock" size={10} color="#7c3aed" />
-              <Text style={styles.mandatoryText}>{mandatoryChannels.length}</Text>
-            </View>
-          )}
+          <ThemedText style={styles.preferenceLabel}>{config.name || config.configKey}</ThemedText>
         </View>
         <ThemedText style={[styles.preferenceDescription, { color: colors.mutedForeground }]}>
           {config.description || "Sem descrição"}
         </ThemedText>
-        <View style={styles.importanceBadge}>
-          <View style={[styles.importanceDot, { backgroundColor: importanceConfig.color }]} />
-          <Text style={[styles.importanceText, { color: colors.mutedForeground }]}>
-            {importanceConfig.label}
-          </Text>
-        </View>
       </View>
       <View style={styles.channelsRow}>
         {ALL_CHANNELS.map((channel) => {
@@ -184,24 +200,45 @@ function PreferenceRow({ config, userChannels, onChange, isSaving }: PreferenceR
               key={channel}
               onPress={() => handleChannelToggle(channel)}
               activeOpacity={0.7}
-              disabled={isSaving || !isAvailable}
+              disabled={isSaving || !isAvailable || isMandatory}
               style={[
                 styles.channelButton,
-                {
-                  borderColor: isSelected ? metadata.color : colors.border,
-                  backgroundColor: isSelected ? `${metadata.color}15` : "transparent",
-                  opacity: isAvailable ? 1 : 0.3,
-                },
+                // State-based styling matching notification config table:
+                // 1. Unavailable: muted bg, muted border, reduced opacity
+                // 2. Mandatory: filled bg + colored border (cannot toggle)
+                // 3. Enabled (selected): colored border only, no fill
+                // 4. Disabled (not selected): muted border, no fill
+                !isAvailable
+                  ? {
+                      borderWidth: 2,
+                      borderColor: colors.muted,
+                      backgroundColor: `${colors.muted}80`,
+                      opacity: 0.5,
+                    }
+                  : isMandatory
+                  ? {
+                      borderWidth: 2,
+                      borderColor: isDark ? metadata.borderColorDark : metadata.borderColor,
+                      backgroundColor: isDark ? metadata.bgColorDark : metadata.bgColor,
+                    }
+                  : isSelected
+                  ? {
+                      borderWidth: 2,
+                      borderColor: isDark ? metadata.borderColorDark : metadata.borderColor,
+                      backgroundColor: colors.background,
+                    }
+                  : {
+                      borderWidth: 2,
+                      borderColor: colors.muted,
+                      backgroundColor: colors.background,
+                    },
               ]}
             >
               <Icon
                 name={metadata.icon}
-                size={18}
-                color={isSelected && isAvailable ? metadata.color : colors.mutedForeground}
+                size={20}
+                color={isAvailable && (isSelected || isMandatory) ? metadata.color : colors.mutedForeground}
               />
-              {isMandatory && isSelected && (
-                <View style={[styles.mandatoryDot, { backgroundColor: "#7c3aed" }]} />
-              )}
             </TouchableOpacity>
           );
         })}
@@ -242,12 +279,19 @@ export default function NotificationPreferencesScreen() {
         setConfigurations(data);
 
         // Extract user preferences from the configuration data
+        // API returns array: [{ notificationType, configurations: [...] }, ...]
         const userPrefs: Record<string, NotificationChannel[]> = {};
-        for (const [type, configs] of Object.entries(data)) {
-          for (const config of configs) {
-            // Get channels where userEnabled is true
+        for (const group of data) {
+          if (!group?.configurations || !Array.isArray(group.configurations)) {
+            continue;
+          }
+          for (const config of group.configurations) {
+            if (!config?.configKey || !Array.isArray(config?.channels)) {
+              continue;
+            }
+            // Get channels where userEnabled is true OR mandatory (mandatory channels are always enabled)
             const enabledChannels = config.channels
-              .filter((ch) => ch.userEnabled)
+              .filter((ch) => ch.userEnabled || ch.mandatory)
               .map((ch) => ch.channel as NotificationChannel);
             userPrefs[config.configKey] = enabledChannels;
           }
@@ -287,10 +331,27 @@ export default function NotificationPreferencesScreen() {
 
   const handlePreferenceChange = useCallback(
     async (configKey: string, channels: NotificationChannel[]) => {
+      // Find the config to get mandatory channels
+      let mandatoryChannels: NotificationChannel[] = [];
+      if (configurations) {
+        for (const group of configurations) {
+          const config = group.configurations?.find((c) => c.configKey === configKey);
+          if (config) {
+            mandatoryChannels = config.channels
+              .filter((ch) => ch.mandatory)
+              .map((ch) => ch.channel as NotificationChannel);
+            break;
+          }
+        }
+      }
+
+      // Ensure mandatory channels are always included
+      const finalChannels = Array.from(new Set([...channels, ...mandatoryChannels]));
+
       // Optimistic update
       setPreferences((prev) => ({
         ...prev,
-        [configKey]: channels,
+        [configKey]: finalChannels,
       }));
 
       // Track saving state for this key
@@ -298,7 +359,7 @@ export default function NotificationPreferencesScreen() {
 
       try {
         const response = await notificationUserPreferenceService.updatePreference(configKey, {
-          channels: channels as NOTIFICATION_CHANNEL[],
+          channels: finalChannels as NOTIFICATION_CHANNEL[],
         });
 
         if (!response.data?.success) {
@@ -312,7 +373,7 @@ export default function NotificationPreferencesScreen() {
           // Update original preferences on success
           setOriginalPreferences((prev) => ({
             ...prev,
-            [configKey]: channels,
+            [configKey]: finalChannels,
           }));
         }
       } catch (error: any) {
@@ -331,7 +392,7 @@ export default function NotificationPreferencesScreen() {
         });
       }
     },
-    [originalPreferences]
+    [originalPreferences, configurations]
   );
 
   // =====================
@@ -385,15 +446,16 @@ export default function NotificationPreferencesScreen() {
   }, [preferences, originalPreferences]);
 
   const groupedSections = useMemo(() => {
-    if (!configurations) return [];
+    if (!configurations || !Array.isArray(configurations)) return [];
 
-    return Object.entries(configurations)
-      .filter(([_, configs]) => configs.length > 0)
-      .map(([type, configs]) => ({
-        type,
-        title: TYPE_LABELS[type]?.title || type,
-        icon: TYPE_LABELS[type]?.icon || "bell",
-        configs,
+    // API returns array: [{ notificationType, configurations: [...] }, ...]
+    return configurations
+      .filter((group) => group?.configurations && Array.isArray(group.configurations) && group.configurations.length > 0)
+      .map((group) => ({
+        type: group.notificationType,
+        title: TYPE_LABELS[group.notificationType]?.title || group.notificationType,
+        icon: TYPE_LABELS[group.notificationType]?.icon || "bell",
+        configs: group.configurations,
       }))
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [configurations]);
@@ -652,35 +714,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  mandatoryBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  mandatoryText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#7c3aed",
-  },
   preferenceDescription: {
     fontSize: 12,
-  },
-  importanceBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 4,
-  },
-  importanceDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  importanceText: {
-    fontSize: 11,
   },
   channelsRow: {
     flexDirection: "row",
@@ -690,18 +725,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-  },
-  mandatoryDot: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   infoCard: {
     padding: spacing.md,
