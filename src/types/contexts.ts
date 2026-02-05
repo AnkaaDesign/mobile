@@ -3,6 +3,9 @@
 import type { ReactNode } from "react";
 import type { ThemeColors, ThemeSpacing, ThemeMode } from "./theme";
 
+// Re-export theme types for convenience
+export type { ThemeMode, ThemeColors, ThemeSpacing };
+
 // Theme Provider Types
 export interface ThemeProviderProps {
   children: ReactNode;

@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamStaffEpis } from "@/api-client";
 import { useInfiniteMobile } from "./use-infinite-mobile";
+import type { PpeDelivery } from "@/types";
 
 // Mobile-optimized page size for team staff EPIs
 const MOBILE_TEAM_STAFF_EPIS_PAGE_SIZE = 40;
@@ -68,5 +69,5 @@ export function useTeamStaffEpisInfiniteMobile(params?: any) {
   };
 
   const infiniteQuery = useTeamStaffEpisInfinite(queryParams);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<PpeDelivery>(infiniteQuery);
 }

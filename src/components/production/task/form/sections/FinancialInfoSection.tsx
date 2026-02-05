@@ -44,7 +44,7 @@ export default function FinancialInfoSection({
       {/* Pricing/Budget Files */}
       <SimpleFormField
         label="Arquivos de Precificação"
-        helper="Upload de orçamentos e propostas comerciais"
+        helperText="Upload de orçamentos e propostas comerciais"
         error={errors.pricingFiles}
       >
         <Controller
@@ -52,9 +52,9 @@ export default function FinancialInfoSection({
           name="pricingFiles"
           render={({ field: { onChange, value } }) => (
             <FilePicker
-              files={value || initialPricingFiles}
+              value={value || initialPricingFiles}
               onChange={onChange}
-              accept="application/pdf,image/*,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              acceptedFileTypes={["application/pdf", "image/*", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]}
               maxFiles={10}
               disabled={isSubmitting}
               error={errors.pricingFiles?.message}
@@ -66,7 +66,7 @@ export default function FinancialInfoSection({
       {/* Invoice/NFe Files */}
       <SimpleFormField
         label="Notas Fiscais"
-        helper="Upload de notas fiscais eletrônicas (NFe)"
+        helperText="Upload de notas fiscais eletrônicas (NFe)"
         error={errors.invoiceFiles}
       >
         <Controller
@@ -74,9 +74,9 @@ export default function FinancialInfoSection({
           name="invoiceFiles"
           render={({ field: { onChange, value } }) => (
             <FilePicker
-              files={value || initialInvoiceFiles}
+              value={value || initialInvoiceFiles}
               onChange={onChange}
-              accept="application/pdf,text/xml,application/xml"
+              acceptedFileTypes={["application/pdf", "text/xml", "application/xml"]}
               maxFiles={10}
               disabled={isSubmitting}
               error={errors.invoiceFiles?.message}
@@ -88,7 +88,7 @@ export default function FinancialInfoSection({
       {/* Receipt Files */}
       <SimpleFormField
         label="Recibos"
-        helper="Upload de recibos e comprovantes"
+        helperText="Upload de recibos e comprovantes"
         error={errors.receiptFiles}
       >
         <Controller
@@ -96,9 +96,9 @@ export default function FinancialInfoSection({
           name="receiptFiles"
           render={({ field: { onChange, value } }) => (
             <FilePicker
-              files={value || initialReceiptFiles}
+              value={value || initialReceiptFiles}
               onChange={onChange}
-              accept="application/pdf,image/*"
+              acceptedFileTypes={["application/pdf", "image/*"]}
               maxFiles={10}
               disabled={isSubmitting}
               error={errors.receiptFiles?.message}

@@ -125,12 +125,12 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
         render: (borrow) => borrow.item?.brand?.name || '-',
       },
       {
-        key: 'item.supplier.name',
+        key: 'item.supplier.fantasyName',
         label: 'FORNECEDOR',
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (borrow) => borrow.item?.supplier?.name || '-',
+        render: (borrow) => borrow.item?.supplier?.fantasyName || '-',
       },
       {
         key: 'user.position.name',
@@ -219,8 +219,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Devolução',
           message: (borrow) => `Confirma a devolução do item "${borrow.item?.name}"?`,
         },
-        onPress: async (borrow, _, { update }) => {
-          await update({
+        onPress: async (borrow, _, mutations) => {
+          await mutations?.update?.({
             id: borrow.id,
             data: {
               status: BORROW_STATUS.RETURNED,
@@ -239,8 +239,8 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Perda',
           message: (borrow) => `Tem certeza que deseja marcar o item "${borrow.item?.name}" como perdido? Esta ação é irreversível.`,
         },
-        onPress: async (borrow, _, { update }) => {
-          await update({
+        onPress: async (borrow, _, mutations) => {
+          await mutations?.update?.({
             id: borrow.id,
             data: {
               status: BORROW_STATUS.LOST,
@@ -370,11 +370,11 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
       { key: 'uniCode', label: 'Código', path: 'item.uniCode' },
       { key: 'category', label: 'Categoria', path: 'item.category.name' },
       { key: 'brand', label: 'Marca', path: 'item.brand.name' },
-      { key: 'supplier', label: 'Fornecedor', path: 'item.supplier.name' },
+      { key: 'supplier', label: 'Fornecedor', path: 'item.supplier.fantasyName' },
       { key: 'position', label: 'Cargo', path: 'user.position.name' },
       { key: 'sector', label: 'Setor', path: 'user.sector.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value] || value },
+      { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value as BORROW_STATUS] || value },
       { key: 'createdAt', label: 'Emprestado Em', path: 'createdAt', format: 'date' },
       { key: 'returnedAt', label: 'Devolvido Em', path: 'returnedAt', format: 'date' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
@@ -393,7 +393,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Devolução em Lote',
           message: (count) => `Deseja devolver ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, mutations) => {
           const updates = Array.from(ids).map((id) => ({
             id,
             data: {
@@ -401,7 +401,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
               returnedAt: new Date(),
             },
           }))
-          await batchUpdateAsync({ borrows: updates })
+          await mutations?.batchUpdateAsync?.({ borrows: updates })
         },
       },
       {
@@ -413,14 +413,14 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Perda em Lote',
           message: (count) => `Deseja marcar ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'} como perdido(s)?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, mutations) => {
           const updates = Array.from(ids).map((id) => ({
             id,
             data: {
               status: BORROW_STATUS.LOST,
             },
           }))
-          await batchUpdateAsync({ borrows: updates })
+          await mutations?.batchUpdateAsync?.({ borrows: updates })
         },
       },
     ],

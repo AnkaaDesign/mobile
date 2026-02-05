@@ -6,9 +6,9 @@ The "Erro de conexão" was caused by **Android blocking HTTP (cleartext) traffic
 
 ## Root Cause Analysis
 
-1. ✅ API is running and accessible at `192.168.10.161:3030`
+1. ✅ API is running and accessible at `192.168.0.16:3030`
 2. ✅ CORS is configured correctly
-3. ✅ `.env` has correct `EXPO_PUBLIC_API_URL="http://192.168.10.161:3030"`
+3. ✅ `.env` has correct `EXPO_PUBLIC_API_URL="http://192.168.0.16:3030"`
 4. ❌ **Android was blocking HTTP traffic** (this was the issue)
 
 ## Changes Made
@@ -156,7 +156,7 @@ After rebuilding with these fixes:
 
 ```
 === TESTE DE CONECTIVIDADE ===
-API URL: http://192.168.10.161:3030
+API URL: http://192.168.0.16:3030
 
 --- Teste Básico ---
 Status: ✅ SUCESSO
@@ -183,7 +183,7 @@ If the connection test still fails after rebuilding:
 1. **Check the diagnostic report** - it will tell you the specific issue
 2. **Verify API is running:**
    ```bash
-   curl http://192.168.10.161:3030/
+   curl http://192.168.0.16:3030/
    ```
 3. **Verify phone and API are on same network:**
    - Check phone WiFi settings
@@ -223,8 +223,8 @@ When you try to login, watch the console for:
 ```
 [AUTH] Starting login attempt...
 [AUTH] Contact: your@email.com
-[AUTH] API URL: http://192.168.10.161:3030
-[Network Diagnostics] Testing connection to: http://192.168.10.161:3030
+[AUTH] API URL: http://192.168.0.16:3030
+[Network Diagnostics] Testing connection to: http://192.168.0.16:3030
 ```
 
 These logs will help identify where the connection is failing.

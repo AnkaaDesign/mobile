@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useChangeLogsInfinite } from './useChangelog';
 import { ChangeLogGetManyFormData } from '@/schemas';
+import type { ChangeLog } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for change logs
@@ -24,5 +25,5 @@ export function useChangeLogsInfiniteMobile(params?: Partial<ChangeLogGetManyFor
   const infiniteQuery = useChangeLogsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<ChangeLog>(infiniteQuery);
 }

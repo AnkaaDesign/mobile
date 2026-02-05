@@ -27,7 +27,7 @@ export function configurePerformance() {
   if ((global as any).nativeCallSyncHook) {
     const originalCallSyncHook = (global as any).nativeCallSyncHook;
     let batchedCalls: any[] = [];
-    let batchTimeout: NodeJS.Timeout | null = null;
+    let batchTimeout: ReturnType<typeof setTimeout> | null = null;
 
     (global as any).nativeCallSyncHook = (...args: any[]) => {
       batchedCalls.push(args);
@@ -54,11 +54,12 @@ export function configurePerformance() {
     }
   }
 
-  // Set up performance observer
-  if (__DEV__ && typeof performance !== 'undefined') {
+  // Set up performance observer (browser/web only - not available in React Native)
+  if (__DEV__ && typeof performance !== 'undefined' && typeof (globalThis as any).PerformanceObserver !== 'undefined') {
     // Monitor long tasks
     try {
-      const observer = new PerformanceObserver((list) => {
+      const Observer = (globalThis as any).PerformanceObserver;
+      const observer = new Observer((list: { getEntries: () => Array<{ name: string; duration: number }> }) => {
         list.getEntries().forEach((entry) => {
           if (entry.duration > 50) {
             console.warn(`Long task detected: ${entry.name} took ${entry.duration}ms`);
@@ -113,8 +114,9 @@ export function configureReact() {
 export const MemoryOptimizer = {
   // Clean up unused memory
   cleanup: () => {
-    if (global.gc) {
-      global.gc();
+    const globalObj = global as unknown as typeof globalThis & { gc?: () => void };
+    if (globalObj.gc) {
+      globalObj.gc();
     }
   },
 

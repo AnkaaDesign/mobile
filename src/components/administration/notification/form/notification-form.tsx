@@ -20,7 +20,7 @@ import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
-import type { User, Sector } from "@/types";
+import type { User, Sector, Notification } from "@/types";
 import { getUsers, getSectors, adminSendNotification, type AdminSendNotificationData } from "@/api-client";
 import { userKeys, sectorKeys } from "@/hooks/queryKeys";
 import {
@@ -67,11 +67,12 @@ type NotificationFormData = z.infer<typeof notificationFormSchema>;
 
 interface NotificationFormProps {
   mode: "create" | "update";
+  notification?: Notification;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function NotificationForm({ mode, onSuccess, onCancel }: NotificationFormProps) {
+export function NotificationForm({ mode, notification, onSuccess, onCancel }: NotificationFormProps) {
   const router = useRouter();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -101,7 +102,7 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
         label: user.email ? `${user.name} (${user.email})` : user.name,
       })) || [],
       hasMore: response.meta?.hasNextPage ?? false,
-      total: response.meta?.total,
+      total: response.meta?.totalRecords,
     };
   }, []);
 
@@ -121,7 +122,7 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
         label: sector.name,
       })) || [],
       hasMore: response.meta?.hasNextPage ?? false,
-      total: response.meta?.total,
+      total: response.meta?.totalRecords,
     };
   }, []);
 
@@ -389,12 +390,12 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
                   name="channels"
                   render={({ field: { onChange, value } }) => (
                     <View style={styles.checkboxContainer}>
-                      {[
-                        { value: "IN_APP", label: "In-App" },
-                        { value: "EMAIL", label: "E-mail" },
-                        { value: "PUSH", label: "Push Mobile" },
-                        { value: "WHATSAPP", label: "WhatsApp" },
-                      ].map((channel) => {
+                      {([
+                        { value: "IN_APP" as const, label: "In-App" },
+                        { value: "EMAIL" as const, label: "E-mail" },
+                        { value: "PUSH" as const, label: "Push Mobile" },
+                        { value: "WHATSAPP" as const, label: "WhatsApp" },
+                      ] as const).map((channel) => {
                         const isSelected = value?.includes(channel.value);
                         return (
                           <View key={channel.value} style={styles.checkboxRow}>
@@ -467,7 +468,7 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
-                        queryKey={sectorKeys.lists()}
+                        queryKey={[...sectorKeys.lists()]}
                         queryFn={fetchSectors}
                         minSearchLength={0}
                         pageSize={50}
@@ -503,7 +504,7 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
                     render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <Combobox
                         async
-                        queryKey={userKeys.list({ status: { not: USER_STATUS.DISMISSED } })}
+                        queryKey={[...userKeys.list({ status: { not: USER_STATUS.DISMISSED } })]}
                         queryFn={fetchUsers}
                         minSearchLength={0}
                         pageSize={50}
@@ -550,7 +551,7 @@ export function NotificationForm({ mode, onSuccess, onCancel }: NotificationForm
                     name="scheduledAt"
                     render={({ field: { onChange, value } }) => (
                       <DatePicker
-                        value={value}
+                        value={value ?? undefined}
                         onChange={onChange}
                         placeholder="Selecione data e hora"
                         disabled={isSending}

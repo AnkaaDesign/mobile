@@ -84,10 +84,12 @@ interface FormLabelProps {
   required?: boolean;
   /** Whether to show the label inline with icon */
   withIcon?: boolean;
+  /** Custom color for the required asterisk (defaults to destructive color) */
+  asteriskColor?: string;
 }
 
 const FormLabel = React.forwardRef<Text, FormLabelProps>(
-  ({ style, children, required, withIcon, ...props }, ref) => {
+  ({ style, children, required, withIcon, asteriskColor, ...props }, ref) => {
     const { error, formItemId } = useFormField();
     const { colors } = useTheme();
 
@@ -102,7 +104,7 @@ const FormLabel = React.forwardRef<Text, FormLabelProps>(
         {...props}
       >
         {children}
-        <Text style={[styles.requiredAsterisk, { color: colors.destructive }]}> *</Text>
+        <Text style={[styles.requiredAsterisk, { color: asteriskColor ?? colors.destructive }]}> *</Text>
       </Text>
     ) : (
       <Text

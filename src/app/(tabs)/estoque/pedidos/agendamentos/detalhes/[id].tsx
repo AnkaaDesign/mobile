@@ -330,7 +330,7 @@ export default function OrderScheduleDetailsScreen() {
               </View>
             </View>
             <View style={styles.content}>
-              <InfoRow label="Nome" value={schedule.supplier.name || schedule.supplier.fantasyName} />
+              <InfoRow label="Nome" value={schedule.supplier.fantasyName} />
               {schedule.supplier.corporateName && (
                 <InfoRow label="Razão Social" value={schedule.supplier.corporateName} />
               )}

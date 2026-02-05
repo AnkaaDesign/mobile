@@ -27,22 +27,22 @@ export const TeamWarningFilterTags = ({ filters, onRemoveFilter, teamMembers }: 
 
     // Severity filters
     if (filters.severities && filters.severities.length > 0) {
-      filters.severities.forEach((severity: WARNING_SEVERITY) => {
+      filters.severities.forEach((severity) => {
         tags.push({
           key: "severities",
           value: severity,
-          label: WARNING_SEVERITY_LABELS[severity] || severity,
+          label: WARNING_SEVERITY_LABELS[severity as WARNING_SEVERITY] || severity,
         });
       });
     }
 
     // Category filters
     if (filters.categories && filters.categories.length > 0) {
-      filters.categories.forEach((category: WARNING_CATEGORY) => {
+      filters.categories.forEach((category) => {
         tags.push({
           key: "categories",
           value: category,
-          label: WARNING_CATEGORY_LABELS[category] || category,
+          label: WARNING_CATEGORY_LABELS[category as WARNING_CATEGORY] || category,
         });
       });
     }

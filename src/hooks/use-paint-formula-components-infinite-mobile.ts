@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { usePaintFormulaComponentsInfinite } from './usePaintFormulaComponent';
 import { PaintFormulaComponentGetManyFormData } from '@/schemas';
+import type { PaintFormulaComponent } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for paint formula components
@@ -24,5 +25,5 @@ export function usePaintFormulaComponentsInfiniteMobile(params?: Partial<PaintFo
   const infiniteQuery = usePaintFormulaComponentsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<PaintFormulaComponent>(infiniteQuery);
 }

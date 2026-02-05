@@ -177,7 +177,7 @@ export const OrderBatchResultDialog: React.FC<OrderBatchResultDialogProps> = ({ 
               <View style={[styles.summaryIcon, getSummaryIconStyle()]}>{getSummaryIcon()}</View>
               <ThemedText style={styles.summaryText}>{getSummaryTitle()}</ThemedText>
             </View>
-            <ThemedText style={{ fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, marginTop: theme.spacing.xs }}>
+            <ThemedText style={{ fontSize: 14, color: theme.colors.textSecondary, marginTop: theme.spacing.xs }}>
               {getSummaryMessage()}
             </ThemedText>
           </View>

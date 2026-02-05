@@ -1,10 +1,9 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Controller, useWatch, useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { PpeSizeSelector } from "./ppe-size-selector";
 import { PPE_TYPE_LABELS, PPE_DELIVERY_MODE_LABELS } from "@/constants";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import { spacing } from "@/constants/design-system";
@@ -18,23 +17,7 @@ interface PpeConfigSectionProps {
 }
 
 export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) {
-  const { control, setValue } = useFormContext<ItemFormData>();
-
-  // Watch the PPE type for the single configuration
-  const ppeType = useWatch({
-    control,
-    name: "ppeType",
-  });
-
-  // Clear size when PPE type changes
-  const prevPpeTypeRef = React.useRef(ppeType);
-  React.useEffect(() => {
-    if (prevPpeTypeRef.current && prevPpeTypeRef.current !== ppeType) {
-      // PPE type changed, clear the size
-      setValue("ppeSize", null);
-    }
-    prevPpeTypeRef.current = ppeType;
-  }, [ppeType, setValue]);
+  const { control } = useFormContext<ItemFormData>();
 
   return (
     <View style={styles.fieldGroup}>
@@ -51,39 +34,33 @@ export function PpeConfigSection({ disabled, required }: PpeConfigSectionProps) 
         )}
       />
 
-      {/* Type and Size */}
-      <View style={styles.fieldRow}>
-        <Controller
-          control={control}
-          name={"ppeType" as const}
-          render={({ field: { onChange, value }, fieldState: { error } }) => {
-            const ppeTypeOptions: ComboboxOption[] = Object.entries(PPE_TYPE_LABELS).map(([key, label]) => ({
-              value: key,
-              label: label,
-            }));
+      {/* Type */}
+      <Controller
+        control={control}
+        name={"ppeType" as const}
+        render={({ field: { onChange, value }, fieldState: { error } }) => {
+          const ppeTypeOptions: ComboboxOption[] = Object.entries(PPE_TYPE_LABELS).map(([key, label]) => ({
+            value: key,
+            label: label,
+          }));
 
-            return (
-              <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-                <ThemedText style={styles.label}>Tipo de EPI {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
-                <Combobox
-                  options={ppeTypeOptions}
-                  value={value || ""}
-                  onValueChange={onChange}
-                  placeholder="Selecione o tipo de EPI"
-                  disabled={disabled}
-                  searchable={false}
-                  clearable={!required}
-                />
-                {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
-              </View>
-            );
-          }}
-        />
-
-        <View style={StyleSheet.flatten([styles.field, styles.halfField])}>
-          <PpeSizeSelector ppeType={ppeType ?? undefined} disabled={disabled || !ppeType} required={required} name="ppeSize" />
-        </View>
-      </View>
+          return (
+            <View style={styles.field}>
+              <ThemedText style={styles.label}>Tipo de EPI {required && <ThemedText variant="destructive">*</ThemedText>}</ThemedText>
+              <Combobox
+                options={ppeTypeOptions}
+                value={value || ""}
+                onValueChange={onChange}
+                placeholder="Selecione o tipo de EPI"
+                disabled={disabled}
+                searchable={false}
+                clearable={!required}
+              />
+              {error && <ThemedText style={styles.errorText}>{error.message}</ThemedText>}
+            </View>
+          );
+        }}
+      />
 
       {/* Delivery Configuration */}
       <Controller

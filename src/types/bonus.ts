@@ -24,6 +24,8 @@ export interface Bonus extends BaseEntity {
   weightedTasks: number | { toNumber: () => number }; // Decimal - weighted task count for this user
   averageTaskPerUser: number | { toNumber: () => number }; // Decimal - average tasks per eligible user
   eligibleUsersCount?: number; // Number of eligible users at the time of calculation
+  calculationPeriodStart?: Date | null; // Start of calculation period
+  calculationPeriodEnd?: Date | null; // End of calculation period
 
   // Relations (optional, populated based on query)
   user?: User;

@@ -154,8 +154,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           confirmText: 'Aprovar',
           cancelText: 'Voltar',
         },
-        onPress: async (delivery, _router, { updateEntity }) => {
-          await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.APPROVED })
+        onPress: async (delivery, _router, context) => {
+          await context?.update?.({ id: delivery.id, data: { status: PPE_DELIVERY_STATUS.APPROVED } })
         },
         visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING,
       },
@@ -170,8 +170,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           confirmText: 'Reprovar',
           cancelText: 'Voltar',
         },
-        onPress: async (delivery, _router, { updateEntity }) => {
-          await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.REPROVED })
+        onPress: async (delivery, _router, context) => {
+          await context?.update?.({ id: delivery.id, data: { status: PPE_DELIVERY_STATUS.REPROVED } })
         },
         visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.PENDING,
       },
@@ -185,8 +185,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           message: (delivery) =>
             `Deseja excluir a entrega de "${delivery.item?.name || 'EPI'}" para "${delivery.user?.name || 'funcionário'}"?`,
         },
-        onPress: async (delivery, _, { delete: deleteDelivery }) => {
-          await deleteDelivery(delivery.id)
+        onPress: async (delivery, _, context) => {
+          await context?.delete?.(delivery.id)
         },
       },
     ],
@@ -326,8 +326,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           title: 'Confirmar Aprovação',
           message: (count) => `Aprovar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'APPROVED' })
+        onPress: async (ids, context) => {
+          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'APPROVED' })
         },
       },
       {
@@ -339,8 +339,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           title: 'Confirmar Entrega',
           message: (count) => `Marcar ${count} ${count === 1 ? 'entrega' : 'entregas'} como entregue?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'DELIVERED', actualDeliveryDate: new Date() })
+        onPress: async (ids, context) => {
+          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'DELIVERED', actualDeliveryDate: new Date() })
         },
       },
       {
@@ -352,8 +352,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           title: 'Confirmar Cancelamento',
           message: (count) => `Cancelar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'CANCELLED' })
+        onPress: async (ids, context) => {
+          await context?.batchUpdateAsync?.({ ids: Array.from(ids), status: 'CANCELLED' })
         },
       },
       {
@@ -365,8 +365,8 @@ export const ppeDeliveriesListConfig: ListConfig<PpeDelivery> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

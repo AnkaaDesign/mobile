@@ -18,6 +18,8 @@ interface NumberInputProps extends Omit<TextInputProps, "onChange" | "value" | "
   max?: number;
   step?: number;
   decimalPlaces?: number;
+  /** Alias for decimalPlaces - for compatibility */
+  decimals?: number;
   allowNegative?: boolean;
   className?: string;
   placeholder?: string;
@@ -38,13 +40,16 @@ export function NumberInput({
   min,
   max,
   step = 1,
-  decimalPlaces = 0,
+  decimalPlaces,
+  decimals,
   allowNegative = true,
   editable = true,
   className,
   fieldKey,
   ...props
 }: NumberInputProps) {
+  // Support both decimalPlaces and decimals (alias)
+  const effectiveDecimalPlaces = decimalPlaces ?? decimals ?? 0;
   const { colors } = useTheme();
   const keyboardContext = useKeyboardAwareForm();
   const inputRef = useRef<TextInput>(null);
@@ -72,12 +77,12 @@ export function NumberInput({
   // Format number for display
   const formatNumber = useCallback(
     (num: number): string => {
-      if (decimalPlaces > 0) {
-        return num.toFixed(decimalPlaces);
+      if (effectiveDecimalPlaces > 0) {
+        return num.toFixed(effectiveDecimalPlaces);
       }
       return num.toString();
     },
-    [decimalPlaces]
+    [effectiveDecimalPlaces]
   );
 
   // Parse string to number
@@ -167,11 +172,11 @@ export function NumberInput({
   const getInputPattern = useCallback(() => {
     let pattern = allowNegative ? "-?" : "";
     pattern += "\\d*";
-    if (decimalPlaces > 0) {
+    if (effectiveDecimalPlaces > 0) {
       pattern += "[.,]?\\d*";
     }
     return new RegExp(`^${pattern}$`);
-  }, [allowNegative, decimalPlaces]);
+  }, [allowNegative, effectiveDecimalPlaces]);
 
   // Validate input characters
   const isValidInput = useCallback(

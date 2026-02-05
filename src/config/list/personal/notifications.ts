@@ -3,9 +3,31 @@ import type { Notification } from '@/types'
 import {
   NOTIFICATION_TYPE,
   NOTIFICATION_IMPORTANCE,
-  NOTIFICATION_TYPE_LABELS,
-  NOTIFICATION_IMPORTANCE_LABELS,
 } from '@/constants'
+
+// Local labels with Record<string, string> for flexible indexing
+const TYPE_LABELS: Record<string, string> = {
+  [NOTIFICATION_TYPE.SYSTEM]: 'Sistema',
+  [NOTIFICATION_TYPE.TASK]: 'Tarefa',
+  [NOTIFICATION_TYPE.ORDER]: 'Pedido',
+  [NOTIFICATION_TYPE.SERVICE_ORDER]: 'Ordem de Serviço',
+  [NOTIFICATION_TYPE.PPE]: 'EPI',
+  [NOTIFICATION_TYPE.VACATION]: 'Férias',
+  [NOTIFICATION_TYPE.WARNING]: 'Advertência',
+  [NOTIFICATION_TYPE.STOCK]: 'Estoque',
+  [NOTIFICATION_TYPE.GENERAL]: 'Geral',
+  [NOTIFICATION_TYPE.CUT]: 'Recorte',
+  [NOTIFICATION_TYPE.USER]: 'Usuário',
+  [NOTIFICATION_TYPE.MAINTENANCE]: 'Manutenção',
+  [NOTIFICATION_TYPE.FINANCIAL]: 'Financeiro',
+}
+
+const IMPORTANCE_LABELS: Record<string, string> = {
+  [NOTIFICATION_IMPORTANCE.LOW]: 'Baixa',
+  [NOTIFICATION_IMPORTANCE.NORMAL]: 'Normal',
+  [NOTIFICATION_IMPORTANCE.HIGH]: 'Alta',
+  [NOTIFICATION_IMPORTANCE.URGENT]: 'Urgente',
+}
 
 export const personalNotificationsListConfig: ListConfig<Notification> = {
   key: 'personal-notifications',
@@ -45,7 +67,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (notification) => notification.type ? NOTIFICATION_TYPE_LABELS[notification.type] : '-',
+        render: (notification) => notification.type ? TYPE_LABELS[notification.type] : '-',
         format: 'badge',
       },
       {
@@ -54,7 +76,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (notification) => notification.importance ? NOTIFICATION_IMPORTANCE_LABELS[notification.importance] : '-',
+        render: (notification) => notification.importance ? IMPORTANCE_LABELS[notification.importance] : '-',
         format: 'badge',
         component: 'importance-badge',
       },
@@ -65,9 +87,9 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         width: 0.8,
         align: 'center',
         render: (notification, context) => {
-          const userId = context?.userId
+          const userId = context?.user?.id
           if (!userId) return 'Não'
-          const isSeen = notification.seenBy?.some((s: any) => s.userId === userId)
+          const isSeen = notification.seenBy?.some((s) => s.userId === userId)
           return isSeen ? 'Sim' : 'Não'
         },
         format: 'badge',
@@ -104,7 +126,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_TYPE).map((type) => ({
-          label: NOTIFICATION_TYPE_LABELS[type],
+          label: TYPE_LABELS[type],
           value: type,
         })),
         placeholder: 'Selecione os tipos',
@@ -115,7 +137,7 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
         type: 'select',
         multiple: true,
         options: Object.values(NOTIFICATION_IMPORTANCE).map((importance) => ({
-          label: NOTIFICATION_IMPORTANCE_LABELS[importance],
+          label: IMPORTANCE_LABELS[importance],
           value: importance,
         })),
         placeholder: 'Selecione as importâncias',
@@ -148,8 +170,8 @@ export const personalNotificationsListConfig: ListConfig<Notification> = {
     columns: [
       { key: 'title', label: 'Título', path: 'title' },
       { key: 'message', label: 'Mensagem', path: 'message' },
-      { key: 'type', label: 'Tipo', path: 'type', format: (value) => value ? NOTIFICATION_TYPE_LABELS[value] : '-' },
-      { key: 'importance', label: 'Importância', path: 'importance', format: (value) => value ? NOTIFICATION_IMPORTANCE_LABELS[value] : '-' },
+      { key: 'type', label: 'Tipo', path: 'type', format: (value) => TYPE_LABELS[value] || '-' },
+      { key: 'importance', label: 'Importância', path: 'importance', format: (value) => IMPORTANCE_LABELS[value] || '-' },
       { key: 'createdAt', label: 'Data', path: 'createdAt', format: 'date' },
       { key: 'sentAt', label: 'Enviada Em', path: 'sentAt', format: 'date' },
     ],

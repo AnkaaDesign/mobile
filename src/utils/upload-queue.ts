@@ -70,7 +70,7 @@ export class UploadQueueManager {
   private isPaused: boolean = false;
   private config: Required<QueueConfig>;
   private persistKey: string;
-  private processingInterval?: NodeJS.Timeout;
+  private processingInterval?: ReturnType<typeof setTimeout>;
 
   constructor(config: QueueConfig = {}) {
     this.config = {

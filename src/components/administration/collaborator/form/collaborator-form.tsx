@@ -297,14 +297,14 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
   useEffect(() => {
     // Skip if this is the first render or status hasn't changed
     if (prevStatusRef.current === undefined) {
-      prevStatusRef.current = watchedStatus;
+      prevStatusRef.current = watchedStatus as USER_STATUS | undefined;
       return;
     }
 
     const hasChanged = prevStatusRef.current !== watchedStatus;
     if (!hasChanged) return;
 
-    prevStatusRef.current = watchedStatus;
+    prevStatusRef.current = watchedStatus as USER_STATUS | undefined;
 
     if (watchedStatus === USER_STATUS.EFFECTED && !effectedAt) {
       // Set effectedAt to today if transitioning to EFFECTED
@@ -591,7 +591,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
                     value={value?.toString() || ""}
-                    onChangeText={(text) => {
+                    onChangeText={(text: string) => {
                       const num = text ? parseInt(text, 10) : null;
                       onChange(num);
                     }}
@@ -683,20 +683,20 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           </FormFieldGroup>
 
           {/* Status Tracking Dates */}
-          {watchedStatus && [
+          {watchedStatus && ([
             USER_STATUS.EXPERIENCE_PERIOD_1,
             USER_STATUS.EXPERIENCE_PERIOD_2,
             USER_STATUS.EFFECTED,
             USER_STATUS.DISMISSED,
-          ].includes(watchedStatus) && (
+          ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
             <>
               {/* Experience Period 1 Dates */}
-              {[
+              {([
                 USER_STATUS.EXPERIENCE_PERIOD_1,
                 USER_STATUS.EXPERIENCE_PERIOD_2,
                 USER_STATUS.EFFECTED,
                 USER_STATUS.DISMISSED,
-              ].includes(watchedStatus) && (
+              ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
                 <FormRow>
                   <FormFieldGroup
                     label="Início da Experiência 1"
@@ -738,11 +738,11 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               )}
 
               {/* Experience Period 2 Dates */}
-              {[
+              {([
                 USER_STATUS.EXPERIENCE_PERIOD_2,
                 USER_STATUS.EFFECTED,
                 USER_STATUS.DISMISSED,
-              ].includes(watchedStatus) && (
+              ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
                 <FormRow>
                   <FormFieldGroup
                     label="Início da Experiência 2"
@@ -783,7 +783,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               )}
 
               {/* Effective Date */}
-              {[USER_STATUS.EFFECTED, USER_STATUS.DISMISSED].includes(watchedStatus) && (
+              {([USER_STATUS.EFFECTED, USER_STATUS.DISMISSED] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
                 <FormFieldGroup
                   label="Data de Contratação Efetiva"
                   required

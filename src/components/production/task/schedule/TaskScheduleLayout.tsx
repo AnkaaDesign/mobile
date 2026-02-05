@@ -492,7 +492,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     return visible.map((col) => ({
       ...col,
       width: Math.floor((availableWidth * col.width) / totalRatio),
-    }))
+    })) as Array<TableColumn<Task> & { width: number }>
   }, [config.table.columns, visibleColumns, screenWidth])
 
   // Active filters count
@@ -722,7 +722,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       <ThemedView style={styles.container}>
         <ErrorScreen
           message="Erro ao carregar cronograma"
-          detail={tasksError.message}
+          detail={(tasksError as Error)?.message || 'Erro desconhecido'}
           onRetry={handleRefresh}
         />
       </ThemedView>
@@ -895,7 +895,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
                     <TableHeader
-                      columns={displayColumns}
+                      columns={displayColumns as any}
                       sort={{
                         config: sortConfig,
                         onSort: handleSort,
@@ -918,24 +918,23 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
               const renderContext: RenderContext = {
                 navigationRoute: shouldGroupByStatus ? 'preparation' : 'schedule',
                 route: pathname, // Pass the actual current route
-                user,
+                user: user ?? undefined,
                 rowIndex: index,
               }
               return (
                 <View style={[styles.rowContainer, { borderColor: colors.border }]}>
                   <TableRow
-                    item={item}
+                    item={item as Task}
                     index={index}
-                    columns={displayColumns}
+                    columns={displayColumns as any}
                     selection={{
                       enabled: selectionEnabled,
                       selectedIds,
                       onToggle: handleToggleSelection,
-                      onToggleAll: () => handleToggleAllInSection(section.data),
                     }}
-                    actions={filteredTableActions}
-                    onPress={handleRowPress}
-                    getRowStyle={config.table.getRowStyle}
+                    actions={filteredTableActions as any}
+                    onPress={handleRowPress as any}
+                    getRowStyle={config.table.getRowStyle as any}
                     renderContext={renderContext}
                   />
                 </View>
@@ -989,7 +988,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         visible={!!sectorModalTask}
         onClose={() => setSectorModalTask(null)}
         task={sectorModalTask}
-        onSuccess={() => {
+        onSuccess={(_task: Task) => {
           setSectorModalTask(null)
           handleRefresh()
         }}

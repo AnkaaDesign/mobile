@@ -31,11 +31,11 @@ export default function NotificationCenterScreen() {
 
   // Fetch notifications
   const {
-    data: flatNotifications = [],
+    items,
     isLoading,
-    isFetching,
+    isRefetching,
     hasNextPage,
-    fetchNextPage,
+    loadMore,
     isFetchingNextPage,
     refetch,
   } = useNotificationsInfiniteMobile({
@@ -43,6 +43,7 @@ export default function NotificationCenterScreen() {
     // Filter to show notifications for current user or global notifications
     userId: user?.id,
   });
+  const flatNotifications = (items ?? []) as Notification[];
 
   // Mutations
   const markAsReadMutation = useMarkAsRead();
@@ -78,10 +79,10 @@ export default function NotificationCenterScreen() {
   }, [refetch]);
 
   const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage && !isFetching) {
-      fetchNextPage();
+    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
+      loadMore();
     }
-  }, [hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isRefetching, loadMore]);
 
   const handleNotificationPress = useCallback(
     (notification: Notification) => {
@@ -206,8 +207,6 @@ export default function NotificationCenterScreen() {
       <Stack.Screen
         options={{
           title: 'Notificações',
-          // Disable drawer swipe on this screen to allow notification item swipe gestures
-          swipeEnabled: false,
           headerRight: () =>
             unreadCount > 0 ? (
               <Button

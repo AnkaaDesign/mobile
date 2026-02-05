@@ -9,7 +9,6 @@ import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -436,9 +435,8 @@ interface ExtendedUser {
 // Main optimized drawer layout with full menu structure
 export function PrivilegeOptimizedFullLayout() {
   const { user } = useAuth();
-  const { theme, isDark } = useTheme();
+  const { isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
-  const insets = useSafeAreaInsets();
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
@@ -475,10 +473,6 @@ export function PrivilegeOptimizedFullLayout() {
         <Suspense fallback={<LoadingScreen />}>
           <DrawerContent
             {...props}
-            accessibleRoutes={accessibleRoutes}
-            userPrivileges={userPrivileges}
-            theme={theme}
-            isDark={isDark}
           />
         </Suspense>
       )}

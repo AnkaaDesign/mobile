@@ -6,16 +6,22 @@ import { useInfiniteErrorHandler } from "./use-infinite-error-handler";
  * Generic hook to enhance infinite query hooks for mobile optimization
  * Provides flattened data, loading states, error handling, and optimized page size for mobile
  * Includes aggressive pre-fetching strategy for smooth scrolling experience
+ *
+ * @template TData - The type of items in the infinite query response (defaults to { id: string })
+ * @template TError - The error type (defaults to Error)
  */
-export function useInfiniteMobile<TError = Error>(infiniteQuery: UseInfiniteQueryResult<any, TError>) {
+export function useInfiniteMobile<TData extends { id: string } = { id: string }, TError = Error>(
+  infiniteQuery: UseInfiniteQueryResult<unknown, TError>
+) {
   // Flatten pages data for FlatList consumption with deduplication
-  const items = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
-    const allItems = pages.flatMap((page: any /* TODO: Add proper type */) => page?.data || []) || [];
+  const items = useMemo((): TData[] => {
+    const data = infiniteQuery.data as { pages?: Array<{ data?: TData[] }> } | undefined;
+    const pages = data?.pages || [];
+    const allItems = pages.flatMap((page) => page?.data || []);
 
     // Deduplicate by id to prevent duplicate key warnings in FlatList
     const uniqueItems = Array.from(
-      new Map(allItems.map((item: any) => [item.id, item])).values()
+      new Map(allItems.map((item) => [item.id, item])).values()
     );
 
     return uniqueItems;
@@ -23,7 +29,8 @@ export function useInfiniteMobile<TError = Error>(infiniteQuery: UseInfiniteQuer
 
   // Extract total count from meta if available (API returns totalRecords)
   const totalCount = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
+    const data = infiniteQuery.data as { pages?: Array<{ meta?: { totalRecords?: number } }> } | undefined;
+    const pages = data?.pages || [];
     const firstPageMeta = pages[0]?.meta;
     return firstPageMeta?.totalRecords;
   }, [infiniteQuery.data]);
@@ -59,7 +66,8 @@ export function useInfiniteMobile<TError = Error>(infiniteQuery: UseInfiniteQuer
 
   // Get current page number
   const currentPage = useMemo(() => {
-    const pages = (infiniteQuery.data as any)?.pages || [];
+    const data = infiniteQuery.data as { pages?: unknown[] } | undefined;
+    const pages = data?.pages || [];
     return pages.length || 0;
   }, [infiniteQuery.data]);
 
@@ -99,6 +107,7 @@ export function useInfiniteMobile<TError = Error>(infiniteQuery: UseInfiniteQuer
   return {
     // Flattened data
     items,
+    data: items, // Alias for backward compatibility
     totalItemsLoaded,
     totalCount,
     currentPage,

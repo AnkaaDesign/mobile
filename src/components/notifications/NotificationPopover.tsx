@@ -74,14 +74,12 @@ function getNotificationIcon(type: NOTIFICATION_TYPE): string {
       return 'package';
     case NOTIFICATION_TYPE.STOCK:
       return 'warehouse';
-    case NOTIFICATION_TYPE.USER:
-      return 'user';
-    case NOTIFICATION_TYPE.MAINTENANCE:
+    case NOTIFICATION_TYPE.GENERAL:
+      return 'bell';
+    case NOTIFICATION_TYPE.SERVICE_ORDER:
       return 'tool';
     case NOTIFICATION_TYPE.PPE:
       return 'shield';
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return 'currency-dollar';
     default:
       return 'bell';
   }
@@ -100,14 +98,12 @@ function getNotificationIconColor(type: NOTIFICATION_TYPE, isDark: boolean): str
       return extendedColors.green[600];
     case NOTIFICATION_TYPE.STOCK:
       return extendedColors.orange[600];
-    case NOTIFICATION_TYPE.USER:
+    case NOTIFICATION_TYPE.GENERAL:
       return extendedColors.indigo[600];
-    case NOTIFICATION_TYPE.MAINTENANCE:
+    case NOTIFICATION_TYPE.SERVICE_ORDER:
       return extendedColors.yellow[700];
     case NOTIFICATION_TYPE.PPE:
       return extendedColors.teal[600];
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return extendedColors.emerald[600];
     default:
       return isDark ? extendedColors.neutral[400] : extendedColors.neutral[600];
   }
@@ -126,14 +122,12 @@ function getNotificationIconBgColor(type: NOTIFICATION_TYPE, isDark: boolean): s
       return isDark ? extendedColors.green[900] : extendedColors.green[100];
     case NOTIFICATION_TYPE.STOCK:
       return isDark ? extendedColors.orange[900] : extendedColors.orange[100];
-    case NOTIFICATION_TYPE.USER:
+    case NOTIFICATION_TYPE.GENERAL:
       return isDark ? extendedColors.indigo[900] : extendedColors.indigo[100];
-    case NOTIFICATION_TYPE.MAINTENANCE:
+    case NOTIFICATION_TYPE.SERVICE_ORDER:
       return isDark ? extendedColors.yellow[900] : extendedColors.yellow[100];
     case NOTIFICATION_TYPE.PPE:
       return isDark ? extendedColors.teal[900] : extendedColors.teal[100];
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return isDark ? extendedColors.emerald[900] : extendedColors.emerald[100];
     default:
       return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100];
   }
@@ -200,8 +194,14 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
 
   // Get notifications list from all pages
   const notifications = useMemo(() => {
-    const items = data?.pages?.flatMap(page => page.data) || [];
-    return items.map(notification => ({
+    const items = data?.pages?.flatMap((page) => {
+      // Handle both array format and { data: Notification[] } format
+      if (Array.isArray(page)) {
+        return page as Notification[];
+      }
+      return (page as { data: Notification[] }).data || [];
+    }) || [];
+    return items.map((notification: Notification) => ({
       ...notification,
       isSeenByUser: notification.seenBy?.some((seen: any) => seen.userId === user?.id) ?? false,
     }));
@@ -209,7 +209,7 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
 
   // Calculate unread count
   const unreadCount = useMemo(() => {
-    return notifications.filter(n => !n.isSeenByUser).length;
+    return notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).length;
   }, [notifications]);
 
   // Handle scroll to detect when near bottom for infinite scroll
@@ -607,17 +607,17 @@ export function NotificationPopover({ color }: NotificationPopoverProps) {
                       ) : (
                         <>
                           {/* Unread notifications */}
-                          {notifications.filter(n => !n.isSeenByUser).map((notification, index) =>
+                          {notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }, index: number) =>
                             renderNotificationItem(notification, index)
                           )}
 
                           {/* Read notifications section */}
-                          {notifications.filter(n => n.isSeenByUser).length > 0 && (
+                          {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).length > 0 && (
                             <>
                               <RNText style={[styles.sectionTitle, { color: isDark ? '#8c8c8c' : '#737373', marginTop: SPACING.lg }]}>
                                 LIDAS
                               </RNText>
-                              {notifications.filter(n => n.isSeenByUser).map((notification, index) =>
+                              {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }, index: number) =>
                                 renderNotificationItem(notification, index)
                               )}
                             </>

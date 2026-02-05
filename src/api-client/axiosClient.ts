@@ -1,6 +1,6 @@
 // packages/services/src/client.ts
 
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosHeaders } from "axios";
 import type {
   AxiosRequestConfig,
   AxiosInstance,
@@ -13,6 +13,13 @@ import Constants from "expo-constants";
 import { notify } from "./notify";
 import { safeLocalStorage } from "./platform-utils";
 import { apiPerformanceLogger } from "@/utils/api-performance-logger";
+
+// Extend ErrorConstructor to include V8-specific captureStackTrace
+declare global {
+  interface ErrorConstructor {
+    captureStackTrace?(targetObject: object, constructorOpt?: Function): void;
+  }
+}
 
 // =====================
 // Enhanced Type Definitions
@@ -849,8 +856,9 @@ const createApiClient = (
                 startTime: Date.now(),
                 retryCount: (metadata?.retryCount || 0) + 1,
               };
-              retryConfig.headers = { ...config.headers };
-              retryConfig.headers.Authorization = `Bearer ${freshToken}`;
+              const retryHeaders = new AxiosHeaders(config.headers);
+              retryHeaders.set('Authorization', `Bearer ${freshToken}`);
+              retryConfig.headers = retryHeaders;
 
               // Create new cancel token for retry
               const newCancelToken = axios.CancelToken.source();

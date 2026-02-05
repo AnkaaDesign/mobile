@@ -68,7 +68,7 @@ export function StockBalanceBatchCreateForm({
   const { isOpen: isResultModalOpen, result: batchResult, openDialog: openResultModal, closeDialog: closeResultModal } = useBatchResultDialog<StockBalanceBatchResult, StockBalanceBatchResult>();
 
   // Mutations
-  const { batchCreateAsync, isPending: isSubmitting } = useActivityBatchMutations();
+  const { batchCreateAsync, isBatchCreating: isSubmitting } = useActivityBatchMutations();
 
   // Keyboard visibility tracking
   useEffect(() => {
@@ -143,7 +143,7 @@ export function StockBalanceBatchCreateForm({
         id: item.id,
         name: itemData?.name || `Item ${item.id.slice(0, 8)}`,
         brand: itemData?.brand?.name,
-        uniCode: itemData?.uniCode,
+        uniCode: itemData?.uniCode ?? undefined,
         currentStock,
         countedQuantity,
         difference: countedQuantity - currentStock,

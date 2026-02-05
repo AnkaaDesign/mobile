@@ -7,7 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { fontSize } from "@/constants/design-system";
 
 interface TaskPriorityIndicatorProps {
-  priority: PRIORITY_TYPE;
+  priority?: PRIORITY_TYPE;
   showLabel?: boolean;
 }
 

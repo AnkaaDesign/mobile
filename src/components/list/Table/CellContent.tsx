@@ -171,7 +171,7 @@ const FileThumbnail = memo(function FileThumbnail({
 
   const thumbnailUrl = getFileThumbnailUrl(file, 'small')
   const hasThumbnail = !!thumbnailUrl
-  const filename = file.filename || file.key || 'arquivo'
+  const filename = String(file.filename || file.key || 'arquivo')
 
   const content = (
     <View style={cellStyles.thumbnailRow}>

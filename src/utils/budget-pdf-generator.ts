@@ -511,7 +511,7 @@ interface BudgetHtmlData {
  */
 function generateBudgetHtml(data: BudgetHtmlData): string {
   // Calculate adaptive layout based on content
-  const hasDiscount = data.discountType !== 'NONE' && data.discountValue && data.discountValue > 0;
+  const hasDiscount = data.discountType !== 'NONE' && !!data.discountValue && data.discountValue > 0;
   const hasDeliveryTerm = !!(data.customDeliveryDays || data.termDate);
 
   const layout = calculateAdaptiveLayout(

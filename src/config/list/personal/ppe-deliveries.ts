@@ -196,7 +196,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
       { key: 'actualDeliveryDate', label: 'Data de Entrega', path: 'actualDeliveryDate', format: 'date' },
       { key: 'scheduledDate', label: 'Data Agendada', path: 'scheduledDate', format: 'date' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => PPE_DELIVERY_STATUS_LABELS[value] || value },
+      { key: 'status', label: 'Status', path: 'status', format: (value: any): string => PPE_DELIVERY_STATUS_LABELS[value as keyof typeof PPE_DELIVERY_STATUS_LABELS] || value },
       { key: 'reviewedBy', label: 'Revisado Por', path: 'reviewedByUser.name' },
       { key: 'ca', label: 'CA', path: 'item.ca' },
       { key: 'validity', label: 'Validade', path: 'item.validity', format: 'date' },

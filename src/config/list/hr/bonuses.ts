@@ -102,7 +102,7 @@ export const bonusesListConfig: ListConfig<Bonus> = {
         format: 'badge',
         badge: (bonus) => ({
           variant: 'default',
-          color: getPerformanceLevelColor(bonus.performanceLevel || 0),
+          color: getPerformanceLevelColor(bonus.performanceLevel || 0).background,
         }),
       },
       {
@@ -334,15 +334,19 @@ export const bonusesListConfig: ListConfig<Bonus> = {
     filename: 'bonus',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'period', label: 'Período', path: 'month', format: (value, item) => formatPeriod(item.month, item.year) },
+      { key: 'period', label: 'Período', path: 'month', format: (value: any) => {
+        // value is the full item for export columns without path
+        const item = value as Bonus
+        return formatPeriod(item.month, item.year)
+      } },
       { key: 'user', label: 'Colaborador', path: 'user.name' },
       { key: 'payrollNumber', label: 'Nº Folha', path: 'user.payrollNumber' },
       { key: 'position', label: 'Cargo', path: 'user.position.name' },
       { key: 'sector', label: 'Setor', path: 'user.sector.name' },
       { key: 'performanceLevel', label: 'Desempenho', path: 'performanceLevel' },
-      { key: 'weightedTasks', label: 'Tarefas', path: 'weightedTasks', format: (value) => getNumericValue(value).toFixed(1) },
-      { key: 'averageTaskPerUser', label: 'Média', path: 'averageTaskPerUser', format: (value) => getNumericValue(value).toFixed(2) },
-      { key: 'baseBonus', label: 'Bônus Bruto', path: 'baseBonus', format: (value) => formatCurrency(getNumericValue(value)) },
+      { key: 'weightedTasks', label: 'Tarefas', path: 'weightedTasks', format: (value: any): string => getNumericValue(value).toFixed(1) },
+      { key: 'averageTaskPerUser', label: 'Média', path: 'averageTaskPerUser', format: (value: any): string => getNumericValue(value).toFixed(2) },
+      { key: 'baseBonus', label: 'Bônus Bruto', path: 'baseBonus', format: (value: any): string => formatCurrency(getNumericValue(value)) },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },

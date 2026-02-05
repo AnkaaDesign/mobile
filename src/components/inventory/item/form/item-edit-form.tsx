@@ -70,8 +70,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       reorderPoint: apiData.reorderPoint,
       reorderQuantity: apiData.reorderQuantity,
       maxQuantity: apiData.maxQuantity,
-      isManualMaxQuantity: apiData.isManualMaxQuantity ?? false,
-      isManualReorderPoint: apiData.isManualReorderPoint ?? false,
       boxQuantity: apiData.boxQuantity,
       icms: apiData.icms,
       ipi: apiData.ipi,
@@ -88,7 +86,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       price: currentPrice,
       // PPE fields
       ppeType: apiData.ppeType,
-      ppeSize: apiData.ppeSize,
       ppeCA: apiData.ppeCA,
       ppeDeliveryMode: apiData.ppeDeliveryMode,
       ppeStandardQuantity: apiData.ppeStandardQuantity,

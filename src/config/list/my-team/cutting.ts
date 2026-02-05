@@ -179,9 +179,9 @@ export const teamCuttingListConfig: ListConfig<Cut> = {
     filename: 'recortes-equipe',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'status', label: 'Status', path: 'status', format: (value) => CUT_STATUS_LABELS[value] || value },
-      { key: 'type', label: 'Tipo', path: 'type', format: (value) => CUT_TYPE_LABELS[value] || value },
-      { key: 'origin', label: 'Origem', path: 'origin', format: (value) => CUT_ORIGIN_LABELS[value] || value },
+      { key: 'status', label: 'Status', path: 'status', format: (value) => CUT_STATUS_LABELS[value as CUT_STATUS] || value },
+      { key: 'type', label: 'Tipo', path: 'type', format: (value) => CUT_TYPE_LABELS[value as CUT_TYPE] || value },
+      { key: 'origin', label: 'Origem', path: 'origin', format: (value) => CUT_ORIGIN_LABELS[value as CUT_ORIGIN] || value },
       { key: 'task', label: 'Tarefa', path: 'task.name' },
       { key: 'file', label: 'Arquivo', path: 'file.filename' },
       { key: 'startedAt', label: 'Início', path: 'startedAt', format: 'datetime' },

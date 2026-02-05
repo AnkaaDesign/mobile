@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert as RNAlert } from "react-native";
 import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage } from "@tabler/icons-react-native";
 
@@ -46,9 +46,7 @@ const STAGES = [
 ] as const;
 
 interface ExternalWithdrawalEditFormProps {
-  withdrawal: ExternalWithdrawal & {
-    items: ExternalWithdrawalItem[];
-  };
+  withdrawal: ExternalWithdrawal;
 }
 
 export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEditFormProps) {
@@ -57,13 +55,13 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
   // Convert existing withdrawal data to initial state
   const initialSelectedItems = useMemo(
-    () => withdrawal.items.map((item) => item.itemId),
+    () => (withdrawal.items || []).map((item) => item.itemId),
     [withdrawal.items]
   );
 
   const initialQuantities = useMemo(
     () =>
-      withdrawal.items.reduce(
+      (withdrawal.items || []).reduce(
         (acc, item) => {
           acc[item.itemId] = item.withdrawedQuantity;
           return acc;
@@ -75,7 +73,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
   const initialPrices = useMemo(
     () =>
-      withdrawal.items.reduce(
+      (withdrawal.items || []).reduce(
         (acc, item) => {
           if (item.price !== null && item.price !== undefined) {
             acc[item.itemId] = item.price;
@@ -171,19 +169,19 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
     const notesChanged = (notes?.trim() || "") !== (withdrawal.notes?.trim() || "");
 
     // Check if selected items have changed
-    const originalItemIds = new Set(withdrawal.items.map((item) => item.itemId));
+    const originalItemIds = new Set((withdrawal.items || []).map((item) => item.itemId));
     const itemsChanged =
       selectedItems.size !== originalItemIds.size ||
       Array.from(selectedItems).some((id) => !originalItemIds.has(id));
 
     // Check if quantities have changed
-    const quantitiesChanged = withdrawal.items.some((item) => {
+    const quantitiesChanged = (withdrawal.items || []).some((item) => {
       const currentQty = quantities[item.itemId];
       return currentQty !== undefined && currentQty !== item.withdrawedQuantity;
     });
 
     // Check if prices have changed
-    const pricesChanged = withdrawal.items.some((item) => {
+    const pricesChanged = (withdrawal.items || []).some((item) => {
       const currentPrice = prices[item.itemId];
       return currentPrice !== undefined && currentPrice !== item.price;
     });
@@ -214,9 +212,9 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
     if (!success && formTouched) {
       // Show validation errors
       if (stage === 1 && validation.errors.withdrawerName) {
-        Alert.alert("Erro", validation.errors.withdrawerName);
+        RNAlert.alert("Erro", validation.errors.withdrawerName);
       } else if (stage === 2 && validation.errors.selectedItems) {
-        Alert.alert("Erro", validation.errors.selectedItems);
+        RNAlert.alert("Erro", validation.errors.selectedItems);
       }
     }
   }, [goToNextStage, formTouched, stage, validation]);
@@ -246,12 +244,12 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
   // Submit handler
   const handleSubmit = useCallback(async () => {
     if (!validation.canSubmit) {
-      Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios");
+      RNAlert.alert("Erro", "Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
     if (!hasFormChanges) {
-      Alert.alert("Aviso", "Nenhuma alteração foi feita");
+      RNAlert.alert("Aviso", "Nenhuma alteração foi feita");
       return;
     }
 
@@ -328,7 +326,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
               onChangeText={updateWithdrawerName}
               placeholder="Digite o nome da pessoa que está retirando"
               maxLength={200}
-              error={formTouched && validation.errors.withdrawerName}
+              error={formTouched && !!validation.errors.withdrawerName}
             />
             {formTouched && validation.errors.withdrawerName && (
               <Text style={styles.errorText}>{validation.errors.withdrawerName}</Text>

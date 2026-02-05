@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useItemCategoriesInfinite } from './useItemCategory';
 import { ItemCategoryGetManyFormData } from '@/schemas';
+import type { ItemCategory } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for categories
@@ -24,5 +25,5 @@ export function useItemCategoriesInfiniteMobile(params?: Partial<ItemCategoryGet
   const infiniteQuery = useItemCategoriesInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<ItemCategory>(infiniteQuery);
 }

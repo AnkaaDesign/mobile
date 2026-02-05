@@ -25,10 +25,16 @@ export function TaskSelector({
   // TODO: Implement actual task options when needed
   const taskOptions: { value: string; label: string }[] = [];
 
+  const handleValueChange = (val: string | string[] | null | undefined) => {
+    // Combobox may return null, array, or undefined; normalize to string | undefined
+    const normalized = Array.isArray(val) ? val[0] : (val ?? undefined);
+    onValueChange?.(normalized);
+  };
+
   return (
     <Combobox
       value={value || ""}
-      onValueChange={onValueChange}
+      onValueChange={handleValueChange}
       options={taskOptions}
       placeholder={placeholder}
       label={required ? `${label} *` : label}

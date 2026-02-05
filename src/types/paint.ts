@@ -93,6 +93,7 @@ export interface PaintFormula extends BaseEntity {
 export interface PaintFormulaComponent extends BaseEntity {
   ratio: number; // Percentage of this component in the formula (calculated from weightInGrams)
   weight?: number; // Weight in grams used during formulation
+  weightInGrams?: number; // Weight in grams (alias for weight, used in form schemas)
   itemId: string;
   formulaPaintId: string;
 
@@ -107,6 +108,19 @@ export interface PaintProduction extends BaseEntity {
 
   // Relations (optional, populated based on query)
   formula?: PaintFormula;
+}
+
+export interface TaskPaint extends BaseEntity {
+  taskId: string;
+  catalogPaintId: string | null;
+  color: string | null;
+  quantity: number | null;
+  measureUnit: string | null;
+  observations: string | null;
+
+  // Relations (optional, populated based on query)
+  task?: Task;
+  catalogPaint?: Paint;
 }
 
 // =====================
@@ -231,6 +245,19 @@ export interface PaintGroundIncludes {
       };
 }
 
+export interface TaskPaintIncludes {
+  task?:
+    | boolean
+    | {
+        include?: TaskIncludes;
+      };
+  catalogPaint?:
+    | boolean
+    | {
+        include?: PaintIncludes;
+      };
+}
+
 // =====================
 // Order By Types
 // =====================
@@ -292,6 +319,17 @@ export interface PaintGroundOrderBy {
   updatedAt?: ORDER_BY_DIRECTION;
   paint?: PaintOrderBy;
   groundPaint?: PaintOrderBy;
+}
+
+export interface TaskPaintOrderBy {
+  id?: ORDER_BY_DIRECTION;
+  taskId?: ORDER_BY_DIRECTION;
+  catalogPaintId?: ORDER_BY_DIRECTION;
+  color?: ORDER_BY_DIRECTION;
+  quantity?: ORDER_BY_DIRECTION;
+  measureUnit?: ORDER_BY_DIRECTION;
+  createdAt?: ORDER_BY_DIRECTION;
+  updatedAt?: ORDER_BY_DIRECTION;
 }
 
 // =====================
@@ -459,6 +497,34 @@ export interface PaintGroundWhere {
   groundPaint?: PaintWhere;
 }
 
+export interface TaskPaintWhere {
+  // Logical operators
+  AND?: TaskPaintWhere | TaskPaintWhere[];
+  OR?: TaskPaintWhere[];
+  NOT?: TaskPaintWhere | TaskPaintWhere[];
+
+  // ID fields
+  id?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] };
+  taskId?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] };
+  catalogPaintId?: string | { equals?: string; not?: string; in?: string[]; notIn?: string[] } | null;
+
+  // String fields
+  color?: string | { equals?: string; not?: string; contains?: string; startsWith?: string; endsWith?: string; mode?: "default" | "insensitive"; in?: string[]; notIn?: string[] } | null;
+  measureUnit?: string | { equals?: string; not?: string; contains?: string; startsWith?: string; endsWith?: string; mode?: "default" | "insensitive"; in?: string[]; notIn?: string[] } | null;
+  observations?: string | { equals?: string; not?: string; contains?: string; startsWith?: string; endsWith?: string; mode?: "default" | "insensitive"; in?: string[]; notIn?: string[] } | null;
+
+  // Number fields
+  quantity?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] } | null;
+
+  // Date fields
+  createdAt?: Date | { equals?: Date; not?: Date; lt?: Date; lte?: Date; gt?: Date; gte?: Date; in?: Date[]; notIn?: Date[] };
+  updatedAt?: Date | { equals?: Date; not?: Date; lt?: Date; lte?: Date; gt?: Date; gte?: Date; in?: Date[]; notIn?: Date[] };
+
+  // Relations
+  task?: any; // TaskWhere - avoiding circular import
+  catalogPaint?: PaintWhere;
+}
+
 // Specialized filtering types for dual filtering (paint type + paint brand)
 export interface ComponentFilterOptions {
   paintTypeId?: string;
@@ -547,6 +613,13 @@ export type PaintProductionCreateResponse = BaseCreateResponse<PaintProduction>;
 export type PaintProductionUpdateResponse = BaseUpdateResponse<PaintProduction>;
 export type PaintProductionDeleteResponse = BaseDeleteResponse;
 
+// TaskPaint responses
+export type TaskPaintGetUniqueResponse = BaseGetUniqueResponse<TaskPaint>;
+export type TaskPaintGetManyResponse = BaseGetManyResponse<TaskPaint>;
+export type TaskPaintCreateResponse = BaseCreateResponse<TaskPaint>;
+export type TaskPaintUpdateResponse = BaseUpdateResponse<TaskPaint>;
+export type TaskPaintDeleteResponse = BaseDeleteResponse;
+
 // =====================
 // Batch Operation Responses
 // =====================
@@ -580,5 +653,10 @@ export type PaintFormulaComponentBatchDeleteResponse = BaseBatchResponse<{ id: s
 export type PaintProductionBatchCreateResponse<T = any> = BaseBatchResponse<PaintProduction, T>;
 export type PaintProductionBatchUpdateResponse<T = any> = BaseBatchResponse<PaintProduction, T & { id: string }>;
 export type PaintProductionBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
+
+// TaskPaint batch operations
+export type TaskPaintBatchCreateResponse<T = any> = BaseBatchResponse<TaskPaint, T>;
+export type TaskPaintBatchUpdateResponse<T = any> = BaseBatchResponse<TaskPaint, T & { id: string }>;
+export type TaskPaintBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
 
 // Dashboard types have been moved to packages/types/src/dashboard.ts

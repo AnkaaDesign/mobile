@@ -174,8 +174,8 @@ export const activitiesListConfig: ListConfig<Activity> = {
           title: 'Confirmar Exclusão',
           message: (activity) => `Deseja excluir esta movimentação?`,
         },
-        onPress: async (activity, _, { delete: deleteActivity }) => {
-          await deleteActivity(activity.id)
+        onPress: async (activity, _, context) => {
+          await context?.delete?.(activity.id)
         },
       },
     ],
@@ -231,7 +231,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
-        loadOnMount: false,
         queryKey: ['users', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -249,7 +248,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
                 value: user.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[User Filter] Error:', error)
@@ -264,7 +262,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
-        loadOnMount: false,
         queryKey: ['items', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -282,7 +279,6 @@ export const activitiesListConfig: ListConfig<Activity> = {
                 value: item.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Item Filter] Error:', error)
@@ -316,11 +312,11 @@ export const activitiesListConfig: ListConfig<Activity> = {
     filename: 'movimentacoes',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'operation', label: 'Operação', path: 'operation', format: (value) => ACTIVITY_OPERATION_LABELS[value] || value },
+      { key: 'operation', label: 'Operação', path: 'operation', format: (value: any) => ACTIVITY_OPERATION_LABELS[value as keyof typeof ACTIVITY_OPERATION_LABELS] || value },
       { key: 'itemCode', label: 'Código', path: 'item.uniCode' },
       { key: 'itemName', label: 'Produto', path: 'item.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'reason', label: 'Motivo', path: 'reason', format: (value) => value ? ACTIVITY_REASON_LABELS[value] : '-' },
+      { key: 'reason', label: 'Motivo', path: 'reason', format: (value: any) => value ? ACTIVITY_REASON_LABELS[value as keyof typeof ACTIVITY_REASON_LABELS] : '-' },
       { key: 'user', label: 'Usuário', path: 'user.name' },
       { key: 'createdAt', label: 'Data', path: 'createdAt', format: 'datetime' },
     ],
@@ -342,8 +338,8 @@ export const activitiesListConfig: ListConfig<Activity> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'movimentação' : 'movimentações'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

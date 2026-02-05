@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useEffect } from "react";
 import { View, StyleSheet, ViewStyle, Alert, StyleProp } from "react-native";
+import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
@@ -16,6 +17,7 @@ export interface SwipeAction {
   onPress: () => void;
   closeOnPress?: boolean;
   confirmDelete?: boolean;
+  deleteMessage?: string;
 }
 
 interface TableRowSwipeProps {
@@ -43,8 +45,8 @@ const TableRowSwipeComponent = ({
 }: TableRowSwipeProps) => {
   const { colors } = useTheme();
   const { activeRowId, setActiveRowId, closeActiveRow, setOpenRow, closeOpenRow } = useSwipeRow();
-  const swipeableRef = useRef<Swipeable>(null);
-  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const swipeableRef = useRef<SwipeableMethods>(null);
+  const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
 
   // Early return if colors are not available yet (during theme initialization)
@@ -82,7 +84,7 @@ const TableRowSwipeComponent = ({
   }, [activeRowId, entityId, setActiveRowId]);
 
   const createActionHandler = useCallback(
-    (action: GenericSwipeAction) => {
+    (action: SwipeAction) => {
       if (action.confirmDelete) {
         return () => {
           const message = confirmDeleteMessage || `Tem certeza que deseja excluir "${entityName}"?`;
@@ -136,7 +138,7 @@ const TableRowSwipeComponent = ({
   );
 
   const handleOpen = useCallback(
-    (_direction: "left" | "right", swipeable: Swipeable) => {
+    (_direction: "left" | "right", swipeable: SwipeableMethods) => {
       setActiveRowId(entityId);
 
       // Register the close function for legacy compatibility

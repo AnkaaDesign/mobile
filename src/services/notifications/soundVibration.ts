@@ -25,7 +25,7 @@ export interface SoundConfig {
  * Custom notification sounds
  * Place sound files in assets/sounds/ directory
  */
-export const NOTIFICATION_SOUNDS = {
+export const NOTIFICATION_SOUNDS: Record<string, string> = {
   DEFAULT: 'default',
   URGENT: 'urgent.wav',
   SUCCESS: 'success.wav',
@@ -34,13 +34,13 @@ export const NOTIFICATION_SOUNDS = {
   TASK: 'task.wav',
   ORDER: 'order.wav',
   MESSAGE: 'message.wav',
-} as const;
+};
 
 /**
  * Vibration patterns (in milliseconds)
  * Format: [wait, vibrate, wait, vibrate, ...]
  */
-export const VIBRATION_PATTERNS = {
+export const VIBRATION_PATTERNS: Record<string, number[]> = {
   DEFAULT: [0, 250, 100, 250],
   URGENT: [0, 100, 50, 100, 50, 100, 50, 400],
   SUCCESS: [0, 200],
@@ -49,22 +49,22 @@ export const VIBRATION_PATTERNS = {
   TRIPLE_PULSE: [0, 150, 100, 150, 100, 150],
   LONG: [0, 500],
   SHORT: [0, 100],
-} as const;
+};
 
 /**
  * Get sound configuration based on notification importance
  */
 export function getSoundForImportance(
   importance: NOTIFICATION_IMPORTANCE
-): string | boolean {
-  const soundMap: Record<NOTIFICATION_IMPORTANCE, string | boolean> = {
-    [NOTIFICATION_IMPORTANCE.LOW]: NOTIFICATION_SOUNDS.INFO,
-    [NOTIFICATION_IMPORTANCE.NORMAL]: NOTIFICATION_SOUNDS.DEFAULT,
-    [NOTIFICATION_IMPORTANCE.HIGH]: NOTIFICATION_SOUNDS.WARNING,
-    [NOTIFICATION_IMPORTANCE.URGENT]: NOTIFICATION_SOUNDS.URGENT,
+): string {
+  const soundMap: Record<NOTIFICATION_IMPORTANCE, string> = {
+    [NOTIFICATION_IMPORTANCE.LOW]: NOTIFICATION_SOUNDS.INFO ?? 'default',
+    [NOTIFICATION_IMPORTANCE.NORMAL]: NOTIFICATION_SOUNDS.DEFAULT ?? 'default',
+    [NOTIFICATION_IMPORTANCE.HIGH]: NOTIFICATION_SOUNDS.WARNING ?? 'default',
+    [NOTIFICATION_IMPORTANCE.URGENT]: NOTIFICATION_SOUNDS.URGENT ?? 'default',
   };
 
-  return soundMap[importance] || NOTIFICATION_SOUNDS.DEFAULT;
+  return soundMap[importance] ?? NOTIFICATION_SOUNDS.DEFAULT ?? 'default';
 }
 
 /**
@@ -73,14 +73,15 @@ export function getSoundForImportance(
 export function getVibrationForImportance(
   importance: NOTIFICATION_IMPORTANCE
 ): number[] {
+  const defaultPattern = [0, 250, 100, 250];
   const vibrationMap: Record<NOTIFICATION_IMPORTANCE, number[]> = {
-    [NOTIFICATION_IMPORTANCE.LOW]: VIBRATION_PATTERNS.SHORT,
-    [NOTIFICATION_IMPORTANCE.NORMAL]: VIBRATION_PATTERNS.DEFAULT,
-    [NOTIFICATION_IMPORTANCE.HIGH]: VIBRATION_PATTERNS.DOUBLE_PULSE,
-    [NOTIFICATION_IMPORTANCE.URGENT]: VIBRATION_PATTERNS.URGENT,
+    [NOTIFICATION_IMPORTANCE.LOW]: VIBRATION_PATTERNS.SHORT ?? defaultPattern,
+    [NOTIFICATION_IMPORTANCE.NORMAL]: VIBRATION_PATTERNS.DEFAULT ?? defaultPattern,
+    [NOTIFICATION_IMPORTANCE.HIGH]: VIBRATION_PATTERNS.DOUBLE_PULSE ?? defaultPattern,
+    [NOTIFICATION_IMPORTANCE.URGENT]: VIBRATION_PATTERNS.URGENT ?? defaultPattern,
   };
 
-  return vibrationMap[importance] || VIBRATION_PATTERNS.DEFAULT;
+  return vibrationMap[importance] ?? VIBRATION_PATTERNS.DEFAULT ?? defaultPattern;
 }
 
 /**
@@ -97,14 +98,14 @@ export async function triggerNotificationHaptic(
       [NOTIFICATION_IMPORTANCE.URGENT]: Haptics.ImpactFeedbackStyle.Heavy,
     };
 
-    const style = hapticMap[importance] || Haptics.ImpactFeedbackStyle.Medium;
+    const style = hapticMap[importance] ?? Haptics.ImpactFeedbackStyle.Medium;
 
     await Haptics.impactAsync(style);
 
     // For urgent notifications, add an extra haptic
     if (importance === NOTIFICATION_IMPORTANCE.URGENT) {
-      setTimeout(async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setTimeout(() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       }, 200);
     }
   } catch (error) {
@@ -213,7 +214,7 @@ export async function setupDefaultNotificationChannels(): Promise<void> {
       'Default Notifications',
       Notifications.AndroidImportance.DEFAULT,
       {
-        sound: NOTIFICATION_SOUNDS.DEFAULT as string,
+        sound: NOTIFICATION_SOUNDS.DEFAULT,
         vibrationPattern: VIBRATION_PATTERNS.DEFAULT,
         description: 'General app notifications',
       }
@@ -304,7 +305,7 @@ export function getChannelIdForImportance(
     [NOTIFICATION_IMPORTANCE.URGENT]: 'urgent',
   };
 
-  return channelMap[importance] || 'default';
+  return channelMap[importance] ?? 'default';
 }
 
 /**
@@ -352,7 +353,8 @@ export async function getAllNotificationChannels(): Promise<
       return [];
     }
 
-    return await Notifications.getNotificationChannelsAsync();
+    const channels = await Notifications.getNotificationChannelsAsync();
+    return channels ?? [];
   } catch (error) {
     console.error('[SoundVibration] Failed to get notification channels:', error);
     return [];

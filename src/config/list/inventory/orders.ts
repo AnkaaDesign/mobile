@@ -169,8 +169,8 @@ export const ordersListConfig: ListConfig<Order> = {
           title: 'Confirmar Exclusão',
           message: (order) => `Deseja excluir o pedido "${order.description}"?`,
         },
-        onPress: async (order, _, { delete: deleteOrder }) => {
-          await deleteOrder(order.id)
+        onPress: async (order, _, helpers) => {
+          await helpers?.delete?.(order.id)
         },
       },
     ],
@@ -310,8 +310,8 @@ export const ordersListConfig: ListConfig<Order> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'pedido' : 'pedidos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, helpers) => {
+          await helpers?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

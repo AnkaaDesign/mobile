@@ -1,4 +1,4 @@
-import type { ListConfig } from '@/components/list/types'
+import type { ListConfig, ActionMutationsContext } from '@/components/list/types'
 import type { ItemBrand } from '@/types'
 import { canEditItems } from '@/utils/permissions/entity-permissions'
 
@@ -85,8 +85,8 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
           title: 'Confirmar Exclusão',
           message: (brand) => `Deseja excluir a marca "${brand.name}"?`,
         },
-        onPress: async (brand, _, { delete: deleteBrand }) => {
-          await deleteBrand(brand.id)
+        onPress: async (brand, _, utils) => {
+          await utils?.delete?.(brand.id)
         },
       },
     ],
@@ -138,9 +138,9 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
         label: 'Editar em Lote',
         icon: 'pencil',
         variant: 'default',
-        onPress: (ids, _, router) => {
+        onPress: (ids: Set<string>, mutations?: ActionMutationsContext, router?: any) => {
           const idsArray = Array.from(ids)
-          router.push(`/estoque/produtos/marcas/editar-em-lote?ids=${idsArray.join(',')}`)
+          router?.push(`/estoque/produtos/marcas/editar-em-lote?ids=${idsArray.join(',')}`)
         },
       },
       {
@@ -152,8 +152,8 @@ export const brandsListConfig: ListConfig<ItemBrand> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'marca' : 'marcas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, utils) => {
+          await utils?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

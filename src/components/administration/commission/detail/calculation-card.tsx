@@ -19,7 +19,7 @@ export function CalculationCard({ commission }: CalculationCardProps) {
   const { colors, isDark } = useTheme();
 
   // Mock calculation data - will be replaced with actual data when available
-  const baseValue = commission.task?.price || 0;
+  const baseValue = commission.task?.pricing?.total || 0;
   const commissionRate = commission.user?.position?.commissionRate || 0;
   const calculatedAmount = baseValue * (commissionRate / 100);
 

@@ -67,7 +67,7 @@ function FullMenuDrawerContent({
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
   const isDarkMode = isDark;
 
@@ -92,10 +92,10 @@ function FullMenuDrawerContent({
 
   // Get favorite items
   const favoriteItems = useMemo(() => {
-    const favorites_filtered = filteredMenu.filter(item => favorites.includes(item.id));
+    const favorites_filtered = filteredMenu.filter(item => item.path && isFavorite(item.path));
     // Sort favorites alphabetically by title
     return favorites_filtered.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'));
-  }, [filteredMenu, favorites]);
+  }, [filteredMenu, isFavorite]);
 
   // Chevron animation
   const getChevronAnimation = useCallback((itemId: string) => {
@@ -282,7 +282,7 @@ function FullMenuDrawerContent({
   );
 
   // Timer ref for long press
-  const longPressTimers = useRef(new Map<string, NodeJS.Timeout>());
+  const longPressTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   // Render menu item with original styling
   const renderMenuItem = useCallback(
@@ -292,7 +292,7 @@ function FullMenuDrawerContent({
       const isActive = isItemActive(item);
       const isInPath = isInActivePath(item);
       const isNavigating = navigatingItemId === item.id;
-      const isFavorite = favorites.includes(item.id);
+      const isItemFavorite = item.path ? isFavorite(item.path) : false;
       const chevronAnimation = hasChildren ? getChevronAnimation(item.id) : null;
 
       const chevronRotation = chevronAnimation?.interpolate({
@@ -412,17 +412,21 @@ function FullMenuDrawerContent({
                       Carregando...
                     </Text>
                   )}
-                  {!hasChildren && !isNavigating && (
+                  {!hasChildren && !isNavigating && item.path && (
                     <Pressable
                       onPress={(e) => {
                         e.stopPropagation();
                         lightImpactHaptic();
-                        toggleFavorite(item.id);
+                        toggleFavorite({
+                          path: item.path!,
+                          title: item.title,
+                          icon: item.icon,
+                        });
                       }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       style={styles.favoriteButton}
                     >
-                      {isFavorite ? (
+                      {isItemFavorite ? (
                         <IconStarFilled size={16} color="#facc15" />
                       ) : (
                         <IconStar size={16} color={isDarkMode ? "#525252" : "#a3a3a3"} />
@@ -460,13 +464,8 @@ function FullMenuDrawerContent({
         </View>
       );
     },
-    [expandedMenus, isItemActive, isInActivePath, navigatingItemId, favorites, toggleFavorite, getChevronAnimation, isDarkMode, handleMainItemClick, navigateToPath, toggleSubmenu],
+    [expandedMenus, isItemActive, isInActivePath, navigatingItemId, isFavorite, toggleFavorite, getChevronAnimation, isDarkMode, handleMainItemClick, navigateToPath, toggleSubmenu],
   );
-
-  // Helper function for pressed background color
-  const getPressedBackgroundColor = (isDark: boolean): string => {
-    return isDark ? "rgba(46, 46, 46, 0.5)" : "rgba(245, 245, 245, 0.5)";
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: isDarkMode ? "#0a0a0a" : "#ffffff" }]}>
@@ -503,7 +502,7 @@ function FullMenuDrawerContent({
                 {user?.nome || "Usuário"}
               </Text>
               <Text style={[styles.userRole, { color: isDarkMode ? "#a3a3a3" : "#737373" }]} numberOfLines={1}>
-                {user?.sectors?.length ? user.sectors[0].name : "Colaborador"}
+                {user?.sector?.name || "Colaborador"}
               </Text>
               {user?.phone && (
                 <Text style={[styles.userPhone, { color: isDarkMode ? "#737373" : "#a3a3a3" }]} numberOfLines={1}>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { usePayrollsInfinite } from './payroll';
-import type { PayrollGetManyParams } from '@/types';
+import type { PayrollGetManyParams, Payroll } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for payrolls
@@ -40,5 +40,5 @@ export function usePayrollsInfiniteMobile(params?: Partial<PayrollGetManyParams>
   const infiniteQuery = usePayrollsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Payroll>(infiniteQuery);
 }

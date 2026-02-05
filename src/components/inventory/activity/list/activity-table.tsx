@@ -32,6 +32,7 @@ interface ActivityTableProps {
   onActivityDelete?: (activityId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
+  onEndReachedThreshold?: number;
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
@@ -42,6 +43,7 @@ interface ActivityTableProps {
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
   visibleColumnKeys?: string[];
+  ListFooterComponent?: React.ReactElement | null;
 }
 
 // Get screen width for responsive design
@@ -256,6 +258,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
     onActivityDelete,
     onRefresh,
     onEndReached,
+    onEndReachedThreshold = 0.2,
     refreshing = false,
     loading = false,
     loadingMore = false,
@@ -266,6 +269,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
     onSort,
     enableSwipeActions = true,
     visibleColumnKeys,
+    ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
@@ -614,10 +618,10 @@ export const ActivityTable = React.memo<ActivityTableProps>(
             keyExtractor={(item) => item.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.2}
+            onEndReachedThreshold={onEndReachedThreshold}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            ListFooterComponent={renderFooter}
+            ListFooterComponent={ListFooterComponent ?? renderFooter()}
             ListEmptyComponent={renderEmpty}
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}

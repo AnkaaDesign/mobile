@@ -85,7 +85,9 @@ export function SectorSelectModal({
           : `Setor da tarefa "${task.name}" removido com sucesso!`
       );
 
-      onSuccess?.(response.data);
+      if (response.data) {
+        onSuccess?.(response.data);
+      }
       onClose();
     } catch (error: any) {
       console.error("[SectorSelectModal] Error:", error);

@@ -105,7 +105,7 @@ export function useProgressiveRender(delays: number[]): boolean[] {
   useEffect(() => {
     if (!isReady) return;
 
-    const timeouts: NodeJS.Timeout[] = [];
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     delays.forEach((delay, index) => {
       const timeout = setTimeout(() => {

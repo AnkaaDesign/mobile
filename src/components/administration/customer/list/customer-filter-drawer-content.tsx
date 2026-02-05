@@ -193,7 +193,7 @@ export function CustomerFilterDrawerContent({
             <Input
               placeholder="Digite tags separadas por vírgula..."
               value={customTags}
-              onChangeText={(text) => setCustomTags(text || '')}
+              onChangeText={(text) => setCustomTags(String(text ?? ''))}
               onSubmitEditing={handleAddTag}
               style={styles.tagInput}
             />

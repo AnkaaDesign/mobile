@@ -132,7 +132,7 @@ export default function RequestPPEScreen() {
         return itemSize === userSize;
       });
 
-      const total = response.meta?.total || items.length;
+      const total = response.meta?.totalRecords || items.length;
       const hasMore = response.meta?.hasNextPage || false;
 
       // Cache loaded items for lookup when selecting

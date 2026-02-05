@@ -51,7 +51,7 @@ export default function CreateCatalogScreen() {
               description: formula.description || "Fórmula Principal",
               components: validComponents.map((c) => ({
                 itemId: c.itemId,
-                weightInGrams: c.weightInGrams, // Backend will calculate ratio from weight
+                weightInGrams: c.weightInGrams!, // Backend will calculate ratio from weight (non-null assertion is safe due to filter above)
               })),
             };
 

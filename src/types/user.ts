@@ -23,6 +23,7 @@ import type { File } from "./file";
 export interface User extends BaseEntity {
   email: string | null;
   name: string;
+  nome?: string; // Portuguese alias for name (legacy support)
   avatarId: string | null;
   status: USER_STATUS;
   statusOrder: number; // 1=Ativo, 2=Inativo, 3=Suspenso

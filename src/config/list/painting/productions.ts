@@ -118,8 +118,8 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
             return `Deseja excluir a produção de "${paintName}"?`
           },
         },
-        onPress: async (production, _, { delete: deleteProduction }) => {
-          await deleteProduction(production.id)
+        onPress: async (production, _, context) => {
+          await context?.delete?.(production.id)
         },
       },
     ],
@@ -299,8 +299,8 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'produção' : 'produções'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

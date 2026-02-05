@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useHolidaysInfinite } from './useHoliday';
 import { HolidayGetManyFormData } from '@/schemas';
+import type { Holiday } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for holidays
@@ -24,5 +25,5 @@ export function useHolidaysInfiniteMobile(params?: Partial<HolidayGetManyFormDat
   const infiniteQuery = useHolidaysInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Holiday>(infiniteQuery);
 }

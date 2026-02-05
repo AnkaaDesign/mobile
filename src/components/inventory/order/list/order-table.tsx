@@ -36,6 +36,7 @@ interface OrderTableProps {
   onOrderDuplicate?: (orderId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
+  onEndReachedThreshold?: number;
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
@@ -46,6 +47,8 @@ interface OrderTableProps {
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
   visibleColumnKeys?: string[];
+  disableVirtualization?: boolean;
+  ListFooterComponent?: React.ReactElement | null;
 }
 
 // Get screen width for responsive design
@@ -226,6 +229,7 @@ export const OrderTable = React.memo<OrderTableProps>(
     onOrderDuplicate,
     onRefresh,
     onEndReached,
+    onEndReachedThreshold = 0.2,
     refreshing = false,
     loading = false,
     loadingMore = false,
@@ -236,6 +240,8 @@ export const OrderTable = React.memo<OrderTableProps>(
     onSort,
     enableSwipeActions = true,
     visibleColumnKeys,
+    disableVirtualization = false,
+    ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
@@ -594,10 +600,10 @@ export const OrderTable = React.memo<OrderTableProps>(
             keyExtractor={(order) => order.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.2}
+            onEndReachedThreshold={onEndReachedThreshold}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            ListFooterComponent={renderFooter}
+            ListFooterComponent={ListFooterComponent ?? renderFooter()}
             ListEmptyComponent={renderEmpty}
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}

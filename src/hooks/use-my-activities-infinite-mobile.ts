@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { apiClient } from "@/api-client/axiosClient";
 import type { ActivityGetManyFormData } from "@/schemas";
-import type { ActivityGetManyResponse } from "@/types";
+import type { ActivityGetManyResponse, Activity } from "@/types";
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import { activityKeys } from "./queryKeys";
 
@@ -66,5 +66,5 @@ export function useMyActivitiesInfiniteMobile(params?: Partial<ActivityGetManyFo
   });
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Activity>(infiniteQuery);
 }

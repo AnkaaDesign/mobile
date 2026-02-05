@@ -148,7 +148,7 @@ export function TeamCommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               value={localFilters.userId || ""}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, userId: value || undefined }))}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, userId: Array.isArray(value) ? value[0] : value || undefined }))}
               options={teamMemberOptions}
               placeholder="Selecione um membro"
               searchable={false}
@@ -171,7 +171,7 @@ export function TeamCommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               value={localFilters.commissionStatus || ""}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, commissionStatus: value || undefined }))}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, commissionStatus: Array.isArray(value) ? value[0] : value || undefined }))}
               options={commissionStatusOptions}
               placeholder="Selecione o status"
               searchable={false}
@@ -194,7 +194,7 @@ export function TeamCommissionFilterDrawerContent({
             </ThemedText>
             <Combobox
               value={localFilters.taskStatus || ""}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, taskStatus: value || undefined }))}
+              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, taskStatus: Array.isArray(value) ? value[0] : value || undefined }))}
               options={taskStatusOptions}
               placeholder="Selecione o status"
               searchable={false}

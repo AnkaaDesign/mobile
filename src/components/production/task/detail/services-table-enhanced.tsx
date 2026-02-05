@@ -41,7 +41,7 @@ interface ServicesTableEnhancedProps {
 
 interface ServiceChanges {
   [serviceId: string]: {
-    status: SERVICE_ORDER_STATUS;
+    status: SERVICE_ORDER_STATUS | null;
   };
 }
 
@@ -304,7 +304,7 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
                   <View style={styles.statusSelectContainer}>
                     <ThemedText style={styles.statusSelectLabel}>Alterar Status:</ThemedText>
                     <Select
-                      value={currentValues.status}
+                      value={currentValues.status ?? undefined}
                       onValueChange={(value) => handleStatusChange(service.id, value as SERVICE_ORDER_STATUS)}
                       disabled={isSaving}
                     >

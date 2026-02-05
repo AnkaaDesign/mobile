@@ -82,7 +82,7 @@ export const positionsListConfig: ListConfig<Position> = {
         sortable: false,
         width: 2.5,
         align: 'left',
-        render: (position) => position.description || '-',
+        render: (position) => position.description?.toString() || '-',
       },
       {
         key: 'createdAt',
@@ -124,8 +124,8 @@ export const positionsListConfig: ListConfig<Position> = {
           title: 'Confirmar Exclusão',
           message: (position) => `Deseja excluir o cargo "${position.name}"?`,
         },
-        onPress: async (position, _, { delete: deletePosition }) => {
-          await deletePosition(position.id)
+        onPress: async (position, _, mutations) => {
+          await mutations?.delete?.(position.id)
         },
       },
     ],
@@ -201,8 +201,8 @@ export const positionsListConfig: ListConfig<Position> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'cargo' : 'cargos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

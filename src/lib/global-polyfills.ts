@@ -36,10 +36,11 @@ if (typeof window === "undefined") {
 }
 
 // Ensure global performance object exists for React Native
-if (typeof global.performance === "undefined") {
-  global.performance = {
+const globalObj = global as unknown as typeof globalThis & { performance?: Performance };
+if (typeof globalObj.performance === "undefined") {
+  globalObj.performance = {
     now: () => Date.now(),
-  } as any;
+  } as Performance;
 }
 
 export {};

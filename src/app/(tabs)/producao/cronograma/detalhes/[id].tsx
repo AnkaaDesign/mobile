@@ -918,7 +918,7 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Financial summary - Only for Admin and Financial */}
-          {canViewDocuments && task.price && (
+          {canViewDocuments && task.pricing?.total && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -928,7 +928,7 @@ export default function ScheduleDetailsScreen() {
               </View>
               <View style={styles.sectionContent}>
                 <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
-                  {formatCurrency(task.price)}
+                  {formatCurrency(task.pricing?.total)}
                 </ThemedText>
               </View>
             </Card>
@@ -958,7 +958,11 @@ export default function ScheduleDetailsScreen() {
                   taskCreatedAt={task.createdAt}
                   serviceOrderIds={(task.serviceOrders || []).map((so: any) => so.id)}
                   truckId={(task as any)?.truck?.id}
-                  layoutIds={layouts?.data?.map((l: any) => l.id) || []}
+                  layoutIds={[
+                    layouts?.leftSideLayout?.id,
+                    layouts?.rightSideLayout?.id,
+                    layouts?.backSideLayout?.id,
+                  ].filter((id): id is string => !!id)}
                 />
               </View>
             </Card>

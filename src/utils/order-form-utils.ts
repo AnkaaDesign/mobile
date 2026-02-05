@@ -221,8 +221,8 @@ export function transformFormDataForAPI(formData: OrderFormData): OrderCreateFor
     supplierId: formData.supplierId || undefined,
     notes: formData.notes?.trim() || undefined,
     budgetIds: formData.budgetId ? [formData.budgetId] : undefined,
-    nfeId: formData.nfeId || undefined,
-    receiptId: formData.receiptId || undefined,
+    invoiceIds: formData.nfeId ? [formData.nfeId] : undefined,
+    receiptIds: formData.receiptId ? [formData.receiptId] : undefined,
     items,
   };
 }
@@ -260,7 +260,7 @@ export function createOrderFormData(
   const context = {
     entityType: "order",
     entityId: data.id || undefined,
-    supplierName: supplier ? sanitizeDirectoryName(supplier.fantasyName || supplier.name || "") : "",
+    supplierName: supplier ? sanitizeDirectoryName(supplier.fantasyName || "") : "",
     userName: user ? sanitizeDirectoryName(user.name) : "",
   };
 

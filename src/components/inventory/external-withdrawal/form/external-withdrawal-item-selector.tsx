@@ -17,7 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Switch } from "@/components/ui/switch";
 import { NumberInput } from "@/components/ui/number-input";
-import { Pagination } from "@/components/ui/pagination";
+import { PageNavigation } from "@/components/ui/page-navigation";
 
 import { ExternalWithdrawalFormFilters } from "./external-withdrawal-form-filters";
 
@@ -407,7 +407,7 @@ export function ExternalWithdrawalItemSelector({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Pagination
+        <PageNavigation
           currentPage={page}
           totalPages={totalPages}
           onPageChange={onPageChange}

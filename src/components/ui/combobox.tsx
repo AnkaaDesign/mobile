@@ -66,6 +66,10 @@ interface ComboboxProps<TData = ComboboxOption> {
   clearable?: boolean;
   className?: string;
   required?: boolean;
+  /** Container style */
+  style?: any;
+  /** Load options on mount for async mode (default: false) */
+  loadOnMount?: boolean;
 
   // Custom rendering
   renderOption?: (option: TData, isSelected: boolean) => React.ReactNode;
@@ -122,8 +126,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   initialOptions = [],
   minSearchLength = 1,
   debounceMs = 300,
-  staleTime = 5 * 60 * 1000,
-  pageSize = 20,
+  // staleTime and pageSize are defined in props but not used - handled by useQuery config
+  staleTime: _staleTime,
+  pageSize: _pageSize,
   allowCreate = false,
   onCreate,
   createLabel = (value) => `Criar "${value}"`,
@@ -140,8 +145,11 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   disabled = false,
   searchable = true,
   clearable = true,
-  className,
-  required = false,
+  // className and required are defined in props but not used in RN - kept for API compatibility
+  className: _className,
+  required: _required,
+  style,
+  loadOnMount = false,
   renderOption,
   renderValue,
   formatDisplay,
@@ -242,7 +250,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     enabled: async && !!queryKey && !!queryFn,
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
-    refetchOnMount: false,
+    refetchOnMount: loadOnMount,
     refetchOnWindowFocus: false,
   });
 
@@ -523,6 +531,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       // Wait for scroll animation to complete, then re-measure and open
       // The parent's handleComboboxOpen waits 50ms before scrolling, then scroll takes ~300-400ms
       // So we need to wait at least 50 + 400 = 450ms, adding buffer for safety
+      // eslint-disable-next-line no-undef
       setTimeout(async () => {
         // Re-measure after scroll completed - this updates inputLayoutRef
         await measureSelect();
@@ -603,13 +612,15 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
         }
 
         // CRITICAL: Wait for React Native to process the state updates
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // eslint-disable-next-line no-undef
+        await new Promise<void>((resolve) => setTimeout(resolve, 100));
 
         // Call onValueChange to update the form field
         onValueChange?.(itemValue);
 
         // Wait for form to process the update
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        // eslint-disable-next-line no-undef
+        await new Promise<void>((resolve) => setTimeout(resolve, 300));
 
         // Close the modal
         handleClose();
@@ -781,6 +792,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       formatOptionLabel,
       handleSelect,
       renderOption,
+      hideDescription,
     ],
   );
 
@@ -811,7 +823,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   }, [isLoadingMore, async, hasMore, colors]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {label && (
         <Text style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">{label}</Text>
       )}
@@ -893,7 +905,9 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               >
                 <Badge variant="outline" size="sm" style={styles.badge}>
                   <Text style={[styles.badgeText, { color: colors.foreground }]}>{formatOptionLabel(option)}</Text>
-                  <Icon name="x" size={12} color={colors.foreground} style={styles.badgeIcon} />
+                  <View style={styles.badgeIcon}>
+                    <Icon name="x" size={12} color={colors.foreground} />
+                  </View>
                 </Badge>
               </TouchableOpacity>
             );
@@ -1247,7 +1261,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   );
 };
 
-export const Combobox = React.memo(ComboboxComponent) as typeof ComboboxComponent;
+export const Combobox = React.memo(ComboboxComponent) as typeof ComboboxComponent & { displayName?: string };
 
 Combobox.displayName = "Combobox";
 
@@ -1258,7 +1272,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: fontSize.sm,
     marginBottom: spacing.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.medium as "500",
   },
   selector: {
     flexDirection: "row",
@@ -1348,7 +1362,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.semibold as "600",
   },
   searchContainer: {
     flexDirection: "row",
@@ -1388,7 +1402,7 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.medium as "500",
   },
   option: {
     flexDirection: "row",
@@ -1414,7 +1428,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
   },
   selectedOptionLabel: {
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.medium as "500",
   },
   optionDescription: {
     fontSize: fontSize.xs - 1,
@@ -1441,7 +1455,7 @@ const styles = StyleSheet.create({
   },
   createOptionText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.medium as "500",
     flex: 1,
   },
   emptyContainer: {

@@ -108,8 +108,8 @@ export function PaintFilterDrawer({
 
       // Standard handling for other fields
       if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
-        const { [key]: _, ...rest } = currentFilters;
-        return rest;
+        const { [key]: _, ...rest } = currentFilters as Record<string, unknown>;
+        return rest as typeof currentFilters;
       }
       return {
         ...currentFilters,

@@ -149,7 +149,7 @@ export function AirbrushingFilterDrawerContent({
             value={localFilters.taskId}
             onValueChange={(value) => setLocalFilters(prev => ({
               ...prev,
-              taskId: value || undefined
+              taskId: Array.isArray(value) ? value[0] : (value || undefined)
             }))}
             options={[
               { value: "", label: "Todas as tarefas" },

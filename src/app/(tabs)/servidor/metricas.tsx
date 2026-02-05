@@ -55,20 +55,20 @@ interface SsdHealthData {
   health: {
     overall: 'PASSED' | 'FAILED' | 'UNKNOWN';
   };
-  temperature: {
-    current: number;
-    unit: string;
+  temperature?: {
+    current?: number;
+    unit?: string;
   };
-  powerOn: {
-    hours: number;
+  powerOn?: {
+    hours?: number;
   };
-  wearLevel: {
-    percentage: number;
+  wearLevel?: {
+    percentage?: number;
   };
-  errorCounts: {
-    reallocatedSectors: number;
-    pendingSectors: number;
-    uncorrectableErrors: number;
+  errorCounts?: {
+    reallocatedSectors?: number;
+    pendingSectors?: number;
+    uncorrectableErrors?: number;
   };
 }
 
@@ -262,9 +262,9 @@ export default function ServerMetricsScreen() {
     }
 
     const hasErrors =
-      ssd.errorCounts?.reallocatedSectors > 0 ||
-      ssd.errorCounts?.pendingSectors > 0 ||
-      ssd.errorCounts?.uncorrectableErrors > 0;
+      (ssd.errorCounts?.reallocatedSectors ?? 0) > 0 ||
+      (ssd.errorCounts?.pendingSectors ?? 0) > 0 ||
+      (ssd.errorCounts?.uncorrectableErrors ?? 0) > 0;
     if (hasErrors) healthScore -= 15;
 
     return Math.max(0, Math.min(100, Math.round(healthScore)));

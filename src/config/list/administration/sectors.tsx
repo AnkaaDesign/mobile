@@ -123,8 +123,8 @@ export const sectorsListConfig: ListConfig<Sector> = {
           title: 'Confirmar Exclusão',
           message: (sector) => `Deseja excluir o setor "${sector.name}"?`,
         },
-        onPress: async (sector, _, { delete: deleteSector }) => {
-          await deleteSector(sector.id)
+        onPress: async (sector, _, context) => {
+          await context?.delete?.(sector.id)
         },
       },
     ],
@@ -168,7 +168,7 @@ export const sectorsListConfig: ListConfig<Sector> = {
         key: 'privileges',
         label: 'Privilégios',
         path: 'privileges',
-        format: (value: string) => value ? SECTOR_PRIVILEGES_LABELS[value] || value : '-'
+        format: (value: string) => value ? SECTOR_PRIVILEGES_LABELS[value as keyof typeof SECTOR_PRIVILEGES_LABELS] || value : '-'
       },
       { key: 'usersCount', label: 'Colaboradores', path: '_count.users' },
       { key: 'tasksCount', label: 'Tarefas', path: '_count.tasks' },
@@ -192,8 +192,8 @@ export const sectorsListConfig: ListConfig<Sector> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'setor' : 'setores'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

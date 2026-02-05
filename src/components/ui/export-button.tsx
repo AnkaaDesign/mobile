@@ -42,8 +42,8 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
     },
     modalContent: {
       backgroundColor: theme.colors.card,
-      borderTopLeftRadius: theme.borderRadius.lg,
-      borderTopRightRadius: theme.borderRadius.lg,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
       padding: theme.spacing.lg,
       maxHeight: '80%',
     },
@@ -54,8 +54,8 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       marginBottom: theme.spacing.lg,
     },
     title: {
-      fontSize: theme.fontSize.xl,
-      fontWeight: theme.fontWeight.semibold as any,
+      fontSize: 20,
+      fontWeight: '600',
       color: theme.colors.text,
     },
     closeButton: {
@@ -65,7 +65,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       flexDirection: 'row',
       alignItems: 'center',
       padding: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
+      borderRadius: 8,
       marginBottom: theme.spacing.sm,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -78,13 +78,13 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       flex: 1,
     },
     formatTitle: {
-      fontSize: theme.fontSize.base,
-      fontWeight: theme.fontWeight.medium as any,
+      fontSize: 16,
+      fontWeight: '500',
       color: theme.colors.text,
-      marginBottom: theme.spacing.xxs,
+      marginBottom: 2,
     },
     formatDescription: {
-      fontSize: theme.fontSize.sm,
+      fontSize: 14,
       color: theme.colors.textSecondary,
     },
   });

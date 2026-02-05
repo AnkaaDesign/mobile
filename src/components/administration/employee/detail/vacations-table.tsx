@@ -27,17 +27,17 @@ const createColumnDefinitions = () => {
   return [
     {
       key: "startAt",
-      label: "Início",
+      header: "Início",
       sortable: true,
     },
     {
       key: "endAt",
-      label: "Fim",
+      header: "Fim",
       sortable: true,
     },
     {
       key: "status",
-      label: "Status",
+      header: "Status",
       sortable: true,
     },
   ];
@@ -47,7 +47,7 @@ const createColumnDefinitions = () => {
 const getStatusColor = (status: string, colors: any) => {
   switch (status) {
     case VACATION_STATUS.APPROVED:
-    case VACATION_STATUS.ACTIVE:
+    case VACATION_STATUS.IN_PROGRESS:
       return colors.success;
     case VACATION_STATUS.PENDING:
       return colors.warning;
@@ -67,7 +67,7 @@ const getStatusLabel = (status: string) => {
     [VACATION_STATUS.PENDING]: "Pendente",
     [VACATION_STATUS.APPROVED]: "Aprovado",
     [VACATION_STATUS.REJECTED]: "Rejeitado",
-    [VACATION_STATUS.ACTIVE]: "Ativo",
+    [VACATION_STATUS.IN_PROGRESS]: "Em Andamento",
     [VACATION_STATUS.COMPLETED]: "Concluído",
     [VACATION_STATUS.CANCELLED]: "Cancelado",
   };

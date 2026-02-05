@@ -645,12 +645,63 @@ const TruckElement = memo(function TruckElement({
   const truckViewRef = useAnimatedRef<Animated.View>(); // Use animated ref for Animated.View
   const startAbsoluteX = useSharedValue(0); // Track absolute X at drag start
 
-  // NOTE: We intentionally DON'T reset translation when baseX/baseY changes
-  // This allows trucks to stay under the finger during garage transitions
-  // The position update happens naturally when the carousel animates
+  // Compensation offset for garage switches during drag
+  // This accumulates position adjustments when baseX/baseY change mid-drag
+  // We need this because gesture's translationX/Y are always relative to drag START
+  const compensationX = useSharedValue(0);
+  const compensationY = useSharedValue(0);
+
+  // Track previous base position to detect garage changes during drag
+  const prevBaseX = useSharedValue(baseX);
+  const prevBaseY = useSharedValue(baseY);
+
+  // Handle position changes:
+  // - During drag (garage switch): accumulate compensation to keep truck under finger
+  // - After drop (not dragging): reset everything so truck snaps to new position
+  useAnimatedReaction(
+    () => ({ baseX, baseY, isDragging: isDragging.value }),
+    (current, previous) => {
+      if (!previous) {
+        // First render - just update prev values
+        prevBaseX.value = current.baseX;
+        prevBaseY.value = current.baseY;
+        return;
+      }
+
+      // Calculate position delta (how much the base position changed)
+      const deltaX = current.baseX - prevBaseX.value;
+      const deltaY = current.baseY - prevBaseY.value;
+
+      if (deltaX !== 0 || deltaY !== 0) {
+        if (current.isDragging) {
+          // DURING DRAG: Accumulate compensation to maintain screen position
+          // screenPos = base + gesture + compensation
+          // When base changes by delta, we subtract delta from compensation
+          compensationX.value = compensationX.value - deltaX;
+          compensationY.value = compensationY.value - deltaY;
+        } else {
+          // AFTER DROP (not dragging): Reset everything so truck snaps to new position
+          // The base position changed due to state update from handleDragEnd
+          translateX.value = 0;
+          translateY.value = 0;
+          compensationX.value = 0;
+          compensationY.value = 0;
+        }
+
+        // Update tracked values
+        prevBaseX.value = current.baseX;
+        prevBaseY.value = current.baseY;
+      }
+    },
+    [baseX, baseY]
+  );
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
+    // Apply both gesture translation AND compensation for garage switches
+    transform: [
+      { translateX: translateX.value + compensationX.value },
+      { translateY: translateY.value + compensationY.value }
+    ],
     opacity: isDragging.value ? 0.8 : 1,
     zIndex: isDragging.value ? 100 : 0,
   }));
@@ -670,9 +721,17 @@ const TruckElement = memo(function TruckElement({
     [lanePositions, laneWidth]
   );
 
+  // Callback to mark navigation as happened (called from JS thread)
+  // NOTE: We do NOT reset translation here - let the truck stay under the finger
+  // Defined BEFORE handleNavigationCheck so it can be used in closure
+  const markAsNavigatedFn = useCallback(() => {
+    hasNavigated.value = true;
+  }, [hasNavigated]);
+
   // Handle navigation during drag - runs on JS thread
+  // Uses markAsNavigatedFn via closure (not as parameter) because runOnJS can't pass functions
   const handleNavigationCheck = useCallback(
-    (translationX: number, setNavigated: () => void) => {
+    (translationX: number) => {
       const adjustedX = baseX + translationX;
       // Lower threshold = easier to trigger (closer to edge)
       const leftThreshold = -15;
@@ -687,7 +746,7 @@ const TruckElement = memo(function TruckElement({
       // Check if dragged past left boundary - navigate WITH truck
       if (adjustedX < leftThreshold) {
         navigationTimeoutRef.current = setTimeout(() => {
-          setNavigated(); // Mark as navigated BEFORE calling navigation
+          markAsNavigatedFn(); // Mark as navigated BEFORE calling navigation
           if (onNavigateWithTruck) {
             console.log('[TruckElement] Navigating prev with truck');
             onNavigateWithTruck('prev');
@@ -699,7 +758,7 @@ const TruckElement = memo(function TruckElement({
       // Check if dragged past right boundary - navigate WITH truck
       else if (adjustedX > rightThreshold) {
         navigationTimeoutRef.current = setTimeout(() => {
-          setNavigated(); // Mark as navigated BEFORE calling navigation
+          markAsNavigatedFn(); // Mark as navigated BEFORE calling navigation
           if (onNavigateWithTruck) {
             console.log('[TruckElement] Navigating next with truck');
             onNavigateWithTruck('next');
@@ -709,7 +768,7 @@ const TruckElement = memo(function TruckElement({
         }, 200); // Faster response
       }
     },
-    [baseX, garageWidth, onNavigatePrev, onNavigateNext, onNavigateWithTruck]
+    [baseX, garageWidth, onNavigatePrev, onNavigateNext, onNavigateWithTruck, markAsNavigatedFn]
   );
 
   // Handle drag end - runs on JS thread
@@ -751,14 +810,6 @@ const TruckElement = memo(function TruckElement({
     mass: 0.8,
   };
 
-  // Callback to mark navigation as happened (called from JS thread)
-  // NOTE: We do NOT reset translation here - let the truck stay under the finger
-  // The translation will be reset in onEnd after the user lifts their finger
-  const markAsNavigated = useCallback(() => {
-    hasNavigated.value = true;
-    // Keep truck under finger during navigation - don't reset translation
-    // The gesture will continue to track the finger position
-  }, [hasNavigated]);
 
   // Handle edge detection during drag using screen coordinates
   // This is the NEW approach matching web implementation
@@ -779,6 +830,9 @@ const TruckElement = memo(function TruckElement({
       'worklet';
       isDragging.value = true;
       hasNavigated.value = false;
+      // Reset compensation at start of new drag
+      compensationX.value = 0;
+      compensationY.value = 0;
       // Capture truck's screen position at drag start using reanimated measure
       const measurement = measure(truckViewRef);
       if (measurement) {
@@ -800,7 +854,7 @@ const TruckElement = memo(function TruckElement({
       if (!hasNavigated.value) {
         runOnJS(handleScreenEdgeDetection)(event.translationX);
         // Also run legacy check as fallback for navigation without truck
-        runOnJS(handleNavigationCheck)(event.translationX, markAsNavigated);
+        runOnJS(handleNavigationCheck)(event.translationX);
       }
     })
     .onEnd((event) => {
@@ -812,19 +866,20 @@ const TruckElement = memo(function TruckElement({
         runOnJS(onDragEnded)();
       }
 
-      // If we navigated, the truck is now in a new garage
-      // Animate back to its new base position smoothly
-      if (hasNavigated.value) {
-        translateX.value = withSpring(0, springConfig);
-        translateY.value = withSpring(0, springConfig);
-        return;
-      }
+      // Capture final position (include compensation for accurate drop detection)
+      const finalTranslationX = event.translationX + compensationX.value;
+      const finalTranslationY = event.translationY + compensationY.value;
 
-      // Normal drag end - animate back and call handler
-      const finalTranslationX = event.translationX;
-      const finalTranslationY = event.translationY;
-      translateX.value = withSpring(0, springConfig);
-      translateY.value = withSpring(0, springConfig);
+      // DON'T reset translation/compensation here!
+      // The state update from handleDragEnd will change baseX/baseY,
+      // which triggers useAnimatedReaction to update compensation.
+      // This keeps the truck visually stable until the new position is calculated.
+      //
+      // After state updates, useAnimatedReaction will adjust compensation,
+      // and we reset everything in the next onStart.
+
+      // Call handleDragEnd to process the final drop position
+      // This updates pendingChanges which triggers re-render with new base position
       runOnJS(handleDragEnd)(finalTranslationX, finalTranslationY);
     });
 
@@ -993,16 +1048,15 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
   // Layout constants - all elements have consistent padding
   const CONTAINER_PADDING = 16;
-  const ACTION_BAR_HEIGHT = 72; // Action bar height when visible
+  const ACTION_BAR_HEIGHT = 72; // Action bar height (always visible)
   const ACTION_BAR_MARGIN = 8; // Gap between card and action bar
   const HEADER_DOTS_HEIGHT = 56; // Title + dots inside card
-  const COUNTS_HEIGHT = 44; // Labels section inside card
   const CARD_INTERNAL_PADDING = 32; // Card padding (16 top + 16 bottom)
   const SAFE_AREA_BOTTOM = Math.max(insets.bottom, 16);
 
   // Calculate available height for garage visualization
   // Total screen height minus: top inset, container padding, card internal elements, safe area, action bar space
-  const fixedOverhead = insets.top + (CONTAINER_PADDING * 2) + HEADER_DOTS_HEIGHT + COUNTS_HEIGHT + CARD_INTERNAL_PADDING + SAFE_AREA_BOTTOM + ACTION_BAR_HEIGHT + ACTION_BAR_MARGIN;
+  const fixedOverhead = insets.top + (CONTAINER_PADDING * 2) + HEADER_DOTS_HEIGHT + CARD_INTERNAL_PADDING + SAFE_AREA_BOTTOM + ACTION_BAR_HEIGHT + ACTION_BAR_MARGIN;
   const availableGarageHeight = screenHeight - fixedOverhead;
   const maxContainerHeight = Math.max(availableGarageHeight, 300); // Minimum 300px
 
@@ -1597,29 +1651,10 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
   const getAreaTitle = (areaId: AreaId) => (areaId === 'PATIO' ? 'Pátio' : `Barracão ${areaId.slice(1)}`);
 
-  // Count trucks per garage (using data with pending changes for display consistency)
-  const garageCounts = useMemo(() => {
-    const counts: Record<string, number> = { B1: 0, B2: 0, B3: 0, PATIO: 0 };
-    trucksWithPendingChanges.forEach((t) => {
-      if (!t.spot || t.spot === TRUCK_SPOT.PATIO) {
-        counts.PATIO++;
-      } else {
-        const parsed = parseSpot(t.spot);
-        if (parsed.garage) {
-          counts[parsed.garage]++;
-        }
-      }
-    });
-    return counts;
-  }, [trucksWithPendingChanges]);
-
-  const inGarages = garageCounts.B1 + garageCounts.B2 + garageCounts.B3;
-  const inPatio = garageCounts.PATIO;
-
   return (
     <View style={[styles.container, { paddingHorizontal: CONTAINER_PADDING, paddingTop: CONTAINER_PADDING }]}>
       {/* Card takes full available space, ScrollView inside for pull-to-refresh */}
-      <Card style={[styles.card, { marginBottom: hasChanges ? ACTION_BAR_MARGIN : SAFE_AREA_BOTTOM }]}>
+      <Card style={[styles.card, { marginBottom: readOnly ? SAFE_AREA_BOTTOM : ACTION_BAR_MARGIN }]}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -1888,38 +1923,11 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           </GestureDetector>
           </View>
 
-          {/* Bottom section - Counts always at bottom */}
-          <View style={styles.bottomSection}>
-            <View style={styles.countsContainer}>
-          <View style={styles.countsGrid}>
-            <View style={styles.countItem}>
-              <View style={[styles.countSquare, { backgroundColor: '#F59E0B' }]} />
-              <Text style={[styles.countText, { color: colors.foreground }]}>B1: {garageCounts.B1}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <View style={[styles.countSquare, { backgroundColor: '#F59E0B' }]} />
-              <Text style={[styles.countText, { color: colors.foreground }]}>B2: {garageCounts.B2}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <View style={[styles.countSquare, { backgroundColor: '#F59E0B' }]} />
-              <Text style={[styles.countText, { color: colors.foreground }]}>B3: {garageCounts.B3}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <View style={[styles.countSquare, { backgroundColor: '#0EA5E9' }]} />
-              <Text style={[styles.countText, { color: colors.foreground }]}>Pátio: {inPatio}</Text>
-            </View>
-            <View style={styles.countItem}>
-              <View style={[styles.countSquare, { backgroundColor: '#6B7280' }]} />
-              <Text style={[styles.countText, { color: colors.foreground }]}>Total: {trucks.length}</Text>
-            </View>
-          </View>
-            </View>
-          </View>
         </ScrollView>
       </Card>
 
-      {/* Action Bar - same width as card, styled to match */}
-      {hasChanges && (
+      {/* Action Bar - always visible in edit mode, disabled when no changes */}
+      {!readOnly && (
         <View style={[
           styles.actionBar,
           {
@@ -1932,7 +1940,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
             <Button
               variant="outline"
               onPress={handleRestoreChanges}
-              disabled={isSaving}
+              disabled={!hasChanges || isSaving}
             >
               <IconReload size={18} color={colors.mutedForeground} />
               <Text style={[styles.actionButtonText, { color: colors.foreground }]}>Desfazer</Text>
@@ -1942,7 +1950,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
             <Button
               variant="default"
               onPress={handleSaveChanges}
-              disabled={isSaving}
+              disabled={!hasChanges || isSaving}
             >
               <IconDeviceFloppy size={18} color={colors.primaryForeground} />
               <Text style={[styles.actionButtonText, { color: colors.primaryForeground }]}>Salvar</Text>
@@ -1979,9 +1987,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bottomSection: {
-    marginTop: 4,
-  },
   header: { alignItems: 'center' },
   title: { fontSize: 18, fontWeight: '600', color: '#44403C' },
   dotsContainer: { flexDirection: 'row', gap: 6, marginTop: 4 },
@@ -1991,33 +1996,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navButton: { width: 40, height: '100%', justifyContent: 'center', alignItems: 'center' },
-  // Counts with compact grid layout
-  countsContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  countsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 12,
-    rowGap: 8,
-  },
-  countItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  // Rounded square indicator
-  countSquare: {
-    width: 10,
-    height: 10,
-    borderRadius: 2,
-  },
-  countText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
   // Action bar - same width as card, styled like a card
   actionBar: {
     flexDirection: 'row',

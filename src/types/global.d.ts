@@ -1,6 +1,13 @@
 // Global type declarations for React Native internals
 
 /**
+ * localStorage polyfill for React Native.
+ * This is provided by src/lib/localStorage-polyfill.ts which uses AsyncStorage
+ * with an in-memory cache for synchronous access.
+ */
+declare var localStorage: Storage;
+
+/**
  * ErrorUtils is a React Native internal for global error handling.
  * It's not officially documented but is used to intercept JavaScript errors
  * before they trigger the red screen.

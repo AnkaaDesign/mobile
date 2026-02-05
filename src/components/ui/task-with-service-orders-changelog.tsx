@@ -23,7 +23,7 @@ import {
 import type { ChangeLog } from "../../types";
 import {
   CHANGE_LOG_ENTITY_TYPE,
-  CHANGE_ACTION,
+  CHANGE_LOG_ACTION,
   CHANGE_TRIGGERED_BY,
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   SERVICE_ORDER_TYPE,
@@ -60,25 +60,25 @@ interface TaskWithServiceOrdersChangelogProps {
 
 type IconComponent = React.ComponentType<any>;
 
-const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
-  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
-  [CHANGE_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
-  [CHANGE_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
-  [CHANGE_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
-  [CHANGE_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
-  [CHANGE_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
-  [CHANGE_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
-  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
-  [CHANGE_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
-  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
-  [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
-  [CHANGE_ACTION.RESCHEDULE]: { icon: IconCalendar, color: "#3b82f6" },
-  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
-  [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
-  [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
-  [CHANGE_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
+const actionConfig: Record<CHANGE_LOG_ACTION, { icon: IconComponent; color: string }> = {
+  [CHANGE_LOG_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
+  [CHANGE_LOG_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
+  [CHANGE_LOG_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
+  [CHANGE_LOG_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
+  [CHANGE_LOG_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
+  [CHANGE_LOG_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
+  [CHANGE_LOG_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.RESCHEDULE]: { icon: IconCalendar, color: "#3b82f6" },
+  [CHANGE_LOG_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
+  [CHANGE_LOG_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
 };
 
 // File fields that should show thumbnails instead of counts
@@ -251,19 +251,19 @@ const groupChangelogsByEntity = (changelogs: ChangeLog[]) => {
   let currentGroup: ChangeLog[] = [];
   let currentTime: number | null = null;
   let currentEntityId: string | null = null;
-  let currentAction: string | null = null;
-  let currentEntityType: string | null = null;
+  let currentAction: CHANGE_LOG_ACTION | null = null;
+  let currentEntityType: CHANGE_LOG_ENTITY_TYPE | null = null;
 
   changelogs.forEach((changelog) => {
     const time = new Date(changelog.createdAt).getTime();
-    const isCreateAction = changelog.action === CHANGE_ACTION.CREATE;
+    const isCreateAction = changelog.action === CHANGE_LOG_ACTION.CREATE;
     const isLayoutEntity = changelog.entityType === CHANGE_LOG_ENTITY_TYPE.LAYOUT;
 
     // For LAYOUT CREATE actions, group by time (within 1 second) to combine all sides
     if (isCreateAction && isLayoutEntity) {
       const canGroupWithCurrent =
         currentEntityType === CHANGE_LOG_ENTITY_TYPE.LAYOUT &&
-        currentAction === CHANGE_ACTION.CREATE &&
+        currentAction === CHANGE_LOG_ACTION.CREATE &&
         currentTime !== null &&
         Math.abs(time - currentTime) < 1000;
 
@@ -302,7 +302,7 @@ const groupChangelogsByEntity = (changelogs: ChangeLog[]) => {
       currentTime !== null &&
       Math.abs(time - currentTime) < 1000 &&
       currentEntityId === changelog.entityId &&
-      currentAction !== CHANGE_ACTION.CREATE;
+      currentAction !== CHANGE_LOG_ACTION.CREATE;
 
     if (shouldGroup) {
       currentGroup.push(changelog);
@@ -455,20 +455,20 @@ const TimelineItem = ({
 }) => {
   const { colors } = useTheme();
   const firstLog = group[0];
-  const action = firstLog.action as CHANGE_ACTION;
-  const config = actionConfig[action] || actionConfig[CHANGE_ACTION.UPDATE];
+  const action = firstLog.action;
+  const config = actionConfig[action] || actionConfig[CHANGE_LOG_ACTION.UPDATE];
   const IconComp = config.icon;
 
   // Get the display title
   const getTitle = () => {
     const entityLabel = getEntityTypeLabel(firstLog.entityType);
     const metadata = firstLog.metadata as { sourceTaskName?: string } | undefined;
-    const actionLabel = getActionLabel(firstLog.action, firstLog.triggeredBy, metadata);
+    const actionLabel = getActionLabel(firstLog.action, firstLog.triggeredBy ?? undefined, metadata);
 
     // Special handling for service orders - show description/type/status (matching web)
     if (
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
-      firstLog.action === CHANGE_ACTION.CREATE
+      firstLog.action === CHANGE_LOG_ACTION.CREATE
     ) {
       // Extract entity details from newValue (matching web implementation)
       let createdEntityData: any = null;
@@ -529,7 +529,7 @@ const TimelineItem = ({
     // Special handling for service orders UPDATE - use feminine form and show description/type (matching web)
     if (
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
-      firstLog.action === CHANGE_ACTION.UPDATE
+      firstLog.action === CHANGE_LOG_ACTION.UPDATE
     ) {
       // Use feminine form "Atualizada" for SERVICE_ORDER (matching web)
       const feminineActionLabel = actionLabel.replace("Atualizado", "Atualizada");
@@ -682,7 +682,7 @@ const TimelineItem = ({
 
       const fieldLabel = getFieldLabel(field, log.entityType);
 
-      if (log.action === CHANGE_ACTION.UPDATE && field) {
+      if (log.action === CHANGE_LOG_ACTION.UPDATE && field) {
         // Special handling for file array fields - show thumbnails
         if (FILE_ARRAY_FIELDS.includes(field)) {
           const oldFiles = parseFileArrayValue(log.oldValue);
@@ -804,7 +804,7 @@ const TimelineItem = ({
             </View>
           </View>
         );
-      } else if (log.action === CHANGE_ACTION.CREATE && field && log.newValue !== null && log.newValue !== undefined) {
+      } else if (log.action === CHANGE_LOG_ACTION.CREATE && field && log.newValue !== null && log.newValue !== undefined) {
         // Special handling for file array fields - show thumbnails
         if (FILE_ARRAY_FIELDS.includes(field)) {
           const newFiles = parseFileArrayValue(log.newValue);
@@ -853,7 +853,7 @@ const TimelineItem = ({
   // Get user info
   const userName = firstLog.user?.name || "Sistema";
   const triggeredBy = firstLog.triggeredBy;
-  const isAutomatic = triggeredBy === CHANGE_TRIGGERED_BY.SYSTEM || triggeredBy === CHANGE_TRIGGERED_BY.SCHEDULED;
+  const isAutomatic = triggeredBy === CHANGE_TRIGGERED_BY.SYSTEM || triggeredBy === CHANGE_TRIGGERED_BY.SCHEDULED_JOB;
 
   return (
     <View style={styles.timelineItem}>
@@ -926,11 +926,13 @@ export function TaskWithServiceOrdersChangelog({
   const { colors } = useTheme();
   const { user } = useAuth();
 
-  // Get user privilege for filtering service orders
-  const userSectorPrivilege = user?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
+  // Get user privilege for filtering service orders and field visibility
+  const userSectorPrivilege = user?.sector?.privileges;
+
+  // Get visible service order types based on user privileges
   const visibleServiceOrderTypes = useMemo(
-    () => getVisibleServiceOrderTypes(userSectorPrivilege),
-    [userSectorPrivilege]
+    () => getVisibleServiceOrderTypes(user ?? null),
+    [user]
   );
 
   // Fetch changelogs for task

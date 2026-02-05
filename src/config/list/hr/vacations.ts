@@ -47,7 +47,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         align: 'left',
         render: (vacation) => vacation.status ? VACATION_STATUS_LABELS[vacation.status] : '—',
         format: 'badge',
-        badgeVariant: 'primary',
+        badgeEntity: 'VACATION',
       },
       {
         key: 'daysRequested',
@@ -58,7 +58,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
         render: (vacation) => {
           // Calculate working days - web uses getWorkdaysBetween
           // For mobile, we can use the days field or calculate
-          return String(vacation.days || 0)
+          return String(0)
         },
       },
       {
@@ -102,8 +102,8 @@ export const vacationsListConfig: ListConfig<Vacation> = {
           title: 'Confirmar Exclusão',
           message: (vacation) => `Deseja excluir estas férias?`,
         },
-        onPress: async (vacation, _, { delete: deleteVacation }) => {
-          await deleteVacation(vacation.id)
+        onPress: async (vacation, _, context) => {
+          await context?.delete?.(vacation.id)
         },
       },
     ],
@@ -142,7 +142,7 @@ export const vacationsListConfig: ListConfig<Vacation> = {
           const currentYear = new Date().getFullYear()
           return Array.from({ length: 11 }, (_, i) => {
             const year = currentYear - 5 + i
-            return { label: String(year), value: year }
+            return { label: String(year), value: String(year) }
           })
         })(),
         placeholder: 'Selecione o ano',
@@ -176,7 +176,6 @@ export const vacationsListConfig: ListConfig<Vacation> = {
                 value: user.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[User Filter] Error:', error)
@@ -199,16 +198,9 @@ export const vacationsListConfig: ListConfig<Vacation> = {
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'user', label: 'Funcionário', path: 'user.name' },
-      {
-        key: 'period',
-        label: 'Período',
-        path: 'startAt',
-        format: (value, item) =>
-          item.startAt && item.endAt
-            ? `${formatDate(new Date(item.startAt))} - ${formatDate(new Date(item.endAt))}`
-            : '—',
-      },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => VACATION_STATUS_LABELS[value] || value },
+      { key: 'startAt', label: 'Início', path: 'startAt', format: 'date' },
+      { key: 'endAt', label: 'Fim', path: 'endAt', format: 'date' },
+      { key: 'status', label: 'Status', path: 'status', format: (value: any): string => VACATION_STATUS_LABELS[value as VACATION_STATUS] || String(value) },
       { key: 'days', label: 'Dias', path: 'days' },
       { key: 'createdAt', label: 'Solicitado Em', path: 'createdAt', format: 'date' },
     ],
@@ -229,8 +221,8 @@ export const vacationsListConfig: ListConfig<Vacation> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'férias' : 'férias'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

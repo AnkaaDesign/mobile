@@ -1269,7 +1269,7 @@ export const mapUserToFormData = createMapToFormDataHelper<User, UserUpdateFormD
   // site: user.site || undefined,
 
   // Additional dates - use birth instead of birthDate, admissional and dismissedAt
-  birth: user.birth,
+  birth: user.birth ?? undefined,
   dismissedAt: user.dismissedAt || undefined,
 
   // Payroll info

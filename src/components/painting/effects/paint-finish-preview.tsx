@@ -3,7 +3,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { PAINT_FINISH } from '@/constants';
 import { useTheme } from '@/lib/theme';
 import { useState, useEffect } from 'react';
-import { Asset } from 'expo-asset';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ExpoAsset = require('expo-asset');
 
 // Import and cache flake texture - both metallic and pearl use the same flake.jpg in web version
 const FLAKE_TEXTURE = require('../../../../assets/images/flake.jpg');
@@ -19,7 +20,7 @@ interface PaintFinishPreviewProps {
 
 // Preload and cache the flake texture
 let flakeTextureLoaded = false;
-Asset.fromModule(FLAKE_TEXTURE).downloadAsync().then(() => {
+ExpoAsset.Asset.fromModule(FLAKE_TEXTURE).downloadAsync().then(() => {
   flakeTextureLoaded = true;
 });
 

@@ -68,7 +68,8 @@ export class NotificationService {
       // Set default notification handler
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
-          shouldShowAlert: this.config.allowInForeground ?? true,
+          shouldShowBanner: this.config.allowInForeground ?? true,
+          shouldShowList: this.config.allowInForeground ?? true,
           shouldPlaySound: this.config.enableSounds ?? true,
           shouldSetBadge: this.config.enableBadges ?? true,
         }),
@@ -187,7 +188,7 @@ export class NotificationService {
       const tokenData = await Notifications.getDevicePushTokenAsync();
 
       return {
-        token: tokenData.data,
+        token: typeof tokenData.data === 'string' ? tokenData.data : JSON.stringify(tokenData.data),
         type: Platform.OS === 'ios' ? 'apns' : 'fcm',
       };
     } catch (error) {
@@ -245,7 +246,8 @@ export class NotificationService {
     // Update notification handler with new config
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: this.config.allowInForeground ?? true,
+        shouldShowBanner: this.config.allowInForeground ?? true,
+        shouldShowList: this.config.allowInForeground ?? true,
         shouldPlaySound: this.config.enableSounds ?? true,
         shouldSetBadge: this.config.enableBadges ?? true,
       }),

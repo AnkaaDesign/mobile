@@ -3,7 +3,7 @@
  * Main form for creating and editing tasks
  */
 
-import React, { useState, useEffect, useMemo, Suspense, lazy, Fragment } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { View, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFormContext } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +35,12 @@ interface TaskFormProps {
   task?: any;
   existingLayouts?: any;
   isSubmitting?: boolean;
+  /** Initial customer data for edit mode */
+  initialCustomer?: any;
+  /** Initial general paint data for edit mode */
+  initialGeneralPaint?: any;
+  /** Initial logo paints array for edit mode */
+  initialLogoPaints?: any[];
 }
 
 // Section loading placeholder
@@ -52,6 +58,9 @@ export function TaskForm({
   task,
   existingLayouts,
   isSubmitting = false,
+  initialCustomer,
+  initialGeneralPaint,
+  initialLogoPaints,
 }: TaskFormProps) {
   const { colors } = useTheme();
   const form = useFormContext();
@@ -84,7 +93,7 @@ export function TaskForm({
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
-  const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.isTeamLeader && user?.sector?.privileges === 'PRODUCTION');
+  const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.managedSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser;
   const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
   const canViewFinancialInfo = isAdminUser || isFinancialUser;
@@ -170,7 +179,6 @@ export function TaskForm({
         {canViewPricing && (
           <PricingSection
             isSubmitting={isSubmitting}
-            errors={form.formState.errors}
           />
         )}
       </Suspense>
@@ -180,9 +188,8 @@ export function TaskForm({
         {canViewFiles && (
           <FilesSection
             isSubmitting={isSubmitting}
-            errors={form.formState.errors}
-            baseFiles={task?.baseFiles}
-            artworks={task?.artworks}
+            initialBaseFiles={task?.baseFiles}
+            initialArtworkFiles={task?.artworks}
           />
         )}
       </Suspense>
@@ -217,7 +224,7 @@ export function TaskForm({
           <ObservationSection
             isSubmitting={isSubmitting}
             errors={form.formState.errors}
-            observation={task?.observation}
+            initialFiles={task?.observation?.files}
           />
         )}
       </Suspense>

@@ -103,7 +103,7 @@ export const Row = memo(function Row<T extends { id: string }>({
       selection.onToggle(item.id)
     } else if (onPress && !isNavigating) {
       // Show loading overlay INSTANTLY - NO DELAY AT ALL
-      startNavigation("Carregando...")
+      startNavigation()
 
       // Haptic feedback
       lightImpactHaptic() // Don't await - let it run async

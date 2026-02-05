@@ -2,7 +2,7 @@ import React from 'react'
 import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
-import type { Task, User } from '@/types'
+import type { Task } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
@@ -289,8 +289,10 @@ export const historyListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
         },
-        onPress: async (task, _, { delete: deleteTask }) => {
-          await deleteTask(task.id)
+        onPress: async (task, _, context) => {
+          if (context?.delete) {
+            await context.delete(task.id)
+          }
         },
       },
     ],
@@ -481,9 +483,11 @@ export const historyListConfig: ListConfig<Task> = {
           title: 'Atualizar Status',
           message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, context) => {
           // Implementation would need to prompt for new status
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          if (context?.batchUpdateAsync) {
+            await context.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          }
         },
       },
       {
@@ -495,9 +499,11 @@ export const historyListConfig: ListConfig<Task> = {
           title: 'Atribuir Setor',
           message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, context) => {
           // Implementation would need to prompt for sector
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          if (context?.batchUpdateAsync) {
+            await context.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          }
         },
       },
       {
@@ -509,8 +515,10 @@ export const historyListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          if (context?.batchDeleteAsync) {
+            await context.batchDeleteAsync({ ids: Array.from(ids) })
+          }
         },
       },
     ],

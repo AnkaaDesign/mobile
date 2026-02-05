@@ -6,17 +6,24 @@ import { useTheme } from "@/lib/theme";
 export interface SwitchProps {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  /** Alias for checked - for form compatibility */
+  value?: boolean;
+  /** Alias for onCheckedChange - for form compatibility */
+  onValueChange?: (value: boolean) => void;
   disabled?: boolean;
   style?: ViewStyle;
 }
 
-const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onCheckedChange, disabled = false, style, ...props }, ref) => {
+const Switch = React.forwardRef<View, SwitchProps>(({ checked, onCheckedChange, value, onValueChange, disabled = false, style, ...props }, ref) => {
+  // Support both checked/onCheckedChange and value/onValueChange APIs
+  const isChecked = checked ?? value ?? false;
+  const handleChange = onCheckedChange ?? onValueChange;
   const { colors, isDark } = useTheme();
   const [isFocused, setIsFocused] = React.useState(false);
 
   // Use spring animation for thumb position for smooth elastic effect
   const translateX = useDerivedValue(() => {
-    return withSpring(checked ? 20 : 0, {
+    return withSpring(isChecked ? 20 : 0, {
       damping: 15,
       stiffness: 150,
       mass: 1,
@@ -25,7 +32,7 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onChecked
 
   // Use timing animation for color transition
   const colorProgress = useDerivedValue(() => {
-    return withTiming(checked ? 1 : 0, {
+    return withTiming(isChecked ? 1 : 0, {
       duration: 300,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
     });
@@ -40,7 +47,7 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onChecked
   const animatedThumbStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
     // Scale effect when switching
-    scale: withTiming(checked ? 1.05 : 1, { duration: 150 }),
+    scale: withTiming(isChecked ? 1.05 : 1, { duration: 150 }),
   }));
 
   const trackStyles: ViewStyle = {
@@ -57,7 +64,7 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onChecked
     elevation: 2,
     // Focus state
     ...(isFocused && {
-      shadowColor: checked ? colors.primary : colors.mutedForeground,
+      shadowColor: isChecked ? colors.primary : colors.mutedForeground,
       shadowOpacity: 0.25,
       shadowRadius: 8,
       elevation: 4,
@@ -73,7 +80,7 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onChecked
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: checked ? colors.primaryForeground : isDark ? colors.card : "#ffffff",
+    backgroundColor: isChecked ? colors.primaryForeground : isDark ? colors.card : "#ffffff",
     // Enhanced thumb shadow
     shadowColor: isDark ? "#000" : "#000",
     shadowOffset: { width: 0, height: 3 },
@@ -85,11 +92,11 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked = false, onChecked
   return (
     <Pressable
       ref={ref}
-      onPress={disabled ? undefined : () => onCheckedChange?.(!checked)}
+      onPress={disabled ? undefined : () => handleChange?.(!isChecked)}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
       accessibilityRole="switch"
-      accessibilityState={{ checked, disabled }}
+      accessibilityState={{ checked: isChecked, disabled }}
       {...props}
     >
       <Animated.View style={StyleSheet.flatten([trackStyles, animatedTrackStyle])}>

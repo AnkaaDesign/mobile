@@ -36,10 +36,13 @@ const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "
   if (file.thumbnailUrl) {
     // If already a complete URL, replace localhost with correct API URL and ensure size parameter
     if (file.thumbnailUrl.startsWith("http://") || file.thumbnailUrl.startsWith("https://")) {
-      // Extract the path from the URL
-      const urlObj = new URL(file.thumbnailUrl);
+      // Extract the path from the URL using string manipulation (React Native URL may not have pathname)
+      const urlWithoutProtocol = file.thumbnailUrl.replace(/^https?:\/\//, '');
+      const pathStartIndex = urlWithoutProtocol.indexOf('/');
+      const pathWithQuery = pathStartIndex >= 0 ? urlWithoutProtocol.substring(pathStartIndex) : '/';
+      const pathname = pathWithQuery.split('?')[0];
       // Always add or update the size parameter
-      const correctedUrl = `${apiUrl}${urlObj.pathname}?size=${size}`;
+      const correctedUrl = `${apiUrl}${pathname}?size=${size}`;
       console.log('🔍 [FileItem] Corrected thumbnailUrl with size:', {
         original: file.thumbnailUrl,
         corrected: correctedUrl,

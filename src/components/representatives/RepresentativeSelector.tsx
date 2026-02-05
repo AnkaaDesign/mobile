@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { IconChevronDown, IconX, IconUsers, IconCheck } from '@tabler/icons-react-native';
 import { representativeService } from '@/services/representativeService';
 import {
   Representative,
@@ -303,8 +303,7 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
               ))}
             </View>
           )}
-          <Ionicons
-            name="chevron-down"
+          <IconChevronDown
             size={20}
             color={colors.textSecondary}
           />
@@ -327,7 +326,7 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
                 style={styles.closeButton}
                 onPress={handleCancel}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <IconX size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -338,8 +337,7 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
                 </View>
               ) : representatives.length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons
-                    name="people-outline"
+                  <IconUsers
                     size={48}
                     color={colors.textSecondary}
                   />
@@ -366,7 +364,7 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
                           ]}
                         >
                           {selectedIds.includes(rep.id) && (
-                            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                            <IconCheck size={16} color="#FFFFFF" />
                           )}
                         </View>
                         <View style={styles.representativeInfo}>

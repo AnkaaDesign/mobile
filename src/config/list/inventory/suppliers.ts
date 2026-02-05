@@ -165,8 +165,8 @@ export const suppliersListConfig: ListConfig<Supplier> = {
           title: 'Confirmar Exclusão',
           message: (supplier) => `Deseja excluir o fornecedor "${supplier.fantasyName}"?`,
         },
-        onPress: async (supplier, _, { delete: deleteSupplier }) => {
-          await deleteSupplier(supplier.id)
+        onPress: async (supplier, _, context) => {
+          await context?.delete?.(supplier.id)
         },
       },
     ],
@@ -265,8 +265,8 @@ export const suppliersListConfig: ListConfig<Supplier> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'fornecedor' : 'fornecedores'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

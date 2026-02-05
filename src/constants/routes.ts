@@ -225,7 +225,7 @@ export const routes = {
       create: "/recursos-humanos/folha-de-pagamento/criar",
       edit: (payrollId: string) => `/recursos-humanos/folha-de-pagamento/editar/${payrollId}`,
     },
-    bonus: {
+    bonifications: {
       root: "/recursos-humanos/bonificacoes",
       list: "/recursos-humanos/bonificacoes",
       create: "/recursos-humanos/bonificacoes/cadastrar",

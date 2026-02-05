@@ -260,7 +260,7 @@ export function OrderBatchCreateForm({
                     <Label>Fornecedor *</Label>
                     <Combobox
                       value={value}
-                      onValueChange={(val) => handleFormChange("supplierId", val || "")}
+                      onValueChange={(val) => handleFormChange("supplierId", (val || "") as string)}
                       options={supplierOptions}
                       placeholder="Selecione o fornecedor"
                       searchPlaceholder="Buscar fornecedor..."
@@ -339,7 +339,7 @@ export function OrderBatchCreateForm({
             <ItemSelectorTable
               selectedItems={multiStepForm.selectedItems}
               quantities={multiStepForm.quantities}
-              onSelectItem={(itemId) => multiStepForm.toggleItemSelection(itemId)}
+              onSelectItem={(itemId, _item) => multiStepForm.toggleItemSelection(itemId)}
               onQuantityChange={multiStepForm.setItemQuantity}
               showQuantityInput
               minQuantity={1}
@@ -356,7 +356,7 @@ export function OrderBatchCreateForm({
               onBrandIdsChange={multiStepForm.setBrandIds}
               onSupplierIdsChange={multiStepForm.setSupplierIds}
               allowZeroStock
-              emptyText="Nenhum item encontrado"
+              emptyMessage="Nenhum item encontrado"
             />
             {multiStepForm.formTouched && multiStepForm.validation.errors.items && (
               <View style={styles.errorContainer}>

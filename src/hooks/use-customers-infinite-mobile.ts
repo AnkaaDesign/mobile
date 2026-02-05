@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useCustomersInfinite } from './useCustomer';
 import { CustomerGetManyFormData } from '@/schemas';
+import type { Customer } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for customers
@@ -24,7 +25,7 @@ export function useCustomersInfiniteMobile(params?: Partial<CustomerGetManyFormD
   const infiniteQuery = useCustomersInfinite(queryParams);
 
   // Apply mobile optimizations
-  const result = useInfiniteMobile(infiniteQuery);
+  const result = useInfiniteMobile<Customer>(infiniteQuery);
 
   // Rename items to customers for better semantics
   return {

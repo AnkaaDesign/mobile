@@ -92,6 +92,8 @@ export interface DatePickerProps {
   onChange?: (date: Date | undefined) => void;
   label?: string;
   type?: "date" | "time" | "datetime";
+  /** Alias for type - for compatibility */
+  mode?: "date" | "time" | "datetime";
   style?: ViewStyle;
   placeholder?: string;
   disabled?: boolean;

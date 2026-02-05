@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useItemBrandsInfinite } from './useItemBrand';
 import { ItemBrandGetManyFormData } from '@/schemas';
+import type { ItemBrand } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for brands
@@ -24,5 +25,5 @@ export function useItemBrandsInfiniteMobile(params?: Partial<ItemBrandGetManyFor
   const infiniteQuery = useItemBrandsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<ItemBrand>(infiniteQuery);
 }

@@ -722,7 +722,7 @@ function InnerLayout() {
 
                     // Show loading overlay for visual feedback
                     if (!isNavigating) {
-                      startNavigation("Voltando...");
+                      startNavigation();
                     }
 
                     // NEVER use router.back() - it's broken with Drawer navigator

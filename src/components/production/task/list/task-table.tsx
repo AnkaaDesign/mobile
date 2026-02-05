@@ -134,7 +134,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <View style={styles.centerAlign}>
-        <TaskPriorityIndicator priority={task.priority as PRIORITY_TYPE} />
+        <TaskPriorityIndicator priority={task.priority != null ? task.priority as unknown as PRIORITY_TYPE : undefined} />
       </View>
     ),
   },
@@ -166,7 +166,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (task: Task) => {
-      const totalValue = task.budget?.total || 0;
+      const totalValue = task.pricing?.total || 0;
       return (
         <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
           {totalValue > 0 ? formatCurrency(totalValue) : "-"}
@@ -697,9 +697,6 @@ export const TaskTable = React.memo<TaskTableProps>(
         onTaskStatusChange,
         handleSetSector,
         handleSetStatus,
-        activeRowId,
-        closeActiveRow,
-        isDark,
       ],
     );
 
@@ -724,7 +721,7 @@ export const TaskTable = React.memo<TaskTableProps>(
           <ThemedText style={styles.emptySubtitle}>Tente ajustar os filtros ou adicionar novas tarefas</ThemedText>
         </View>
       ),
-      [colors.mutedForeground],
+      [],
     );
 
     // Main loading state

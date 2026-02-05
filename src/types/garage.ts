@@ -124,7 +124,7 @@ export function parseSpot(spot: TRUCK_SPOT | string | null): ParsedSpot {
     return { garage: null, lane: null, spotNumber: null };
   }
 
-  const spotString = typeof spot === 'string' ? spot : spot.toString();
+  const spotString = String(spot);
   const match = spotString.match(/^B(\d)_([ABC])(\d)$/);
 
   if (!match) {

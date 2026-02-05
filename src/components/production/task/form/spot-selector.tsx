@@ -99,13 +99,14 @@ export function SpotSelector({
   // Find selected garage data
   const selectedGarageData = useMemo(() => {
     if (!selectedGarage || selectedGarage === 'PATIO') return null;
-    return garages.find((g) => g.garageId === selectedGarage);
+    const garageToFind = selectedGarage as GarageId;
+    return garages.find((g) => g.garageId === garageToFind) ?? null;
   }, [garages, selectedGarage]);
 
   // Find selected lane data
   const selectedLaneData = useMemo(() => {
     if (!selectedGarageData || !selectedLane) return null;
-    return selectedGarageData.lanes.find((l) => l.laneId === selectedLane);
+    return selectedGarageData.lanes.find((l) => l.laneId === selectedLane) ?? null;
   }, [selectedGarageData, selectedLane]);
 
   // Garage options (including Patio)
@@ -153,8 +154,8 @@ export function SpotSelector({
     if (!selectedGarageData) return [];
 
     return selectedGarageData.lanes.map((lane) => ({
-      value: lane.laneId,
-      label: `${LANE_LABELS[lane.laneId]} (${lane.availableSpace.toFixed(1)}m livre)`,
+      value: lane.laneId as string,
+      label: `${LANE_LABELS[lane.laneId as LaneId]} (${lane.availableSpace.toFixed(1)}m livre)`,
       disabled: !lane.canFit && lane.laneId !== parsedSpot.lane,
     }));
   }, [selectedGarageData, parsedSpot.lane]);
@@ -225,14 +226,15 @@ export function SpotSelector({
   }, [selectedLaneData, selectedGarage, selectedLane, parsedSpot]);
 
   // Handle garage change
-  const handleGarageChange = useCallback((value: string | null) => {
-    if (value === 'PATIO') {
+  const handleGarageChange = useCallback((value: string | string[] | null | undefined) => {
+    const stringValue = Array.isArray(value) ? value[0] : value;
+    if (stringValue === 'PATIO') {
       setSelectedGarage('PATIO');
       setSelectedLane(null);
       setSelectedSpotNumber(null);
       onSpotChange(null); // Clear spot when Patio is selected
-    } else if (value) {
-      setSelectedGarage(value as GarageId);
+    } else if (stringValue) {
+      setSelectedGarage(stringValue as GarageId);
       setSelectedLane(null);
       setSelectedSpotNumber(null);
     } else {
@@ -243,9 +245,10 @@ export function SpotSelector({
   }, [onSpotChange]);
 
   // Handle lane change
-  const handleLaneChange = useCallback((value: string | null) => {
-    if (value) {
-      setSelectedLane(value as LaneId);
+  const handleLaneChange = useCallback((value: string | string[] | null | undefined) => {
+    const stringValue = Array.isArray(value) ? value[0] : value;
+    if (stringValue) {
+      setSelectedLane(stringValue as LaneId);
       setSelectedSpotNumber(null);
     } else {
       setSelectedLane(null);
@@ -254,9 +257,10 @@ export function SpotSelector({
   }, []);
 
   // Handle spot change
-  const handleSpotChange = useCallback((value: string | null) => {
-    if (value && selectedGarage && selectedGarage !== 'PATIO' && selectedLane) {
-      const spotNum = parseInt(value, 10) as SpotNumber;
+  const handleSpotChange = useCallback((value: string | string[] | null | undefined) => {
+    const stringValue = Array.isArray(value) ? value[0] : value;
+    if (stringValue && selectedGarage && selectedGarage !== 'PATIO' && selectedLane) {
+      const spotNum = parseInt(stringValue, 10) as SpotNumber;
       setSelectedSpotNumber(spotNum);
       const newSpot = buildSpot(selectedGarage, selectedLane, spotNum);
       onSpotChange(newSpot);
@@ -298,7 +302,7 @@ export function SpotSelector({
         <View style={styles.selectorsContainer}>
           {/* Garage selector */}
           <Combobox
-            value={selectedGarage}
+            value={selectedGarage ?? undefined}
             onValueChange={handleGarageChange}
             options={garageOptions}
             placeholder="Selecione o barracao"
@@ -308,7 +312,7 @@ export function SpotSelector({
 
           {/* Lane selector */}
           <Combobox
-            value={selectedLane}
+            value={selectedLane ?? undefined}
             onValueChange={handleLaneChange}
             options={laneOptions}
             placeholder="Selecione a faixa"
@@ -318,7 +322,7 @@ export function SpotSelector({
 
           {/* Spot selector */}
           <Combobox
-            value={selectedSpotNumber ? String(selectedSpotNumber) : null}
+            value={selectedSpotNumber ? String(selectedSpotNumber) : undefined}
             onValueChange={handleSpotChange}
             options={spotOptions}
             placeholder="Selecione a vaga"

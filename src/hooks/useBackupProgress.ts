@@ -47,7 +47,7 @@ export function useBackupProgress(
   const [error, setError] = useState<Error | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const lastUpdateTime = useRef<number>(Date.now());
   const lastProgress = useRef<number>(0);
 
@@ -58,34 +58,37 @@ export function useBackupProgress(
       return;
     }
 
-    const start = displayProgress;
-    const startTime = Date.now();
+    setDisplayProgress((currentDisplayProgress) => {
+      const start = currentDisplayProgress;
+      const startTime = Date.now();
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const percent = Math.min(elapsed / duration, 1);
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const percent = Math.min(elapsed / duration, 1);
 
-      // Easing function for smooth animation
-      const easeInOutQuad = (t: number) =>
-        t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        // Easing function for smooth animation
+        const easeInOutQuad = (t: number) =>
+          t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
-      const easedPercent = easeInOutQuad(percent);
-      const currentProgress = start + (targetProgress - start) * easedPercent;
+        const easedPercent = easeInOutQuad(percent);
+        const currentProgress = start + (targetProgress - start) * easedPercent;
 
-      setDisplayProgress(currentProgress);
+        setDisplayProgress(currentProgress);
 
-      if (percent < 1 && currentProgress < targetProgress) {
-        animationRef.current = requestAnimationFrame(animate);
+        if (percent < 1 && currentProgress < targetProgress) {
+          animationRef.current = requestAnimationFrame(animate);
+        }
+      };
+
+      // Cancel any existing animation
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
-    };
 
-    // Cancel any existing animation
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-
-    animate();
-  }, [displayProgress, interpolate]);
+      animate();
+      return start; // Return current value, animation will update it
+    });
+  }, [interpolate]);
 
   // Calculate estimated progress based on rate
   const estimateProgress = useCallback(() => {

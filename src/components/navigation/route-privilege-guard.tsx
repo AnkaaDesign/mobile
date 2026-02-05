@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { useSegments } from "expo-router";
-import { SECTOR_PRIVILEGES, MENU_ITEMS} from "@/constants";
+import { SECTOR_PRIVILEGES, MENU_ITEMS, type MenuItem } from "@/constants";
 import { PrivilegeGuard } from "./privilege-guard";
 
 interface RoutePrivilegeGuardProps {

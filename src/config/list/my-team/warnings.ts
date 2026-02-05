@@ -182,8 +182,8 @@ export const myTeamWarningsListConfig: ListConfig<Warning> = {
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'collaborator', label: 'Colaborador', path: 'collaborator.name' },
-      { key: 'severity', label: 'Severidade', path: 'severity', format: (value) => WARNING_SEVERITY_LABELS[value] || value },
-      { key: 'category', label: 'Categoria', path: 'category', format: (value) => value ? WARNING_CATEGORY_LABELS[value] : '-' },
+      { key: 'severity', label: 'Severidade', path: 'severity', format: (value) => WARNING_SEVERITY_LABELS[value as WARNING_SEVERITY] || value },
+      { key: 'category', label: 'Categoria', path: 'category', format: (value) => value ? WARNING_CATEGORY_LABELS[value as WARNING_CATEGORY] : '-' },
       { key: 'reason', label: 'Motivo', path: 'reason' },
       { key: 'followUpDate', label: 'Acompanhamento', path: 'followUpDate', format: 'date' },
       { key: 'isActive', label: 'Ativa', path: 'isActive', format: 'boolean' },

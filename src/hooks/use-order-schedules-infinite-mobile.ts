@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useOrderSchedulesInfinite } from './useOrderSchedule';
 import { OrderScheduleGetManyFormData } from '@/schemas';
+import type { OrderSchedule } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for order schedules
@@ -24,5 +25,5 @@ export function useOrderSchedulesInfiniteMobile(params?: Partial<OrderScheduleGe
   const infiniteQuery = useOrderSchedulesInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<OrderSchedule>(infiniteQuery);
 }

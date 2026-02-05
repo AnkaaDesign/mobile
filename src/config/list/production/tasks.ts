@@ -1,9 +1,9 @@
 import React from 'react'
 import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
-import type { ListConfig, RenderContext } from '@/components/list/types'
+import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canCreateTasks, canEditTasks, canEditLayoutsOnly, canEditLayoutForTask, canLeaderManageTask, isLeader, canBatchOperateTasks, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks } from '@/utils/permissions/entity-permissions'
 import { canViewPricing } from '@/utils/permissions/pricing-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
@@ -32,18 +32,15 @@ const canViewPriceField = (user: any) => {
          privilege === SECTOR_PRIVILEGES.FINANCIAL ||
          privilege === SECTOR_PRIVILEGES.COMMERCIAL
 }
-import { useAuth } from '@/hooks/useAuth'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
-  COMMISSION_STATUS,
   COMMISSION_STATUS_LABELS,
   SERVICE_ORDER_STATUS,
 } from '@/constants'
 import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
 import { taskKeys } from '@/hooks/queryKeys'
-import { isTabletWidth } from '@/lib/table-utils'
 import { ServiceOrderProgressBar } from '@/components/production/task/service-order-progress-bar'
 import { ForecastDateCell } from '@/components/production/task/forecast-date-cell'
 
@@ -56,7 +53,6 @@ const hasPendingServiceOrders = (task: Task): boolean => {
 }
 import { DeadlineCountdown } from '@/components/production/DeadlineCountdown'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
-import { PAINT_FINISH } from '@/constants/enums'
 
 // Statuses that should show the countdown
 const COUNTDOWN_STATUSES = [
@@ -66,7 +62,7 @@ const COUNTDOWN_STATUSES = [
 
 // Get row background color based on status and deadline (for cronograma only)
 // NOTE: PREPARATION and WAITING_PRODUCTION statuses use neutral alternating colors (matching web version)
-const getRowBackgroundColor = (task: Task, isDark: boolean = false, rowIndex?: number) => {
+const getRowBackgroundColor = (task: Task, isDark: boolean = false) => {
   // For PREPARATION and WAITING_PRODUCTION: use neutral alternating colors (like web version)
   // Corner flags indicate issues, not row background colors
   if (task.status === TASK_STATUS.PREPARATION || task.status === TASK_STATUS.WAITING_PRODUCTION) {
@@ -260,7 +256,7 @@ export const tasksListConfig: ListConfig<Task> = {
         align: 'left',
         render: (task, context) => {
           // Use ForecastDateCell with corner flags for preparation route
-          const navigationRoute = context?.navigationRoute || 'schedule'
+          const navigationRoute = context?.navigationRoute === 'preparation' ? 'preparation' : 'schedule'
           return React.createElement(ForecastDateCell, {
             task,
             navigationRoute,
@@ -350,7 +346,7 @@ export const tasksListConfig: ListConfig<Task> = {
         align: 'center',
         render: (task, context) => {
           // Pass navigationRoute to ServiceOrderProgressBar for corner flags
-          const navigationRoute = context?.navigationRoute || 'schedule'
+          const navigationRoute = context?.navigationRoute === 'preparation' ? 'preparation' : 'schedule'
           return React.createElement(ServiceOrderProgressBar, {
             task,
             compact: true,
@@ -374,8 +370,13 @@ export const tasksListConfig: ListConfig<Task> = {
         width: 1.1,
         align: 'left',
         render: (task) => {
+          // task.term is typed as Date but comes as string from JSON API
+          const termValue = task.term
+          const deadlineStr = termValue
+            ? (typeof termValue === 'string' ? termValue : (termValue as Date).toISOString())
+            : null
           return React.createElement(DeadlineCountdown, {
-            deadline: task.term,
+            deadline: deadlineStr,
             showForStatuses: COUNTDOWN_STATUSES,
             currentStatus: task.status,
           })
@@ -384,8 +385,8 @@ export const tasksListConfig: ListConfig<Task> = {
     ],
     defaultVisible: ['name', 'serialNumber', 'term', 'remainingTime'],
     rowHeight: 48,
-    getRowStyle: (task, isDark, rowIndex) => {
-      const backgroundColor = getRowBackgroundColor(task, isDark, rowIndex)
+    getRowStyle: (task: Task, isDark?: boolean) => {
+      const backgroundColor = getRowBackgroundColor(task, isDark)
       // If null, don't set backgroundColor - let the table handle alternating colors
       return backgroundColor ? { backgroundColor } : {}
     },
@@ -413,7 +414,7 @@ export const tasksListConfig: ListConfig<Task> = {
         onPress: async (task: Task) => {
           try {
             await updateTask(task.id, {
-              forecastDate: new Date().toISOString(),
+              forecastDate: new Date(),
             })
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
             // API client already shows success/error alerts
@@ -433,7 +434,7 @@ export const tasksListConfig: ListConfig<Task> = {
           if (task.status !== TASK_STATUS.WAITING_PRODUCTION) return false
           return canLeaderManageTask(user, task.sectorId)
         },
-        onPress: async (task: Task, router: any, context?: { user?: any }) => {
+        onPress: async (task: Task, router: any, context?) => {
           try {
             const user = context?.user
             const updateData: any = {
@@ -477,7 +478,7 @@ export const tasksListConfig: ListConfig<Task> = {
 
             await updateTask(task.id, {
               status: TASK_STATUS.COMPLETED,
-              finishedAt: new Date().toISOString(),
+              finishedAt: new Date(),
             })
 
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
@@ -640,7 +641,7 @@ export const tasksListConfig: ListConfig<Task> = {
       {
         key: 'isOverdue',
         label: 'Mostrar apenas tarefas atrasadas',
-        type: 'switch',
+        type: 'toggle',
         placeholder: 'Mostrar apenas tarefas atrasadas',
       },
     ],
@@ -686,10 +687,10 @@ export const tasksListConfig: ListConfig<Task> = {
           title: 'Atualizar Status',
           message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for new status
           // This is a placeholder for the structure
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
         },
       },
       {
@@ -701,10 +702,10 @@ export const tasksListConfig: ListConfig<Task> = {
           title: 'Atribuir Setor',
           message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for sector
           // This is a placeholder for the structure
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
         },
       },
     ],

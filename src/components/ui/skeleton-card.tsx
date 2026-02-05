@@ -61,11 +61,12 @@ export const SkeletonCard = memo(function SkeletonCard({
         styles.skeleton,
         {
           height,
-          width,
+          width: typeof width === 'number' ? width : undefined,
           borderRadius,
           backgroundColor: colors.muted,
           opacity: animate ? opacity : 0.5,
         },
+        typeof width === 'string' ? { width: width as any } : undefined,
         style,
       ]}
     />

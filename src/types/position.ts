@@ -22,6 +22,7 @@ export interface MonetaryValue extends BaseEntity {
 
 export interface Position extends BaseEntity {
   name: string;
+  description?: string | null; // Position description
   hierarchy: number | null;
   bonifiable: boolean;
   commissionRate: number;

@@ -165,8 +165,8 @@ export const filesListConfig: ListConfig<File> = {
           title: 'Confirmar Exclusão',
           message: (file) => `Deseja excluir o arquivo "${file.filename}"?`,
         },
-        onPress: async (file, _, { delete: deleteFile }) => {
-          await deleteFile(file.id)
+        onPress: async (file, _, mutations) => {
+          await mutations?.delete?.(file.id)
         },
       },
     ],
@@ -265,7 +265,6 @@ export const filesListConfig: ListConfig<File> = {
   search: {
     placeholder: 'Buscar arquivos...',
     debounce: 300,
-    searchKey: 'searchingFor',
   },
 
   export: {
@@ -310,8 +309,8 @@ export const filesListConfig: ListConfig<File> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'arquivo' : 'arquivos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

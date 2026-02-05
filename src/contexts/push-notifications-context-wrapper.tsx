@@ -7,7 +7,7 @@ let PushNotificationsProvider: React.ComponentType<{ children: ReactNode }>;
 let usePushNotifications: () => any;
 
 const isExpoGo = !Platform.select({
-  native: typeof global.expo?.modules?.ExpoNotifications !== 'undefined',
+  native: typeof (global as { expo?: { modules?: { ExpoNotifications?: unknown } } }).expo?.modules?.ExpoNotifications !== 'undefined',
   default: false,
 });
 

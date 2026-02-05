@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useFilesInfinite } from './useFile';
 import { FileGetManyFormData } from '@/schemas';
+import type { File } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for files
@@ -24,5 +25,5 @@ export function useFilesInfiniteMobile(params?: Partial<FileGetManyFormData> & {
   const infiniteQuery = useFilesInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<File>(infiniteQuery);
 }

@@ -39,14 +39,14 @@ export const TeamBorrowFilterTags = ({ filters, onRemoveFilter, teamMembers }: T
       ))}
 
       {/* Status filters */}
-      {filters.statuses?.map((status: BORROW_STATUS) => (
+      {filters.statuses?.map((status) => (
         <Pressable
           key={`status-${status}`}
           onPress={() => onRemoveFilter("statuses", status)}
           style={[styles.tag, { backgroundColor: colors.primary + "20", borderColor: colors.primary }]}
         >
           <ThemedText style={[styles.tagText, { color: colors.primary }]}>
-            {BORROW_STATUS_LABELS[status] || status}
+            {BORROW_STATUS_LABELS[status as BORROW_STATUS] || status}
           </ThemedText>
           <IconX size={14} color={colors.primary} />
         </Pressable>

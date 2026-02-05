@@ -1,5 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+// Storage interface for React Native (DOM lib not included)
+interface Storage {
+  readonly length: number;
+  clear(): void;
+  getItem(key: string): string | null;
+  key(index: number): string | null;
+  removeItem(key: string): void;
+  setItem(key: string, value: string): void;
+}
+
+// Declare localStorage as potentially undefined for React Native environment
+// where it doesn't exist natively (unlike web browsers)
+declare const localStorage: Storage | undefined;
+
 // In-memory storage for synchronous localStorage behavior
 let memoryStorage: { [key: string]: string } = {};
 let isInitialized = false;

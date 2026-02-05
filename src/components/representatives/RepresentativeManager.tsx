@@ -5,8 +5,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { IconPlus } from '@tabler/icons-react-native';
+import { IconPlus, IconAlertCircle } from '@tabler/icons-react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/lib/theme';
@@ -268,7 +267,7 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
       {/* Error display */}
       {error && (
         <View style={[styles.errorContainer, { backgroundColor: colors.destructive + '15' }]}>
-          <Ionicons name="alert-circle" size={16} color={colors.destructive} />
+          <IconAlertCircle size={16} color={colors.destructive} />
           <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
             {error}
           </ThemedText>

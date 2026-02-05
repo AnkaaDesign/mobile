@@ -102,7 +102,8 @@ export const useDeploymentBatchMutations = baseHooks.useBatchMutations;
 // Custom Deployment Workflow Hooks
 // =====================================================
 
-import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
 import { DEPLOYMENT_ENVIRONMENT } from '@/constants';
 import type { GitCommitInfo, DeploymentGetUniqueResponse } from '@/types';
 

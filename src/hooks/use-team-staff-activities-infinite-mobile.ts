@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamStaffActivities } from "@/api-client";
 import { useInfiniteMobile } from "./use-infinite-mobile";
+import type { Activity } from "@/types";
 
 // Mobile-optimized page size for team staff activities
 const MOBILE_TEAM_STAFF_ACTIVITIES_PAGE_SIZE = 40;
@@ -98,5 +99,5 @@ export function useTeamStaffActivitiesInfiniteMobile(params?: any) {
   };
 
   const infiniteQuery = useTeamStaffActivitiesInfinite(queryParams);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Activity>(infiniteQuery);
 }

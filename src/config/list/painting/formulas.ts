@@ -159,8 +159,8 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
             return `Deseja excluir a fórmula de "${paintName}"?`
           },
         },
-        onPress: async (formula, _, { delete: deleteFormula }) => {
-          await deleteFormula(formula.id)
+        onPress: async (formula, _, context) => {
+          await context?.delete?.(formula.id)
         },
       },
     ],
@@ -315,8 +315,8 @@ export const formulasListConfig: ListConfig<PaintFormula> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'fórmula' : 'fórmulas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

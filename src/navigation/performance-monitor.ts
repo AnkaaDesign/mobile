@@ -2,6 +2,10 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'expo-router';
 
+// Helper function to get high-resolution timestamp with fallback for React Native
+const getTimestamp = (): number =>
+  typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+
 interface PerformanceMetrics {
   navigationStart: number;
   navigationEnd: number;
@@ -25,14 +29,14 @@ class NavigationPerformanceMonitor {
   private maxMetrics = 100; // Keep last 100 navigation metrics
 
   startNavigation(route: string) {
-    this.navigationStartTime = performance.now();
+    this.navigationStartTime = getTimestamp();
     this.currentRoute = route;
   }
 
   endNavigation() {
     if (!this.navigationStartTime) return;
 
-    const navigationEnd = performance.now();
+    const navigationEnd = getTimestamp();
     const duration = navigationEnd - this.navigationStartTime;
 
     const metric: PerformanceMetrics = {
@@ -143,14 +147,14 @@ export function useNavigationPerformance() {
 
 // Hook for component render performance
 export function useComponentPerformance(componentName: string) {
-  const renderStart = useRef<number>();
+  const renderStart = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    renderStart.current = performance.now();
+    renderStart.current = getTimestamp();
 
     return () => {
       if (renderStart.current) {
-        const renderTime = performance.now() - renderStart.current;
+        const renderTime = getTimestamp() - renderStart.current;
         if (__DEV__ && renderTime > 16) {
           // Warn if render takes more than one frame (16ms)
           console.warn(`[PERF] ${componentName} render: ${renderTime.toFixed(2)}ms`);
@@ -196,11 +200,11 @@ export async function measureAsync<T>(
   operation: () => Promise<T>,
   operationName: string
 ): Promise<T> {
-  const start = performance.now();
+  const start = getTimestamp();
 
   try {
     const result = await operation();
-    const duration = performance.now() - start;
+    const duration = getTimestamp() - start;
 
     if (__DEV__) {
       console.log(`[PERF] ${operationName}: ${duration.toFixed(2)}ms`);
@@ -208,7 +212,7 @@ export async function measureAsync<T>(
 
     return result;
   } catch (error) {
-    const duration = performance.now() - start;
+    const duration = getTimestamp() - start;
     console.error(`[PERF] ${operationName} failed after ${duration.toFixed(2)}ms`, error);
     throw error;
   }
@@ -216,7 +220,7 @@ export async function measureAsync<T>(
 
 // Debounced performance logger to avoid console spam
 let logBuffer: string[] = [];
-let logTimer: NodeJS.Timeout | null = null;
+let logTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function logPerformance(message: string) {
   if (!__DEV__) return;

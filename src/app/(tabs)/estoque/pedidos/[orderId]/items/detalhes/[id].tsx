@@ -148,7 +148,7 @@ export default function OrderItemDetailScreen() {
             </View>
             <View style={styles.content}>
               <ThemedText style={styles.orderTitle}>{order?.description || `Pedido #${order?.id}`}</ThemedText>
-              <ThemedText style={styles.orderSupplier}>{order?.supplier?.name}</ThemedText>
+              <ThemedText style={styles.orderSupplier}>{order?.supplier?.fantasyName}</ThemedText>
             </View>
           </Card>
         )}

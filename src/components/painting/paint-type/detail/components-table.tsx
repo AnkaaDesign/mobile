@@ -110,7 +110,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
   }, []);
 
   const handleItemPress = (itemId: string) => {
-    router.push(routeToMobilePath(routes.inventory.items.details(itemId)) as any);
+    router.push(routeToMobilePath(routes.inventory.products.details(itemId)) as any);
   };
 
   // Don't show if no component IDs configured and not loading

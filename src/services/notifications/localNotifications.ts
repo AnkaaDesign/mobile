@@ -6,6 +6,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NOTIFICATION_CATEGORIES } from './notificationCategories';
 import type { NotificationData } from './notificationHandler';
@@ -15,12 +16,12 @@ export interface ScheduledNotificationContent {
   body: string;
   data?: NotificationData;
   subtitle?: string;
-  sound?: boolean | string;
+  sound?: boolean;
   badge?: number;
   categoryIdentifier?: string;
 }
 
-export interface NotificationTrigger {
+export interface LocalNotificationTrigger {
   date?: Date;
   seconds?: number;
   repeats?: boolean;
@@ -69,18 +70,19 @@ export async function clearBadge(): Promise<void> {
  */
 export async function scheduleLocalNotification(
   content: ScheduledNotificationContent,
-  trigger: Date | NotificationTrigger
+  trigger: Date | LocalNotificationTrigger
 ): Promise<string> {
   try {
     // Prepare trigger
     let notificationTrigger: Notifications.NotificationTriggerInput;
 
     if (trigger instanceof Date) {
-      notificationTrigger = { date: trigger };
+      notificationTrigger = { type: SchedulableTriggerInputTypes.DATE, date: trigger };
     } else if (trigger.date) {
-      notificationTrigger = { date: trigger.date };
+      notificationTrigger = { type: SchedulableTriggerInputTypes.DATE, date: trigger.date };
     } else if (trigger.seconds) {
       notificationTrigger = {
+        type: SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: trigger.seconds,
         repeats: trigger.repeats || false,
       };
@@ -98,7 +100,6 @@ export async function scheduleLocalNotification(
         sound: content.sound === undefined ? true : content.sound,
         badge: content.badge,
         categoryIdentifier: content.categoryIdentifier,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: notificationTrigger,
     });
@@ -188,7 +189,7 @@ export async function scheduleGroupedNotification(
   content: ScheduledNotificationContent,
   groupId: string,
   isGroupSummary: boolean = false,
-  trigger: Date | NotificationTrigger
+  trigger: Date | LocalNotificationTrigger
 ): Promise<string> {
   try {
     if (Platform.OS !== 'android') {
@@ -205,15 +206,14 @@ export async function scheduleGroupedNotification(
         sound: content.sound === undefined ? true : content.sound,
         badge: content.badge,
         categoryIdentifier: content.categoryIdentifier,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
-        // @ts-ignore - Android-specific properties
-        android: {
-          channelId: 'default',
-          groupSummary: isGroupSummary,
-          groupId: groupId,
-        },
       },
-      trigger: trigger instanceof Date ? { date: trigger } : trigger,
+      trigger: trigger instanceof Date
+        ? { type: SchedulableTriggerInputTypes.DATE, date: trigger }
+        : trigger.date
+          ? { type: SchedulableTriggerInputTypes.DATE, date: trigger.date, channelId: trigger.channelId }
+          : trigger.seconds
+            ? { type: SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: trigger.seconds, repeats: trigger.repeats || false, channelId: trigger.channelId }
+            : null,
     });
 
     console.log('[LocalNotifications] Grouped notification scheduled:', notificationId);
@@ -369,9 +369,9 @@ export async function scheduleDailyNotification(
 ): Promise<string> {
   try {
     const trigger: Notifications.DailyTriggerInput = {
+      type: SchedulableTriggerInputTypes.DAILY,
       hour,
       minute,
-      repeats: true,
     };
 
     const notificationId = await Notifications.scheduleNotificationAsync({
@@ -381,7 +381,6 @@ export async function scheduleDailyNotification(
         subtitle: content.subtitle,
         data: content.data || {},
         sound: content.sound === undefined ? true : content.sound,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger,
     });
@@ -405,10 +404,10 @@ export async function scheduleWeeklyNotification(
 ): Promise<string> {
   try {
     const trigger: Notifications.WeeklyTriggerInput = {
+      type: SchedulableTriggerInputTypes.WEEKLY,
       weekday,
       hour,
       minute,
-      repeats: true,
     };
 
     const notificationId = await Notifications.scheduleNotificationAsync({
@@ -418,7 +417,6 @@ export async function scheduleWeeklyNotification(
         subtitle: content.subtitle,
         data: content.data || {},
         sound: content.sound === undefined ? true : content.sound,
-        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger,
     });

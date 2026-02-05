@@ -188,16 +188,22 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
 
   // Get notifications list from all pages
   const notifications = useMemo(() => {
-    const items = data?.pages?.flatMap(page => page.data) || [];
-    return items.map(notification => ({
+    const items = data?.pages?.flatMap((page) => {
+      // Handle both array format and { data: Notification[] } format
+      if (Array.isArray(page)) {
+        return page as Notification[];
+      }
+      return (page as { data: Notification[] }).data || [];
+    }) || [];
+    return items.map((notification: Notification) => ({
       ...notification,
-      isSeenByUser: notification.seenBy?.some((seen: any) => seen.userId === authUser?.id) ?? false,
+      isSeenByUser: notification.seenBy?.some((seen: { userId: string }) => seen.userId === authUser?.id) ?? false,
     }));
   }, [data, authUser?.id]);
 
   // Calculate unread count
   const unreadCount = useMemo(() => {
-    return notifications.filter(n => !n.isSeenByUser).length;
+    return notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).length;
   }, [notifications]);
 
   // Extract mobile deep link from notification (checks metadata first, then actionUrl)
@@ -603,28 +609,28 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
         ) : (
           <>
             {/* Unread Notifications Section */}
-            {notifications.filter(n => !n.isSeenByUser).length > 0 && (
+            {notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).length > 0 && (
               <View style={{ marginBottom: SPACING.xs }}>
                 <View style={styles.sectionHeader}>
                   <Text style={[styles.sectionTitle, { color: isDarkMode ? "#8c8c8c" : "#737373" }]}>
                     NÃO LIDAS
                   </Text>
                 </View>
-                {notifications.filter(n => !n.isSeenByUser).map((notification) =>
+                {notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }) =>
                   renderNotificationItem(notification)
                 )}
               </View>
             )}
 
             {/* Read Notifications Section */}
-            {notifications.filter(n => n.isSeenByUser).length > 0 && (
+            {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).length > 0 && (
               <View style={{ marginBottom: SPACING.xs }}>
                 <View style={styles.sectionHeader}>
                   <Text style={[styles.sectionTitle, { color: isDarkMode ? "#8c8c8c" : "#737373" }]}>
                     LIDAS
                   </Text>
                 </View>
-                {notifications.filter(n => n.isSeenByUser).map((notification) =>
+                {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }) =>
                   renderNotificationItem(notification)
                 )}
               </View>

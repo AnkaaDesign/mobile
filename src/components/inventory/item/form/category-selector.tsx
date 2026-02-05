@@ -114,12 +114,14 @@ export function CategorySelector({ disabled, required, initialCategory, onCatego
           <Combobox<ItemCategory>
             value={value || ""}
             onValueChange={(selectedValue) => {
+              // Handle string | string[] | null | undefined - extract single value
+              const singleValue = Array.isArray(selectedValue) ? selectedValue[0] : selectedValue;
               // Convert empty string to null for optional field
-              const newValue = selectedValue === "" ? null : selectedValue;
+              const newValue = singleValue === "" ? null : singleValue;
               onChange(newValue);
 
               // Find category from cache for onCategoryChange callback
-              const category = selectedValue ? cacheRef.current.get(selectedValue) : undefined;
+              const category = singleValue ? cacheRef.current.get(singleValue) : undefined;
               onCategoryChange?.(category?.id || undefined);
             }}
             async={true}
@@ -144,7 +146,7 @@ export function CategorySelector({ disabled, required, initialCategory, onCatego
                 onCategoryChange?.(newCategoryId);
               }
             }}
-            createNewText={(value: string) => `Criar categoria "${value}"`}
+            createLabel={(value: string) => `Criar categoria "${value}"`}
             isCreating={isCreating}
           />
         </View>

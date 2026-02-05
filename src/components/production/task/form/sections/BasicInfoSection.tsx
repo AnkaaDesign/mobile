@@ -3,7 +3,7 @@
  * Combines customer info and vehicle details in one section
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { View } from 'react-native';
 import { Controller, useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
@@ -47,7 +47,6 @@ export default function BasicInfoSection({
 }: BasicInfoSectionProps) {
   const { control, watch } = useFormContext();
   const { user } = useAuth();
-  const [sectorSearch, setSectorSearch] = useState('');
 
   // Check user sector privileges
   const userPrivilege = user?.sector?.privileges;
@@ -65,7 +64,6 @@ export default function BasicInfoSection({
 
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
-    searchingFor: sectorSearch,
     orderBy: { name: "asc" },
   });
 
@@ -202,7 +200,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: ABC123456"
               maxLength={50}
@@ -222,7 +220,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: ABC-1234"
               maxLength={10}
@@ -242,7 +240,7 @@ export default function BasicInfoSection({
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               value={value || ''}
-              onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
               onBlur={onBlur}
               placeholder="Ex: 9BWZZZ377VT004251"
               maxLength={17}
@@ -270,7 +268,6 @@ export default function BasicInfoSection({
               disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector || isCommercialSector}
               error={errors.sectorId?.message}
               loading={isLoadingSectors}
-              onSearchChange={setSectorSearch}
               clearable={false}
             />
           )}

@@ -104,12 +104,12 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         render: (schedule) => String(schedule.deliveries?.length || 0),
       },
       {
-        key: 'rescheduleCount',
+        key: 'rescheduledCount',
         label: 'REAGENDAMENTOS',
         sortable: true,
         width: 1.2,
         align: 'center',
-        render: (schedule) => String(schedule.rescheduleCount || 0),
+        render: (schedule) => String(schedule.ppeItems?.filter(item => item.id).length || 0),
       },
     ],
     defaultVisible: ['frequency', 'assignmentType', 'ppeItems', 'isActive'],
@@ -121,7 +121,7 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         icon: 'eye',
         variant: 'default',
         onPress: (schedule, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.schedules.detail(schedule.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.schedules.details(schedule.id)) as any)
         },
       },
       {
@@ -134,19 +134,36 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         },
       },
       {
-        key: 'toggle',
-        label: (schedule) => (schedule.isActive ? 'Desativar' : 'Ativar'),
-        icon: (schedule) => (schedule.isActive ? 'x' : 'check'),
-        variant: (schedule) => (schedule.isActive ? 'destructive' : 'default'),
-        confirm: (schedule) => ({
-          title: schedule.isActive ? 'Desativar Agendamento' : 'Ativar Agendamento',
-          message: `Tem certeza que deseja ${schedule.isActive ? 'desativar' : 'ativar'} este agendamento?`,
-          confirmText: schedule.isActive ? 'Desativar' : 'Ativar',
+        key: 'activate',
+        label: 'Ativar',
+        icon: 'check',
+        variant: 'default',
+        confirm: {
+          title: 'Ativar Agendamento',
+          message: 'Tem certeza que deseja ativar este agendamento?',
+          confirmText: 'Ativar',
           cancelText: 'Cancelar',
-        }),
-        onPress: async (schedule, _router, { updateEntity }) => {
-          await updateEntity(schedule.id, { isActive: !schedule.isActive })
         },
+        onPress: async (schedule, _router, { update } = {}) => {
+          await update?.({ id: schedule.id, data: { isActive: true } })
+        },
+        visible: (schedule) => !schedule.isActive,
+      },
+      {
+        key: 'deactivate',
+        label: 'Desativar',
+        icon: 'x',
+        variant: 'destructive',
+        confirm: {
+          title: 'Desativar Agendamento',
+          message: 'Tem certeza que deseja desativar este agendamento?',
+          confirmText: 'Desativar',
+          cancelText: 'Cancelar',
+        },
+        onPress: async (schedule, _router, { update } = {}) => {
+          await update?.({ id: schedule.id, data: { isActive: false } })
+        },
+        visible: (schedule) => schedule.isActive,
       },
       {
         key: 'delete',
@@ -159,8 +176,8 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
           confirmText: 'Excluir',
           cancelText: 'Cancelar',
         },
-        onPress: async (schedule, _router, { deleteEntity }) => {
-          await deleteEntity(schedule.id)
+        onPress: async (schedule, _router, { delete: deleteEntity } = {}) => {
+          await deleteEntity?.(schedule.id)
         },
       },
     ],
@@ -326,10 +343,10 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         variant: 'default',
         confirm: {
           title: 'Ativar Agendamentos',
-          message: 'Deseja ativar os agendamentos selecionados?',
+          message: (count) => `Deseja ativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { isActive: true })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: true })
         },
       },
       {
@@ -339,10 +356,10 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         variant: 'destructive',
         confirm: {
           title: 'Desativar Agendamentos',
-          message: 'Deseja desativar os agendamentos selecionados?',
+          message: (count) => `Deseja desativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { isActive: false })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: false })
         },
       },
       {
@@ -352,10 +369,10 @@ export const ppeSchedulesInventoryListConfig: ListConfig<PpeDeliverySchedule> = 
         variant: 'destructive',
         confirm: {
           title: 'Excluir Agendamentos',
-          message: 'Deseja excluir permanentemente os agendamentos selecionados?',
+          message: (count) => `Deseja excluir permanentemente ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        action: async (ids, { deleteEntities }) => {
-          await deleteEntities(ids)
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

@@ -95,8 +95,8 @@ export const observationsListConfig: ListConfig<Observation> = {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir esta observação?`,
         },
-        onPress: async (observation, _, { delete: deleteObservation }) => {
-          await deleteObservation(observation.id)
+        onPress: async (observation, _, { delete: deleteObservation } = {}) => {
+          await deleteObservation?.(observation.id)
         },
       },
     ],
@@ -169,8 +169,8 @@ export const observationsListConfig: ListConfig<Observation> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'observação' : 'observações'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

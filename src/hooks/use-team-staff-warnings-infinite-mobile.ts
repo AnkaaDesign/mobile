@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamStaffWarnings } from "@/api-client";
 import { useInfiniteMobile } from "./use-infinite-mobile";
+import type { Warning } from "@/types";
 
 // Mobile-optimized page size for team staff warnings
 const MOBILE_TEAM_STAFF_WARNINGS_PAGE_SIZE = 40;
@@ -68,5 +69,5 @@ export function useTeamStaffWarningsInfiniteMobile(params?: any) {
   };
 
   const infiniteQuery = useTeamStaffWarningsInfinite(queryParams);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Warning>(infiniteQuery);
 }

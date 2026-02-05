@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTeamVacationsInfinite } from './useVacation';
 import { VacationGetManyFormData } from '@/schemas';
+import type { Vacation } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for team vacations
@@ -24,5 +25,5 @@ export function useTeamVacationsInfiniteMobile(params?: Partial<VacationGetManyF
   const infiniteQuery = useTeamVacationsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Vacation>(infiniteQuery);
 }

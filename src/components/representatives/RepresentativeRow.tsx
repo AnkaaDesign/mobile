@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { IconTrash, IconAlertCircle } from '@tabler/icons-react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
@@ -193,7 +193,8 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   );
 
   const handlePhoneChange = useCallback(
-    (phone: string) => {
+    (value: string | number | null) => {
+      const phone = value !== null ? String(value) : '';
       onUpdate({ phone });
     },
     [onUpdate]
@@ -279,7 +280,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
             onPress={onRemove}
             disabled={isDisabled}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.destructive} />
+            <IconTrash size={18} color={colors.destructive} />
           </TouchableOpacity>
         )}
       </View>
@@ -344,7 +345,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
       {/* Error Display */}
       {row.error && (
         <View style={[styles.errorContainer, { backgroundColor: colors.destructive + '15' }]}>
-          <Ionicons name="alert-circle" size={16} color={colors.destructive} />
+          <IconAlertCircle size={16} color={colors.destructive} />
           <ThemedText style={[styles.errorText, { color: colors.destructive }]}>
             {row.error}
           </ThemedText>

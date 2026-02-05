@@ -56,7 +56,7 @@ const SearchBar = React.forwardRef<TextInput, SearchBarProps>(
     const clearButtonScale = React.useRef(new Animated.Value(0)).current;
 
     // Debounce timer ref
-    const debounceTimer = React.useRef<NodeJS.Timeout | undefined>(undefined);
+    const debounceTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     // Update local value when prop changes
     React.useEffect(() => {

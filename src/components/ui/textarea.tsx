@@ -12,9 +12,11 @@ export interface TextareaProps extends Omit<TextInputProps, "style" | "multiline
   numberOfLines?: number;
   className?: string;
   disabled?: boolean;
+  /** Minimum height for the textarea */
+  minHeight?: number;
 }
 
-const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerStyle, inputStyle, error, errorMessage, editable = true, disabled, numberOfLines = 4, className, ...props }, ref) => {
+const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerStyle, inputStyle, error, errorMessage, editable = true, disabled, numberOfLines = 4, minHeight, className, ...props }, ref) => {
   // Handle disabled prop
   const isEditable = disabled !== undefined ? !disabled : editable;
   const { colors, isDark } = useTheme();
@@ -48,7 +50,7 @@ const Textarea = React.forwardRef<TextInput, TextareaProps>(({ style, containerS
   });
 
   const baseTextareaStyles: ViewStyle = {
-    minHeight: 80,
+    minHeight: minHeight ?? 80,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     backgroundColor: colors.input,

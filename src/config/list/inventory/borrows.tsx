@@ -207,8 +207,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Devolução',
           message: (borrow) => `Confirma a devolução do item "${borrow.item?.name}"?`,
         },
-        onPress: async (borrow, _, { update }) => {
-          await update({
+        onPress: async (borrow, _, { update } = {}) => {
+          await update?.({
             id: borrow.id,
             data: {
               status: BORROW_STATUS.RETURNED,
@@ -227,8 +227,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Perda',
           message: (borrow) => `Tem certeza que deseja marcar o item "${borrow.item?.name}" como perdido? Esta ação é irreversível.`,
         },
-        onPress: async (borrow, _, { update }) => {
-          await update({
+        onPress: async (borrow, _, { update } = {}) => {
+          await update?.({
             id: borrow.id,
             data: {
               status: BORROW_STATUS.LOST,
@@ -246,8 +246,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Exclusão',
           message: (borrow) => `Deseja excluir o empréstimo do item "${borrow.item?.name}" para "${borrow.user?.name}"?`,
         },
-        onPress: async (borrow, _, { delete: deleteBorrow }) => {
-          await deleteBorrow(borrow.id)
+        onPress: async (borrow, _, { delete: deleteBorrow } = {}) => {
+          await deleteBorrow?.(borrow.id)
         },
       },
     ],
@@ -367,7 +367,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
       { key: 'brand', label: 'Marca', path: 'item.brand.name' },
       { key: 'userName', label: 'Usuário', path: 'user.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'status', label: 'Status', path: 'status', format: 'enum', enumLabels: BORROW_STATUS_LABELS },
+      { key: 'status', label: 'Status', path: 'status', format: (value) => BORROW_STATUS_LABELS[value as keyof typeof BORROW_STATUS_LABELS] || value },
       { key: 'createdAt', label: 'Emprestado Em', path: 'createdAt', format: 'date' },
       { key: 'returnedAt', label: 'Devolvido Em', path: 'returnedAt', format: 'date' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
@@ -390,7 +390,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Devolução em Lote',
           message: (count) => `Deseja devolver ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           const updates = Array.from(ids).map((id) => ({
             id,
             data: {
@@ -398,7 +398,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
               returnedAt: new Date(),
             },
           }))
-          await batchUpdateAsync({ borrows: updates })
+          await batchUpdateAsync?.({ borrows: updates })
         },
       },
       {
@@ -410,14 +410,14 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Perda em Lote',
           message: (count) => `Deseja marcar ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'} como perdido(s)?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           const updates = Array.from(ids).map((id) => ({
             id,
             data: {
               status: BORROW_STATUS.LOST,
             },
           }))
-          await batchUpdateAsync({ borrows: updates })
+          await batchUpdateAsync?.({ borrows: updates })
         },
       },
       {
@@ -429,8 +429,8 @@ export const borrowsListConfig: ListConfig<Borrow> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'empréstimo' : 'empréstimos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

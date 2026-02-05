@@ -33,7 +33,7 @@ export function AddressSearchInput({
   const inputRef = useRef(null);
 
   // Native debounce implementation to prevent too many API calls
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check for API key after all hooks are called
   if (!apiKey) {

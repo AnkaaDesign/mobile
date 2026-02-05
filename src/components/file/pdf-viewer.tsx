@@ -56,7 +56,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   const [loadProgress, setLoadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [controlsVisible, setControlsVisible] = useState(true);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pdfUrl = getFileUrl(file, baseUrl);
 
@@ -264,7 +264,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                 onLoadComplete={handleLoadComplete}
                 onPageChanged={handlePageChanged}
                 onError={handleError}
-                onPressLink={(uri) => {
+                onPressLink={(uri: string) => {
                   console.log('[PDF Viewer] Link pressed:', uri);
                 }}
                 style={styles.pdf}

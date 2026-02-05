@@ -24,7 +24,7 @@ export default function PricingSection({
   const [pricingLayoutFiles, setPricingLayoutFiles] = useState<any[]>([]);
 
   // Check if user can view pricing sections
-  const canViewPricingSections = canViewPricing(user?.sector?.privileges);
+  const canViewPricingSections = canViewPricing(user?.sector?.privileges ?? '');
 
   if (!canViewPricingSections) {
     return null;

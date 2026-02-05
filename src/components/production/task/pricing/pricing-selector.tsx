@@ -215,7 +215,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
       }
       // Use append to preserve addition order (first added = first position)
       // Incomplete items are displayed at top via the grouping logic
-      append({ description: "", observation: null, amount: undefined });
+      append({ description: "", observation: null, amount: null as unknown as number });
     }, [append, clearErrors, fields.length, setValue]);
 
     const clearAll = useCallback(() => {
@@ -235,7 +235,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     const canEditStatus = userRole === "ADMIN" || userRole === "FINANCIAL" || userRole === "COMMERCIAL";
 
     const handleValidityPeriodChange = useCallback(
-      (period: string) => {
+      (period: string | string[] | null | undefined) => {
+        if (!period || Array.isArray(period)) return;
         const days = Number(period);
         setValidityPeriod(days);
         const expiryDate = new Date();
@@ -247,7 +248,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     );
 
     const handlePaymentConditionChange = useCallback(
-      (value: string) => {
+      (value: string | string[] | null | undefined) => {
+        if (!value || Array.isArray(value)) return;
         if (value === "CUSTOM") {
           setShowCustomPayment(true);
           setValue("pricing.paymentCondition", "CUSTOM");
@@ -261,7 +263,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     );
 
     const handleGuaranteeOptionChange = useCallback(
-      (value: string) => {
+      (value: string | string[] | null | undefined) => {
+        if (Array.isArray(value)) return;
         if (value === "CUSTOM") {
           setShowCustomGuarantee(true);
           setValue("pricing.guaranteeYears", null);
@@ -405,7 +408,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 </ThemedText>
                 <Input
                   type={discountType === DISCOUNT_TYPE.FIXED_VALUE ? "currency" : "number"}
-                  value={discountValue ?? ""}
+                  value={discountValue ?? null}
                   onChange={(value) => {
                     if (value === null || value === undefined || value === "") {
                       setValue("pricing.discountValue", null);
@@ -668,7 +671,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
         <View style={styles.amountField}>
           <Input
             type="currency"
-            value={amount ?? ""}
+            value={amount ?? null}
             onChange={(value) => setValue(`pricing.items.${index}.amount`, value)}
             disabled={disabled}
             placeholder="R$ 0,00"
@@ -938,16 +941,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: fontSize.sm,
     fontWeight: "600",
-  },
-  borderedSection: {
-    paddingTop: spacing.md,
-    marginTop: spacing.sm,
-    borderTopWidth: 1,
-  },
-  labelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
   },
 });
 

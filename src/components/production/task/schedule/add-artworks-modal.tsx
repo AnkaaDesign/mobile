@@ -17,7 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { ArtworkFileUploadField, type ArtworkFileItem } from "../form/artwork-file-upload-field";
 import { useTaskMutations } from "@/hooks";
-import { uploadFile } from "@/api-client";
+import { uploadSingleFile } from "@/api-client";
 
 export interface AddArtworksModalProps {
   open: boolean;
@@ -78,7 +78,7 @@ export function AddArtworksModal({
             type: file.mimeType || file.type || "application/octet-stream",
           } as any);
 
-          const uploadResult = await uploadFile(formData);
+          const uploadResult = await uploadSingleFile(formData);
           if (uploadResult?.id) {
             uploadedFileIds.push(uploadResult.id);
           }

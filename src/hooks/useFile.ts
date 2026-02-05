@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { fileKeys, taskKeys, customerKeys, supplierKeys, userKeys, activityKeys, itemKeys } from "./queryKeys";
 import { getFiles, getFileById, createFile, updateFile, deleteFile, batchCreateFiles, batchUpdateFiles, batchDeleteFiles, uploadSingleFile, uploadFiles, fileService } from '@/api-client';
-import type { FileUploadOptions as ApiFileUploadOptions, FileUploadProgress as ApiFileUploadProgress } from '@/api-client';
+import type { FileUploadOptions as ApiFileUploadOptions } from '@/api-client';
 import type { FileGetManyFormData, FileCreateFormData, FileUpdateFormData, FileBatchCreateFormData, FileBatchUpdateFormData, FileBatchDeleteFormData } from '@/schemas';
 import type {
   File,
@@ -23,7 +23,12 @@ import { createEntityHooks } from "./createEntityHooks";
 // Enhanced Upload Progress Types
 // =====================================================
 
-export interface UploadProgress extends ApiFileUploadProgress {
+export interface UploadProgress {
+  // Base progress properties (from ApiFileUploadProgress)
+  loaded: number;
+  total: number;
+  percentage: number;
+  // Extended properties
   fileId: string;
   _fileName: string;
   status: "pending" | "uploading" | "completed" | "error" | "cancelled";

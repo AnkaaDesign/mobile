@@ -43,6 +43,7 @@ interface UseTasksParams extends Partial<TaskGetManyFormData> {
 interface UseTaskDetailParams {
   enabled?: boolean;
   include?: any; // TaskInclude from schemas
+  staleTime?: number; // How long data is considered fresh (ms)
 }
 
 // -------------------------------------

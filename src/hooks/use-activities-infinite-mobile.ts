@@ -1,6 +1,7 @@
 import { useActivitiesInfinite } from './useActivity';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import type { ActivityGetManyFormData } from '@/schemas';
+import type { Activity } from '@/types';
 
 const DEFAULT_MOBILE_PAGE_SIZE = 40;
 
@@ -42,5 +43,5 @@ export const useActivitiesInfiniteMobile = (filters: Partial<ActivityGetManyForm
     select: filters.select || ACTIVITY_LIST_SELECT,
   });
 
-  return useInfiniteMobile(baseQuery);
+  return useInfiniteMobile<Activity>(baseQuery);
 };

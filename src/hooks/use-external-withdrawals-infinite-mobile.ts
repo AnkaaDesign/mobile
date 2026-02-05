@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useExternalWithdrawalsInfinite } from './useExternalWithdrawal';
 import { ExternalWithdrawalGetManyFormData } from '@/schemas';
+import type { ExternalWithdrawal } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for external withdrawals
@@ -24,5 +25,5 @@ export function useExternalWithdrawalsInfiniteMobile(params?: Partial<ExternalWi
   const infiniteQuery = useExternalWithdrawalsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<ExternalWithdrawal>(infiniteQuery);
 }

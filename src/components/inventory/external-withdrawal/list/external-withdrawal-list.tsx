@@ -72,9 +72,16 @@ export const ExternalWithdrawalList = React.memo<ExternalWithdrawalListProps>(
       [onEdit, router]
     );
 
+    const handleRowPress = useCallback(
+      (withdrawal: ExternalWithdrawal) => {
+        handleView(withdrawal.id);
+      },
+      [handleView]
+    );
+
     const renderItem = useCallback(
       ({ item }: { item: ExternalWithdrawal }) => {
-        const rowContent = <ExternalWithdrawalRowCard withdrawal={item} onPress={handleView} />;
+        const rowContent = <ExternalWithdrawalRowCard withdrawal={item} onPress={handleRowPress} />;
 
         if (enableSwipeActions) {
           return (
@@ -93,7 +100,7 @@ export const ExternalWithdrawalList = React.memo<ExternalWithdrawalListProps>(
 
         return rowContent;
       },
-      [enableSwipeActions, handleView, handleEdit, onEdit, onDelete]
+      [enableSwipeActions, handleRowPress, handleView, handleEdit, onEdit, onDelete]
     );
 
     const keyExtractor = useCallback((item: ExternalWithdrawal) => item.id, []);

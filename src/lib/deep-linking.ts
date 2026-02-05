@@ -1,5 +1,5 @@
-import { Linking } from 'react-native';
 import { router } from 'expo-router';
+import type { Href } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // =====================================================
@@ -205,8 +205,6 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   PPEDELIVERY: 'PpeDelivery',
   MY_PPE: 'MyPpe',
   MYPPE: 'MyPpe',
-  PENDING_SIGNATURE: 'PendingSignature',
-  PENDINGSIGNATURE: 'PendingSignature',
 
   // PascalCase variants (for direct entity type matching)
   Task: 'Task',
@@ -244,7 +242,6 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   FinancialCustomer: 'FinancialCustomer',
   PpeDelivery: 'PpeDelivery',
   MyPpe: 'MyPpe',
-  PendingSignature: 'PendingSignature',
 
   // Lowercase variants (existing)
   task: 'Task',
@@ -655,7 +652,7 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
       await storePendingDeepLink(url);
 
       // Navigate to login
-      router.replace('/(autenticacao)/login');
+      router.replace('/(autenticacao)/login' as Href);
       return;
     }
 
@@ -663,14 +660,14 @@ export async function handleDeepLink(url: string, isAuthenticated: boolean = fal
     console.log('[Deep Link] Navigating to:', route, 'Params:', params);
 
     if (params) {
-      router.push({ pathname: route as any, params });
+      router.push({ pathname: route, params } as Href);
     } else {
-      router.push(route as any);
+      router.push(route as Href);
     }
   } catch (error) {
     console.error('[Deep Link] Error handling deep link:', error);
     // Fallback to home on error
-    router.push('/(tabs)');
+    router.push('/(tabs)' as Href);
   }
 }
 

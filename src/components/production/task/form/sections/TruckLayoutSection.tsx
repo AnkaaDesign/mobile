@@ -34,7 +34,7 @@ export default function TruckLayoutSection({
   const userPrivilege = user?.sector?.privileges;
   const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
-  const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.isTeamLeader;
+  const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.managedSector;
 
   const canViewSection = isAdminUser || isLogisticUser || isProductionLeader;
 
@@ -74,15 +74,19 @@ export default function TruckLayoutSection({
       {/* Layout Form for Selected Side */}
       <Controller
         control={control}
-        name={`layouts.${selectedSide}`}
+        name="layouts"
         render={({ field: { onChange, value } }) => (
           <LayoutForm
-            value={value}
-            onChange={onChange}
-            side={selectedSide}
+            layouts={value || {}}
+            selectedSide={selectedSide}
+            onChange={(side, data) => {
+              onChange({
+                ...value,
+                [side]: data,
+              });
+            }}
             disabled={isSubmitting}
-            error={errors.layouts?.[selectedSide]}
-            existingLayout={existingLayouts?.[selectedSide]}
+            embedded={true}
           />
         )}
       />

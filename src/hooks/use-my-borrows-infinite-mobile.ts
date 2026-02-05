@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { apiClient } from "@/api-client/axiosClient";
-import type { BorrowGetManyFormData, BorrowGetManyResponse } from "@/types";
+import type { BorrowGetManyFormData } from "@/schemas";
+import type { Borrow, BorrowGetManyResponse } from "@/types";
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import { borrowKeys } from "./queryKeys";
 import { BORROW_SELECT_TABLE } from "@/api-client/select-patterns";
@@ -52,5 +53,5 @@ export function useMyBorrowsInfiniteMobile(params?: Partial<BorrowGetManyFormDat
   });
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Borrow>(infiniteQuery);
 }

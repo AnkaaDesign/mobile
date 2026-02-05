@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import type { DefaultValues } from "react-hook-form";
+import type { DefaultValues, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { itemBrandCreateSchema, itemBrandUpdateSchema, type ItemBrandCreateFormData, type ItemBrandUpdateFormData } from '../../../../../schemas';
@@ -13,6 +13,13 @@ import { Input } from "@/components/ui/input";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+
+// Base form data type that covers both create and update scenarios
+// This helps TypeScript properly infer the Path types for react-hook-form
+interface ItemBrandBaseFormData {
+  name: string;
+  itemIds?: string[];
+}
 
 interface ItemBrandFormProps<TMode extends "create" | "update"> {
   onSubmit: (data: (TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData) & { itemIds?: string[] }) => Promise<any>;
@@ -26,22 +33,21 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
 
-  type FormData = TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData;
-
-  const form = useForm<FormData>({
+  // Use base form type for react-hook-form to properly infer Path types
+  // The actual submit handler uses the proper TMode-based type
+  const form = useForm<ItemBrandBaseFormData>({
     resolver: zodResolver(mode === "create" ? itemBrandCreateSchema : itemBrandUpdateSchema),
     defaultValues: {
       name: "",
       itemIds: [],
       ...defaultValues,
-    } as DefaultValues<FormData>,
+    } as DefaultValues<ItemBrandBaseFormData>,
   });
 
-  // Form will be provided through context to child components
-
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = async (data: ItemBrandBaseFormData) => {
     try {
-      await onSubmit(data as any);
+      // Cast to the appropriate type based on mode
+      await onSubmit(data as TMode extends "create" ? ItemBrandCreateFormData : ItemBrandUpdateFormData);
     } catch (error) {
       // Error handling done by parent component
     }
@@ -92,14 +98,14 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
           <FormFieldGroup
             label="Nome da Marca"
             required={isRequired}
-            error={form.formState.errors.name?.message}
+            error={(form.formState.errors.name as FieldError | undefined)?.message}
           >
             <Controller
               control={form.control}
               name="name"
               render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <Input
-                  value={value || ""}
+                  value={typeof value === 'string' ? value : ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   placeholder="Digite o nome da marca"
@@ -115,7 +121,7 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
           <FormFieldGroup label="Produtos Associados">
             <Controller
               control={form.control}
-              name={"itemIds" as any}
+              name="itemIds"
               render={({ field }) => (
                 <Combobox
                   mode="multiple"
@@ -136,7 +142,7 @@ export function ItemBrandForm<TMode extends "create" | "update">({ onSubmit, onC
 
         <FormActionBar
           onCancel={onCancel}
-          onSubmit={form.handleSubmit(handleSubmit as any)}
+          onSubmit={form.handleSubmit(handleSubmit)}
           isSubmitting={isSubmitting}
           canSubmit={form.formState.isValid}
           submitLabel={mode === "create" ? "Cadastrar" : "Atualizar"}

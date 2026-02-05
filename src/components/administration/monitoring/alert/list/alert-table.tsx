@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { formatRelativeTime } from "@/utils";
 import { NOTIFICATION_IMPORTANCE } from "@/constants";
-import { ReanimatedSwipeableRow} from "@/components/ui/reanimated-swipeable-row";
+import { ReanimatedSwipeableRow, SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 
 const ACTION_WIDTH = 80;
 

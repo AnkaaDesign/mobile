@@ -98,8 +98,8 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
           title: 'Confirmar Exclusão',
           message: (paintType) => `Deseja excluir o tipo de tinta "${paintType.name}"?`,
         },
-        onPress: async (paintType, _, { delete: deletePaintType }) => {
-          await deletePaintType(paintType.id)
+        onPress: async (paintType, _, context) => {
+          await context?.delete?.(paintType.id)
         },
       },
     ],
@@ -164,8 +164,8 @@ export const paintTypesListConfig: ListConfig<PaintType> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tipo de tinta' : 'tipos de tinta'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

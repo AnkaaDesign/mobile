@@ -2,6 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { format, isWeekend } from "date-fns";
 
+// Type-safe delay helper for simulating network latency
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const setTimeout: (callback: () => void, ms: number) => number;
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 // Types for activity analytics
 interface StatisticsFilters {
   dateRange: {
@@ -257,7 +263,7 @@ export const useActivityAnalytics = (filters: StatisticsFilters) => {
       // await apiClient.get('/inventory/analytics/activities', { params: filters });
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await delay(400);
 
       return generateMockActivityAnalytics();
     },
@@ -275,7 +281,7 @@ export const useActivityTrends = (filters: StatisticsFilters) => {
       // await apiClient.get('/inventory/analytics/activity-trends', { params: filters });
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await delay(300);
 
       return generateMockActivityTrends(filters);
     },
@@ -293,7 +299,7 @@ export const useActivityHeatmap = (filters: StatisticsFilters) => {
       // await apiClient.get('/inventory/analytics/activity-heatmap', { params: filters });
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 600));
+      await delay(600);
 
       return generateMockActivityHeatmap();
     },
@@ -323,7 +329,9 @@ export const useActivityInsights = (filters: StatisticsFilters) => {
     const workLifeBalance = weekendAvg / weekdayAvg;
 
     // Activity intensity score (0-100)
-    const intensityScore = Math.min(100, (analytics.totalActivities / filters.dateRange.from.getTime() * 86400000) * 10);
+    // Calculate based on days in the date range
+    const daysInRange = Math.max(1, Math.ceil((filters.dateRange.to.getTime() - filters.dateRange.from.getTime()) / 86400000));
+    const intensityScore = Math.min(100, (analytics.totalActivities / daysInRange) * 10);
 
     return {
       peakEfficiencyUser,
@@ -336,7 +344,7 @@ export const useActivityInsights = (filters: StatisticsFilters) => {
       },
       recommendations: generateActivityRecommendations(analytics, trends),
     };
-  }, [analytics, trends, heatmap, filters]);
+  }, [analytics, trends, heatmap, filters.dateRange.from, filters.dateRange.to]);
 
   return {
     analytics,
@@ -364,9 +372,9 @@ const generateActivityRecommendations = (analytics: ActivityAnalytics, trends: A
   }
 
   // Check for sector imbalances
+  const avgSectorActivity = analytics.sectorComparison.reduce((sum, s) => sum + s.activityCount, 0) / analytics.sectorComparison.length;
   const sectorActivityVariance = analytics.sectorComparison.reduce((max, sector) => {
-    const avg = analytics.sectorComparison.reduce((sum: number, s: any) => sum + s.activityCount, 0) / analytics.sectorComparison.length;
-    const variance = Math.abs(sector.activityCount - avg);
+    const variance = Math.abs(sector.activityCount - avgSectorActivity);
     return variance > max ? variance : max;
   }, 0);
 

@@ -165,7 +165,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         icon: 'eye',
         variant: 'default',
         onPress: (item, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.detail(item.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.details(item.id)) as any)
         },
       },
       {
@@ -188,8 +188,8 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           confirmText: 'Excluir',
           cancelText: 'Cancelar',
         },
-        onPress: async (item, _router, { deleteEntity }) => {
-          await deleteEntity(item.id)
+        onPress: async (item, _router, { delete: deleteItem } = {}) => {
+          await deleteItem?.(item.id)
         },
       },
     ],
@@ -375,10 +375,10 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         variant: 'default',
         confirm: {
           title: 'Ativar EPIs',
-          message: 'Deseja ativar os EPIs selecionados?',
+          message: (count) => `Deseja ativar ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { isActive: true })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: true })
         },
       },
       {
@@ -388,10 +388,10 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         variant: 'destructive',
         confirm: {
           title: 'Desativar EPIs',
-          message: 'Deseja desativar os EPIs selecionados?',
+          message: (count) => `Deseja desativar ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { isActive: false })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), isActive: false })
         },
       },
       {
@@ -401,10 +401,10 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         variant: 'destructive',
         confirm: {
           title: 'Excluir EPIs',
-          message: 'Deseja excluir permanentemente os EPIs selecionados?',
+          message: (count) => `Deseja excluir permanentemente ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
-        action: async (ids, { deleteEntities }) => {
-          await deleteEntities(ids)
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

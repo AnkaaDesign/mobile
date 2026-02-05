@@ -43,14 +43,14 @@ export function TeamCommissionTable({
   };
 
   const getCommissionValue = (task: Task): string => {
-    if (!task.price) return "R$ 0,00";
+    if (!task.pricing?.total) return "R$ 0,00";
 
     switch (task.commission) {
       case "FULL_COMMISSION":
-        return formatCurrency(task.price);
+        return formatCurrency(task.pricing.total);
       case "PARTIAL_COMMISSION":
         // Assuming 50% for partial commission
-        return formatCurrency(task.price * 0.5);
+        return formatCurrency(task.pricing.total * 0.5);
       default:
         return "R$ 0,00";
     }
@@ -74,7 +74,7 @@ export function TeamCommissionTable({
                 {item.createdBy?.name || "Colaborador"}
               </ThemedText>
             </View>
-            <Badge variant={getCommissionBadgeVariant(item.commission)} size="sm">
+            <Badge variant={getCommissionBadgeVariant(item.commission ?? '')} size="sm">
               <ThemedText style={styles.badgeText}>
                 {COMMISSION_STATUS_LABELS[item.commission as keyof typeof COMMISSION_STATUS_LABELS] || item.commission}
               </ThemedText>
@@ -94,7 +94,7 @@ export function TeamCommissionTable({
           {/* Customer Info (if available) */}
           {item.customer && (
             <ThemedText style={styles.customerName} numberOfLines={1}>
-              Cliente: {item.customer.name}
+              Cliente: {item.customer.fantasyName}
             </ThemedText>
           )}
 

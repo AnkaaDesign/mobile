@@ -16,12 +16,13 @@ import { Button } from "@/components/ui/button";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useSuppliers, useItems, useOrderMutations, useFileUploadManager } from "@/hooks";
+import { useSuppliers, useItems, useOrderMutations } from "@/hooks";
 import { useMultiStepForm } from "@/hooks";
 import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from "@/constants";
 import { formatCurrency, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
+import type { OrderCreateFormData as OrderCreateFormDataSchema } from "@/schemas";
 import {
   MultiStepFormContainer,
   ItemSelectorTable,
@@ -29,7 +30,6 @@ import {
 import {
   IconBox,
   IconCalendar,
-  IconCreditCard,
   IconPackage,
   IconPlus,
   IconTrash,
@@ -89,11 +89,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
 
   // Mutations
   const { createAsync, isLoading: isMutating } = useOrderMutations();
-
-  // File upload hooks
-  const budgetUpload = useFileUploadManager({ entityType: "order", fileContext: "budget" });
-  const invoiceUpload = useFileUploadManager({ entityType: "order", fileContext: "invoice" });
-  const receiptUpload = useFileUploadManager({ entityType: "order", fileContext: "receipt" });
 
   // Multi-step form state management
   const multiStepForm = useMultiStepForm<OrderCreateFormData>({
@@ -157,9 +152,9 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
 
   // Sync form data to multi-step state
   const handleFormChange = useCallback(
-    (field: keyof OrderCreateFormData, value: string | number | null) => {
-      form.setValue(field, value as never);
-      multiStepForm.updateFormData({ [field]: value });
+    <K extends keyof OrderCreateFormData>(field: K, value: OrderCreateFormData[K]) => {
+      form.setValue(field, value as any);
+      multiStepForm.updateFormData({ [field]: value } as Partial<OrderCreateFormData>);
     },
     [form, multiStepForm],
   );
@@ -269,14 +264,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   // Handle form submission
   const handleFormSubmit = useCallback(async () => {
     try {
-      let itemsData: Array<{
-        itemId?: string;
-        temporaryItemDescription?: string;
-        orderedQuantity: number;
-        price: number;
-        icms: number;
-        ipi: number;
-      }> = [];
+      let itemsData: NonNullable<OrderCreateFormDataSchema["items"]> = [];
 
       if (multiStepForm.formData.itemMode === "inventory") {
         const items = multiStepForm.getSelectedItemsWithData();
@@ -293,6 +281,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           price: item.price || 0,
           icms: 0,
           ipi: 0,
+          isCritical: false,
         }));
       } else {
         // Temporary items validation
@@ -311,15 +300,16 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           price: item.price,
           icms: item.icms,
           ipi: item.ipi,
+          isCritical: false,
         }));
       }
 
       // Prepare order data
-      const orderData = {
+      const orderData: OrderCreateFormDataSchema = {
         description: multiStepForm.formData.description,
         status: ORDER_STATUS.CREATED,
         supplierId: multiStepForm.formData.supplierId || undefined,
-        forecast: forecastDate || undefined,
+        forecast: forecastDate ?? null,
         notes: multiStepForm.formData.notes || undefined,
         items: itemsData,
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
@@ -354,13 +344,13 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
             supplier
               ? {
                   id: supplier.id,
-                  name: supplier.name,
-                  fantasyName: supplier.fantasyName,
+                  fantasyName: supplier.fantasyName ?? undefined,
                 }
               : undefined
           );
 
-          result = await createAsync(formDataWithFiles as any);
+          // FormData is accepted by the API client for multipart form submission
+          result = await createAsync(formDataWithFiles as unknown as OrderCreateFormDataSchema);
         } else {
           // Use regular JSON payload when no files
           result = await createAsync(orderData);
@@ -400,9 +390,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     budgetFiles,
     invoiceFiles,
     receiptFiles,
-    budgetUpload,
-    invoiceUpload,
-    receiptUpload,
+    suppliers,
     createAsync,
     onSuccess,
     router,
@@ -513,7 +501,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       <Label>Fornecedor</Label>
                       <Combobox
                         value={value || ""}
-                        onValueChange={(val) => handleFormChange("supplierId", val || null)}
+                        onValueChange={(val) => handleFormChange("supplierId", (val || null) as string | null)}
                         options={supplierOptions}
                         placeholder="Selecione o fornecedor (opcional)"
                         searchPlaceholder="Buscar fornecedor..."
@@ -539,7 +527,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       <Label>Tipo de Itens</Label>
                       <Combobox
                         value={value || "inventory"}
-                        onValueChange={(val) => handleFormChange("itemMode", val || "inventory")}
+                        onValueChange={(val) => handleFormChange("itemMode", (val || "inventory") as "inventory" | "temporary")}
                         options={[
                           { label: "Itens do Estoque", value: "inventory" },
                           { label: "Itens Temporários", value: "temporary" },
@@ -614,7 +602,8 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                       <Combobox
                         value={value || ""}
                         onValueChange={(val) => {
-                          handleFormChange("paymentMethod", val || null);
+                          const paymentMethodValue = val ? (val as PAYMENT_METHOD) : null;
+                          handleFormChange("paymentMethod", paymentMethodValue);
                           // Auto-fill PIX from supplier when selecting PIX
                           if (val === PAYMENT_METHOD.PIX && multiStepForm.formData.supplierId) {
                             const selectedSupplier = suppliers?.data?.find(
@@ -796,7 +785,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                 onBrandIdsChange={multiStepForm.setBrandIds}
                 onSupplierIdsChange={multiStepForm.setSupplierIds}
                 allowZeroStock
-                emptyText="Nenhum item encontrado"
+                emptyMessage="Nenhum item encontrado"
               />
             ) : (
               <View style={styles.temporaryItemsContainer}>

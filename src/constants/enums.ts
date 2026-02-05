@@ -46,6 +46,7 @@ export enum SECTOR_PRIVILEGES {
   LEADER = "LEADER",
   MAINTENANCE = "MAINTENANCE",
   WAREHOUSE = "WAREHOUSE",
+  STOCK = "STOCK", // Inventory/Stock workers
   ADMIN = "ADMIN",
   HUMAN_RESOURCES = "HUMAN_RESOURCES",
   EXTERNAL = "EXTERNAL",
@@ -54,6 +55,7 @@ export enum SECTOR_PRIVILEGES {
   LOGISTIC = "LOGISTIC",
   COMMERCIAL = "COMMERCIAL",
   PLOTTING = "PLOTTING",
+  TEAM_LEADER = "TEAM_LEADER", // Virtual privilege - checked via user.managedSector relationship
 }
 
 export enum USER_STATUS {
@@ -260,6 +262,7 @@ export enum EXTERNAL_WITHDRAWAL_TYPE {
   RETURNABLE = "RETURNABLE",
   CHARGEABLE = "CHARGEABLE",
   COMPLIMENTARY = "COMPLIMENTARY",
+  COURTESY = "COURTESY", // Alias for COMPLIMENTARY
 }
 
 // =====================
@@ -628,13 +631,20 @@ export enum PPE_SIZE {
   GG = "GG",
   XG = "XG",
 
-  // Pants and Boots sizes
+  // Pants and Boots sizes (full range)
+  SIZE_35 = "SIZE_35",
   SIZE_36 = "SIZE_36",
+  SIZE_37 = "SIZE_37",
   SIZE_38 = "SIZE_38",
+  SIZE_39 = "SIZE_39",
   SIZE_40 = "SIZE_40",
+  SIZE_41 = "SIZE_41",
   SIZE_42 = "SIZE_42",
+  SIZE_43 = "SIZE_43",
   SIZE_44 = "SIZE_44",
+  SIZE_45 = "SIZE_45",
   SIZE_46 = "SIZE_46",
+  SIZE_47 = "SIZE_47",
   SIZE_48 = "SIZE_48",
   SIZE_50 = "SIZE_50",
 }
@@ -1001,6 +1011,9 @@ export enum NOTIFICATION_TYPE {
   STOCK = "STOCK",
   GENERAL = "GENERAL",
   CUT = "CUT",
+  USER = "USER",
+  MAINTENANCE = "MAINTENANCE",
+  FINANCIAL = "FINANCIAL",
 }
 
 export enum NOTIFICATION_CHANNEL {
@@ -1479,6 +1492,7 @@ export enum CHANGE_LOG_ENTITY_TYPE {
   USER = "USER",
   VACATION = "VACATION",
   VERIFICATION = "VERIFICATION",
+  WARNING = "WARNING",
 }
 
 // Alias for Prisma compatibility
@@ -1789,6 +1803,7 @@ export enum FAVORITE_PAGES {
   PRODUCAO_CRONOGRAMA_LISTAR = "/producao/cronograma",
   PRODUCAO_RECORTE_LISTAR = "/producao/recorte",
   PRODUCAO_SERVICOS_LISTAR = "/producao/servicos",
+  PRODUCAO_SERVICOS_CADASTRAR = "/producao/servicos/cadastrar",
   PRODUCAO_OBSERVACOES_LISTAR = "/producao/observacoes",
   PRODUCAO_AEROGRAFIA_LISTAR = "/producao/aerografia/listar",
   PRODUCAO_GARAGENS_LISTAR = "/producao/garagens",

@@ -1,6 +1,6 @@
 import { useSectorsInfinite } from './useSector';
 
-import type { SectorGetManyFormData } from '@/types';
+import type { SectorGetManyFormData, Sector } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 /**
@@ -9,5 +9,5 @@ import { useInfiniteMobile } from "./use-infinite-mobile";
  */
 export function useSectorsInfiniteMobile(params?: SectorGetManyFormData) {
   const infiniteQuery = useSectorsInfinite(params);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Sector>(infiniteQuery);
 }

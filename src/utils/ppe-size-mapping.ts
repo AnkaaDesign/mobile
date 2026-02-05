@@ -1,5 +1,5 @@
 import type { Item, Measure } from '../types';
-import { PPE_SIZE, MEASURE_TYPE } from '../constants';
+import { PPE_SIZE, MEASURE_TYPE, MEASURE_UNIT } from '../constants';
 
 /**
  * Helper utilities for working with PPE sizes stored in the measures array.

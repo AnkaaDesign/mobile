@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { usePaintProductionsInfinite } from './usePaintProduction';
 import { PaintProductionGetManyFormData } from '@/schemas';
+import type { PaintProduction } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for paint productions
@@ -24,5 +25,5 @@ export function usePaintProductionsInfiniteMobile(params?: Partial<PaintProducti
   const infiniteQuery = usePaintProductionsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<PaintProduction>(infiniteQuery);
 }

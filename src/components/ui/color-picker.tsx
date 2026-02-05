@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Pressable, Modal, ActivityIndicator, InteractionManager, ScrollView } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import ColorPicker, { Panel1, HueSlider, Preview } from 'reanimated-color-picker';
-import type { returnedResults } from 'reanimated-color-picker';
+import ColorPicker, { Panel1, HueSlider, Preview, type ColorFormatsObject } from 'reanimated-color-picker';
 import { IconCheck, IconX } from '@tabler/icons-react-native';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from './themed-text';
@@ -110,7 +109,7 @@ export function ColorPickerComponent({ color, onColorChange, label, disabled = f
   }, []);
 
   // Worklet callback for color picker - runs on UI thread
-  const handleColorSelect = useCallback((result: returnedResults) => {
+  const handleColorSelect = useCallback((result: ColorFormatsObject) => {
     'worklet';
     const hexColor = result.hex.toUpperCase();
     // Use runOnJS to update state from UI thread

@@ -38,7 +38,7 @@ export function SupplierSelector({
   );
 
   // Memoize callbacks to prevent infinite loops
-  const getOptionLabel = useCallback((supplier: Supplier) => supplier.name, []);
+  const getOptionLabel = useCallback((supplier: Supplier) => supplier.fantasyName, []);
   const getOptionValue = useCallback((supplier: Supplier) => supplier.id, []);
 
   // Search function for async loading
@@ -50,7 +50,7 @@ export function SupplierSelector({
     hasMore: boolean;
   }> => {
     const params: any = {
-      orderBy: { name: "asc" },
+      orderBy: { fantasyName: "asc" },
       page: page,
       take: 50,
       where: { isActive: true },
@@ -88,7 +88,7 @@ export function SupplierSelector({
               color: colors.foreground,
             }}
           >
-            {option.name}
+            {option.fantasyName}
           </Text>
           {option.cnpj && (
             <Text

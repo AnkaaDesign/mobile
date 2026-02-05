@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { IconFilter, IconRefresh, IconTag, IconSearch } from "@tabler/icons-react-native";
+import { IconFilter, IconRefresh } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import { FormLabel } from "@/components/ui/form";
-import { Modal } from "@/components/ui/modal";
+import { Modal, ModalContent } from "@/components/ui/modal";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -124,10 +124,10 @@ export function ExternalWithdrawalFormFilters({
     <Modal
       visible={open}
       onClose={() => onOpenChange(false)}
-      title="Filtros de Seleção"
       style={styles.modal}
     >
-      <View style={styles.container}>
+      <ModalContent style={styles.modalContent}>
+        <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTitle}>
@@ -145,10 +145,10 @@ export function ExternalWithdrawalFormFilters({
         {/* Tabs */}
         <Tabs defaultValue="basic" style={styles.tabs}>
           <TabsList>
-            <TabsTrigger value="basic" icon={<IconSearch size={16} />}>
+            <TabsTrigger value="basic">
               Básico
             </TabsTrigger>
-            <TabsTrigger value="entities" icon={<IconTag size={16} />}>
+            <TabsTrigger value="entities">
               Categorias e Marcas
             </TabsTrigger>
           </TabsList>
@@ -183,7 +183,10 @@ export function ExternalWithdrawalFormFilters({
                     mode="multiple"
                     options={categoryOptions}
                     value={localCategoryIds}
-                    onValueChange={setLocalCategoryIds}
+                    onValueChange={(values) => {
+                      const ids = Array.isArray(values) ? values : values ? [values] : [];
+                      setLocalCategoryIds(ids);
+                    }}
                     placeholder="Selecione categorias..."
                     emptyText="Nenhuma categoria encontrada"
                     searchPlaceholder="Buscar categorias..."
@@ -205,7 +208,10 @@ export function ExternalWithdrawalFormFilters({
                     mode="multiple"
                     options={brandOptions}
                     value={localBrandIds}
-                    onValueChange={setLocalBrandIds}
+                    onValueChange={(values) => {
+                      const ids = Array.isArray(values) ? values : values ? [values] : [];
+                      setLocalBrandIds(ids);
+                    }}
                     placeholder="Selecione marcas..."
                     emptyText="Nenhuma marca encontrada"
                     searchPlaceholder="Buscar marcas..."
@@ -227,7 +233,10 @@ export function ExternalWithdrawalFormFilters({
                     mode="multiple"
                     options={supplierOptions}
                     value={localSupplierIds}
-                    onValueChange={setLocalSupplierIds}
+                    onValueChange={(values) => {
+                      const ids = Array.isArray(values) ? values : values ? [values] : [];
+                      setLocalSupplierIds(ids);
+                    }}
                     placeholder="Selecione fornecedores..."
                     emptyText="Nenhum fornecedor encontrado"
                     searchPlaceholder="Buscar fornecedores..."
@@ -272,12 +281,16 @@ export function ExternalWithdrawalFormFilters({
           </Button>
         </View>
       </View>
+      </ModalContent>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   modal: {
+    maxHeight: "80%",
+  },
+  modalContent: {
     maxHeight: "80%",
   },
   container: {

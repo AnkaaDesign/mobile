@@ -10,7 +10,7 @@ export const notify = {
   _retryHandler: null as RetryNotifyHandler | null,
   _dismissRetryHandler: null as DismissRetryHandler | null,
   _suppressSuccessToasts: false,
-  _suppressionTimeout: null as NodeJS.Timeout | null,
+  _suppressionTimeout: null as ReturnType<typeof setTimeout> | null,
 
   // Suppress success toasts temporarily (used when opening app from notification tap)
   setSuppressSuccessToasts(suppress: boolean, durationMs: number = 5000) {

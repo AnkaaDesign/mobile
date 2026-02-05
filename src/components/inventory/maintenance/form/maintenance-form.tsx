@@ -19,6 +19,7 @@ import { spacing } from "@/constants/design-system";
 
 import { maintenanceCreateSchema, maintenanceUpdateSchema } from "@/schemas/maintenance";
 import type { MaintenanceCreateFormData, MaintenanceUpdateFormData } from "@/schemas/maintenance";
+import type { FieldErrors } from "react-hook-form";
 import type { Maintenance } from "@/types";
 import { useMaintenanceMutations } from "@/hooks/useMaintenance";
 import { useItems } from "@/hooks/useItem";
@@ -78,6 +79,10 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const watchedStatus = form.watch("status");
+
+  // Type-safe access to form errors for mode-specific fields
+  const createErrors = form.formState.errors as FieldErrors<MaintenanceCreateFormData>;
+  const updateErrors = form.formState.errors as FieldErrors<MaintenanceUpdateFormData>;
 
   const handleSubmit = async (data: MaintenanceCreateFormData | MaintenanceUpdateFormData) => {
     try {
@@ -256,7 +261,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
               name="scheduledFor"
               render={({ field: { onChange, value } }) => (
                 <DatePicker
-                  value={value}
+                  value={value ?? undefined}
                   onChange={onChange}
                   placeholder="Selecione a data"
                   disabled={isLoading}
@@ -271,14 +276,14 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
             <FormRow>
               <FormFieldGroup
                 label="Data de Início"
-                error={form.formState.errors.startedAt?.message}
+                error={updateErrors.startedAt?.message}
               >
                 <Controller
                   control={form.control}
-                  name="startedAt"
+                  name={"startedAt" as keyof MaintenanceUpdateFormData}
                   render={({ field: { onChange, value } }) => (
                     <DatePicker
-                      value={value}
+                      value={value instanceof Date ? value : undefined}
                       onChange={onChange}
                       placeholder="Selecione a data"
                       disabled={isLoading}
@@ -291,14 +296,14 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
               {watchedStatus === MAINTENANCE_STATUS.COMPLETED && (
                 <FormFieldGroup
                   label="Data de Conclusão"
-                  error={form.formState.errors.finishedAt?.message}
+                  error={updateErrors.finishedAt?.message}
                 >
                   <Controller
                     control={form.control}
-                    name="finishedAt"
+                    name={"finishedAt" as keyof MaintenanceUpdateFormData}
                     render={({ field: { onChange, value } }) => (
                       <DatePicker
-                        value={value}
+                        value={value instanceof Date ? value : undefined}
                         onChange={onChange}
                         placeholder="Selecione a data"
                         disabled={isLoading}
@@ -315,20 +320,20 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
           {mode === "update" && watchedStatus === MAINTENANCE_STATUS.COMPLETED && (
             <FormFieldGroup
               label="Tempo Gasto (minutos)"
-              error={form.formState.errors.timeTaken?.message}
+              error={updateErrors.timeTaken?.message}
             >
               <Controller
                 control={form.control}
-                name="timeTaken"
+                name={"timeTaken" as keyof MaintenanceUpdateFormData}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={value?.toString() || ""}
+                    value={typeof value === "number" ? value.toString() : ""}
                     onChangeText={(val) => onChange(val ? Number(val) : null)}
                     onBlur={onBlur}
                     placeholder="Tempo em minutos"
                     keyboardType="numeric"
                     editable={!isLoading}
-                    error={!!form.formState.errors.timeTaken}
+                    error={!!updateErrors.timeTaken}
                   />
                 )}
               />
@@ -347,7 +352,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
                 <View style={styles.itemFieldContainer}>
                   <FormFieldGroup
                     label={index === 0 ? "Item" : undefined}
-                    error={form.formState.errors.itemsNeeded?.[index]?.itemId?.message}
+                    error={createErrors.itemsNeeded?.[index]?.itemId?.message}
                   >
                     <Controller
                       control={form.control}
@@ -371,7 +376,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
                 <View style={styles.quantityContainer}>
                   <FormFieldGroup
                     label={index === 0 ? "Quantidade" : undefined}
-                    error={form.formState.errors.itemsNeeded?.[index]?.quantity?.message}
+                    error={createErrors.itemsNeeded?.[index]?.quantity?.message}
                   >
                     <Controller
                       control={form.control}

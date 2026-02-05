@@ -70,7 +70,7 @@ export function TaskNameAutocomplete({ control, disabled }: TaskNameAutocomplete
                   setInputValue(value);
                   field.onChange(value);
                   // Show dropdown when typing 2+ characters
-                  if (value.length >= 2) {
+                  if (String(value).length >= 2) {
                     setIsOpen(true);
                   } else {
                     setIsOpen(false);
@@ -90,7 +90,7 @@ export function TaskNameAutocomplete({ control, disabled }: TaskNameAutocomplete
                 }}
                 placeholder="Ex: Pintura completa do caminhão"
                 disabled={disabled}
-                error={fieldState.error?.message}
+                error={!!fieldState.error}
               />
               {isLoading && (
                 <View style={styles.loadingIndicator}>

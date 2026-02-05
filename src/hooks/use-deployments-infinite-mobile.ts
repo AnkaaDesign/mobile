@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useDeploymentsInfinite } from './deployment';
 import type { DeploymentGetManyFormData } from '@/schemas';
+import type { Deployment } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for deployments
@@ -24,5 +25,5 @@ export function useDeploymentsInfiniteMobile(params?: Partial<DeploymentGetManyF
   const infiniteQuery = useDeploymentsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Deployment>(infiniteQuery);
 }

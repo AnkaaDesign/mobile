@@ -29,7 +29,7 @@ export function PaymentCard({ commission }: PaymentCardProps) {
     return null;
   }
 
-  const baseValue = commission.task?.price || 0;
+  const baseValue = commission.task?.pricing?.total || 0;
   const commissionRate = commission.user?.position?.commissionRate || 0;
   const calculatedAmount = baseValue * (commissionRate / 100);
   const multiplier = commission.status === COMMISSION_STATUS.PARTIAL_COMMISSION ? 0.5 : 1.0;

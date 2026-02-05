@@ -130,8 +130,8 @@ export function createFormulaComponentsListConfig(
               return `Tem certeza que deseja remover "${itemName}" da fórmula? Esta ação não pode ser desfeita.`
             },
           },
-          onPress: async (component, _, { delete: deleteComponent }) => {
-            await deleteComponent(component.id)
+          onPress: async (component, _, context) => {
+            await context?.delete?.(component.id)
           },
         },
       ],
@@ -266,8 +266,8 @@ export function createFormulaComponentsListConfig(
             message: (count) =>
               `Deseja excluir ${count} ${count === 1 ? 'componente' : 'componentes'}?`,
           },
-          onPress: async (ids, { batchDeleteAsync }) => {
-            await batchDeleteAsync({ ids: Array.from(ids) })
+          onPress: async (ids, mutations) => {
+            await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
           },
         },
       ],

@@ -36,7 +36,7 @@ export const warningsListConfig: ListConfig<Warning> = {
         align: 'left',
         render: (warning) => warning.category ? WARNING_CATEGORY_LABELS[warning.category] : '—',
         format: 'badge',
-        badgeVariant: 'primary',
+        badge: () => ({ variant: 'primary' }),
       },
       {
         key: 'severity',
@@ -46,7 +46,7 @@ export const warningsListConfig: ListConfig<Warning> = {
         align: 'left',
         render: (warning) => warning.severity ? WARNING_SEVERITY_LABELS[warning.severity] : '—',
         format: 'badge',
-        badgeVariant: 'secondary',
+        badge: () => ({ variant: 'secondary' }),
       },
       {
         key: 'followUpDate',
@@ -105,8 +105,8 @@ export const warningsListConfig: ListConfig<Warning> = {
           title: 'Confirmar Exclusão',
           message: (warning) => `Deseja excluir esta advertência?`,
         },
-        onPress: async (warning, _, { delete: deleteWarning }) => {
-          await deleteWarning(warning.id)
+        onPress: async (warning, _, context) => {
+          await context?.delete?.(warning.id)
         },
       },
     ],
@@ -269,10 +269,10 @@ export const warningsListConfig: ListConfig<Warning> = {
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'collaborator', label: 'Funcionário', path: 'collaborator.name' },
-      { key: 'category', label: 'Categoria', path: 'category', format: (value) => value ? WARNING_CATEGORY_LABELS[value] : '—' },
-      { key: 'severity', label: 'Severidade', path: 'severity', format: (value) => WARNING_SEVERITY_LABELS[value] || value },
+      { key: 'category', label: 'Categoria', path: 'category', format: (value: any): string => value ? WARNING_CATEGORY_LABELS[value as WARNING_CATEGORY] : '—' },
+      { key: 'severity', label: 'Severidade', path: 'severity', format: (value: any): string => WARNING_SEVERITY_LABELS[value as WARNING_SEVERITY] || String(value) },
       { key: 'followUpDate', label: 'Data', path: 'followUpDate', format: 'date' },
-      { key: 'attachments', label: 'Anexo', path: 'attachments', format: (value) => value && value.length > 0 ? 'Sim' : 'Não' },
+      { key: 'attachments', label: 'Anexo', path: 'attachments', format: (value: any): string => value && value.length > 0 ? 'Sim' : 'Não' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],
   },
@@ -292,8 +292,8 @@ export const warningsListConfig: ListConfig<Warning> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'advertência' : 'advertências'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, actions) => {
+          await actions?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

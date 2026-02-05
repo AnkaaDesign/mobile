@@ -119,7 +119,7 @@ export const BorrowItemInfoCard: React.FC<BorrowItemInfoCardProps> = ({ borrow }
             <View style={styles.infoText}>
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Fornecedor</ThemedText>
               <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {item.supplier.fantasyName || item.supplier.corporateName || item.supplier.name || "-"}
+                {item.supplier.fantasyName || item.supplier.corporateName || "-"}
               </ThemedText>
             </View>
           </View>

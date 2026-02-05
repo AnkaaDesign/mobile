@@ -48,7 +48,7 @@ const TeamWarningTableRowSwipeComponent = ({
             onPress: () => onDelete(warningId),
             closeOnPress: false,
             confirmDelete: true,
-            confirmDeleteMessage: "Tem certeza que deseja excluir esta advertência?",
+            deleteMessage: "Tem certeza que deseja excluir esta advertência?",
           },
         ]
       : []),

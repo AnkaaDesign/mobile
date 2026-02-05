@@ -42,10 +42,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
 
   query: {
     hook: 'useMyBonusesInfiniteMobile',
-    defaultSort: [
-      { field: 'year', direction: 'desc' },
-      { field: 'month', direction: 'desc' },
-    ],
+    defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
   },
 
@@ -246,22 +243,23 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       {
         key: 'period',
         label: 'Período',
-        format: (_, bonus) => {
-          const monthName = getMonthLabel(bonus.month)
-          return `${monthName}/${bonus.year}`
+        path: 'month',
+        format: (value: any): string => {
+          const monthName = getMonthLabel(value)
+          return `${monthName}`
         }
       },
       {
         key: 'baseBonus',
         label: 'Valor Bruto',
         path: 'baseBonus',
-        format: (value) => formatBonusAmount(value)
+        format: (value: any): string => formatBonusAmount(value)
       },
       {
         key: 'netBonus',
         label: 'Valor Líquido',
         path: 'netBonus',
-        format: (value) => formatBonusAmount(value)
+        format: (value: any): string => formatBonusAmount(value)
       },
       {
         key: 'performanceLevel',
@@ -272,13 +270,13 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         key: 'weightedTasks',
         label: 'Tarefas Ponderadas',
         path: 'weightedTasks',
-        format: (value) => formatDecimal(value)
+        format: (value: any): string => formatDecimal(value)
       },
       {
         key: 'averageTaskPerUser',
         label: 'Média por Colaborador',
         path: 'averageTaskPerUser',
-        format: (value) => formatDecimal(value)
+        format: (value: any): string => formatDecimal(value)
       },
       {
         key: 'position',

@@ -187,8 +187,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
           title: 'Confirmar Exclusão',
           message: (airbrushing) => `Deseja excluir esta aerografia?`,
         },
-        onPress: async (airbrushing, _, { delete: deleteAirbrushing }) => {
-          await deleteAirbrushing(airbrushing.id)
+        onPress: async (airbrushing, _, { delete: deleteAirbrushing } = {}) => {
+          await deleteAirbrushing?.(airbrushing.id)
         },
       },
     ],
@@ -283,8 +283,8 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'aerografia' : 'aerografias'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

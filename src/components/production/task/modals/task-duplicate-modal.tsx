@@ -123,7 +123,7 @@ export function TaskDuplicateModal({
         observation: task.observation
           ? {
               description: task.observation.description,
-              artworkIds: task.observation.artworks?.map((file: any) => file.id) || [],
+              artworkIds: task.observation.files?.map((file: any) => file.id) || [],
             }
           : null,
 
@@ -155,7 +155,9 @@ export function TaskDuplicateModal({
 
       // API client already shows success alert
 
-      onSuccess?.(result.data);
+      if (result.data) {
+        onSuccess?.(result.data);
+      }
       reset();
       onClose();
     } catch (error: any) {
@@ -212,10 +214,11 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+                    onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
                     placeholder="Ex: ABC-123"
                     autoCapitalize="characters"
-                    error={errors.serialNumber?.message}
+                    error={!!errors.serialNumber}
+                    errorMessage={errors.serialNumber?.message}
                   />
                 )}
               />
@@ -235,7 +238,7 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+                    onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
                     placeholder="Ex: ABC1D23"
                     autoCapitalize="characters"
                   />
@@ -252,7 +255,7 @@ export function TaskDuplicateModal({
                 render={({ field: { onChange, value } }) => (
                   <Input
                     value={value || ""}
-                    onChangeText={(text) => onChange((text ?? '').toUpperCase())}
+                    onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
                     placeholder="Ex: 9BWZZZ377VT004251"
                     autoCapitalize="characters"
                   />

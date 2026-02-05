@@ -151,7 +151,7 @@ function getUserPrivilegeLabels(user: User | null): string {
 /**
  * Unauthorized Access Screen for Mobile
  */
-function UnauthorizedScreen({ requiredPrivilege, _fallbackScreen }: { requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; fallbackScreen?: string }) {
+function UnauthorizedScreen({ requiredPrivilege, fallbackScreen: _fallbackScreen }: { requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; fallbackScreen?: string }) {
   const { user, logout } = useAuth();
 
   const handleGoBack = () => {

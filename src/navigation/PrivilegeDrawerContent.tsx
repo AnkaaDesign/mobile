@@ -245,7 +245,7 @@ function PrivilegeDrawerContent({
               </Text>
               <View style={styles.privilegeContainer}>
                 <Text style={[styles.userRole, { color: isDark ? '#a3a3a3' : '#737373' }]}>
-                  {user?.sectors?.[0]?.name || 'Cargo'}
+                  {user?.sector?.name || 'Cargo'}
                 </Text>
                 <PrivilegeBadge privilege={highestPrivilege} isDark={isDark} />
               </View>

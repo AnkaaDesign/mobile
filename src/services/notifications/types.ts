@@ -114,15 +114,6 @@ export interface NotificationActionResult {
 }
 
 /**
- * Background fetch result
- */
-export enum BackgroundFetchResult {
-  NewData = 'newData',
-  NoData = 'noData',
-  Failed = 'failed',
-}
-
-/**
  * Notification channel configuration (Android)
  */
 export interface NotificationChannelConfig {

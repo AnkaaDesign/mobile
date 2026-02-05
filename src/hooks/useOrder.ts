@@ -12,6 +12,7 @@ import {
   batchDeleteOrders,
 } from '@/api-client';
 import type {
+  OrderGetManyFormData,
   OrderCreateFormData,
   OrderUpdateFormData,
   OrderBatchCreateFormData,

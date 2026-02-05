@@ -127,8 +127,8 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
           title: 'Confirmar Exclusão',
           message: (order) => `Deseja excluir a ordem de serviço "${order.description || order.id}"?`,
         },
-        onPress: async (order, _, { delete: deleteOrder }) => {
-          await deleteOrder(order.id)
+        onPress: async (order, _, { delete: deleteOrder } = {}) => {
+          await deleteOrder?.(order.id)
         },
       },
     ],
@@ -228,9 +228,9 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
           title: 'Atualizar Status',
           message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'ordem' : 'ordens'} de serviço?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for new status
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
         },
       },
       {
@@ -242,8 +242,8 @@ export const serviceOrdersListConfig: ListConfig<ServiceOrder> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'ordem' : 'ordens'} de serviço?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

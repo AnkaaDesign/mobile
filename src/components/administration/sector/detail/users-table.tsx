@@ -178,14 +178,7 @@ export function UsersTable({ sector, maxHeight = 500 }: UsersTableProps) {
                 enableSwipeActions={false}
                 visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                  isFetchingNextPage ? (
-                    <View style={styles.footerLoader}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                  ) : null
-                }
+                loadingMore={isFetchingNextPage}
               />
             </View>
           )}

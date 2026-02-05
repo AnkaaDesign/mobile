@@ -74,8 +74,8 @@ export const holidaysListConfig: ListConfig<Holiday> = {
           title: 'Confirmar Exclusão',
           message: (holiday) => `Deseja excluir o feriado "${holiday.name}"?`,
         },
-        onPress: async (holiday, _, { delete: deleteHoliday }) => {
-          await deleteHoliday(holiday.id)
+        onPress: async (holiday, _, context) => {
+          await context?.delete?.(holiday.id)
         },
       },
     ],
@@ -151,8 +151,8 @@ export const holidaysListConfig: ListConfig<Holiday> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'feriado' : 'feriados'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

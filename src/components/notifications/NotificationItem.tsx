@@ -32,14 +32,8 @@ function getNotificationIcon(type: NOTIFICATION_TYPE): string {
       return 'package';
     case NOTIFICATION_TYPE.STOCK:
       return 'warehouse';
-    case NOTIFICATION_TYPE.USER:
-      return 'user';
-    case NOTIFICATION_TYPE.MAINTENANCE:
-      return 'tool';
     case NOTIFICATION_TYPE.PPE:
       return 'shield';
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return 'currency-dollar';
     default:
       return 'bell';
   }
@@ -58,14 +52,8 @@ function getNotificationIconColor(type: NOTIFICATION_TYPE, isDark: boolean): str
       return extendedColors.green[600];
     case NOTIFICATION_TYPE.STOCK:
       return extendedColors.orange[600];
-    case NOTIFICATION_TYPE.USER:
-      return extendedColors.indigo[600];
-    case NOTIFICATION_TYPE.MAINTENANCE:
-      return extendedColors.yellow[700];
     case NOTIFICATION_TYPE.PPE:
       return extendedColors.teal[600];
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return extendedColors.emerald[600];
     default:
       return isDark ? extendedColors.neutral[400] : extendedColors.neutral[600];
   }
@@ -84,14 +72,8 @@ function getNotificationIconBgColor(type: NOTIFICATION_TYPE, isDark: boolean): s
       return isDark ? extendedColors.green[900] : extendedColors.green[100];
     case NOTIFICATION_TYPE.STOCK:
       return isDark ? extendedColors.orange[900] : extendedColors.orange[100];
-    case NOTIFICATION_TYPE.USER:
-      return isDark ? extendedColors.indigo[900] : extendedColors.indigo[100];
-    case NOTIFICATION_TYPE.MAINTENANCE:
-      return isDark ? extendedColors.yellow[900] : extendedColors.yellow[100];
     case NOTIFICATION_TYPE.PPE:
       return isDark ? extendedColors.teal[900] : extendedColors.teal[100];
-    case NOTIFICATION_TYPE.FINANCIAL:
-      return isDark ? extendedColors.emerald[900] : extendedColors.emerald[100];
     default:
       return isDark ? extendedColors.neutral[800] : extendedColors.neutral[100];
   }

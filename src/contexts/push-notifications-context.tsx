@@ -115,7 +115,7 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       // This prevents "Sucesso" toasts from API calls made during navigation
       notify.setSuppressSuccessToasts(true, 5000);
 
-      const data = response.notification.request.content.data;
+      const data = response.notification.request.content.data as Record<string, string | undefined>;
       const title = response.notification.request.content.title;
       const body = response.notification.request.content.body;
 

@@ -126,7 +126,7 @@ export function CutRequestModal({
         },
       );
 
-      onSuccess?.(response.data?.success);
+      onSuccess?.(response.data?.success ?? []);
       reset();
       onClose();
     } catch (error) {
@@ -145,7 +145,7 @@ export function CutRequestModal({
 
   // Get proper filename
   const file = cutItem?.file;
-  const fileName = file?.filename || file?.key || "arquivo";
+  const fileName = file?.filename || (file?.key as string | undefined) || "arquivo";
 
   // Reason options for combobox
   const reasonOptions = Object.entries(CUT_REQUEST_REASON_LABELS).map(
@@ -182,11 +182,11 @@ export function CutRequestModal({
           {/* Content */}
           <View style={styles.content}>
             {/* File name */}
-            {fileName && (
+            {fileName ? (
               <ThemedText style={[styles.fileName, { color: colors.mutedForeground }]} numberOfLines={1}>
                 {fileName}
               </ThemedText>
-            )}
+            ) : null}
 
             {/* Current cut info */}
             {cutItem && (

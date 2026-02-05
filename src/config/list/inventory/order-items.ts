@@ -198,8 +198,8 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           message: (orderItem) =>
             `Tem certeza que deseja remover "${orderItem.item?.name || 'este item'}" do pedido?`,
         },
-        onPress: async (orderItem, _, { delete: deleteOrderItem }) => {
-          await deleteOrderItem(orderItem.id)
+        onPress: async (orderItem, _, context) => {
+          await context?.delete?.(orderItem.id)
         },
       },
     ],
@@ -265,23 +265,23 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
         key: 'price',
         label: 'Preço Unitário',
         path: 'price',
-        format: (value) => formatCurrency(value),
+        format: (value: any) => formatCurrency(value),
       },
       {
         key: 'totalPrice',
         label: 'Total',
-        format: (orderItem) => formatCurrency((orderItem.price || 0) * (orderItem.orderedQuantity || 0)),
+        format: (value: any) => formatCurrency((value?.price || 0) * (value?.orderedQuantity || 0)),
       },
       { key: 'icms', label: 'ICMS (%)', path: 'icms', format: 'number' },
       { key: 'ipi', label: 'IPI (%)', path: 'ipi', format: 'number' },
       {
         key: 'status',
         label: 'Status',
-        format: (orderItem) => {
-          if (orderItem.receivedQuantity && orderItem.receivedQuantity >= orderItem.orderedQuantity) {
+        format: (value: any) => {
+          if (value?.receivedQuantity && value.receivedQuantity >= value.orderedQuantity) {
             return 'Recebido'
           }
-          if (orderItem.receivedQuantity && orderItem.receivedQuantity > 0) {
+          if (value?.receivedQuantity && value.receivedQuantity > 0) {
             return 'Parcial'
           }
           return 'Pendente'
@@ -308,7 +308,7 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           title: 'Confirmar Recebimento',
           message: (count) => `Deseja marcar ${count} ${count === 1 ? 'item' : 'itens'} como recebido?`,
         },
-        onPress: async (ids, { markReceivedAsync }) => {
+        onPress: async (ids, context) => {
           // Convert ids to array of { id, receivedQuantity }
           // This would need access to the items to get orderedQuantity
           // For now, this is a placeholder
@@ -324,8 +324,8 @@ export const orderItemsListConfig: ListConfig<OrderItem> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'item' : 'itens'} do pedido?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

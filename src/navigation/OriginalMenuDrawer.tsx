@@ -80,7 +80,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   // Animation refs
   const chevronAnimations = useRef(new Map<string, Animated.Value>());
   // Timer refs for long press - moved to component level to fix hooks order
-  const longPressTimers = useRef(new Map<string, NodeJS.Timeout>());
+  const longPressTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   // Dropdown animation
   const dropdownAnimation = useRef(new Animated.Value(0)).current;
 
@@ -124,13 +124,12 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const navUser = useMemo(() => {
     if (!authUser) return null;
 
-    // Convert old API structure to navigation-compatible structure
-    // Handle both sector (single) and sectors (array) formats
-    const userPrivilege = authUser.sector?.privileges || authUser.position?.sector?.privileges;
+    // Use the sector property directly from the user
+    const userSector = authUser.sector || authUser.position?.sector;
 
     return {
       ...authUser,
-      sector: authUser.sector || authUser.sectors?.[0] || authUser.position?.sector,
+      sector: userSector,
       position: authUser.position,
     };
   }, [authUser]);
@@ -530,34 +529,37 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 </View>
 
                 {/* Favorite toggle button - only for items with paths */}
-                {item.path && !item.isContextual && !isNavigating && (
-                  <Pressable
-                    onPress={async (e) => {
-                      e.stopPropagation();
-                      // Instant haptic feedback for favorite toggle
-                      lightImpactHaptic();
-                      await toggleFavorite({
-                        path: item.path,
-                        title: item.title,
-                        icon: item.icon,
-                      });
-                    }}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: hasChildren ? 0 : SPACING.xs,
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    {isFavorite(item.path) ? (
-                      <IconStarFilled size={16} color="#eab308" />
-                    ) : (
-                      <IconStar size={16} color={isActive ? "#fafafa" : isDarkMode ? "#cccccc" : "#525252"} opacity={0.5} />
-                    )}
-                  </Pressable>
-                )}
+                {item.path && !item.isContextual && !isNavigating && (() => {
+                  const itemPath = item.path; // Capture path to ensure TypeScript narrowing
+                  return (
+                    <Pressable
+                      onPress={async (e) => {
+                        e.stopPropagation();
+                        // Instant haptic feedback for favorite toggle
+                        lightImpactHaptic();
+                        await toggleFavorite({
+                          path: itemPath,
+                          title: item.title,
+                          icon: item.icon,
+                        });
+                      }}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: hasChildren ? 0 : SPACING.xs,
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      {isFavorite(itemPath) ? (
+                        <IconStarFilled size={16} color="#eab308" />
+                      ) : (
+                        <IconStar size={16} color={isActive ? "#fafafa" : (isDarkMode ? "#cccccc" : "#525252")} opacity={0.5} />
+                      )}
+                    </Pressable>
+                  );
+                })()}
 
                 {/* Chevron for expandable items */}
                 {hasChildren && (
@@ -570,7 +572,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                   >
                     <View style={styles.chevronTouchable}>
                       {chevronAnimation ? (
-                        <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+                        <Animated.View style={{ transform: [{ rotate: chevronRotation || '0deg' }] }}>
                           <Icon name="chevron-right" size={16} variant={isActive ? "onPrimary" : isInPath ? "primary" : "navigation"} />
                         </Animated.View>
                       ) : (
@@ -661,7 +663,11 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
-                      {authUser?.email || (authUser?.phone && maskPhone(authUser.phone)) || "Email/Phone"}
+                      {(() => {
+                        if (authUser?.email) return authUser.email;
+                        if (authUser?.phone) return maskPhone(authUser.phone);
+                        return "Email/Phone";
+                      })()}
                     </Text>
                   </View>
                   <Animated.View
@@ -910,7 +916,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                             <View style={styles.menuItemInner}>
                               <View style={[styles.menuItemContent, { paddingLeft: SPACING.md }]}>
                                 <View style={styles.menuItemIcon}>
-                                  {getIconComponentLocal(favorite.icon, isFavoriteActive ? "onPrimary" : "navigation")}
+                                  {getIconComponentLocal(favorite.icon || "star", isFavoriteActive ? "onPrimary" : "navigation")}
                                 </View>
                                 <Text
                                   style={[

@@ -233,7 +233,7 @@ export default function MaintenanceDetailsScreen() {
                     <View style={styles.itemDetailRow}>
                       <ThemedText style={styles.detailLabel}>Fornecedor:</ThemedText>
                       <ThemedText style={styles.detailValue}>
-                        {targetItem.supplier.fantasyName || targetItem.supplier.name}
+                        {targetItem.supplier.fantasyName}
                       </ThemedText>
                     </View>
                   )}

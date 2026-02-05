@@ -15,6 +15,7 @@ import { AIRBRUSHING_STATUS } from "@/constants/enums";
 import { AIRBRUSHING_STATUS_LABELS } from "@/constants/enum-labels";
 import { IconTrash, IconSpray, IconGripVertical } from "@tabler/icons-react-native";
 import { formatCurrency, formatDate } from "@/utils";
+import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import * as DocumentPicker from "expo-document-picker";
 
 interface MultiAirbrushingSelectorProps {
@@ -220,7 +221,7 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                       <ThemedText style={styles.airbrushingHeaderTitle}>Aerografia {index + 1}</ThemedText>
                       <View style={[styles.badge, { backgroundColor: getStatusBadgeColor(airbrushing.status) }]}>
                         <ThemedText style={[styles.badgeText, { color: "#ffffff" }]}>
-                          {AIRBRUSHING_STATUS_LABELS[airbrushing.status]}
+                          {AIRBRUSHING_STATUS_LABELS[airbrushing.status as keyof typeof AIRBRUSHING_STATUS_LABELS] ?? airbrushing.status}
                         </ThemedText>
                       </View>
                       {airbrushing.price && (
@@ -258,7 +259,7 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             <Label>Status</Label>
                             <Combobox
                               value={airbrushing.status}
-                              onValueChange={(value) => updateAirbrushing(airbrushing.id, { status: value })}
+                              onValueChange={(value) => updateAirbrushing(airbrushing.id, { status: value as string })}
                               disabled={disabled}
                               options={statusOptions}
                               placeholder="Selecione o status"
@@ -273,7 +274,7 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             type="currency"
                             value={airbrushing.price ? String(airbrushing.price) : ""}
                             onChangeText={(value) => {
-                              const numValue = parseFloat((value ?? '').replace(/[^0-9.-]/g, ""));
+                              const numValue = parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ""));
                               updateAirbrushing(airbrushing.id, {
                                 price: isNaN(numValue) ? null : numValue,
                               });

@@ -17,9 +17,13 @@ export interface Vacation extends BaseEntity {
   statusOrder: number; // 1=Pendente, 2=Aprovado, 3=Rejeitado, 4=Ativo, 5=Concluído, 6=Cancelado
   type: VACATION_TYPE;
   typeOrder: number;
+  daysRequested?: number; // Number of vacation days requested
+  observation?: string | null; // Optional observation/notes
+  approvedById?: string | null; // ID of user who approved
 
   // Relations
   user?: User;
+  approvedBy?: User; // User who approved the vacation
 }
 
 // =====================

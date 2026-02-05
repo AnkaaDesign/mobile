@@ -71,7 +71,7 @@ export default function ProductionPreparationScreen() {
         defaultSort: { field: 'forecastDate', direction: 'asc' },
       },
       filters: {
-        ...tasksListAgendaConfig.filters,
+        fields: tasksListAgendaConfig.filters?.fields ?? [],
         defaultValues: defaultFilters,
       },
     // Configure default visible columns for agenda

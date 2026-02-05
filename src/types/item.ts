@@ -79,6 +79,12 @@ export interface Item extends BaseEntity {
   ppeDeliveryMode: PPE_DELIVERY_MODE | null;
   ppeStandardQuantity: number | null;
 
+  // Additional fields for display/compatibility
+  description?: string | null; // Item description
+  expirationDate?: Date | null; // Expiration date for perishable/certified items
+  ca?: string | null; // Alias for ppeCA (Certificate of Approval)
+  validity?: number | null; // Validity period in days
+
   // Measure fields (backward compatibility)
   measureUnit?: MEASURE_UNIT;
   measureValue?: number;

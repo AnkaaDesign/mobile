@@ -51,7 +51,7 @@ export function useInfiniteErrorHandler(options: InfiniteErrorHandlerOptions = {
       try {
         // Add delay before retry
         if (retryDelay > 0) {
-          await new Promise((resolve) => setTimeout(resolve, retryDelay * retryCount));
+          await new Promise<void>((resolve) => setTimeout(resolve, retryDelay * retryCount));
         }
 
         await retryFn();

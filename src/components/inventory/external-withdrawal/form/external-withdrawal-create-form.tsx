@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Alert as RNAlert } from "react-native";
 import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
 
@@ -122,9 +122,9 @@ export function ExternalWithdrawalCreateForm() {
     if (!success && formTouched) {
       // Show validation errors
       if (stage === 1 && validation.errors.withdrawerName) {
-        Alert.alert("Erro", validation.errors.withdrawerName);
+        RNAlert.alert("Erro", validation.errors.withdrawerName);
       } else if (stage === 2 && validation.errors.selectedItems) {
-        Alert.alert("Erro", validation.errors.selectedItems);
+        RNAlert.alert("Erro", validation.errors.selectedItems);
       }
     }
   }, [goToNextStage, formTouched, stage, validation]);
@@ -152,7 +152,7 @@ export function ExternalWithdrawalCreateForm() {
   // Submit handler
   const handleSubmit = useCallback(async () => {
     if (!validation.canSubmit) {
-      Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios");
+      RNAlert.alert("Erro", "Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
@@ -170,7 +170,7 @@ export function ExternalWithdrawalCreateForm() {
 
       if (result.success && result.data) {
         await resetForm();
-        router.replace(`/inventory/external-withdrawals/${result.data.id}`);
+        router.replace(`/inventory/external-withdrawals/${result.data.id}` as any);
       }
     } catch (error) {
       console.error("Submission error:", error);
@@ -210,7 +210,7 @@ export function ExternalWithdrawalCreateForm() {
               onChangeText={updateWithdrawerName}
               placeholder="Digite o nome da pessoa que está retirando"
               maxLength={200}
-              error={formTouched && validation.errors.withdrawerName}
+              error={formTouched && !!validation.errors.withdrawerName}
             />
             {formTouched && validation.errors.withdrawerName && (
               <Text style={styles.errorText}>{validation.errors.withdrawerName}</Text>

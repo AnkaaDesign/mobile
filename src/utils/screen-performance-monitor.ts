@@ -1,5 +1,9 @@
 import { useEffect, useRef, useCallback } from 'react';
 
+// Helper function to get high-resolution timestamp with fallback for React Native
+const getTimestamp = (): number =>
+  typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+
 interface ScreenMetrics {
   name: string;
   mountTime?: number;
@@ -22,7 +26,7 @@ class ScreenPerformanceMonitor {
   startScreen(screenName: string) {
     if (!this.enabled) return;
 
-    const startTime = performance.now();
+    const startTime = getTimestamp();
     this.activeScreens.set(screenName, { startTime });
 
     console.log(`📱 [SCREEN START] ${screenName}`);
@@ -36,7 +40,7 @@ class ScreenPerformanceMonitor {
     const screen = this.activeScreens.get(screenName);
     if (!screen) return;
 
-    const mountTime = performance.now() - screen.startTime;
+    const mountTime = getTimestamp() - screen.startTime;
     screen.mountTime = mountTime;
 
     console.log(`🎯 [SCREEN MOUNT] ${screenName}: ${mountTime.toFixed(0)}ms`);
@@ -53,7 +57,7 @@ class ScreenPerformanceMonitor {
     const screen = this.activeScreens.get(screenName);
     if (!screen) return;
 
-    const dataFetchTime = performance.now() - screen.startTime - (screen.mountTime || 0);
+    const dataFetchTime = getTimestamp() - screen.startTime - (screen.mountTime || 0);
 
     console.log(`📊 [DATA LOADED] ${screenName}: ${dataFetchTime.toFixed(0)}ms from mount`);
 
@@ -76,7 +80,7 @@ class ScreenPerformanceMonitor {
     const screen = this.activeScreens.get(screenName);
     if (!screen) return;
 
-    const totalTime = performance.now() - screen.startTime;
+    const totalTime = getTimestamp() - screen.startTime;
     const renderTime = totalTime - (screen.mountTime || 0);
 
     console.log(`✅ [SCREEN RENDERED] ${screenName}:`);
@@ -210,7 +214,7 @@ export function useScreenPerformance(screenName: string) {
   // Track mount
   useEffect(() => {
     if (!hasMountedRef.current) {
-      startTimeRef.current = performance.now();
+      startTimeRef.current = getTimestamp();
       screenPerformanceMonitor.startScreen(screenName);
       screenPerformanceMonitor.markMounted(screenName);
       hasMountedRef.current = true;
@@ -243,6 +247,6 @@ export function useScreenPerformance(screenName: string) {
   return {
     trackDataLoaded,
     trackRenderComplete,
-    getElapsedTime: () => performance.now() - startTimeRef.current,
+    getElapsedTime: () => getTimestamp() - startTimeRef.current,
   };
 }

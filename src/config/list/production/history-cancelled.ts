@@ -2,14 +2,13 @@ import React from 'react'
 import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
-import type { Task, User } from '@/types'
+import type { Task } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
-import { PAINT_FINISH } from '@/constants/enums'
 
 export const historyCancelledListConfig: ListConfig<Task> = {
   key: 'production-history-cancelled',
@@ -242,8 +241,10 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
         },
-        onPress: async (task, _, { delete: deleteTask }) => {
-          await deleteTask(task.id)
+        onPress: async (task, _, context) => {
+          if (context?.delete) {
+            await context.delete(task.id)
+          }
         },
       },
     ],
@@ -405,9 +406,11 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           title: 'Atribuir Setor',
           message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, mutations) => {
           // Implementation would need to prompt for sector
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          if (mutations?.batchUpdateAsync) {
+            await mutations.batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          }
         },
       },
       {
@@ -419,8 +422,10 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          if (mutations?.batchDeleteAsync) {
+            await mutations.batchDeleteAsync({ ids: Array.from(ids) })
+          }
         },
       },
     ],

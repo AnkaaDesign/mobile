@@ -61,7 +61,7 @@ export interface FileViewerActions {
   openFile: (file: AnkaaFile) => Promise<void>;
 }
 
-export interface FileViewerContextValue {
+export interface FileViewerContextValue extends FileViewerActions {
   state: FileViewerState;
   actions: FileViewerActions;
 }
@@ -372,6 +372,8 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
   const contextValue = useMemo<FileViewerContextValue>(() => ({
     state,
     actions,
+    // Spread actions at top level for convenience
+    ...actions,
   }), [state, actions]);
 
   // Get current file for modals

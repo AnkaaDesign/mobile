@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Icon } from '@/components/ui/icon';
 import { useTheme } from '@/lib/theme';
-import { Select } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   EXTERNAL_WITHDRAWAL_STATUS,
@@ -84,31 +84,33 @@ export const ExternalWithdrawalFilters = React.memo<ExternalWithdrawalFiltersPro
       onClose();
     }, [onClearFilters, onClose]);
 
-    const handleStatusChange = useCallback((values: string[]) => {
+    const handleStatusChange = useCallback((values: string | string[] | null | undefined) => {
+      const statusValues = Array.isArray(values) ? values : values ? [values] : [];
       setLocalFilters((prev) => ({
         ...prev,
-        statuses: values as EXTERNAL_WITHDRAWAL_STATUS[],
+        statuses: statusValues as EXTERNAL_WITHDRAWAL_STATUS[],
       }));
     }, []);
 
-    const handleTypeChange = useCallback((values: string[]) => {
+    const handleTypeChange = useCallback((values: string | string[] | null | undefined) => {
+      const typeValues = Array.isArray(values) ? values : values ? [values] : [];
       setLocalFilters((prev) => ({
         ...prev,
-        types: values as EXTERNAL_WITHDRAWAL_TYPE[],
+        types: typeValues as EXTERNAL_WITHDRAWAL_TYPE[],
       }));
     }, []);
 
-    const handleCreatedAtStartChange = useCallback((date: Date | null) => {
+    const handleCreatedAtStartChange = useCallback((date: Date | undefined) => {
       setLocalFilters((prev) => ({
         ...prev,
-        createdAtStart: date || undefined,
+        createdAtStart: date,
       }));
     }, []);
 
-    const handleCreatedAtEndChange = useCallback((date: Date | null) => {
+    const handleCreatedAtEndChange = useCallback((date: Date | undefined) => {
       setLocalFilters((prev) => ({
         ...prev,
-        createdAtEnd: date || undefined,
+        createdAtEnd: date,
       }));
     }, []);
 
@@ -137,24 +139,28 @@ export const ExternalWithdrawalFilters = React.memo<ExternalWithdrawalFiltersPro
             {/* Status Filter */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Status</Text>
-              <Select
+              <Combobox
                 options={statusOptions}
                 value={localFilters.statuses || []}
-                onChange={handleStatusChange}
+                onValueChange={handleStatusChange}
                 placeholder="Selecione os status"
-                multiple
+                mode="multiple"
+                searchPlaceholder="Buscar status..."
+                emptyText="Nenhum status encontrado"
               />
             </View>
 
             {/* Type Filter */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.foreground }]}>Tipo</Text>
-              <Select
+              <Combobox
                 options={typeOptions}
                 value={localFilters.types || []}
-                onChange={handleTypeChange}
+                onValueChange={handleTypeChange}
                 placeholder="Selecione os tipos"
-                multiple
+                mode="multiple"
+                searchPlaceholder="Buscar tipos..."
+                emptyText="Nenhum tipo encontrado"
               />
             </View>
 

@@ -68,7 +68,7 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
   const userPrivilege = user?.sector?.privileges || user?.position?.sector?.privileges;
   const isTeamLeader = Boolean(user?.managedSector?.id);
 
-  filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege as SECTOR_PRIVILEGES | undefined, isTeamLeader);
+  filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege, isTeamLeader);
 
   // Apply bonifiable filtering - hide menu items that require bonifiable position
   // User must be EFFECTED and have a bonifiable position to see bonus-related menus
@@ -120,8 +120,8 @@ function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, is
 
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
-    const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
-    return userPrivilege ? regularPrivileges.includes(userPrivilege) : false;
+    const regularPrivileges: SECTOR_PRIVILEGES[] = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    return regularPrivileges.includes(userPrivilege);
   }
 
   // Handle single privilege
@@ -209,7 +209,7 @@ export function filterMenuByPlatform(menuItems: MenuItem[], platform: "web" | "m
   return menuItems
     .filter((item) => {
       // Exclude items marked as excludeFromMobile when on mobile platform
-      if (platform === "mobile" && ((item as any).excludeFromMobile)) {
+      if (platform === "mobile" && ('excludeFromMobile' in item && item.excludeFromMobile)) {
         return false;
       }
       return true;
@@ -507,8 +507,8 @@ export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVI
 
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
-    const regularPrivileges = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
-    return userPrivilege ? regularPrivileges.includes(userPrivilege) : false;
+    const regularPrivileges: SECTOR_PRIVILEGES[] = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    return regularPrivileges.includes(userPrivilege);
   }
 
   // Handle single privilege

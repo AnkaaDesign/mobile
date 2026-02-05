@@ -16,7 +16,7 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     // Filter tasks to only show those with commission (exclude NO_COMMISSION)
-    defaultFilters: {
+    forcedParams: {
       commission: [
         COMMISSION_STATUS.FULL_COMMISSION,
         COMMISSION_STATUS.PARTIAL_COMMISSION,
@@ -91,12 +91,12 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'price',
+        key: 'pricing.total',
         label: 'VALOR',
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (task) => task.price || null,
+        render: (task) => task.pricing?.total || null,
         format: 'currency',
       },
       {

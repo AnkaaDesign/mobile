@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from '../constants';
 
-// Add polyfills for Node.js environments (btoa, atob are browser-only)
-const btoa = (typeof globalThis !== 'undefined' && (globalThis as any).btoa) || ((str: string) => Buffer.from(str, 'binary').toString('base64'));
-const atob = (typeof globalThis !== 'undefined' && (globalThis as any).atob) || ((str: string) => Buffer.from(str, 'base64').toString('binary'));
+// Add polyfills for Node.js/React Native environments (btoa, atob are browser-only)
+const btoa: (str: string) => string = (typeof globalThis !== 'undefined' && (globalThis as any).btoa) || ((str: string) => Buffer.from(str, 'binary').toString('base64'));
+const atob: (str: string) => string = (typeof globalThis !== 'undefined' && (globalThis as any).atob) || ((str: string) => Buffer.from(str, 'base64').toString('binary'));
 
 // =====================
 // Base URL State Configuration

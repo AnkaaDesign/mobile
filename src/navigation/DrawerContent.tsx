@@ -19,10 +19,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { IconChevronRight} from '@tabler/icons-react-native';
 
 interface DrawerContentProps extends DrawerContentComponentProps {
-  onNavigate: (path: string) => Promise<void>;
-  onPrefetch: (moduleName: any) => void;
-  userPrivileges: string[];
-  theme: string;
+  onNavigate?: (path: string) => Promise<void>;
+  onPrefetch?: (moduleName: string) => void;
+  userPrivileges?: string[];
+  theme?: string;
   isDark: boolean;
 }
 
@@ -113,8 +113,6 @@ function DrawerContentComponent({
   navigation,
   onNavigate,
   onPrefetch,
-  userPrivileges,
-  theme,
   isDark,
 }: DrawerContentProps) {
   const router = useRouter();
@@ -131,9 +129,9 @@ function DrawerContentComponent({
     return getFilteredMenuForUser(MENU_ITEMS, user, 'mobile');
   }, [user]);
 
-  // Get favorite items
+  // Get favorite items - filter by path since favorites contain FavoriteItem objects
   const favoriteItems = useMemo(() =>
-    filteredMenu.filter(item => favorites.includes(item.id)),
+    filteredMenu.filter(item => item.path && favorites.some(fav => fav.path === item.path)),
     [filteredMenu, favorites]
   );
 
@@ -175,7 +173,9 @@ function DrawerContentComponent({
     navigation.closeDrawer();
 
     // Trigger module loading if needed
-    await onNavigate(item.path);
+    if (onNavigate) {
+      await onNavigate(item.path);
+    }
 
     // Navigate to the route
     const routePath = item.path.replace(/^\//, '');
@@ -186,6 +186,8 @@ function DrawerContentComponent({
 
   // Prefetch module on hover/focus
   const handlePrefetch = useCallback((path: string) => {
+    if (!onPrefetch) return;
+
     if (path.startsWith('/producao')) {
       onPrefetch('production');
     } else if (path.startsWith('/estoque')) {
@@ -254,7 +256,7 @@ function DrawerContentComponent({
                 {user?.nome || 'Usuário'}
               </Text>
               <Text style={[styles.userRole, { color: isDark ? '#a3a3a3' : '#737373' }]}>
-                {user?.sectors?.[0]?.name || 'Cargo'}
+                {user?.sector?.name || 'Cargo'}
               </Text>
             </View>
           </View>
@@ -330,7 +332,6 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     marginHorizontal: 8,
     borderRadius: 6,
-    transition: 'background-color 0.2s',
   },
   menuItemPressed: {
     backgroundColor: 'rgba(21, 128, 61, 0.1)',
@@ -368,7 +369,6 @@ const styles = StyleSheet.create({
   },
   chevron: {
     transform: [{ rotate: '0deg' }],
-    transition: 'transform 0.2s',
   },
   chevronExpanded: {
     transform: [{ rotate: '90deg' }],

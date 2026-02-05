@@ -17,7 +17,7 @@ interface BackupFilterDrawerContentProps {
 }
 
 interface FilterState {
-  type?: "database" | "files" | "full";
+  type?: "database" | "files" | "system" | "full";
   statuses?: Array<"pending" | "in_progress" | "completed" | "failed">;
   createdAfter?: Date;
   createdBefore?: Date;
@@ -74,7 +74,7 @@ export function BackupFilterDrawerContent({
     onClear();
   }, [onClear]);
 
-  const handleTypeSelect = useCallback((type: "database" | "files" | "full") => {
+  const handleTypeSelect = useCallback((type: "database" | "files" | "system" | "full") => {
     setLocalFilters((prev) => ({
       ...prev,
       type: prev.type === type ? undefined : type,

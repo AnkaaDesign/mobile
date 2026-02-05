@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -188,14 +188,7 @@ export function CutsTable({ taskId, taskSectorId, maxHeight = 400 }: CutsTablePr
                 onCutRequest={canRequestCuts ? handleCutRequest : undefined}
                 visibleColumnKeys={visibleColumnKeys}
                 onEndReached={() => canLoadMore && loadMore()}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                  isFetchingNextPage ? (
-                    <View style={styles.footerLoader}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                  ) : null
-                }
+                loadingMore={isFetchingNextPage}
               />
             </View>
           )}
@@ -283,9 +276,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.sm,
     textAlign: "center",
-  },
-  footerLoader: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
   },
 });

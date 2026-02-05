@@ -1,8 +1,56 @@
 import { apiClient } from "../axiosClient";
 import type { UserNotificationPreference } from "../../types";
+import { NOTIFICATION_CHANNEL, NOTIFICATION_IMPORTANCE } from "../../constants";
 
 // =====================
-// Request/Response Types
+// Configuration-Driven API Types (New)
+// =====================
+
+export interface ChannelPreferenceDetail {
+  channel: NOTIFICATION_CHANNEL;
+  enabled: boolean;
+  mandatory: boolean;
+  defaultOn: boolean;
+  userEnabled: boolean;
+}
+
+export interface UserPreferenceConfig {
+  configKey: string;
+  description: string;
+  importance: NOTIFICATION_IMPORTANCE;
+  channels: ChannelPreferenceDetail[];
+}
+
+export interface GroupedConfigurationsResponse {
+  [notificationType: string]: UserPreferenceConfig[];
+}
+
+export interface AvailableConfigurationsApiResponse {
+  success: boolean;
+  message: string;
+  data?: GroupedConfigurationsResponse;
+}
+
+export interface UpdateUserPreferencePayload {
+  channels: NOTIFICATION_CHANNEL[];
+}
+
+export interface UpdateUserPreferenceApiResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    configKey: string;
+    channels: NOTIFICATION_CHANNEL[];
+  };
+}
+
+export interface ResetPreferenceApiResponse {
+  success: boolean;
+  message: string;
+}
+
+// =====================
+// Legacy Request/Response Types
 // =====================
 
 export interface UserNotificationPreferenceGetManyResponse {
@@ -121,6 +169,37 @@ export const notificationPreferenceService = {
         mandatory: boolean;
       }>;
     }>("/notification-preferences/defaults"),
+};
+
+// =====================
+// Configuration-Driven User Preference Service (New)
+// =====================
+
+export const notificationUserPreferenceService = {
+  /**
+   * Get all available notification configurations grouped by type.
+   * This returns the user's current preference state for each configuration.
+   */
+  getAvailableConfigurations: () =>
+    apiClient.get<AvailableConfigurationsApiResponse>("/api/notifications/preferences/available-configurations"),
+
+  /**
+   * Update user preference for a specific configuration.
+   * The channels array should contain the channels the user wants enabled.
+   */
+  updatePreference: (configKey: string, data: UpdateUserPreferencePayload) =>
+    apiClient.put<UpdateUserPreferenceApiResponse>(
+      `/api/notifications/preferences/my-preferences/${configKey}`,
+      data
+    ),
+
+  /**
+   * Reset user preference for a specific configuration to defaults.
+   */
+  resetPreference: (configKey: string) =>
+    apiClient.post<ResetPreferenceApiResponse>(
+      `/api/notifications/preferences/my-preferences/${configKey}/reset`
+    ),
 };
 
 // =====================

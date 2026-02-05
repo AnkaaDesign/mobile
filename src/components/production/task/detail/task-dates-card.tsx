@@ -22,7 +22,7 @@ interface TaskDatesCardProps {
   task: Task & {
     entryDate?: Date | string;
     term?: Date | string;
-    forecastDate?: Date | string;
+    forecastDate?: Date | string | null;
     createdBy?: {
       name: string;
     };

@@ -133,8 +133,8 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
           title: 'Confirmar Exclusão',
           message: (size) => `Deseja excluir os tamanhos de "${size.user?.name || 'funcionário'}"?`,
         },
-        onPress: async (size, _, { delete: deleteSize }) => {
-          await deleteSize(size.id)
+        onPress: async (size, _, context) => {
+          await context?.delete?.(size.id)
         },
       },
     ],
@@ -237,8 +237,8 @@ export const ppeSizesListConfig: ListConfig<PpeSize> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'registro' : 'registros'} de tamanho?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

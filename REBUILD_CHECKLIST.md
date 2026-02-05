@@ -59,7 +59,7 @@ The APK was showing `https://api.ankaa.live` because the code wasn't properly re
 
 **File:** `app.json`
 
-- Has `"apiUrl": "http://192.168.10.161:3030"` in extra section
+- Has `"apiUrl": "http://192.168.0.16:3030"` in extra section
 
 ## Why It Will Work Now
 
@@ -72,7 +72,7 @@ The APK was showing `https://api.ankaa.live` because the code wasn't properly re
 ### After (Why It Works):
 
 1. `_layout.tsx` checks `Constants.expoConfig.extra.apiUrl` FIRST ✅
-2. `app.json` gets bundled into APK with `apiUrl: "http://192.168.10.161:3030"` ✅
+2. `app.json` gets bundled into APK with `apiUrl: "http://192.168.0.16:3030"` ✅
 3. All API URL loading code checks Constants FIRST ✅
 4. Android allows HTTP traffic ✅
 
@@ -122,15 +122,15 @@ adb install ~/Downloads/ankaa-design-release-*.apk
 ### 1. On App Launch (check logs via adb logcat):
 
 ```
-[App] Setting API URL from app.json : http://192.168.10.161:3030
-[API Client] Using API URL from app.json: http://192.168.10.161:3030
+[App] Setting API URL from app.json : http://192.168.0.16:3030
+[API Client] Using API URL from app.json: http://192.168.0.16:3030
 ```
 
 ### 2. When You Tap "Testar Conexão com API":
 
 ```
 === TESTE DE CONECTIVIDADE ===
-API URL: http://192.168.10.161:3030    ← Should show LOCAL IP now!
+API URL: http://192.168.0.16:3030    ← Should show LOCAL IP now!
 --- Teste Básico ---
 Status: ✅ SUCESSO
 ```
@@ -150,7 +150,7 @@ global.__ANKAA_API_URL__: <what's in global>
 
 Before rebuilding, verify:
 
-- [ ] `app.json` has `"apiUrl": "http://192.168.10.161:3030"`
+- [ ] `app.json` has `"apiUrl": "http://192.168.0.16:3030"`
 - [ ] All 5 files above were modified with Constants import
 - [ ] Android network security config exists
 - [ ] AndroidManifest has cleartext traffic enabled
@@ -160,7 +160,7 @@ After installing new APK:
 - [ ] Uninstalled old version completely
 - [ ] Installed NEW APK (check timestamp!)
 - [ ] Phone is on same WiFi as API server (192.168.0.x)
-- [ ] API server is running at 192.168.10.161:3030
+- [ ] API server is running at 192.168.0.16:3030
 
 ## If It STILL Doesn't Work
 

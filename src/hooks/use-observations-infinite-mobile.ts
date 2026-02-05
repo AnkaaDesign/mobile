@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useObservationsInfinite } from './useObservation';
 import { ObservationGetManyFormData } from '@/schemas';
+import type { Observation } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for observations
@@ -24,5 +25,5 @@ export function useObservationsInfiniteMobile(params?: Partial<ObservationGetMan
   const infiniteQuery = useObservationsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Observation>(infiniteQuery);
 }

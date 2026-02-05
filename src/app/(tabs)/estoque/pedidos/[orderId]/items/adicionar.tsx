@@ -174,7 +174,7 @@ export default function AddOrderItemScreen() {
           <Card style={styles.card}>
             <View style={styles.orderHeader}>
               <ThemedText style={styles.orderTitle}>{order?.data?.description || `Pedido #${order?.data?.id}`}</ThemedText>
-              <ThemedText style={styles.orderSupplier}>{order?.data?.supplier?.name || order?.data?.supplier?.fantasyName}</ThemedText>
+              <ThemedText style={styles.orderSupplier}>{order?.data?.supplier?.fantasyName}</ThemedText>
             </View>
           </Card>
 

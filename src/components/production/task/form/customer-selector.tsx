@@ -101,7 +101,7 @@ export function CustomerSelector({
 
   // Custom render option with logo and metadata
   const renderOption = useCallback(
-    (option: any, isSelected: boolean, _onPress: () => void) => {
+    (option: any, isSelected: boolean) => {
       // Defensive check: option is the Customer object directly
       const customer = option as Customer;
 

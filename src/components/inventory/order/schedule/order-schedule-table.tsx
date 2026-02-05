@@ -56,7 +56,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (schedule: OrderSchedule) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {schedule.supplier?.name || "Sem fornecedor"}
+        {schedule.supplier?.fantasyName || "Sem fornecedor"}
       </ThemedText>
     ),
   },

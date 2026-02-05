@@ -72,8 +72,8 @@ export function OrderItemSelector({
       ].filter(Boolean).join(" | "),
       metadata: {
         quantity: initialItem.quantity,
-        category: initialItem.itemCategory,
-        brand: initialItem.itemBrand,
+        category: initialItem.category,
+        brand: initialItem.brand,
         supplier: initialItem.supplier,
         price: priceInfo,
         isActive: initialItem.isActive,
@@ -91,8 +91,8 @@ export function OrderItemSelector({
         OR: [
           { name: { contains: searchTerm, mode: "insensitive" } },
           { uniCode: { contains: searchTerm, mode: "insensitive" } },
-          { itemBrand: { name: { contains: searchTerm, mode: "insensitive" } } },
-          { itemCategory: { name: { contains: searchTerm, mode: "insensitive" } } },
+          { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+          { category: { name: { contains: searchTerm, mode: "insensitive" } } },
         ],
       } : {}),
       // Apply category filter
@@ -118,13 +118,13 @@ export function OrderItemSelector({
         isActive: true,
         icms: true,
         ipi: true,
-        itemCategory: {
+        category: {
           select: {
             id: true,
             name: true,
           },
         },
-        itemBrand: {
+        brand: {
           select: {
             id: true,
             name: true,
@@ -149,7 +149,7 @@ export function OrderItemSelector({
     });
 
     const items = response.data || [];
-    const total = response.total || 0;
+    const total = response.meta?.totalRecords || 0;
     const hasMore = (page * pageSize) < total;
 
     return {
@@ -168,8 +168,8 @@ export function OrderItemSelector({
           ].filter(Boolean).join(" | "),
           metadata: {
             quantity: item.quantity,
-            category: item.itemCategory,
-            brand: item.itemBrand,
+            category: item.category,
+            brand: item.brand,
             supplier: item.supplier,
             price: priceInfo,
             isActive: item.isActive,
@@ -257,7 +257,11 @@ export function OrderItemSelector({
         debounceMs={500}
         loadOnMount={false}
         value={value || ""}
-        onValueChange={onValueChange}
+        onValueChange={(val) => {
+          // Handle string | string[] | null | undefined - extract single value
+          const singleValue = Array.isArray(val) ? val[0] : val;
+          onValueChange(singleValue || undefined);
+        }}
         placeholder="Selecione um item"
         emptyText="Nenhum item disponível"
         searchPlaceholder="Buscar por nome, código, marca ou categoria..."

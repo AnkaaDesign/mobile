@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useBonusesInfinite } from './bonus';
-import type { BonusGetManyParams } from '@/types';
+import type { BonusGetManyParams, Bonus } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for bonuses
@@ -34,5 +34,5 @@ export function useBonusesInfiniteMobile(params?: Partial<BonusGetManyParams> & 
   const infiniteQuery = useBonusesInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Bonus>(infiniteQuery);
 }

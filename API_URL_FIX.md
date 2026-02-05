@@ -2,7 +2,7 @@
 
 ## Problem
 
-The diagnostic showed the APK was trying to connect to `https://api.ankaa.live` (production) instead of `http://192.168.10.161:3030` (your local dev API). This happened because:
+The diagnostic showed the APK was trying to connect to `https://api.ankaa.live` (production) instead of `http://192.168.0.16:3030` (your local dev API). This happened because:
 
 1. Release builds set `__DEV__` to `false`
 2. The `.env` file doesn't get bundled into the APK
@@ -21,7 +21,7 @@ I've updated the API URL configuration to use `app.json` which DOES get bundled 
 1. `app.json` → `extra.apiUrl` ✅ **Gets bundled into APK!**
 2. `.env` → `EXPO_PUBLIC_API_URL` (only works in dev mode)
 3. Global variable `__ANKAA_API_URL__`
-4. Fallback to `http://192.168.10.161:3030`
+4. Fallback to `http://192.168.0.16:3030`
 
 **Files Updated:**
 
@@ -34,7 +34,7 @@ I've updated the API URL configuration to use `app.json` which DOES get bundled 
 ```json
 {
   "extra": {
-    "apiUrl": "http://192.168.10.161:3030"
+    "apiUrl": "http://192.168.0.16:3030"
   }
 }
 ```
@@ -81,7 +81,7 @@ adb install ~/Downloads/ankaa-design-release-[timestamp].apk
 2. **Before logging in, tap "Testar Conexão com API"**
 3. You should now see:
    ```
-   API URL: http://192.168.10.161:3030
+   API URL: http://192.168.0.16:3030
    Status: ✅ SUCESSO
    ```
 4. Try to login - it should work!
@@ -91,8 +91,8 @@ adb install ~/Downloads/ankaa-design-release-[timestamp].apk
 When the app starts, you'll see console logs showing which API URL is being used:
 
 ```
-[API Client] Using API URL from app.json: http://192.168.10.161:3030
-[File Viewer] Using API URL from app.json: http://192.168.10.161:3030
+[API Client] Using API URL from app.json: http://192.168.0.16:3030
+[File Viewer] Using API URL from app.json: http://192.168.0.16:3030
 ```
 
 This confirms it's using the correct URL from app.json.
@@ -104,7 +104,7 @@ This confirms it's using the correct URL from app.json.
 **app.json:**
 
 ```json
-"apiUrl": "http://192.168.10.161:3030"
+"apiUrl": "http://192.168.0.16:3030"
 ```
 
 ### For Production Release
@@ -149,10 +149,10 @@ If the diagnostic still shows the wrong URL after rebuilding:
    cat app.json | grep apiUrl
    ```
 
-   Should show: `"apiUrl": "http://192.168.10.161:3030"`
+   Should show: `"apiUrl": "http://192.168.0.16:3030"`
 
 3. **Check console logs when app starts:**
-   Should see: `[API Client] Using API URL from app.json: http://192.168.10.161:3030`
+   Should see: `[API Client] Using API URL from app.json: http://192.168.0.16:3030`
 
 4. **If building with EAS Build, use `eas.json` configuration instead**
 

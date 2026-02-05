@@ -48,7 +48,7 @@ const TeamPpeDeliveryTableRowSwipeComponent = ({
             onPress: () => onDelete(deliveryId),
             closeOnPress: false,
             confirmDelete: true,
-            confirmDeleteMessage: `Deseja realmente excluir a entrega para ${deliveryName}?`,
+            deleteMessage: `Deseja realmente excluir a entrega para ${deliveryName}?`,
           },
         ]
       : []),

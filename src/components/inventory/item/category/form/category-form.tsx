@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-
+import type { DefaultValues, Path, FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { itemCategoryCreateSchema, itemCategoryUpdateSchema, type ItemCategoryCreateFormData, type ItemCategoryUpdateFormData } from '../../../../../schemas';
@@ -15,6 +15,14 @@ import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
+// Base form data type that covers both create and update scenarios
+// This helps TypeScript properly infer the Path types for react-hook-form
+interface ItemCategoryBaseFormData {
+  name: string;
+  type: ITEM_CATEGORY_TYPE;
+  itemIds?: string[];
+}
+
 interface ItemCategoryFormProps<TMode extends "create" | "update"> {
   onSubmit: (data: TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData) => Promise<any>;
   onCancel: () => void;
@@ -27,21 +35,22 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
 
-  type FormData = TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData;
-
-  const form = useForm<FormData>({
+  // Use base form type for react-hook-form to properly infer Path types
+  // The actual submit handler uses the proper TMode-based type
+  const form = useForm<ItemCategoryBaseFormData>({
     resolver: zodResolver(mode === "create" ? itemCategoryCreateSchema : itemCategoryUpdateSchema),
     defaultValues: {
       name: "",
       type: ITEM_CATEGORY_TYPE.REGULAR,
       itemIds: [],
       ...defaultValues,
-    } as any,
+    } as DefaultValues<ItemCategoryBaseFormData>,
   });
 
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = async (data: ItemCategoryBaseFormData) => {
     try {
-      await onSubmit(data as any);
+      // Cast to the appropriate type based on mode
+      await onSubmit(data as TMode extends "create" ? ItemCategoryCreateFormData : ItemCategoryUpdateFormData);
     } catch (error) {
       // Error handling done by parent component
     }
@@ -99,14 +108,14 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
           <FormFieldGroup
             label="Nome da Categoria"
             required={isRequired}
-            error={form.formState.errors.name?.message}
+            error={(form.formState.errors.name as FieldError | undefined)?.message}
           >
             <Controller
               control={form.control}
               name="name"
               render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <Input
-                  value={value || ""}
+                  value={typeof value === 'string' ? value : ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   placeholder="Ex: Ferramentas, EPIs, etc."
@@ -127,7 +136,7 @@ export function ItemCategoryForm<TMode extends "create" | "update">({ onSubmit, 
                   ? "Categoria para ferramentas e equipamentos"
                   : "Categoria para produtos gerais"
             }
-            error={form.formState.errors.type?.message}
+            error={(form.formState.errors.type as FieldError | undefined)?.message}
           >
             <Controller
               control={form.control}

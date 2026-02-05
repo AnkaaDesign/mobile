@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamStaffVacations } from "@/api-client";
 import { useInfiniteMobile } from "./use-infinite-mobile";
+import type { Vacation } from "@/types";
 
 // Mobile-optimized page size for team staff vacations
 const MOBILE_TEAM_STAFF_VACATIONS_PAGE_SIZE = 25;
@@ -68,5 +69,5 @@ export function useTeamStaffVacationsInfiniteMobile(params?: any) {
   };
 
   const infiniteQuery = useTeamStaffVacationsInfinite(queryParams);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Vacation>(infiniteQuery);
 }

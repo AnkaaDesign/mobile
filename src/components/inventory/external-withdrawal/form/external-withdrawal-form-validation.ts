@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Item, User } from "@/types";
-import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
+import { EXTERNAL_WITHDRAWAL_TYPE, USER_STATUS } from "@/constants";
 
 // =====================
 // VALIDATION ERROR TYPES
@@ -115,8 +115,8 @@ export function validateStage1(
 
   // Business rule validations
   if (context.selectedUser) {
-    // Check if user is active
-    if (context.selectedUser.status !== "ACTIVE") {
+    // Check if user is active (not dismissed)
+    if (context.selectedUser.status === USER_STATUS.DISMISSED || !context.selectedUser.isActive) {
       errors.push({
         field: "withdrawerId",
         message: "Usuário selecionado está inativo",

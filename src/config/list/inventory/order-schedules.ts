@@ -58,7 +58,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (schedule) => schedule.supplier?.name || '-',
+        render: (schedule) => schedule.supplier?.fantasyName || '-',
       },
       {
         key: 'itemsCount',
@@ -126,8 +126,8 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir este agendamento automático?`,
         },
-        onPress: async (schedule, _, { delete: deleteSchedule }) => {
-          await deleteSchedule(schedule.id)
+        onPress: async (schedule, _, { delete: deleteSchedule } = {}) => {
+          await deleteSchedule?.(schedule.id)
         },
       },
     ],
@@ -221,7 +221,7 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
         format: (value) => FREQUENCY_LABELS[value] || value,
       },
       { key: 'frequencyCount', label: 'Intervalo', path: 'frequencyCount' },
-      { key: 'supplier', label: 'Fornecedor', path: 'supplier.name' },
+      { key: 'supplier', label: 'Fornecedor', path: 'supplier.fantasyName' },
       { key: 'isActive', label: 'Ativo', path: 'isActive', format: (value) => (value ? 'Sim' : 'Não') },
       { key: 'nextRun', label: 'Próxima Execução', path: 'nextRun', format: 'datetime' },
       { key: 'lastRun', label: 'Última Execução', path: 'lastRun', format: 'datetime' },
@@ -244,8 +244,8 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Ativação',
           message: (count) => `Ativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), isActive: true })
+        onPress: async (ids, { batchUpdate } = {}) => {
+          await batchUpdate?.({ ids: Array.from(ids), isActive: true })
         },
       },
       {
@@ -257,8 +257,8 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Desativação',
           message: (count) => `Desativar ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), isActive: false })
+        onPress: async (ids, { batchUpdate } = {}) => {
+          await batchUpdate?.({ ids: Array.from(ids), isActive: false })
         },
       },
       {
@@ -270,8 +270,8 @@ export const orderSchedulesListConfig: ListConfig<OrderSchedule> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'agendamento' : 'agendamentos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

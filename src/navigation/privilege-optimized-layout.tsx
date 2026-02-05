@@ -22,7 +22,7 @@ const logPerformance = (action: string, startTime: number) => {
 };
 
 // Lazy load drawer content
-const DrawerContent = lazy(() => import('./PrivilegeDrawerContent'));
+const PrivilegeDrawerContent = lazy(() => import('./PrivilegeDrawerContent'));
 
 // Route configuration with privilege requirements
 interface RouteConfig {
@@ -41,9 +41,14 @@ const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES, number> = {
   [SECTOR_PRIVILEGES.FINANCIAL]: 7,
   [SECTOR_PRIVILEGES.PRODUCTION]: 6,
   [SECTOR_PRIVILEGES.WAREHOUSE]: 5,
+  [SECTOR_PRIVILEGES.STOCK]: 5, // Same level as WAREHOUSE
   [SECTOR_PRIVILEGES.MAINTENANCE]: 4,
   [SECTOR_PRIVILEGES.LOGISTIC]: 3,
+  [SECTOR_PRIVILEGES.COMMERCIAL]: 3, // Same level as LOGISTIC
   [SECTOR_PRIVILEGES.DESIGNER]: 2,
+  [SECTOR_PRIVILEGES.PLOTTING]: 2, // Same level as DESIGNER
+  [SECTOR_PRIVILEGES.LEADER]: 2, // Leadership privilege
+  [SECTOR_PRIVILEGES.TEAM_LEADER]: 2, // Virtual privilege - checked via user.managedSector
   [SECTOR_PRIVILEGES.EXTERNAL]: 1,
   [SECTOR_PRIVILEGES.BASIC]: 0,
 };
@@ -280,8 +285,10 @@ export function PrivilegeOptimizedDrawerLayout() {
 
   // Get user privileges
   const userPrivileges = useMemo(() => {
-    if (!user?.sectors) return [SECTOR_PRIVILEGES.BASIC];
-    return user.sectors.map(s => s.privilege as SECTOR_PRIVILEGES);
+    if (!user?.sector) return [SECTOR_PRIVILEGES.BASIC];
+    // User has a single sector relationship, extract privilege from it
+    const sectorPrivilege = (user.sector as { privilege?: string })?.privilege;
+    return sectorPrivilege ? [sectorPrivilege as SECTOR_PRIVILEGES] : [SECTOR_PRIVILEGES.BASIC];
   }, [user]);
 
   // Calculate and load accessible routes
@@ -330,9 +337,9 @@ export function PrivilegeOptimizedDrawerLayout() {
 
   return (
     <Drawer
-      drawerContent={(props) => (
+      drawerContent={(props: DrawerContentComponentProps) => (
         <Suspense fallback={<LoadingScreen />}>
-          <DrawerContent
+          <PrivilegeDrawerContent
             {...props}
             accessibleRoutes={accessibleRoutes}
             userPrivileges={userPrivileges}

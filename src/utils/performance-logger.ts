@@ -11,6 +11,28 @@
  * View logs in Metro bundler console or React Native Debugger.
  */
 
+// Helper function to get high-resolution timestamp with fallback for React Native
+const getTimestamp = (): number =>
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+
+// Type declaration for performance.memory (non-standard Chrome API)
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+declare global {
+  interface Performance {
+    memory?: PerformanceMemory;
+  }
+}
+
+// Declare __DEV__ global for React Native
+declare const __DEV__: boolean;
+
 type PerformanceEntry = {
   label: string
   startTime: number
@@ -35,7 +57,7 @@ class PerformanceLogger {
     renderCounts: new Map<string, number>(),
     memoryUsage: [] as number[],
   }
-  private startupTime = performance.now()
+  private startupTime = getTimestamp()
 
   setEnabled(value: boolean) {
     this.enabled = value
@@ -47,7 +69,7 @@ class PerformanceLogger {
   start(label: string, metadata?: Record<string, any>) {
     if (!this.enabled) return
 
-    const startTime = performance.now()
+    const startTime = getTimestamp()
     this.entries.set(label, { label, startTime, metadata })
 
     console.log(`⏱️ [PERF START] ${label}`, metadata ? JSON.stringify(metadata) : '')
@@ -65,7 +87,7 @@ class PerformanceLogger {
       return
     }
 
-    const endTime = performance.now()
+    const endTime = getTimestamp()
     const duration = endTime - entry.startTime
 
     entry.endTime = endTime
@@ -87,7 +109,7 @@ class PerformanceLogger {
   navigationClick(from: string, to: string, itemId?: string) {
     if (!this.enabled) return
 
-    const clickTime = performance.now()
+    const clickTime = getTimestamp()
     this.navigationTimings.push({
       from,
       to,
@@ -104,7 +126,7 @@ class PerformanceLogger {
   screenMount(screenName: string) {
     if (!this.enabled) return
 
-    const mountTime = performance.now()
+    const mountTime = getTimestamp()
     const timing = this.navigationTimings[this.navigationTimings.length - 1]
 
     if (timing && timing.to === screenName) {
@@ -122,7 +144,7 @@ class PerformanceLogger {
   dataReady(screenName: string, dataSource?: string) {
     if (!this.enabled) return
 
-    const dataReadyTime = performance.now()
+    const dataReadyTime = getTimestamp()
     const timing = this.navigationTimings[this.navigationTimings.length - 1]
 
     if (timing && timing.to === screenName) {
@@ -143,7 +165,7 @@ class PerformanceLogger {
   screenRendered(screenName: string) {
     if (!this.enabled) return
 
-    const renderTime = performance.now()
+    const renderTime = getTimestamp()
     const timing = this.navigationTimings[this.navigationTimings.length - 1]
 
     if (timing && timing.to === screenName) {
@@ -164,7 +186,7 @@ class PerformanceLogger {
    */
   mark(label: string) {
     if (!this.enabled) return
-    console.log(`📍 [PERF MARK] ${label}: ${performance.now().toFixed(2)}ms`)
+    console.log(`📍 [PERF MARK] ${label}: ${getTimestamp().toFixed(2)}ms`)
   }
 
   /**
@@ -213,7 +235,9 @@ class PerformanceLogger {
     }
     this.performanceMetrics.apiCalls.get(endpoint)?.push(duration)
 
-    const avg = this.performanceMetrics.apiCalls.get(endpoint)?.reduce((a, b) => a + b, 0)! / this.performanceMetrics.apiCalls.get(endpoint)!.length
+    const durations = this.performanceMetrics.apiCalls.get(endpoint);
+    if (!durations || durations.length === 0) return;
+    const avg = durations.reduce((a, b) => a + b, 0) / durations.length
 
     if (duration > avg * 1.5) {
       console.warn(`⚠️ [API SLOW] ${endpoint}: ${duration.toFixed(0)}ms (avg: ${avg.toFixed(0)}ms)`)
@@ -239,9 +263,10 @@ class PerformanceLogger {
    */
   trackMemory() {
     if (!this.enabled) return
-    if (typeof performance.memory === 'undefined') return
+    const perf = performance as Performance & { memory?: { usedJSHeapSize: number } }
+    if (typeof performance === 'undefined' || typeof perf.memory === 'undefined') return
 
-    const used = (performance.memory as any).usedJSHeapSize / 1048576 // Convert to MB
+    const used = perf.memory.usedJSHeapSize / 1048576 // Convert to MB
     this.performanceMetrics.memoryUsage.push(used)
 
     // Keep only last 10 measurements
@@ -267,7 +292,7 @@ class PerformanceLogger {
   logStartupTime() {
     if (!this.enabled) return
 
-    const startupDuration = performance.now() - this.startupTime
+    const startupDuration = getTimestamp() - this.startupTime
     const color = startupDuration > 3000 ? '🔴' : startupDuration > 2000 ? '🟠' : startupDuration > 1000 ? '🟡' : '🟢'
     console.log(`${color} [APP STARTUP] ${startupDuration.toFixed(0)}ms`)
   }

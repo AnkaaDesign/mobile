@@ -48,7 +48,7 @@ const getStatusColor = (status: string, colors: any) => {
       return colors.warning;
     case PPE_DELIVERY_STATUS.APPROVED:
       return colors.success;
-    case PPE_DELIVERY_STATUS.REJECTED:
+    case PPE_DELIVERY_STATUS.REPROVED:
       return colors.destructive;
     case PPE_DELIVERY_STATUS.DELIVERED:
       return colors.success;
@@ -64,7 +64,7 @@ const getStatusLabel = (status: string) => {
   const statusLabels: Record<string, string> = {
     [PPE_DELIVERY_STATUS.PENDING]: "Pendente",
     [PPE_DELIVERY_STATUS.APPROVED]: "Aprovado",
-    [PPE_DELIVERY_STATUS.REJECTED]: "Rejeitado",
+    [PPE_DELIVERY_STATUS.REPROVED]: "Rejeitado",
     [PPE_DELIVERY_STATUS.DELIVERED]: "Entregue",
     [PPE_DELIVERY_STATUS.CANCELLED]: "Cancelado",
   };

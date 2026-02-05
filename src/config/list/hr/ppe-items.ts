@@ -89,12 +89,12 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         render: (item) => (item.measures?.length ?? 0) > 0 ? `${item.measures!.length} medida(s)` : '-',
       },
       {
-        key: 'description',
+        key: 'name',
         label: 'DESCRIÇÃO',
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (item) => item.description || '-',
+        render: (item) => item.name || '-',
       },
       {
         key: 'currentPrice',
@@ -133,20 +133,20 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         render: (item) => item.reorderPoint?.toString() || '0',
       },
       {
-        key: 'location',
+        key: 'supplier.name',
         label: 'LOCALIZAÇÃO',
         sortable: true,
         width: 1.3,
         align: 'left',
-        render: (item) => item.location || '-',
+        render: (item) => item.supplier?.name || '-',
       },
       {
-        key: 'unit',
+        key: 'measureUnit',
         label: 'UNIDADE',
         sortable: true,
         width: 1.0,
         align: 'center',
-        render: (item) => item.unit || '-',
+        render: (item) => item.measureUnit || '-',
       },
       {
         key: 'createdAt',
@@ -197,8 +197,8 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           title: 'Confirmar Exclusão',
           message: (item) => `Deseja excluir o EPI "${item.name}"?`,
         },
-        onPress: async (item, _, { delete: deleteItem }) => {
-          await deleteItem(item.id)
+        onPress: async (item, _, context) => {
+          await context?.delete?.(item.id)
         },
       },
     ],
@@ -280,7 +280,7 @@ export const ppeItemsListConfig: ListConfig<Item> = {
       { key: 'category.name', label: 'Categoria', path: 'category.name' },
       { key: 'ppeCA', label: 'CA', path: 'ppeCA' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity' },
-      { key: 'measures', label: 'Medidas', path: 'measures', format: (value) => value?.length || 0 },
+      { key: 'measures', label: 'Medidas', path: 'measures', format: (value: any): string => String(value?.length || 0) },
       { key: 'description', label: 'Descrição', path: 'description' },
       { key: 'currentPrice', label: 'Preço Atual', path: 'prices[0].value', format: 'currency' },
       { key: 'minQuantity', label: 'Qtd Mínima', path: 'reorderPoint' },
@@ -308,8 +308,8 @@ export const ppeItemsListConfig: ListConfig<Item> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'EPI' : 'EPIs'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

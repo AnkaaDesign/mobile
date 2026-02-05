@@ -1,6 +1,7 @@
 // packages/utils/src/file-utils.ts
 // Consolidated file utilities with Brazilian formatting and MIME type support
 
+import * as Crypto from 'expo-crypto';
 import { formatNumberWithDecimals } from "./number";
 import type { File as AnkaaFile } from '../types';
 
@@ -1011,15 +1012,15 @@ export const createFileHash = async (file: File): Promise<string> => {
     throw new Error('File.arrayBuffer is not supported in this environment');
   }
 
-  // Check if crypto.subtle is available
-  if (typeof crypto === 'undefined' || !crypto.subtle) {
-    throw new Error('crypto.subtle is not available in this environment');
-  }
-
   const arrayBuffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  const uint8Array = new Uint8Array(arrayBuffer);
+  // Use expo-crypto for React Native compatibility
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    String.fromCharCode(...uint8Array),
+    { encoding: Crypto.CryptoEncoding.HEX }
+  );
+  return hash;
 };
 
 export const generateUploadId = (): string => {

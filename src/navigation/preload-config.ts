@@ -99,11 +99,14 @@ export function useAutoPreload(loadModule: (module: any) => Promise<void>) {
   useEffect(() => {
     if (!user) return;
 
-    const userRoles = user.sectors?.map(s => s.privilege) || [];
+    // Get user roles from sector privileges
+    const userRoles = user.sector?.privileges
+      ? [user.sector.privileges]
+      : [];
     const modulesToLoad = getModulesToPreload(userRoles);
 
     // Schedule module loading with delays
-    const timeouts: NodeJS.Timeout[] = [];
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     modulesToLoad.forEach(({ module, delay }) => {
       const timeout = setTimeout(() => {

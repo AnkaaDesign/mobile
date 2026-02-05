@@ -265,6 +265,15 @@ const styles = StyleSheet.create({
   specLogistics: {
     gap: spacing.xs,
   },
+  specIdHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  specIdLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
   specValueItalic: {
     fontStyle: "italic",
   },

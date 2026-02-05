@@ -47,7 +47,7 @@ export const OrderExport: React.FC<OrderExportProps> = ({ orders, disabled = fal
       {
         key: 'forecast',
         label: 'PREVISÃO',
-        getValue: (order) => order.forecast,
+        getValue: (order) => (order.forecast ? order.forecast.toISOString() : null),
         format: (value) => (value ? formatDate(new Date(value)) : '-'),
       },
       {
@@ -70,13 +70,13 @@ export const OrderExport: React.FC<OrderExportProps> = ({ orders, disabled = fal
       {
         key: 'createdAt',
         label: 'CRIADO EM',
-        getValue: (order) => order.createdAt,
+        getValue: (order) => order.createdAt.toISOString(),
         format: (value) => (value ? formatDateTime(new Date(value)) : '-'),
       },
       {
         key: 'updatedAt',
         label: 'ATUALIZADO EM',
-        getValue: (order) => order.updatedAt,
+        getValue: (order) => order.updatedAt.toISOString(),
         format: (value) => (value ? formatDateTime(new Date(value)) : '-'),
       },
       {

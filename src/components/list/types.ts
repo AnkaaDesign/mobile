@@ -62,6 +62,8 @@ export interface TableColumn<T = any> {
   component?: string // Special component to use (e.g., 'file-thumbnail')
   style?: TextStyle // Additional text styles
   badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
+  /** Custom badge styling function - returns variant and color for badge rendering */
+  badge?: (item: T) => { variant?: string; color?: string }
   /** Custom press handler for cell - when provided, prevents default row press */
   onCellPress?: (item: T) => void
   /** Permission check - if provided, column will only be shown if this returns true */
@@ -74,10 +76,18 @@ export interface ActionMutationsContext {
   update?: (params: { id: string; data: any }) => Promise<any>
   /** Delete an entity by id */
   delete?: (id: string) => Promise<any>
-  /** Batch update multiple entities */
+  /** Batch update multiple entities (synchronous variant) */
+  batchUpdate?: (params: any) => Promise<any>
+  /** Batch update multiple entities (async variant) */
   batchUpdateAsync?: (params: any) => Promise<any>
   /** Batch delete multiple entities */
   batchDeleteAsync?: (params: any) => Promise<any>
+  /** Generic mutations object for entity-specific operations */
+  mutations?: {
+    update?: (params: { id: string; data: any }) => Promise<any>
+    delete?: (id: string) => Promise<any>
+    [key: string]: ((params: any) => Promise<any>) | undefined
+  }
   /** Current user */
   user?: any
   /** Current route for navigation tracking */
@@ -94,6 +104,8 @@ export interface TableAction<T = any> {
   confirm?: {
     title: string
     message: string | ((item: T) => string)
+    confirmText?: string
+    cancelText?: string
   }
   onPress?: (item: T, router?: any, context?: ActionMutationsContext) => void | Promise<void>
   /** Item-level visibility check - receives item and optionally user */

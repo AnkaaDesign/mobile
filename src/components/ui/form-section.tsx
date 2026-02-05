@@ -203,14 +203,18 @@ const fieldGroupStyles = StyleSheet.create({
 export function FormCard({
   title,
   description,
+  subtitle,
   icon,
   children,
   className,
   contentClassName,
   action,
+  badge,
 }: {
   title?: string;
   description?: string;
+  /** Alias for description */
+  subtitle?: string;
   icon?: React.ComponentProps<typeof Icon>["name"];
   children: React.ReactNode;
   className?: string;
@@ -219,7 +223,11 @@ export function FormCard({
     label: string;
     onPress: () => void;
   };
+  /** Badge count to show next to title */
+  badge?: number;
 }) {
+  // Support both description and subtitle (alias)
+  const effectiveDescription = description ?? subtitle;
   const { colors } = useTheme();
 
   return (
@@ -230,7 +238,7 @@ export function FormCard({
       ]}
       className={className}
     >
-      {(title || description || action) && (
+      {(title || effectiveDescription || action) && (
         <View
           style={[
             cardStyles.header,
@@ -253,14 +261,14 @@ export function FormCard({
                     {title}
                   </Text>
                 )}
-                {description && (
+                {effectiveDescription && (
                   <Text
                     style={[
                       cardStyles.description,
                       { color: colors.mutedForeground },
                     ]}
                   >
-                    {description}
+                    {effectiveDescription}
                   </Text>
                 )}
               </View>

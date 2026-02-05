@@ -213,7 +213,7 @@ export function ItemFilterModal({
           <Button
             variant="default"
             onPress={handleApply}
-            style={[styles.footerButton, styles.applyButton]}
+            style={StyleSheet.flatten([styles.footerButton, styles.applyButton])}
           >
             <ThemedText style={[styles.buttonText, { color: colors.primaryForeground }]}>
               Aplicar filtros

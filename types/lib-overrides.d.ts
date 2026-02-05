@@ -28,6 +28,13 @@ declare global {
   var window: any;
   var document: any;
 
+  // URLSearchParams polyfill type for React Native
+  // React Native provides URLSearchParams at runtime but ES2021 lib doesn't include these methods
+  interface URLSearchParams {
+    set(name: string, value: string): void;
+    forEach(callback: (value: string, key: string, parent: URLSearchParams) => void, thisArg?: any): void;
+  }
+
   // Extend existing File interface for React Native
   interface File {
     arrayBuffer?(): Promise<ArrayBuffer>;

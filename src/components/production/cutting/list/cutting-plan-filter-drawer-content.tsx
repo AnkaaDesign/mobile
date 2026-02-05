@@ -279,7 +279,6 @@ export function CuttingPlanFilterDrawerContent({
             <React.Fragment key={section.id}>
               <FilterSection
                 title={section.title}
-                description={section.description}
                 defaultOpen={section.defaultOpen}
                 badge={section.badge}
               >

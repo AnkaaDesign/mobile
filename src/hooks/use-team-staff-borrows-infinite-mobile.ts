@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { getTeamStaffBorrows } from "@/api-client";
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import { BORROW_SELECT_TABLE } from "@/api-client/select-patterns";
+import type { Borrow } from "@/types";
 
 // Mobile-optimized page size for team staff borrows
 const MOBILE_TEAM_STAFF_BORROWS_PAGE_SIZE = 40;
@@ -81,5 +82,5 @@ export function useTeamStaffBorrowsInfiniteMobile(params?: any) {
   };
 
   const infiniteQuery = useTeamStaffBorrowsInfinite(queryParams);
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Borrow>(infiniteQuery);
 }

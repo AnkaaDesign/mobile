@@ -45,7 +45,7 @@ class NetworkService {
   private currentState: NetworkServiceState;
   private listeners: Set<NetworkStateListener> = new Set();
   private netInfoSubscription: NetInfoSubscription | null = null;
-  private reachabilityCheckInterval: NodeJS.Timeout | null = null;
+  private reachabilityCheckInterval: ReturnType<typeof setTimeout> | null = null;
   private isInitialized: boolean = false;
 
   private constructor() {

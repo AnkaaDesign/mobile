@@ -79,8 +79,8 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
           title: 'Confirmar Exclusão',
           message: (brand) => `Deseja excluir a marca "${brand.name}"?`,
         },
-        onPress: async (brand, _, { delete: deleteBrand }) => {
-          await deleteBrand(brand.id)
+        onPress: async (brand, _, context) => {
+          await context?.delete?.(brand.id)
         },
       },
     ],
@@ -136,8 +136,8 @@ export const paintBrandsListConfig: ListConfig<PaintBrand> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'marca de tinta' : 'marcas de tinta'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

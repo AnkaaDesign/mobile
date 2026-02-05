@@ -50,9 +50,9 @@ export function FAB({
     }
 
     // Show loading overlay INSTANTLY if loadingMessage is provided
-    if (loadingMessage) {
+    if (loadingMessage !== undefined) {
       console.log('[FAB] Starting navigation with message:', loadingMessage);
-      startNavigation(loadingMessage);
+      startNavigation();
     }
 
     // Execute action immediately

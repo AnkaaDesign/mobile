@@ -123,7 +123,7 @@ export function RelatedOrdersCard({ supplier, className }: RelatedOrdersCardProp
 
   const handleViewAll = () => {
     if (supplier.id) {
-      router.push(`${routes.inventory.orders.list}?supplierId=${supplier.id}&supplierName=${encodeURIComponent(supplier.name || "")}`);
+      router.push(`${routes.inventory.orders.list}?supplierId=${supplier.id}&supplierName=${encodeURIComponent(supplier.fantasyName || "")}`);
     }
   };
 

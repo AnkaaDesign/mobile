@@ -265,8 +265,14 @@ export function useSimpleTableSort(config: {
  * // Restored when user navigates back
  * ```
  */
+// URLSearchParams-like interface for React Native compatibility
+interface SearchParamsLike {
+  get(key: string): string | null;
+  entries(): IterableIterator<[string, string]>;
+}
+
 export function useSortWithNavigation(
-  searchParams: URLSearchParams,
+  searchParams: SearchParamsLike,
   updateSearchParams: (params: Record<string, string>) => void,
   options: {
     paramKey?: string;

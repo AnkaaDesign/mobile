@@ -62,9 +62,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (showAlert?: boolean, alertMessage?: string) => Promise<void>;
   accessToken: string | null;
-  refreshUserData: () => Promise<void>;
+  refreshUserData: () => Promise<User | null>;
   isAuthReady: boolean;
   register: (data: { name: string; contact: string; password: string }) => Promise<{ requiresVerification: boolean; phone?: string; email?: string; userId?: string }>;
   recoverPassword: (data: PasswordResetRequestFormData) => Promise<void>;
@@ -564,11 +564,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const completeUserData = await fetchAndUpdateUserData(access_token);
         if (completeUserData === 'SKIP' || !completeUserData) {
           setUser(userData as User);
-          await storeUserData(userData);
+          await storeUserData(userData as User);
         }
       } catch {
         setUser(userData as User);
-        await storeUserData(userData);
+        await storeUserData(userData as User);
       }
 
       try {
@@ -610,7 +610,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       await storeToken(token);
-      await storeUserData(user);
+      await storeUserData(user as User);
       setAuthToken(token);
       setAccessToken(token);
       setCachedToken(token);

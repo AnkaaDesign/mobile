@@ -39,8 +39,13 @@ export const usersListConfig: ListConfig<User> = {
       avatarId: true,
       payrollNumber: true,
       verified: true,
+      requirePasswordChange: true,
+      cpf: true,
+      city: true,
+      state: true,
       lastLoginAt: true,
       createdAt: true,
+      updatedAt: true,
       position: {
         select: {
           id: true,
@@ -51,7 +56,7 @@ export const usersListConfig: ListConfig<User> = {
         select: {
           id: true,
           name: true,
-          privileges: true, // Needed for privilege display
+          privileges: true, // Needed for privileges display
         },
       },
       managedSector: {
@@ -103,7 +108,7 @@ export const usersListConfig: ListConfig<User> = {
         width: 1.8,
         align: 'center',
         render: (user) => {
-          const privilege = user.sector?.privilege
+          const privilege = user.sector?.privileges
           if (!privilege) return <Badge variant="secondary" size="sm">Nenhum</Badge>
 
           const variant = getBadgeVariant(privilege, 'SECTOR_PRIVILEGES')
@@ -290,8 +295,8 @@ export const usersListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (user) => `Deseja excluir o usuário "${user.name}"?`,
         },
-        onPress: async (user, _, { delete: deleteUser }) => {
-          await deleteUser(user.id)
+        onPress: async (user, _, mutations) => {
+          await mutations?.delete?.(user.id)
         },
       },
     ],
@@ -322,7 +327,6 @@ export const usersListConfig: ListConfig<User> = {
                 value: sector.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Sector Filter] Error:', error)
@@ -354,7 +358,6 @@ export const usersListConfig: ListConfig<User> = {
                 value: position.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Position Filter] Error:', error)
@@ -408,10 +411,10 @@ export const usersListConfig: ListConfig<User> = {
       { key: 'cpf', label: 'CPF', path: 'cpf' },
       { key: 'phone', label: 'Telefone', path: 'phone' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'privilege', label: 'Privilégio', path: 'sector.privilege', format: (value) => SECTOR_PRIVILEGES_LABELS[value as SECTOR_PRIVILEGES] || value },
+      { key: 'privilege', label: 'Privilégio', path: 'sector.privileges', format: (value) => SECTOR_PRIVILEGES_LABELS[value as SECTOR_PRIVILEGES] || String(value) },
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'managedSector', label: 'Setor Gerenciado', path: 'managedSector.name' },
-      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
+      { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || String(value) },
       { key: 'verified', label: 'Verificado', path: 'verified', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'requirePasswordChange', label: 'Requer Alt. Senha', path: 'requirePasswordChange', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },
@@ -439,8 +442,8 @@ export const usersListConfig: ListConfig<User> = {
           title: 'Confirmar Verificação',
           message: (count) => `Verificar ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), verified: true })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchUpdate?.({ ids: Array.from(ids), verified: true })
         },
       },
       {
@@ -452,8 +455,8 @@ export const usersListConfig: ListConfig<User> = {
           title: 'Confirmar Alteração',
           message: (count) => `Forçar alteração de senha para ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), requirePasswordChange: true })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchUpdate?.({ ids: Array.from(ids), requirePasswordChange: true })
         },
       },
       {
@@ -465,8 +468,8 @@ export const usersListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'usuário' : 'usuários'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

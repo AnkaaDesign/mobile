@@ -31,24 +31,21 @@ export default function CreatePaintScreen() {
       // Step 2: Create formulas if provided
       if (formulas && formulas.length > 0) {
         for (const formula of formulas) {
-          // Calculate total weight for ratio conversion
-          const totalWeight = formula.components?.reduce((sum, c) => sum + (c.weight || 0), 0) || 0;
-
-          if (totalWeight > 0 && formula.components && formula.components.length > 0) {
-            // Convert weight to ratio (percentage)
-            const componentsWithRatio = formula.components
+          if (formula.components && formula.components.length > 0) {
+            // Map components with weightInGrams (API expects weight in grams, not ratio)
+            const componentsWithWeight = formula.components
               .filter((c) => c.itemId && c.weight && c.weight > 0)
               .map((c) => ({
                 itemId: c.itemId,
-                ratio: ((c.weight || 0) / totalWeight) * 100,
+                weightInGrams: c.weight || 0,
               }));
 
             // Only create formula if we have valid components
-            if (componentsWithRatio.length > 0) {
+            if (componentsWithWeight.length > 0) {
               const formulaData = {
                 description: formula.description || "Fórmula Principal",
                 paintId: newPaintId,
-                components: componentsWithRatio,
+                components: componentsWithWeight,
               };
 
               try {

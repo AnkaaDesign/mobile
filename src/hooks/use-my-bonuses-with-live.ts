@@ -4,7 +4,7 @@ import { useCurrentUser } from './useAuth';
 import { useInfiniteMobile } from './use-infinite-mobile';
 import { bonusService } from '@/api-client';
 import { bonusKeys } from './queryKeys';
-import type { BonusGetManyParams } from '@/types';
+import type { BonusGetManyParams, Bonus } from '@/types';
 
 /**
  * Custom infinite query hook that combines live current bonus with historical saved bonuses
@@ -180,11 +180,14 @@ export function useMyBonusesInfiniteMobile(
   }, [infiniteQuery.data, liveBonusForUser, currentYear, currentMonth]);
 
   // Apply mobile optimizations (flattens pages into items array)
-  const result = useInfiniteMobile({
+  // Create a modified query object with combined loading state
+  const combinedQuery = {
     ...infiniteQuery,
     data: combinedData,
     isLoading: isLoadingUser || isLoadingLive || infiniteQuery.isLoading,
-  });
+  } as typeof infiniteQuery;
+
+  const result = useInfiniteMobile<Bonus>(combinedQuery);
 
   return result;
 }

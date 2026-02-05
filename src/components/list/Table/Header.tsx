@@ -15,6 +15,7 @@ interface HeaderProps<T> {
   selection?: {
     enabled: boolean
     selectedIds: Set<string>
+    onToggle?: (id: string) => void
     onToggleAll: () => void
   }
   totalItems: number

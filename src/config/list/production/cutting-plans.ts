@@ -22,16 +22,14 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
     hook: 'useCutsInfiniteMobile',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
-    defaultFilters: {
-      where: {
-        origin: CUT_ORIGIN.PLAN,
-      },
+    where: {
+      origin: CUT_ORIGIN.PLAN,
     },
     include: {
       file: {
         select: {
           id: true,
-          fileName: true,
+          filename: true,
           key: true,
         },
       },
@@ -53,7 +51,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           file: {
             select: {
               id: true,
-              fileName: true,
+              filename: true,
               key: true,
             },
           },
@@ -104,7 +102,7 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (cut) => cut.file?.fileName || cut.file?.key || '-',
+        render: (cut) => cut.file?.filename || cut.file?.key || '-',
       },
       {
         key: 'startedAt',
@@ -166,8 +164,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Exclusão',
           message: () => `Deseja excluir este plano de corte?`,
         },
-        onPress: async (cut, _, { delete: deleteCut }) => {
-          await deleteCut(cut.id)
+        onPress: async (cut, _, { delete: deleteCut } = {}) => {
+          await deleteCut?.(cut.id)
         },
       },
     ],
@@ -249,8 +247,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
       { key: 'type', label: 'Tipo', path: 'type', format: (value) => TYPE_LABELS[value] || value },
       { key: 'task', label: 'Tarefa', path: 'task.name' },
-      { key: 'customer', label: 'Cliente', path: 'task.customer.name' },
-      { key: 'file', label: 'Arquivo', path: 'file.fileName' },
+      { key: 'customer', label: 'Cliente', path: 'task.customer.fantasyName' },
+      { key: 'file', label: 'Arquivo', path: 'file.filename' },
       { key: 'startedAt', label: 'Início', path: 'startedAt', format: 'datetime' },
       { key: 'completedAt', label: 'Conclusão', path: 'completedAt', format: 'datetime' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'datetime' },
@@ -273,8 +271,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Início',
           message: (count) => `Iniciar ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'CUTTING', startedAt: new Date() })
+        onPress: async (ids, { batchUpdate } = {}) => {
+          await batchUpdate?.({ ids: Array.from(ids), status: 'CUTTING', startedAt: new Date() })
         },
       },
       {
@@ -286,8 +284,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Conclusão',
           message: (count) => `Concluir ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'COMPLETED', completedAt: new Date() })
+        onPress: async (ids, { batchUpdate } = {}) => {
+          await batchUpdate?.({ ids: Array.from(ids), status: 'COMPLETED', completedAt: new Date() })
         },
       },
       {
@@ -299,8 +297,8 @@ export const cuttingPlansListConfig: ListConfig<Cut> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'plano' : 'planos'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

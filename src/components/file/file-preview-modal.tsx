@@ -137,7 +137,7 @@ function InlineVideoPlayer({ file, fileUrl, colors, onShare, onToggleControls }:
   const [videoError, setVideoError] = React.useState(false);
   const [isMuted, setIsMuted] = React.useState(false);
   const [showVideoControls, setShowVideoControls] = React.useState(true);
-  const hideControlsRef = React.useRef<NodeJS.Timeout | null>(null);
+  const hideControlsRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPlaying = videoStatus?.isLoaded && videoStatus?.isPlaying;
   const isLoaded = videoStatus?.isLoaded;
@@ -401,7 +401,7 @@ export function FilePreviewModal({
   const isPinching = useSharedValue(false);
 
   // Refs
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Enable orientation change when file viewer is open
   useFileViewerOrientation({ isOpen: visible });
@@ -507,8 +507,7 @@ export function FilePreviewModal({
     showControls();
   }, [isCurrentFilePreviewable, currentImageIndex, totalImages, previewableFiles, showControls]);
 
-  // @ts-expect-error TS6133 - Unused but kept for future features
-  // Zoom functions
+  // Zoom functions (kept for future features)
   const _handleZoomIn = useCallback(() => {
     const newScale = Math.min(scale.value * 1.5, MAX_ZOOM);
     scale.value = withSpring(newScale);
@@ -516,7 +515,6 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // @ts-expect-error TS6133 - Unused but kept for future features
   const _handleZoomOut = useCallback(() => {
     const newScale = Math.max(scale.value / 1.5, MIN_ZOOM);
     scale.value = withSpring(newScale);
@@ -531,7 +529,6 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // @ts-expect-error TS6133 - Unused but kept for future features
   const _handleResetZoom = useCallback(() => {
     scale.value = withSpring(1);
     translateX.value = withSpring(0);
@@ -542,15 +539,13 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // Rotation functions
-  // @ts-expect-error TS6133 - Unused but kept for future features
+  // Rotation functions (kept for future features)
   const _handleRotateRight = useCallback(() => {
     _setRotation((prev) => (prev + 90) % 360);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     showControls();
   }, [showControls]);
 
-  // @ts-expect-error TS6133 - Unused but kept for future features
   const _handleRotateLeft = useCallback(() => {
     _setRotation((prev) => (prev - 90 + 360) % 360);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -812,8 +807,9 @@ export function FilePreviewModal({
 
     // Check if file has a URL property that might contain localhost
     if (file.url && typeof file.url === 'string' && file.url.startsWith('http')) {
-      const urlObj = new URL(file.url);
-      const correctedUrl = `${apiUrl}${urlObj.pathname}${urlObj.search}`;
+      // Extract path and query string manually for React Native compatibility
+      const urlWithoutProtocol = file.url.replace(/^https?:\/\/[^\/]+/, '');
+      const correctedUrl = `${apiUrl}${urlWithoutProtocol}`;
       console.log('🔍 [FilePreviewModal] Corrected file URL:', {
         original: file.url,
         corrected: correctedUrl
@@ -849,10 +845,11 @@ export function FilePreviewModal({
     if (file.thumbnailUrl) {
       // If already absolute URL, replace localhost with correct API URL and ensure size parameter
       if (file.thumbnailUrl.startsWith('http')) {
-        // Extract the path from the URL
-        const urlObj = new URL(file.thumbnailUrl);
-        // Always add or update the size parameter
-        const correctedUrl = `${apiUrl}${urlObj.pathname}?size=${size}`;
+        // Extract the path from the URL manually for React Native compatibility
+        const urlWithoutProtocol = file.thumbnailUrl.replace(/^https?:\/\/[^\/]+/, '');
+        // Remove any existing query string and add size parameter
+        const pathOnly = urlWithoutProtocol.split('?')[0];
+        const correctedUrl = `${apiUrl}${pathOnly}?size=${size}`;
         console.log('🔍 [FilePreviewModal] Corrected thumbnailUrl with size:', {
           original: file.thumbnailUrl,
           corrected: correctedUrl,
@@ -888,11 +885,14 @@ export function FilePreviewModal({
         {/* Main Content */}
         <View style={styles.content}>
           {/* Header */}
-          <Animated.View style={[
-            styles.header,
-            animatedControlsStyle,
-            { paddingTop: insets.top + 12 }
-          ]}>
+          <Animated.View
+            style={[
+              styles.header,
+              animatedControlsStyle,
+              { paddingTop: insets.top + 12 }
+            ]}
+            pointerEvents={isControlsVisible ? 'auto' : 'none'}
+          >
             <View style={styles.headerLeft}>
               <View style={styles.fileInfo}>
                 <Text style={styles.fileName} numberOfLines={1}>
@@ -928,7 +928,7 @@ export function FilePreviewModal({
                       <View style={styles.pdfLoadingOverlay}>
                         <Text style={styles.errorIcon}>📄</Text>
                         <Text style={styles.errorTitle}>PDF não disponível no Expo Go</Text>
-                        <Text style={styles.errorMessage}>Use um development build para visualizar PDFs</Text>
+                        <Text style={styles.errorText}>Use um development build para visualizar PDFs</Text>
                         <TouchableOpacity style={styles.errorButton} onPress={handleShare} activeOpacity={0.7}>
                           <IconExternalLink size={16} color="#ffffff" />
                           <Text style={styles.errorButtonText}>Abrir com...</Text>
@@ -943,17 +943,17 @@ export function FilePreviewModal({
                             cache: true,
                           }}
                           trustAllCerts={false}
-                          onLoadComplete={(numberOfPages) => {
+                          onLoadComplete={(numberOfPages: number) => {
                             console.log('[PDF Viewer] Loaded:', numberOfPages, 'pages');
                             setImageLoading(false);
                             setImageError(false);
                           }}
-                          onError={(error) => {
+                          onError={(error: Error | any) => {
                             console.error('[PDF Viewer] Error:', error);
                             setImageLoading(false);
                             setImageError(true);
                           }}
-                          onLoadProgress={(percent) => {
+                          onLoadProgress={(percent: number) => {
                             console.log('[PDF Viewer] Progress:', Math.round(percent * 100) + '%');
                           }}
                           onPageSingleTap={() => {
@@ -1135,11 +1135,14 @@ export function FilePreviewModal({
 
           {/* Thumbnail Strip */}
           {isCurrentFilePreviewable && totalImages > 1 && showThumbnailStrip && (
-            <Animated.View style={[
-              styles.thumbnailStrip,
-              animatedControlsStyle,
-              { paddingBottom: insets.bottom + 12 }
-            ]}>
+            <Animated.View
+              style={[
+                styles.thumbnailStrip,
+                animatedControlsStyle,
+                { paddingBottom: insets.bottom + 12 }
+              ]}
+              pointerEvents={isControlsVisible ? 'auto' : 'none'}
+            >
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbnailScrollContent}>
                 {previewableFiles.map(({ file, originalIndex }, _index) => {
                   const isActive = originalIndex === currentIndex;

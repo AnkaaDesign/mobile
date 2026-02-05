@@ -53,6 +53,9 @@ export interface PpeDelivery extends BaseEntity {
   statusOrder: number;
   quantity: number;
   reason: string | null;
+  size?: string | null; // PPE size
+  expirationDate?: Date | null; // Expiration date for the delivered PPE
+  notes?: string | null; // Additional notes about the delivery
 
   // ClickSign integration fields
   clicksignEnvelopeId?: string | null;
@@ -124,6 +127,7 @@ export interface PpeDeliverySchedule extends BaseEntity {
 
   // Relations (optional, populated based on query)
   items?: PpeScheduleItem[];
+  ppeItems?: PpeScheduleItem[]; // Alias for items - used by API responses and frontend components
   deliveries?: PpeDelivery[];
   autoOrders?: Order[];
 }

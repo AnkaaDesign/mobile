@@ -15,12 +15,18 @@ type TaskFormData = TaskCreateFormData;
 
 interface TaskFormWithProviderProps {
   mode?: 'create' | 'edit';
-  onSubmit: (data: any) => void | Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   onCancel?: () => void;
   initialData?: any;
   task?: any;
   existingLayouts?: any;
   isSubmitting?: boolean;
+  /** Initial customer data for edit mode */
+  initialCustomer?: any;
+  /** Initial general paint data for edit mode */
+  initialGeneralPaint?: any;
+  /** Initial logo paints array for edit mode */
+  initialLogoPaints?: any[];
 }
 
 /**
@@ -34,6 +40,9 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
   task,
   existingLayouts,
   isSubmitting = false,
+  initialCustomer,
+  initialGeneralPaint,
+  initialLogoPaints,
 }: TaskFormWithProviderProps) {
   // Initialize form with default values and schema validation
   const form = useForm<TaskFormData>({
@@ -59,6 +68,9 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         task={task}
         existingLayouts={existingLayouts}
         isSubmitting={isSubmitting}
+        initialCustomer={initialCustomer}
+        initialGeneralPaint={initialGeneralPaint}
+        initialLogoPaints={initialLogoPaints}
       />
     </FormProvider>
   );

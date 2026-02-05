@@ -34,6 +34,7 @@ interface BorrowTableProps {
   onMarkAsLost?: (borrowId: string) => void;
   onRefresh?: () => Promise<void>;
   onEndReached?: () => void;
+  onEndReachedThreshold?: number;
   refreshing?: boolean;
   loading?: boolean;
   loadingMore?: boolean;
@@ -44,6 +45,7 @@ interface BorrowTableProps {
   onSort?: (configs: SortConfig[]) => void;
   enableSwipeActions?: boolean;
   visibleColumnKeys?: string[];
+  ListFooterComponent?: React.ReactElement | null;
 }
 
 // Get screen width for responsive design
@@ -275,6 +277,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
     onMarkAsLost,
     onRefresh,
     onEndReached,
+    onEndReachedThreshold = 0.2,
     refreshing = false,
     loading = false,
     loadingMore = false,
@@ -285,6 +288,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
     onSort,
     enableSwipeActions = true,
     visibleColumnKeys,
+    ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
     const { activeRowId, closeActiveRow } = useSwipeRow();
@@ -643,10 +647,10 @@ export const BorrowTable = React.memo<BorrowTableProps>(
             keyExtractor={(item) => item.id}
             refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} /> : undefined}
             onEndReached={onEndReached}
-            onEndReachedThreshold={0.2}
+            onEndReachedThreshold={onEndReachedThreshold}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            ListFooterComponent={renderFooter}
+            ListFooterComponent={ListFooterComponent ?? renderFooter()}
             ListEmptyComponent={renderEmpty}
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}

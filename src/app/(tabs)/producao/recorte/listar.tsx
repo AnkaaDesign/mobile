@@ -166,8 +166,8 @@ export default function CuttingListScreen() {
       },
     } : null;
 
-    // Combine all custom actions
-    const customActions = [requestAction, startAction, completeAction].filter(Boolean);
+    // Combine all custom actions - filter out null values with type guard
+    const customActions = [requestAction, startAction, completeAction].filter((action): action is NonNullable<typeof action> => action !== null);
     const actionsWithCustom = [
       ...customActions,
       ...(cutsListConfig.table.actions || []),
@@ -193,7 +193,7 @@ export default function CuttingListScreen() {
         },
         filters: cutsListConfig.filters ? {
           ...cutsListConfig.filters,
-          fields: filteredFields,
+          fields: filteredFields ?? [],
         } : undefined,
       };
     }
@@ -222,7 +222,7 @@ export default function CuttingListScreen() {
         },
         filters: cutsListConfig.filters ? {
           ...cutsListConfig.filters,
-          fields: filteredFields,
+          fields: filteredFields ?? [],
         } : undefined,
       };
     }
@@ -238,7 +238,7 @@ export default function CuttingListScreen() {
       },
       filters: cutsListConfig.filters ? {
         ...cutsListConfig.filters,
-        fields: filteredFields,
+        fields: filteredFields ?? [],
       } : undefined,
     };
   }, [user, handleCutRequest, handleStartCut, handleCompleteCut, handleFileCellPress]);

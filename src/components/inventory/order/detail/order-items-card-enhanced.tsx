@@ -74,7 +74,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
     ORDER_STATUS.PARTIALLY_FULFILLED,
     ORDER_STATUS.FULFILLED,
     ORDER_STATUS.PARTIALLY_RECEIVED
-  ].includes(orderStatus);
+  ].includes(orderStatus as ORDER_STATUS);
 
   // Check if there are unsaved changes
   const hasChanges = useMemo(() => {

@@ -148,12 +148,12 @@ export const collaboratorsListConfig: ListConfig<User> = {
         render: (user) => user.phone || '-',
       },
       {
-        key: 'admissionalDate',
+        key: 'admissional',
         label: 'ADMISSÃO',
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (user) => user.admissionalDate,
+        render: (user) => user.admissional,
         format: 'date',
       },
       {
@@ -347,8 +347,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (user) => `Deseja excluir o colaborador "${user.name}"?`,
         },
-        onPress: async (user, _, { delete: deleteUser }) => {
-          await deleteUser(user.id)
+        onPress: async (user, _, mutations) => {
+          await mutations?.delete?.(user.id)
         },
       },
     ],
@@ -474,7 +474,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
       { key: 'dismissedAt', label: 'Data de Demissão', path: 'dismissedAt', format: 'date' },
-      { key: 'admissionalDate', label: 'Data de Admissão', path: 'admissionalDate', format: 'date' },
+      { key: 'admissional', label: 'Data de Admissão', path: 'admissional', format: 'date' },
       { key: 'performanceLevel', label: 'Nível de Performance', path: 'performanceLevel' },
       { key: 'verified', label: 'Verificado', path: 'verified', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },
@@ -505,8 +505,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
           title: 'Confirmar Ativação',
           message: (count) => `Ativar ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'ACTIVE' })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'ACTIVE' })
         },
       },
       {
@@ -518,8 +518,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
           title: 'Confirmar Desativação',
           message: (count) => `Desativar ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'INACTIVE' })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchUpdate?.({ ids: Array.from(ids), status: 'INACTIVE' })
         },
       },
       {
@@ -531,8 +531,8 @@ export const collaboratorsListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'colaborador' : 'colaboradores'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

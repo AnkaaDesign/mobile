@@ -22,7 +22,7 @@ import {
   IconPhoto,
 } from "@tabler/icons-react-native";
 import type { ChangeLog } from "../../types";
-import { CHANGE_LOG_ENTITY_TYPE, CHANGE_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
+import { CHANGE_LOG_ENTITY_TYPE, CHANGE_LOG_ACTION, CHANGE_TRIGGERED_BY, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
 import {
   CUT_TYPE_LABELS,
   CUT_STATUS_LABELS,
@@ -52,24 +52,25 @@ interface ChangelogTimelineProps {
 // Map actions to icons
 type IconComponent = React.ComponentType<any>;
 
-const actionConfig: Record<CHANGE_ACTION, { icon: IconComponent; color: string }> = {
-  [CHANGE_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
-  [CHANGE_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
-  [CHANGE_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
-  [CHANGE_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
-  [CHANGE_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
-  [CHANGE_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
-  [CHANGE_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
-  [CHANGE_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
-  [CHANGE_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
-  [CHANGE_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
-  [CHANGE_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
-  [CHANGE_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
-  [CHANGE_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
-  [CHANGE_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
-  [CHANGE_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
-  [CHANGE_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
+const actionConfig: Record<CHANGE_LOG_ACTION, { icon: IconComponent; color: string }> = {
+  [CHANGE_LOG_ACTION.CREATE]: { icon: IconPlus, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.UPDATE]: { icon: IconEdit, color: "#737373" },
+  [CHANGE_LOG_ACTION.DELETE]: { icon: IconTrash, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.RESTORE]: { icon: IconRefresh, color: "#a855f7" },
+  [CHANGE_LOG_ACTION.ROLLBACK]: { icon: IconRefresh, color: "#a855f7" },
+  [CHANGE_LOG_ACTION.ARCHIVE]: { icon: IconArchive, color: "#6b7280" },
+  [CHANGE_LOG_ACTION.UNARCHIVE]: { icon: IconArchiveOff, color: "#6b7280" },
+  [CHANGE_LOG_ACTION.ACTIVATE]: { icon: IconToggleRight, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.DEACTIVATE]: { icon: IconToggleLeft, color: "#f97316" },
+  [CHANGE_LOG_ACTION.APPROVE]: { icon: IconCheck, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.REJECT]: { icon: IconX, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.CANCEL]: { icon: IconX, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.COMPLETE]: { icon: IconCheck, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.RESCHEDULE]: { icon: IconCalendar, color: "#3b82f6" },
+  [CHANGE_LOG_ACTION.BATCH_CREATE]: { icon: IconPlus, color: "#16a34a" },
+  [CHANGE_LOG_ACTION.BATCH_UPDATE]: { icon: IconEdit, color: "#737373" },
+  [CHANGE_LOG_ACTION.BATCH_DELETE]: { icon: IconTrash, color: "#ef4444" },
+  [CHANGE_LOG_ACTION.VIEW]: { icon: IconHistory, color: "#6b7280" },
 };
 
 // Group changelog entries by entity and time
@@ -107,11 +108,20 @@ const parseJsonValue = (val: any) => {
   if (typeof val === "string" && (val.trim().startsWith("[") || val.trim().startsWith("{"))) {
     try {
       return JSON.parse(val);
-    } catch (e) {
+    } catch {
       return val;
     }
   }
   return val;
+};
+
+// Constants for date calculations (7 days in milliseconds)
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Helper function to calculate recent changes - callable outside of render
+const calculateRecentChangesCount = (changelogs: ChangeLog[]): number => {
+  const cutoffTime = Date.now() - SEVEN_DAYS_MS;
+  return changelogs.filter((c) => new Date(c.createdAt).getTime() > cutoffTime).length;
 };
 
 // Status labels for services
@@ -156,9 +166,6 @@ const FileThumbnail = ({ fileId, size = 48, colors }: { fileId?: string; size?: 
   // Build thumbnail URL - backend route is /files/thumbnail/{id}?size=small
   const apiBaseUrl = getApiBaseUrl();
   const thumbnailUrl = fileId ? `${apiBaseUrl}/files/thumbnail/${fileId}?size=small` : "";
-
-  // Also try direct serve endpoint as fallback for images
-  const serveUrl = fileId ? `${apiBaseUrl}/files/serve/${fileId}` : "";
 
   // UUID validation
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -287,7 +294,7 @@ const renderCutsCards = (cuts: any[], colors: any) => {
               </ThemedText>
               {cut.status && (
                 <Badge colors={colors} variant={cut.status === "COMPLETED" ? "success" : "default"}>
-                  {CUT_STATUS_LABELS[cut.status] || cut.status}
+                  {CUT_STATUS_LABELS[cut.status as keyof typeof CUT_STATUS_LABELS] || cut.status}
                 </Badge>
               )}
             </View>
@@ -296,7 +303,7 @@ const renderCutsCards = (cuts: any[], colors: any) => {
               {cut.type && (
                 <View style={{ flexDirection: "row", gap: 2 }}>
                   <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Tipo:</ThemedText>
-                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_TYPE_LABELS[cut.type] || cut.type}</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_TYPE_LABELS[cut.type as keyof typeof CUT_TYPE_LABELS] || cut.type}</ThemedText>
                 </View>
               )}
               {cut.quantity && (
@@ -308,7 +315,7 @@ const renderCutsCards = (cuts: any[], colors: any) => {
               {cut.origin && (
                 <View style={{ flexDirection: "row", gap: 2 }}>
                   <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Origem:</ThemedText>
-                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_ORIGIN_LABELS[cut.origin] || cut.origin}</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{CUT_ORIGIN_LABELS[cut.origin as keyof typeof CUT_ORIGIN_LABELS] || cut.origin}</ThemedText>
                 </View>
               )}
             </View>
@@ -382,7 +389,7 @@ const renderAirbrushingsCards = (airbrushings: any[], colors: any) => {
             </ThemedText>
             {airbrushing.status && (
               <Badge colors={colors} variant={airbrushing.status === "COMPLETED" ? "success" : "default"}>
-                {AIRBRUSHING_STATUS_LABELS[airbrushing.status] || airbrushing.status}
+                {AIRBRUSHING_STATUS_LABELS[airbrushing.status as keyof typeof AIRBRUSHING_STATUS_LABELS] || airbrushing.status}
               </Badge>
             )}
           </View>
@@ -429,7 +436,7 @@ const renderPaintsCards = (paints: any[], colors: any) => {
               {/* Badges */}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                 {paint.paintType?.name && <Badge colors={colors}>{paint.paintType.name}</Badge>}
-                {paint.finish && <Badge colors={colors}>{PAINT_FINISH_LABELS[paint.finish] || paint.finish}</Badge>}
+                {paint.finish && <Badge colors={colors}>{PAINT_FINISH_LABELS[paint.finish as keyof typeof PAINT_FINISH_LABELS] || paint.finish}</Badge>}
                 {paint.paintBrand?.name && <Badge colors={colors}>{paint.paintBrand.name}</Badge>}
               </View>
             </View>
@@ -518,18 +525,18 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
     // Only add creation entry if entityCreatedAt is provided AND there's no existing CREATE action
     if (entityCreatedAt && !isLoading) {
       // Check if there's already a CREATE action in the filtered logs
-      const hasCreateAction = filteredLogs.some((log) => log.action === CHANGE_ACTION.CREATE);
+      const hasCreateAction = filteredLogs.some((log) => log.action === CHANGE_LOG_ACTION.CREATE);
 
       if (!hasCreateAction) {
         const creationEntry: Partial<ChangeLog> = {
           id: `${entityId}-creation`,
           entityId,
           entityType,
-          action: CHANGE_ACTION.CREATE as any,
+          action: CHANGE_LOG_ACTION.CREATE,
           field: null,
           oldValue: null,
           newValue: null,
-          triggeredBy: CHANGE_TRIGGERED_BY.USER as any,
+          triggeredBy: CHANGE_TRIGGERED_BY.USER,
           userId: null,
           user: undefined,
           createdAt: new Date(entityCreatedAt),
@@ -599,7 +606,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
         // Extract paint IDs from arrays
         const extractPaintIds = (val: any) => {
           if (!val) return;
-          let parsed = parseJsonValue(val);
+          const parsed = parseJsonValue(val);
           if (Array.isArray(parsed)) {
             parsed.forEach((item: any) => {
               if (typeof item === "string" && uuidRegex.test(item)) {
@@ -672,9 +679,14 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
   }, [changelogs]);
 
   // Calculate summary statistics
+  // Use state for recentChanges count since Date.now() cannot be called during render
+  const [recentChangesCount, setRecentChangesCount] = useState(0);
+  React.useEffect(() => {
+    setRecentChangesCount(calculateRecentChangesCount(changelogs));
+  }, [changelogs]);
+
   const changeStats = useMemo(() => {
     const totalChanges = changelogs.length;
-    const recentChanges = changelogs.filter((c) => new Date(c.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length;
 
     const uniqueUsers = new Set(changelogs.map((c) => c.userId).filter(Boolean)).size;
 
@@ -692,7 +704,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
 
     return {
       totalChanges,
-      recentChanges,
+      recentChanges: recentChangesCount,
       uniqueUsers,
       mostChangedField: mostChangedField
         ? {
@@ -701,7 +713,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
           }
         : null,
     };
-  }, [changelogs, entityType]);
+  }, [changelogs, entityType, recentChangesCount]);
 
   // Format value with entity name
   const formatValueWithEntity = (value: any, field: string | null, metadata?: any) => {
@@ -710,7 +722,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
     if (value === null || value === undefined) return "Nenhum";
 
     // Parse JSON strings if needed (backend stores as Json type which may come as strings)
-    let parsedValue = parseJsonValue(value);
+    const parsedValue = parseJsonValue(value);
 
     // Check if it's a UUID and we have entity details
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -992,11 +1004,11 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                   {dayChangelogGroups.map((changelogGroup, index) => {
                     const isLastChange = isLastGroup && index === dayChangelogGroups.length - 1;
                     const firstChange = changelogGroup[0];
-                    const config = actionConfig[firstChange.action as unknown as CHANGE_ACTION];
+                    const config = actionConfig[firstChange.action] || actionConfig[CHANGE_LOG_ACTION.UPDATE];
                     const Icon = config.icon;
 
                     // Determine the action label
-                    const actionLabel = getActionLabel(firstChange.action as any, firstChange.triggeredBy as any);
+                    const actionLabel = getActionLabel(firstChange.action, firstChange.triggeredBy ?? undefined);
 
                     return (
                       <View key={firstChange.id} style={styles.timelineItem}>
@@ -1029,11 +1041,11 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           {/* Header */}
                           <View style={StyleSheet.flatten([styles.cardHeader, { borderBottomColor: colors.border }])}>
                             <ThemedText style={StyleSheet.flatten([styles.actionText, { color: colors.foreground }])}>{actionLabel}</ThemedText>
-                            <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt as Date)}</ThemedText>
+                            <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.mutedForeground }])}>{formatRelativeTime(firstChange.createdAt)}</ThemedText>
                           </View>
 
                           {/* CREATE ACTION - Special handling for creation with entity details */}
-                          {firstChange.action === (CHANGE_ACTION.CREATE as any) && (() => {
+                          {firstChange.action === CHANGE_LOG_ACTION.CREATE && (() => {
                             // Extract entity details from newValue for CREATE actions
                             let entityCreatedDetails: any = null;
                             try {
@@ -1042,7 +1054,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                   ? JSON.parse(firstChange.newValue)
                                   : firstChange.newValue;
                               }
-                            } catch (e) {
+                            } catch {
                               // Failed to parse
                             }
 
@@ -1055,7 +1067,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Tipo:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {SERVICE_ORDER_TYPE_LABELS[entityCreatedDetails.type] || entityCreatedDetails.type}
+                                          {SERVICE_ORDER_TYPE_LABELS[entityCreatedDetails.type as keyof typeof SERVICE_ORDER_TYPE_LABELS] || entityCreatedDetails.type}
                                         </ThemedText>
                                       </View>
                                     )}
@@ -1069,7 +1081,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Status:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {SERVICE_ORDER_STATUS_LABELS[entityCreatedDetails.status] || entityCreatedDetails.status}
+                                          {SERVICE_ORDER_STATUS_LABELS[entityCreatedDetails.status as keyof typeof SERVICE_ORDER_STATUS_LABELS] || entityCreatedDetails.status}
                                         </ThemedText>
                                       </View>
                                     )}
@@ -1095,7 +1107,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Categoria:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {TRUCK_MANUFACTURER_LABELS[entityCreatedDetails.category] || entityCreatedDetails.category}
+                                          {TRUCK_MANUFACTURER_LABELS[entityCreatedDetails.category as keyof typeof TRUCK_MANUFACTURER_LABELS] || entityCreatedDetails.category}
                                         </ThemedText>
                                       </View>
                                     )}
@@ -1116,9 +1128,9 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           })()}
 
                           {/* SERVICE_ORDER UPDATE - Special handling to group related changes */}
-                          {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action === (CHANGE_ACTION.UPDATE as any) && (() => {
-                            // Get service order details from entityDetails
-                            const serviceOrderDetails = entityDetails?.serviceOrders?.get(firstChange.entityId);
+                          {entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action === CHANGE_LOG_ACTION.UPDATE && (() => {
+                            // Service order details are not fetched via useEntityDetails hook
+                            // The relevant data comes from the changelog itself (descriptionChange, typeChange)
 
                             // Group related field changes intelligently for service orders
                             const statusChange = changelogGroup.find(c => c.field === 'status');
@@ -1139,10 +1151,10 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             let statusSummary: { title: string; timestamp?: string; user?: string } | null = null;
 
                             if (statusChange) {
-                              const newStatus = statusChange.newValue;
-                              const oldStatus = statusChange.oldValue;
-                              const newStatusLabel = SERVICE_ORDER_STATUS_LABELS[newStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || newStatus;
-                              const oldStatusLabel = SERVICE_ORDER_STATUS_LABELS[oldStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || oldStatus;
+                              const newStatus = statusChange.newValue as string | null;
+                              const oldStatus = statusChange.oldValue as string | null;
+                              const newStatusLabel = newStatus ? (SERVICE_ORDER_STATUS_LABELS[newStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || newStatus) : '';
+                              const oldStatusLabel = oldStatus ? (SERVICE_ORDER_STATUS_LABELS[oldStatus as keyof typeof SERVICE_ORDER_STATUS_LABELS] || oldStatus) : '';
 
                               statusSummary = {
                                 title: `Status: ${oldStatusLabel} → ${newStatusLabel}`,
@@ -1161,7 +1173,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                 if (typeof dateValue === 'string' && dateValue.startsWith('"') && dateValue.endsWith('"')) {
                                   try {
                                     dateValue = JSON.parse(dateValue);
-                                  } catch (e) {
+                                  } catch {
                                     // If parsing fails, use as-is
                                   }
                                 }
@@ -1176,29 +1188,30 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                 if (newStatus === 'WAITING_APPROVE' && c.field === 'approvedById') return true;
                                 return false;
                               });
-                              if (relevantUser?.newValue && entityDetails?.users) {
-                                statusSummary.user = entityDetails.users.get(relevantUser.newValue)?.name;
+                              if (relevantUser?.newValue && entityDetails?.users && typeof relevantUser.newValue === 'string') {
+                                // users Map stores user names as strings
+                                statusSummary.user = entityDetails.users.get(relevantUser.newValue) || undefined;
                               }
                             }
 
                             return (
                               <View style={styles.changesContainer}>
                                 {/* Service Order identification - show description and type */}
-                                {(descriptionChange || typeChange || serviceOrderDetails) && (
+                                {(descriptionChange || typeChange) && (
                                   <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
-                                    {(descriptionChange?.newValue || serviceOrderDetails?.description) && (
+                                    {descriptionChange?.newValue && (
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Descrição:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {descriptionChange?.newValue || serviceOrderDetails?.description}
+                                          {String(descriptionChange.newValue)}
                                         </ThemedText>
                                       </View>
                                     )}
-                                    {(typeChange?.newValue || serviceOrderDetails?.type) && (
+                                    {typeChange?.newValue && (
                                       <View style={styles.detailRow}>
                                         <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Tipo:</ThemedText>
                                         <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                                          {SERVICE_ORDER_TYPE_LABELS[(typeChange?.newValue || serviceOrderDetails?.type) as keyof typeof SERVICE_ORDER_TYPE_LABELS] || (typeChange?.newValue || serviceOrderDetails?.type)}
+                                          {SERVICE_ORDER_TYPE_LABELS[typeChange.newValue as keyof typeof SERVICE_ORDER_TYPE_LABELS] || String(typeChange.newValue)}
                                         </ThemedText>
                                       </View>
                                     )}
@@ -1227,7 +1240,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                 {/* Other field changes */}
                                 {otherChanges.length > 0 && otherChanges.map((changelog) => (
                                   <View key={changelog.id} style={styles.changeItem}>
-                                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field, entityType)}: </ThemedText>
+                                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field ?? '', entityType)}: </ThemedText>
                                     <View style={styles.inlineValues}>
                                       <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, textDecorationLine: 'line-through', marginRight: 8 }}>
                                         {formatFieldValue(changelog.oldValue, changelog.field, entityType) || 'Nenhum'}
@@ -1243,7 +1256,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                           })()}
 
                           {/* Changes (generic) */}
-                          {entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action !== (CHANGE_ACTION.CREATE as any) && changelogGroup.length > 0 && (
+                          {entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER && firstChange.action !== CHANGE_LOG_ACTION.CREATE && changelogGroup.length > 0 && (
                             <View style={styles.changesContainer}>
                               {changelogGroup
                                 .filter((changelog) => {
@@ -1258,7 +1271,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                       if (typeof val === "string" && (val.trim().startsWith("[") || val.trim().startsWith("{"))) {
                                         try {
                                           return JSON.parse(val);
-                                        } catch (e) {
+                                        } catch {
                                           return val;
                                         }
                                       }
@@ -1292,7 +1305,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                     {showSeparator && <View style={StyleSheet.flatten([styles.changeSeparator, { backgroundColor: colors.border }])} />}
 
                                     <View style={styles.changeItem}>
-                                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field, entityType)}</ThemedText>
+                                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>{getFieldLabel(changelog.field ?? '', entityType)}</ThemedText>
 
                                       {/* Special handling for cuts/cutRequest/cutPlan */}
                                       {(changelog.field === "cuts" || changelog.field === "cutRequest" || changelog.field === "cutPlan") ? (
@@ -1419,11 +1432,11 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             <View style={styles.fieldValues}>
                                               <View>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
-                                                {renderPaintsCards(oldPaints, colors)}
+                                                {renderPaintsCards(oldPaints ?? [], colors)}
                                               </View>
                                               <View style={{ marginTop: spacing.sm }}>
                                                 <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
-                                                {renderPaintsCards(newPaints, colors)}
+                                                {renderPaintsCards(newPaints ?? [], colors)}
                                               </View>
                                             </View>
                                           );
@@ -1445,16 +1458,16 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                         <View style={styles.fieldValues}>
                                           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
                                             <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
-                                            {changelog.oldValue ? (
-                                              <FileThumbnail fileId={changelog.oldValue as string} size={40} colors={colors} />
+                                            {changelog.oldValue && typeof changelog.oldValue === 'string' ? (
+                                              <FileThumbnail fileId={changelog.oldValue} size={40} colors={colors} />
                                             ) : (
                                               <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>—</ThemedText>
                                             )}
                                           </View>
                                           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xs }}>
                                             <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
-                                            {changelog.newValue ? (
-                                              <FileThumbnail fileId={changelog.newValue as string} size={40} colors={colors} />
+                                            {changelog.newValue && typeof changelog.newValue === 'string' ? (
+                                              <FileThumbnail fileId={changelog.newValue} size={40} colors={colors} />
                                             ) : (
                                               <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>—</ThemedText>
                                             )}
@@ -1481,8 +1494,8 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                         /* Handle barcode arrays specially */
                                         <View style={styles.arrayChanges}>
                                           {(() => {
-                                            const oldBarcodes = changelog.oldValue as string[];
-                                            const newBarcodes = changelog.newValue as string[];
+                                            const oldBarcodes = (changelog.oldValue as unknown as string[]) || [];
+                                            const newBarcodes = (changelog.newValue as unknown as string[]) || [];
                                             const added = newBarcodes.filter((bc) => !oldBarcodes.includes(bc));
                                             const removed = oldBarcodes.filter((bc) => !newBarcodes.includes(bc));
 
@@ -1549,7 +1562,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                             <View style={styles.userInfo}>
                               <IconUser size={14} color={colors.mutedForeground} />
                               <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.mutedForeground }])}>Por:</ThemedText>
-                              <ThemedText style={StyleSheet.flatten([styles.userNameValue, { color: colors.foreground }])}>{(firstChange.user as any)?.name || "Sistema"}</ThemedText>
+                              <ThemedText style={StyleSheet.flatten([styles.userNameValue, { color: colors.foreground }])}>{firstChange.user?.name || "Sistema"}</ThemedText>
                             </View>
                           </View>
                         </View>

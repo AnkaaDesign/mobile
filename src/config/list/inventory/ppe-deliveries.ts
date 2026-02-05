@@ -96,12 +96,12 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         render: (delivery) => delivery.reviewedByUser?.name || '-',
       },
       {
-        key: 'deliveryMethod',
+        key: 'ppeDeliveryMode',
         label: 'MÉTODO',
         sortable: true,
         width: 1.2,
         align: 'left',
-        render: (delivery) => delivery.deliveryMethod || '-',
+        render: (delivery) => delivery.item?.ppeDeliveryMode || '-',
       },
     ],
     defaultVisible: ['user', 'item', 'quantity', 'status'],
@@ -113,7 +113,7 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         icon: 'eye',
         variant: 'default',
         onPress: (delivery, router) => {
-          router.push(routeToMobilePath(routes.inventory.ppe.deliveries.detail(delivery.id)) as any)
+          router.push(routeToMobilePath(routes.inventory.ppe.deliveries.details(delivery.id)) as any)
         },
       },
       {
@@ -137,10 +137,13 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
           confirmText: 'Entregar',
           cancelText: 'Voltar',
         },
-        onPress: async (delivery, _router, { updateEntity }) => {
-          await updateEntity(delivery.id, {
-            status: PPE_DELIVERY_STATUS.DELIVERED,
-            actualDeliveryDate: new Date(),
+        onPress: async (delivery, _router, { update } = {}) => {
+          await update?.({
+            id: delivery.id,
+            data: {
+              status: PPE_DELIVERY_STATUS.DELIVERED,
+              actualDeliveryDate: new Date(),
+            },
           })
         },
         visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.APPROVED,
@@ -156,8 +159,8 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
           confirmText: 'Cancelar Entrega',
           cancelText: 'Voltar',
         },
-        onPress: async (delivery, _router, { updateEntity }) => {
-          await updateEntity(delivery.id, { status: PPE_DELIVERY_STATUS.CANCELLED })
+        onPress: async (delivery, _router, { update } = {}) => {
+          await update?.({ id: delivery.id, data: { status: PPE_DELIVERY_STATUS.CANCELLED } })
         },
         visible: (delivery) => delivery.status === PPE_DELIVERY_STATUS.APPROVED,
       },
@@ -298,10 +301,14 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         variant: 'default',
         confirm: {
           title: 'Aprovar Entregas',
-          message: 'Deseja aprovar as entregas selecionadas?',
+          message: (count) => `Deseja aprovar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { status: PPE_DELIVERY_STATUS.APPROVED })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          const updates = Array.from(ids).map((id) => ({
+            id,
+            data: { status: PPE_DELIVERY_STATUS.APPROVED },
+          }))
+          await batchUpdateAsync?.({ deliveries: updates })
         },
       },
       {
@@ -311,13 +318,17 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         variant: 'default',
         confirm: {
           title: 'Marcar como Entregue',
-          message: 'Deseja marcar as entregas selecionadas como entregues?',
+          message: (count) => `Deseja marcar ${count} ${count === 1 ? 'entrega' : 'entregas'} como entregues?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, {
-            status: PPE_DELIVERY_STATUS.DELIVERED,
-            actualDeliveryDate: new Date(),
-          })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          const updates = Array.from(ids).map((id) => ({
+            id,
+            data: {
+              status: PPE_DELIVERY_STATUS.DELIVERED,
+              actualDeliveryDate: new Date(),
+            },
+          }))
+          await batchUpdateAsync?.({ deliveries: updates })
         },
       },
       {
@@ -327,10 +338,14 @@ export const ppeDeliveriesInventoryListConfig: ListConfig<PpeDelivery> = {
         variant: 'destructive',
         confirm: {
           title: 'Cancelar Entregas',
-          message: 'Deseja cancelar as entregas selecionadas?',
+          message: (count) => `Deseja cancelar ${count} ${count === 1 ? 'entrega' : 'entregas'}?`,
         },
-        action: async (ids, { updateEntities }) => {
-          await updateEntities(ids, { status: PPE_DELIVERY_STATUS.CANCELLED })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          const updates = Array.from(ids).map((id) => ({
+            id,
+            data: { status: PPE_DELIVERY_STATUS.CANCELLED },
+          }))
+          await batchUpdateAsync?.({ deliveries: updates })
         },
       },
     ],

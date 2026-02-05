@@ -120,6 +120,7 @@ export function PpeRequestModal({
           if (item.ppeType === PPE_TYPE.OTHERS) return true;
 
           // 4. Get user's size for this PPE type
+          if (!userPpeSize.data) return true;
           const userSize = getPpeSizeByType(userPpeSize.data, item.ppeType);
 
           // 5. Get item's size from measures array
@@ -144,7 +145,7 @@ export function PpeRequestModal({
         });
       }
 
-      const total = response.meta?.total || items.length;
+      const total = response.meta?.totalRecords || items.length;
       const hasMore = response.meta?.hasNextPage || false;
 
       // Cache loaded items

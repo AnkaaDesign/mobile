@@ -163,7 +163,7 @@ export function BorrowUserSelector({
         debounceMs={500}
         loadOnMount={false}
         value={value || ""}
-        onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val)}
+        onValueChange={(val) => onValueChange(Array.isArray(val) ? val[0] : val ?? undefined)}
         placeholder="Selecione um usuário"
         emptyText="Nenhum usuário encontrado"
         searchPlaceholder="Buscar por nome, e-mail ou CPF..."

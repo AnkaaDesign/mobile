@@ -74,7 +74,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         sortable: false,
         width: 2.5,
         align: 'left',
-        render: (notification) => notification.message || '-',
+        render: (notification) => notification.body || '-',
       },
       {
         key: 'seenCount',
@@ -135,8 +135,8 @@ export const notificationsListConfig: ListConfig<Notification> = {
           title: 'Confirmar Exclusão',
           message: (notification) => `Deseja excluir a notificação "${notification.title}"?`,
         },
-        onPress: async (notification, _, { delete: deleteNotification }) => {
-          await deleteNotification(notification.id)
+        onPress: async (notification, _, mutations) => {
+          await mutations?.delete?.(notification.id)
         },
       },
     ],
@@ -231,8 +231,8 @@ export const notificationsListConfig: ListConfig<Notification> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'notificação' : 'notificações'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

@@ -26,6 +26,7 @@ export interface Notification extends BaseEntity {
   userId: string | null;
   title: string;
   body: string;
+  message?: string; // Alias for body for compatibility
   type: NOTIFICATION_TYPE;
   channel: NOTIFICATION_CHANNEL[];
   importance: NOTIFICATION_IMPORTANCE;
@@ -33,6 +34,7 @@ export interface Notification extends BaseEntity {
   actionUrl: string | null;
   scheduledAt: Date | null;
   sentAt: Date | null;
+  metadata?: Record<string, any> | null;
 
   // Relations
   user?: User;

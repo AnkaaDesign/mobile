@@ -1,7 +1,7 @@
-
 import { useBorrowsInfinite } from './useBorrow';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 import type { BorrowGetManyFormData } from '@/schemas';
+import type { Borrow } from '@/types';
 import { BORROW_SELECT_TABLE } from '@/api-client/select-patterns';
 
 const DEFAULT_MOBILE_PAGE_SIZE = 40;
@@ -19,5 +19,5 @@ export const useBorrowsInfiniteMobile = (filters: Partial<BorrowGetManyFormData>
     select: filtersSelect || BORROW_SELECT_TABLE,
   });
 
-  return useInfiniteMobile(baseQuery);
+  return useInfiniteMobile<Borrow>(baseQuery);
 };

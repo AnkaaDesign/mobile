@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useItemsInfinite } from './useItem';
 import { ItemGetManyFormData } from '@/schemas';
+import type { Item } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for items
@@ -24,5 +25,5 @@ export function useItemsInfiniteMobile(params?: Partial<ItemGetManyFormData> & {
   const infiniteQuery = useItemsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Item>(infiniteQuery);
 }

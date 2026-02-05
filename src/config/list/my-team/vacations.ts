@@ -102,7 +102,12 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
         sortable: true,
         width: 0.8,
         align: 'center',
-        render: (vacation) => String(vacation.days || 0),
+        render: (vacation) => {
+          const startAt = new Date(vacation.startAt)
+          const endAt = new Date(vacation.endAt)
+          const days = Math.ceil((endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60 * 24)) + 1
+          return String(days || 0)
+        },
         format: 'number',
       },
     ],
@@ -172,7 +177,12 @@ export const teamVacationsListConfig: ListConfig<Vacation> = {
       { key: 'type', label: 'Tipo', path: 'type', format: (value) => value ? TYPE_LABELS[value] : '-' },
       { key: 'startAt', label: 'Início', path: 'startAt', format: 'date' },
       { key: 'endAt', label: 'Fim', path: 'endAt', format: 'date' },
-      { key: 'days', label: 'Dias', path: 'days' },
+      { key: 'days', label: 'Dias', path: 'days', format: (vacation) => {
+        const startAt = new Date(vacation.startAt)
+        const endAt = new Date(vacation.endAt)
+        const days = Math.ceil((endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        return String(days || 0)
+      } },
     ],
   },
 

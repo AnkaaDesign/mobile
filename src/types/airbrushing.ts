@@ -17,6 +17,7 @@ export interface Airbrushing extends BaseEntity {
   status: AIRBRUSHING_STATUS; // "Pendente", "Em Andamento", "Finalizado"
   statusOrder: number; // 1=Pendente, 2=Em Andamento, 3=Finalizado
   taskId: string;
+  observations?: string | null; // Additional observations
 
   // Relations (optional, populated based on query)
   task?: Task;

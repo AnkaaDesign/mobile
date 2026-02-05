@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useNotificationsInfinite } from './useNotification';
 import { NotificationGetManyFormData } from '@/schemas';
+import type { Notification } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for notifications
@@ -24,5 +25,5 @@ export function useNotificationsInfiniteMobile(params?: Partial<NotificationGetM
   const infiniteQuery = useNotificationsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Notification>(infiniteQuery);
 }

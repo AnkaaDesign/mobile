@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useAirbrushingsInfinite } from './useAirbrushing';
 import { AirbrushingGetManyFormData } from '@/schemas';
+import type { Airbrushing } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for airbrushings
@@ -24,5 +25,5 @@ export function useAirbrushingsInfiniteMobile(params?: Partial<AirbrushingGetMan
   const infiniteQuery = useAirbrushingsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Airbrushing>(infiniteQuery);
 }

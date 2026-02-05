@@ -35,7 +35,6 @@ export const catalogListConfig: ListConfig<Paint> = {
         width: 0.8,
         align: 'center',
         render: (paint) => paint.hex,
-        format: 'color',
       },
       {
         key: 'code',
@@ -150,8 +149,8 @@ export const catalogListConfig: ListConfig<Paint> = {
           title: 'Confirmar Exclusão',
           message: (paint) => `Deseja excluir a tinta "${paint.name}"?`,
         },
-        onPress: async (paint, _, { delete: deletePaint }) => {
-          await deletePaint(paint.id)
+        onPress: async (paint, _, context) => {
+          await context?.delete?.(paint.id)
         },
       },
     ],
@@ -240,7 +239,7 @@ export const catalogListConfig: ListConfig<Paint> = {
       {
         key: 'hasFormulas',
         label: 'Apenas com fórmulas',
-        type: 'boolean',
+        type: 'toggle',
         placeholder: 'Apenas com fórmulas',
         description: 'Mostrar apenas tintas que possuem fórmulas cadastradas',
       },
@@ -308,8 +307,8 @@ export const catalogListConfig: ListConfig<Paint> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tinta' : 'tintas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

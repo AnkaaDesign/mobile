@@ -47,10 +47,10 @@ export default function DatesSection({
           render={({ field: { onChange, value } }) => (
             <DateTimePicker
               value={value ? new Date(value) : undefined}
-              onValueChange={(date) => onChange(date?.toISOString())}
+              onChange={(date: Date | undefined) => onChange(date?.toISOString())}
               placeholder="Selecione o prazo"
               disabled={isSubmitting || !canEditDates}
-              error={!!errors.deadline}
+              error={errors.deadline?.message}
             />
           )}
         />
@@ -64,10 +64,10 @@ export default function DatesSection({
           render={({ field: { onChange, value } }) => (
             <DateTimePicker
               value={value ? new Date(value) : undefined}
-              onValueChange={(date) => onChange(date?.toISOString())}
+              onChange={(date: Date | undefined) => onChange(date?.toISOString())}
               placeholder="Selecione a data agendada"
               disabled={isSubmitting || !canEditDates}
-              error={!!errors.scheduledDate}
+              error={errors.scheduledDate?.message}
             />
           )}
         />
@@ -82,10 +82,10 @@ export default function DatesSection({
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
                 value={value ? new Date(value) : undefined}
-                onValueChange={(date) => onChange(date?.toISOString())}
+                onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a data de conclusão"
                 disabled={isSubmitting}
-                error={!!errors.completionDate}
+                error={errors.completionDate?.message}
               />
             )}
           />

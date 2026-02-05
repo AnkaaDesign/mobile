@@ -59,11 +59,19 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
   const handleSubmit = async (data: SectorCreateFormData | SectorUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as SectorCreateFormData);
+        const createData = {
+          name: data.name!,
+          privileges: data.privileges! as SECTOR_PRIVILEGES,
+        };
+        await createAsync(createData);
       } else if (sector) {
+        const updateData = {
+          name: data.name,
+          privileges: data.privileges as SECTOR_PRIVILEGES | undefined,
+        };
         await updateAsync({
           id: sector.id,
-          data: data as SectorUpdateFormData,
+          data: updateData,
         });
       }
       onSuccess?.();

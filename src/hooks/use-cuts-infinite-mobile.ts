@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useCutsInfinite } from './useCut';
 import { CutGetManyFormData } from '@/schemas';
+import type { Cut } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for cuts
@@ -24,5 +25,5 @@ export function useCutsInfiniteMobile(params?: Partial<CutGetManyFormData> & { e
   const infiniteQuery = useCutsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Cut>(infiniteQuery);
 }

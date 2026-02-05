@@ -1,8 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
-import type { Paint } from '@/types'
+import type { TaskPaint } from '@/types'
 import { canEditPaints } from '@/utils/permissions/entity-permissions'
 
-export const paintsListConfig: ListConfig<Paint> = {
+export const paintsListConfig: ListConfig<TaskPaint> = {
   key: 'production-paints',
   title: 'Tintas',
 
@@ -127,8 +127,8 @@ export const paintsListConfig: ListConfig<Paint> = {
           title: 'Confirmar Exclusão',
           message: (paint) => `Deseja excluir esta tinta?`,
         },
-        onPress: async (paint, _, { delete: deletePaint }) => {
-          await deletePaint(paint.id)
+        onPress: async (paint, _, { delete: deletePaint } = {}) => {
+          await deletePaint?.(paint.id)
         },
       },
     ],
@@ -209,8 +209,8 @@ export const paintsListConfig: ListConfig<Paint> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tinta' : 'tintas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

@@ -111,7 +111,7 @@ export function formatNotificationChannels(channels: NOTIFICATION_CHANNEL[]): st
 
   const labels: Record<NOTIFICATION_CHANNEL, string> = {
     [NOTIFICATION_CHANNEL.EMAIL]: "E-mail",
-    [NOTIFICATION_CHANNEL.SMS]: "SMS",
+    [NOTIFICATION_CHANNEL.WHATSAPP]: "WhatsApp",
     [NOTIFICATION_CHANNEL.PUSH]: "Push",
     [NOTIFICATION_CHANNEL.IN_APP]: "No App",
   };

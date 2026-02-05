@@ -83,11 +83,6 @@ export function PaintForm(props: PaintFormProps) {
   const [currentStep, setCurrentStep] = useState(props.currentStep || 1);
   const [formulas, setFormulas] = useState<PaintFormula[]>([]);
 
-  // Search states
-  const [paintTypeSearch, setPaintTypeSearch] = useState("");
-  const [paintBrandSearch, setPaintBrandSearch] = useState("");
-  const [groundPaintSearch, setGroundPaintSearch] = useState("");
-
   // Memoize keyboard context value
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
     onFieldLayout: handlers.handleFieldLayout,
@@ -124,19 +119,16 @@ export function PaintForm(props: PaintFormProps) {
 
   // Fetch paint types
   const { data: paintTypes, isLoading: isLoadingTypes } = usePaintTypes({
-    searchingFor: paintTypeSearch,
     orderBy: { name: "asc" },
   });
 
   // Fetch paint brands
   const { data: paintBrands, isLoading: isLoadingBrands } = usePaintBrands({
-    searchingFor: paintBrandSearch,
     orderBy: { name: "asc" },
   });
 
   // Fetch paints for ground selection
   const { data: paints, isLoading: isLoadingPaints } = usePaints({
-    searchingFor: groundPaintSearch,
     orderBy: { name: "asc" },
   });
 
@@ -374,7 +366,6 @@ export function PaintForm(props: PaintFormProps) {
                         placeholder="Selecione o tipo"
                         searchPlaceholder="Buscar tipo..."
                         emptyText="Nenhum tipo encontrado"
-                        onSearchChange={setPaintTypeSearch}
                         disabled={isSubmitting || isLoadingTypes}
                         loading={isLoadingTypes}
                         clearable={false}
@@ -424,7 +415,6 @@ export function PaintForm(props: PaintFormProps) {
                         placeholder="Selecione a marca"
                         searchPlaceholder="Buscar marca..."
                         emptyText="Nenhuma marca encontrada"
-                        onSearchChange={setPaintBrandSearch}
                         disabled={isSubmitting || isLoadingBrands}
                         loading={isLoadingBrands}
                         clearable

@@ -53,8 +53,8 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
       marginBottom: theme.spacing.sm,
     },
     selectedText: {
-      fontSize: theme.fontSize.sm,
-      fontWeight: theme.fontWeight.medium as any,
+      fontSize: 14,
+      fontWeight: '500',
       color: theme.colors.text,
     },
     actionsRow: {

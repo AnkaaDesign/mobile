@@ -464,9 +464,12 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                   pricing={previewPricing as any}
                   task={task ? {
                     name: task.name,
-                    serialNumber: task.serialNumber,
+                    serialNumber: task.serialNumber ?? undefined,
                     term: task.term,
-                    customer: task.customer,
+                    customer: task.customer ? {
+                      corporateName: task.customer.corporateName ?? undefined,
+                      fantasyName: task.customer.fantasyName ?? undefined,
+                    } : undefined,
                     representatives: task.representatives,
                   } : undefined}
                 />
@@ -536,7 +539,8 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     return "";
   }, [guaranteeYears, customGuaranteeText]);
 
-  const handleValidityChange = useCallback((period: string) => {
+  const handleValidityChange = useCallback((value: string | string[] | null | undefined) => {
+    const period = typeof value === 'string' ? value : '';
     setValidityPeriod(period);
     const days = Number(period);
     const expiryDate = new Date();
@@ -545,18 +549,20 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     setValue("pricing.expiresAt", expiryDate);
   }, [setValue]);
 
-  const handlePaymentChange = useCallback((value: string) => {
+  const handlePaymentChange = useCallback((val: string | string[] | null | undefined) => {
+    const value = typeof val === 'string' ? val : '';
     if (value === "CUSTOM") {
       setShowCustomPayment(true);
       setValue("pricing.paymentCondition", "CUSTOM");
     } else {
       setShowCustomPayment(false);
       setValue("pricing.customPaymentText", null);
-      setValue("pricing.paymentCondition", value);
+      setValue("pricing.paymentCondition", value || null);
     }
   }, [setValue]);
 
-  const handleGuaranteeChange = useCallback((value: string) => {
+  const handleGuaranteeChange = useCallback((val: string | string[] | null | undefined) => {
+    const value = typeof val === 'string' ? val : '';
     if (value === "CUSTOM") {
       setShowCustomGuarantee(true);
       setValue("pricing.guaranteeYears", null);

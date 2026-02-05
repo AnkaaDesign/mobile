@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTasksInfinite } from './useTask';
 import { TaskGetManyFormData } from '@/schemas';
+import type { Task } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for tasks (default for infinite scroll)
@@ -29,5 +30,5 @@ export function useTasksInfiniteMobile(params?: Partial<TaskGetManyFormData> & {
   const infiniteQuery = useTasksInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Task>(infiniteQuery);
 }

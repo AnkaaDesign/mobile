@@ -242,7 +242,7 @@ export default function NotificationPreferencesScreen() {
     setIsRefreshing(true);
     try {
       // TODO: Implement API call to load preferences
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       setPreferences(createDefaultPreferences());
       setHasChanges(false);
     } catch (error) {
@@ -269,7 +269,7 @@ export default function NotificationPreferencesScreen() {
     setIsSaving(true);
     try {
       // TODO: Implement API call to save preferences
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
       Alert.alert("Sucesso", "Preferências salvas com sucesso!");
       setHasChanges(false);
     } catch (error) {
@@ -336,7 +336,7 @@ export default function NotificationPreferencesScreen() {
                     <Icon name={section.icon} size={18} color={colors.primary} />
                   </View>
                   <View style={styles.sectionInfo}>
-                    <Text variant="base" style={[styles.sectionTitle, { color: colors.foreground }]}>
+                    <Text variant="p" style={[styles.sectionTitle, { color: colors.foreground }]}>
                       {section.title}
                     </Text>
                     <Text variant="xs" style={{ color: colors.mutedForeground }}>
@@ -379,7 +379,7 @@ export default function NotificationPreferencesScreen() {
           variant="default"
           onPress={handleSave}
           disabled={isSaving || !hasChanges}
-          style={[styles.footerButton, styles.saveButton]}
+          style={StyleSheet.flatten([styles.footerButton, styles.saveButton])}
         >
           {isSaving ? (
             <ActivityIndicator size="small" color="#ffffff" />

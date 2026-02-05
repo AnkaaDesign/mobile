@@ -761,7 +761,7 @@ export function ItemSelectorTable({
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
-  const searchTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleSearchChange = useCallback(
     (text: string) => {

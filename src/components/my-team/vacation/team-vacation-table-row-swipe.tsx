@@ -48,7 +48,7 @@ const TeamVacationTableRowSwipeComponent = ({
             onPress: () => onDelete(vacationId),
             closeOnPress: false,
             confirmDelete: true,
-            confirmDeleteMessage: `Tem certeza que deseja excluir as férias de ${vacationUserName}?`,
+            deleteMessage: `Tem certeza que deseja excluir as férias de ${vacationUserName}?`,
           },
         ]
       : []),

@@ -117,7 +117,7 @@ class RouteRegistry {
     return Array.from(this.routes.values());
   }
 
-  isModuleLoaded(moduleName: string): boolean {
+  isModuleLoaded(moduleName: keyof typeof ROUTE_MODULES): boolean {
     return this.loadedModules.has(moduleName);
   }
 }
@@ -184,7 +184,7 @@ export function OptimizedDrawerLayout() {
   const insets = useSafeAreaInsets();
 
   const userPrivileges = useMemo(() =>
-    user?.sectors?.map(s => s.privilege) || [],
+    user?.sector?.privileges ? [user.sector.privileges] : [],
     [user]
   );
 
@@ -217,9 +217,12 @@ export function OptimizedDrawerLayout() {
   }, [loadModule]);
 
   // Pre-fetch modules on hover/focus (web) or on drawer open (mobile)
-  const prefetchModule = useCallback((moduleName: keyof typeof ROUTE_MODULES) => {
+  const prefetchModule = useCallback((moduleName: string) => {
     // Fire and forget - don't await
-    loadModule(moduleName);
+    // Cast to keyof ROUTE_MODULES since we validate the module names internally
+    if (moduleName in ROUTE_MODULES) {
+      loadModule(moduleName as keyof typeof ROUTE_MODULES);
+    }
   }, [loadModule]);
 
   return (
@@ -285,15 +288,6 @@ export function OptimizedDrawerLayout() {
           }}
         />
       ))}
-
-      {/* Show loading overlay when loading modules */}
-      {isLoading && (
-        <Drawer.Screen
-          name="__loading__"
-          options={{ title: "Loading..." }}
-          component={LoadingScreen}
-        />
-      )}
     </Drawer>
   );
 }

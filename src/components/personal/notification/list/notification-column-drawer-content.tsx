@@ -108,7 +108,11 @@ export function NotificationColumnDrawerContent({
                 </View>
                 <RNSwitch
                   value={isVisible}
-                  onValueChange={() => !isOnlyVisible && handleToggleColumn(column.key)}
+                  onValueChange={() => {
+                    if (!isOnlyVisible) {
+                      handleToggleColumn(column.key);
+                    }
+                  }}
                   disabled={isOnlyVisible}
                   trackColor={{
                     false: colors.muted,

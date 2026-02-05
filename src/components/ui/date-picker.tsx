@@ -19,7 +19,8 @@ export function DatePicker({
   value,
   onChange,
   label,
-  type = "date",
+  type,
+  mode,
   style,
   placeholder,
   disabled,
@@ -32,15 +33,17 @@ export function DatePicker({
   onlyBusinessDays,
   error,
 }: DatePickerProps) {
+  // Support both type and mode props (mode is an alias for type)
+  const pickerType = type ?? mode ?? "date";
   const { colors } = useTheme();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState<Date | undefined>(undefined);
   const [validationError, setValidationError] = useState<string | undefined>(error);
 
-  const isDateOnly = type === "date";
-  const isTimeOnly = type === "time";
-  const isDateTime = type === "datetime";
+  const isDateOnly = pickerType === "date";
+  const isTimeOnly = pickerType === "time";
+  const isDateTime = pickerType === "datetime";
 
   // Helper function to check if a date is a weekend (Saturday or Sunday)
   const isWeekend = (date: Date): boolean => {

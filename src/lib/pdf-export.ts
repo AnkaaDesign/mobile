@@ -22,7 +22,7 @@ function generateHTMLTable<T extends Record<string, any>>(
           if (value === null || value === undefined) displayValue = '';
           else if (typeof value === 'boolean') displayValue = value ? 'Sim' : 'Não';
           else if (typeof value === 'number') displayValue = value.toString();
-          else if (value instanceof Date) displayValue = value.toLocaleDateString('pt-BR');
+          else if (typeof value === 'object' && (value as object) instanceof Date) displayValue = (value as Date).toLocaleDateString('pt-BR');
           else displayValue = String(value);
 
           return `<td>${displayValue}</td>`;

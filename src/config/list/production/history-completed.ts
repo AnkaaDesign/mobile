@@ -2,13 +2,13 @@ import React from 'react'
 import { View } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
-import type { Task, User } from '@/types'
+import type { Task } from '@/types'
 import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
-  COMMISSION_STATUS,
   COMMISSION_STATUS_LABELS,
 } from '@/constants'
+import type { Customer, Sector, User } from '@/types'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 
@@ -263,8 +263,8 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (task) => `Deseja excluir a tarefa "${task.name}"?`,
         },
-        onPress: async (task, _, { delete: deleteTask }) => {
-          await deleteTask(task.id)
+        onPress: async (task, _, { delete: deleteTask } = {}) => {
+          await deleteTask?.(task.id)
         },
       },
     ],
@@ -304,7 +304,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
               page: page,
             })
             return {
-              data: (response.data || []).map((customer: any) => ({
+              data: (response.data || []).map((customer: Customer) => ({
                 label: customer.fantasyName,
                 value: customer.id,
               })),
@@ -336,7 +336,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
               page: page,
             })
             return {
-              data: (response.data || []).map((sector: any) => ({
+              data: (response.data || []).map((sector: Sector) => ({
                 label: sector.name,
                 value: sector.id,
               })),
@@ -368,7 +368,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
               page: page,
             })
             return {
-              data: (response.data || []).map((user: any) => ({
+              data: (response.data || []).map((user: User) => ({
                 label: user.name,
                 value: user.id,
               })),
@@ -448,9 +448,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           title: 'Atualizar Status',
           message: (count) => `Deseja atualizar o status de ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for new status
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
         },
       },
       {
@@ -462,9 +462,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           title: 'Atribuir Setor',
           message: (count) => `Deseja atribuir um setor a ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchUpdateAsync }) => {
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
           // Implementation would need to prompt for sector
-          await batchUpdateAsync({ ids: Array.from(ids), data: {} })
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: {} })
         },
       },
       {
@@ -476,8 +476,8 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'tarefa' : 'tarefas'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

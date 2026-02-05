@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
-import { TextArea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import {
   IconUser,
   IconCalendar,
@@ -550,7 +550,7 @@ export default function RequisitionsListScreen() {
               <Button
                 variant="outline"
                 onPress={() => setRejectDialogOpen(true)}
-                style={[styles.actionButton, styles.rejectButton]}
+                style={StyleSheet.flatten([styles.actionButton, styles.rejectButton])}
                 disabled={rejectMutation.isPending}
               >
                 <IconCircleX size={18} color="#DC2626" />
@@ -560,7 +560,7 @@ export default function RequisitionsListScreen() {
               <Button
                 variant="default"
                 onPress={handleApprove}
-                style={[styles.actionButton, styles.approveButton]}
+                style={StyleSheet.flatten([styles.actionButton, styles.approveButton])}
                 disabled={approveMutation.isPending}
               >
                 <IconCircleCheck size={18} color="#fff" />
@@ -695,7 +695,7 @@ export default function RequisitionsListScreen() {
                 <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
                   Motivo da Rejeição
                 </ThemedText>
-                <TextArea
+                <Textarea
                   value={rejectReason}
                   onChangeText={setRejectReason}
                   placeholder="Descreva o motivo da rejeição..."
@@ -833,7 +833,7 @@ export default function RequisitionsListScreen() {
               <ThemedText style={[styles.modalLabel, { color: colors.foreground }]}>
                 Motivo da Rejeição
               </ThemedText>
-              <TextArea
+              <Textarea
                 value={rejectReason}
                 onChangeText={setRejectReason}
                 placeholder="Descreva o motivo da rejeição..."

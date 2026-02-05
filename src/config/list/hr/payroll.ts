@@ -375,7 +375,7 @@ export const payrollListConfig: ListConfig<Payroll> = {
       { key: 'baseRemuneration', label: 'Salário Base', path: 'baseRemuneration', format: 'currency' },
       { key: 'baseBonus', label: 'Bônus Bruto', path: 'bonus.baseBonus', format: 'currency' },
       { key: 'netBonus', label: 'Bônus Líquido', path: 'bonus.netBonus', format: 'currency' },
-      { key: 'period', label: 'Período', path: 'month', format: (value, item) => formatPeriod(item.month, item.year) },
+      { key: 'period', label: 'Período', path: 'month', format: (value: any): string => String(value) },
     ],
   },
 

@@ -2,6 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 // import { format, differenceInDays } from "date-fns"; // Reserved for future use
 
+// Type-safe delay helper for simulating network latency
+declare const setTimeout: (callback: () => void, ms: number) => number;
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 // Types for stock metrics
 interface StatisticsFilters {
   dateRange: {
@@ -118,7 +123,7 @@ const generateMockStockMetrics = (): StockMetrics => {
       inTransit: Math.floor(totalItems * 0.02),
     },
     turnoverMetrics: {
-      averageTurnover: Number((Math.random() * 8 + 4).toFixed(2)),
+      averageTurnover: parseFloat((Math.random() * 8 + 4).toFixed(2)),
       fastMovingItems: Math.floor(totalItems * 0.20),
       slowMovingItems: Math.floor(totalItems * 0.15),
       deadStock: Math.floor(totalItems * 0.05),
@@ -150,7 +155,7 @@ const generateMockStockMetrics = (): StockMetrics => {
       categoryName: name,
       itemCount: Math.floor(totalItems * (Math.random() * 0.3 + 0.1)),
       totalValue: Math.floor(Math.random() * 80000) + 20000,
-      turnoverRate: Number((Math.random() * 10 + 2).toFixed(2)),
+      turnoverRate: parseFloat((Math.random() * 10 + 2).toFixed(2)),
       stockStatus: (['healthy', 'warning', 'critical'] as const)[Math.floor(Math.random() * 3)],
     })),
   };
@@ -211,20 +216,20 @@ const generateMockStockForecasting = (): StockForecasting => {
 const generateMockPerformanceMetrics = (): PerformanceMetrics => {
   return {
     efficiency: {
-      inventoryTurnover: Number((Math.random() * 8 + 4).toFixed(2)),
+      inventoryTurnover: parseFloat((Math.random() * 8 + 4).toFixed(2)),
       daysSalesInventory: Math.floor(Math.random() * 60) + 30,
-      stockoutRate: Number((Math.random() * 5 + 1).toFixed(2)),
-      carryingCost: Number((Math.random() * 25 + 15).toFixed(2)),
+      stockoutRate: parseFloat((Math.random() * 5 + 1).toFixed(2)),
+      carryingCost: parseFloat((Math.random() * 25 + 15).toFixed(2)),
     },
     accuracy: {
-      cycleCounting: Number((Math.random() * 10 + 90).toFixed(1)),
-      receivingAccuracy: Number((Math.random() * 8 + 92).toFixed(1)),
-      pickingAccuracy: Number((Math.random() * 12 + 88).toFixed(1)),
-      overallAccuracy: Number((Math.random() * 7 + 93).toFixed(1)),
+      cycleCounting: parseFloat((Math.random() * 10 + 90).toFixed(1)),
+      receivingAccuracy: parseFloat((Math.random() * 8 + 92).toFixed(1)),
+      pickingAccuracy: parseFloat((Math.random() * 12 + 88).toFixed(1)),
+      overallAccuracy: parseFloat((Math.random() * 7 + 93).toFixed(1)),
     },
     cost: {
       totalCarryingCost: Math.floor(Math.random() * 50000) + 25000,
-      storageCostPerUnit: Number((Math.random() * 5 + 2).toFixed(2)),
+      storageCostPerUnit: parseFloat((Math.random() * 5 + 2).toFixed(2)),
       obsolescenceCost: Math.floor(Math.random() * 15000) + 5000,
       orderingCost: Math.floor(Math.random() * 8000) + 2000,
     },
@@ -248,7 +253,7 @@ export const useStockMetrics = (filters: StatisticsFilters) => {
       // await apiClient.get('/inventory/metrics/stock', { params: filters });
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await delay(500);
 
       return generateMockStockMetrics();
     },
@@ -266,7 +271,7 @@ export const useStockForecasting = (filters: StatisticsFilters) => {
       // await apiClient.get('/inventory/metrics/forecasting', { params: filters });
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 700));
+      await delay(700);
 
       return generateMockStockForecasting();
     },
@@ -284,7 +289,7 @@ export const usePerformanceMetrics = () => {
       // await apiClient.get('/inventory/metrics/performance');
 
       // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await delay(400);
 
       return generateMockPerformanceMetrics();
     },

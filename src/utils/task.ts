@@ -313,7 +313,7 @@ export function calculateTaskStats(tasks: Task[]) {
   const completionRate = total > 0 ? (completed / total) * 100 : 0;
 
   const totalValue = tasks.reduce((sum, task) => {
-    const taskValue = task.budget?.total || 0;
+    const taskValue = task.pricing?.total || 0;
     return sum + taskValue;
   }, 0);
   const averagePrice = total > 0 ? totalValue / total : 0;

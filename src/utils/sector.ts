@@ -31,54 +31,66 @@ export const getSectorFullDisplay = (sector: Sector): string => {
 // are imported from ./privilege.ts
 
 export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES): string => {
-  const descriptions = {
+  const descriptions: Record<SECTOR_PRIVILEGES, string> = {
     [SECTOR_PRIVILEGES.BASIC]: "Acesso básico ao sistema",
     [SECTOR_PRIVILEGES.MAINTENANCE]: "Acesso a funcionalidades de limpeza e manutenção",
     [SECTOR_PRIVILEGES.WAREHOUSE]: "Acesso completo ao almoxarifado",
+    [SECTOR_PRIVILEGES.STOCK]: "Acesso a inventário e estoque",
     [SECTOR_PRIVILEGES.DESIGNER]: "Acesso a design e recorte",
     [SECTOR_PRIVILEGES.LOGISTIC]: "Acesso a logística e garagens",
     [SECTOR_PRIVILEGES.PRODUCTION]: "Acesso a funcionalidades de produção",
+    [SECTOR_PRIVILEGES.LEADER]: "Acesso de líder de setor",
+    [SECTOR_PRIVILEGES.TEAM_LEADER]: "Acesso de líder de equipe",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "Acesso a recursos humanos",
     [SECTOR_PRIVILEGES.FINANCIAL]: "Acesso financeiro",
+    [SECTOR_PRIVILEGES.COMMERCIAL]: "Acesso comercial",
     [SECTOR_PRIVILEGES.PLOTTING]: "Acesso a plotagem e recorte",
     [SECTOR_PRIVILEGES.ADMIN]: "Acesso administrativo completo",
     [SECTOR_PRIVILEGES.EXTERNAL]: "Acesso externo limitado",
   };
-  return descriptions[privilege] || "Privilégio não definido";
+  return descriptions[privilege] ?? "Privilégio não definido";
 };
 
 export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES): string => {
-  const colors = {
+  const colors: Record<SECTOR_PRIVILEGES, string> = {
     [SECTOR_PRIVILEGES.BASIC]: "gray",
     [SECTOR_PRIVILEGES.MAINTENANCE]: "blue",
     [SECTOR_PRIVILEGES.WAREHOUSE]: "purple",
+    [SECTOR_PRIVILEGES.STOCK]: "purple",
     [SECTOR_PRIVILEGES.DESIGNER]: "indigo",
     [SECTOR_PRIVILEGES.LOGISTIC]: "cyan",
     [SECTOR_PRIVILEGES.PRODUCTION]: "green",
+    [SECTOR_PRIVILEGES.LEADER]: "green",
+    [SECTOR_PRIVILEGES.TEAM_LEADER]: "green",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "pink",
     [SECTOR_PRIVILEGES.FINANCIAL]: "orange",
+    [SECTOR_PRIVILEGES.COMMERCIAL]: "orange",
     [SECTOR_PRIVILEGES.PLOTTING]: "teal",
     [SECTOR_PRIVILEGES.ADMIN]: "red",
     [SECTOR_PRIVILEGES.EXTERNAL]: "gray",
   };
-  return colors[privilege] || "gray";
+  return colors[privilege] ?? "gray";
 };
 
 export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES): "default" | "secondary" | "destructive" | "outline" => {
-  const variants = {
-    [SECTOR_PRIVILEGES.BASIC]: "outline" as const,
-    [SECTOR_PRIVILEGES.MAINTENANCE]: "secondary" as const,
-    [SECTOR_PRIVILEGES.WAREHOUSE]: "secondary" as const,
-    [SECTOR_PRIVILEGES.DESIGNER]: "default" as const,
-    [SECTOR_PRIVILEGES.LOGISTIC]: "default" as const,
-    [SECTOR_PRIVILEGES.PRODUCTION]: "default" as const,
-    [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "secondary" as const,
-    [SECTOR_PRIVILEGES.FINANCIAL]: "secondary" as const,
-    [SECTOR_PRIVILEGES.PLOTTING]: "default" as const,
-    [SECTOR_PRIVILEGES.ADMIN]: "destructive" as const,
-    [SECTOR_PRIVILEGES.EXTERNAL]: "outline" as const,
+  const variants: Record<SECTOR_PRIVILEGES, "default" | "secondary" | "destructive" | "outline"> = {
+    [SECTOR_PRIVILEGES.BASIC]: "outline",
+    [SECTOR_PRIVILEGES.MAINTENANCE]: "secondary",
+    [SECTOR_PRIVILEGES.WAREHOUSE]: "secondary",
+    [SECTOR_PRIVILEGES.STOCK]: "secondary",
+    [SECTOR_PRIVILEGES.DESIGNER]: "default",
+    [SECTOR_PRIVILEGES.LOGISTIC]: "default",
+    [SECTOR_PRIVILEGES.PRODUCTION]: "default",
+    [SECTOR_PRIVILEGES.LEADER]: "default",
+    [SECTOR_PRIVILEGES.TEAM_LEADER]: "default",
+    [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "secondary",
+    [SECTOR_PRIVILEGES.FINANCIAL]: "secondary",
+    [SECTOR_PRIVILEGES.COMMERCIAL]: "secondary",
+    [SECTOR_PRIVILEGES.PLOTTING]: "default",
+    [SECTOR_PRIVILEGES.ADMIN]: "destructive",
+    [SECTOR_PRIVILEGES.EXTERNAL]: "outline",
   };
-  return variants[privilege] || "outline";
+  return variants[privilege] ?? "outline";
 };
 
 /**

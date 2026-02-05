@@ -82,7 +82,7 @@ const baseHooks = createEntityHooks<
   PayrollBatchCreateFormData,
   { created: number; skipped: number },
   PayrollBatchUpdateFormData,
-  { updated: number; errors: number },
+  { success: Payroll[]; failed: any[] },
   PayrollBatchDeleteFormData,
   void
 >({

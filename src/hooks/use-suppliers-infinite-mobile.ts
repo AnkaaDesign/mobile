@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useSuppliersInfinite } from './useSupplier';
 import { SupplierGetManyFormData } from '@/schemas';
+import type { Supplier } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for suppliers
@@ -24,5 +25,5 @@ export function useSuppliersInfiniteMobile(params?: Partial<SupplierGetManyFormD
   const infiniteQuery = useSuppliersInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Supplier>(infiniteQuery);
 }

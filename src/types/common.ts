@@ -32,6 +32,9 @@ export interface BaseGetManyResponse<T> {
   data?: T[];
   meta?: Meta;
   error?: string;
+  // Pagination compatibility fields
+  pages?: T[][]; // For infinite query pagination
+  total?: number; // Total count of items
 }
 
 export interface BaseCreateResponse<T> {

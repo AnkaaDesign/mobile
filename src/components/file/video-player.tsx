@@ -16,6 +16,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { AVPlaybackStatus } from 'expo-av';
 // Using conditional import for backward compatibility
 let VideoComponent: any = null;
 let ResizeModeEnum: any = null;
@@ -78,7 +79,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null);
+  const hideControlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const videoUrl = getFileUrl(file, baseUrl);
 
@@ -301,7 +302,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </View>
             </View>
           ) : (
-            <Video
+            <VideoComponent
               ref={videoRef}
               source={{ uri: videoUrl }}
               rate={1.0}

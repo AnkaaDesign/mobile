@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useOrderItemsInfinite } from './useOrderItem';
 import { OrderItemGetManyFormData } from '@/schemas';
+import type { OrderItem } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for order items
@@ -27,5 +28,5 @@ export function useOrderItemsInfiniteMobile(params?: Partial<OrderItemGetManyFor
   const infiniteQuery = useOrderItemsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<OrderItem>(infiniteQuery);
 }

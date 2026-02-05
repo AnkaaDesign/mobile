@@ -21,9 +21,9 @@ export function TeamCommissionStatsCard({ tasks }: TeamCommissionStatsCardProps)
     const noCommissionTasks = tasks.filter((t) => t.commission === COMMISSION_STATUS.NO_COMMISSION);
     const suspendedCommissionTasks = tasks.filter((t) => t.commission === COMMISSION_STATUS.SUSPENDED_COMMISSION);
 
-    // Calculate total earnings (tasks with price)
-    const totalEarned = fullCommissionTasks.reduce((sum, task) => sum + (task.price || 0), 0);
-    const partialEarned = partialCommissionTasks.reduce((sum, task) => sum + (task.price || 0) * 0.5, 0); // Assuming 50% for partial
+    // Calculate total earnings (tasks with pricing)
+    const totalEarned = fullCommissionTasks.reduce((sum, task) => sum + (task.pricing?.total || 0), 0);
+    const partialEarned = partialCommissionTasks.reduce((sum, task) => sum + (task.pricing?.total || 0) * 0.5, 0); // Assuming 50% for partial
 
     // Get unique team members
     const teamMembers = new Set(tasks.map((t) => t.createdBy?.id).filter(Boolean));

@@ -224,7 +224,7 @@ interface ProgressProps {
   style?: ViewStyle | ViewStyle[];
 }
 
-import ReanimatedView, {
+import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -289,7 +289,7 @@ export const Progress: React.FC<ProgressProps> = ({ value, max = 100, showValue 
         </View>
       )}
       <View style={trackStyles}>
-        <ReanimatedView style={[fillStyles, animatedFillStyle]} />
+        <Reanimated.View style={[fillStyles, animatedFillStyle]} />
       </View>
     </View>
   );

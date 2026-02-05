@@ -192,7 +192,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (borrow: Borrow) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {borrow.item?.supplier?.name || "-"}
+        {borrow.item?.supplier?.fantasyName || "-"}
       </ThemedText>
     ),
   },

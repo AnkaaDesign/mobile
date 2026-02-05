@@ -57,7 +57,7 @@ export interface InputProps extends Omit<TextInputProps, "value" | "onChangeText
   type?: InputType;
   value?: string | number | null;
   onChange?: (value: string | number | null) => void;
-  onChangeText?: (value: string | number | null) => void; // Alias for onChange
+  onChangeText?: (value: string) => void; // Alias for onChange - accepts string for backwards compatibility
   decimals?: number;
   documentType?: "cpf" | "cnpj";
   onCepLookup?: (data: CepData) => void;
@@ -117,8 +117,8 @@ const Input = React.forwardRef<TextInput, InputProps>(
     },
     ref,
   ) => {
-    // Merge onChange and onChangeText
-    const handleValueChange = onChange || onChangeText;
+    // Handle both onChange (full type) and onChangeText (string-only for backwards compatibility)
+    const handleValueChange = onChange || (onChangeText ? (value: string | number | null) => onChangeText(String(value ?? '')) : undefined);
 
     // Handle disabled prop
     const isEditable = disabled !== undefined ? !disabled : editable;

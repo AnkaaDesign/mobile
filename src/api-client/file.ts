@@ -56,6 +56,8 @@ export interface FileUploadResponse {
   message: string;
   data?: File;
   errors?: string[];
+  // Convenience property - mirrors data.id when data exists
+  id?: string;
 }
 
 export interface BatchFileUploadResponse {

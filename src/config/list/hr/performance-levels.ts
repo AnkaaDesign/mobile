@@ -100,7 +100,7 @@ export const performanceLevelsListConfig: ListConfig<User> = {
           const level = user.performanceLevel || 0
           return {
             variant: 'default',
-            color: getPerformanceLevelColor(level),
+            color: getPerformanceLevelColor(level).background,
           }
         },
       },
@@ -255,7 +255,7 @@ export const performanceLevelsListConfig: ListConfig<User> = {
         key: 'status',
         label: 'Status',
         path: 'status',
-        format: (value) => USER_STATUS_LABELS[value as USER_STATUS] || value
+        format: (value: any): string => USER_STATUS_LABELS[value as USER_STATUS] || String(value)
       },
     ],
   },

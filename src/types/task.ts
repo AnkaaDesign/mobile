@@ -51,6 +51,13 @@ export interface Task extends BaseEntity {
   createdById: string | null;
   bonusDiscountId?: string | null;
   pricingId?: string | null; // Foreign key to TaskPricing
+  updatedById?: string | null; // ID of user who last updated
+  priority?: number | null; // Task priority level
+  measures?: string | null; // Task measures/dimensions
+  price?: number | null; // Task price/value
+
+  // Relations for updatedBy
+  updatedBy?: User;
 
   // Relations
   sector?: Sector;

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMyWarningsInfinite } from './useWarning';
 import { WarningGetManyFormData } from '@/schemas';
+import type { Warning } from '@/types';
 import { useInfiniteMobile } from "./use-infinite-mobile";
 
 // Mobile-optimized page size for warnings
@@ -25,5 +26,5 @@ export function useMyWarningsInfiniteMobile(params?: Partial<WarningGetManyFormD
   const infiniteQuery = useMyWarningsInfinite(queryParams);
 
   // Apply mobile optimizations
-  return useInfiniteMobile(infiniteQuery);
+  return useInfiniteMobile<Warning>(infiniteQuery);
 }

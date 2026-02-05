@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Pressable, Text, View, ViewStyle, TextStyle, Animated, StyleSheet} from "react-native";
+import { Pressable, Text, View, ViewStyle, TextStyle, Animated, StyleSheet, ActivityIndicator} from "react-native";
 
 import { useTheme } from "@/lib/theme";
 import { borderRadius, shadow, fontSize, fontWeight, transitions, componentSizes } from "@/constants/design-system";
@@ -12,6 +12,10 @@ export interface ButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   children?: React.ReactNode;
   icon?: React.ReactNode;
+  /** Position of the icon relative to children */
+  iconPosition?: "left" | "right";
+  /** Shows a loading spinner and disables the button */
+  loading?: boolean;
   style?: ViewStyle;
   className?: string;
   accessibilityLabel?: string;
@@ -166,7 +170,7 @@ const getPressedStyles = (variant: ButtonProps["variant"] = "default", colors: T
   return pressedStyles[variant as keyof typeof pressedStyles];
 };
 
-const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, icon, style, className, onPress, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
+const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size = "default", disabled, children, icon, iconPosition = "left", loading = false, style, className, onPress, accessibilityLabel, accessibilityHint, testID, ...props }, ref) => {
   const { colors, isDark } = useTheme();
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const opacityValue = React.useRef(new Animated.Value(1)).current;
@@ -233,30 +237,40 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
           (typeof childType === "function" && 'displayName' in childType && childType.displayName && childType.displayName.includes("Text")) ||
           (typeof childType === "function" && 'name' in childType && childType.name && childType.name.includes("Text"))
         ) {
-          const element = child as React.ReactElement<{ style?: TextStyle }>;
+          const element = child as React.ReactElement<{ style?: TextStyle; numberOfLines?: number }>;
           return React.cloneElement(element, {
             style: StyleSheet.flatten([textStyles, { flexShrink: 1 }, element.props.style]),
             numberOfLines: element.props.numberOfLines || 1,
             adjustsFontSizeToFit: true
-          });
+          } as any);
         }
       }
       return child;
     });
   };
 
+  const isDisabled = disabled || loading;
+
+  // Render loading indicator or icon based on state and position
+  const renderIcon = () => {
+    if (loading) {
+      return <ActivityIndicator size="small" color={textStyles.color} />;
+    }
+    return icon;
+  };
+
   return (
     <Pressable
       ref={ref}
-      onPress={disabled ? undefined : onPress}
+      onPress={isDisabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={disabled}
+      disabled={isDisabled}
       accessible={true}
       accessibilityRole="button"
       accessibilityLabel={getAccessibilityLabel()}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!isDisabled }}
       testID={testID}
       {...props}
     >
@@ -265,18 +279,19 @@ const Button = React.forwardRef<View, ButtonProps>(({ variant = "default", size 
           style={StyleSheet.flatten([
             buttonStyles,
             pressed && pressedStyles,
-            disabled && {
+            isDisabled && {
               opacity: 0.5,
             },
             style,
             {
               transform: [{ scale: scaleValue }],
-              opacity: disabled ? 0.5 : opacityValue,
+              opacity: isDisabled ? 0.5 : opacityValue,
             },
           ])}
         >
-          {icon}
+          {iconPosition === "left" && renderIcon()}
           {renderChildren()}
+          {iconPosition === "right" && renderIcon()}
         </Animated.View>
       )}
     </Pressable>

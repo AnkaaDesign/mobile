@@ -72,18 +72,18 @@ export function TaskCard({ commission }: TaskCardProps) {
                     <IconUser size={14} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Cliente</ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{task.customer.name}</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{task.customer.fantasyName}</ThemedText>
                 </View>
               )}
 
               {/* Price */}
-              {task.price && (
+              {task.pricing?.total && (
                 <View style={styles.detailRow}>
                   <View style={styles.detailLabelRow}>
                     <IconCurrencyDollar size={14} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>Valor</ThemedText>
                   </View>
-                  <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{formatCurrency(task.price)}</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>{formatCurrency(task.pricing?.total)}</ThemedText>
                 </View>
               )}
 

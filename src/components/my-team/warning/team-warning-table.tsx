@@ -45,7 +45,7 @@ const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
 // Helper function to get severity variant
-const getSeverityVariant = (severity: string): string => {
+const getSeverityVariant = (severity: string): "info" | "warning" | "orange" | "error" | "muted" => {
   switch (severity) {
     case WARNING_SEVERITY.VERBAL:
       return "info";

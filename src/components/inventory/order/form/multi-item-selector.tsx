@@ -63,8 +63,8 @@ export function OrderMultiItemSelector({
           OR: [
             { name: { contains: searchTerm, mode: "insensitive" } },
             { uniCode: { contains: searchTerm, mode: "insensitive" } },
-            { itemBrand: { name: { contains: searchTerm, mode: "insensitive" } } },
-            { itemCategory: { name: { contains: searchTerm, mode: "insensitive" } } },
+            { brand: { name: { contains: searchTerm, mode: "insensitive" } } },
+            { category: { name: { contains: searchTerm, mode: "insensitive" } } },
           ],
         } : {}),
         // Apply category filter
@@ -83,8 +83,8 @@ export function OrderMultiItemSelector({
         skip: (page - 1) * pageSize,
         where,
         include: {
-          itemCategory: true,
-          itemBrand: true,
+          category: true,
+          brand: true,
           supplier: true,
           prices: {
             orderBy: { createdAt: "desc" },
@@ -94,7 +94,7 @@ export function OrderMultiItemSelector({
       });
 
       const items = response.data || [];
-      const total = response.total || 0;
+      const total = response.meta?.totalRecords || 0;
       const hasMore = (page * pageSize) < total;
 
       const options: ComboboxOption[] = items.map((item) => {
@@ -113,8 +113,8 @@ export function OrderMultiItemSelector({
           ].filter(Boolean).join(" | "),
           metadata: {
             quantity: item.quantity,
-            category: item.itemCategory,
-            brand: item.itemBrand,
+            category: item.category,
+            brand: item.brand,
             supplier: item.supplier,
             price: priceInfo,
             isActive: item.isActive,
@@ -214,7 +214,7 @@ export function OrderMultiItemSelector({
         pageSize={50}
         debounceMs={300}
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(val) => onValueChange(Array.isArray(val) ? val : undefined)}
         placeholder={placeholder}
         emptyText={emptyText}
         searchPlaceholder={searchPlaceholder}

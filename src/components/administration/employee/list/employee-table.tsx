@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Avatar } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import type { BadgeVariant } from "@/constants/badge-colors";
 import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -51,8 +52,8 @@ interface EmployeeTableProps {
 const { width: screenWidth } = Dimensions.get("window");
 const availableWidth = screenWidth - 32; // Account for padding
 
-// Status badge variant helper - returns proper variant string
-const getStatusBadgeVariant = (status: USER_STATUS): string => {
+// Status badge variant helper - returns proper BadgeVariant type
+const getStatusBadgeVariant = (status: USER_STATUS): BadgeVariant => {
   switch (status) {
     case USER_STATUS.EFFECTED:
       return "success";

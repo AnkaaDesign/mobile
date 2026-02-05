@@ -27,17 +27,17 @@ const createColumnDefinitions = () => {
   return [
     {
       key: "severity",
-      label: "Gravidade",
+      header: "Gravidade",
       sortable: true,
     },
     {
       key: "category",
-      label: "Categoria",
+      header: "Categoria",
       sortable: true,
     },
     {
       key: "createdAt",
-      label: "Data",
+      header: "Data",
       sortable: true,
     },
   ];
@@ -74,7 +74,9 @@ const getSeverityLabel = (severity: string) => {
 const getCategoryLabel = (category: string) => {
   const categoryLabels: Record<string, string> = {
     [WARNING_CATEGORY.ATTENDANCE]: "Presença",
-    [WARNING_CATEGORY.CONDUCT]: "Conduta",
+    [WARNING_CATEGORY.BEHAVIOR]: "Conduta",
+    [WARNING_CATEGORY.MISCONDUCT]: "Má Conduta",
+    [WARNING_CATEGORY.INSUBORDINATION]: "Insubordinação",
     [WARNING_CATEGORY.PERFORMANCE]: "Desempenho",
     [WARNING_CATEGORY.SAFETY]: "Segurança",
     [WARNING_CATEGORY.POLICY_VIOLATION]: "Violação de Política",

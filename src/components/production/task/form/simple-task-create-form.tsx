@@ -1,19 +1,18 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { useCallback, useMemo } from "react";
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Input } from "@/components/ui/input";
 import { FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { IconFileText, IconCopy, IconCalendar, IconTruck, IconBox, IconClipboardList } from "@tabler/icons-react-native";
+import { IconFileText, IconCopy } from "@tabler/icons-react-native";
 import { CustomerSelector } from "./customer-selector";
 import { TaskNameAutocomplete } from "./task-name-autocomplete";
 import { PlateTagsInput } from "./plate-tags-input";
@@ -44,7 +43,7 @@ interface SimpleTaskCreateFormProps {
   isSubmitting?: boolean;
 }
 
-export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: SimpleTaskCreateFormProps) {
+export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting = false }: SimpleTaskCreateFormProps) {
   const { colors } = useTheme();
 
   // Keyboard-aware scrolling
@@ -193,7 +192,7 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
         keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
         <ScrollView
-          ref={refs.scrollViewRef}
+          ref={refs.scrollViewRef as React.RefObject<ScrollView>}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -235,7 +234,6 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
                 {/* Forecast Date */}
                 <FormFieldGroup
                   label="Data de Previsão de Liberação"
-                  icon={<IconCalendar size={16} color={colors.mutedForeground} />}
                   error={form.formState.errors.forecastDate?.message}
                 >
                   <Controller
@@ -256,7 +254,6 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
                 {/* Service Order Description */}
                 <FormFieldGroup
                   label="Ordem de Serviço"
-                  icon={<IconClipboardList size={16} color={colors.mutedForeground} />}
                   error={form.formState.errors.serviceOrderDescription?.message}
                 >
                   <Controller
@@ -284,7 +281,6 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
                   <View style={styles.halfField}>
                     <FormFieldGroup
                       label="Categoria"
-                      icon={<IconTruck size={16} color={colors.mutedForeground} />}
                       error={form.formState.errors.category?.message}
                     >
                       <Controller
@@ -311,7 +307,6 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting }: Simpl
                   <View style={styles.halfField}>
                     <FormFieldGroup
                       label="Implemento"
-                      icon={<IconBox size={16} color={colors.mutedForeground} />}
                       error={form.formState.errors.implementType?.message}
                     >
                       <Controller

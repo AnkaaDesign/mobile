@@ -45,7 +45,7 @@ export const ExternalWithdrawalRowCard = React.memo<ExternalWithdrawalRowCardPro
           return 'default';
         case EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE:
           return 'destructive';
-        case EXTERNAL_WITHDRAWAL_TYPE.COURTESY:
+        case EXTERNAL_WITHDRAWAL_TYPE.COMPLIMENTARY:
           return 'secondary';
         default:
           return 'default';

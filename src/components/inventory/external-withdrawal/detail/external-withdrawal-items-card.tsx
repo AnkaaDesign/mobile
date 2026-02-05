@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   metaBadge: {
-    fontSize: fontSize.xs,
+    // Badge component handles its own text styling
   },
   summarySection: {
     paddingHorizontal: spacing.md,

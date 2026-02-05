@@ -42,8 +42,8 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const pathname = usePathname();
   const [isNavigating, setIsNavigating] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const previousPathnameRef = useRef<string | null>(null);

@@ -4,7 +4,7 @@ import { Platform, Alert, ToastAndroid } from "react-native";
 // Global flag to suppress toasts when handling notification tap
 // This prevents success toasts from showing when the app opens from a notification
 let isHandlingNotificationTap = false;
-let suppressionTimeout: NodeJS.Timeout | null = null;
+let suppressionTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export function setIsHandlingNotificationTap(value: boolean, durationMs: number = 3000) {
   isHandlingNotificationTap = value;

@@ -94,8 +94,8 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
           title: 'Confirmar Exclusão',
           message: (category) => `Deseja excluir a categoria "${category.name}"?`,
         },
-        onPress: async (category, _, { delete: deleteCategory }) => {
-          await deleteCategory(category.id)
+        onPress: async (category, _, context) => {
+          await context?.delete?.(category.id)
         },
       },
     ],
@@ -152,8 +152,8 @@ export const categoriesListConfig: ListConfig<ItemCategory> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'categoria' : 'categorias'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

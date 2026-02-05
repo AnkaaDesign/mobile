@@ -48,7 +48,7 @@ const TeamBorrowTableRowSwipeComponent = ({
             onPress: () => onDelete(borrowId),
             closeOnPress: false,
             confirmDelete: true,
-            confirmDeleteMessage: `Deseja realmente excluir o empréstimo de "${borrowName}"?`,
+            deleteMessage: `Deseja realmente excluir o empréstimo de "${borrowName}"?`,
           },
         ]
       : []),

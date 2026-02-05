@@ -133,8 +133,8 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           title: 'Confirmar Exclusão',
           message: 'Deseja realmente excluir este backup? Esta ação não pode ser desfeita.',
         },
-        onPress: async (backup, _router, { deleteAsync }) => {
-          await deleteAsync({ id: backup.id })
+        onPress: async (backup, _, mutations) => {
+          await mutations?.delete?.(backup.id)
         },
       },
     ],
@@ -257,8 +257,8 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'backup' : 'backups'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, mutations) => {
+          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

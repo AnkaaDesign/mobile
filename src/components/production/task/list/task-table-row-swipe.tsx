@@ -12,7 +12,7 @@ interface TaskTableRowSwipeProps {
   taskId: string;
   taskName: string;
   taskStatus: TASK_STATUS;
-  taskSectorId: string;
+  taskSectorId?: string;
   hasLayout?: boolean;
   onEdit?: (taskId: string) => void;
   onStart?: (taskId: string) => void;
@@ -22,6 +22,9 @@ interface TaskTableRowSwipeProps {
   onRelease?: (taskId: string) => void;
   onAddArtworks?: (taskId: string) => void;
   onCopyFromTask?: (taskId: string) => void;
+  // Modal trigger actions
+  onSetSector?: (taskId: string) => void;
+  onSetStatus?: (taskId: string) => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
@@ -68,6 +71,8 @@ const TaskTableRowSwipeComponent = ({
   onRelease,
   onAddArtworks,
   onCopyFromTask,
+  onSetSector,
+  onSetStatus,
   style,
   disabled = false,
 }: TaskTableRowSwipeProps) => {

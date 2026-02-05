@@ -357,8 +357,8 @@ export const employeesListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (employee) => `Deseja excluir o funcionário "${employee.name}"?`,
         },
-        onPress: async (employee, _, { delete: deleteEmployee }) => {
-          await deleteEmployee(employee.id)
+        onPress: async (employee, _, context) => {
+          await context?.delete?.(employee.id)
         },
       },
     ],
@@ -527,8 +527,8 @@ export const employeesListConfig: ListConfig<User> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'funcionário' : 'funcionários'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

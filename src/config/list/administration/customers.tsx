@@ -112,8 +112,8 @@ export const customersListConfig: ListConfig<Customer> = {
       economicActivity: {
         select: {
           id: true,
-          name: true,
           code: true,
+          description: true,
         },
       },
       // Include task count
@@ -282,7 +282,7 @@ export const customersListConfig: ListConfig<Customer> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (customer: Customer) => customer.economicActivity?.name || '-',
+        render: (customer: Customer) => customer.economicActivity?.description || '-',
       },
       {
         key: 'createdAt',
@@ -342,8 +342,8 @@ export const customersListConfig: ListConfig<Customer> = {
           title: 'Confirmar Exclusão',
           message: (customer) => `Deseja excluir o cliente "${customer.fantasyName}"?`,
         },
-        onPress: async (customer, _, { delete: deleteCustomer }) => {
-          await deleteCustomer(customer.id)
+        onPress: async (customer, _, context) => {
+          await context?.delete?.(customer.id)
         },
       },
     ],
@@ -424,8 +424,8 @@ export const customersListConfig: ListConfig<Customer> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'cliente' : 'clientes'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

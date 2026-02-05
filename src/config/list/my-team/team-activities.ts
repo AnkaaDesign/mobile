@@ -147,7 +147,6 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
-        loadOnMount: false,
         queryKey: ['items', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -180,7 +179,6 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
         type: 'select',
         multiple: true,
         async: true,
-        loadOnMount: false,
         queryKey: ['users', 'filter'],
         queryFn: async (searchTerm: string, page: number = 1) => {
           try {
@@ -232,11 +230,11 @@ export const teamActivitiesListConfig: ListConfig<Activity> = {
     filename: 'atividades-equipe',
     formats: ['csv', 'json', 'pdf'],
     columns: [
-      { key: 'operation', label: 'Operação', path: 'operation', format: (value) => ACTIVITY_OPERATION_LABELS[value] || value },
+      { key: 'operation', label: 'Operação', path: 'operation', format: (value) => ACTIVITY_OPERATION_LABELS[value as ACTIVITY_OPERATION] || value },
       { key: 'itemCode', label: 'Código', path: 'item.uniCode' },
       { key: 'itemName', label: 'Item', path: 'item.name' },
       { key: 'quantity', label: 'Quantidade', path: 'quantity', format: 'number' },
-      { key: 'reason', label: 'Motivo', path: 'reason', format: (value) => value ? ACTIVITY_REASON_LABELS[value] : '-' },
+      { key: 'reason', label: 'Motivo', path: 'reason', format: (value) => value ? ACTIVITY_REASON_LABELS[value as ACTIVITY_REASON] : '-' },
       { key: 'user', label: 'Usuário', path: 'user.name' },
       { key: 'createdAt', label: 'Data', path: 'createdAt', format: 'datetime' },
     ],

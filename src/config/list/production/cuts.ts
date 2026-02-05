@@ -1,42 +1,8 @@
 import type { ListConfig } from '@/components/list/types'
-import type { Cut, User } from '@/types'
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, SECTOR_PRIVILEGES } from '@/constants/enums'
+import type { Cut } from '@/types'
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '@/constants/enums'
 import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
-
-// Special value for tasks without a sector
-const UNDEFINED_SECTOR_VALUE = "__UNDEFINED__";
-
-// Helper function to get sector-based where clause for production/team leader users
-const getSectorBasedWhere = (user: User | null) => {
-  if (!user?.sector) return {};
-
-  const { privileges, id: userSectorId } = user.sector;
-
-  // Production users can only see cuts from their own sector
-  if (privileges === SECTOR_PRIVILEGES.PRODUCTION) {
-    return {
-      task: {
-        sectorId: userSectorId,
-      },
-    };
-  }
-
-  // Team leaders (users who manage a sector) can see cuts from their sector and managed sector
-  const managedSectorId = user.managedSector?.id;
-  if (managedSectorId) {
-    const sectorIds = [userSectorId];
-    sectorIds.push(managedSectorId);
-    return {
-      task: {
-        sectorId: { in: sectorIds },
-      },
-    };
-  }
-
-  // Other privileges (ADMIN, WAREHOUSE, etc.) can see all cuts
-  return {};
-};
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
@@ -194,10 +160,10 @@ export const cutsListConfig: ListConfig<Cut> = {
         canPerform: canDeleteCuts,
         confirm: {
           title: 'Confirmar Exclusão',
-          message: () => `Deseja excluir este corte?`,
+          message: (cut) => `Deseja excluir este corte?`,
         },
-        onPress: async (cut, _, { delete: deleteCut }) => {
-          await deleteCut(cut.id)
+        onPress: async (cut, _, { delete: deleteCut } = {}) => {
+          await deleteCut?.(cut.id)
         },
       },
     ],
@@ -261,7 +227,6 @@ export const cutsListConfig: ListConfig<Cut> = {
                 value: sector.id,
               })),
               hasMore: response.meta?.hasNextPage ?? false,
-              total: response.meta?.totalRecords,
             }
           } catch (error) {
             console.error('[Sector Filter] Error:', error)
@@ -293,7 +258,7 @@ export const cutsListConfig: ListConfig<Cut> = {
       { key: 'type', label: 'Tipo', path: 'type', format: (value) => TYPE_LABELS[value] || value },
       { key: 'origin', label: 'Origem', path: 'origin', format: (value) => ORIGIN_LABELS[value] || value },
       { key: 'task', label: 'Tarefa', path: 'task.name' },
-      { key: 'file', label: 'Arquivo', path: 'file.fileName' },
+      { key: 'file', label: 'Arquivo', path: 'file.filename' },
       { key: 'startedAt', label: 'Início', path: 'startedAt', format: 'datetime' },
       { key: 'completedAt', label: 'Conclusão', path: 'completedAt', format: 'datetime' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'datetime' },
@@ -316,8 +281,8 @@ export const cutsListConfig: ListConfig<Cut> = {
           title: 'Confirmar Início',
           message: (count) => `Iniciar ${count} ${count === 1 ? 'corte' : 'cortes'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'CUTTING', startedAt: new Date() })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: { status: 'CUTTING', startedAt: new Date() } })
         },
       },
       {
@@ -329,8 +294,8 @@ export const cutsListConfig: ListConfig<Cut> = {
           title: 'Confirmar Conclusão',
           message: (count) => `Concluir ${count} ${count === 1 ? 'corte' : 'cortes'}?`,
         },
-        onPress: async (ids, { batchUpdate }) => {
-          await batchUpdate({ ids: Array.from(ids), status: 'COMPLETED', completedAt: new Date() })
+        onPress: async (ids, { batchUpdateAsync } = {}) => {
+          await batchUpdateAsync?.({ ids: Array.from(ids), data: { status: 'COMPLETED', completedAt: new Date() } })
         },
       },
       {
@@ -342,8 +307,8 @@ export const cutsListConfig: ListConfig<Cut> = {
           title: 'Confirmar Exclusão',
           message: (count) => `Deseja excluir ${count} ${count === 1 ? 'corte' : 'cortes'}?`,
         },
-        onPress: async (ids, { batchDeleteAsync }) => {
-          await batchDeleteAsync({ ids: Array.from(ids) })
+        onPress: async (ids, { batchDeleteAsync } = {}) => {
+          await batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],

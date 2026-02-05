@@ -113,7 +113,7 @@ export function BrandSelector({ disabled, required, initialBrand }: BrandSelecto
                 onChange(newBrandId);
               }
             }}
-            createNewText={(value: string) => `Criar marca "${value}"`}
+            createLabel={(value: string) => `Criar marca "${value}"`}
             isCreating={isCreating}
           />
         </View>
