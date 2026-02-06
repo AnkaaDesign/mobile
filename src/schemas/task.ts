@@ -279,6 +279,7 @@ export const taskOrderBySchema = z
       status: orderByDirectionSchema.optional(),
       statusOrder: orderByDirectionSchema.optional(),
       serialNumber: orderByDirectionSchema.optional(),
+      commissionOrder: orderByDirectionSchema.optional(),
       // Note: chassisNumber and plate removed - these are now on Truck entity
       entryDate: orderByDirectionSchema.optional(),
       term: orderByDirectionSchema.optional(),
@@ -294,6 +295,7 @@ export const taskOrderBySchema = z
         status: orderByDirectionSchema.optional(),
         statusOrder: orderByDirectionSchema.optional(),
         serialNumber: orderByDirectionSchema.optional(),
+        commissionOrder: orderByDirectionSchema.optional(),
         // Note: chassisNumber and plate removed - these are now on Truck entity
         entryDate: orderByDirectionSchema.optional(),
         term: orderByDirectionSchema.optional(),

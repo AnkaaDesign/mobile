@@ -1,8 +1,11 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import { SvgXml } from "react-native-svg";
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
+import { GestureDetector, Gesture, GestureHandlerRootView } from "react-native-gesture-handler";
+import { IconZoomIn, IconZoomOut, IconZoomReset } from "@tabler/icons-react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
 import { Card } from "@/components/ui/card";
 import { FilePicker, FilePickerItem } from "@/components/ui/file-picker";
@@ -13,7 +16,6 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import type { LayoutCreateFormData } from "@/schemas";
 // import { showToast } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/utils/file";
-import { LayoutSelector } from "./selector/layout-selector";
 
 // MeasurementInput component with local state (like web version)
 const MeasurementInput = React.memo(({
@@ -131,10 +133,6 @@ interface LayoutFormProps {
   disabled?: boolean;
   /** When true, disables the internal ScrollView and KeyboardAvoidingView (use when nested in another scrollable) */
   embedded?: boolean;
-  /** Optional: Called when user selects an existing layout to assign */
-  onSelectExistingLayout?: (side: 'left' | 'right' | 'back', layoutId: string) => void;
-  /** Optional: Show layout selection UI */
-  showLayoutSelection?: boolean;
 }
 
 interface Door {
@@ -164,12 +162,76 @@ const getPhotoUrl = (photoId: string | null): string | undefined => {
   return `${apiUrl}/files/serve/${photoId}`;
 };
 
-export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, embedded = false, onSelectExistingLayout, showLayoutSelection = false }: LayoutFormProps) {
-  const { colors } = useTheme();
+export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, embedded = false }: LayoutFormProps) {
+  const { colors, isDark } = useTheme();
 
-  // State for layout selection mode
-  const [selectedLayoutId, setSelectedLayoutId] = useState<string | undefined>();
-  const [showingLayoutOptions, setShowingLayoutOptions] = useState(false);
+  // Zoom/pan state for preview
+  const zoomScale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 3;
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      const newScale = savedScale.value * e.scale;
+      zoomScale.value = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+    })
+    .onEnd(() => {
+      savedScale.value = zoomScale.value;
+    });
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      translateX.value = savedTranslateX.value + e.translationX;
+      translateY.value = savedTranslateY.value + e.translationY;
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
+
+  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+
+  const animatedZoomStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: zoomScale.value },
+    ],
+  } as any));
+
+  const handleZoomIn = () => {
+    const newScale = Math.min(zoomScale.value + 0.5, MAX_SCALE);
+    zoomScale.value = withSpring(newScale);
+    savedScale.value = newScale;
+  };
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(zoomScale.value - 0.5, MIN_SCALE);
+    zoomScale.value = withSpring(newScale);
+    savedScale.value = newScale;
+  };
+
+  const handleResetZoom = () => {
+    zoomScale.value = withSpring(1);
+    savedScale.value = 1;
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+  };
+
+  // Theme-aware SVG colors (matching truck-layout-preview)
+  const svgColors = useMemo(() => ({
+    stroke: isDark ? '#e5e5e5' : '#171717',
+    divider: isDark ? '#a3a3a3' : '#525252',
+    dimension: isDark ? '#60a5fa' : '#0066cc',
+  }), [isDark]);
 
   // Keyboard-aware scrolling (only used when not embedded)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -831,14 +893,81 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     onChange(selectedSide, layoutData);
   }, [selectedSide, currentState, onChange]);
 
-  // Calculate display scale for mobile
-  const maxDisplayWidth = 300;
-  const maxDisplayHeight = 120;
-  const scale = Math.min(
-    maxDisplayWidth / Math.max(currentState?.totalWidth || 800, 100),
-    maxDisplayHeight / Math.max(currentState?.height || 240, 100),
-    0.5
-  );
+  // Generate SVG preview string (matching truck-layout-preview.tsx pattern)
+  const previewSvgContent = useMemo(() => {
+    if (!currentState) return null;
+
+    const height = currentState.height; // Already in cm
+    const totalWidth = currentState.totalWidth; // Already in cm
+    const margin = 60;
+    const extraSpace = 40;
+    const svgWidth = totalWidth + margin * 2;
+    const svgHeight = height + margin * 2 + extraSpace;
+
+    let svg = `<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+
+    // Main container rectangle
+    svg += `\n<rect x="${margin}" y="${margin}" width="${totalWidth}" height="${height}" fill="none" stroke="${svgColors.stroke}" stroke-width="3"/>`;
+
+    // Section dividers (vertical lines between non-door segments)
+    let currentPos = 0;
+    segments.forEach((segment: any, index: number) => {
+      if (index > 0) {
+        const prevSegment = segments[index - 1];
+        if (segment.type !== 'door' && prevSegment.type !== 'door') {
+          const lineX = margin + currentPos;
+          svg += `\n<line x1="${lineX}" y1="${margin}" x2="${lineX}" y2="${margin + height}" stroke="${svgColors.divider}" stroke-width="2"/>`;
+        }
+      }
+      currentPos += segment.width;
+    });
+
+    // Doors (only for sides, not back)
+    if (selectedSide !== 'back') {
+      currentState.doors.forEach((door) => {
+        const doorX = margin + door.position;
+        const doorWidth = door.width;
+        const doorTopY = margin + (height - door.doorHeight);
+
+        svg += `\n<line x1="${doorX}" y1="${doorTopY}" x2="${doorX}" y2="${margin + height}" stroke="${svgColors.stroke}" stroke-width="3"/>`;
+        svg += `\n<line x1="${doorX + doorWidth}" y1="${doorTopY}" x2="${doorX + doorWidth}" y2="${margin + height}" stroke="${svgColors.stroke}" stroke-width="3"/>`;
+        svg += `\n<line x1="${doorX}" y1="${doorTopY}" x2="${doorX + doorWidth}" y2="${doorTopY}" stroke="${svgColors.stroke}" stroke-width="3"/>`;
+      });
+    }
+
+    // Width dimensions with arrows (per segment)
+    currentPos = 0;
+    segments.forEach((segment: any) => {
+      const sectionWidth = segment.width;
+      const startX = margin + currentPos;
+      const endX = margin + currentPos + sectionWidth;
+      const centerX = startX + sectionWidth / 2;
+      const dimY = margin + height + 20;
+
+      svg += `\n<line x1="${startX}" y1="${dimY}" x2="${endX}" y2="${dimY}" stroke="${svgColors.dimension}" stroke-width="2"/>`;
+      svg += `\n<polygon points="${startX},${dimY} ${startX + 5},${dimY - 3} ${startX + 5},${dimY + 3}" fill="${svgColors.dimension}"/>`;
+      svg += `\n<polygon points="${endX},${dimY} ${endX - 5},${dimY - 3} ${endX - 5},${dimY + 3}" fill="${svgColors.dimension}"/>`;
+      svg += `\n<text x="${centerX}" y="${dimY + 18}" text-anchor="middle" font-size="16" font-weight="bold" fill="${svgColors.dimension}">${Math.round(sectionWidth)}</text>`;
+
+      currentPos += sectionWidth;
+    });
+
+    // Height dimension (left side)
+    const dimX = margin - 30;
+    svg += `\n<line x1="${dimX}" y1="${margin}" x2="${dimX}" y2="${margin + height}" stroke="${svgColors.dimension}" stroke-width="2"/>`;
+    svg += `\n<polygon points="${dimX},${margin} ${dimX - 3},${margin + 5} ${dimX + 3},${margin + 5}" fill="${svgColors.dimension}"/>`;
+    svg += `\n<polygon points="${dimX},${margin + height} ${dimX - 3},${margin + height - 5} ${dimX + 3},${margin + height - 5}" fill="${svgColors.dimension}"/>`;
+    svg += `\n<text x="${dimX - 10}" y="${margin + height / 2}" text-anchor="middle" font-size="16" font-weight="bold" fill="${svgColors.dimension}" transform="rotate(-90, ${dimX - 10}, ${margin + height / 2})">${Math.round(height)}</text>`;
+
+    svg += `\n</svg>`;
+    return svg;
+  }, [currentState, segments, svgColors, selectedSide]);
+
+  // Scale for positioning overlay remove buttons on top of SVG
+  const SVG_DISPLAY_HEIGHT = 200;
+  const svgNativeHeight = currentState ? currentState.height + 160 : 400; // height + margin*2 + extraSpace
+  const svgRenderScale = SVG_DISPLAY_HEIGHT / svgNativeHeight;
+  const svgMarginScaled = 60 * svgRenderScale;
 
   // Copy from another side
   const copyFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
@@ -889,14 +1018,6 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     // Layout mirror is a local operation, no API call
   }, [selectedSide, sideStates, updateCurrentSide]);
 
-  const getSideLabel = (side: 'left' | 'right' | 'back') => {
-    switch (side) {
-      case 'left': return 'Motorista';
-      case 'right': return 'Sapo';
-      case 'back': return 'Traseira';
-    }
-  };
-
   if (!currentState) {
     return (
       <View style={styles.container}>
@@ -905,182 +1026,71 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     );
   }
 
-  // Handle existing layout selection
-  const handleSelectExistingLayout = (layoutId: string | undefined) => {
-    setSelectedLayoutId(layoutId);
-    if (layoutId && onSelectExistingLayout) {
-      onSelectExistingLayout(selectedSide, layoutId);
-    }
-  };
-
   // The main form content
   const formContent = (
     <>
-      {/* Layout Selection Section - Only show if enabled */}
-      {showLayoutSelection && (
-        <Card style={styles.layoutSelectionCard}>
-          <View style={styles.layoutSelectionHeader}>
-            <ThemedText style={[styles.layoutSelectionTitle, { color: colors.foreground }]}>
-              Opções de Layout
-            </ThemedText>
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => setShowingLayoutOptions(!showingLayoutOptions)}
-              disabled={disabled}
-            >
-              <Icon name={showingLayoutOptions ? "chevron-up" : "chevron-down"} size={16} color={colors.foreground} />
-            </Button>
-          </View>
-
-          {showingLayoutOptions && (
-            <View style={styles.layoutSelectionContent}>
-              <ThemedText style={[styles.layoutSelectionHelp, { color: colors.mutedForeground }]}>
-                Você pode criar um novo layout ou selecionar um layout existente para reutilizar.
-              </ThemedText>
-
-              <LayoutSelector
-                value={selectedLayoutId}
-                onValueChange={handleSelectExistingLayout}
-                side={selectedSide}
-                disabled={disabled}
-                placeholder="Selecione um layout para reutilizar"
-              />
-
-              {selectedLayoutId && (
-                <View style={[styles.layoutWarning, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
-                  <Icon name="alert-triangle" size={18} color={colors.warning} />
-                  <ThemedText style={[styles.layoutWarningText, { color: colors.warning }]}>
-                    Este layout é compartilhado. Alterações afetarão todos os caminhões que o utilizam.
-                  </ThemedText>
-                </View>
-              )}
-
-              {selectedLayoutId && (
-                <Button
-                  variant="outline"
-                  onPress={() => {
-                    setSelectedLayoutId(undefined);
-                    setShowingLayoutOptions(false);
-                  }}
-                  disabled={disabled}
-                >
-                  <ThemedText>Criar novo layout ao invés disso</ThemedText>
-                </Button>
-              )}
-            </View>
-          )}
-        </Card>
-      )}
-
-      {/* Total Width Display */}
-      <View style={[styles.totalWidthContainer, { backgroundColor: colors.primary + '20', borderRadius: borderRadius.md }]}>
-        <ThemedText style={[styles.totalWidthLabel, { color: colors.mutedForeground }]}>
-          Comprimento Total:
-        </ThemedText>
-        <ThemedText style={[styles.totalWidthValue, { color: colors.foreground }]}>
-          {Math.round(currentState.totalWidth)}cm
-        </ThemedText>
-      </View>
-
-      {/* Visual Layout Preview */}
+      {/* Visual Layout Preview with Zoom/Pan (SVG-based, matching task detail preview) */}
       <View style={[styles.previewContainer, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-        <ThemedText style={styles.previewTitle}>{getSideLabel(selectedSide)}</ThemedText>
+        {/* Zoom Controls with Total Width */}
+        <View style={[styles.zoomControls, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <ThemedText style={[styles.totalWidthLabel, { flex: 1 }]}>
+            {Math.round(currentState.totalWidth)} x {Math.round(currentState.height)}cm
+          </ThemedText>
+          <Button variant="ghost" size="sm" onPress={handleZoomOut} style={styles.zoomButton}>
+            <IconZoomOut size={20} color={colors.foreground} />
+          </Button>
+          <Button variant="ghost" size="sm" onPress={handleResetZoom} style={styles.zoomButton}>
+            <IconZoomReset size={20} color={colors.foreground} />
+          </Button>
+          <Button variant="ghost" size="sm" onPress={handleZoomIn} style={styles.zoomButton}>
+            <IconZoomIn size={20} color={colors.foreground} />
+          </Button>
+        </View>
 
-        <View style={styles.layoutWrapper}>
-          {/* Main Rectangle */}
-          <View
-            style={[
-              styles.layoutRect,
-              {
-                width: currentState.totalWidth * scale,
-                height: currentState.height * scale,
-                borderColor: colors.foreground,
-                backgroundColor: (selectedSide === 'back' && photoState.file?.uri) ? 'transparent' : colors.background,
-              }
-            ]}
-          >
-            {/* Background photo for back side */}
-            {selectedSide === 'back' && photoState.file?.uri && (
-              <View style={StyleSheet.absoluteFill}>
-                <Image
-                  source={{ uri: photoState.file?.uri }}
-                  style={{ width: '100%', height: '100%', opacity: 0.5 }}
-                  resizeMode="cover"
+        <GestureHandlerRootView style={styles.gestureContainer}>
+          <GestureDetector gesture={composedGesture}>
+            <Animated.View style={[styles.zoomableContent, animatedZoomStyle]}>
+              {previewSvgContent && (
+                <SvgXml
+                  xml={previewSvgContent}
+                  width="100%"
+                  height={SVG_DISPLAY_HEIGHT}
+                  preserveAspectRatio="xMidYMid meet"
                 />
-              </View>
-            )}
+              )}
+            </Animated.View>
+          </GestureDetector>
+        </GestureHandlerRootView>
 
-            {/* Render doors (only for sides, not back) */}
-            {selectedSide !== 'back' && currentState.doors.map(door => {
-              // doorHeight is measured from bottom of layout to top of door opening
-              // So the door top position = layout height - door height
+        {/* Overlay: Door remove buttons (positioned on top of SVG area) */}
+        {selectedSide !== 'back' && currentState.doors.length > 0 && (
+          <View style={styles.doorButtonsOverlay} pointerEvents="box-none">
+            {currentState.doors.map(door => {
+              const doorCenterX = svgMarginScaled + (door.position + door.width / 2) * svgRenderScale;
               const doorTopPosition = currentState.height - door.doorHeight;
-              // Clamp to prevent overflow
               const clampedTopPosition = Math.max(0, doorTopPosition);
-              // Calculate visual height - ensure door doesn't extend past bottom border
-              // The container has a 2px border, so we need to stop 2px before the bottom
-              const maxVisualHeight = currentState.height - clampedTopPosition;
-              const doorVisualHeight = Math.min(door.doorHeight, maxVisualHeight) * scale - 2;
+              const doorVisualCenterY = svgMarginScaled + (clampedTopPosition + (door.doorHeight / 2)) * svgRenderScale;
 
               return (
-                <View key={door.id}>
-                  {/* Door left vertical line */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      left: door.position * scale,
-                      top: clampedTopPosition * scale,
-                      width: 2,
-                      height: doorVisualHeight,
-                      backgroundColor: colors.foreground,
-                    }}
-                  />
-
-                  {/* Door right vertical line */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      left: (door.position + door.width) * scale - 2,
-                      top: clampedTopPosition * scale,
-                      width: 2,
-                      height: doorVisualHeight,
-                      backgroundColor: colors.foreground,
-                    }}
-                  />
-
-                  {/* Door top horizontal line */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      left: door.position * scale,
-                      top: clampedTopPosition * scale,
-                      width: door.width * scale,
-                      height: 2,
-                      backgroundColor: colors.foreground,
-                    }}
-                  />
-
-                  {/* Remove button */}
-                  <TouchableOpacity
-                    style={[
-                      styles.removeDoorButton,
-                      {
-                        left: (door.position + door.width / 2) * scale - 12,
-                        top: (clampedTopPosition * scale + doorVisualHeight / 2) - 12,
-                        backgroundColor: colors.destructive,
-                      }
-                    ]}
-                    onPress={() => removeDoor(door.id)}
-                    disabled={disabled}
-                  >
-                    <Icon name="x" size={16} color={colors.destructiveForeground} />
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  key={door.id}
+                  style={[
+                    styles.removeDoorButton,
+                    {
+                      left: doorCenterX - 12,
+                      top: doorVisualCenterY - 12,
+                      backgroundColor: colors.destructive,
+                    }
+                  ]}
+                  onPress={() => removeDoor(door.id)}
+                  disabled={disabled}
+                >
+                  <Icon name="x" size={16} color={colors.destructiveForeground} />
+                </TouchableOpacity>
               );
             })}
           </View>
-        </View>
+        )}
       </View>
 
       {/* Copy and Mirror Buttons (only for left/right sides) */}
@@ -1273,40 +1283,46 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 0,
   },
-  totalWidthContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
   totalWidthLabel: {
-    fontSize: fontSize.sm,
-  },
-  totalWidthValue: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
   },
   previewContainer: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
     marginBottom: spacing.md,
+    overflow: 'hidden',
   },
-  previewTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  layoutWrapper: {
+  zoomControls: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    gap: spacing.xs,
   },
-  layoutRect: {
-    borderWidth: 2,
-    position: 'relative',
+  zoomButton: {
+    padding: spacing.xs,
+    minWidth: 36,
+    minHeight: 36,
+  },
+  gestureContainer: {
+    minHeight: 200,
+    overflow: 'hidden',
+  },
+  zoomableContent: {
+    padding: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 200,
+  },
+  doorButtonsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   removeDoorButton: {
     position: 'absolute',
@@ -1359,41 +1375,5 @@ const styles = StyleSheet.create({
   },
   photoPickerContainer: {
     marginBottom: spacing.md,
-  },
-  layoutSelectionCard: {
-    marginBottom: spacing.md,
-    padding: 0,
-  },
-  layoutSelectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  layoutSelectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-  },
-  layoutSelectionContent: {
-    padding: spacing.md,
-    gap: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  layoutSelectionHelp: {
-    fontSize: fontSize.sm,
-  },
-  layoutWarning: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-  },
-  layoutWarningText: {
-    flex: 1,
-    fontSize: fontSize.sm,
   },
 });

@@ -150,7 +150,7 @@
       "eas": {
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
-      "apiUrl": "http://192.168.10.154:3030",
+      "apiUrl": "http://192.168.10.169:3030",
       "fallbackApiUrl": "https://api.ankaadesign.com.br"
     }
   }

@@ -311,6 +311,7 @@ export const tasksListConfig: ListConfig<Task> = {
         key: 'commission',
         label: 'COMISSÃO',
         sortable: true,
+        sortField: 'commissionOrder',
         width: 1.2,
         align: 'center',
         render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',

@@ -3,7 +3,7 @@
  *
  * This service monitors internet connectivity and manages the API base URL:
  * - Online: Uses the cloud API (https://api.ankaadesign.com.br)
- * - Offline (local network): Uses the local server (http://192.168.10.154:3030)
+ * - Offline (local network): Uses the local server (http://192.168.10.169:3030)
  *
  * The service automatically switches between URLs based on connectivity.
  */
@@ -45,7 +45,8 @@ class NetworkService {
   private currentState: NetworkServiceState;
   private listeners: Set<NetworkStateListener> = new Set();
   private netInfoSubscription: NetInfoSubscription | null = null;
-  private reachabilityCheckInterval: ReturnType<typeof setTimeout> | null = null;
+  private reachabilityCheckInterval: ReturnType<typeof setTimeout> | null =
+    null;
   private isInitialized: boolean = false;
 
   private constructor() {
@@ -98,7 +99,7 @@ class NetworkService {
     }
 
     // Default: Local API for development
-    return "http://192.168.10.154:3030";
+    return "http://192.168.10.169:3030";
   }
 
   /**
@@ -119,7 +120,7 @@ class NetworkService {
     }
 
     // Default: Local network server
-    return "http://192.168.10.154:3030";
+    return "http://192.168.10.169:3030";
   }
 
   /**

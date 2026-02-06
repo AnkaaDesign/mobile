@@ -131,6 +131,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         key: 'commission',
         label: 'COMISSÃO',
         sortable: true,
+        sortField: 'commissionOrder',
         width: 1.6,
         align: 'center',
         render: (task) => task.commission ? COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission : '-',

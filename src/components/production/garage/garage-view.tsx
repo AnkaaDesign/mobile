@@ -218,9 +218,12 @@ function calculateSwapAvailability(
   const margins = 2 * GARAGE_CONFIG.TRUCK_MARGIN_TOP;
   const newTruckCount = trucksInLaneAfterSwap.length + 1;
 
-  const gapsBetweenTrucks = newTruckCount >= 2
-    ? (newTruckCount - 1) * GARAGE_CONFIG.TRUCK_MIN_SPACING
-    : 0;
+  // Gaps only needed for 3 trucks (V1 top, V2 middle, V3 bottom).
+  // 2 trucks (V1 top, V2 bottom) need no mandatory gap between them.
+  let gapsBetweenTrucks = 0;
+  if (newTruckCount === 3) {
+    gapsBetweenTrucks = 2 * GARAGE_CONFIG.TRUCK_MIN_SPACING;
+  }
 
   const totalRequiredSpace = margins + newTotalTruckLengths + gapsBetweenTrucks;
   return totalRequiredSpace <= laneLength && trucksInLaneAfterSwap.length < 3;
@@ -250,26 +253,26 @@ function calculateLaneAvailability(
     return sum + t.length;
   }, 0);
 
-  // Calculate required spacing - FIXED: properly calculate gaps for 2+ trucks
+  // Calculate required spacing
   const margins = 2 * GARAGE_CONFIG.TRUCK_MARGIN_TOP; // 0.4m total
   const newTruckCount = trucksInLane.length + 1;
 
-  // Calculate gaps: n trucks need (n-1) gaps between them
-  // For 2 trucks: 1 gap, for 3 trucks: 2 gaps
-  const gapsBetweenTrucks = newTruckCount >= 2
-    ? (newTruckCount - 1) * GARAGE_CONFIG.TRUCK_MIN_SPACING
-    : 0;
+  // Gaps only needed for 3 trucks (V1 top, V2 middle, V3 bottom).
+  // 2 trucks (V1 top, V2 bottom) need no mandatory gap between them.
+  let gapsBetweenTrucks = 0;
+  if (newTruckCount === 3) {
+    gapsBetweenTrucks = 2 * GARAGE_CONFIG.TRUCK_MIN_SPACING;
+  }
 
   const requiredSpace = margins + totalOccupiedLength + truckLength + gapsBetweenTrucks;
 
-  // Calculate existing gaps (between current trucks)
-  const existingGaps = trucksInLane.length >= 2
-    ? (trucksInLane.length - 1) * GARAGE_CONFIG.TRUCK_MIN_SPACING
-    : 0;
-
-  // Available space = total - occupied - margins - existing gaps - new gap (if adding to existing trucks)
-  const newGapNeeded = trucksInLane.length > 0 ? GARAGE_CONFIG.TRUCK_MIN_SPACING : 0;
-  const availableSpace = Math.max(0, laneLength - totalOccupiedLength - margins - existingGaps - newGapNeeded);
+  // Calculate current gaps (same logic: only 3 trucks need gaps)
+  let currentGaps = 0;
+  if (trucksInLane.length === 3) {
+    currentGaps = 2 * GARAGE_CONFIG.TRUCK_MIN_SPACING;
+  }
+  const currentOccupied = margins + totalOccupiedLength + currentGaps;
+  const availableSpace = Math.max(0, laneLength - currentOccupied);
 
   const canFit = trucksInLane.length < 3 && requiredSpace <= laneLength;
 
@@ -287,37 +290,34 @@ function calculateLaneAvailability(
   const spacing = GARAGE_CONFIG.TRUCK_MIN_SPACING;
 
   if (trucksInLane.length === 0) {
-    // Empty lane: each position gets roughly half the usable space (accounting for spacing if both filled)
-    const usableSpace = laneLength - topMargin - bottomMargin - spacing; // Space for 2 trucks with gap
+    // Empty lane: V1 (top) and V2 (bottom) each get half the usable space.
+    // No mandatory gap for 2 trucks (V1 top, V2 bottom don't need spacing).
+    const usableSpace = laneLength - topMargin - bottomMargin;
     positionSpaces.v1 = usableSpace / 2;
     positionSpaces.v2 = usableSpace / 2;
-    positionSpaces.v3 = 0; // V3 only used when V2 is occupied
+    positionSpaces.v3 = 0;
   } else if (trucksInLane.length === 1) {
     if (v1Truck) {
-      // V1 occupied: V2 gets remaining space at bottom
-      const v1End = topMargin + v1Truck.length + spacing;
-      positionSpaces.v1 = 0; // Already occupied
-      positionSpaces.v2 = laneLength - v1End - bottomMargin;
+      // V1 occupied: V2 at bottom gets remaining space (no mandatory gap for 2 trucks)
+      positionSpaces.v1 = 0;
+      positionSpaces.v2 = laneLength - topMargin - v1Truck.length - bottomMargin;
       positionSpaces.v3 = 0;
     } else if (v2Truck) {
-      // V2 occupied (bottom-aligned): V1 gets space at top
-      const v2Start = laneLength - bottomMargin - v2Truck.length;
-      positionSpaces.v1 = v2Start - topMargin - spacing;
-      positionSpaces.v2 = 0; // Already occupied
+      // V2 occupied (bottom-aligned): V1 at top gets remaining space (no mandatory gap)
+      positionSpaces.v1 = laneLength - topMargin - v2Truck.length - bottomMargin;
+      positionSpaces.v2 = 0;
       positionSpaces.v3 = 0;
     }
   } else if (trucksInLane.length === 2) {
-    // Two trucks: calculate middle space for V2 or remaining space for V1/V3
     if (v1Truck && v2Truck) {
-      // V1 at top, V2 at bottom (both occupied) - V3 not applicable since V2 is at bottom
+      // V1 at top, V2 at bottom - V3 goes in middle (needs spacing on both sides)
       positionSpaces.v1 = 0;
       positionSpaces.v2 = 0;
-      // Check if V3 position (very bottom) has space - usually not
       const v1End = topMargin + v1Truck.length + spacing;
       const v2Start = laneLength - bottomMargin - v2Truck.length;
       positionSpaces.v3 = Math.max(0, v2Start - v1End - spacing);
     } else if (v1Truck && v3Truck) {
-      // V1 at top, V3 at bottom - V2 gets middle space
+      // V1 at top, V3 at bottom - V2 goes in middle (needs spacing on both sides)
       const v1End = topMargin + v1Truck.length + spacing;
       const v3Start = laneLength - bottomMargin - v3Truck.length - spacing;
       positionSpaces.v1 = 0;
@@ -595,16 +595,10 @@ function calculatePreviewPositions(
           spotNumber: 2,
         });
       }
-    } else if (!occupiedSpots.includes(3)) {
-      const v3Color = getColorForPosition(positionSpaces.v3);
-      previews.push({
-        y: laneLength - GARAGE_CONFIG.TRUCK_MARGIN_TOP - draggedTruckLength,
-        height: draggedTruckLength,
-        color: v3Color,
-        availableSpace: positionSpaces.v3,
-        spotNumber: 3,
-      });
     }
+    // NOTE: V3 add indicator is intentionally NOT shown when V1+V2 are occupied.
+    // V2 is at the bottom (same position as V3 would be), so the V3 add indicator
+    // would overlap the V2 swap indicator, hiding its green/red color.
   }
 
   return previews;
@@ -757,7 +751,7 @@ interface TruckElementProps {
   laneWidth?: number; // Lane width (scaled)
   garageWidth?: number; // Total garage width (scaled) for boundary detection
   garageHeight?: number; // Total garage height (scaled) for snap decision
-  onDragEnd?: (targetLane: LaneId | null, dropY: number | null) => void;
+  onDragEnd?: (targetLane: LaneId | null, dropY: number | null) => boolean;
   onNavigatePrev?: () => void; // Called when truck dragged past left boundary
   onNavigateNext?: () => void; // Called when truck dragged past right boundary
   onNavigateWithTruck?: (direction: 'prev' | 'next') => void; // Navigate AND move truck
@@ -831,9 +825,15 @@ const TruckElement = memo(function TruckElement({
   const prevBaseX = useSharedValue(baseX);
   const prevBaseY = useSharedValue(baseY);
 
+  const springConfig = {
+    damping: 20,
+    stiffness: 200,
+    mass: 0.8,
+  };
+
   // Handle position changes:
   // - During drag (garage switch): accumulate compensation to keep truck under finger
-  // - After drop (not dragging): reset everything so truck snaps to new position
+  // - After drop (base changed): smoothly animate from drop position to new slot
   useAnimatedReaction(
     () => ({ baseX, baseY, isDragging: isDragging.value }),
     (current, previous) => {
@@ -856,12 +856,18 @@ const TruckElement = memo(function TruckElement({
           compensationX.value = compensationX.value - deltaX;
           compensationY.value = compensationY.value - deltaY;
         } else {
-          // AFTER DROP (not dragging): Reset everything so truck snaps to new position
-          // The base position changed due to state update from handleDragEnd
-          translateX.value = 0;
-          translateY.value = 0;
+          // AFTER DROP: Animate smoothly from current visual position to new base position.
+          // Calculate the current visual offset (translate + compensation) minus the delta
+          // from the base position change, so the truck stays visually in place.
+          // Then spring to 0 so it glides into its new slot.
+          const currentOffsetX = translateX.value + compensationX.value - deltaX;
+          const currentOffsetY = translateY.value + compensationY.value - deltaY;
           compensationX.value = 0;
           compensationY.value = 0;
+          translateX.value = currentOffsetX;
+          translateY.value = currentOffsetY;
+          translateX.value = withSpring(0, springConfig);
+          translateY.value = withSpring(0, springConfig);
         }
 
         // Update tracked values
@@ -948,6 +954,15 @@ const TruckElement = memo(function TruckElement({
   );
 
   // Handle drag end - runs on JS thread
+  // Springs back to original position only when no state change occurred.
+  // When state changes, useAnimatedReaction handles the smooth animation.
+  const springBack = useCallback(() => {
+    translateX.value = withSpring(0, springConfig);
+    translateY.value = withSpring(0, springConfig);
+    compensationX.value = withSpring(0, springConfig);
+    compensationY.value = withSpring(0, springConfig);
+  }, [translateX, translateY, compensationX, compensationY, springConfig]);
+
   const handleDragEnd = useCallback(
     (translationX: number, translationY: number) => {
       // Clear navigation timeout
@@ -962,29 +977,31 @@ const TruckElement = memo(function TruckElement({
       // Check if dragged past left boundary (navigate to previous) - fallback if timeout didn't trigger
       if (adjustedX < -15 && onNavigatePrev) {
         onNavigatePrev();
+        springBack();
         return;
       }
 
       // Check if dragged past right boundary (navigate to next) - fallback if timeout didn't trigger
       if (garageWidth && adjustedX > garageWidth + 15 && onNavigateNext) {
         onNavigateNext();
+        springBack();
         return;
       }
 
       // Normal lane detection - pass Y position for snap decision
-      if (!onDragEnd || !garageId) return;
+      if (!onDragEnd || !garageId) {
+        springBack();
+        return;
+      }
       const targetLane = detectTargetLane(adjustedX);
-      onDragEnd(targetLane, adjustedY);
+      const changed = onDragEnd(targetLane, adjustedY);
+      if (!changed) {
+        springBack();
+      }
     },
-    [onDragEnd, garageId, baseX, baseY, detectTargetLane, garageWidth, onNavigatePrev, onNavigateNext]
+    [onDragEnd, garageId, baseX, baseY, detectTargetLane, garageWidth, onNavigatePrev, onNavigateNext, springBack]
   );
 
-  // Spring config for smoother animation with less bounce
-  const springConfig = {
-    damping: 20,
-    stiffness: 200,
-    mass: 0.8,
-  };
 
 
   // Handle edge detection during drag using screen coordinates
@@ -1006,7 +1023,9 @@ const TruckElement = memo(function TruckElement({
       'worklet';
       isDragging.value = true;
       hasNavigated.value = false;
-      // Reset compensation at start of new drag
+      // Reset all animation values at start of new drag
+      translateX.value = 0;
+      translateY.value = 0;
       compensationX.value = 0;
       compensationY.value = 0;
       // Capture truck's screen position at drag start using reanimated measure
@@ -1046,16 +1065,10 @@ const TruckElement = memo(function TruckElement({
       const finalTranslationX = event.translationX + compensationX.value;
       const finalTranslationY = event.translationY + compensationY.value;
 
-      // DON'T reset translation/compensation here!
-      // The state update from handleDragEnd will change baseX/baseY,
-      // which triggers useAnimatedReaction to update compensation.
-      // This keeps the truck visually stable until the new position is calculated.
-      //
-      // After state updates, useAnimatedReaction will adjust compensation,
-      // and we reset everything in the next onStart.
-
-      // Call handleDragEnd to process the final drop position
-      // This updates pendingChanges which triggers re-render with new base position
+      // Don't spring here - hold the truck at drop position.
+      // handleDragEnd (JS thread) determines if a state change occurred:
+      // - If changed: useAnimatedReaction smoothly animates from drop to new slot
+      // - If unchanged: handleDragEnd triggers spring-back to original position
       runOnJS(handleDragEnd)(finalTranslationX, finalTranslationY);
     });
 
@@ -1600,12 +1613,12 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
     });
 
   const handleTruckDragEnd = useCallback(
-    (truckId: string, targetLane: LaneId | null, dropY: number | null) => {
-      if (isPatio || !targetLane) return;
+    (truckId: string, targetLane: LaneId | null, dropY: number | null): boolean => {
+      if (isPatio || !targetLane) return false;
 
       // Find the truck (use trucksWithPendingChanges for current state)
       const draggedTruck = trucksWithPendingChanges.find((t) => t.id === truckId);
-      if (!draggedTruck) return;
+      if (!draggedTruck) return false;
 
       const targetGarageId = currentAreaId as GarageId;
       const targetConfig = GARAGE_CONFIGS[targetGarageId];
@@ -1683,7 +1696,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           : TRUCK_SPOT.PATIO;
 
         // Don't swap if it's the same truck (shouldn't happen but safety check)
-        if (directHitTruck.truck.id === truckId) return;
+        if (directHitTruck.truck.id === truckId) return false;
 
         // Get original spot for the truck being swapped
         const originalSwapTruck = trucks.find((t) => t.id === directHitTruck!.truck.id);
@@ -1712,7 +1725,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
           return next;
         });
-        return;
+        return true;
       }
 
       // PRIORITY 2: No direct hit - use snap-to-lane logic based on lane position
@@ -1729,7 +1742,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
       if (isAlreadyAtPreferredSpot) {
         // Truck is being dropped at its own position - no change needed
-        return;
+        return false;
       }
 
       // Check if preferred spot is occupied by another truck
@@ -1770,7 +1783,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
 
           return next;
         });
-        return;
+        return true;
       }
 
       // Preferred spot is empty - move there
@@ -1791,6 +1804,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           return next;
         });
       }
+      return true;
     },
     [trucksWithPendingChanges, trucks, currentAreaId, isPatio, scale]
   );

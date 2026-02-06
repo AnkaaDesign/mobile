@@ -85,6 +85,7 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
         key: 'commission',
         label: 'STATUS COMISSÃO',
         sortable: true,
+        sortField: 'commissionOrder',
         width: 1.5,
         align: 'center',
         render: (task) => task.commission,

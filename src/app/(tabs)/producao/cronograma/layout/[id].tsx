@@ -100,13 +100,6 @@ export default function LayoutOnlyEditScreen() {
   // Track which sides were modified
   const [modifiedLayoutSides, setModifiedLayoutSides] = useState<Set<"left" | "right" | "back">>(new Set());
 
-  // Track selected existing layouts for each side (for layout assignment)
-  const [selectedExistingLayouts, setSelectedExistingLayouts] = useState<{
-    left?: string;
-    right?: string;
-    back?: string;
-  }>({});
-
   // Layout width validation error
   const [layoutWidthError, setLayoutWidthError] = useState<string | null>(null);
 
@@ -240,22 +233,9 @@ export default function LayoutOnlyEditScreen() {
       const savePromises: Promise<any>[] = [];
 
       for (const side of modifiedLayoutSides) {
-        const existingLayoutId = selectedExistingLayouts[side];
         const layoutData = layouts[side];
 
-        // If an existing layout is selected, use assignLayoutToTruck
-        if (existingLayoutId) {
-          console.log(`[LayoutOnlyEdit] 🔗 Assigning existing layout ${existingLayoutId} to ${side} side`);
-          savePromises.push(
-            createOrUpdateTruckLayout({
-              truckId: activeTruckId,
-              side,
-              data: layoutData || { height: 2.4, layoutSections: [], photoId: null },
-              existingLayoutId,
-            })
-          );
-        } else if (layoutData && layoutData.layoutSections && layoutData.layoutSections.length > 0) {
-          // Otherwise, create/update a new layout
+        if (layoutData && layoutData.layoutSections && layoutData.layoutSections.length > 0) {
           console.log(`[LayoutOnlyEdit] 💾 Saving ${side} layout:`, {
             hasPhotoUri: !!(layoutData as any).photoUri,
             photoUri: (layoutData as any).photoUri,
@@ -501,19 +481,6 @@ export default function LayoutOnlyEditScreen() {
                   <LayoutForm
                     selectedSide={selectedLayoutSide}
                     layouts={layouts}
-                    showLayoutSelection={true}
-                    onSelectExistingLayout={(side, layoutId) => {
-                      console.log('[LayoutOnlyEdit] Selected existing layout:', { side, layoutId });
-                      setSelectedExistingLayouts(prev => ({
-                        ...prev,
-                        [side]: layoutId,
-                      }));
-                      setModifiedLayoutSides(prev => {
-                        const newSet = new Set(prev);
-                        newSet.add(side);
-                        return newSet;
-                      });
-                    }}
                     onChange={(side, layoutData) => {
                       console.log('[LayoutOnlyEdit] 📥 Received onChange:', {
                         side,

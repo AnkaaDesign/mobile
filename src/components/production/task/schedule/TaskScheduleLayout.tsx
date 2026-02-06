@@ -353,7 +353,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [shouldGroupByStatus, filteredPreparationTasks, filteredInProductionTasks, filteredCompletedTasks])
 
   // Check if user is financial for section ordering
-  const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL)
+  // Use exact match so admins get regular table order (not financial order)
+  const isFinancialUser = user?.sector?.privileges === SECTOR_PRIVILEGES.FINANCIAL
 
   const sections: SectionData[] = useMemo(() => {
     // If grouping by status (agenda 3-table workflow), create 3 sections

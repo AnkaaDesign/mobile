@@ -15,7 +15,7 @@
  * Local network IP address used for offline mode
  * This is the IP of the local server on the same network
  */
-export const LOCAL_SERVER_IP = "192.168.10.154";
+export const LOCAL_SERVER_IP = "192.168.10.169";
 
 /**
  * Primary API URL (Local Server)
