@@ -45,16 +45,29 @@ export function getAllColumnKeys(): string[] {
   ];
 }
 
-// Save column visibility to AsyncStorage or other persistence layer
+// Save column visibility to AsyncStorage
 export async function saveColumnVisibility(visibleColumns: Set<string>): Promise<void> {
-  // TODO: Implement persistence if needed
-  // For now, we'll just use in-memory state
-  console.log("Saving column visibility:", Array.from(visibleColumns));
+  try {
+    const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+    await AsyncStorage.setItem('@column_visibility_activities', JSON.stringify(Array.from(visibleColumns)));
+  } catch (error) {
+    console.error('Error saving column visibility:', error);
+  }
 }
 
-// Load column visibility from AsyncStorage or other persistence layer
+// Load column visibility from AsyncStorage
 export async function loadColumnVisibility(): Promise<Set<string>> {
-  // TODO: Implement persistence if needed
-  // For now, return default columns
+  try {
+    const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+    const stored = await AsyncStorage.getItem('@column_visibility_activities');
+    if (stored) {
+      const parsed = JSON.parse(stored) as string[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return new Set(parsed);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading column visibility:', error);
+  }
   return getDefaultVisibleColumns();
 }

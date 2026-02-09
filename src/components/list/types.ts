@@ -207,7 +207,7 @@ export interface FilterTagsProps {
 export interface SearchProps {
   value: string
   onChangeText: (text: string) => void
-  onSearch: (text: string) => void
+  onSearch?: (text: string) => void
   placeholder?: string
   loading?: boolean
   debounce?: number

@@ -22,6 +22,8 @@ import type { Activity, ActivityIncludes, ActivityOrderBy } from "./activity";
 // =====================
 
 export interface OrderSchedule extends BaseEntity {
+  name: string | null;
+  description: string | null;
   frequency: SCHEDULE_FREQUENCY;
   frequencyCount: number;
   isActive: boolean;

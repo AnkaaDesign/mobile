@@ -24,6 +24,7 @@ import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { isTeamLeader, hasPrivilege } from '@/utils/user'
 import { Search } from '@/components/list/Search'
+import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
 import { Filters } from '@/components/list/Filters'
 import { BulkActions } from '@/components/list/BulkActions'
 import { ColumnVisibilityButton, ColumnVisibilityPanel } from '@/components/list/ColumnVisibility'
@@ -66,9 +67,10 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // State
   // ============================================================================
 
-  // Search state
-  const [searchText, setSearchText] = useState('')
-  const [displaySearchText, setDisplaySearchText] = useState('')
+  // Search state - useDebouncedSearch handles the separation of display vs debounced values
+  // displayText updates instantly (for TextInput), searchText updates after 300ms debounce
+  // This prevents heavy re-renders during typing which caused the input to clear
+  const { displayText: displaySearchText, searchText, setDisplayText: setDisplaySearchText, reset: resetSearch } = useDebouncedSearch('', 300)
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<SortConfig>(config.query.defaultSort)
@@ -250,11 +252,12 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Computed Values
   // ============================================================================
 
-  // Filter tasks by search text (client-side for immediate feedback)
+  // Filter tasks by search text (client-side, uses debounced searchText to avoid
+  // heavy re-renders on every keystroke which caused TextInput to clear)
   const filteredTasks = useMemo(() => {
-    if (!displaySearchText) return allTasks
+    if (!searchText) return allTasks
 
-    const searchLower = displaySearchText.toLowerCase()
+    const searchLower = searchText.toLowerCase()
     return allTasks.filter((task) => {
       return (
         task.name?.toLowerCase().includes(searchLower) ||
@@ -265,7 +268,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         task.sector?.name?.toLowerCase().includes(searchLower)
       )
     })
-  }, [allTasks, displaySearchText])
+  }, [allTasks, searchText])
 
   // Group tasks by sector
   const tasksBySector = useMemo(() => {
@@ -295,9 +298,10 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   const shouldGroupBySector = config.table.groupBySector !== false
 
   // Filter tasks from each status group by search text (for agenda view)
+  // Uses debounced searchText to prevent input clearing during slow typing
   const filteredPreparationTasks = useMemo(() => {
-    if (!shouldGroupByStatus || !displaySearchText) return preparationTasks
-    const searchLower = displaySearchText.toLowerCase()
+    if (!shouldGroupByStatus || !searchText) return preparationTasks
+    const searchLower = searchText.toLowerCase()
     return preparationTasks.filter((task) => {
       return (
         task.name?.toLowerCase().includes(searchLower) ||
@@ -308,11 +312,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         task.sector?.name?.toLowerCase().includes(searchLower)
       )
     })
-  }, [shouldGroupByStatus, preparationTasks, displaySearchText])
+  }, [shouldGroupByStatus, preparationTasks, searchText])
 
   const filteredInProductionTasks = useMemo(() => {
-    if (!shouldGroupByStatus || !displaySearchText) return inProductionTasks
-    const searchLower = displaySearchText.toLowerCase()
+    if (!shouldGroupByStatus || !searchText) return inProductionTasks
+    const searchLower = searchText.toLowerCase()
     return inProductionTasks.filter((task) => {
       return (
         task.name?.toLowerCase().includes(searchLower) ||
@@ -323,11 +327,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         task.sector?.name?.toLowerCase().includes(searchLower)
       )
     })
-  }, [shouldGroupByStatus, inProductionTasks, displaySearchText])
+  }, [shouldGroupByStatus, inProductionTasks, searchText])
 
   const filteredCompletedTasks = useMemo(() => {
-    if (!shouldGroupByStatus || !displaySearchText) return completedTasks
-    const searchLower = displaySearchText.toLowerCase()
+    if (!shouldGroupByStatus || !searchText) return completedTasks
+    const searchLower = searchText.toLowerCase()
     return completedTasks.filter((task) => {
       return (
         task.name?.toLowerCase().includes(searchLower) ||
@@ -338,7 +342,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         task.sector?.name?.toLowerCase().includes(searchLower)
       )
     })
-  }, [shouldGroupByStatus, completedTasks, displaySearchText])
+  }, [shouldGroupByStatus, completedTasks, searchText])
 
   // Group tasks by status for agenda view (3-table workflow like web)
   // Now uses pre-fetched data from separate API calls instead of grouping client-side
@@ -514,13 +518,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Handlers
   // ============================================================================
 
-  const handleSearch = useCallback((text: string) => {
-    setSearchText(text)
-  }, [])
-
+  // Search text change handler - only updates displayText (instant)
+  // The useDebouncedSearch hook automatically debounces searchText updates
   const handleSearchTextChange = useCallback((text: string) => {
     setDisplaySearchText(text)
-  }, [])
+  }, [setDisplaySearchText])
 
   const handleSort = useCallback((field: string) => {
     setSortConfig(prev => ({
@@ -742,7 +744,6 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           <Search
             value={displaySearchText}
             onChangeText={handleSearchTextChange}
-            onSearch={handleSearch}
             placeholder={config.search?.placeholder || 'Buscar...'}
             loading={tasksLoading}
           />

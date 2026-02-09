@@ -26,20 +26,24 @@ export const Search = memo(function Search({
   const handleChange = (text: string) => {
     onChangeText(text)
 
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
+    // Only set up debounce timer if onSearch is provided
+    // When parent handles debounce (e.g. useDebouncedSearch), onSearch is omitted
+    if (onSearch) {
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
 
-    // Set new debounced search
-    debounceTimerRef.current = setTimeout(() => {
-      onSearch(text)
-    }, debounce)
+      // Set new debounced search
+      debounceTimerRef.current = setTimeout(() => {
+        onSearch(text)
+      }, debounce)
+    }
   }
 
   const handleClear = () => {
     onChangeText('')
-    onSearch('')
+    onSearch?.('')
   }
 
   return (
@@ -66,7 +70,7 @@ export const Search = memo(function Search({
           },
         ]}
         returnKeyType="search"
-        onSubmitEditing={() => onSearch(value)}
+        onSubmitEditing={() => onSearch?.(value)}
         autoCapitalize="none"
         autoCorrect={false}
       />

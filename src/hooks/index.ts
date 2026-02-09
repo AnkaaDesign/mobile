@@ -61,7 +61,6 @@ export * from "./usePaintProduction";
 // =====================================================
 export * from "./useUser";
 export * from "./usePosition";
-export * from "./usePositionRemuneration";
 export * from "./useSector";
 export * from "./bonus";
 export * from "./payroll";
@@ -87,7 +86,6 @@ export * from "./usePpe";
 export * from "./useItem";
 export * from "./useItemBrand";
 export * from "./useItemCategory";
-export * from "./usePrice";
 export * from "./useSupplier";
 export * from "./useExternalWithdrawal";
 export * from "./useMaintenance";
@@ -99,7 +97,6 @@ export * from "./useFile";
 export * from "./useFileUploadManager";
 export * from "./use-files-infinite-mobile";
 export * from "./useNotification";
-export * from "./usePreferences";
 export * from "./useChangelog";
 export * from "./dashboard";
 export * from "./use-entity-details";
@@ -110,7 +107,6 @@ export * from "./use-entity-details";
 export * from "./useCustomer";
 // export * from "./useTruck"; // Disabled - file removed
 export * from "./useLayout";
-export * from "./useLayoutSection";
 
 // =====================================================
 // Server Management Hooks
@@ -204,7 +200,6 @@ export * from "./useDebouncedSearch";
 // =====================================================
 export * from "./use-external-withdrawal-form-state";
 export * from "./use-multi-step-form";
-export * from "./use-persisted-state";
 
 // =====================================================
 // Lookup & Validation Hooks
@@ -226,7 +221,6 @@ export * from "./use-batch-result-dialog";
 // Performance & Navigation Optimization Hooks
 // =====================================================
 export * from "./use-after-interactions";
-export * from "./use-navigation-prefetch";
 
 // =====================================================
 // File Viewer & Media Hooks

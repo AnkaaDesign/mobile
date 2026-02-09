@@ -13,7 +13,7 @@ import { scheduleReminder } from './localNotifications';
 import { handleDeepLink as handleDeepLinkNavigation, generateNotificationLink } from '@/lib/deep-linking';
 
 // DEBUG: Flag to enable/disable debug alerts for testing
-const DEBUG_NOTIFICATION_HANDLER = true;
+const DEBUG_NOTIFICATION_HANDLER = __DEV__;
 
 export interface NotificationData {
   url?: string;

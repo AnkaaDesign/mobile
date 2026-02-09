@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
@@ -40,34 +40,61 @@ export function useColumnVisibility(
   allColumns?: string[]
 ) {
   const storageKey = `@column_visibility_${entityKey}`;
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+  const isLoadedRef = useRef(false);
   const [visibleColumns, setVisibleColumnsState] = useState<Set<string>>(new Set(defaultColumns));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load persisted column visibility on mount
+  // Load persisted column visibility ONCE on mount (or when entityKey changes)
   useEffect(() => {
+    let cancelled = false;
+    isLoadedRef.current = false;
+
     const loadVisibility = async () => {
       try {
         const stored = await AsyncStorage.getItem(storageKey);
+        if (cancelled) return;
+
         if (stored) {
           const parsed = JSON.parse(stored) as string[];
-
-          // Validate columns if allColumns provided
-          if (allColumns) {
-            const valid = parsed.filter(col => allColumns.includes(col));
-            setVisibleColumnsState(new Set(valid.length > 0 ? valid : defaultColumns));
-          } else {
+          if (Array.isArray(parsed) && parsed.length > 0) {
             setVisibleColumnsState(new Set(parsed));
           }
         }
       } catch (error) {
         console.error('Error loading column visibility:', error);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          isLoadedRef.current = true;
+          setIsLoading(false);
+        }
       }
     };
 
     loadVisibility();
-  }, [entityKey, storageKey, defaultColumns, allColumns]);
+    return () => { cancelled = true; };
+  }, [entityKey, storageKey]);
+
+  // Validate visible columns when allColumns changes (separate from loading)
+  useEffect(() => {
+    if (!isLoadedRef.current || !allColumns || allColumns.length === 0) return;
+
+    const allColumnsSet = new Set(allColumns);
+    setVisibleColumnsState((current) => {
+      const valid = new Set(Array.from(current).filter(col => allColumnsSet.has(col)));
+      if (valid.size === 0) {
+        const result = new Set(defaultColumns);
+        AsyncStorage.setItem(storageKeyRef.current, JSON.stringify(Array.from(result)));
+        return result;
+      }
+      if (valid.size !== current.size) {
+        AsyncStorage.setItem(storageKeyRef.current, JSON.stringify(Array.from(valid)));
+        return valid;
+      }
+      return current;
+    });
+  }, [allColumns, defaultColumns]);
 
   // Persist column visibility whenever it changes
   const setVisibleColumns = useCallback(async (columns: Set<string>) => {

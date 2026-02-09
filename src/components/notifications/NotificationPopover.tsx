@@ -41,7 +41,7 @@ import * as Haptics from 'expo-haptics';
 import { parseDeepLink } from '@/lib/deep-linking';
 
 // DEBUG: Flag to enable/disable debug alerts for testing
-const DEBUG_NOTIFICATION_POPOVER = true;
+const DEBUG_NOTIFICATION_POPOVER = __DEV__;
 
 const isWeb = Platform.OS === 'web';
 

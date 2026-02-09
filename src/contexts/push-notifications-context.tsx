@@ -328,8 +328,9 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
             Alert.alert('✅ Push Token Registered', `Token registered with backend successfully\nDeviceId: ${deviceId || 'N/A'}`);
           }
         } catch (backendError: any) {
-          // Backend registration failed - still mark as registered locally
-          setIsRegistered(true);
+          // Backend registration failed - allow retry on next app launch
+          setIsRegistered(false);
+          hasAttemptedRegistration.current = false;
           if (DEBUG_PUSH_NOTIFICATIONS) {
             Alert.alert('⚠️ Backend Registration Failed', `Error: ${backendError?.message || backendError}`);
           }
