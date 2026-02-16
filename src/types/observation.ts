@@ -10,7 +10,6 @@ import type { Task, TaskIncludes, TaskOrderBy } from "./task";
 // =====================
 
 export interface Observation extends BaseEntity {
-  reason: string;
   description: string;
   taskId: string;
 

@@ -27,14 +27,11 @@ import {
   IconFileText,
   IconClipboardList,
   IconMapPin,
-  IconReceipt,
   IconUser,
-  IconPhone,
   IconCategory,
   IconTool,
   IconCoin,
   IconBrandWhatsapp,
-  IconUsers,
 } from "@tabler/icons-react-native";
 import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
 
@@ -53,9 +50,6 @@ interface TaskInfoCardProps {
   task: Task & {
     truck?: Truck;
     customer?: {
-      fantasyName: string;
-    };
-    invoiceTo?: {
       fantasyName: string;
     };
     negotiatingWith?: {
@@ -146,107 +140,72 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         )}
 
-        {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
-        {canViewFinancialFields && task.invoiceTo && (
-          <View style={styles.infoSection}>
+        {/* Representatives - Each displayed as its own field (like web) */}
+        {canViewRestrictedFields && hasRepresentatives && task.representatives!.map((rep) => (
+          <View key={rep.id} style={styles.infoSection}>
             <View style={styles.infoHeader}>
-              <IconReceipt size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Faturar Para</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.invoiceTo.fantasyName}</ThemedText>
-            </View>
-          </View>
-        )}
-
-        {/* Representatives Section - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER */}
-        {canViewRestrictedFields && hasRepresentatives && (
-          <View style={styles.representativesSection}>
-            <View style={styles.representativesSectionHeader}>
-              <IconUsers size={18} color={colors.mutedForeground} />
+              <IconUser size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Representantes ({task.representatives!.length})
+                Representante {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
               </ThemedText>
             </View>
-            {task.representatives!.map((rep) => (
-              <View
-                key={rep.id}
-                style={[styles.representativeCard, { backgroundColor: colors.muted, borderColor: colors.border }]}
-              >
-                <View style={styles.representativeHeader}>
-                  <View style={styles.representativeInfo}>
-                    <ThemedText style={[styles.representativeName, { color: colors.foreground }]}>
-                      {rep.name}
+            <View style={[styles.infoCard, styles.representativeRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{rep.name}</ThemedText>
+              {rep.phone && (
+                <View style={styles.representativePhoneActions}>
+                  <TouchableOpacity
+                    style={styles.phoneButton}
+                    onPress={() => handleCallPhone(rep.phone)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
+                      {formatPhoneDisplay(rep.phone)}
                     </ThemedText>
-                    <ThemedText style={[styles.representativeRole, { color: colors.mutedForeground }]}>
-                      {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
-                    </ThemedText>
-                  </View>
-                  {rep.phone && (
-                    <View style={styles.representativePhoneActions}>
-                      <TouchableOpacity
-                        style={styles.phoneButton}
-                        onPress={() => handleCallPhone(rep.phone)}
-                        activeOpacity={0.7}
-                      >
-                        <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
-                          {formatPhoneDisplay(rep.phone)}
-                        </ThemedText>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.whatsappIconButton}
-                        onPress={() => handleWhatsApp(rep.phone)}
-                        activeOpacity={0.7}
-                      >
-                        <IconBrandWhatsapp size={20} color="#16a34a" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.whatsappIconButton}
+                    onPress={() => handleWhatsApp(rep.phone)}
+                    activeOpacity={0.7}
+                  >
+                    <IconBrandWhatsapp size={20} color="#16a34a" />
+                  </TouchableOpacity>
                 </View>
-              </View>
-            ))}
+              )}
+            </View>
           </View>
-        )}
+        ))}
 
         {/* Legacy Negotiating With Contact - Fallback for old data without representatives */}
         {canViewRestrictedFields && !hasRepresentatives && task.negotiatingWith && (
-          <View style={styles.representativesSection}>
-            <View style={styles.representativesSectionHeader}>
+          <View style={styles.infoSection}>
+            <View style={styles.infoHeader}>
               <IconUser size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
                 Negociando com
               </ThemedText>
             </View>
-            <View
-              style={[styles.representativeCard, { backgroundColor: colors.muted, borderColor: colors.border }]}
-            >
-              <View style={styles.representativeHeader}>
-                <View style={styles.representativeInfo}>
-                  <ThemedText style={[styles.representativeName, { color: colors.foreground }]}>
-                    {task.negotiatingWith.name}
-                  </ThemedText>
+            <View style={[styles.infoCard, styles.representativeRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{task.negotiatingWith.name}</ThemedText>
+              {task.negotiatingWith.phone && (
+                <View style={styles.representativePhoneActions}>
+                  <TouchableOpacity
+                    style={styles.phoneButton}
+                    onPress={() => handleCallPhone(task.negotiatingWith!.phone)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
+                      {formatPhoneDisplay(task.negotiatingWith.phone)}
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.whatsappIconButton}
+                    onPress={() => handleWhatsApp(task.negotiatingWith!.phone)}
+                    activeOpacity={0.7}
+                  >
+                    <IconBrandWhatsapp size={20} color="#16a34a" />
+                  </TouchableOpacity>
                 </View>
-                {task.negotiatingWith.phone && (
-                  <View style={styles.representativePhoneActions}>
-                    <TouchableOpacity
-                      style={styles.phoneButton}
-                      onPress={() => handleCallPhone(task.negotiatingWith!.phone)}
-                      activeOpacity={0.7}
-                    >
-                      <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
-                        {formatPhoneDisplay(task.negotiatingWith.phone)}
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.whatsappIconButton}
-                      onPress={() => handleWhatsApp(task.negotiatingWith!.phone)}
-                      activeOpacity={0.7}
-                    >
-                      <IconBrandWhatsapp size={20} color="#16a34a" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
+              )}
             </View>
           </View>
         )}
@@ -481,35 +440,10 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 8,
   },
-  representativesSection: {
-    gap: spacing.sm,
-  },
-  representativesSectionHeader: {
+  representativeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  representativeCard: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    padding: spacing.sm,
-  },
-  representativeHeader: {
-    flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  representativeInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  representativeName: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  representativeRole: {
-    fontSize: fontSize.xs,
   },
   representativePhoneActions: {
     flexDirection: "row",

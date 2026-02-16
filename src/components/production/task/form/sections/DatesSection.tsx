@@ -1,15 +1,15 @@
 /**
  * Dates Section Component
- * Handles deadline, scheduled date, and completion date fields
+ * Handles date fields matching web: forecastDate, entryDate, term, startedAt, finishedAt
  */
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
 import { Controller, useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField } from '@/components/ui';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { useAuth } from '@/hooks/useAuth';
+import { SECTOR_PRIVILEGES } from '@/constants';
 
 interface DatesSectionProps {
   isSubmitting?: boolean;
@@ -26,66 +26,113 @@ export default function DatesSection({
   const { user } = useAuth();
 
   // Check user sector privileges
-  const isFinancialSector = user?.sector?.privileges === 'FINANCIAL';
-  const isWarehouseSector = user?.sector?.privileges === 'WAREHOUSE';
-  const isDesignerSector = user?.sector?.privileges === 'DESIGNER';
-  const isLogisticSector = user?.sector?.privileges === 'LOGISTIC';
-  const isAdminUser = user?.sector?.privileges === 'ADMIN';
-  const isCommercialUser = user?.sector?.privileges === 'COMMERCIAL';
+  const userPrivilege = user?.sector?.privileges;
+  const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
+  const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+  const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+  const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+  const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
 
-  // Determine if user can edit dates
-  const canEditDates = !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector;
-  const canEditCompletionDate = mode === 'edit' && (isAdminUser || isFinancialSector || isCommercialUser);
+  // Web disables dates for warehouse, financial, and designer users
+  const canEditDates = !isFinancialUser && !isWarehouseUser && !isDesignerUser;
+
+  // forecastDate visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER (canViewRestrictedFields)
+  const canViewForecast = isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser;
+
+  // startedAt and finishedAt only visible in edit mode (web shows them in edit form only)
+  const canViewStartFinish = mode === 'edit';
+
+  // entryDate only visible in edit mode (web create form only has forecastDate + term)
+  const canViewEntryDate = mode === 'edit';
 
   return (
     <FormCard title="Datas" icon="IconCalendar">
-      {/* Deadline */}
-      <SimpleFormField label="Prazo" error={errors.deadline}>
+      {/* 1. Forecast Date - First field, full width (matches web order) */}
+      {canViewForecast && (
+        <SimpleFormField label="Data de Previsão de Liberação" error={errors.forecastDate}>
+          <Controller
+            control={control}
+            name="forecastDate"
+            render={({ field: { onChange, value } }) => (
+              <DateTimePicker
+                value={value ? new Date(value) : undefined}
+                onChange={(date: Date | undefined) => onChange(date?.toISOString())}
+                placeholder="Selecione a previsão"
+                disabled={isSubmitting || !canEditDates}
+                error={errors.forecastDate?.message}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
+
+      {/* 2. Entry Date + Term row (web: grid-cols-2) */}
+      {canViewEntryDate && (
+        <SimpleFormField label="Data de Entrada" error={errors.entryDate}>
+          <Controller
+            control={control}
+            name="entryDate"
+            render={({ field: { onChange, value } }) => (
+              <DateTimePicker
+                value={value ? new Date(value) : undefined}
+                onChange={(date: Date | undefined) => onChange(date?.toISOString())}
+                placeholder="Selecione a data de entrada"
+                disabled={isSubmitting || !canEditDates}
+                error={errors.entryDate?.message}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
+
+      <SimpleFormField label="Prazo de Entrega" error={errors.term}>
         <Controller
           control={control}
-          name="deadline"
+          name="term"
           render={({ field: { onChange, value } }) => (
             <DateTimePicker
               value={value ? new Date(value) : undefined}
               onChange={(date: Date | undefined) => onChange(date?.toISOString())}
               placeholder="Selecione o prazo"
               disabled={isSubmitting || !canEditDates}
-              error={errors.deadline?.message}
+              error={errors.term?.message}
             />
           )}
         />
       </SimpleFormField>
 
-      {/* Scheduled Date */}
-      <SimpleFormField label="Data Agendada" error={errors.scheduledDate}>
-        <Controller
-          control={control}
-          name="scheduledDate"
-          render={({ field: { onChange, value } }) => (
-            <DateTimePicker
-              value={value ? new Date(value) : undefined}
-              onChange={(date: Date | undefined) => onChange(date?.toISOString())}
-              placeholder="Selecione a data agendada"
-              disabled={isSubmitting || !canEditDates}
-              error={errors.scheduledDate?.message}
-            />
-          )}
-        />
-      </SimpleFormField>
-
-      {/* Completion Date - Only visible in edit mode for specific roles */}
-      {canEditCompletionDate && (
-        <SimpleFormField label="Data de Conclusão" error={errors.completionDate}>
+      {/* 3. Started At + Finished At (edit mode only) */}
+      {canViewStartFinish && (
+        <SimpleFormField label="Data de Início" error={errors.startedAt}>
           <Controller
             control={control}
-            name="completionDate"
+            name="startedAt"
+            render={({ field: { onChange, value } }) => (
+              <DateTimePicker
+                value={value ? new Date(value) : undefined}
+                onChange={(date: Date | undefined) => onChange(date?.toISOString())}
+                placeholder="Selecione a data de início"
+                disabled={isSubmitting || !canEditDates}
+                error={errors.startedAt?.message}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
+
+      {canViewStartFinish && (
+        <SimpleFormField label="Data de Conclusão" error={errors.finishedAt}>
+          <Controller
+            control={control}
+            name="finishedAt"
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
                 value={value ? new Date(value) : undefined}
                 onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a data de conclusão"
-                disabled={isSubmitting}
-                error={errors.completionDate?.message}
+                disabled={isSubmitting || !canEditDates}
+                error={errors.finishedAt?.message}
               />
             )}
           />
@@ -94,7 +141,3 @@ export default function DatesSection({
     </FormCard>
   );
 }
-
-const styles = StyleSheet.create({
-  // Add any specific styles here if needed
-});

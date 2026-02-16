@@ -41,7 +41,7 @@ export function BorrowUserSelector({
       metadata: {
         email: initialUser.email,
         position: initialUser.position,
-        sector: initialUser.position?.sector,
+        sector: initialUser.sector,
         status: initialUser.status,
       },
     }];
@@ -100,7 +100,7 @@ export function BorrowUserSelector({
         metadata: {
           email: user.email,
           position: user.position,
-          sector: user.position?.sector,
+          sector: user.sector,
           status: user.status,
         },
       })) as ComboboxOption[],

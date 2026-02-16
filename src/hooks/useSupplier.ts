@@ -184,9 +184,6 @@ export function useUpdateSupplier(id: string, queryParams?: SupplierQueryFormDat
       queryClient.invalidateQueries({
         queryKey: orderKeys.bySupplier(id),
       });
-      queryClient.invalidateQueries({
-        queryKey: orderScheduleKeys.bySupplier(id),
-      });
 
       // Invalidate change logs
       queryClient.invalidateQueries({
@@ -317,9 +314,6 @@ export function useBatchUpdateSuppliers() {
           });
           queryClient.invalidateQueries({
             queryKey: orderKeys.bySupplier(supplier.id),
-          });
-          queryClient.invalidateQueries({
-            queryKey: orderScheduleKeys.bySupplier(supplier.id),
           });
 
           if (supplier.logoId) {

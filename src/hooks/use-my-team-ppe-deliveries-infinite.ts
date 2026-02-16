@@ -11,7 +11,7 @@ export const useMyTeamPpeDeliveriesInfinite = (filters?: Partial<PpeDeliveryGetM
   const pageSize = 40;
 
   const query = useInfiniteQuery({
-    queryKey: ['ppe-deliveries', 'my-team', filters],
+    queryKey: [...ppeDeliveryKeys.all, 'my-team', filters],
     queryFn: async ({ pageParam = 1 }) => {
       const params: PpeDeliveryGetManyFormData = {
         page: pageParam,
@@ -51,8 +51,7 @@ export const useMyTeamPpeDeliveriesInfinite = (filters?: Partial<PpeDeliveryGetM
   const totalCount = query.data?.pages[0]?.meta?.totalRecords;
 
   return {
-    items: allDeliveries,
-    deliveries: allDeliveries, // Alias for backward compatibility
+    deliveries: allDeliveries,
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

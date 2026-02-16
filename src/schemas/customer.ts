@@ -70,9 +70,8 @@ export const customerSelectSchema = z
     logoId: z.boolean().optional(),
     economicActivityId: z.boolean().optional(),
     registrationStatus: z.boolean().optional(),
-    situacaoCadastral: z.boolean().optional(),
-    inscricaoEstadual: z.boolean().optional(),
-    logradouro: z.boolean().optional(),
+    stateRegistration: z.boolean().optional(),
+    streetType: z.boolean().optional(),
     createdAt: z.boolean().optional(),
     updatedAt: z.boolean().optional(),
 
@@ -139,6 +138,8 @@ export const customerOrderBySchema = z
         zipCode: orderByDirectionSchema.optional(),
         site: orderByDirectionSchema.optional(),
         logoId: orderByDirectionSchema.optional(),
+        registrationStatus: orderByDirectionSchema.optional(),
+        stateRegistration: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       })
@@ -161,6 +162,8 @@ export const customerOrderBySchema = z
           state: orderByDirectionSchema.optional(),
           zipCode: orderByDirectionSchema.optional(),
           site: orderByDirectionSchema.optional(),
+          registrationStatus: orderByDirectionSchema.optional(),
+          stateRegistration: orderByDirectionSchema.optional(),
           createdAt: orderByDirectionSchema.optional(),
           updatedAt: orderByDirectionSchema.optional(),
         })
@@ -390,6 +393,44 @@ export const customerWhereSchema: z.ZodType<any> = z
           startsWith: z.string().optional(),
           endsWith: z.string().optional(),
           mode: z.enum(["default", "insensitive"]).optional(),
+        }),
+      ])
+      .optional(),
+
+    registrationStatus: z
+      .union([
+        z.string().nullable(),
+        z.object({
+          equals: z.string().nullable().optional(),
+          not: z.string().nullable().optional(),
+          in: z.array(z.string()).optional(),
+          notIn: z.array(z.string()).optional(),
+        }),
+      ])
+      .optional(),
+
+    stateRegistration: z
+      .union([
+        z.string().nullable(),
+        z.object({
+          equals: z.string().nullable().optional(),
+          not: z.string().nullable().optional(),
+          contains: z.string().optional(),
+          startsWith: z.string().optional(),
+          endsWith: z.string().optional(),
+          mode: z.enum(["default", "insensitive"]).optional(),
+        }),
+      ])
+      .optional(),
+
+    streetType: z
+      .union([
+        z.string().nullable(),
+        z.object({
+          equals: z.string().nullable().optional(),
+          not: z.string().nullable().optional(),
+          in: z.array(z.string()).optional(),
+          notIn: z.array(z.string()).optional(),
         }),
       ])
       .optional(),
@@ -664,7 +705,10 @@ export const customerCreateSchema = z
       .optional()
       .refine((val) => !val || val === "" || isValidCPF(val), { message: "CPF inválido" }),
     corporateName: z.string().nullable().optional(),
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     address: z.string().nullable().optional(),
     addressNumber: z.string().nullable().optional(),
     addressComplement: z.string().nullable().optional(),
@@ -676,10 +720,10 @@ export const customerCreateSchema = z
     phones: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
     logoId: z.string().uuid("Logo inválido").nullable().optional(),
-    situacaoCadastral: z.string().nullable().optional(),
-    inscricaoEstadual: z.string().nullable().optional(),
+    registrationStatus: z.string().nullable().optional(),
+    stateRegistration: z.string().nullable().optional(),
+    streetType: z.string().nullable().optional(),
     economicActivityId: z.string().uuid("Atividade econômica inválida").nullable().optional(),
-    logradouro: z.string().nullable().optional(),
   })
   .transform(toFormData)
   .refine(
@@ -714,7 +758,10 @@ export const customerUpdateSchema = z
       .optional()
       .refine((val) => !val || val === "" || isValidCPF(val), { message: "CPF inválido" }),
     corporateName: z.string().nullable().optional(),
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     address: z.string().nullable().optional(),
     addressNumber: z.string().nullable().optional(),
     addressComplement: z.string().nullable().optional(),
@@ -726,10 +773,10 @@ export const customerUpdateSchema = z
     phones: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
     logoId: z.string().uuid("Logo inválido").nullable().optional(),
-    situacaoCadastral: z.string().nullable().optional(),
-    inscricaoEstadual: z.string().nullable().optional(),
+    registrationStatus: z.string().nullable().optional(),
+    stateRegistration: z.string().nullable().optional(),
+    streetType: z.string().nullable().optional(),
     economicActivityId: z.string().uuid("Atividade econômica inválida").nullable().optional(),
-    logradouro: z.string().nullable().optional(),
   })
   .transform(toFormData);
 
@@ -831,8 +878,8 @@ export const mapCustomerToFormData = createMapToFormDataHelper<Customer, Custome
   phones: customer.phones,
   tags: customer.tags,
   logoId: customer.logoId,
-  situacaoCadastral: customer.situacaoCadastral,
-  inscricaoEstadual: customer.inscricaoEstadual,
+  registrationStatus: customer.registrationStatus,
+  stateRegistration: customer.stateRegistration,
+  streetType: customer.streetType,
   economicActivityId: customer.economicActivityId,
-  logradouro: customer.logradouro,
 }));

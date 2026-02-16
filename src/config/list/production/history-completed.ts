@@ -53,7 +53,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           },
         },
       },
-      updatedBy: {
+      createdBy: {
         select: {
           id: true,
           name: true,

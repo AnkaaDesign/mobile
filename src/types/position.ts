@@ -3,7 +3,6 @@
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse } from "./common";
 import type { ORDER_BY_DIRECTION } from '@/constants';
 import type { User, UserIncludes, UserOrderBy } from "./user";
-import type { Sector, SectorIncludes } from "./sector";
 
 // =====================
 // Main Entity Interfaces
@@ -22,17 +21,13 @@ export interface MonetaryValue extends BaseEntity {
 
 export interface Position extends BaseEntity {
   name: string;
-  description?: string | null; // Position description
   hierarchy: number | null;
   bonifiable: boolean;
-  commissionRate: number;
-  sectorId: string | null;
 
   // Relations (optional, populated based on query)
   users?: User[];
   monetaryValues?: MonetaryValue[];
   remunerations?: PositionRemuneration[]; // DEPRECATED: use monetaryValues
-  sector?: Sector;
 
   // Virtual field (computed from latest/current monetary value)
   remuneration?: number;
@@ -78,11 +73,6 @@ export interface PositionIncludes {
     | boolean
     | {
         include?: PositionRemunerationIncludes;
-      };
-  sector?:
-    | boolean
-    | {
-        include?: SectorIncludes;
       };
 }
 

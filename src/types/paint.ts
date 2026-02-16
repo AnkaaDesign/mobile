@@ -1,7 +1,7 @@
 // packages/interfaces/src/paint.ts
 
 import type { BaseEntity, BaseGetUniqueResponse, BaseGetManyResponse, BaseCreateResponse, BaseUpdateResponse, BaseDeleteResponse, BaseBatchResponse, BaseMergeResponse } from "./common";
-import type { PAINT_FINISH, ORDER_BY_DIRECTION, PAINT_MANUFACTURER, PAINT_TYPE_ENUM } from '@/constants';
+import type { PAINT_FINISH, ORDER_BY_DIRECTION, TRUCK_MANUFACTURER, PAINT_TYPE_ENUM } from '@/constants';
 import type { Item, ItemIncludes, ItemOrderBy } from "./item";
 import type { Task, TaskIncludes } from "./task";
 import type { PaintBrand, PaintBrandIncludes, PaintBrandOrderBy, PaintBrandWhere } from "./paint-brand";
@@ -31,7 +31,7 @@ export interface Paint extends BaseEntity {
   code: string | null;
   hex: string;
   finish: PAINT_FINISH;
-  manufacturer: PAINT_MANUFACTURER | null;
+  manufacturer: TRUCK_MANUFACTURER | null;
   tags: string[];
   colorOrder: number;
   paintTypeId: string;
@@ -380,7 +380,7 @@ export interface PaintWhere {
 
   // Enum fields
   finish?: PAINT_FINISH | { equals?: PAINT_FINISH; not?: PAINT_FINISH; in?: PAINT_FINISH[]; notIn?: PAINT_FINISH[] };
-  manufacturer?: PAINT_MANUFACTURER | { equals?: PAINT_MANUFACTURER; not?: PAINT_MANUFACTURER; in?: PAINT_MANUFACTURER[]; notIn?: PAINT_MANUFACTURER[] } | null;
+  manufacturer?: TRUCK_MANUFACTURER | { equals?: TRUCK_MANUFACTURER; not?: TRUCK_MANUFACTURER; in?: TRUCK_MANUFACTURER[]; notIn?: TRUCK_MANUFACTURER[] } | null;
 
   // Number fields
   colorOrder?: number | { equals?: number; not?: number; lt?: number; lte?: number; gt?: number; gte?: number; in?: number[]; notIn?: number[] };
@@ -561,7 +561,7 @@ export interface PaintComponentFilters {
     name?: string;
     hex?: string;
     finish?: PAINT_FINISH | PAINT_FINISH[];
-    manufacturer?: PAINT_MANUFACTURER | PAINT_MANUFACTURER[];
+    manufacturer?: TRUCK_MANUFACTURER | TRUCK_MANUFACTURER[];
     tags?: string[];
   };
 }

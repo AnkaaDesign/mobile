@@ -224,12 +224,12 @@ export const tasksListConfig: ListConfig<Task> = {
         render: (task) => task.customer?.fantasyName || '-',
       },
       {
-        key: 'measures',
-        label: 'MEDIDAS',
+        key: 'details',
+        label: 'DETALHES',
         sortable: true,
         width: 1.1,
         align: 'left',
-        render: (task) => task.measures || '-',
+        render: (task) => task.details || '-',
       },
       {
         key: 'sector.name',
@@ -323,10 +323,10 @@ export const tasksListConfig: ListConfig<Task> = {
       {
         key: 'price',
         label: 'PREÇO',
-        sortable: true,
+        sortable: false,
         width: 1.0,
         align: 'right',
-        render: (task) => task.price || null,
+        render: (task) => task.pricing?.total || null,
         format: 'currency',
         // Only visible to ADMIN, FINANCIAL, COMMERCIAL (matches web canViewPricingSections)
         canView: canViewPriceField,
@@ -660,7 +660,7 @@ export const tasksListConfig: ListConfig<Task> = {
     columns: [
       { key: 'name', label: 'Logomarca', path: 'name' },
       { key: 'customer', label: 'Cliente', path: 'customer.fantasyName' },
-      { key: 'measures', label: 'Medidas', path: 'measures' },
+      { key: 'details', label: 'Detalhes', path: 'details' },
       { key: 'generalPainting', label: 'Pintura', path: 'generalPainting.name' },
       { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
       { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },
@@ -670,7 +670,7 @@ export const tasksListConfig: ListConfig<Task> = {
       { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
       { key: 'status', label: 'Status', path: 'status' },
       { key: 'details', label: 'Detalhes', path: 'details' },
-      { key: 'price', label: 'Preço', path: 'price', format: 'currency' },
+      { key: 'price', label: 'Preço', path: 'pricing.total', format: 'currency' },
       { key: 'commission', label: 'Comissão', path: 'commission' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],

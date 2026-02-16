@@ -51,13 +51,13 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           },
         },
       },
-      updatedBy: {
+      serviceOrders: {
         select: {
           id: true,
           name: true,
         },
       },
-      serviceOrders: {
+      createdBy: {
         select: {
           id: true,
           name: true,
@@ -125,12 +125,12 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'updatedBy.name',
-        label: 'CANCELADO POR',
+        key: 'createdBy.name',
+        label: 'CRIADO POR',
         sortable: false,
         width: 1.5,
         align: 'left',
-        render: (task) => task.updatedBy?.name || '-',
+        render: (task) => task.createdBy?.name || '-',
       },
       {
         key: 'serialNumber',
@@ -209,7 +209,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         render: (task) => task.observation?.description || '-',
       },
     ],
-    defaultVisible: ['name', 'customer.fantasyName', 'updatedAt', 'updatedBy.name'],
+    defaultVisible: ['name', 'customer.fantasyName', 'updatedAt', 'createdBy.name'],
     rowHeight: 72,
     actions: [
       {
@@ -317,8 +317,8 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         placeholder: 'Selecione os setores',
       },
       {
-        key: 'updatedByIds',
-        label: 'Cancelado por',
+        key: 'createdByIds',
+        label: 'Criado por',
         type: 'select',
         multiple: true,
         async: true,
@@ -346,7 +346,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
             return { data: [], hasMore: false }
           }
         },
-        placeholder: 'Selecione quem cancelou',
+        placeholder: 'Selecione o criador',
       },
       {
         key: 'updatedDateRange',
@@ -383,7 +383,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
       { key: 'customer', label: 'Cliente', path: 'customer.fantasyName' },
       { key: 'generalPainting', label: 'Pintura', path: 'generalPainting.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'updatedBy', label: 'Cancelado Por', path: 'updatedBy.name' },
+      { key: 'createdBy', label: 'Criado Por', path: 'createdBy.name' },
       { key: 'serialNumber', label: 'Nº Série', path: 'serialNumber' },
       { key: 'plate', label: 'Placa', path: 'truck.plate' },
       { key: 'chassisNumber', label: 'Nº Chassi', path: 'truck.chassisNumber' },

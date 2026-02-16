@@ -74,8 +74,8 @@ export function getTimeSinceStatusChange(user: User): { years: number; months: n
   const now = new Date();
   let startDate: Date | null = null;
 
-  if (user.status === USER_STATUS.EFFECTED && user.contractedAt) {
-    startDate = new Date(user.contractedAt);
+  if (user.status === USER_STATUS.EFFECTED && user.effectedAt) {
+    startDate = new Date(user.effectedAt);
   } else if (user.status === USER_STATUS.DISMISSED && user.dismissedAt) {
     startDate = new Date(user.dismissedAt);
   }
@@ -261,7 +261,7 @@ export function isUserBlocked(user: User): boolean {
  * Uses EXACT privilege matching (not hierarchical) - ADMIN is special case with access to everything
  * FINANCIAL can edit tasks but not inventory, WAREHOUSE can edit inventory but not tasks
  */
-export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES): boolean {
+export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES | string): boolean {
   if (!user?.sector?.privileges) return false;
 
   const userPrivilege = user.sector.privileges;
@@ -278,7 +278,7 @@ export function hasPrivilege(user: User | null, requiredPrivilege: SECTOR_PRIVIL
  * Matches backend @Roles decorator behavior - checks if user's privilege is IN the array
  * ADMIN can access everything, others need exact match
  */
-export function hasAnyPrivilege(user: User | null, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
+export function hasAnyPrivilege(user: User | null, requiredPrivileges: (SECTOR_PRIVILEGES | string)[]): boolean {
   if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
 
   const userPrivilege = user.sector.privileges;
@@ -294,7 +294,7 @@ export function hasAnyPrivilege(user: User | null, requiredPrivileges: SECTOR_PR
  * Check if user has ALL of the specified privileges (AND logic)
  * User must have privilege level equal to or higher than ALL specified privileges
  */
-export function hasAllPrivileges(user: User | null, requiredPrivileges: SECTOR_PRIVILEGES[]): boolean {
+export function hasAllPrivileges(user: User | null, requiredPrivileges: (SECTOR_PRIVILEGES | string)[]): boolean {
   if (!user?.sector?.privileges || !requiredPrivileges.length) return false;
 
   return requiredPrivileges.every((privilege) => hasPrivilege(user, privilege));

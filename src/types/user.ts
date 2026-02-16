@@ -23,13 +23,11 @@ import type { File } from "./file";
 export interface User extends BaseEntity {
   email: string | null;
   name: string;
-  nome?: string; // Portuguese alias for name (legacy support)
   avatarId: string | null;
   status: USER_STATUS;
   statusOrder: number; // 1=Ativo, 2=Inativo, 3=Suspenso
   isActive: boolean;
   phone: string | null;
-  phoneNumber: string | null; // Alias for phone
   password?: string | null;
   positionId: string | null;
   preferenceId: string | null;
@@ -37,7 +35,6 @@ export interface User extends BaseEntity {
   cpf: string | null;
   verified: boolean;
   birth: Date | null; // Date of birth (optional in database)
-  admissional: Date | null;
   performanceLevel: number;
   sectorId: string | null;
   address: string | null;
@@ -55,11 +52,9 @@ export interface User extends BaseEntity {
   lastLoginAt?: Date | null;
   sessionToken: string | null;
   payrollNumber: number | null;
-  profilePictureUrl: string | null; // Profile picture URL
 
   // Status timestamp tracking
   effectedAt: Date | null; // When user became permanently effected/hired
-  contractedAt: Date | null;
   exp1StartAt: Date | null;
   exp1EndAt: Date | null;
   exp2StartAt: Date | null;
@@ -239,9 +234,7 @@ export interface UserOrderBy {
   verified?: ORDER_BY_DIRECTION;
   payrollNumber?: ORDER_BY_DIRECTION;
   birth?: ORDER_BY_DIRECTION;
-  admissional?: ORDER_BY_DIRECTION;
   effectedAt?: ORDER_BY_DIRECTION;
-  contractedAt?: ORDER_BY_DIRECTION;
   exp1StartAt?: ORDER_BY_DIRECTION;
   exp1EndAt?: ORDER_BY_DIRECTION;
   exp2StartAt?: ORDER_BY_DIRECTION;

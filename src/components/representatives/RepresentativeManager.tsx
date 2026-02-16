@@ -23,11 +23,18 @@ interface CustomerOption {
   name: string;
 }
 
+interface InvoiceToCustomer {
+  id: string;
+  fantasyName?: string;
+  corporateName?: string;
+}
+
 interface RepresentativeManagerProps {
   customerId?: string | null;
   customerName?: string; // Display name for primary customer
-  invoiceToId?: string | null; // Billing customer - representatives from this customer should also be available
-  invoiceToName?: string; // Display name for billing customer
+  invoiceToId?: string | null; // Billing customer (legacy single)
+  invoiceToName?: string; // Display name for billing customer (legacy single)
+  invoiceToCustomers?: InvoiceToCustomer[]; // Multiple billing customers from pricing
   value: RepresentativeRowData[];
   onChange: (rows: RepresentativeRowData[]) => void;
   disabled?: boolean;
@@ -49,6 +56,7 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
   customerName,
   invoiceToId,
   invoiceToName,
+  invoiceToCustomers,
   value = [],
   onChange,
   disabled = false,
@@ -71,16 +79,27 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
     if (customerId && customerName) {
       options.push({ id: customerId, name: customerName });
     }
-    if (invoiceToId && invoiceToName && invoiceToId !== customerId) {
+    // Support multiple invoiceTo customers from pricing
+    if (invoiceToCustomers && invoiceToCustomers.length > 0) {
+      invoiceToCustomers.forEach(c => {
+        if (c.id !== customerId) {
+          options.push({ id: c.id, name: c.fantasyName || c.corporateName || 'Cliente' });
+        }
+      });
+    } else if (invoiceToId && invoiceToName && invoiceToId !== customerId) {
+      // Legacy single invoiceTo fallback
       options.push({ id: invoiceToId, name: invoiceToName });
     }
     return options;
-  }, [customerId, customerName, invoiceToId, invoiceToName]);
+  }, [customerId, customerName, invoiceToId, invoiceToName, invoiceToCustomers]);
 
-  // Load available representatives - for customer, invoiceTo, or all if no customer selected
+  // Build list of all invoiceTo customer IDs for dependency tracking
+  const invoiceToCustomerIds = invoiceToCustomers?.map(c => c.id).join(',') || '';
+
+  // Load available representatives - for customer, invoiceTo customers, or all if no customer selected
   useEffect(() => {
     loadRepresentatives();
-  }, [customerId, invoiceToId]);
+  }, [customerId, invoiceToId, invoiceToCustomerIds]);
 
   const loadRepresentatives = async () => {
     setLoading(true);
@@ -90,7 +109,11 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
       // Collect unique customer IDs to fetch representatives from
       const customerIds = new Set<string>();
       if (customerId) customerIds.add(customerId);
-      if (invoiceToId) customerIds.add(invoiceToId);
+      if (invoiceToCustomers && invoiceToCustomers.length > 0) {
+        invoiceToCustomers.forEach(c => customerIds.add(c.id));
+      } else if (invoiceToId) {
+        customerIds.add(invoiceToId);
+      }
 
       if (customerIds.size > 0) {
         // Fetch representatives for each customer in parallel
@@ -234,6 +257,7 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
               index={index}
               customerId={customerId || ''}
               invoiceToId={invoiceToId || ''}
+              invoiceToCustomerIds={invoiceToCustomers?.map(c => c.id)}
               customerOptions={customerOptions}
               availableRepresentatives={getFilteredRepresentativesForRow(index)}
               loadingRepresentatives={loading}

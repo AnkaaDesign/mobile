@@ -117,7 +117,7 @@ export function useEntityDetails(entityIds: {
         try {
           const response = await getSupplierById(id);
           if (response?.success && response.data) {
-            details.suppliers.set(id, response.data.fantasyName || response.data.name || "");
+            details.suppliers.set(id, response.data.fantasyName || "");
           }
         } catch (error) {
           console.error(`Failed to fetch supplier ${id}:`, error);

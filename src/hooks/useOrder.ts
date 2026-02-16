@@ -405,7 +405,6 @@ export {
   useOrderSchedules,
   useOrderSchedule,
   useActiveOrderSchedules,
-  useOrderSchedulesBySupplier,
   useCreateOrderSchedule,
   useUpdateOrderSchedule,
   useDeleteOrderSchedule,

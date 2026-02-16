@@ -43,10 +43,8 @@ export const BANK_SLIP_DUE_DAYS_OPTIONS = [30, 60, 90, 120] as const;
 export enum SECTOR_PRIVILEGES {
   BASIC = "BASIC",
   PRODUCTION = "PRODUCTION",
-  LEADER = "LEADER",
   MAINTENANCE = "MAINTENANCE",
   WAREHOUSE = "WAREHOUSE",
-  STOCK = "STOCK", // Inventory/Stock workers
   ADMIN = "ADMIN",
   HUMAN_RESOURCES = "HUMAN_RESOURCES",
   EXTERNAL = "EXTERNAL",
@@ -55,14 +53,28 @@ export enum SECTOR_PRIVILEGES {
   LOGISTIC = "LOGISTIC",
   COMMERCIAL = "COMMERCIAL",
   PLOTTING = "PLOTTING",
-  TEAM_LEADER = "TEAM_LEADER", // Virtual privilege - checked via user.managedSector relationship
 }
+
+/**
+ * TEAM_LEADER is a virtual privilege - not stored in database
+ * Determined by: user.sector.privilege === PRODUCTION && user.id === user.sector.managerId
+ * Use isTeamLeader() helper function to check this status
+ */
+export const TEAM_LEADER = 'TEAM_LEADER' as const;
 
 export enum USER_STATUS {
   EXPERIENCE_PERIOD_1 = "EXPERIENCE_PERIOD_1",
   EXPERIENCE_PERIOD_2 = "EXPERIENCE_PERIOD_2",
   EFFECTED = "EFFECTED",
   DISMISSED = "DISMISSED",
+}
+
+export enum REGISTRATION_STATUS {
+  ACTIVE = "ACTIVE",
+  SUSPENDED = "SUSPENDED",
+  UNFIT = "UNFIT",
+  ACTIVE_NOT_REGULAR = "ACTIVE_NOT_REGULAR",
+  DEREGISTERED = "DEREGISTERED",
 }
 
 export const REGISTRATION_STATUS_OPTIONS = [
@@ -1479,6 +1491,7 @@ export enum CHANGE_LOG_ENTITY_TYPE {
   SERVICE_ORDER = "SERVICE_ORDER",
   SUPPLIER = "SUPPLIER",
   TASK = "TASK",
+  TASK_PRICING = "TASK_PRICING",
   TIME_CLOCK_ENTRY = "TIME_CLOCK_ENTRY",
   TRUCK = "TRUCK",
   USER = "USER",
@@ -1987,6 +2000,14 @@ export enum DISCOUNT_TYPE {
   FIXED_VALUE = "FIXED_VALUE",
 }
 
+export enum REPRESENTATIVE_ROLE {
+  COMMERCIAL = "COMMERCIAL",
+  MARKETING = "MARKETING",
+  COORDINATOR = "COORDINATOR",
+  FINANCIAL = "FINANCIAL",
+  FLEET_MANAGER = "FLEET_MANAGER",
+}
+
 export enum PAYMENT_CONDITION {
   CASH = "CASH",
   INSTALLMENTS_2 = "INSTALLMENTS_2",
@@ -2070,19 +2091,6 @@ export enum DEPLOYMENT_TRIGGER {
   WEBHOOK = "WEBHOOK",
   ROLLBACK = "ROLLBACK",
   API = "API",
-}
-
-// =====================
-// Paint
-// =====================
-
-export enum PAINT_MANUFACTURER {
-  VOLKSWAGEN = "VOLKSWAGEN",
-  MERCEDES_BENZ = "MERCEDES_BENZ",
-  SCANIA = "SCANIA",
-  VOLVO = "VOLVO",
-  DAF = "DAF",
-  IVECO = "IVECO",
 }
 
 // =====================

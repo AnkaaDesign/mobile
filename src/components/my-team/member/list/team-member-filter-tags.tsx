@@ -12,8 +12,8 @@ interface TeamMemberFilters {
   statuses?: string[];
   positionIds?: string[];
   sectorIds?: string[];
-  admissionalStart?: Date;
-  admissionalEnd?: Date;
+  exp1StartAtStart?: Date;
+  exp1StartAtEnd?: Date;
 }
 
 interface TeamMemberFilterTagsProps {
@@ -121,28 +121,28 @@ export function TeamMemberFilterTags({
     }
 
     // Hire date start
-    if (filters.admissionalStart) {
+    if (filters.exp1StartAtStart) {
       tags.push({
         key: "hire-start",
-        label: `Admissão após: ${formatDate(filters.admissionalStart)}`,
+        label: `Admissão após: ${formatDate(filters.exp1StartAtStart)}`,
         onRemove: () => {
           onFilterChange({
             ...filters,
-            admissionalStart: undefined,
+            exp1StartAtStart: undefined,
           });
         },
       });
     }
 
     // Hire date end
-    if (filters.admissionalEnd) {
+    if (filters.exp1StartAtEnd) {
       tags.push({
         key: "hire-end",
-        label: `Admissão antes: ${formatDate(filters.admissionalEnd)}`,
+        label: `Admissão antes: ${formatDate(filters.exp1StartAtEnd)}`,
         onRemove: () => {
           onFilterChange({
             ...filters,
-            admissionalEnd: undefined,
+            exp1StartAtEnd: undefined,
           });
         },
       });

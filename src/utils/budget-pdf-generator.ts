@@ -3,6 +3,8 @@ import * as Sharing from "expo-sharing";
 import { formatCurrency, formatDate } from "./index";
 import { generatePaymentText, generateGuaranteeText } from "./pricing-text-generators";
 import type { TaskPricing } from "../types/task-pricing";
+import { COMPANY_INFO, DIRECTOR_INFO } from "../config/company";
+import { API_BASE_URL, WEB_BASE_URL } from "../config/urls";
 
 interface BudgetPdfOptions {
   pricing: TaskPricing;
@@ -43,16 +45,16 @@ const PDF_CONFIG = {
   primaryGreen: '#0a5c1e',
   textDark: '#1a1a1a',
   textGray: '#666666',
-  // Company info
-  companyName: 'Ankaa Design',
-  companyAddress: 'Rua: Luís Carlos Zani, 2493 - Santa Paula, Ibiporã-PR',
-  companyPhone: '43 9 8428-3228',
-  companyPhoneClean: '5543984283228',
-  companyWebsite: 'ankaadesign.com.br',
-  companyWebsiteUrl: 'https://ankaadesign.com.br',
-  // Director info
-  directorName: 'Sergio Rodrigues',
-  directorTitle: 'Diretor Comercial',
+  // Company info (from centralized config)
+  companyName: COMPANY_INFO.name,
+  companyAddress: COMPANY_INFO.address,
+  companyPhone: COMPANY_INFO.phone,
+  companyPhoneClean: COMPANY_INFO.phoneClean,
+  companyWebsite: COMPANY_INFO.website,
+  companyWebsiteUrl: COMPANY_INFO.websiteUrl,
+  // Director info (from centralized config)
+  directorName: DIRECTOR_INFO.name,
+  directorTitle: DIRECTOR_INFO.title,
 };
 
 /**
@@ -116,7 +118,8 @@ function calculateAdaptiveLayout(
   hasDeliveryTerm: boolean,
   hasPaymentConditions: boolean,
   hasGuarantee: boolean,
-  hasDiscount: boolean
+  hasDiscount: boolean,
+  hasInvoiceToCustomers: boolean = false
 ): AdaptiveLayoutConfig {
   // A4 page height = 297mm
   const PAGE_HEIGHT = 297;
@@ -125,8 +128,8 @@ function calculateAdaptiveLayout(
   const SAFETY_BUFFER = 12; // mm safety margin - increased for reliability
   const AVAILABLE_HEIGHT = PAGE_HEIGHT - SAFETY_BUFFER;
 
-  // Count terms sections
-  const termsCount = (hasDeliveryTerm ? 1 : 0) + (hasPaymentConditions ? 1 : 0) + (hasGuarantee ? 1 : 0);
+  // Count terms sections (including invoice-to customers if present)
+  const termsCount = (hasInvoiceToCustomers ? 1 : 0) + (hasDeliveryTerm ? 1 : 0) + (hasPaymentConditions ? 1 : 0) + (hasGuarantee ? 1 : 0);
 
   // Define all compressible elements with their DEFAULT and MINIMUM values
   // Heights are CONSERVATIVE estimates accounting for text wrapping
@@ -422,10 +425,10 @@ export async function exportBudgetPdf({ pricing, customerName, contactName, term
   const paymentText = generatePaymentText(pricing);
   const guaranteeText = generateGuaranteeText(pricing);
 
-  // Get layout and signature URLs
-  const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL || "https://api.ankaadesign.com.br";
-  // Use EXPO_PUBLIC_WEB_URL for static files (logo, signature)
-  const webBaseUrl = process.env.EXPO_PUBLIC_WEB_URL || "https://ankaadesign.com.br";
+  // Get layout and signature URLs from centralized config
+  const apiBaseUrl = API_BASE_URL;
+  // Use WEB_BASE_URL for static files (logo, signature)
+  const webBaseUrl = WEB_BASE_URL;
 
   const layoutImageUrl = pricing.layoutFile?.id
     ? `${apiBaseUrl}/files/serve/${pricing.layoutFile.id}`
@@ -461,6 +464,10 @@ export async function exportBudgetPdf({ pricing, customerName, contactName, term
     // Vehicle identification
     serialNumber: serialNumber || null,
     plate: plate || null,
+    // NEW FIELDS: Multi-customer invoicing and advanced pricing
+    invoicesToCustomers: pricing.invoicesToCustomers || null,
+    simultaneousTasks: pricing.simultaneousTasks || null,
+    discountReference: pricing.discountReference || null,
   });
 
   // Generate PDF
@@ -503,6 +510,10 @@ interface BudgetHtmlData {
   // Vehicle identification
   serialNumber: string | null;
   plate: string | null;
+  // NEW FIELDS: Multi-customer invoicing and advanced pricing
+  invoicesToCustomers: Array<{ fantasyName: string; corporateName: string }> | null;
+  simultaneousTasks: number | null;
+  discountReference: string | null;
 }
 
 /**
@@ -513,17 +524,47 @@ function generateBudgetHtml(data: BudgetHtmlData): string {
   // Calculate adaptive layout based on content
   const hasDiscount = data.discountType !== 'NONE' && !!data.discountValue && data.discountValue > 0;
   const hasDeliveryTerm = !!(data.customDeliveryDays || data.termDate);
+  const hasInvoiceToCustomers = !!(data.invoicesToCustomers && data.invoicesToCustomers.length > 0);
 
   const layout = calculateAdaptiveLayout(
     data.items.length,
     hasDeliveryTerm,
     !!data.paymentText,
     !!data.guaranteeText,
-    hasDiscount
+    hasDiscount,
+    hasInvoiceToCustomers
   );
 
   // Apply layout values - use L as shorthand for cleaner CSS
   const L = layout;
+
+  // Generate invoice-to customers list (if multiple customers)
+  const invoiceToCustomersHtml = data.invoicesToCustomers && data.invoicesToCustomers.length > 0
+    ? `
+      <section class="terms-section">
+        <h2 class="terms-title">Faturar para</h2>
+        <p class="terms-content">${data.invoicesToCustomers.map(c => escapeHtml(c.fantasyName || c.corporateName)).join(', ')}</p>
+      </section>
+    `
+    : "";
+
+  // Generate simultaneousTasks note (if multiple tasks quoted together)
+  const simultaneousTasksHtml = data.simultaneousTasks && data.simultaneousTasks > 1
+    ? `
+      <p class="intro-text" style="margin-top: ${L.customerNameMarginBottom}mm; font-style: italic; color: ${PDF_CONFIG.textGray};">
+        Orçamento para ${data.simultaneousTasks} implementos.
+      </p>
+    `
+    : "";
+
+  // Generate discount reference (if provided)
+  const discountReferenceHtml = data.discountReference
+    ? `
+      <p class="intro-text" style="margin-top: ${L.customerNameMarginBottom}mm; font-style: italic; color: ${PDF_CONFIG.textGray};">
+        ${escapeHtml(data.discountReference)}
+      </p>
+    `
+    : "";
 
   // Generate services list with numbers
   // Description + observation shown inline (e.g., "Pintura Geral Azul Firenze")
@@ -1007,6 +1048,8 @@ function generateBudgetHtml(data: BudgetHtmlData): string {
         <div class="customer-name">À ${escapeHtml(formatCorporateName(data.corporateName))}</div>
         ${data.contactName ? `<div class="contact-line">Caro ${escapeHtml(data.contactName)}</div>` : ""}
         <p class="intro-text">Conforme solicitado, apresentamos nossa proposta de preço para execução dos serviços abaixo descriminados${data.serialNumber || data.plate ? ` no veículo${data.serialNumber ? ` nº série: <strong>${escapeHtml(data.serialNumber)}</strong>` : ''}${data.serialNumber && data.plate ? ',' : ''}${data.plate ? ` placa: <strong style="font-weight: 600;">${escapeHtml(data.plate)}</strong>` : ''}` : ''}.</p>
+        ${simultaneousTasksHtml}
+        ${discountReferenceHtml}
       </div>
 
       <!-- Services -->
@@ -1017,6 +1060,9 @@ function generateBudgetHtml(data: BudgetHtmlData): string {
         </div>
         ${totalsHtml}
       </section>
+
+      <!-- Invoice To Customers (if multiple customers) -->
+      ${invoiceToCustomersHtml}
 
       <!-- Delivery Term - customDeliveryDays takes priority over termDate -->
       ${data.customDeliveryDays ? `

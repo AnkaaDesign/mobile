@@ -18,6 +18,7 @@ interface FinancialInfoSectionProps {
   initialPricingFiles?: FilePickerItem[];
   initialInvoiceFiles?: FilePickerItem[];
   initialReceiptFiles?: FilePickerItem[];
+  initialBankSlipFiles?: FilePickerItem[];
 }
 
 export default function FinancialInfoSection({
@@ -25,7 +26,8 @@ export default function FinancialInfoSection({
   errors = {},
   initialPricingFiles = [],
   initialInvoiceFiles = [],
-  initialReceiptFiles = []
+  initialReceiptFiles = [],
+  initialBankSlipFiles = [],
 }: FinancialInfoSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();
@@ -43,8 +45,8 @@ export default function FinancialInfoSection({
     <FormCard title="Informações Financeiras" icon="IconFileInvoice">
       {/* Pricing/Budget Files */}
       <SimpleFormField
-        label="Arquivos de Precificação"
-        helperText="Upload de orçamentos e propostas comerciais"
+        label="Arquivos de Orçamento"
+        helperText="Upload de arquivos de orçamento"
         error={errors.pricingFiles}
       >
         <Controller
@@ -102,6 +104,28 @@ export default function FinancialInfoSection({
               maxFiles={10}
               disabled={isSubmitting}
               error={errors.receiptFiles?.message}
+            />
+          )}
+        />
+      </SimpleFormField>
+
+      {/* Bank Slip Files */}
+      <SimpleFormField
+        label="Boletos"
+        helperText="Upload de boletos bancários"
+        error={errors.bankSlipFiles}
+      >
+        <Controller
+          control={control}
+          name="bankSlipFiles"
+          render={({ field: { onChange, value } }) => (
+            <FilePicker
+              value={value || initialBankSlipFiles}
+              onChange={onChange}
+              acceptedFileTypes={["application/pdf", "image/*"]}
+              maxFiles={10}
+              disabled={isSubmitting}
+              error={errors.bankSlipFiles?.message}
             />
           )}
         />

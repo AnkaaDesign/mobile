@@ -13,6 +13,7 @@ import Constants from "expo-constants";
 import { notify } from "./notify";
 import { safeLocalStorage } from "./platform-utils";
 import { apiPerformanceLogger } from "@/utils/api-performance-logger";
+import { ONLINE_API_URL as DEFAULT_API_URL } from "@/constants/api";
 
 // Extend ErrorConstructor to include V8-specific captureStackTrace
 declare global {
@@ -186,8 +187,8 @@ const getDefaultApiUrl = (): string => {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // Default: Production API
-  return "https://api.ankaadesign.com.br";
+  // Default: from centralized API config (constants/api.ts)
+  return DEFAULT_API_URL;
 };
 
 // Synchronous getter for API URL (uses cached value or default)

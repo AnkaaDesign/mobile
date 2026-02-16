@@ -21,10 +21,18 @@ import {
   showActionWarning,
 } from '../../utils/file-viewer-service';
 
-// Import viewer components
-import { FilePreviewModal } from './file-preview-modal';
+// Import viewer components (lazy-loaded for release build safety)
 import PDFViewerWrapper from './pdf-viewer-wrapper';
 import VideoPlayerWrapper from './video-player-wrapper';
+
+// Lazy load FilePreviewModal to avoid crash when native modules
+// (react-native-pdf, expo-av) fail to initialize in release builds
+let FilePreviewModal: React.ComponentType<any> | null = null;
+try {
+  FilePreviewModal = require('./file-preview-modal').FilePreviewModal;
+} catch (error) {
+  console.warn('[FileViewer] FilePreviewModal not available:', error);
+}
 
 // =====================
 // Type Definitions
@@ -388,18 +396,20 @@ export const FileViewerProvider: React.FC<FileViewerProviderProps> = ({
       {children}
 
       {/* Image Preview Modal */}
-      <FilePreviewModal
-        files={state.currentFiles}
-        initialFileIndex={state.currentFileIndex}
-        visible={state.isImageModalOpen}
-        onClose={closeImageModal}
-        baseUrl={baseUrl}
-        enableSwipeNavigation={true}
-        enablePinchZoom={true}
-        enableRotation={true}
-        showThumbnailStrip={state.currentFiles.length > 1}
-        showImageCounter={true}
-      />
+      {FilePreviewModal && (
+        <FilePreviewModal
+          files={state.currentFiles}
+          initialFileIndex={state.currentFileIndex}
+          visible={state.isImageModalOpen}
+          onClose={closeImageModal}
+          baseUrl={baseUrl}
+          enableSwipeNavigation={true}
+          enablePinchZoom={true}
+          enableRotation={true}
+          showThumbnailStrip={state.currentFiles.length > 1}
+          showImageCounter={true}
+        />
+      )}
 
       {/* PDF Viewer Modal */}
       {currentFile && (

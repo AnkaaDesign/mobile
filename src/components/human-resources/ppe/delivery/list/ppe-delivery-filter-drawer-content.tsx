@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Switch as RNSwitch } from 'react-native';
-import { IconFilter, IconX, IconShield, IconUsers, IconCalendarPlus, IconFileCheck } from '@tabler/icons-react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { IconFilter, IconX, IconShield, IconUsers, IconCalendarPlus } from '@tabler/icons-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -22,7 +22,6 @@ interface FilterState {
   statuses?: string[];
   userIds?: string[];
   itemIds?: string[];
-  isSigned?: boolean;
   deliveryAfter?: Date;
   deliveryBefore?: Date;
 }
@@ -52,9 +51,8 @@ export function PpeDeliveryFilterDrawerContent({
     statuses: filters.statuses || [],
     userIds: filters.userIds || [],
     itemIds: filters.itemIds || [],
-    isSigned: filters.isSigned,
-    deliveryAfter: filters.dateRange?.startDate,
-    deliveryBefore: filters.dateRange?.endDate,
+    deliveryAfter: filters.actualDeliveryDateRange?.gte ? new Date(filters.actualDeliveryDateRange.gte) : undefined,
+    deliveryBefore: filters.actualDeliveryDateRange?.lte ? new Date(filters.actualDeliveryDateRange.lte) : undefined,
   }));
 
   const handleApply = useCallback(() => {
@@ -72,14 +70,10 @@ export function PpeDeliveryFilterDrawerContent({
       newFilters.itemIds = localFilters.itemIds;
     }
 
-    if (localFilters.isSigned !== undefined) {
-      newFilters.isSigned = localFilters.isSigned;
-    }
-
     if (localFilters.deliveryAfter || localFilters.deliveryBefore) {
-      newFilters.dateRange = {
-        startDate: localFilters.deliveryAfter,
-        endDate: localFilters.deliveryBefore,
+      newFilters.actualDeliveryDateRange = {
+        gte: localFilters.deliveryAfter,
+        lte: localFilters.deliveryBefore,
       };
     }
 
@@ -169,60 +163,6 @@ export function PpeDeliveryFilterDrawerContent({
               placeholder="Todos os status"
               searchPlaceholder="Buscar status..."
               emptyText="Nenhum status encontrado"
-            />
-          </View>
-        </View>
-
-        {/* Signed Status */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconFileCheck size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Status de Assinatura
-            </ThemedText>
-          </View>
-
-          <View style={[styles.filterItem, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity
-              style={styles.filterTouchable}
-              onPress={() => setLocalFilters((prev) => ({ ...prev, isSigned: prev.isSigned === true ? undefined : true }))}
-              activeOpacity={0.7}
-            >
-              <View>
-                <ThemedText style={styles.filterLabel}>Assinado</ThemedText>
-                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
-                  Mostrar apenas entregas assinadas
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-            <RNSwitch
-              value={localFilters.isSigned === true}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, isSigned: value ? true : undefined }))}
-              trackColor={{ false: colors.muted, true: colors.primary }}
-              thumbColor={localFilters.isSigned === true ? colors.primaryForeground : "#f4f3f4"}
-              ios_backgroundColor={colors.muted}
-            />
-          </View>
-
-          <View style={[styles.filterItem, { borderBottomWidth: 0 }]}>
-            <TouchableOpacity
-              style={styles.filterTouchable}
-              onPress={() => setLocalFilters((prev) => ({ ...prev, isSigned: prev.isSigned === false ? undefined : false }))}
-              activeOpacity={0.7}
-            >
-              <View>
-                <ThemedText style={styles.filterLabel}>Não assinado</ThemedText>
-                <ThemedText style={[styles.filterDescription, { color: colors.mutedForeground }]}>
-                  Mostrar apenas entregas não assinadas
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-            <RNSwitch
-              value={localFilters.isSigned === false}
-              onValueChange={(value) => setLocalFilters((prev) => ({ ...prev, isSigned: value ? false : undefined }))}
-              trackColor={{ false: colors.muted, true: colors.primary }}
-              thumbColor={localFilters.isSigned === false ? colors.primaryForeground : "#f4f3f4"}
-              ios_backgroundColor={colors.muted}
             />
           </View>
         </View>

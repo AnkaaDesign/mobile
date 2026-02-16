@@ -1,3 +1,6 @@
+// Reanimated MUST be imported first before any other imports
+import "react-native-reanimated";
+
 // Import global polyfills first (before any other imports)
 import "./src/lib/global-polyfills";
 

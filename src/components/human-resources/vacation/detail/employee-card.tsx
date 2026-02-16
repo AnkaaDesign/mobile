@@ -44,8 +44,8 @@ export function EmployeeCard({ vacation }: EmployeeCardProps) {
             {/* Avatar and Name */}
             <View style={styles.employeeHeader}>
               <Avatar size="lg">
-                {user.profilePictureUrl ? (
-                  <AvatarImage source={{ uri: user.profilePictureUrl }} />
+                {user.avatar?.url ? (
+                  <AvatarImage source={{ uri: user.avatar.url }} />
                 ) : null}
                 <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
@@ -61,11 +61,11 @@ export function EmployeeCard({ vacation }: EmployeeCardProps) {
                     </ThemedText>
                   </View>
                 )}
-                {user.position?.sector && (
+                {user.sector && (
                   <View style={styles.employeeDetail}>
                     <IconBuilding size={14} color={colors.mutedForeground} />
                     <ThemedText style={StyleSheet.flatten([styles.employeeDetailText, { color: colors.mutedForeground }])}>
-                      {user.position.sector.name}
+                      {user.sector.name}
                     </ThemedText>
                   </View>
                 )}

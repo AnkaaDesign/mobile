@@ -54,6 +54,7 @@ interface TaskWithServiceOrdersChangelogProps {
   serviceOrderIds: string[];
   truckId?: string;
   layoutIds?: string[];
+  pricingId?: string;
   maxHeight?: number;
   limit?: number;
 }
@@ -297,7 +298,29 @@ const groupChangelogsByEntity = (changelogs: ChangeLog[]) => {
       return;
     }
 
-    // For non-CREATE actions, group by time AND entity
+    // TASK/SERVICE_ORDER/TRUCK UPDATE/ROLLBACK/BATCH_UPDATE always get separate groups (matching web)
+    const isRollbackableUpdate =
+      (changelog.action === CHANGE_LOG_ACTION.UPDATE ||
+        changelog.action === CHANGE_LOG_ACTION.ROLLBACK ||
+        changelog.action === CHANGE_LOG_ACTION.BATCH_UPDATE) &&
+      (changelog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK ||
+        changelog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER ||
+        changelog.entityType === CHANGE_LOG_ENTITY_TYPE.TRUCK);
+
+    if (isRollbackableUpdate) {
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup);
+      }
+      groups.push([changelog]);
+      currentGroup = [];
+      currentTime = null;
+      currentEntityId = null;
+      currentAction = null;
+      currentEntityType = null;
+      return;
+    }
+
+    // For non-CREATE, non-rollbackable actions, group by time AND entity
     const shouldGroup =
       currentTime !== null &&
       Math.abs(time - currentTime) < 1000 &&
@@ -366,6 +389,24 @@ const groupByDate = (groups: ChangeLog[][]): Map<string, ChangeLog[][]> => {
   return dateGroups;
 };
 
+// Safe Map lookup helper - handles both Map instances and plain objects
+// (React Query persistence via AsyncStorage can deserialize Maps as plain objects)
+const safeMapGet = (map: any, key: string): any => {
+  if (!map) return undefined;
+  if (typeof map.get === "function") return map.get(key);
+  // Fallback for plain objects (deserialized Maps)
+  if (typeof map === "object" && key in map) return map[key];
+  return undefined;
+};
+
+const safeMapHas = (map: any, key: string): boolean => {
+  if (!map) return false;
+  if (typeof map.has === "function") return map.has(key);
+  // Fallback for plain objects (deserialized Maps)
+  if (typeof map === "object") return key in map;
+  return false;
+};
+
 // Format field values with entity resolution
 const formatValueWithEntity = (
   value: any,
@@ -394,32 +435,32 @@ const formatValueWithEntity = (
   if (typeof parsedValue === "string" && uuidRegex.test(parsedValue)) {
     if (entityDetails) {
       // Customer fields
-      if (field === "customerId" && entityDetails.customers?.has(parsedValue)) {
-        return entityDetails.customers.get(parsedValue) || "Cliente";
+      if (field === "customerId" && safeMapHas(entityDetails.customers, parsedValue)) {
+        return safeMapGet(entityDetails.customers, parsedValue) || "Cliente";
       }
-      if (field === "invoiceToId" && entityDetails.customers?.has(parsedValue)) {
-        return entityDetails.customers.get(parsedValue) || "Cliente";
+      if (field === "invoiceToId" && safeMapHas(entityDetails.customers, parsedValue)) {
+        return safeMapGet(entityDetails.customers, parsedValue) || "Cliente";
       }
       // Sector field
-      if (field === "sectorId" && entityDetails.sectors?.has(parsedValue)) {
-        return entityDetails.sectors.get(parsedValue) || "Setor";
+      if (field === "sectorId" && safeMapHas(entityDetails.sectors, parsedValue)) {
+        return safeMapGet(entityDetails.sectors, parsedValue) || "Setor";
       }
       // Paint field
-      if (field === "paintId" && entityDetails.paints?.has(parsedValue)) {
-        const paint = entityDetails.paints.get(parsedValue);
+      if (field === "paintId" && safeMapHas(entityDetails.paints, parsedValue)) {
+        const paint = safeMapGet(entityDetails.paints, parsedValue);
         return paint?.name || "Tinta";
       }
       // Truck field
-      if (field === "truckId" && entityDetails.trucks?.has(parsedValue)) {
-        return entityDetails.trucks.get(parsedValue) || "Caminhão";
+      if (field === "truckId" && safeMapHas(entityDetails.trucks, parsedValue)) {
+        return safeMapGet(entityDetails.trucks, parsedValue) || "Caminhão";
       }
       // User fields - resolve from users map
       const userFields = [
         "assignedToId", "createdById", "startedById", "approvedById", "completedById",
         "userId", "reviewedBy", "rejectedBy", "cancelledBy", "responsibleUserId"
       ];
-      if (userFields.includes(field) && entityDetails.users?.has(parsedValue)) {
-        return entityDetails.users.get(parsedValue) || "Usuário";
+      if (userFields.includes(field) && safeMapHas(entityDetails.users, parsedValue)) {
+        return safeMapGet(entityDetails.users, parsedValue) || "Usuário";
       }
     }
 
@@ -448,10 +489,12 @@ const TimelineItem = ({
   group,
   isLast,
   entityDetails,
+  userSectorPrivilege,
 }: {
   group: ChangeLog[];
   isLast: boolean;
   entityDetails: any;
+  userSectorPrivilege?: string;
 }) => {
   const { colors } = useTheme();
   const firstLog = group[0];
@@ -526,7 +569,7 @@ const TimelineItem = ({
       }
     }
 
-    // Special handling for service orders UPDATE - use feminine form and show description/type (matching web)
+    // Special handling for service orders UPDATE - use feminine form and show description/type/status summary (matching web)
     if (
       firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
       firstLog.action === CHANGE_LOG_ACTION.UPDATE
@@ -537,6 +580,7 @@ const TimelineItem = ({
       // Extract description and type changes from the group (matching web)
       const descriptionChange = group.find((c) => c.field === "description");
       const typeChange = group.find((c) => c.field === "type");
+      const soStatusChange = group.find((c) => c.field === "status");
 
       // Get values from changes or metadata
       const description = descriptionChange?.newValue || (firstLog.metadata as any)?.description;
@@ -544,6 +588,50 @@ const TimelineItem = ({
       const typeLabel = typeValue
         ? SERVICE_ORDER_TYPE_LABELS[typeValue as keyof typeof SERVICE_ORDER_TYPE_LABELS] || typeValue
         : null;
+
+      // Status summary with relevant timestamp and user (matching web)
+      let statusTimestamp: string | null = null;
+      let statusUser: string | null = null;
+      if (soStatusChange) {
+        const newStatus = soStatusChange.newValue;
+        const soTimestampChanges = group.filter((c) =>
+          ["startedAt", "finishedAt", "approvedAt", "completedAt"].includes(c.field || "")
+        );
+        const soUserChanges = group.filter((c) =>
+          ["startedById", "completedById", "approvedById"].includes(c.field || "")
+        );
+
+        // Pick relevant timestamp based on new status
+        const relevantTimestamp = soTimestampChanges.find((c) => {
+          if (newStatus === "IN_PROGRESS" && c.field === "startedAt") return true;
+          if (newStatus === "COMPLETED" && (c.field === "finishedAt" || c.field === "completedAt")) return true;
+          if (newStatus === "WAITING_APPROVE" && c.field === "approvedAt") return true;
+          return false;
+        });
+
+        if (relevantTimestamp?.newValue) {
+          // Handle double-encoded date strings (old data)
+          let dateValue = relevantTimestamp.newValue;
+          if (typeof dateValue === "string" && dateValue.startsWith('"') && dateValue.endsWith('"')) {
+            try { dateValue = JSON.parse(dateValue); } catch { /* use as-is */ }
+          }
+          try {
+            statusTimestamp = new Date(dateValue).toLocaleString("pt-BR");
+          } catch { /* ignore */ }
+        }
+
+        // Pick relevant user based on new status
+        const relevantUser = soUserChanges.find((c) => {
+          if (newStatus === "IN_PROGRESS" && c.field === "startedById") return true;
+          if (newStatus === "COMPLETED" && c.field === "completedById") return true;
+          if (newStatus === "WAITING_APPROVE" && c.field === "approvedById") return true;
+          return false;
+        });
+
+        if (relevantUser?.newValue && entityDetails) {
+          statusUser = safeMapGet(entityDetails.users, relevantUser.newValue) || null;
+        }
+      }
 
       return (
         <View>
@@ -560,13 +648,27 @@ const TimelineItem = ({
               Tipo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{typeLabel}</ThemedText>
             </ThemedText>
           )}
+          {statusTimestamp && (
+            <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+              Data: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{statusTimestamp}</ThemedText>
+            </ThemedText>
+          )}
+          {statusUser && (
+            <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+              Responsável: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{statusUser}</ThemedText>
+            </ThemedText>
+          )}
         </View>
       );
     }
 
+    // Copy operation detection (matching web)
+    const isCopyOperation = firstLog.reason && firstLog.reason.includes("Campos copiados");
+    const displayTitle = isCopyOperation ? firstLog.reason : `${entityLabel} ${actionLabel}`;
+
     return (
       <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
-        {entityLabel} {actionLabel}
+        {displayTitle}
       </ThemedText>
     );
   };
@@ -659,20 +761,52 @@ const TimelineItem = ({
   const getChanges = () => {
     const changes: React.ReactNode[] = [];
 
+    // Per-field permission filtering (matching web's inline filtering)
+    const alwaysHiddenFields = ["statusOrder", "colorOrder", "services", "serviceOrders", "serviceOrderIds"];
+    const financialFieldsList = ["pricingId", "budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
+    const restrictedFieldsList = ["forecastDate", "representatives", "representativeIds", "negotiatingWith"];
+    const invoiceToFieldsList = ["invoiceTo", "invoiceToId"];
+
+    const canViewFinancial =
+      userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+    const canViewRestricted =
+      userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
+    const canViewInvoiceTo =
+      userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+
+    // Filter the group's logs by field permissions
+    const filteredGroup = group.filter((log) => {
+      if (!log.field) return true;
+      const fieldLower = log.field.toLowerCase();
+      if (alwaysHiddenFields.includes(log.field)) return false;
+      if (!canViewFinancial && financialFieldsList.some(f => fieldLower.includes(f.toLowerCase()))) return false;
+      if (!canViewRestricted && restrictedFieldsList.some(f => fieldLower.includes(f.toLowerCase()))) return false;
+      if (!canViewInvoiceTo && invoiceToFieldsList.some(f => fieldLower.includes(f.toLowerCase()))) return false;
+      return true;
+    });
+
     // Separate status change, timestamp changes, and user changes like the web does
-    const statusChange = group.find(c => c.field === 'status');
+    const statusChange = filteredGroup.find(c => c.field === 'status');
     const timestampFields = ['startedAt', 'finishedAt', 'approvedAt', 'completedAt'];
-    const userFields = ['startedById', 'completedById', 'approvedById'];
+    const userFieldsList2 = ['startedById', 'completedById', 'approvedById'];
 
     // Fields to skip from individual display (they're summarized with status change)
     const fieldsToSkip = new Set<string>();
     if (statusChange) {
       // If there's a status change, skip related timestamp and user fields
       timestampFields.forEach(f => fieldsToSkip.add(f));
-      userFields.forEach(f => fieldsToSkip.add(f));
+      userFieldsList2.forEach(f => fieldsToSkip.add(f));
     }
 
-    group.forEach((log, idx) => {
+    filteredGroup.forEach((log, idx) => {
       const field = log.field;
 
       // Skip fields that are summarized with status change
@@ -682,7 +816,7 @@ const TimelineItem = ({
 
       const fieldLabel = getFieldLabel(field, log.entityType);
 
-      if (log.action === CHANGE_LOG_ACTION.UPDATE && field) {
+      if ((log.action === CHANGE_LOG_ACTION.UPDATE || log.action === CHANGE_LOG_ACTION.ROLLBACK || log.action === CHANGE_LOG_ACTION.BATCH_UPDATE) && field) {
         // Special handling for file array fields - show thumbnails
         if (FILE_ARRAY_FIELDS.includes(field)) {
           const oldFiles = parseFileArrayValue(log.oldValue);
@@ -690,7 +824,7 @@ const TimelineItem = ({
 
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
               <View style={styles.changeValuesVertical}>
                 <View style={styles.fileValueRow}>
                   <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes: </ThemedText>
@@ -762,7 +896,7 @@ const TimelineItem = ({
 
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
               <View style={styles.changeValuesVertical}>
                 <View style={styles.valueRow}>
                   <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes: </ThemedText>
@@ -787,7 +921,7 @@ const TimelineItem = ({
 
         changes.push(
           <View key={`${log.id}-${idx}`} style={styles.changeRow}>
-            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>{fieldLabel}:</ThemedText>
+            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
             <View style={styles.changeValuesVertical}>
               <View style={styles.valueRow}>
                 <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes: </ThemedText>
@@ -921,6 +1055,7 @@ export function TaskWithServiceOrdersChangelog({
   serviceOrderIds,
   truckId,
   layoutIds = [],
+  pricingId,
   limit = 100,
 }: TaskWithServiceOrdersChangelogProps) {
   const { colors } = useTheme();
@@ -988,85 +1123,76 @@ export function TaskWithServiceOrdersChangelog({
     { enabled: layoutIds.length > 0 }
   );
 
-  const isLoading = taskLoading || serviceOrdersLoading || truckLoading || layoutLoading;
+  // Fetch changelogs for task pricing
+  const { data: pricingLogs, isLoading: pricingLoading } = useChangeLogs(
+    {
+      where: {
+        entityType: CHANGE_LOG_ENTITY_TYPE.TASK_PRICING,
+        entityId: pricingId!,
+      },
+      include: { user: true },
+      limit,
+      orderBy: { createdAt: "desc" },
+    },
+    { enabled: !!pricingId }
+  );
 
-  // Check if user can view financial fields (ADMIN, FINANCIAL only)
-  const canViewFinancialFields =
-    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
-
-  // Check if user can view restricted fields (ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER only)
-  const canViewRestrictedFields =
-    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
-
-  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
-  const canViewInvoiceToField =
-    userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-    userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isLoading = taskLoading || serviceOrdersLoading || truckLoading || layoutLoading || pricingLoading;
 
   // Combine and sort all changelogs
   const allChangelogs = useMemo(() => {
     const logs: ChangeLog[] = [];
+    const serviceLogs: ChangeLog[] = serviceOrderLogs?.data || [];
 
     if (taskLogs?.data) logs.push(...taskLogs.data);
-    if (serviceOrderLogs?.data) logs.push(...serviceOrderLogs.data);
     if (truckLogs?.data) logs.push(...truckLogs.data);
     if (layoutLogs?.data) logs.push(...layoutLogs.data);
+    if (pricingLogs?.data) logs.push(...pricingLogs.data);
+
+    // Build serviceOrderTypeMap from SERVICE_ORDER CREATE actions (matching web)
+    const serviceOrderTypeMap = new Map<string, string>();
+    serviceLogs.forEach((log) => {
+      if (
+        log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
+        log.action === CHANGE_LOG_ACTION.CREATE &&
+        log.newValue &&
+        log.entityId
+      ) {
+        try {
+          const data = typeof log.newValue === "string" ? JSON.parse(log.newValue) : log.newValue;
+          if (data?.type) {
+            serviceOrderTypeMap.set(log.entityId, data.type);
+          }
+        } catch { /* ignore parse errors */ }
+      }
+    });
+
+    // Filter service order logs by visible types using the map (matching web)
+    // If type can't be determined, hide by default for security
+    const filteredServiceLogs = serviceLogs.filter((log) => {
+      if (log.entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) return true;
+      const serviceOrderType = serviceOrderTypeMap.get(log.entityId);
+      if (!serviceOrderType) return false;
+      return visibleServiceOrderTypes.includes(serviceOrderType as SERVICE_ORDER_TYPE);
+    });
+
+    logs.push(...filteredServiceLogs);
 
     // Sort by createdAt descending
     logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Define fields to filter (matching web changelog-history.tsx)
-    const internalFields = ["statusOrder", "colorOrder"];
     const sensitiveFields = ["sessionToken", "verificationCode", "verificationExpiresAt", "verificationType", "password", "token", "apiKey", "secret"];
-    const financialFields = ["budgetIds", "invoiceIds", "receiptIds", "pricingId", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit", "budget", "pricing"];
-    const restrictedFields = ["forecastDate", "negotiatingWith"]; // invoiceTo removed - has its own check
-    const invoiceToFields = ["invoiceTo", "invoiceToId"]; // Separate check - DESIGNER cannot see
 
-    // Filter logs based on user permissions (matching web)
+    // Filter logs - only sensitive fields at this level (per-field permission filtering moved to TimelineItem)
     const filteredLogs = logs.filter((log) => {
-      // Filter service orders by visible types
-      if (log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
-        const metadata = log.metadata as any;
-        const serviceType = metadata?.type;
-        if (serviceType && !visibleServiceOrderTypes.includes(serviceType)) {
-          return false;
-        }
-      }
-
       // Skip logs without field (CREATE/DELETE actions are ok)
       if (!log.field) return true;
 
       const fieldLower = log.field.toLowerCase();
 
-      // Always filter out internal system fields
-      if (internalFields.includes(log.field)) {
-        return false;
-      }
-
       // Always filter out sensitive fields
       if (sensitiveFields.some((sensitive) => fieldLower.includes(sensitive.toLowerCase()))) {
-        return false;
-      }
-
-      // Filter out financial fields for non-FINANCIAL/ADMIN users
-      if (!canViewFinancialFields && financialFields.some((financial) => fieldLower.includes(financial.toLowerCase()))) {
-        return false;
-      }
-
-      // Filter out restricted fields (forecastDate, negotiatingWith) for non-privileged users
-      if (!canViewRestrictedFields && restrictedFields.some((restricted) => fieldLower.includes(restricted.toLowerCase()))) {
-        return false;
-      }
-
-      // Filter out invoiceTo fields - DESIGNER cannot see (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
-      if (!canViewInvoiceToField && invoiceToFields.some((invoiceTo) => fieldLower.includes(invoiceTo.toLowerCase()))) {
         return false;
       }
 
@@ -1074,7 +1200,7 @@ export function TaskWithServiceOrdersChangelog({
     });
 
     return filteredLogs.slice(0, limit);
-  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, visibleServiceOrderTypes, limit, canViewFinancialFields, canViewRestrictedFields, canViewInvoiceToField]);
+  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, pricingLogs, visibleServiceOrderTypes, limit]);
 
   // Extract entity IDs for detail fetching - grouped by entity type
   const entityIdsByType = useMemo(() => {
@@ -1087,10 +1213,30 @@ export function TaskWithServiceOrdersChangelog({
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     // User fields that should resolve to user names
-    const userFields = [
+    const userFieldNames = [
       "userId", "assignedToId", "createdById", "startedById", "approvedById",
       "completedById", "reviewedBy", "rejectedBy", "cancelledBy", "responsibleUserId"
     ];
+
+    // Paint array fields (matching web)
+    const paintArrayFields = ["logoPaints", "paints", "groundPaints", "paintGrounds"];
+
+    // Helper to extract paint IDs from array values
+    const extractPaintIds = (value: any) => {
+      if (!value) return;
+      try {
+        const parsed = typeof value === "string" ? JSON.parse(value) : value;
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item: any) => {
+            if (typeof item === "string" && uuidRegex.test(item)) {
+              paintIds.add(item);
+            } else if (item && typeof item === "object" && item.id) {
+              paintIds.add(item.id);
+            }
+          });
+        }
+      } catch { /* ignore */ }
+    };
 
     allChangelogs.forEach((log) => {
       // Check field type and extract relevant IDs
@@ -1105,13 +1251,48 @@ export function TaskWithServiceOrdersChangelog({
           paintIds.add(value);
         } else if (field === "truckId") {
           truckIds.add(value);
-        } else if (field && userFields.includes(field)) {
+        } else if (field && userFieldNames.includes(field)) {
           userIds.add(value);
         }
       };
 
       processValue(log.oldValue, log.field);
       processValue(log.newValue, log.field);
+
+      // Extract assignedToId from SERVICE_ORDER CREATE newValue (matching web)
+      if (
+        log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
+        log.action === CHANGE_LOG_ACTION.CREATE &&
+        log.newValue
+      ) {
+        try {
+          const createdData = typeof log.newValue === "string" ? JSON.parse(log.newValue) : log.newValue;
+          if (createdData?.assignedToId && typeof createdData.assignedToId === "string") {
+            userIds.add(createdData.assignedToId);
+          }
+        } catch { /* ignore */ }
+      }
+
+      // Extract paint IDs from paint array fields (matching web)
+      if (log.field && paintArrayFields.includes(log.field)) {
+        extractPaintIds(log.oldValue);
+        extractPaintIds(log.newValue);
+      }
+
+      // Extract user IDs from negotiatingWith field (matching web)
+      if (log.field === "negotiatingWith") {
+        const extractUserFromNegotiating = (value: any) => {
+          if (!value) return;
+          try {
+            const parsed = typeof value === "string" ? JSON.parse(value) : value;
+            if (parsed?.userId) userIds.add(parsed.userId);
+          } catch { /* ignore */ }
+        };
+        extractUserFromNegotiating(log.oldValue);
+        extractUserFromNegotiating(log.newValue);
+      }
+
+      // Note: representatives/representativeIds are NOT added to userIds (matching web)
     });
 
     return {
@@ -1166,6 +1347,7 @@ export function TaskWithServiceOrdersChangelog({
                 group={group}
                 isLast={dateIdx === dateGroups.size - 1 && idx === groups.length - 1}
                 entityDetails={entityDetails}
+                userSectorPrivilege={userSectorPrivilege}
               />
             ))}
           </View>

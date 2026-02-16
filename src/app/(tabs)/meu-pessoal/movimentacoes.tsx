@@ -32,7 +32,7 @@ export default function TeamActivitiesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user: currentUser } = useAuth();
-  const { pushWithLoading, isNavigating } = useNavigationLoading();
+  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -206,9 +206,9 @@ export default function TeamActivitiesScreen() {
   // Handle activity press - navigate to detail page with loading overlay
   // Note: Team staff activities navigate to the main inventory activity detail page
   const handleActivityPress = useCallback((activityId: string) => {
-    if (isNavigating) return;
+    if (isNavigatingRef.current) return;
     pushWithLoading(`/estoque/movimentacoes/detalhes/${activityId}`);
-  }, [pushWithLoading, isNavigating]);
+  }, [pushWithLoading]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);

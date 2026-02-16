@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import { useSegments } from "expo-router";
-import { SECTOR_PRIVILEGES, MENU_ITEMS, type MenuItem } from "@/constants";
+import { SECTOR_PRIVILEGES, MENU_ITEMS, type MenuItem, type PrivilegeValue } from "@/constants";
 import { PrivilegeGuard } from "./privilege-guard";
 
 interface RoutePrivilegeGuardProps {
@@ -12,7 +12,7 @@ interface RoutePrivilegeGuardProps {
  * Get required privilege for current route by searching navigation menu
  * Uses navigation.ts as single source of truth for privilege requirements
  */
-function getRequiredPrivilegeFromNavigation(segments: string[]): SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[] | null {
+function getRequiredPrivilegeFromNavigation(segments: string[]): PrivilegeValue | PrivilegeValue[] | null {
   if (!segments.length) return null;
 
   // Build current path from segments
@@ -179,7 +179,7 @@ function pathMatches(navPath: string, segments: string[]): boolean {
  * Get required privilege for current route
  * Now uses navigation.ts as the single source of truth
  */
-function getRequiredPrivilegeForRoute(segments: string[]): SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[] | null {
+function getRequiredPrivilegeForRoute(segments: string[]): PrivilegeValue | PrivilegeValue[] | null {
   return getRequiredPrivilegeFromNavigation(segments);
 }
 
@@ -208,7 +208,7 @@ export function RoutePrivilegeGuard({ children, fallbackScreen = '/(autenticacao
  */
 export function withPrivilegeGuard<T extends object>(
   Component: React.ComponentType<T>,
-  requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[],
+  requiredPrivilege: PrivilegeValue | PrivilegeValue[],
   options?: {
     requireAll?: boolean;
     fallbackScreen?: string;

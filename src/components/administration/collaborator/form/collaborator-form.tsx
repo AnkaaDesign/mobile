@@ -107,7 +107,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             cpf: "",
             pis: "",
             birth: getDefaultBirthDate(),
-            admissional: new Date(),
             status: USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: null,
             positionId: null,
@@ -133,7 +132,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               gloves: null,
               rainBoots: null,
             },
-            exp1StartAt: null,
+            exp1StartAt: new Date(),
             exp1EndAt: null,
             exp2StartAt: null,
             exp2EndAt: null,
@@ -147,7 +146,6 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             cpf: user?.cpf || "",
             pis: user?.pis || "",
             birth: toDate(user?.birth) ?? undefined,
-            admissional: toDate(user?.admissional) ?? undefined,
             status: user?.status || USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: user?.sectorId || null,
             positionId: user?.positionId || null,
@@ -699,7 +697,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
               ] as USER_STATUS[]).includes(watchedStatus as USER_STATUS) && (
                 <FormRow>
                   <FormFieldGroup
-                    label="Início da Experiência 1"
+                    label="Data de Admissão"
                     required
                     error={form.formState.errors.exp1StartAt?.message}
                   >

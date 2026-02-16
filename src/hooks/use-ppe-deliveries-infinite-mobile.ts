@@ -48,7 +48,6 @@ export const usePpeDeliveriesInfiniteMobile = (filters?: Partial<PpeDeliveryGetM
 
   return {
     items: allDeliveries,
-    deliveries: allDeliveries, // Alias for backward compatibility
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

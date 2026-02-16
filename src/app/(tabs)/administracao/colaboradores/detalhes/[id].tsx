@@ -39,7 +39,7 @@ export default function EmployeeDetailsScreen() {
   console.log("[EMPLOYEE DETAILS] Screen mounted with ID:", id);
   console.log("[EMPLOYEE DETAILS] Full params:", params);
   console.log("[EMPLOYEE DETAILS] Current logged-in user:", currentUser ? `${currentUser.name} (${currentUser.id})` : "null");
-  console.log("[EMPLOYEE DETAILS] User sector privileges:", currentUser?.sector?.privileges || currentUser?.position?.sector?.privileges || "none");
+  console.log("[EMPLOYEE DETAILS] User sector privileges:", currentUser?.sector?.privileges || "none");
   console.log("[EMPLOYEE DETAILS] Has access token:", !!accessToken);
   console.log("[EMPLOYEE DETAILS] Is viewing own profile:", id === currentUser?.id);
   console.log("[EMPLOYEE DETAILS] Access token (first 50 chars):", accessToken ? accessToken.substring(0, 50) + "..." : "null");
@@ -66,7 +66,6 @@ export default function EmployeeDetailsScreen() {
       avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      admissional: true,
       // Address fields
       address: true,
       addressNumber: true,
@@ -94,7 +93,6 @@ export default function EmployeeDetailsScreen() {
           id: true,
           filename: true,
           path: true,
-          url: true,
           thumbnailUrl: true,
         },
       },

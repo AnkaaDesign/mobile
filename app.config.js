@@ -14,12 +14,11 @@
 const baseConfig = require("./app.json");
 
 module.exports = ({ config }) => {
-  // Get API URLs from environment variables or use defaults
-  // Using production API for all environments
+  // Get API URLs from environment variables or use production defaults
   const apiUrl =
     process.env.EXPO_PUBLIC_API_URL || "https://api.ankaadesign.com.br";
   const fallbackApiUrl =
-    process.env.EXPO_PUBLIC_FALLBACK_API_URL || "http://192.168.10.169:3030";
+    process.env.EXPO_PUBLIC_FALLBACK_API_URL || apiUrl;
 
   return {
     ...config,

@@ -32,6 +32,7 @@ import { Header as TableHeader, Row as TableRow, Empty, Loading } from '@/compon
 import { SectorSelectModal } from '@/components/production/task/modals'
 import { CopyFromTaskModal } from './copy-from-task-modal'
 import { AddArtworksModal } from './add-artworks-modal'
+import { useTable } from '@/hooks/list/useTable'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
@@ -56,7 +57,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useAuth()
-  const { pushWithLoading, startNavigation, isNavigating } = useNavigationLoading()
+  const { pushWithLoading, startNavigation, isNavigatingRef } = useNavigationLoading()
   const { width: screenWidth } = Dimensions.get('window')
   const insets = useSafeAreaInsets()
 
@@ -87,9 +88,19 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectionEnabled, setSelectionEnabled] = useState(false)
 
-  // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(config.table.defaultVisible)
-  const [columnPanelOpen, setColumnPanelOpen] = useState(false)
+  // Column visibility state - persisted to AsyncStorage via useTable
+  const {
+    visibleColumns,
+    onToggleColumn: handleToggleColumn,
+    onResetColumns: handleResetColumns,
+    isColumnPanelOpen: columnPanelOpen,
+    onOpenColumnPanel,
+    onCloseColumnPanel,
+  } = useTable({
+    columns: config.table.columns,
+    defaultVisible: config.table.defaultVisible,
+    storageKey: config.key,
+  })
 
   // Refreshing state
   const [refreshing, setRefreshing] = useState(false)
@@ -572,18 +583,6 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     setSelectionEnabled(false)
   }, [])
 
-  const handleToggleColumn = useCallback((key: string) => {
-    setVisibleColumns(prev => {
-      if (prev.includes(key)) {
-        return prev.filter(k => k !== key)
-      }
-      return [...prev, key]
-    })
-  }, [])
-
-  const handleResetColumns = useCallback(() => {
-    setVisibleColumns(config.table.defaultVisible)
-  }, [config.table.defaultVisible])
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -596,7 +595,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   const handleRowPress = useCallback((item: Task) => {
     // Prevent double-clicks while navigating
-    if (isNavigating) return
+    if (isNavigatingRef.current) return
 
     // Performance logging - track navigation start
     perfLog.navigationClick('TaskScheduleLayout', 'ScheduleDetailsScreen', item.id)
@@ -604,8 +603,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
     if (config.table.onRowPress) {
       startNavigation()
-      config.table.onRowPress(item, router)
-      // Navigation loading will auto-hide when pathname changes
+      requestAnimationFrame(() => config.table.onRowPress!(item, router))
       return
     }
 
@@ -625,13 +623,12 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
     if (action.onPress) {
       startNavigation()
-      action.onPress(item, router, {})
-      // Navigation loading will auto-hide when pathname changes
+      requestAnimationFrame(() => action!.onPress!(item, router, {}))
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
       pushWithLoading(route)
     }
-  }, [config.table.actions, config.table.onRowPress, router, isNavigating, startNavigation, pushWithLoading])
+  }, [config.table.actions, config.table.onRowPress, router, startNavigation, pushWithLoading])
 
   const handleCreate = useCallback(() => {
     if (config.actions?.create?.route) {
@@ -774,7 +771,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           <ColumnVisibilityButton
             columns={config.table.columns}
             visibleColumns={visibleColumns}
-            onOpen={() => setColumnPanelOpen(true)}
+            onOpen={onOpenColumnPanel}
           />
 
           {config.filters && (
@@ -968,7 +965,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         onToggleColumn={handleToggleColumn}
         onResetColumns={handleResetColumns}
         isOpen={columnPanelOpen}
-        onClose={() => setColumnPanelOpen(false)}
+        onClose={onCloseColumnPanel}
         defaultVisible={config.table.defaultVisible}
       />
 

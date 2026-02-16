@@ -77,14 +77,6 @@ export const positionsListConfig: ListConfig<Position> = {
         format: 'count-badge',
       },
       {
-        key: 'description',
-        label: 'DESCRIÇÃO',
-        sortable: false,
-        width: 2.5,
-        align: 'left',
-        render: (position) => position.description?.toString() || '-',
-      },
-      {
         key: 'createdAt',
         label: 'CADASTRADO EM',
         sortable: true,
@@ -181,7 +173,6 @@ export const positionsListConfig: ListConfig<Position> = {
       { key: 'bonifiable', label: 'Bonificável', path: 'bonifiable', format: 'boolean' },
       { key: 'remuneration', label: 'Remuneração', path: 'remunerations[0].value', format: 'currency' },
       { key: 'users', label: 'Colaboradores', path: '_count.users' },
-      { key: 'description', label: 'Descrição', path: 'description' },
       { key: 'createdAt', label: 'Cadastrado em', path: 'createdAt', format: 'date' },
     ],
   },

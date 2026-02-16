@@ -23,7 +23,6 @@ import {
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
-import { SupplierSelector } from "@/components/inventory/supplier/supplier-selector";
 import { ItemMultiSelector } from "@/components/inventory/item/item-multi-selector";
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
@@ -38,7 +37,6 @@ export default function EditAutomaticOrderScreen() {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
-  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
 
   // Check permissions
   const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -46,7 +44,6 @@ export default function EditAutomaticOrderScreen() {
   const scheduleId = params.id!;
 
   const include: OrderScheduleInclude = {
-    supplier: true,
     weeklyConfig: { include: { daysOfWeek: true } },
     monthlyConfig: { include: { occurrences: true } },
     yearlyConfig: { include: { monthlyConfigs: true } },
@@ -77,7 +74,6 @@ export default function EditAutomaticOrderScreen() {
       frequencyCount: 1,
       isActive: true,
       items: [],
-      supplierId: null,
     },
     mode: "onChange",
   });
@@ -100,7 +96,6 @@ export default function EditAutomaticOrderScreen() {
     if (schedule && !isFormReady) {
       const formData = mapOrderScheduleToFormData(schedule);
       reset(formData);
-      setSelectedSupplierId(schedule.supplierId || null);
       setIsFormReady(true);
     }
   }, [schedule, reset, isFormReady]);
@@ -123,9 +118,7 @@ export default function EditAutomaticOrderScreen() {
 
       setIsSubmitting(true);
       try {
-        // Include supplierId in the update data
-        const updateData = { ...data, supplierId: selectedSupplierId };
-        await updateOrderSchedule({ id: scheduleId, data: updateData });
+        await updateOrderSchedule({ id: scheduleId, data });
       } catch (error) {
         Alert.alert("Erro", "Não foi possível atualizar o agendamento automático. Tente novamente.");
         console.error("Error updating order schedule:", error);
@@ -133,7 +126,7 @@ export default function EditAutomaticOrderScreen() {
         setIsSubmitting(false);
       }
     },
-    [updateOrderSchedule, scheduleId, canEdit, isDirty, selectedSupplierId],
+    [updateOrderSchedule, scheduleId, canEdit, isDirty],
   );
 
   const handleCancel = useCallback(() => {
@@ -304,23 +297,6 @@ export default function EditAutomaticOrderScreen() {
             </Card>
           </FormSection>
 
-          {/* Supplier Selection */}
-          <FormSection title="Fornecedor" icon="truck">
-            <Card style={styles.card}>
-              <View style={styles.fieldContainer}>
-                <ThemedText style={styles.fieldLabel}>Fornecedor Preferencial</ThemedText>
-                <ThemedText style={styles.fieldHelper}>
-                  Selecione um fornecedor para filtrar os itens disponíveis (opcional)
-                </ThemedText>
-                <SupplierSelector
-                  value={selectedSupplierId || undefined}
-                  onValueChange={(supplierId) => setSelectedSupplierId(supplierId || null)}
-                  placeholder="Selecione um fornecedor..."
-                />
-              </View>
-            </Card>
-          </FormSection>
-
           {/* Items Selection */}
           <FormSection title="Itens" icon="package">
             <Card style={styles.card}>
@@ -336,7 +312,7 @@ export default function EditAutomaticOrderScreen() {
                     <ItemMultiSelector
                       value={(value as string[]) || []}
                       onValueChange={onChange}
-                      supplierId={selectedSupplierId || undefined}
+                      supplierId={undefined}
                     />
                   )}
                 />

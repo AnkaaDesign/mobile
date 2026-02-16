@@ -29,7 +29,8 @@ interface RepresentativeRowProps {
   row: RepresentativeRowData;
   index: number;
   customerId: string;
-  invoiceToId?: string; // Billing customer - representatives from this customer are also valid
+  invoiceToId?: string; // Billing customer (legacy single)
+  invoiceToCustomerIds?: string[]; // Multiple billing customer IDs from pricing
   customerOptions?: CustomerOption[]; // Options for customer selection when creating new representatives
   availableRepresentatives: Representative[];
   loadingRepresentatives: boolean;
@@ -46,6 +47,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   index,
   customerId,
   invoiceToId,
+  invoiceToCustomerIds,
   customerOptions = [],
   availableRepresentatives,
   loadingRepresentatives,
@@ -92,7 +94,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   }, []);
 
   // Filter representatives by selected role AND customer (matches web logic)
-  // Show: reps matching the role that belong to customer, invoiceTo, or are global
+  // Show: reps matching the role that belong to customer, invoiceTo customers, or are global
   const filteredRepresentatives = useMemo(() => {
     if (!row.role) return [];
 
@@ -100,14 +102,21 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
       // Filter by role first
       if (rep.role !== row.role) return false;
 
-      // If task has a customer or invoiceTo, show reps that:
-      // 1. Belong to the primary customer (customerId), OR
-      // 2. Belong to the billing customer (invoiceToId), OR
-      // 3. Have no customer (global representatives)
-      if (customerId || invoiceToId) {
+      // Build set of valid customer IDs (primary + all invoiceTo customers)
+      const validCustomerIds = new Set<string>();
+      if (customerId) validCustomerIds.add(customerId);
+      if (invoiceToCustomerIds && invoiceToCustomerIds.length > 0) {
+        invoiceToCustomerIds.forEach(id => validCustomerIds.add(id));
+      } else if (invoiceToId) {
+        validCustomerIds.add(invoiceToId);
+      }
+
+      // If task has any customer associations, show reps that:
+      // 1. Belong to any of the associated customers, OR
+      // 2. Have no customer (global representatives)
+      if (validCustomerIds.size > 0) {
         return (
-          rep.customerId === customerId ||
-          rep.customerId === invoiceToId ||
+          (rep.customerId && validCustomerIds.has(rep.customerId)) ||
           !rep.customerId
         );
       }
@@ -115,7 +124,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
       // If no customer on task, show all representatives with this role
       return true;
     });
-  }, [availableRepresentatives, row.role, customerId, invoiceToId]);
+  }, [availableRepresentatives, row.role, customerId, invoiceToId, invoiceToCustomerIds]);
 
 
   // Handle role change (matches web - resets representative selection when role changes)

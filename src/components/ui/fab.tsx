@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as React from "react";
 import { useCallback } from "react";
 import { impactHaptic } from "@/utils/haptics";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
 interface FABProps {
   icon?: string;
@@ -30,41 +29,25 @@ export function FAB({
 }: FABProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { startNavigation, isNavigating } = useNavigationLoading();
 
   const handlePress = useCallback(() => {
-    console.log('[FAB] handlePress called:', {
-      disabled,
-      isNavigating,
-      hasLoadingMessage: !!loadingMessage
-    });
-
-    if (disabled || isNavigating) {
-      console.log('[FAB] Press blocked:', { disabled, isNavigating });
-      return;
-    }
+    if (disabled) return;
 
     // Haptic feedback (don't await for instant response)
     if (enableHaptic) {
       impactHaptic();
     }
 
-    // Show loading overlay INSTANTLY if loadingMessage is provided
-    if (loadingMessage !== undefined) {
-      console.log('[FAB] Starting navigation with message:', loadingMessage);
-      startNavigation();
-    }
-
-    // Execute action immediately
-    console.log('[FAB] Executing onPress callback');
+    // Execute action — the overlay blocks touches during navigation,
+    // and pushWithLoading has its own ref-based double-click guard
     onPress();
-  }, [disabled, isNavigating, enableHaptic, loadingMessage, startNavigation, onPress]);
+  }, [disabled, enableHaptic, onPress]);
 
   const defaultStyle: ViewStyle = {
     position: "absolute",
     bottom: Math.max(24, insets.bottom + 32),
     right: 16,
-    backgroundColor: disabled || isNavigating ? colors.muted : colors.primary,
+    backgroundColor: disabled ? colors.muted : colors.primary,
     borderRadius: 28,
     paddingHorizontal: label ? 20 : 16,
     paddingVertical: 16,
@@ -73,17 +56,17 @@ export function FAB({
     gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: disabled || isNavigating ? 0.1 : 0.2,
+    shadowOpacity: disabled ? 0.1 : 0.2,
     shadowRadius: 8,
-    elevation: disabled || isNavigating ? 4 : 8,
-    opacity: disabled || isNavigating ? 0.6 : 1,
+    elevation: disabled ? 4 : 8,
+    opacity: disabled ? 0.6 : 1,
   };
 
   return (
     <TouchableOpacity
       onPress={handlePress}
       style={StyleSheet.flatten([defaultStyle, style])}
-      disabled={disabled || isNavigating}
+      disabled={disabled}
       activeOpacity={0.7}
     >
       {children ? (

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser } from "@/hooks";
+import { getFileUrl } from "@/utils/file-utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -46,10 +47,10 @@ const getStatusColor = (status: string, colors: any) => {
 };
 
 // Helper function to calculate employment duration
-const getEmploymentDuration = (admissional: Date | string | null, dismissedAt?: Date | string | null) => {
-  if (!admissional) return null;
+const getEmploymentDuration = (exp1StartAt: Date | string | null, dismissedAt?: Date | string | null) => {
+  if (!exp1StartAt) return null;
 
-  const startDate = new Date(admissional);
+  const startDate = new Date(exp1StartAt);
   const endDate = dismissedAt ? new Date(dismissedAt) : new Date();
 
   const years = endDate.getFullYear() - startDate.getFullYear();
@@ -98,13 +99,12 @@ export default function EmployeeDetailScreen() {
       status: true,
       avatarId: true,
       performanceLevel: true,
-      admissional: true,
+      exp1StartAt: true,
       dismissedAt: true,
       // Relations with minimal select
       avatar: {
         select: {
           id: true,
-          url: true,
           thumbnailUrl: true,
         },
       },
@@ -177,7 +177,7 @@ export default function EmployeeDetailScreen() {
     );
   }
 
-  const employmentDuration = getEmploymentDuration(employee.admissional, employee.dismissedAt);
+  const employmentDuration = getEmploymentDuration(employee.exp1StartAt, employee.dismissedAt);
 
   return (
     <ScrollView
@@ -197,7 +197,7 @@ export default function EmployeeDetailScreen() {
         <Card style={styles.headerCard}>
           <View style={styles.headerContent}>
             <Avatar
-              imageUrl={employee.avatar?.url}
+              imageUrl={employee.avatar?.id ? getFileUrl(employee.avatar as any) : undefined}
               name={employee.name || "F"}
               size="lg"
             />
@@ -320,7 +320,7 @@ export default function EmployeeDetailScreen() {
                 </View>
               </View>
             )}
-            {employee.admissional && (
+            {employee.exp1StartAt && (
               <View style={styles.infoRow}>
                 <IconCalendar size={16} color={colors.mutedForeground} />
                 <View style={styles.infoTextContainer}>
@@ -328,7 +328,7 @@ export default function EmployeeDetailScreen() {
                     Data de Admissão
                   </ThemedText>
                   <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {formatDate(employee.admissional)}
+                    {formatDate(employee.exp1StartAt)}
                   </ThemedText>
                   {employmentDuration && (
                     <ThemedText style={[styles.infoSubValue, { color: colors.mutedForeground }]}>

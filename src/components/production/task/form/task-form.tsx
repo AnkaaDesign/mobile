@@ -23,7 +23,6 @@ import ServicesSection from './sections/ServicesSection';
 const PricingSection = lazy(() => import('./sections/PricingSection'));
 const TruckLayoutSection = lazy(() => import('./sections/TruckLayoutSection'));
 const TruckSpotSection = lazy(() => import('./sections/TruckSpotSection'));
-const AirbrushingSection = lazy(() => import('./sections/AirbrushingSection'));
 const FinancialInfoSection = lazy(() => import('./sections/FinancialInfoSection'));
 const FilesSection = lazy(() => import('./sections/FilesSection'));
 const ObservationSection = lazy(() => import('./sections/ObservationSection'));
@@ -95,15 +94,26 @@ export function TaskForm({
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
   const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.managedSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser;
-  const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
   const canViewFinancialInfo = isAdminUser || isFinancialUser;
   const canViewFiles = !isWarehouseUser && !isFinancialUser;
-  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isCommercialUser && !isLogisticUser;
+  const taskStatus = task?.status;
+  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isCommercialUser && !isLogisticUser
+    && taskStatus === 'COMPLETED';
 
-  const handleFormSubmit = form.handleSubmit(async (data: any) => {
-    console.log('[TaskForm] Submitting form data:', data);
-    await onSubmit(data);
-  });
+  // In edit mode, bypass react-hook-form validation and submit current values directly.
+  // processFormDataForSubmission in the edit page handles change detection and filtering.
+  // The API validates the data server-side. This matches the web approach where
+  // the edit form uses taskUpdateSchema (all optional) vs taskCreateSchema (strict).
+  const handleFormSubmit = mode === 'edit'
+    ? async () => {
+        const data = form.getValues();
+        console.log('[TaskForm] Submitting edit form data (bypassing schema):', data);
+        await onSubmit(data);
+      }
+    : form.handleSubmit(async (data: any) => {
+        console.log('[TaskForm] Submitting create form data:', data);
+        await onSubmit(data);
+      });
 
   if (!isReady) {
     return (
@@ -126,7 +136,6 @@ export function TaskForm({
         isSubmitting={isSubmitting}
         mode={mode}
         initialCustomer={task?.customer}
-        initialInvoiceTo={task?.invoiceTo}
         task={task}
         errors={form.formState.errors}
       />
@@ -143,6 +152,7 @@ export function TaskForm({
       <DatesSection
         isSubmitting={isSubmitting}
         errors={form.formState.errors}
+        mode={mode}
       />
 
       {/* 4. Services */}
@@ -194,18 +204,7 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 9. Airbrushing */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando aerografias..." />}>
-        {canViewAirbrushing && (
-          <AirbrushingSection
-            isSubmitting={isSubmitting}
-            errors={form.formState.errors}
-            initialAirbrushings={task?.airbrushings}
-          />
-        )}
-      </Suspense>
-
-      {/* 10. Financial Information */}
+      {/* 9. Financial Information */}
       <Suspense fallback={<SectionPlaceholder title="Carregando informações financeiras..." />}>
         {canViewFinancialInfo && (
           <FinancialInfoSection
@@ -214,6 +213,7 @@ export function TaskForm({
             initialPricingFiles={task?.pricingFiles}
             initialInvoiceFiles={task?.invoiceFiles}
             initialReceiptFiles={task?.receiptFiles}
+            initialBankSlipFiles={task?.bankSlipFiles}
           />
         )}
       </Suspense>
@@ -236,7 +236,7 @@ export function TaskForm({
         onCancel={onCancel}
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
-        canSubmit={form.formState.isValid}
+        canSubmit={mode === 'edit' ? true : form.formState.isValid}
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />

@@ -41,7 +41,6 @@ export default function EmployeeEditScreen() {
       isActive: true,
       payrollNumber: true,
       performanceLevel: true,
-      admissional: true,
       // Address fields for form
       address: true,
       addressNumber: true,

@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { IconPackage, IconClock, IconCircleCheck, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconPackage, IconClock, IconCircleCheck, IconAlertCircle, IconPencil, IconCircleCheckFilled } from "@tabler/icons-react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -19,8 +19,12 @@ export function TeamPpeDeliveryStatsCard({ deliveries }: TeamPpeDeliveryStatsCar
     const pending = deliveries.filter(d => d.status === PPE_DELIVERY_STATUS.PENDING).length;
     const approved = deliveries.filter(d => d.status === PPE_DELIVERY_STATUS.APPROVED).length;
     const delivered = deliveries.filter(d => d.status === PPE_DELIVERY_STATUS.DELIVERED).length;
+    const waitingSignature = deliveries.filter(d => d.status === PPE_DELIVERY_STATUS.WAITING_SIGNATURE).length;
+    const completed = deliveries.filter(d => d.status === PPE_DELIVERY_STATUS.COMPLETED).length;
     const needsAttention = deliveries.filter(d =>
-      d.status === PPE_DELIVERY_STATUS.REPROVED || d.status === PPE_DELIVERY_STATUS.CANCELLED
+      d.status === PPE_DELIVERY_STATUS.REPROVED ||
+      d.status === PPE_DELIVERY_STATUS.CANCELLED ||
+      d.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED
     ).length;
 
     return {
@@ -28,6 +32,8 @@ export function TeamPpeDeliveryStatsCard({ deliveries }: TeamPpeDeliveryStatsCar
       pending,
       approved,
       delivered,
+      waitingSignature,
+      completed,
       needsAttention,
     };
   }, [deliveries]);
@@ -52,6 +58,20 @@ export function TeamPpeDeliveryStatsCard({ deliveries }: TeamPpeDeliveryStatsCar
       value: stats.delivered,
       icon: IconPackage,
       color: "#10b981",
+      bgColor: "#d1fae5",
+    },
+    {
+      label: "Ag. Assinatura",
+      value: stats.waitingSignature,
+      icon: IconPencil,
+      color: "#8b5cf6",
+      bgColor: "#ede9fe",
+    },
+    {
+      label: "Concluidos",
+      value: stats.completed,
+      icon: IconCircleCheckFilled,
+      color: "#059669",
       bgColor: "#d1fae5",
     },
     {

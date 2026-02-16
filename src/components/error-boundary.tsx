@@ -111,8 +111,8 @@ export class ErrorBoundary extends Component<Props, State> {
               Ocorreu um erro inesperado. Você continua logado - tente novamente.
             </Text>
 
-            {/* Show error details in development mode */}
-            {__DEV__ && (
+            {/* Show error details always for debugging */}
+            {(
               <ScrollView style={styles.errorDetails} contentContainerStyle={styles.errorDetailsContent}>
                 <Text style={styles.errorTitle}>Erro:</Text>
                 <Text style={styles.errorText}>{errorMessage}</Text>

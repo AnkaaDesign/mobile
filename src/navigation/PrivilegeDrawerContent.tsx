@@ -241,7 +241,7 @@ function PrivilegeDrawerContent({
             <Icon name="user-circle" size="lg" variant="muted" />
             <View style={styles.userDetails}>
               <Text style={[styles.userName, { color: isDark ? '#f5f5f5' : '#171717' }]}>
-                {user?.nome || 'Usuário'}
+                {user?.name || 'Usuário'}
               </Text>
               <View style={styles.privilegeContainer}>
                 <Text style={[styles.userRole, { color: isDark ? '#a3a3a3' : '#737373' }]}>

@@ -116,17 +116,14 @@ export default function FinancialCustomerEditScreen() {
       phones: true,
       tags: true,
       logoId: true,
-      situacaoCadastral: true,
-      inscricaoEstadual: true,
+      registrationStatus: true,
+      stateRegistration: true,
       economicActivityId: true,
-      logradouro: true,
+      streetType: true,
       // Logo relation for display
       logo: {
         select: {
           id: true,
-          url: true,
-          name: true,
-          mimeType: true,
         },
       },
     },
@@ -520,7 +517,7 @@ export default function FinancialCustomerEditScreen() {
               showGallery={true}
               showFilePicker={true}
             />
-            {customer.data.logo?.url && logoFiles.length === 0 && (
+            {customer.data.logo?.id && logoFiles.length === 0 && (
               <ThemedText style={[styles.helperText, { color: colors.mutedForeground }]}>
                 Logo atual: {customer.data.logo.filename || 'logo.jpg'}
               </ThemedText>

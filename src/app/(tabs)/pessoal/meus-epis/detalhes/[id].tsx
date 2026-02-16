@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePpeDeliveries } from "@/hooks";
+import { usePpeDelivery } from "@/hooks";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Header } from "@/components/ui/header";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -27,8 +27,7 @@ export default function PpeDeliveryDetailScreen() {
     isLoading,
     error,
     refetch,
-  } = usePpeDeliveries({
-    where: { id },
+  } = usePpeDelivery(id || '', {
     include: {
       user: true,
       reviewedByUser: true,
@@ -40,9 +39,10 @@ export default function PpeDeliveryDetailScreen() {
       },
       ppeSchedule: true,
     },
+    enabled: !!id,
   });
 
-  const delivery = response?.data?.[0];
+  const delivery = response?.data;
 
   const handleRefresh = async () => {
     setRefreshing(true);

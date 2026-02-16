@@ -152,8 +152,8 @@ export const ChangeLogTable = memo(({
             {changeLog.user ? (
               <View style={styles.userInfo}>
                 <Avatar size="sm" style={styles.avatar}>
-                  {(changeLog.user.avatar?.url || changeLog.user.profilePictureUrl) && (
-                    <AvatarImage source={{ uri: (changeLog.user.avatar?.url || changeLog.user.profilePictureUrl)! }} />
+                  {changeLog.user.avatar?.url && (
+                    <AvatarImage source={{ uri: changeLog.user.avatar.url }} />
                   )}
                   <AvatarFallback>{changeLog.user.name.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>

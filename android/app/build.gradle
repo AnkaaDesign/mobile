@@ -96,6 +96,18 @@ android {
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+
+        // Include all ABIs in a single universal APK
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+    }
+
+    // Disable per-ABI split to produce a single universal APK
+    splits {
+        abi {
+            enable false
+        }
     }
     signingConfigs {
         debug {
@@ -110,8 +122,6 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
@@ -129,17 +139,6 @@ android {
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
-    }
-
-    // Split APKs by ABI - produces smaller APKs for each CPU architecture
-    // This significantly improves download and install times on devices
-    splits {
-        abi {
-            reset()
-            enable true
-            universalApk false  // Don't generate a universal APK by default
-            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-        }
     }
 }
 

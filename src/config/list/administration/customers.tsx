@@ -104,8 +104,6 @@ export const customersListConfig: ListConfig<Customer> = {
       logo: {
         select: {
           id: true,
-          url: true,
-          name: true,
         },
       },
       // Include economicActivity relation for display

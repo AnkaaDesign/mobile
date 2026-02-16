@@ -63,10 +63,13 @@ export default function TeamPpeDeliveryDetailScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
+    refetch()
+      .then(() => {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso");
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
   }, [refetch]);
 
   // Check if user has access (team leader with matching sector)

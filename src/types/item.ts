@@ -79,12 +79,6 @@ export interface Item extends BaseEntity {
   ppeDeliveryMode: PPE_DELIVERY_MODE | null;
   ppeStandardQuantity: number | null;
 
-  // Additional fields for display/compatibility
-  description?: string | null; // Item description
-  expirationDate?: Date | null; // Expiration date for perishable/certified items
-  ca?: string | null; // Alias for ppeCA (Certificate of Approval)
-  validity?: number | null; // Validity period in days
-
   // Measure fields (backward compatibility)
   measureUnit?: MEASURE_UNIT;
   measureValue?: number;
@@ -356,7 +350,7 @@ export interface ItemOrderBy {
   id?: ORDER_BY_DIRECTION;
   name?: ORDER_BY_DIRECTION;
   uniCode?: ORDER_BY_DIRECTION;
-  CA?: ORDER_BY_DIRECTION;
+  ppeCA?: ORDER_BY_DIRECTION;
   quantity?: ORDER_BY_DIRECTION;
   maxQuantity?: ORDER_BY_DIRECTION;
   reorderPoint?: ORDER_BY_DIRECTION;

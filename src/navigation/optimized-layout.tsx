@@ -8,7 +8,6 @@ import { useFavorites } from "@/contexts/favorites-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { MENU_ITEMS, MenuItem } from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
@@ -179,7 +178,6 @@ function LoadingScreen() {
 export function OptimizedDrawerLayout() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
-  const pathname = usePathname();
   const { canGoBack, goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
 

@@ -75,9 +75,6 @@ export default function CustomerDetailScreen() {
       logo: {
         select: {
           id: true,
-          url: true,
-          name: true,
-          mimeType: true,
         },
       },
       // Tasks with minimal fields for display

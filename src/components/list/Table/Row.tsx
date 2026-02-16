@@ -1,11 +1,10 @@
 import { memo, useMemo, useCallback, useState } from 'react'
-import { View, ScrollView, Pressable, StyleSheet, Dimensions, Platform, InteractionManager } from 'react-native'
+import { View, ScrollView, Pressable, StyleSheet, Dimensions, Platform } from 'react-native'
 import { useTheme } from '@/lib/theme'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Cell } from './Cell'
 import { CellContent } from './CellContent'
 import { RowActions } from './RowActions'
-import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { lightImpactHaptic } from '@/utils/haptics'
 import type { TableColumn, TableAction, RenderContext, ActionMutationsContext } from '../types'
 
@@ -40,7 +39,6 @@ export const Row = memo(function Row<T extends { id: string }>({
 }: RowProps<T>) {
   const { colors, isDark } = useTheme()
   const { width: screenWidth } = Dimensions.get('window')
-  const { isNavigating, startNavigation } = useNavigationLoading()
 
   // Local pressed state for immediate visual feedback
   const [isPressed, setIsPressed] = useState(false)
@@ -86,34 +84,28 @@ export const Row = memo(function Row<T extends { id: string }>({
 
   // Immediate visual feedback on press start
   const handlePressIn = useCallback(() => {
-    if (!isNavigating && onPress && !selection?.enabled) {
+    if (onPress && !selection?.enabled) {
       setIsPressed(true)
     }
-  }, [isNavigating, onPress, selection?.enabled])
+  }, [onPress, selection?.enabled])
 
   const handlePressOut = useCallback(() => {
     setIsPressed(false)
   }, [])
 
-  // Handle press with navigation loading and haptic feedback
-  const handlePress = useCallback(async () => {
+  // Handle press — let the parent handler (Layout.handleRowPress) manage
+  // the loading overlay via pushWithLoading/startNavigation
+  const handlePress = useCallback(() => {
     if (selection?.enabled) {
-      // Light haptic for selection toggle
-      await lightImpactHaptic()
+      lightImpactHaptic()
       selection.onToggle(item.id)
-    } else if (onPress && !isNavigating) {
-      // Show loading overlay INSTANTLY - NO DELAY AT ALL
-      startNavigation()
-
-      // Haptic feedback
-      lightImpactHaptic() // Don't await - let it run async
-
-      // Navigate after a micro-task to ensure overlay shows first
-      setTimeout(() => {
-        onPress(item)
-      }, 0)
+    } else if (onPress) {
+      // Haptic feedback (don't await - fire and forget)
+      lightImpactHaptic()
+      // Delegate to parent handler which controls the overlay
+      onPress(item)
     }
-  }, [selection, onPress, item, isNavigating, startNavigation])
+  }, [selection, onPress, item])
 
   const hasActions = actions && actions.length > 0 && !selection?.enabled
 
@@ -184,7 +176,6 @@ export const Row = memo(function Row<T extends { id: string }>({
                   onPressOut={handlePressOut}
                   onPress={handlePress}
                   android_ripple={androidRipple}
-                  disabled={isNavigating}
                 >
                   {rowContent}
                 </Pressable>
@@ -204,7 +195,6 @@ export const Row = memo(function Row<T extends { id: string }>({
             onPressOut={handlePressOut}
             onPress={handlePress}
             android_ripple={androidRipple}
-            disabled={isNavigating}
           >
             {rowContent}
           </Pressable>

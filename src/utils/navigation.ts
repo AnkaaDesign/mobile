@@ -1,7 +1,7 @@
 // packages/utils/src/navigation.ts
 // Navigation utility functions moved from constants package
 
-import { SECTOR_PRIVILEGES, TABLER_ICONS, USER_STATUS, type MenuItem } from '../constants';
+import { SECTOR_PRIVILEGES, TEAM_LEADER, TABLER_ICONS, USER_STATUS, type MenuItem } from '../constants';
 
 // Define minimal user interface for navigation
 export interface NavigationUser {
@@ -65,7 +65,7 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
   let filteredMenu = filterMenuByPlatform(menuItems, platform);
 
   // Apply privilege and team leader filtering
-  const userPrivilege = user?.sector?.privileges || user?.position?.sector?.privileges;
+  const userPrivilege = user?.sector?.privileges;
   const isTeamLeader = Boolean(user?.managedSector?.id);
 
   filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege, isTeamLeader);
@@ -111,7 +111,7 @@ function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, is
   // Handle array of privileges (OR logic)
   if (Array.isArray(item.requiredPrivilege)) {
     // Check if TEAM_LEADER is in the required privileges and user is a team leader
-    if (item.requiredPrivilege.includes(SECTOR_PRIVILEGES.TEAM_LEADER) && isTeamLeader) {
+    if (item.requiredPrivilege.includes(TEAM_LEADER) && isTeamLeader) {
       return true;
     }
 
@@ -120,13 +120,13 @@ function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, is
 
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
-    const regularPrivileges: SECTOR_PRIVILEGES[] = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    const regularPrivileges = item.requiredPrivilege.filter(p => p !== TEAM_LEADER) as SECTOR_PRIVILEGES[];
     return regularPrivileges.includes(userPrivilege);
   }
 
   // Handle single privilege
   // Check if the required privilege is TEAM_LEADER
-  if (item.requiredPrivilege === SECTOR_PRIVILEGES.TEAM_LEADER) {
+  if (item.requiredPrivilege === TEAM_LEADER) {
     return isTeamLeader;
   }
 
@@ -498,7 +498,7 @@ export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVI
   // Handle array of privileges (OR logic)
   if (Array.isArray(item.requiredPrivilege)) {
     // Check if TEAM_LEADER is in the required privileges and user is a team leader
-    if (item.requiredPrivilege.includes(SECTOR_PRIVILEGES.TEAM_LEADER) && isTeamLeader) {
+    if (item.requiredPrivilege.includes(TEAM_LEADER) && isTeamLeader) {
       return true;
     }
 
@@ -507,13 +507,13 @@ export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVI
 
     // User needs to have EXACTLY one of the specified privileges for menu display
     // Filter out TEAM_LEADER since it's handled above via isTeamLeader check
-    const regularPrivileges: SECTOR_PRIVILEGES[] = item.requiredPrivilege.filter(p => p !== SECTOR_PRIVILEGES.TEAM_LEADER);
+    const regularPrivileges = item.requiredPrivilege.filter(p => p !== TEAM_LEADER) as SECTOR_PRIVILEGES[];
     return regularPrivileges.includes(userPrivilege);
   }
 
   // Handle single privilege
   // Check if the required privilege is TEAM_LEADER
-  if (item.requiredPrivilege === SECTOR_PRIVILEGES.TEAM_LEADER) {
+  if (item.requiredPrivilege === TEAM_LEADER) {
     return isTeamLeader;
   }
 

@@ -24,7 +24,10 @@ export type SignInFormData = z.infer<typeof signInSchema>;
 export const signUpSchema = z
   .object({
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(200, "Nome deve ter no máximo 200 caracteres"),
-    email: emailSchema.optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.optional(),
+    ),
     phone: phoneSchema.optional(),
     password: passwordSchema,
   })

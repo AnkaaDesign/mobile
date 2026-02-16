@@ -12,35 +12,8 @@ import NetInfo, {
   NetInfoState,
   NetInfoSubscription,
 } from "@react-native-community/netinfo";
-import Constants from "expo-constants";
 import { updateApiUrl, getCurrentApiUrl } from "../api-client";
-
-// =====================================================
-// Network Configuration Constants
-// =====================================================
-
-/**
- * Primary API URL
- * For production: cloud API
- */
-const ONLINE_API_URL =
-  Constants.expoConfig?.extra?.apiUrl ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api.ankaadesign.com.br";
-
-/**
- * Fallback API URL
- * Used when device does NOT have internet connectivity
- *
- * Priority:
- * 1. app.json extra.fallbackApiUrl
- * 2. EXPO_PUBLIC_FALLBACK_API_URL environment variable
- * 3. Default: https://api.ankaadesign.com.br (production server)
- */
-const OFFLINE_API_URL =
-  Constants.expoConfig?.extra?.fallbackApiUrl ||
-  process.env.EXPO_PUBLIC_FALLBACK_API_URL ||
-  "https://api.ankaadesign.com.br";
+import { ONLINE_API_URL, OFFLINE_API_URL } from "@/constants/api";
 
 // =====================================================
 // Types & Interfaces

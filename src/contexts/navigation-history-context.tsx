@@ -25,6 +25,8 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const pathname = usePathname();
   const router = useRouter();
   const previousPathname = useRef<string>("");
+  const currentPathnameRef = useRef(pathname);
+  useEffect(() => { currentPathnameRef.current = pathname; }, [pathname]);
 
   // Store screen reset functions for managing state persistence
   const screenResetFunctions = useRef<Map<string, () => void>>(new Map());
@@ -82,7 +84,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const goBack = useCallback(() => {
     // Track where we should go back to
     console.log('🔙 [NAV-CONTEXT] goBack called');
-    console.log('🔙 [NAV-CONTEXT] Current path:', pathname);
+    console.log('🔙 [NAV-CONTEXT] Current path:', currentPathnameRef.current);
     console.log('🔙 [NAV-CONTEXT] History:', history);
 
     // If we have history, use it to navigate back properly
@@ -96,7 +98,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     } else {
       console.log('🔙 [NAV-CONTEXT] Cannot go back');
     }
-  }, [router, pathname, history]);
+  }, [router, history]);
 
   const getBackPath = useCallback((): string | null => {
     // Return the previous route from history if available

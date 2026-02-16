@@ -251,7 +251,7 @@ export function TaskFilterTags({
       const sortLabels: Record<string, string> = {
         createdAt: "Data de Criação",
         term: "Prazo",
-        priority: "Prioridade",
+        statusOrder: "Status",
       };
       tags.push({
         key: "sortBy",

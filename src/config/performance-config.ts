@@ -23,29 +23,6 @@ export function configurePerformance() {
     InteractionManager.setDeadline(100); // Reduce deadline for better responsiveness
   }
 
-  // Reduce bridge traffic by batching native calls
-  if ((global as any).nativeCallSyncHook) {
-    const originalCallSyncHook = (global as any).nativeCallSyncHook;
-    let batchedCalls: any[] = [];
-    let batchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    (global as any).nativeCallSyncHook = (...args: any[]) => {
-      batchedCalls.push(args);
-
-      if (!batchTimeout) {
-        batchTimeout = setTimeout(() => {
-          const calls = [...batchedCalls];
-          batchedCalls = [];
-          batchTimeout = null;
-
-          calls.forEach(callArgs => {
-            originalCallSyncHook.apply(global, callArgs);
-          });
-        }, 0);
-      }
-    };
-  }
-
   // Configure memory management
   if (Platform.OS === 'android') {
     // Request large heap on Android

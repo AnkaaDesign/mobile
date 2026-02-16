@@ -555,7 +555,10 @@ export const physicalPersonCreateSchema = z
       .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, "CPF deve estar no formato 000.000.000-00")
       .refine((val) => isValidCPF(val), { message: "CPF inválido" }),
     corporateName: z.string().nullable().optional(),
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     address: z.string().nullable().optional(),
     addressNumber: z.string().nullable().optional(),
     addressComplement: z.string().nullable().optional(),
@@ -603,7 +606,10 @@ export const physicalPersonUpdateSchema = z
       .refine((val) => isValidCPF(val), { message: "CPF inválido" })
       .optional(),
     corporateName: z.string().nullable().optional(),
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     address: z.string().nullable().optional(),
     addressNumber: z.string().nullable().optional(),
     addressComplement: z.string().nullable().optional(),

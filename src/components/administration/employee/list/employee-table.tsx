@@ -468,7 +468,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         "sector.name": 1.7,
         tasksCount: 1.0,
         vacationsCount: 1.0,
-        admissional: 1.4,
+        exp1StartAt: 1.4,
         birth: 1.4,
         dismissedAt: 1.4,
         status: 1.5,

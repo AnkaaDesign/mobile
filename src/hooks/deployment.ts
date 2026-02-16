@@ -194,7 +194,7 @@ export function useDeploymentLogs(deploymentId: string | null) {
       setIsConnected(true);
     };
 
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
         setLogs((prev) => [...prev, data.message || event.data]);

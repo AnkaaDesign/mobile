@@ -16,17 +16,17 @@ interface EmploymentInfoCardProps {
 export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   const { colors } = useTheme();
 
-  const formattedAdmissional = employee.admissional ? formatDate(employee.admissional) : "Não informado";
+  const formattedAdmissional = employee.exp1StartAt ? formatDate(employee.exp1StartAt) : "Não informado";
   const formattedDismissal = employee.dismissedAt ? formatDate(employee.dismissedAt) : "-";
 
   // Calculate time at company
   const getTimeAtCompany = () => {
-    if (!employee.admissional) return "Não informado";
+    if (!employee.exp1StartAt) return "Não informado";
 
     const now = employee.dismissedAt ? new Date(employee.dismissedAt) : new Date();
-    const admissionalDate = new Date(employee.admissional);
-    const years = Math.floor((now.getTime() - admissionalDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
-    const months = Math.floor((now.getTime() - admissionalDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
+    const startDate = new Date(employee.exp1StartAt);
+    const years = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365));
+    const months = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)) % 12;
 
     if (years > 0) {
       return `${years} ano${years > 1 ? "s" : ""} e ${months} ${months === 1 ? "mês" : "meses"}`;

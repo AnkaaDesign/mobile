@@ -15,7 +15,7 @@ interface PricingSectionProps {
 }
 
 export default function PricingSection({
-  isSubmitting = false
+  isSubmitting = false,
 }: PricingSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();

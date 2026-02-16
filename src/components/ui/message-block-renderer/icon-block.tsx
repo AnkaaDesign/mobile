@@ -2,8 +2,19 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import * as TablerIcons from "@tabler/icons-react-native";
 import type { IconBlock } from "./types";
+
+// NOTE: Do NOT use `import * as TablerIcons from "@tabler/icons-react-native"` here.
+// Metro's _interopRequireWildcard iterates ALL 5000+ icon exports, which causes
+// Hermes release builds to crash during mass module evaluation.
+// Instead, use require() to access only the specific icon needed at render time.
+let _tablerIcons: Record<string, any> | null = null;
+function getTablerIcons(): Record<string, any> {
+  if (_tablerIcons === null) {
+    _tablerIcons = require("@tabler/icons-react-native");
+  }
+  return _tablerIcons!;
+}
 
 interface IconBlockProps {
   block: IconBlock;
@@ -41,8 +52,8 @@ export function IconBlockComponent({ block }: IconBlockProps) {
   const { colors } = useTheme();
   const { icon, size = "md", color, alignment = "center" } = block;
 
-  // Dynamically get the icon component
-  const IconComponent = icon ? (TablerIcons as any)[icon] : null;
+  // Dynamically get the icon component (lazy access avoids mass evaluation)
+  const IconComponent = icon ? getTablerIcons()[icon] : null;
 
   if (!IconComponent) {
     return null;

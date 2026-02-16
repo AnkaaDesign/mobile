@@ -45,9 +45,9 @@ export const PRELOAD_CONFIGS: PreloadConfig[] = [
     delay: 500,
   },
 
-  // Inventory/Stock workers
+  // Inventory/Warehouse workers
   {
-    role: SECTOR_PRIVILEGES.STOCK,
+    role: SECTOR_PRIVILEGES.WAREHOUSE,
     modules: ['inventory'],
     priority: 'high',
     delay: 500,

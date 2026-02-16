@@ -8,6 +8,7 @@ import type { Task } from '@/types';
  */
 export const tasksListAgendaConfig: ListConfig<Task> = {
   ...tasksListConfig,
+  key: 'production-tasks-agenda',
 
   query: {
     ...tasksListConfig.query,

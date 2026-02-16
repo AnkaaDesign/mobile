@@ -90,9 +90,6 @@ export default function FinancialCustomerDetailScreen() {
       logo: {
         select: {
           id: true,
-          url: true,
-          name: true,
-          mimeType: true,
         },
       },
       // Counts for display

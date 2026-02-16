@@ -9,7 +9,6 @@ import {
   IconCalendar,
   IconClock,
   IconPackage,
-  IconTruck,
   IconHistory,
   IconRefresh,
 } from "@tabler/icons-react-native";
@@ -55,7 +54,6 @@ export default function OrderScheduleDetailsScreen() {
   const scheduleId = params.id!;
 
   const include: OrderScheduleInclude = {
-    supplier: { include: { contact: true } },
     weeklyConfig: { include: { daysOfWeek: true } },
     monthlyConfig: { include: { occurrences: true } },
     yearlyConfig: { include: { monthlyConfigs: true } },
@@ -319,33 +317,6 @@ export default function OrderScheduleDetailsScreen() {
             <ScheduleInfoCard schedule={schedule} />
           </View>
         </Card>
-
-        {/* Supplier Information */}
-        {schedule?.supplier && (
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconTruck size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Fornecedor</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <InfoRow label="Nome" value={schedule.supplier.fantasyName} />
-              {schedule.supplier.corporateName && (
-                <InfoRow label="Razão Social" value={schedule.supplier.corporateName} />
-              )}
-              {schedule.supplier.email && (
-                <InfoRow label="Email" value={schedule.supplier.email} />
-              )}
-              {schedule.supplier.phones && schedule.supplier.phones.length > 0 && (
-                <InfoRow label="Telefone" value={schedule.supplier.phones[0]} />
-              )}
-              {schedule.supplier.cnpj && (
-                <InfoRow label="CNPJ" value={schedule.supplier.cnpj} />
-              )}
-            </View>
-          </Card>
-        )}
 
         {/* Items Information */}
         <Card style={styles.card}>

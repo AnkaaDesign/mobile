@@ -11,6 +11,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { formatCurrency, formatDate, exportBudgetPdf } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
 import type { TaskPricing } from "@/types/task-pricing";
+import { WEB_BASE_URL } from "@/config/urls";
 import {
   IconFileInvoice,
   IconDownload,
@@ -22,6 +23,7 @@ import {
   IconPhoto,
   IconWriting,
   IconNote,
+  IconTruck,
 } from "@tabler/icons-react-native";
 
 interface TaskPricingCardProps {
@@ -81,9 +83,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
     const pricingId = pricing.id;
 
     if (pricingId) {
-      // Use EXPO_PUBLIC_WEB_URL for the web frontend, not the API URL
-      const webBaseUrl = process.env.EXPO_PUBLIC_WEB_URL || 'https://ankaadesign.com.br';
-      const url = `${webBaseUrl}/cliente/${cId}/orcamento/${pricingId}`;
+      const url = `${WEB_BASE_URL}/cliente/${cId}/orcamento/${pricingId}`;
 
       try {
         // Use WebBrowser.openBrowserAsync which works better with Safari on iOS
@@ -247,6 +247,15 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             </View>
           )}
 
+          {/* Discount Reference */}
+          {pricing.discountType && pricing.discountType !== "NONE" && pricing.discountReference && (
+            <View style={styles.summaryRow}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground, fontStyle: 'italic' }]}>
+                Ref: {pricing.discountReference}
+              </ThemedText>
+            </View>
+          )}
+
           {/* Total */}
           <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
             <ThemedText style={styles.totalLabel}>TOTAL</ThemedText>
@@ -255,6 +264,20 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             </ThemedText>
           </View>
         </View>
+
+        {/* Delivery Deadline */}
+        {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1)) && (
+          <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
+            <View style={styles.infoSectionHeader}>
+              <IconTruck size={16} color={colors.mutedForeground} />
+              <ThemedText style={styles.infoSectionTitle}>Prazo de Entrega</ThemedText>
+            </View>
+            <ThemedText style={[styles.infoSectionText, { color: colors.mutedForeground }]}>
+              {pricing.customForecastDays ? `O prazo de entrega é de ${pricing.customForecastDays} dias úteis.` : ''}
+              {pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? ` Capacidade: ${pricing.simultaneousTasks} tarefas simultâneas.` : ''}
+            </ThemedText>
+          </View>
+        )}
 
         {/* Payment Conditions */}
         {paymentText ? (

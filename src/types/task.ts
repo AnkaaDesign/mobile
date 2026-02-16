@@ -31,7 +31,6 @@ export interface Task extends BaseEntity {
   serialNumber: string | null;
   // Note: chassisNumber and plate are now on the Truck entity (task.truck?.chassisNumber, task.truck?.plate)
   details: string | null;
-  description?: string | null; // Alias for details
   entryDate: Date | null;
   term: Date | null;
   startedAt: Date | null;
@@ -39,36 +38,29 @@ export interface Task extends BaseEntity {
   forecastDate: Date | null;
   paintId: string | null;
   customerId: string | null;
-  invoiceToId: string | null;
   sectorId: string | null;
   representatives?: Representative[];
   representativeIds?: string[];
   budgetIds?: string[];
   invoiceIds?: string[];
   receiptIds?: string[];
+  bankSlipIds?: string[];
   reimbursementIds?: string[];
   reimbursementInvoiceIds?: string[];
   baseFileIds?: string[];
   createdById: string | null;
   bonusDiscountId?: string | null;
   pricingId?: string | null; // Foreign key to TaskPricing
-  updatedById?: string | null; // ID of user who last updated
-  priority?: number | null; // Task priority level
-  measures?: string | null; // Task measures/dimensions
-  price?: number | null; // Task price/value
-
-  // Relations for updatedBy
-  updatedBy?: User;
 
   // Relations
   sector?: Sector;
   customer?: Customer;
-  invoiceTo?: Customer;
 
   // Multiple file support (array relations matching database schema)
   budgets?: File[];
   invoices?: File[];
   receipts?: File[];
+  bankSlips?: File[];
   reimbursements?: File[];
   invoiceReimbursements?: File[];
   baseFiles?: File[]; // Files used as base for artwork design

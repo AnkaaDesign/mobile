@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { usePpeDelivery } from "@/hooks/usePpe";
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, PPE_DELIVERY_STATUS } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -63,10 +63,13 @@ export default function HRPPEDeliveryDetailsScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
+    refetch()
+      .then(() => {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso");
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
   }, [refetch]);
 
   if (isLoading) {
@@ -104,7 +107,7 @@ export default function HRPPEDeliveryDetailsScreen() {
     );
   }
 
-  const canEdit = delivery.status === "PENDING" || delivery.status === "APPROVED";
+  const canEdit = delivery.status === PPE_DELIVERY_STATUS.PENDING || delivery.status === PPE_DELIVERY_STATUS.APPROVED;
 
   return (
     <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>

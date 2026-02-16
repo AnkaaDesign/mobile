@@ -48,7 +48,7 @@ export function UserCard({ changeLog }: UserCardProps) {
 
   const userName = changeLog.user?.name || "Usuário não identificado";
   const userEmail = changeLog.user?.email;
-  const avatarUrl = changeLog.user?.avatar?.url || changeLog.user?.profilePictureUrl;
+  const avatarUrl = changeLog.user?.avatar?.url;
 
   return (
     <Card style={styles.card}>

@@ -15,10 +15,7 @@ export function DrawerModeProvider({ children }: { children: ReactNode }) {
 
   const openDrawerWithMode = useCallback((mode: DrawerMode, openDrawer: () => void) => {
     setDrawerMode(mode);
-    // Small delay to ensure state is set before drawer opens
-    requestAnimationFrame(() => {
-      openDrawer();
-    });
+    openDrawer();
   }, []);
 
   // Memoize context value to prevent unnecessary re-renders of all consumers

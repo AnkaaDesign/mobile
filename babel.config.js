@@ -1,20 +1,8 @@
 module.exports = function (api) {
-  // Enable aggressive caching for faster rebuilds
   api.cache(true);
-
-  const isProduction = process.env.NODE_ENV === 'production';
-
   return {
-    presets: [
-      ["babel-preset-expo", {
-        jsxImportSource: "nativewind",
-        // Enable optimizations
-        lazyImports: true,
-      }],
-      "nativewind/babel"
-    ],
+    presets: [["babel-preset-expo", { jsxImportSource: "nativewind" }], "nativewind/babel"],
     plugins: [
-      // Module resolver for cleaner imports (already installed)
       [
         "module-resolver",
         {
@@ -25,16 +13,7 @@ module.exports = function (api) {
           extensions: [".ios.js", ".android.js", ".js", ".jsx", ".ts", ".tsx", ".json"],
         },
       ],
-      // Reanimated must be last
-      "react-native-reanimated/plugin",
+      "react-native-reanimated/plugin", // Must be last
     ],
-    // Environment-specific configurations
-    env: {
-      production: {
-        // Production optimizations
-        compact: true,
-        minified: true,
-      }
-    }
   };
 };

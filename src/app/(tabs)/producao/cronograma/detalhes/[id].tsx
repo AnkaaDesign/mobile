@@ -216,7 +216,23 @@ export default function ScheduleDetailsScreen() {
           id: true,
           total: true,
           status: true,
-          items: { take: 10 } // Limit items
+          subtotal: true,
+          discountType: true,
+          discountValue: true,
+          discountReference: true,
+          expiresAt: true,
+          budgetNumber: true,
+          paymentCondition: true,
+          customPaymentText: true,
+          guaranteeYears: true,
+          customGuaranteeText: true,
+          customForecastDays: true,
+          simultaneousTasks: true,
+          layoutFileId: true,
+          layoutFile: true,
+          customerSignatureId: true,
+          customerSignature: true,
+          items: { take: 10 },
         }
       }
     }),
@@ -518,8 +534,8 @@ export default function ScheduleDetailsScreen() {
             />
           )}
 
-          {/* Observation Card - Before Artworks - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
-          {canViewObservation && (task as any)?.observation && (
+          {/* Observation Card - Only for COMPLETED tasks, hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL */}
+          {canViewObservation && (task as any)?.status === 'COMPLETED' && (task as any)?.observation && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -569,8 +585,8 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Observations Table - Before Artworks - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
-          {canViewObservation && <ObservationsTable taskId={id as string} maxHeight={400} />}
+          {/* Observations Table - Only for COMPLETED tasks */}
+          {canViewObservation && (task as any)?.status === 'COMPLETED' && <ObservationsTable taskId={id as string} maxHeight={400} />}
 
           {/* Base Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewBaseFiles && (task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
@@ -963,6 +979,7 @@ export default function ScheduleDetailsScreen() {
                     layouts?.rightSideLayout?.id,
                     layouts?.backSideLayout?.id,
                   ].filter((id): id is string => !!id)}
+                  pricingId={(task as any)?.pricing?.id}
                 />
               </View>
             </Card>

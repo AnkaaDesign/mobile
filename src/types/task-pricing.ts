@@ -49,6 +49,14 @@ export type TaskPricing = {
   customerSignatureId: string | null;
   customerSignature?: any; // File type
 
+  // NEW FIELDS: Multi-customer invoicing support
+  invoicesToCustomerIds: string[] | null; // Array of customer IDs to invoice
+  invoicesToCustomers?: any[]; // Customer entities for invoice recipients
+
+  // NEW FIELDS: Advanced pricing features
+  simultaneousTasks: number | null; // Number of tasks being quoted together (for bulk discounts)
+  discountReference: string | null; // Reference text for discount justification (e.g., "Desconto por volume de 3 implementos")
+
   tasks?: any[]; // Tasks that share this pricing (one-to-many)
   items?: TaskPricingItem[];
   createdAt?: Date;

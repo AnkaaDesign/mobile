@@ -56,7 +56,7 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         items: [],
       },
     },
-    mode: 'onBlur',
+    mode: 'onChange',
   });
 
   return (

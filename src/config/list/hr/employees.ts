@@ -30,7 +30,7 @@ export const employeesListConfig: ListConfig<User> = {
       verified: true,
       performanceLevel: true,
       birth: true,
-      admissional: true,
+      exp1StartAt: true,
       dismissedAt: true,
       lastLoginAt: true,
       requirePasswordChange: true,
@@ -68,7 +68,6 @@ export const employeesListConfig: ListConfig<User> = {
         select: {
           id: true,
           filename: true,
-          url: true,
           thumbnailUrl: true,
         },
       },
@@ -174,12 +173,12 @@ export const employeesListConfig: ListConfig<User> = {
         format: 'date',
       },
       {
-        key: 'admissional',
+        key: 'exp1StartAt',
         label: 'DATA DE ADMISSÃO',
         sortable: true,
         width: 1.4,
         align: 'left',
-        render: (employee) => employee.admissional,
+        render: (employee) => employee.exp1StartAt,
         format: 'date',
       },
       {
@@ -493,7 +492,7 @@ export const employeesListConfig: ListConfig<User> = {
         format: (value) => USER_STATUS_LABELS[value as USER_STATUS] || value
       },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
-      { key: 'admissional', label: 'Data de Admissão', path: 'admissional', format: 'date' },
+      { key: 'exp1StartAt', label: 'Data de Admissão', path: 'exp1StartAt', format: 'date' },
       { key: 'dismissedAt', label: 'Data de Demissão', path: 'dismissedAt', format: 'date' },
       { key: 'performanceLevel', label: 'Nível de Performance', path: 'performanceLevel', format: 'number' },
       { key: 'verified', label: 'Verificado', path: 'verified', format: 'boolean' },

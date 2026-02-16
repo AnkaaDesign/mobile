@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
-import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from "@/constants";
+import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS, type PrivilegeValue } from "@/constants";
 import { hasAnyPrivilege, hasPrivilege, hasAllPrivileges } from "@/utils";
 import { getSectorPrivilegesLabel } from "@/utils";
 import { isTeamLeader } from "@/utils/user";
@@ -15,7 +15,7 @@ import type { User } from '@/types/user';
 
 interface PrivilegeGuardProps {
   children: ReactNode;
-  requiredPrivilege?: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[];
+  requiredPrivilege?: PrivilegeValue | PrivilegeValue[];
   requireAll?: boolean; // If true, user must have ALL privileges (AND logic). If false, user needs ANY (OR logic). Default: false
   fallbackScreen?: string;
   showUnauthorized?: boolean; // If true, shows unauthorized screen. If false, redirects silently. Default: true
@@ -95,7 +95,7 @@ export function PrivilegeGuard({
  * Check if user has required privilege(s)
  * Supports both single privileges and arrays of privileges
  */
-function checkUserPrivileges(user: User | null, requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[], requireAll: boolean = false): boolean {
+function checkUserPrivileges(user: User | null, requiredPrivilege: PrivilegeValue | PrivilegeValue[], requireAll: boolean = false): boolean {
   if (!user || !requiredPrivilege) return false;
 
   // Handle array of privileges
@@ -117,7 +117,7 @@ function checkUserPrivileges(user: User | null, requiredPrivilege: SECTOR_PRIVIL
  * Helper function to get privilege labels for arrays
  * Uses existing getSectorPrivilegesLabel utility for single privileges
  */
-function getRequiredPrivilegeLabels(requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]): string {
+function getRequiredPrivilegeLabels(requiredPrivilege: PrivilegeValue | PrivilegeValue[]): string {
   if (Array.isArray(requiredPrivilege)) {
     return requiredPrivilege.map((privilege) => getSectorPrivilegesLabel(privilege)).join(", ");
   }
@@ -151,7 +151,7 @@ function getUserPrivilegeLabels(user: User | null): string {
 /**
  * Unauthorized Access Screen for Mobile
  */
-function UnauthorizedScreen({ requiredPrivilege, fallbackScreen: _fallbackScreen }: { requiredPrivilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]; fallbackScreen?: string }) {
+function UnauthorizedScreen({ requiredPrivilege, fallbackScreen: _fallbackScreen }: { requiredPrivilege: PrivilegeValue | PrivilegeValue[]; fallbackScreen?: string }) {
   const { user, logout } = useAuth();
 
   const handleGoBack = () => {
@@ -263,7 +263,7 @@ export function usePrivilegeCheck() {
     return hasAllPrivileges(user, privileges);
   };
 
-  const canAccess = (privilege: SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[], requireAll: boolean = false) => {
+  const canAccess = (privilege: PrivilegeValue | PrivilegeValue[], requireAll: boolean = false) => {
     return checkUserPrivileges(user, privilege, requireAll);
   };
 

@@ -150,7 +150,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     ppeScheduleId: "Agendamento de EPI",
     notes: "Observações",
     doneAt: "Concluído em",
-    "supplier.name": "Nome do Fornecedor",
     "supplier.fantasyName": "Nome Fantasia do Fornecedor",
     "budget.filename": "Nome do Orçamento",
     "nfe.filename": "Nome da NFe",
@@ -210,9 +209,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     status: "Status",
     statusOrder: "Ordem do Status",
     isActive: "Ativo",
-    admissional: "Data de Admissão",
     effectedAt: "Data de Contratação",
-    exp1StartAt: "Início da Experiência 1",
+    exp1StartAt: "Data de Admissão / Início Exp. 1",
     exp1EndAt: "Fim da Experiência 1",
     exp2StartAt: "Início da Experiência 2",
     exp2EndAt: "Fim da Experiência 2",
@@ -842,6 +840,27 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "startedBy.name": "Nome de quem Iniciou",
     "approvedBy.name": "Nome de quem Aprovou",
     "completedBy.name": "Nome de quem Concluiu",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.TASK_PRICING]: {
+    subtotal: "Subtotal",
+    discountType: "Tipo de Desconto",
+    discountValue: "Valor do Desconto",
+    total: "Total",
+    expiresAt: "Data de Expiração",
+    status: "Status",
+    paymentCondition: "Condição de Pagamento",
+    downPaymentDate: "Data de Entrada",
+    customPaymentText: "Texto Personalizado de Pagamento",
+    guaranteeYears: "Anos de Garantia",
+    customGuaranteeText: "Texto Personalizado de Garantia",
+    layoutFileId: "Arquivo de Layout",
+    budgetNumber: "Número do Orçamento",
+    simultaneousTasks: "Tarefas Simultâneas",
+    discountReference: "Referência do Desconto",
+    invoicesToCustomerIds: "Faturar Para (Clientes)",
+    customerSignatureId: "Assinatura do Cliente",
+    customForecastDays: "Dias de Previsão Personalizados",
+    "items.length": "Quantidade de Itens",
   },
   [CHANGE_LOG_ENTITY_TYPE.TIME_CLOCK_ENTRY]: {
     userId: "Funcionário",
@@ -1971,7 +1990,6 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     field === "lastRun" ||
     field === "birth" ||
     field === "productionDate" ||
-    field === "admissional" ||
     field === "exp1StartAt" ||
     field === "exp1EndAt" ||
     field === "exp2StartAt" ||

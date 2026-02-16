@@ -12,8 +12,10 @@ import { DISCOUNT_TYPE, PAYMENT_CONDITION, TASK_PRICING_STATUS } from "@/constan
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
-import { IconNote, IconTrash, IconPlus, IconCalendar, IconCurrencyReal, IconPhoto } from "@tabler/icons-react-native";
+import { IconNote, IconTrash, IconPlus, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice } from "@tabler/icons-react-native";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
+import { getCustomers } from "@/api-client";
+import type { Customer } from "@/types";
 
 // Payment condition options
 const PAYMENT_CONDITIONS = [
@@ -50,6 +52,12 @@ const STATUS_OPTIONS = [
   { value: "REJECTED", label: "Rejeitado" },
   { value: "CANCELLED", label: "Cancelado" },
 ];
+
+// Forecast days options (1-30)
+const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
+  value: String(i + 1),
+  label: `${i + 1} ${i + 1 === 1 ? 'dia' : 'dias'}`,
+}));
 
 interface PricingSelectorProps {
   control: any;
@@ -94,6 +102,31 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
     const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
     const layoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
+    const discountReference = useWatch({ control, name: "pricing.discountReference" });
+    const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
+    const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
+    const invoicesToCustomerIds = useWatch({ control, name: "pricing.invoicesToCustomerIds" });
+
+    // Customer search for invoice-to selector
+    const searchCustomers = useCallback(async (search: string, page: number = 1) => {
+      try {
+        const params: any = {
+          orderBy: { fantasyName: "asc" },
+          page,
+          take: 20,
+          select: { id: true, fantasyName: true, cnpj: true, cpf: true, corporateName: true },
+        };
+        if (search && search.trim()) {
+          params.searchingFor = search.trim();
+        }
+        const response = await getCustomers(params);
+        return { data: response?.data || [], hasMore: response?.meta?.hasNextPage || false };
+      } catch {
+        return { data: [], hasMore: false };
+      }
+    }, []);
+    const getCustomerLabel = useCallback((c: Customer) => c.fantasyName, []);
+    const getCustomerValue = useCallback((c: Customer) => c.id, []);
 
     // Current payment condition
     const currentPaymentCondition = useMemo(() => {
@@ -387,6 +420,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                     setValue("pricing.discountType", safeType);
                     if (safeType === DISCOUNT_TYPE.NONE) {
                       setValue("pricing.discountValue", null);
+                      setValue("pricing.discountReference", null);
                     } else if (previousType !== safeType && previousType !== DISCOUNT_TYPE.NONE) {
                       setValue("pricing.discountValue", null);
                     }
@@ -421,6 +455,56 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 />
               </View>
             </View>
+          </View>
+        )}
+
+        {/* Discount Reference - Only show when discount type is not NONE */}
+        {hasPricingItems && discountType !== DISCOUNT_TYPE.NONE && (
+          <View style={styles.section}>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
+            <TextInput
+              value={discountReference || ""}
+              onChangeText={(text) => setValue("pricing.discountReference", text || null)}
+              placeholder="Justificativa ou referência para o desconto aplicado..."
+              placeholderTextColor={colors.mutedForeground}
+              editable={!disabled}
+              maxLength={500}
+              style={[
+                styles.textArea,
+                {
+                  backgroundColor: colors.input,
+                  borderColor: colors.border,
+                  color: colors.foreground,
+                  minHeight: 42,
+                },
+              ]}
+            />
+          </View>
+        )}
+
+        {/* Invoice To Customers (web: before totals) */}
+        {hasPricingItems && (
+          <View style={styles.section}>
+            <View style={styles.labelWithIcon}>
+              <IconFileInvoice size={14} color={colors.mutedForeground} />
+              <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">
+                Faturar Para (Clientes)
+              </ThemedText>
+            </View>
+            <Combobox
+              value={invoicesToCustomerIds || []}
+              onValueChange={(value) => setValue("pricing.invoicesToCustomerIds", value || [])}
+              mode="multiple"
+              disabled={disabled}
+              placeholder="Selecione clientes para faturamento..."
+              searchable
+              async
+              queryKey={["customers", "invoice-selector"]}
+              queryFn={searchCustomers}
+              getOptionLabel={getCustomerLabel}
+              getOptionValue={getCustomerValue}
+              clearable
+            />
           </View>
         )}
 
@@ -490,39 +574,21 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
-        {/* Payment, Guarantee */}
+        {/* Payment Condition */}
         {hasPricingItems && (
           <View style={styles.section}>
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
-                <Combobox
-                  value={currentPaymentCondition}
-                  onValueChange={handlePaymentConditionChange}
-                  disabled={disabled}
-                  options={PAYMENT_CONDITIONS.map((opt) => ({
-                    value: opt.value,
-                    label: opt.label,
-                  }))}
-                  placeholder="Selecione"
-                  searchable={false}
-                />
-              </View>
-              <View style={styles.halfField}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
-                <Combobox
-                  value={currentGuaranteeOption}
-                  onValueChange={handleGuaranteeOptionChange}
-                  disabled={disabled}
-                  options={GUARANTEE_OPTIONS.map((opt) => ({
-                    value: opt.value,
-                    label: opt.label,
-                  }))}
-                  placeholder="Selecione"
-                  searchable={false}
-                />
-              </View>
-            </View>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
+            <Combobox
+              value={currentPaymentCondition}
+              onValueChange={handlePaymentConditionChange}
+              disabled={disabled}
+              options={PAYMENT_CONDITIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+              placeholder="Selecione"
+              searchable={false}
+            />
           </View>
         )}
 
@@ -571,6 +637,54 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 },
               ]}
             />
+          </View>
+        )}
+
+        {/* Guarantee, Simultaneous Tasks & Forecast Days (web: 2/4, 1/4, 1/4 row) */}
+        {hasPricingItems && (
+          <View style={styles.section}>
+            {/* Guarantee - full width on mobile */}
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
+            <Combobox
+              value={currentGuaranteeOption}
+              onValueChange={handleGuaranteeOptionChange}
+              disabled={disabled}
+              options={GUARANTEE_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+              placeholder="Selecione"
+              searchable={false}
+            />
+
+            {/* Simultaneous Tasks + Forecast Days row */}
+            <View style={[styles.row, { marginTop: spacing.sm }]}>
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tarefas Simultâneas</ThemedText>
+                <Input
+                  type="number"
+                  value={simultaneousTasks ?? null}
+                  onChange={(value) => {
+                    const numVal = value ? Number(value) : null;
+                    setValue("pricing.simultaneousTasks", numVal);
+                  }}
+                  disabled={disabled}
+                  placeholder="1-100"
+                />
+              </View>
+
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
+                <Combobox
+                  value={customForecastDays ? String(customForecastDays) : ""}
+                  onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
+                  disabled={disabled}
+                  options={FORECAST_DAYS_OPTIONS}
+                  placeholder="Auto"
+                  searchable={false}
+                />
+              </View>
+            </View>
           </View>
         )}
 

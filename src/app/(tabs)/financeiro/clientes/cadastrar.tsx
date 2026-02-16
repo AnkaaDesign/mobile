@@ -73,10 +73,10 @@ export default function FinancialCustomerCreateScreen() {
       phones: [],
       tags: [],
       logoId: null,
-      situacaoCadastral: null,
-      inscricaoEstadual: null,
+      registrationStatus: null,
+      stateRegistration: null,
       economicActivityId: null,
-      logradouro: null,
+      streetType: null,
     },
   });
 
@@ -112,7 +112,7 @@ export default function FinancialCustomerCreateScreen() {
         setValue("phones", data.phones, { shouldDirty: true, shouldValidate: true });
       }
       if (data.registrationStatus) {
-        setValue("situacaoCadastral", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
+        setValue("registrationStatus", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
       }
 
       // Handle economic activity (CNAE)
@@ -144,7 +144,7 @@ export default function FinancialCustomerCreateScreen() {
   const { lookupCep } = useCepLookup({
     onSuccess: (data) => {
       if (data.streetType) {
-        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
+        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.logradouro) {
         setValue("address", data.logradouro, { shouldDirty: true, shouldValidate: true });
@@ -377,10 +377,10 @@ export default function FinancialCustomerCreateScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Situação Cadastral" error={errors.situacaoCadastral?.message}>
+          <FormFieldGroup label="Situação Cadastral" error={errors.registrationStatus?.message}>
             <Controller
               control={control}
-              name="situacaoCadastral"
+              name="registrationStatus"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
@@ -397,17 +397,17 @@ export default function FinancialCustomerCreateScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Inscrição Estadual" error={errors.inscricaoEstadual?.message}>
+          <FormFieldGroup label="Inscrição Estadual" error={errors.stateRegistration?.message}>
             <Controller
               control={control}
-              name="inscricaoEstadual"
+              name="stateRegistration"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   placeholder="Ex: 123.456.789.012"
-                  error={!!errors.inscricaoEstadual}
+                  error={!!errors.stateRegistration}
                   editable={!isSubmitting}
                 />
               )}
@@ -509,10 +509,10 @@ export default function FinancialCustomerCreateScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Tipo de Logradouro" error={errors.logradouro?.message}>
+          <FormFieldGroup label="Tipo de Logradouro" error={errors.streetType?.message}>
             <Controller
               control={control}
-              name="logradouro"
+              name="streetType"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}

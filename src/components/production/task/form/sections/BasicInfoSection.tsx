@@ -33,7 +33,6 @@ interface BasicInfoSectionProps {
   errors?: any;
   mode?: 'create' | 'edit';
   initialCustomer?: any;
-  initialInvoiceTo?: any;
   task?: any;
 }
 
@@ -42,7 +41,6 @@ export default function BasicInfoSection({
   errors = {},
   mode = 'create',
   initialCustomer,
-  initialInvoiceTo,
   task
 }: BasicInfoSectionProps) {
   const { control, watch } = useFormContext();
@@ -59,9 +57,6 @@ export default function BasicInfoSection({
   // Check if user can view restricted fields
   const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER'].includes(userPrivilege || '');
   const canViewCommissionField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
-  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
-  const canViewInvoiceToField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC'].includes(userPrivilege || '');
-
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
     orderBy: { name: "asc" },
@@ -135,26 +130,6 @@ export default function BasicInfoSection({
           )}
         />
       </FormFieldGroup>
-
-      {/* Invoice To - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC (NOT Designer) */}
-      {canViewInvoiceToField && (
-        <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
-          <Controller
-            control={control}
-            name="invoiceToId"
-            render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <CustomerSelector
-                value={value}
-                onValueChange={onChange}
-                initialCustomer={initialInvoiceTo}
-                disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-                error={error?.message}
-                required={false}
-              />
-            )}
-          />
-        </FormFieldGroup>
-      )}
 
       {/* Truck Category */}
       <SimpleFormField label="Categoria do Caminhão" error={errors.truckCategory}>

@@ -499,7 +499,7 @@ function FullMenuDrawerContent({
             </View>
             <View style={styles.userInfo}>
               <Text style={[styles.userName, { color: isDarkMode ? "#f5f5f5" : "#171717" }]} numberOfLines={1}>
-                {user?.nome || "Usuário"}
+                {user?.name || "Usuário"}
               </Text>
               <Text style={[styles.userRole, { color: isDarkMode ? "#a3a3a3" : "#737373" }]} numberOfLines={1}>
                 {user?.sector?.name || "Colaborador"}

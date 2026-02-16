@@ -10,13 +10,13 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TaskTableRowSwipe } from "./task-table-row-swipe";
 import { TaskStatusBadge } from "./task-status-badge";
-import { TaskPriorityIndicator } from "./task-priority-indicator";
+
 import { DeadlineCountdown } from "./deadline-countdown";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatDate, formatCurrency } from "@/utils";
 import { formatTruckSpotShort } from "@/utils/task";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS, PRIORITY_TYPE } from "@/constants";
+import { TASK_STATUS } from "@/constants";
 import type { SortConfig } from "@/lib/sort-utils";
 import { TaskSectorModal } from "../modals/task-sector-modal";
 import { TaskStatusModal } from "../modals/task-status-modal";
@@ -125,18 +125,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (task: Task) => <TaskStatusBadge status={task.status} />,
-  },
-  {
-    key: "priority",
-    header: "PRIORIDADE",
-    align: "center",
-    sortable: true,
-    width: 0,
-    accessor: (task: Task) => (
-      <View style={styles.centerAlign}>
-        <TaskPriorityIndicator priority={task.priority != null ? task.priority as unknown as PRIORITY_TYPE : undefined} />
-      </View>
-    ),
   },
   {
     key: "term",
@@ -400,7 +388,6 @@ export const TaskTable = React.memo<TaskTableProps>(
         "customer.fantasyName": 2.0,
         "sector.name": 1.5,
         status: 1.2,
-        priority: 0.9,
         term: 1.2,
         price: 1.2,
         servicesCount: 0.9,

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
+import { getFileUrl } from "@/utils/file-utils";
 import type { Customer } from "@/types";
 
 interface CustomerSelectorProps {
@@ -74,7 +75,6 @@ export function CustomerSelector({
           logo: {
             select: {
               id: true,
-              url: true,
             },
           },
         },
@@ -111,8 +111,8 @@ export function CustomerSelector({
         return null;
       }
 
-      // Get logo URL if available
-      const logoUrl = customer?.logo?.url;
+      // Get logo URL if available (url is computed, not a DB field - use getFileUrl)
+      const logoUrl = customer?.logo?.id ? getFileUrl(customer.logo as any) : undefined;
 
       return (
         <View style={styles.optionContainer}>

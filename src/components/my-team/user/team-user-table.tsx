@@ -141,7 +141,7 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
                 <View style={styles.dateSection}>
                   <Icon name="calendar" size="xs" variant="muted" />
                   <ThemedText style={styles.dateText}>
-                    Admissão: {formatDate(item.admissional)}
+                    Admissão: {formatDate(item.exp1StartAt)}
                   </ThemedText>
                 </View>
               </View>

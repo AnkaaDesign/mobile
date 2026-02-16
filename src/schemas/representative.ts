@@ -20,7 +20,10 @@ const passwordSchema = z
 
 // Representative create schema
 export const representativeCreateSchema = z.object({
-  email: emailSchema,
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    emailSchema,
+  ),
   phone: z
     .string()
     .min(1, 'Telefone é obrigatório')
@@ -45,7 +48,10 @@ export const representativeCreateSchema = z.object({
 
 // Representative update schema
 export const representativeUpdateSchema = z.object({
-  email: emailSchema,
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    emailSchema,
+  ),
   phone: z
     .string()
     .regex(phoneRegex, 'Formato de telefone inválido')

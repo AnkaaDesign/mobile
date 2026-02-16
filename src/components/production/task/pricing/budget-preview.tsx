@@ -7,16 +7,7 @@ import { getFileUrl } from "@/utils/file-utils";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import type { TaskPricing } from "@/types/task-pricing";
-
-const COMPANY = {
-  name: "Ankaa Design",
-  address: "Rua: Luís Carlos Zani, 2493 - Santa Paula, Ibiporã-PR",
-  phone: "43 9 8428-3228",
-  website: "ankaadesign.com.br",
-  primaryGreen: "#0a5c1e",
-  directorName: "Sergio Rodrigues",
-  directorTitle: "Diretor Comercial",
-};
+import { COMPANY_INFO, DIRECTOR_INFO, BRAND_COLORS } from "@/config/company";
 
 function toTitleCase(str: string): string {
   return str
@@ -105,7 +96,7 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <ThemedText style={styles.companyName}>{COMPANY.name}</ThemedText>
+        <ThemedText style={styles.companyName}>{COMPANY_INFO.name}</ThemedText>
         <View style={styles.headerRight}>
           <ThemedText style={styles.budgetTitle}>
             Orçamento Nº {budgetNumber}
@@ -264,10 +255,10 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
           </View>
           <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
           <ThemedText style={styles.signatureName}>
-            {COMPANY.directorName}
+            {DIRECTOR_INFO.name}
           </ThemedText>
           <ThemedText style={styles.signatureRole}>
-            {COMPANY.directorTitle}
+            {DIRECTOR_INFO.title}
           </ThemedText>
         </View>
 
@@ -287,13 +278,13 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.divider} />
-        <ThemedText style={styles.footerCompany}>{COMPANY.name}</ThemedText>
-        <ThemedText style={styles.footerText}>{COMPANY.address}</ThemedText>
-        <ThemedText style={[styles.footerText, { color: COMPANY.primaryGreen }]}>
-          {COMPANY.phone}
+        <ThemedText style={styles.footerCompany}>{COMPANY_INFO.name}</ThemedText>
+        <ThemedText style={styles.footerText}>{COMPANY_INFO.address}</ThemedText>
+        <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>
+          {COMPANY_INFO.phone}
         </ThemedText>
-        <ThemedText style={[styles.footerText, { color: COMPANY.primaryGreen }]}>
-          {COMPANY.website}
+        <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>
+          {COMPANY_INFO.website}
         </ThemedText>
       </View>
     </ThemedView>
@@ -315,7 +306,7 @@ const styles = StyleSheet.create({
   companyName: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
-    color: "#0a5c1e",
+    color: BRAND_COLORS.primaryGreen,
     flex: 1,
   },
   headerRight: {
@@ -332,12 +323,12 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#0a5c1e",
+    backgroundColor: BRAND_COLORS.primaryGreen,
   },
   sectionTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: "#0a5c1e",
+    color: BRAND_COLORS.primaryGreen,
     marginBottom: spacing.xs,
   },
   section: {
@@ -345,7 +336,7 @@ const styles = StyleSheet.create({
   },
   customerName: {
     fontWeight: fontWeight.bold,
-    color: "#0a5c1e",
+    color: BRAND_COLORS.primaryGreen,
   },
   bodyText: {
     fontSize: fontSize.sm,
@@ -394,7 +385,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
-    color: "#0a5c1e",
+    color: BRAND_COLORS.primaryGreen,
   },
   layoutImage: {
     width: "100%",
@@ -442,7 +433,7 @@ const styles = StyleSheet.create({
   },
   footerCompany: {
     fontWeight: fontWeight.bold,
-    color: "#0a5c1e",
+    color: BRAND_COLORS.primaryGreen,
     marginTop: spacing.sm,
   },
   footerText: {

@@ -1,7 +1,7 @@
 // packages/utils/src/sector.ts
 
 import type { Sector } from '../types';
-import { SECTOR_PRIVILEGES, SECTOR_PRIVILEGES_LABELS } from '../constants';
+import { SECTOR_PRIVILEGES, TEAM_LEADER, SECTOR_PRIVILEGES_LABELS } from '../constants';
 import { getSectorPrivilegeSortOrder, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges } from "./privilege";
 
 // =====================
@@ -30,17 +30,15 @@ export const getSectorFullDisplay = (sector: Sector): string => {
 // Functions getSectorPrivilegeSortOrder, canAccessSector, canAccessAnyPrivilege, canAccessAllPrivileges
 // are imported from ./privilege.ts
 
-export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES): string => {
-  const descriptions: Record<SECTOR_PRIVILEGES, string> = {
+export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES | typeof TEAM_LEADER): string => {
+  const descriptions: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, string> = {
     [SECTOR_PRIVILEGES.BASIC]: "Acesso básico ao sistema",
     [SECTOR_PRIVILEGES.MAINTENANCE]: "Acesso a funcionalidades de limpeza e manutenção",
     [SECTOR_PRIVILEGES.WAREHOUSE]: "Acesso completo ao almoxarifado",
-    [SECTOR_PRIVILEGES.STOCK]: "Acesso a inventário e estoque",
     [SECTOR_PRIVILEGES.DESIGNER]: "Acesso a design e recorte",
     [SECTOR_PRIVILEGES.LOGISTIC]: "Acesso a logística e garagens",
     [SECTOR_PRIVILEGES.PRODUCTION]: "Acesso a funcionalidades de produção",
-    [SECTOR_PRIVILEGES.LEADER]: "Acesso de líder de setor",
-    [SECTOR_PRIVILEGES.TEAM_LEADER]: "Acesso de líder de equipe",
+    [TEAM_LEADER]: "Acesso de líder de equipe",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "Acesso a recursos humanos",
     [SECTOR_PRIVILEGES.FINANCIAL]: "Acesso financeiro",
     [SECTOR_PRIVILEGES.COMMERCIAL]: "Acesso comercial",
@@ -51,17 +49,15 @@ export const getSectorPrivilegeDescription = (privilege: SECTOR_PRIVILEGES): str
   return descriptions[privilege] ?? "Privilégio não definido";
 };
 
-export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES): string => {
-  const colors: Record<SECTOR_PRIVILEGES, string> = {
+export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES | typeof TEAM_LEADER): string => {
+  const colors: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, string> = {
     [SECTOR_PRIVILEGES.BASIC]: "gray",
     [SECTOR_PRIVILEGES.MAINTENANCE]: "blue",
     [SECTOR_PRIVILEGES.WAREHOUSE]: "purple",
-    [SECTOR_PRIVILEGES.STOCK]: "purple",
     [SECTOR_PRIVILEGES.DESIGNER]: "indigo",
     [SECTOR_PRIVILEGES.LOGISTIC]: "cyan",
     [SECTOR_PRIVILEGES.PRODUCTION]: "green",
-    [SECTOR_PRIVILEGES.LEADER]: "green",
-    [SECTOR_PRIVILEGES.TEAM_LEADER]: "green",
+    [TEAM_LEADER]: "green",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "pink",
     [SECTOR_PRIVILEGES.FINANCIAL]: "orange",
     [SECTOR_PRIVILEGES.COMMERCIAL]: "orange",
@@ -72,17 +68,15 @@ export const getSectorPrivilegeColor = (privilege: SECTOR_PRIVILEGES): string =>
   return colors[privilege] ?? "gray";
 };
 
-export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES): "default" | "secondary" | "destructive" | "outline" => {
-  const variants: Record<SECTOR_PRIVILEGES, "default" | "secondary" | "destructive" | "outline"> = {
+export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES | typeof TEAM_LEADER): "default" | "secondary" | "destructive" | "outline" => {
+  const variants: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, "default" | "secondary" | "destructive" | "outline"> = {
     [SECTOR_PRIVILEGES.BASIC]: "outline",
     [SECTOR_PRIVILEGES.MAINTENANCE]: "secondary",
     [SECTOR_PRIVILEGES.WAREHOUSE]: "secondary",
-    [SECTOR_PRIVILEGES.STOCK]: "secondary",
     [SECTOR_PRIVILEGES.DESIGNER]: "default",
     [SECTOR_PRIVILEGES.LOGISTIC]: "default",
     [SECTOR_PRIVILEGES.PRODUCTION]: "default",
-    [SECTOR_PRIVILEGES.LEADER]: "default",
-    [SECTOR_PRIVILEGES.TEAM_LEADER]: "default",
+    [TEAM_LEADER]: "default",
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: "secondary",
     [SECTOR_PRIVILEGES.FINANCIAL]: "secondary",
     [SECTOR_PRIVILEGES.COMMERCIAL]: "secondary",
@@ -98,8 +92,8 @@ export const getSectorPrivilegeBadgeVariant = (privilege: SECTOR_PRIVILEGES): "d
  * @param privileges - The sector privileges enum value
  * @returns The localized label for the privileges
  */
-export function getSectorPrivilegesLabel(privileges: SECTOR_PRIVILEGES): string {
-  return SECTOR_PRIVILEGES_LABELS[privileges] || privileges;
+export function getSectorPrivilegesLabel(privileges: SECTOR_PRIVILEGES | string): string {
+  return SECTOR_PRIVILEGES_LABELS[privileges as SECTOR_PRIVILEGES] || privileges;
 }
 
 // =====================

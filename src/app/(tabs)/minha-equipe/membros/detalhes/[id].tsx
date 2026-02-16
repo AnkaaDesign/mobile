@@ -66,10 +66,13 @@ export default function TeamMemberDetailsScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
+    refetch()
+      .then(() => {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso");
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
   }, [refetch]);
 
   // Show access denied if not a team leader

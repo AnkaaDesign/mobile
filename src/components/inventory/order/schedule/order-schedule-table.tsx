@@ -49,18 +49,6 @@ const availableWidth = screenWidth - 32; // Account for padding
 // Define all available columns with their renderers
 export const createColumnDefinitions = (): TableColumn[] => [
   {
-    key: "supplier",
-    header: "Fornecedor",
-    align: "left",
-    sortable: false,
-    width: 0,
-    accessor: (schedule: OrderSchedule) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {schedule.supplier?.fantasyName || "Sem fornecedor"}
-      </ThemedText>
-    ),
-  },
-  {
     key: "frequency",
     header: "Frequência",
     align: "left",

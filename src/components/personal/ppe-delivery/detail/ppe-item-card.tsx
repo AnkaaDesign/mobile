@@ -101,16 +101,6 @@ export function PpeItemCard({ item }: PpeItemCardProps) {
           </View>
         )}
 
-        {/* Description */}
-        {item.description && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50", flexDirection: "column", alignItems: "flex-start" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <Icon name="align-left" size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Descrição</ThemedText>
-            </View>
-            <ThemedText style={[styles.descriptionValue, { color: colors.foreground }]}>{item.description}</ThemedText>
-          </View>
-        )}
       </View>
     </Card>
   );

@@ -1,7 +1,7 @@
 // Ultra-Optimized Navigation with Full Menu Structure and Privilege-Based Loading
 // This version combines the privilege optimization with the original menu design
 
-import { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
+import React, { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -326,6 +326,7 @@ const ALL_ROUTES = [
   { name: "pessoal/meu-bonus/simulacao", title: "Simulação de Bônus" },
   { name: "pessoal/meu-bonus/historico", title: "Histórico de Bônus" },
   { name: "pessoal/meu-bonus/detalhes/[id]", title: "Detalhes do Bônus" },
+  { name: "pessoal/minhas-mensagens/index", title: "Minhas Mensagens" },
   { name: "pessoal/meus-pontos/index", title: "Meus Pontos" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
@@ -541,7 +542,7 @@ interface ExtendedUser {
 }
 
 // Notification Bell component for header - opens notification drawer
-function NotificationBell({ color, onPress }: { color: string; onPress: () => void }) {
+const NotificationBell = React.memo(function NotificationBell({ color, onPress }: { color: string; onPress: () => void }) {
   const { count, isLoading } = useUnreadNotificationsCount();
   const { isDark } = useTheme();
 
@@ -573,14 +574,203 @@ function NotificationBell({ color, onPress }: { color: string; onPress: () => vo
       </View>
     </Pressable>
   );
+});
+
+// Extracted HeaderBackButton component to prevent unmount/remount on every render
+interface HeaderBackButtonProps {
+  pathname: string;
+  isNavigatingRef: React.RefObject<boolean>;
+  startNavigation: () => void;
+  isDark: boolean;
+  headerText: string;
+  buttonPressed: string;
 }
+
+const HeaderBackButton = React.memo(function HeaderBackButton({
+  pathname,
+  isNavigatingRef,
+  startNavigation,
+  isDark,
+  headerText,
+  buttonPressed,
+}: HeaderBackButtonProps) {
+  // Determine if we should show back button - never show on home page
+  const showBackButton = pathname !== '/(tabs)/inicio';
+
+  if (!showBackButton) {
+    // Add spacing even when there's no back button for consistency
+    return <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />;
+  }
+
+  return (
+    <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
+      <Pressable
+        onPress={() => {
+          // Show loading overlay for visual feedback
+          if (!isNavigatingRef.current) {
+            startNavigation();
+          }
+
+          // NEVER use router.back() - it's broken with Drawer navigator
+          // Always use explicit navigation to the correct parent route
+
+          let targetRoute: string | null = null;
+
+          if (pathname.includes('/detalhes/')) {
+            if (pathname.includes('/producao/agenda/detalhes/')) {
+              targetRoute = '/(tabs)/producao/agenda';
+            } else if (pathname.includes('/producao/cronograma/detalhes/')) {
+              targetRoute = '/(tabs)/producao/cronograma';
+            } else if (pathname.includes('/producao/ordens-de-servico/detalhes/')) {
+              targetRoute = '/(tabs)/producao/ordens-de-servico';
+            } else {
+              const pathParts = pathname.split('/');
+              const section = pathParts.slice(0, pathParts.indexOf('detalhes')).join('/');
+              targetRoute = section;
+            }
+
+          } else if (pathname.includes('/layout/')) {
+            targetRoute = '/(tabs)/inicio';
+            if (navigationTracker.hasSource()) {
+              const source = navigationTracker.getSource();
+              if (source) {
+                targetRoute = source;
+                navigationTracker.clearSource();
+              }
+            } else if (pathname.includes('/producao/cronograma/layout/')) {
+              targetRoute = '/(tabs)/producao/cronograma';
+            } else {
+              const pathParts = pathname.split('/');
+              const section = pathParts.slice(0, pathParts.indexOf('layout')).join('/');
+              targetRoute = section;
+            }
+
+          } else if (pathname.includes('/precificacao/')) {
+            targetRoute = '/(tabs)/inicio';
+            if (navigationTracker.hasSource()) {
+              const source = navigationTracker.getSource();
+              if (source) {
+                targetRoute = source;
+                navigationTracker.clearSource();
+              }
+            } else if (pathname.includes('/producao/agenda/precificacao/')) {
+              targetRoute = '/(tabs)/producao/agenda';
+            } else {
+              const pathParts = pathname.split('/');
+              const section = pathParts.slice(0, pathParts.indexOf('precificacao')).join('/');
+              targetRoute = section;
+            }
+
+          } else if (pathname.includes('/editar/')) {
+            targetRoute = '/(tabs)/inicio';
+            if (navigationTracker.hasSource()) {
+              const source = navigationTracker.getSource();
+              if (source) {
+                targetRoute = source;
+                navigationTracker.clearSource();
+              }
+            } else if (pathname.includes('/producao/')) {
+              targetRoute = '/(tabs)/producao/agenda';
+            } else if (pathname.includes('/ordens-de-servico/')) {
+              targetRoute = '/(tabs)/producao/ordens-de-servico';
+            } else {
+              const pathParts = pathname.split('/');
+              const section = pathParts.slice(0, pathParts.indexOf('editar')).join('/');
+              targetRoute = section;
+            }
+
+          } else if (pathname.includes('/cadastrar')) {
+            if (pathname.includes('/producao/agenda/cadastrar')) {
+              targetRoute = '/(tabs)/producao/agenda';
+            } else if (pathname.includes('/producao/cronograma/cadastrar')) {
+              targetRoute = '/(tabs)/producao/cronograma';
+            } else if (pathname.includes('/producao/ordens-de-servico/cadastrar')) {
+              targetRoute = '/(tabs)/producao/ordens-de-servico';
+            } else {
+              targetRoute = pathname.replace('/cadastrar', '');
+            }
+
+          } else if (pathname === '/(tabs)/inicio' || pathname === '/inicio') {
+            // Already at home, do nothing
+
+          } else {
+            targetRoute = '/(tabs)/inicio';
+          }
+
+          // Defer navigation to next frame so overlay renders before heavy work
+          if (targetRoute) {
+            const route = targetRoute;
+            requestAnimationFrame(() => {
+              router.push(route as any);
+            });
+          }
+        }}
+        style={({ pressed }) => [
+          styles.headerButton,
+          pressed && { backgroundColor: buttonPressed },
+        ]}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Icon
+          name="arrow-left"
+          size="md"
+          variant={isDark ? "default" : "default"}
+          color={headerText}
+        />
+      </Pressable>
+    </View>
+  );
+});
+
+// Extracted HeaderRightButtons component to prevent unmount/remount on every render
+interface HeaderRightButtonsProps {
+  headerText: string;
+  buttonPressed: string;
+  isDark: boolean;
+  openNotificationsDrawer: (navigation: any) => void;
+  openMenuDrawer: (navigation: any) => void;
+  navigation: any;
+}
+
+const HeaderRightButtons = React.memo(function HeaderRightButtons({
+  headerText,
+  buttonPressed,
+  isDark,
+  openNotificationsDrawer,
+  openMenuDrawer,
+  navigation,
+}: HeaderRightButtonsProps) {
+  return (
+    <View style={styles.headerRight}>
+      <NotificationBell
+        color={headerText}
+        onPress={() => openNotificationsDrawer(navigation)}
+      />
+      <Pressable
+        onPress={() => openMenuDrawer(navigation)}
+        style={({ pressed }) => [
+          styles.headerButton,
+          pressed && { backgroundColor: buttonPressed }
+        ]}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <Icon
+          name="menu"
+          size="md"
+          variant={isDark ? "default" : "default"}
+          color={headerText}
+        />
+      </Pressable>
+    </View>
+  );
+});
 
 // Inner layout component that uses drawer mode context
 function InnerLayout() {
   const { user, isAuthReady, isLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
-  const { startNavigation, isNavigating } = useNavigationLoading();
+  const { startNavigation, isNavigatingRef } = useNavigationLoading();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
   const { setDrawerMode } = useDrawerMode();
@@ -644,22 +834,30 @@ function InnerLayout() {
     }
   }, [user]);
 
+  // Guard ref to prevent rapid drawer open/close races
+  const drawerOperationRef = useRef(false);
+
   // Handler to open notifications drawer
   // IMPORTANT: These hooks must be called BEFORE any conditional returns to avoid
   // "Rendered fewer hooks than expected" error when user logs out
   const openNotificationsDrawer = useCallback((navigation: any) => {
+    if (drawerOperationRef.current) return;
+    drawerOperationRef.current = true;
     setDrawerMode('notifications');
-    // Small delay to ensure state is set before drawer opens
     requestAnimationFrame(() => {
       navigation.openDrawer();
+      setTimeout(() => { drawerOperationRef.current = false; }, 500);
     });
   }, [setDrawerMode]);
 
   // Handler to open menu drawer
   const openMenuDrawer = useCallback((navigation: any) => {
+    if (drawerOperationRef.current) return;
+    drawerOperationRef.current = true;
     setDrawerMode('menu');
     requestAnimationFrame(() => {
       navigation.openDrawer();
+      setTimeout(() => { drawerOperationRef.current = false; }, 500);
     });
   }, [setDrawerMode]);
 
@@ -704,218 +902,25 @@ function InnerLayout() {
           },
           // Disable drawer swipe on notifications screen to allow notification item swipes
           swipeEnabled: !route.name.includes('notifications'),
-          headerLeft: () => {
-            // Determine if we should show back button - never show on home page
-            const showBackButton = pathname !== '/(tabs)/inicio';
-
-            if (!showBackButton) {
-              // Add spacing even when there's no back button for consistency
-              return <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />;
-            }
-
-            return (
-              <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
-                <Pressable
-                  onPress={() => {
-                    console.log('🔙 [BACK BTN] ========== START ==========');
-                    console.log('🔙 [BACK BTN] Current pathname:', pathname);
-
-                    // Show loading overlay for visual feedback
-                    if (!isNavigating) {
-                      startNavigation();
-                    }
-
-                    // NEVER use router.back() - it's broken with Drawer navigator
-                    // Always use explicit navigation to the correct parent route
-
-                    if (pathname.includes('/detalhes/')) {
-                      // From detail page, always go back to the parent list
-                      let targetRoute = '/(tabs)/inicio';
-
-                      if (pathname.includes('/producao/agenda/detalhes/')) {
-                        targetRoute = '/(tabs)/producao/agenda';
-                      } else if (pathname.includes('/producao/cronograma/detalhes/')) {
-                        targetRoute = '/(tabs)/producao/cronograma';
-                      } else if (pathname.includes('/producao/ordens-de-servico/detalhes/')) {
-                        targetRoute = '/(tabs)/producao/ordens-de-servico';
-                      } else {
-                        // Generic detail page - extract parent path
-                        const pathParts = pathname.split('/');
-                        const section = pathParts.slice(0, pathParts.indexOf('detalhes')).join('/');
-                        targetRoute = section;
-                      }
-
-                      console.log('🔙 [BACK BTN] Detail → List:', targetRoute);
-                      router.push(targetRoute as any);
-
-                    } else if (pathname.includes('/layout/')) {
-                      // From layout page, check where we came from
-                      let targetRoute = '/(tabs)/inicio';
-
-                      // Check if we have a stored navigation source
-                      if (navigationTracker.hasSource()) {
-                        const source = navigationTracker.getSource();
-                        console.log('🔙 [BACK BTN] Found navigation source:', source);
-
-                        // Go back to where we came from
-                        if (source) {
-                          targetRoute = source;
-                          // Clear the source after using it
-                          navigationTracker.clearSource();
-                        }
-                      } else {
-                        // No source stored, layout forms are typically accessed from cronograma
-                        if (pathname.includes('/producao/cronograma/layout/')) {
-                          targetRoute = '/(tabs)/producao/cronograma';
-                        } else {
-                          // Generic layout - go to parent section
-                          const pathParts = pathname.split('/');
-                          const section = pathParts.slice(0, pathParts.indexOf('layout')).join('/');
-                          targetRoute = section;
-                        }
-                      }
-
-                      console.log('🔙 [BACK BTN] Layout → Source:', targetRoute);
-                      router.push(targetRoute as any);
-
-                    } else if (pathname.includes('/precificacao/')) {
-                      // From pricing page, check where we came from
-                      let targetRoute = '/(tabs)/inicio';
-
-                      // Check if we have a stored navigation source
-                      if (navigationTracker.hasSource()) {
-                        const source = navigationTracker.getSource();
-                        console.log('🔙 [BACK BTN] Found navigation source:', source);
-
-                        // Go back to where we came from
-                        if (source) {
-                          targetRoute = source;
-                          // Clear the source after using it
-                          navigationTracker.clearSource();
-                        }
-                      } else {
-                        // No source stored, pricing is typically accessed from agenda
-                        if (pathname.includes('/producao/agenda/precificacao/')) {
-                          targetRoute = '/(tabs)/producao/agenda';
-                        } else {
-                          // Generic pricing - go to parent section
-                          const pathParts = pathname.split('/');
-                          const section = pathParts.slice(0, pathParts.indexOf('precificacao')).join('/');
-                          targetRoute = section;
-                        }
-                      }
-
-                      console.log('🔙 [BACK BTN] Pricing → Source:', targetRoute);
-                      router.push(targetRoute as any);
-
-                    } else if (pathname.includes('/editar/')) {
-                      // From edit page, check where we came from
-                      let targetRoute = '/(tabs)/inicio';
-
-                      // Check if we have a stored navigation source
-                      if (navigationTracker.hasSource()) {
-                        const source = navigationTracker.getSource();
-                        console.log('🔙 [BACK BTN] Found navigation source:', source);
-
-                        // Go back to where we came from
-                        if (source) {
-                          targetRoute = source;
-                          // Clear the source after using it
-                          navigationTracker.clearSource();
-                        }
-                      } else {
-                        // No source stored, determine from URL
-                        // The edit URL might be /producao/cronograma/editar/ but we came from agenda
-                        // So we should look at the task's actual module, not the URL
-
-                        // For production tasks, they can be accessed from agenda, cronograma, or historico
-                        // Without stored source, default to agenda as it's the main entry point
-                        if (pathname.includes('/producao/')) {
-                          targetRoute = '/(tabs)/producao/agenda';
-                        } else if (pathname.includes('/ordens-de-servico/')) {
-                          targetRoute = '/(tabs)/producao/ordens-de-servico';
-                        } else {
-                          // Generic edit - go to parent section
-                          const pathParts = pathname.split('/');
-                          const section = pathParts.slice(0, pathParts.indexOf('editar')).join('/');
-                          targetRoute = section;
-                        }
-                      }
-
-                      console.log('🔙 [BACK BTN] Edit → Source:', targetRoute);
-                      router.push(targetRoute as any);
-
-                    } else if (pathname.includes('/cadastrar')) {
-                      // From create page, go back to the parent list
-                      let targetRoute = '/(tabs)/inicio';
-
-                      if (pathname.includes('/producao/agenda/cadastrar')) {
-                        targetRoute = '/(tabs)/producao/agenda';
-                      } else if (pathname.includes('/producao/cronograma/cadastrar')) {
-                        targetRoute = '/(tabs)/producao/cronograma';
-                      } else if (pathname.includes('/producao/ordens-de-servico/cadastrar')) {
-                        targetRoute = '/(tabs)/producao/ordens-de-servico';
-                      } else {
-                        // Generic create - extract parent path
-                        const section = pathname.replace('/cadastrar', '');
-                        targetRoute = section;
-                      }
-
-                      console.log('🔙 [BACK BTN] Create → List:', targetRoute);
-                      router.push(targetRoute as any);
-
-                    } else if (pathname === '/(tabs)/inicio' || pathname === '/inicio') {
-                      // Already at home, do nothing
-                      console.log('🔙 [BACK BTN] Already at home');
-
-                    } else {
-                      // For list pages, go to home
-                      console.log('🔙 [BACK BTN] List → Home');
-                      router.push('/(tabs)/inicio' as any);
-                    }
-
-                    console.log('🔙 [BACK BTN] ========== END ==========');
-                  }}
-                  disabled={isNavigating}
-                  style={({ pressed }) => [
-                    styles.headerButton,
-                    pressed && { backgroundColor: buttonPressed },
-                    isNavigating && { opacity: 0.5 }
-                  ]}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Icon
-                    name="arrow-left"
-                    size="md"
-                    variant={isDark ? "default" : "default"}
-                    color={headerText}
-                  />
-                </Pressable>
-              </View>
-            );
-          },
+          headerLeft: () => (
+            <HeaderBackButton
+              pathname={pathname}
+              isNavigatingRef={isNavigatingRef}
+              startNavigation={startNavigation}
+              isDark={isDark}
+              headerText={headerText}
+              buttonPressed={buttonPressed}
+            />
+          ),
           headerRight: () => (
-            <View style={styles.headerRight}>
-              <NotificationBell
-                color={headerText}
-                onPress={() => openNotificationsDrawer(navigation)}
-              />
-              <Pressable
-                onPress={() => openMenuDrawer(navigation)}
-                style={({ pressed }) => [
-                  styles.headerButton,
-                  pressed && { backgroundColor: buttonPressed }
-                ]}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Icon
-                  name="menu"
-                  size="md"
-                  variant={isDark ? "default" : "default"}
-                  color={headerText}
-                />
-              </Pressable>
-            </View>
+            <HeaderRightButtons
+              headerText={headerText}
+              buttonPressed={buttonPressed}
+              isDark={isDark}
+              openNotificationsDrawer={openNotificationsDrawer}
+              openMenuDrawer={openMenuDrawer}
+              navigation={navigation}
+            />
           ),
           drawerPosition: "right",
           drawerStyle: {

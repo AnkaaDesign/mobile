@@ -29,7 +29,7 @@ export default function MyMovementsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { pushWithLoading, isNavigating } = useNavigationLoading();
+  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -187,9 +187,9 @@ export default function MyMovementsScreen() {
 
   // Handle activity press - navigate to detail page with loading overlay
   const handleActivityPress = useCallback((activityId: string) => {
-    if (isNavigating) return;
+    if (isNavigatingRef.current) return;
     pushWithLoading(`/pessoal/minhas-movimentacoes/detalhes/${activityId}`);
-  }, [pushWithLoading, isNavigating]);
+  }, [pushWithLoading]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);

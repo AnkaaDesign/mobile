@@ -117,6 +117,11 @@ export class MessageService {
     return response.data.data;
   }
 
+  async getMyMessages(): Promise<(Message & { viewedAt?: Date | null; dismissedAt?: Date | null })[]> {
+    const response = await apiClient.get<{ success: boolean; data: (Message & { viewedAt?: Date | null; dismissedAt?: Date | null })[]; meta: { count: number } }>(`${this.basePath}/my-messages`);
+    return response.data.data;
+  }
+
   async markAsViewed(messageId: string): Promise<ViewedMessageCreateResponse> {
     const response = await apiClient.post<ViewedMessageCreateResponse>(`${this.basePath}/${messageId}/mark-viewed`);
     return response.data;
@@ -261,6 +266,7 @@ export const batchDeleteMessages = (data: MessageBatchDeleteFormData) => message
 export const getMessagesByRecipient = (recipientId: string, params?: MessageGetManyFormData) => messageService.getMessagesByRecipient(recipientId, params || {});
 export const getMessagesBySender = (senderId: string, params?: MessageGetManyFormData) => messageService.getMessagesBySender(senderId, params || {});
 export const getUnviewedMessages = () => messageService.getUnviewedMessages();
+export const getMyMessages = () => messageService.getMyMessages();
 export const markAsViewed = (messageId: string) => messageService.markAsViewed(messageId);
 export const markAllAsViewed = (userId: string) => messageService.markAllAsViewed(userId);
 export const getMessageStats = (messageId: string) => messageService.getMessageStats(messageId);

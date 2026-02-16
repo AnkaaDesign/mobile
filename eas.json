@@ -23,6 +23,16 @@
         "buildType": "apk"
       }
     },
+    "local-release": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://192.168.0.12:3030",
+        "EXPO_PUBLIC_FALLBACK_API_URL": "http://192.168.0.12:3030"
+      }
+    },
     "production": {
       "channel": "production",
       "android": {
@@ -39,7 +49,7 @@
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=4096",
         "EXPO_PUBLIC_API_URL": "https://api.ankaadesign.com.br",
-        "EXPO_PUBLIC_FALLBACK_API_URL": "http://192.168.10.169:3030"
+        "EXPO_PUBLIC_FALLBACK_API_URL": "https://api.ankaadesign.com.br"
       }
     },
     "production-aab": {
@@ -48,7 +58,9 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "NODE_OPTIONS": "--max-old-space-size=4096"
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "EXPO_PUBLIC_API_URL": "https://api.ankaadesign.com.br",
+        "EXPO_PUBLIC_FALLBACK_API_URL": "https://api.ankaadesign.com.br"
       }
     }
   },

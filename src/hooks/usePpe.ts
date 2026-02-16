@@ -525,40 +525,6 @@ export const usePpeDeliveryScheduleBatchMutations = basePpeDeliveryScheduleHooks
 // PPE Schedule Specialized Hooks
 // =====================================================
 
-// Hook to get PPE schedules by PPE type
-export const usePpeDeliverySchedulesByPpeType = createSpecializedQueryHook({
-  queryKeyFn: (ppeType: string) => [...ppeDeliveryScheduleKeys.all, "byPpeType", ppeType] as const,
-  queryFn: (ppeType: string) =>
-    ppeDeliveryScheduleService.getMany({
-      where: { ppes: { has: ppeType } },
-      include: { user: true },
-    }),
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
-
-// Hook to get active PPE schedules
-export const useActivePpeDeliverySchedules = createSpecializedQueryHook({
-  queryKeyFn: () => [...ppeDeliveryScheduleKeys.all, "active"] as const,
-  queryFn: () =>
-    ppeDeliveryScheduleService.getMany({
-      where: { isActive: true },
-      include: { user: true },
-      orderBy: { specificDate: "asc" },
-    }),
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
-
-// Hook to get PPE schedules by assignment type
-export const usePpeDeliverySchedulesByAssignmentType = createSpecializedQueryHook({
-  queryKeyFn: (assignmentType: string) => [...ppeDeliveryScheduleKeys.all, "byAssignmentType", assignmentType] as const,
-  queryFn: (assignmentType: string) =>
-    ppeDeliveryScheduleService.getMany({
-      where: { assignmentType },
-      include: { user: true },
-    }),
-  staleTime: 1000 * 60 * 5, // 5 minutes
-});
-
 // Legacy individual mutation exports for backward compatibility
 export function useCreatePpeDeliverySchedule() {
   const { createMutation } = usePpeDeliveryScheduleMutations();
@@ -704,8 +670,6 @@ export function useMarkPpeDeliveryAsDelivered() {
   return useMutation({
     mutationFn: ({ id, deliveryDate }: { id: string; deliveryDate?: Date }) => markPpeDeliveryAsDelivered(id, deliveryDate),
     onSuccess: (_data, variables) => {
-      console.log("Mark as delivered success, invalidating queries for ID:", variables.id);
-
       // Invalidate PPE delivery queries using correct key structure
       queryClient.invalidateQueries({ queryKey: ppeDeliveryKeys.all });
       queryClient.invalidateQueries({ queryKey: ppeDeliveryKeys.detail(variables.id) });
@@ -713,8 +677,6 @@ export function useMarkPpeDeliveryAsDelivered() {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: userKeys.all });
       queryClient.invalidateQueries({ queryKey: itemKeys.all });
-
-      console.log("Query invalidation completed");
     },
     onError: (error) => {
       console.error("Mark as delivered failed:", error);

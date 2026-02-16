@@ -133,12 +133,12 @@ export const ppeItemsListConfig: ListConfig<Item> = {
         render: (item) => item.reorderPoint?.toString() || '0',
       },
       {
-        key: 'supplier.name',
+        key: 'supplier.fantasyName',
         label: 'LOCALIZAÇÃO',
         sortable: true,
         width: 1.3,
         align: 'left',
-        render: (item) => item.supplier?.name || '-',
+        render: (item) => item.supplier?.fantasyName || '-',
       },
       {
         key: 'measureUnit',

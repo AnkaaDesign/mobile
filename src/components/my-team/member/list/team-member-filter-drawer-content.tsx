@@ -11,8 +11,8 @@ interface TeamMemberFilters {
   statuses?: string[];
   positionIds?: string[];
   sectorIds?: string[];
-  admissionalStart?: Date;
-  admissionalEnd?: Date;
+  exp1StartAtStart?: Date;
+  exp1StartAtEnd?: Date;
 }
 
 interface TeamMemberFilterDrawerContentProps {
@@ -219,10 +219,10 @@ export function TeamMemberFilterDrawerContent({
               }]}
               placeholder="AAAA-MM-DD"
               placeholderTextColor={colors.mutedForeground}
-              value={formatDateForInput(localFilters.admissionalStart)}
+              value={formatDateForInput(localFilters.exp1StartAtStart)}
               onChangeText={(value) => setLocalFilters(prev => ({
                 ...prev,
-                admissionalStart: parseDateFromInput(value)
+                exp1StartAtStart: parseDateFromInput(value)
               }))}
             />
           </View>
@@ -237,10 +237,10 @@ export function TeamMemberFilterDrawerContent({
               }]}
               placeholder="AAAA-MM-DD"
               placeholderTextColor={colors.mutedForeground}
-              value={formatDateForInput(localFilters.admissionalEnd)}
+              value={formatDateForInput(localFilters.exp1StartAtEnd)}
               onChangeText={(value) => setLocalFilters(prev => ({
                 ...prev,
-                admissionalEnd: parseDateFromInput(value)
+                exp1StartAtEnd: parseDateFromInput(value)
               }))}
             />
           </View>

@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import type { Href } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { WEB_BASE_URL, WEB_DOMAIN, WEB_DOMAIN_WWW } from '../config/urls';
 
 // =====================================================
 // Route Mapping Configuration
@@ -60,7 +61,6 @@ export const ROUTE_MAP = {
   MyVacation: '/(tabs)/pessoal/minhas-ferias/detalhes/[id]',
   MyHoliday: '/(tabs)/pessoal/meus-feriados/detalhes/[id]',
   MyNotification: '/(tabs)/pessoal/minhas-notificacoes/detalhes/[id]',
-  MyPpe: '/(tabs)/pessoal/meus-epis/detalhes/[id]',
   PpeDelivery: '/(tabs)/pessoal/meus-epis/detalhes/[id]',
 
   // Catalog
@@ -203,8 +203,8 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   FINANCIALCUSTOMER: 'FinancialCustomer',
   PPE_DELIVERY: 'PpeDelivery',
   PPEDELIVERY: 'PpeDelivery',
-  MY_PPE: 'MyPpe',
-  MYPPE: 'MyPpe',
+  MY_PPE: 'PpeDelivery',
+  MYPPE: 'PpeDelivery',
 
   // PascalCase variants (for direct entity type matching)
   Task: 'Task',
@@ -241,7 +241,7 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   CatalogItem: 'CatalogItem',
   FinancialCustomer: 'FinancialCustomer',
   PpeDelivery: 'PpeDelivery',
-  MyPpe: 'MyPpe',
+  MyPpe: 'PpeDelivery',
 
   // Lowercase variants (existing)
   task: 'Task',
@@ -327,8 +327,8 @@ export const ENTITY_ALIAS_MAP: Record<string, keyof typeof ROUTE_MAP> = {
   'ppe-deliveries': 'PpeDelivery',
   'entrega-epi': 'PpeDelivery',
   'entregas-epi': 'PpeDelivery',
-  'meu-epi': 'MyPpe',
-  'meus-epis': 'MyPpe',
+  'meu-epi': 'PpeDelivery',
+  'meus-epis': 'PpeDelivery',
 };
 
 // =====================================================
@@ -570,8 +570,8 @@ export function parseDeepLink(url: string): ParsedDeepLink {
       }
     }
 
-    // Handle web universal links (https://ankaadesign.com.br/...)
-    if (hostname === 'ankaadesign.com.br' || hostname === 'www.ankaadesign.com.br') {
+    // Handle web universal links (https://<domain>/...)
+    if (hostname === WEB_DOMAIN || hostname === WEB_DOMAIN_WWW) {
       // Handle paths with /app/ prefix
       if (path?.startsWith('/app/')) {
         const appPath = path.replace('/app/', '');
@@ -757,7 +757,7 @@ export function generateUniversalLink(entityType: keyof typeof ROUTE_MAP, id: st
     ([_, value]) => value === entityType
   )?.[0] || entityKey;
 
-  return `https://ankaadesign.com.br/${alias}/${id}`;
+  return `${WEB_BASE_URL}/${alias}/${id}`;
 }
 
 /**

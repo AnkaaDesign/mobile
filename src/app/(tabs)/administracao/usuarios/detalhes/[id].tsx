@@ -86,7 +86,6 @@ export default function UserDetailScreen() {
           id: true,
           filename: true,
           path: true,
-          url: true,
           thumbnailUrl: true,
         },
       },

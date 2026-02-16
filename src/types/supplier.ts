@@ -12,7 +12,6 @@ import type { Order, OrderIncludes, OrderRule, OrderRuleIncludes } from "./order
 
 export interface Supplier extends BaseEntity {
   fantasyName: string;
-  name?: string; // Alias for fantasyName for compatibility
   cnpj: string | null;
   corporateName: string | null;
   email: string | null;

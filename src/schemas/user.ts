@@ -198,11 +198,12 @@ export const userOrderBySchema = z.union([
       pis: orderByDirectionSchema.optional(),
       cpf: orderByDirectionSchema.optional(),
       verified: orderByDirectionSchema.optional(),
-      admissional: orderByDirectionSchema.optional(),
+      exp1StartAt: orderByDirectionSchema.optional(),
       birth: orderByDirectionSchema.optional(),
       dismissedAt: orderByDirectionSchema.optional(),
       performanceLevel: orderByDirectionSchema.optional(),
       sectorId: orderByDirectionSchema.optional(),
+      payrollNumber: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
 
@@ -250,11 +251,12 @@ export const userOrderBySchema = z.union([
         pis: orderByDirectionSchema.optional(),
         cpf: orderByDirectionSchema.optional(),
         verified: orderByDirectionSchema.optional(),
-        admissional: orderByDirectionSchema.optional(),
+        exp1StartAt: orderByDirectionSchema.optional(),
         birth: orderByDirectionSchema.optional(),
         dismissedAt: orderByDirectionSchema.optional(),
         performanceLevel: orderByDirectionSchema.optional(),
         sectorId: orderByDirectionSchema.optional(),
+        payrollNumber: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       })
@@ -392,7 +394,7 @@ export const userWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      admissional: z
+      exp1StartAt: z
         .union([
           z.date(),
           z.null(),
@@ -580,13 +582,14 @@ const userFilters = {
   hasTasks: z.boolean().optional(),
   hasVacations: z.boolean().optional(),
   showDismissed: z.boolean().optional(),
+  hasManagedSector: z.boolean().optional(),
   performanceLevelRange: z
     .object({
       min: z.number().optional(),
       max: z.number().optional(),
     })
     .optional(),
-  admissionalRange: z
+  exp1StartAtRange: z
     .object({
       gte: z.coerce.date().optional(),
       lte: z.coerce.date().optional(),
@@ -724,6 +727,16 @@ const userTransform = (data: any) => {
     delete data.hasVacations;
   }
 
+  // Handle hasManagedSector filter
+  if (typeof data.hasManagedSector === "boolean") {
+    if (data.hasManagedSector) {
+      andConditions.push({ managedSector: { is: { id: { not: undefined } } } });
+    } else {
+      andConditions.push({ managedSector: { is: null } });
+    }
+    delete data.hasManagedSector;
+  }
+
   // Handle performanceLevelRange filter
   if (data.performanceLevelRange && typeof data.performanceLevelRange === "object") {
     const levelCondition: any = {};
@@ -735,29 +748,29 @@ const userTransform = (data: any) => {
     delete data.performanceLevelRange;
   }
 
-  // Handle admissionalRange filter
-  if (data.admissionalRange && typeof data.admissionalRange === "object") {
+  // Handle exp1StartAtRange filter
+  if (data.exp1StartAtRange && typeof data.exp1StartAtRange === "object") {
     const dateCondition: any = {};
-    if (data.admissionalRange.gte) {
-      const fromDate = data.admissionalRange.gte instanceof Date
-        ? data.admissionalRange.gte
-        : new Date(data.admissionalRange.gte);
+    if (data.exp1StartAtRange.gte) {
+      const fromDate = data.exp1StartAtRange.gte instanceof Date
+        ? data.exp1StartAtRange.gte
+        : new Date(data.exp1StartAtRange.gte);
       // Set to start of day (00:00:00)
       fromDate.setHours(0, 0, 0, 0);
       dateCondition.gte = fromDate;
     }
-    if (data.admissionalRange.lte) {
-      const toDate = data.admissionalRange.lte instanceof Date
-        ? data.admissionalRange.lte
-        : new Date(data.admissionalRange.lte);
+    if (data.exp1StartAtRange.lte) {
+      const toDate = data.exp1StartAtRange.lte instanceof Date
+        ? data.exp1StartAtRange.lte
+        : new Date(data.exp1StartAtRange.lte);
       // Set to end of day (23:59:59.999)
       toDate.setHours(23, 59, 59, 999);
       dateCondition.lte = toDate;
     }
     if (Object.keys(dateCondition).length > 0) {
-      andConditions.push({ admissional: dateCondition });
+      andConditions.push({ exp1StartAt: dateCondition });
     }
-    delete data.admissionalRange;
+    delete data.exp1StartAtRange;
   }
 
   // Handle excludeSectorPrivileges filter - exclude users whose sector has specific privileges
@@ -890,8 +903,12 @@ const notificationPreferenceCreateNestedSchema = z.object({
 
 export const userCreateSchema = z
   .object({
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     name: createNameSchema(2, 200, "Nome"),
+    avatarId: z.string().uuid("Avatar inválido").nullable().optional(),
     status: z
       .enum(Object.values(USER_STATUS) as [string, ...string[]], {
         errorMap: () => ({ message: "status inválido" }),
@@ -903,7 +920,6 @@ export const userCreateSchema = z
     cpf: cpfSchema.nullable().optional(),
     verified: z.boolean().default(false),
     isActive: z.boolean().default(true),
-    admissional: nullableDate.optional(),
     performanceLevel: z.number().int().min(0).max(5).default(0),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres").nullable().optional(),
@@ -921,7 +937,7 @@ export const userCreateSchema = z
     zipCode: z.string().nullable().optional(),
     site: z.string().url("URL inválida").nullable().optional(),
 
-    // Additional dates - birth and admissional are required
+    // Additional dates - birth is required, exp1StartAt is optional
     birth: z.coerce
       .date()
       .refine(
@@ -961,8 +977,12 @@ export const userCreateSchema = z
 
 export const userUpdateSchema = z
   .object({
-    email: emailSchema.nullable().optional(),
+    email: z.preprocess(
+      (val) => (val === '' || val === null || val === undefined ? null : val),
+      emailSchema.nullable().optional(),
+    ),
     name: createNameSchema(2, 200, "Nome").optional(),
+    avatarId: z.string().uuid("Avatar inválido").nullable().optional(),
     status: z
       .enum(Object.values(USER_STATUS) as [string, ...string[]], {
         errorMap: () => ({ message: "status inválido" }),
@@ -974,7 +994,6 @@ export const userUpdateSchema = z
     cpf: cpfSchema.nullable().optional(),
     verified: z.boolean().optional(),
     isActive: z.boolean().optional(),
-    admissional: nullableDate.optional(),
     performanceLevel: z.number().int().min(0).max(5).optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres").nullable().optional(),
@@ -1083,11 +1102,11 @@ export const userUpdateSchema = z
   )
   .refine(
     (data) => {
-      // Validate dismissedAt date is not before admissional date
-      if (data.dismissedAt && data.admissional) {
+      // Validate dismissedAt date is not before exp1StartAt date
+      if (data.dismissedAt && data.exp1StartAt) {
         const dismissedAtDate = data.dismissedAt instanceof Date ? data.dismissedAt : new Date(data.dismissedAt);
-        const admissionalDate = data.admissional instanceof Date ? data.admissional : new Date(data.admissional);
-        return dismissedAtDate >= admissionalDate;
+        const exp1StartAtDate = data.exp1StartAt instanceof Date ? data.exp1StartAt : new Date(data.exp1StartAt);
+        return dismissedAtDate >= exp1StartAtDate;
       }
       return true;
     },
@@ -1253,7 +1272,7 @@ export const mapUserToFormData = createMapToFormDataHelper<User, UserUpdateFormD
   pis: user.pis || undefined,
   cpf: user.cpf || undefined,
   verified: user.verified,
-  admissional: user.admissional || undefined,
+  exp1StartAt: user.exp1StartAt || undefined,
   performanceLevel: user.performanceLevel,
   sectorId: user.sectorId || undefined,
   password: undefined, // Never map password from existing user
@@ -1268,7 +1287,7 @@ export const mapUserToFormData = createMapToFormDataHelper<User, UserUpdateFormD
   zipCode: user.zipCode || undefined,
   // site: user.site || undefined,
 
-  // Additional dates - use birth instead of birthDate, admissional and dismissedAt
+  // Additional dates - use birth instead of birthDate, exp1StartAt and dismissedAt
   birth: user.birth ?? undefined,
   dismissedAt: user.dismissedAt || undefined,
 

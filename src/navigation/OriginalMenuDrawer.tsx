@@ -65,6 +65,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { clearHistory } = useNavigationHistory();
   const router = useRouter();
   const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
   const insets = useSafeAreaInsets();
   const { navigation } = props;
   const drawerStatus = useDrawerStatus();
@@ -125,7 +127,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     if (!authUser) return null;
 
     // Use the sector property directly from the user
-    const userSector = authUser.sector || authUser.position?.sector;
+    const userSector = authUser.sector;
 
     return {
       ...authUser,
@@ -145,7 +147,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
           if (item.path) {
             const path = item.path.toLowerCase();
 
-            // More aggressive filtering for CRUD operations
+            // Always hide CRUD pages from menu - users navigate to them via list actions
             const crudPatterns = [
               'detalhes',
               'cadastrar',
@@ -163,9 +165,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
             const isCrudPage = crudPatterns.some(pattern => path.includes(pattern));
 
             if (isCrudPage) {
-              // Only show if we're currently on this exact page
-              const currentPath = pathname.replace(/^\/\(tabs\)/, "");
-              return item.path === currentPath;
+              return false;
             }
           }
           return true;
@@ -190,7 +190,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
     const userFilteredMenu = getFilteredMenuForUser(MENU_ITEMS, navUser, 'mobile');
     return filterDetailPages(userFilteredMenu);
-  }, [navUser, pathname]);
+  }, [navUser]);
 
   // Toggle submenu expansion (accordion style - only collapse same-level siblings)
   const toggleSubmenu = useCallback(
@@ -281,7 +281,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       const tabRoute = routeToMobilePath(path);
 
       console.log('📱 [MENU NAV] ========== START ==========');
-      console.log('📱 [MENU NAV] Current pathname:', pathname);
+      console.log('📱 [MENU NAV] Current pathname:', pathnameRef.current);
       console.log('📱 [MENU NAV] Target route:', tabRoute);
 
       try {
@@ -299,7 +299,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
       console.log('📱 [MENU NAV] ========== END ==========');
     },
-    [router, props.navigation, closeUserMenu, pathname],
+    [router, props.navigation, closeUserMenu],
   );
 
   // Get first submenu path for navigation
@@ -319,7 +319,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     (item: MenuItem): boolean => {
       if (!item.path) return false;
 
-      const currentPath = pathname.replace(/^\/\(tabs\)/, "");
+      const currentPath = pathnameRef.current.replace(/^\/\(tabs\)/, "");
       const normalizedCurrent = normalizePath(currentPath);
       const normalizedItem = normalizePath(item.path);
 
@@ -350,7 +350,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
 
       return false;
     },
-    [pathname],
+    [],
   );
 
   // Check if item has active child
@@ -880,7 +880,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               {showFavorites && (
                 <View style={styles.submenu}>
                   {favorites.map((favorite) => {
-                    const currentPath = pathname.replace(/^\/\(tabs\)/, "");
+                    const currentPath = pathnameRef.current.replace(/^\/\(tabs\)/, "");
                     const isFavoriteActive = normalizePath(currentPath) === normalizePath(favorite.path);
 
                     return (

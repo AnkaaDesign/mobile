@@ -60,13 +60,13 @@ export function EmployeeCard({ delivery }: EmployeeCardProps) {
             </View>
           )}
 
-          {user.position?.sector?.name && (
+          {user.sector?.name && (
             <View style={styles.infoRow}>
               <View style={styles.infoLabelContainer}>
                 <IconBuilding size={16} color={colors.mutedForeground} style={styles.infoIcon} />
                 <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Setor</ThemedText>
               </View>
-              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{user.position.sector.name}</ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{user.sector.name}</ThemedText>
             </View>
           )}
         </View>

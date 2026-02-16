@@ -19,6 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
+import { getFileUrl } from "@/utils/file-utils";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
@@ -74,17 +75,14 @@ export default function CustomerEditScreen() {
       phones: true,
       tags: true,
       logoId: true,
-      situacaoCadastral: true,
-      inscricaoEstadual: true,
+      registrationStatus: true,
+      stateRegistration: true,
       economicActivityId: true,
-      logradouro: true,
+      streetType: true,
       // Logo relation for display
       logo: {
         select: {
           id: true,
-          url: true,
-          name: true,
-          mimeType: true,
         },
       },
     },
@@ -117,10 +115,10 @@ export default function CustomerEditScreen() {
       phones: [],
       tags: [],
       logoId: null,
-      situacaoCadastral: null,
-      inscricaoEstadual: null,
+      registrationStatus: null,
+      stateRegistration: null,
       economicActivityId: null,
-      logradouro: null,
+      streetType: null,
     },
   });
 
@@ -163,7 +161,7 @@ export default function CustomerEditScreen() {
         }
       }
       if (data.registrationStatus) {
-        setValue("situacaoCadastral", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
+        setValue("registrationStatus", data.registrationStatus, { shouldDirty: true, shouldValidate: true });
       }
 
       // Handle economic activity (CNAE)
@@ -195,7 +193,7 @@ export default function CustomerEditScreen() {
   const { lookupCep } = useCepLookup({
     onSuccess: (data) => {
       if (data.streetType) {
-        setValue("logradouro", data.streetType, { shouldDirty: true, shouldValidate: true });
+        setValue("streetType", data.streetType, { shouldDirty: true, shouldValidate: true });
       }
       if (data.logradouro) {
         setValue("address", data.logradouro, { shouldDirty: true, shouldValidate: true });
@@ -269,10 +267,10 @@ export default function CustomerEditScreen() {
         phones: customerData.phones,
         tags: customerData.tags,
         logoId: customerData.logoId,
-        situacaoCadastral: (customerData as any)?.situacaoCadastral,
-        inscricaoEstadual: customerData.inscricaoEstadual,
+        registrationStatus: customerData.registrationStatus,
+        stateRegistration: customerData.stateRegistration,
         economicActivityId: customerData.economicActivityId,
-        logradouro: (customerData as any)?.logradouro,
+        streetType: customerData.streetType,
       });
 
       // Set document type based on existing data
@@ -299,11 +297,11 @@ export default function CustomerEditScreen() {
       }
 
       // Initialize logo files if existing logo
-      if (customerData.logo?.url) {
+      if (customerData.logo?.id) {
         setLogoFiles([{
-          uri: customerData.logo.url as string,
-          name: (customerData.logo.name as string) || "logo",
-          type: (customerData.logo.mimeType as string) || "image/jpeg",
+          uri: getFileUrl(customerData.logo as any),
+          name: (customerData.logo as any).filename || "logo",
+          type: (customerData.logo as any).mimetype || "image/jpeg",
         }]);
       }
     }
@@ -579,10 +577,10 @@ export default function CustomerEditScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Situação Cadastral" error={errors.situacaoCadastral?.message}>
+          <FormFieldGroup label="Situação Cadastral" error={errors.registrationStatus?.message}>
             <Controller
               control={control}
-              name="situacaoCadastral"
+              name="registrationStatus"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}
@@ -599,17 +597,17 @@ export default function CustomerEditScreen() {
             />
           </FormFieldGroup>
 
-          <FormFieldGroup label="Inscrição Estadual" error={errors.inscricaoEstadual?.message}>
+          <FormFieldGroup label="Inscrição Estadual" error={errors.stateRegistration?.message}>
             <Controller
               control={control}
-              name="inscricaoEstadual"
+              name="stateRegistration"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   value={value || ""}
                   onChangeText={onChange}
                   onBlur={onBlur}
                   placeholder="Ex: 123.456.789.012"
-                  error={!!errors.inscricaoEstadual}
+                  error={!!errors.stateRegistration}
                   editable={!isSubmitting}
                 />
               )}
@@ -717,10 +715,10 @@ export default function CustomerEditScreen() {
             </View>
           </View>
           <View style={styles.content}>
-          <FormFieldGroup label="Tipo de Logradouro" error={errors.logradouro?.message}>
+          <FormFieldGroup label="Tipo de Logradouro" error={errors.streetType?.message}>
             <Controller
               control={control}
-              name="logradouro"
+              name="streetType"
               render={({ field: { onChange, value } }) => (
                 <Combobox
                   value={value || ""}

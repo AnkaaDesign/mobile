@@ -29,9 +29,6 @@ export interface OrderSchedule extends BaseEntity {
   isActive: boolean;
   items: string[];
 
-  // Supplier relation
-  supplierId: string | null;
-
   // Specific scheduling fields
   specificDate: Date | null;
   dayOfMonth: number | null;
@@ -57,7 +54,6 @@ export interface OrderSchedule extends BaseEntity {
   originalScheduleId: string | null;
 
   // Relations (optional, populated based on query)
-  supplier?: Supplier;
   weeklyConfig?: WeeklyScheduleConfig;
   monthlyConfig?: MonthlyScheduleConfig;
   yearlyConfig?: YearlyScheduleConfig;
@@ -240,11 +236,6 @@ export interface OrderItemIncludes {
 }
 
 export interface OrderScheduleIncludes {
-  supplier?:
-    | boolean
-    | {
-        include?: SupplierIncludes;
-      };
   weeklyConfig?:
     | boolean
     | {

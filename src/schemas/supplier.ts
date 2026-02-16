@@ -660,7 +660,10 @@ export const supplierCreateSchema = z.object({
   fantasyName: fantasyNameSchema,
   cnpj: cnpjOptionalSchema,
   corporateName: corporateNameSchema,
-  email: emailSchema.nullable().optional(),
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    emailSchema.nullable().optional(),
+  ),
   address: addressSchema,
   addressNumber: z.string().max(10, "Número deve ter no máximo 10 caracteres").nullable().optional(),
   addressComplement: z.string().max(100, "Complemento deve ter no máximo 100 caracteres").nullable().optional(),
@@ -787,7 +790,10 @@ export const supplierUpdateSchema = z.object({
     ])
     .optional(),
   corporateName: corporateNameSchema.optional(),
-  email: emailSchema.nullable().optional(),
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? null : val),
+    emailSchema.nullable().optional(),
+  ),
   address: addressSchema.optional(),
   addressNumber: z.string().max(10, "Número deve ter no máximo 10 caracteres").nullable().optional(),
   addressComplement: z.string().max(100, "Complemento deve ter no máximo 100 caracteres").nullable().optional(),

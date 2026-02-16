@@ -170,14 +170,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     },
   },
   {
-    key: "admissional",
+    key: "exp1StartAt",
     header: "Data de Admissão",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (user: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {user.admissional ? formatDate(new Date(user.admissional)) : "-"}
+        {user.exp1StartAt ? formatDate(new Date(user.exp1StartAt)) : "-"}
       </ThemedText>
     ),
   },
@@ -283,7 +283,7 @@ export const TeamMemberTable = React.memo<TeamMemberTableProps>(
         sector: 1.5,
         email: 2.0,
         phone: 1.5,
-        admissional: 1.5,
+        exp1StartAt: 1.5,
         status: 1.2,
         tasksCount: 0.8,
       };

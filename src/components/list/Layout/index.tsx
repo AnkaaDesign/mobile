@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native'
 import { IconFilter } from '@tabler/icons-react-native'
 import { useRouter, usePathname } from 'expo-router'
@@ -35,7 +35,7 @@ export const Layout = memo(function Layout({
   const router = useRouter()
   const pathname = usePathname()
   const { user } = useAuth()
-  const { pushWithLoading, startNavigation, endNavigation, isNavigating } = useNavigationLoading()
+  const { pushWithLoading, startNavigation, endNavigation, isNavigatingRef } = useNavigationLoading()
   const list = useList(config)
 
   // Track page access for recents/most accessed
@@ -51,7 +51,7 @@ export const Layout = memo(function Layout({
   // Handle row click - use config's onRowPress if defined, otherwise use 'view' action or first non-destructive action
   const handleRowPress = useCallback((item: any) => {
     // Prevent double-clicks while navigating
-    if (isNavigating) return
+    if (isNavigatingRef.current) return
 
     // Performance logging - track navigation start
     perfLog.navigationClick(`Layout:${config.key}`, `${config.key}:detail`, item.id)
@@ -60,8 +60,8 @@ export const Layout = memo(function Layout({
     // If config has a custom onRowPress handler, use it with loading
     if (config.table.onRowPress) {
       startNavigation()
-      config.table.onRowPress(item, router)
-      // Navigation loading will auto-hide when pathname changes
+      // Defer navigation to next frame so overlay renders before heavy work
+      requestAnimationFrame(() => config.table.onRowPress!(item, router))
       return
     }
 
@@ -89,13 +89,20 @@ export const Layout = memo(function Layout({
     // Execute the action with loading overlay
     if (action.onPress) {
       startNavigation()
-      action.onPress(item, router, {})
-      // Navigation loading will auto-hide when pathname changes
+      // Defer navigation to next frame so overlay renders before heavy work
+      requestAnimationFrame(() => action.onPress!(item, router, {}))
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
       pushWithLoading(route)
     }
-  }, [config.table.actions, config.table.onRowPress, config.key, config.title, router, isNavigating, startNavigation, pushWithLoading])
+  }, [config.table.actions, config.table.onRowPress, config.key, config.title, router, startNavigation, pushWithLoading])
+
+  // Memoize renderContext to prevent unnecessary Table re-renders
+  const renderContext = useMemo(() => ({
+    route: pathname,
+    navigationRoute: pathname?.includes('historico') ? 'history' as const : undefined,
+    user,
+  }), [pathname, user])
 
   // Check if user can create (using permission function if provided)
   const canCreate = config.actions?.create?.canCreate
@@ -271,11 +278,7 @@ export const Layout = memo(function Layout({
         emptyState={config.emptyState}
         totalCount={list.totalCount}
         getRowStyle={list.table.getRowStyle}
-        renderContext={{
-          route: pathname,
-          navigationRoute: pathname?.includes('historico') ? 'history' : undefined,
-          user,
-        }}
+        renderContext={renderContext}
       />
 
       {/* FAB for Create */}

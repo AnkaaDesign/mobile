@@ -31,13 +31,15 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   const { colors } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
   const { user } = useAuth()
-  const { pushWithLoading, isNavigating, startNavigation, endNavigation } = useNavigationLoading()
+  const { pushWithLoading, isNavigatingRef, startNavigation, endNavigation } = useNavigationLoading()
 
   // Get current path - with multiple fallback strategies
   const getCurrentPath = useCallback(() => {
-    // First try: usePathname hook
-    if (pathname) return pathname
+    // First try: usePathname hook (via ref to avoid re-renders)
+    if (pathnameRef.current) return pathnameRef.current
 
     // Second try: renderContext might have route info
     if (renderContext?.route) return renderContext.route
@@ -69,7 +71,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
 
     // Last resort fallback
     return '/(tabs)/inicio'
-  }, [pathname, router, renderContext])
+  }, [router, renderContext])
   const swipeableRef = useRef<Swipeable>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -136,7 +138,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   const handleAction = useCallback(
     async (action: TableAction<T>) => {
       // Prevent double-clicks while navigating
-      if (isNavigating) return
+      if (isNavigatingRef.current) return
 
       closeActions()
       setActiveActionKey(action.key)
@@ -151,21 +153,19 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
       // Helper to execute the action (with navigation loading for route actions)
       const executeAction = async () => {
         if (action.onPress) {
-          // Start navigation for custom onPress handlers
+          // Start navigation overlay, then defer action to next frame so overlay renders first
           startNavigation()
-          try {
-            // Store navigation source for proper back navigation
-            const currentPath = getCurrentPath()
-            console.log('[RowActions] Storing navigation source:', currentPath)
-            navigationTracker.setSource(currentPath)
-            await action.onPress(item, router, actionContext)
-          } catch (error) {
-            console.error('[RowActions] Action error:', error)
-            // Make sure to end navigation on error
-            endNavigation()
-          }
-          setActiveActionKey(null)
-          // Navigation will auto-end when pathname changes, or safety timeout will kick in
+          const currentPath = getCurrentPath()
+          navigationTracker.setSource(currentPath)
+          requestAnimationFrame(async () => {
+            try {
+              await action.onPress!(item, router, actionContext)
+            } catch (error) {
+              console.error('[RowActions] Action error:', error)
+              endNavigation()
+            }
+            setActiveActionKey(null)
+          })
         } else if (action.route) {
           const route = typeof action.route === 'function' ? action.route(item) : action.route
           // Store navigation source for proper back navigation
@@ -202,7 +202,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         await executeAction()
       }
     },
-    [item, closeActions, router, mutations, user, isNavigating, pushWithLoading, startNavigation, endNavigation]
+    [item, closeActions, router, mutations, user, pushWithLoading, startNavigation, endNavigation]
   )
 
   const renderRightActions = useCallback(
@@ -266,11 +266,11 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
                 style={[
                   styles.actionButton,
                   { backgroundColor },
-                  (isNavigating || isActionActive) && { opacity: 0.6 }
+                  isActionActive && { opacity: 0.6 }
                 ]}
                 onPress={() => handleAction(action)}
                 activeOpacity={0.7}
-                disabled={isNavigating || isActionActive}
+                disabled={isActionActive}
               >
                 {isActionActive ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -286,7 +286,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
         </View>
       )
     },
-    [visibleActions, colors, handleAction, activeActionKey, isNavigating]
+    [visibleActions, colors, handleAction, activeActionKey]
   )
 
   if (visibleActions.length === 0) {

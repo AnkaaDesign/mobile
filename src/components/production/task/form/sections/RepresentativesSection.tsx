@@ -31,13 +31,14 @@ export default function RepresentativesSection({
   const { control, setValue, getValues } = useFormContext();
   const { user } = useAuth();
 
-  // Watch customerId and invoiceToId to pass to RepresentativeManager
+  // Watch customerId to pass to RepresentativeManager
   const customerId = useWatch({ control, name: 'customerId' });
-  const invoiceToId = useWatch({ control, name: 'invoiceToId' });
 
   // Get customer names from task data
   const customerName = task?.customer?.fantasyName || task?.customer?.corporateName;
-  const invoiceToName = task?.invoiceTo?.fantasyName || task?.invoiceTo?.corporateName;
+
+  // Get invoiceTo customers from pricing (many-to-many)
+  const invoiceToCustomers = task?.pricing?.invoicesToCustomers;
 
   // Check user sector privileges
   const isDesignerSector = user?.sector?.privileges === 'DESIGNER';
@@ -179,8 +180,7 @@ export default function RepresentativesSection({
       <RepresentativeManager
         customerId={customerId}
         customerName={customerName}
-        invoiceToId={invoiceToId}
-        invoiceToName={invoiceToName}
+        invoiceToCustomers={invoiceToCustomers}
         value={representativeRows}
         onChange={handleRepresentativeRowsChange}
         disabled={isSubmitting || isReadOnlyForRepresentatives}

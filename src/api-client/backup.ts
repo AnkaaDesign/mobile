@@ -1,4 +1,5 @@
 import { apiClient } from "./axiosClient";
+import { BACKUP_PATH_PRESETS } from "../config/backup-paths";
 
 export interface BackupMetadata {
   id: string;
@@ -179,24 +180,18 @@ class BackupApiClient {
   // Get backup priority paths
   async getPathsByPriority(priority: "low" | "medium" | "high" | "critical" = "medium"): Promise<string[]> {
     // This could be an API call in the future, for now return sensible defaults
-    const pathMaps = {
-      critical: ["/home/kennedy/ankaa", "/home/kennedy/ankaa/.env", "/home/kennedy/ankaa/apps/api/.env"],
-      high: ["/home/kennedy/ankaa/apps", "/home/kennedy/ankaa/packages", "/home/kennedy/ankaa/scripts", "/etc/nginx", "/etc/ssl"],
-      medium: ["/home/kennedy/ankaa/docs", "/home/kennedy/ankaa/test-examples", "/var/log/nginx", "/var/www"],
-      low: ["/home/kennedy/ankaa/node_modules", "/home/kennedy/ankaa/.git", "/tmp"],
-    };
-
+    // Paths are centralized in config/backup-paths.ts
     switch (priority) {
       case "critical":
-        return [...pathMaps.critical];
+        return [...BACKUP_PATH_PRESETS.critical];
       case "high":
-        return [...pathMaps.critical, ...pathMaps.high];
+        return [...BACKUP_PATH_PRESETS.critical, ...BACKUP_PATH_PRESETS.high];
       case "medium":
-        return [...pathMaps.critical, ...pathMaps.high, ...pathMaps.medium];
+        return [...BACKUP_PATH_PRESETS.critical, ...BACKUP_PATH_PRESETS.high, ...BACKUP_PATH_PRESETS.medium];
       case "low":
-        return [...pathMaps.critical, ...pathMaps.high, ...pathMaps.medium, ...pathMaps.low];
+        return [...BACKUP_PATH_PRESETS.critical, ...BACKUP_PATH_PRESETS.high, ...BACKUP_PATH_PRESETS.medium, ...BACKUP_PATH_PRESETS.low];
       default:
-        return [...pathMaps.high];
+        return [...BACKUP_PATH_PRESETS.high];
     }
   }
 

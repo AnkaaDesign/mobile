@@ -8,9 +8,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { usePathname } from "expo-router";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { SECTOR_PRIVILEGES } from '@/constants/enums';
+import { SECTOR_PRIVILEGES, TEAM_LEADER } from '@/constants/enums';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 
 // Performance monitoring
@@ -35,20 +34,18 @@ interface RouteConfig {
 
 // Privilege hierarchy - higher privileges include lower ones
 // Note: Team leadership is now determined by managedSector relationship, not privilege
-const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES, number> = {
+const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, number> = {
   [SECTOR_PRIVILEGES.ADMIN]: 10,
   [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: 8,
   [SECTOR_PRIVILEGES.FINANCIAL]: 7,
   [SECTOR_PRIVILEGES.PRODUCTION]: 6,
   [SECTOR_PRIVILEGES.WAREHOUSE]: 5,
-  [SECTOR_PRIVILEGES.STOCK]: 5, // Same level as WAREHOUSE
   [SECTOR_PRIVILEGES.MAINTENANCE]: 4,
   [SECTOR_PRIVILEGES.LOGISTIC]: 3,
   [SECTOR_PRIVILEGES.COMMERCIAL]: 3, // Same level as LOGISTIC
   [SECTOR_PRIVILEGES.DESIGNER]: 2,
   [SECTOR_PRIVILEGES.PLOTTING]: 2, // Same level as DESIGNER
-  [SECTOR_PRIVILEGES.LEADER]: 2, // Leadership privilege
-  [SECTOR_PRIVILEGES.TEAM_LEADER]: 2, // Virtual privilege - checked via user.managedSector
+  [TEAM_LEADER]: 2, // Virtual privilege - checked via user.managedSector
   [SECTOR_PRIVILEGES.EXTERNAL]: 1,
   [SECTOR_PRIVILEGES.BASIC]: 0,
 };
@@ -277,7 +274,6 @@ function LoadingScreen() {
 export function PrivilegeOptimizedDrawerLayout() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
-  const pathname = usePathname();
   const { canGoBack, goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);

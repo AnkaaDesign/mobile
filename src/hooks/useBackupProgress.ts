@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { WEBHOOK_BASE_URL } from '../config/urls';
 // TODO: Install socket.io-client and react-native-config to enable this feature
 // import io, { Socket } from 'socket.io-client';
 // import Config from 'react-native-config';
@@ -116,8 +117,8 @@ export function useBackupProgress(
   useEffect(() => {
     if (!backupId) return;
 
-    // Use webhook subdomain or fallback to API URL
-    const socketUrl = Config.WEBHOOK_URL || 'https://webhook.ankaadesign.com.br';
+    // Use webhook subdomain or fallback to centralized config URL
+    const socketUrl = Config.WEBHOOK_URL || WEBHOOK_BASE_URL;
     const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,

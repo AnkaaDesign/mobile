@@ -147,8 +147,7 @@ export default function RequestPPEScreen() {
         hasMore,
         total,
       };
-    } catch (error) {
-      console.error('[PPE Request Screen] Error fetching PPE items:', error);
+    } catch (_error) {
       return { data: [], hasMore: false };
     }
   }, [hasSizesConfigured, userPpeSize?.data]);
@@ -183,9 +182,6 @@ export default function RequestPPEScreen() {
   }, []);
 
   const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
-    console.log('[PPE Request Screen] Submitting request:', data);
-    console.log('[PPE Request Screen] Selected item:', selectedItem);
-
     const requestData = {
       itemId: data.itemId,
       quantity: 1,
@@ -193,15 +189,13 @@ export default function RequestPPEScreen() {
     };
 
     try {
-      const result = await requestMutation.mutateAsync(requestData);
-      console.log('[PPE Request Screen] Request successful:', result);
+      await requestMutation.mutateAsync(requestData);
       form.reset();
       router.back();
     } catch (error: any) {
-      console.error('[PPE Request Screen] Request failed:', error);
       // API client handles error alerts
     }
-  }, [requestMutation, form, selectedItem]);
+  }, [requestMutation, form]);
 
   const isLoading = requestMutation.isPending;
 

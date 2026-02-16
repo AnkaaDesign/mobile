@@ -97,7 +97,6 @@ export default function EmployeeDetailScreen() {
       avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      admissional: true,
       // Status tracking dates
       effectedAt: true,
       exp1StartAt: true,
@@ -532,13 +531,13 @@ export default function EmployeeDetailScreen() {
                 {employee.sector?.name || "Não informado"}
               </ThemedText>
             </View>
-            {employee.admissional && (
+            {employee.exp1StartAt && (
               <View style={styles.infoItem}>
                 <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
                   Data de Admissão
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>
-                  {format(new Date(employee.admissional), "dd/MM/yyyy", { locale: ptBR })}
+                  {format(new Date(employee.exp1StartAt), "dd/MM/yyyy", { locale: ptBR })}
                 </ThemedText>
               </View>
             )}

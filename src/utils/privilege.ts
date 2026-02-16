@@ -1,7 +1,7 @@
 // packages/utils/src/privilege.ts
 // Privilege management utilities
 
-import { SECTOR_PRIVILEGES } from '../constants';
+import { SECTOR_PRIVILEGES, TEAM_LEADER } from '../constants';
 
 // =====================
 // Privilege Sort Order (for DISPLAY/SORTING purposes ONLY)
@@ -13,17 +13,15 @@ import { SECTOR_PRIVILEGES } from '../constants';
  * IMPORTANT: This is NOT used for access control!
  * Privileges are NOT hierarchical - each privilege grants specific access only.
  */
-export const getSectorPrivilegeSortOrder = (privilege: SECTOR_PRIVILEGES): number => {
-  const sortOrder: Record<SECTOR_PRIVILEGES, number> = {
+export const getSectorPrivilegeSortOrder = (privilege: SECTOR_PRIVILEGES | typeof TEAM_LEADER): number => {
+  const sortOrder: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, number> = {
     [SECTOR_PRIVILEGES.BASIC]: 1,
     [SECTOR_PRIVILEGES.MAINTENANCE]: 2,
     [SECTOR_PRIVILEGES.WAREHOUSE]: 3,
-    [SECTOR_PRIVILEGES.STOCK]: 3,
     [SECTOR_PRIVILEGES.DESIGNER]: 4,
     [SECTOR_PRIVILEGES.LOGISTIC]: 4,
     [SECTOR_PRIVILEGES.PRODUCTION]: 5,
-    [SECTOR_PRIVILEGES.LEADER]: 5,
-    [SECTOR_PRIVILEGES.TEAM_LEADER]: 5,
+    [TEAM_LEADER]: 5,
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: 6,
     [SECTOR_PRIVILEGES.FINANCIAL]: 7,
     [SECTOR_PRIVILEGES.COMMERCIAL]: 7,

@@ -15,6 +15,7 @@ import {
   IconAlertTriangle,
   IconCoin,
   IconClock,
+  IconMessageCircle,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
@@ -96,6 +97,14 @@ export default function PessoalScreen() {
       description: "Registro de ponto",
       icon: <IconClock size={28} color={colors.primary} />,
       route: "/(tabs)/pessoal/meus-pontos",
+      available: true,
+    },
+    {
+      id: "messages",
+      title: "Minhas Mensagens",
+      description: "Mensagens e comunicados",
+      icon: <IconMessageCircle size={28} color={colors.primary} />,
+      route: "/(tabs)/pessoal/minhas-mensagens",
       available: true,
     },
     {

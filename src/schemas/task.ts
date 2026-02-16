@@ -1196,7 +1196,6 @@ export const taskCreateSchema = z
     forecastDate: nullableDate.optional(),
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
-    invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     // Representatives relationship
     representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
@@ -1205,6 +1204,7 @@ export const taskCreateSchema = z
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to invoices/nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
+    bankSlipIds: z.array(z.string().uuid("Boleto inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
     // FIXED: Field name to match Prisma schema and web (was invoiceReimbursementIds)
     reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
@@ -1279,7 +1279,6 @@ export const taskUpdateSchema = z
     forecastDate: nullableDate.optional(),
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
-    invoiceToId: z.string().uuid("Cliente para faturamento inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     // Representatives relationship
     representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
@@ -1288,6 +1287,7 @@ export const taskUpdateSchema = z
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
     invoiceIds: z.array(z.string().uuid("Invoice inválida")).optional(), // Maps to invoices/nfes
     receiptIds: z.array(z.string().uuid("Receipt inválido")).optional(),
+    bankSlipIds: z.array(z.string().uuid("Boleto inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
     // FIXED: Field name to match Prisma schema and web (was invoiceReimbursementIds)
     reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
@@ -1444,6 +1444,7 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   budgetIds: task.budgets?.map((budget) => budget.id),
   invoiceIds: task.invoices?.map((nfe) => nfe.id),
   receiptIds: task.receipts?.map((receipt) => receipt.id),
+  bankSlipIds: task.bankSlips?.map((bankSlip) => bankSlip.id),
   reimbursementIds: task.reimbursements?.map((reimbursement) => reimbursement.id),
   reimbursementInvoiceIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
   artworkIds: task.artworks?.map((artwork) => artwork.id),

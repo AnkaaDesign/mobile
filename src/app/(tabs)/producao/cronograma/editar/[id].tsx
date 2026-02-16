@@ -61,12 +61,6 @@ export default function EditScheduleScreen() {
           fantasyName: true,
         }
       },
-      invoiceTo: {
-        select: {
-          id: true,
-          fantasyName: true,
-        }
-      },
       representatives: {
         select: {
           id: true,
@@ -151,6 +145,16 @@ export default function EditScheduleScreen() {
           customGuaranteeText: true,
           layoutFileId: true,
           layoutFile: true,
+          customForecastDays: true,
+          simultaneousTasks: true,
+          discountReference: true,
+          invoicesToCustomerIds: true,
+          invoicesToCustomers: {
+            select: {
+              id: true,
+              fantasyName: true,
+            }
+          },
           items: {
             select: {
               id: true,
@@ -341,24 +345,10 @@ export default function EditScheduleScreen() {
       });
     };
 
-    // Helper: Filter empty airbrushings
-    const filterAirbrushings = (airbrushings: any[]): any[] => {
-      if (!airbrushings || !Array.isArray(airbrushings)) return [];
-      return airbrushings.filter(a => {
-        // Keep if it has an ID (existing record)
-        if (a.id && !a.id.startsWith('temp-') && !a.id.startsWith('airbrushing-')) return true;
-        // For new airbrushings, require some meaningful data
-        const hasPrice = a.price !== null && a.price !== undefined;
-        const hasDates = a.startDate || a.finishDate;
-        const hasFiles = (a.receiptIds?.length > 0) || (a.invoiceIds?.length > 0) || (a.artworkIds?.length > 0);
-        return hasPrice || hasDates || hasFiles;
-      });
-    };
-
     // Process simple scalar fields
     const scalarFields = [
       'name', 'status', 'serialNumber', 'details', 'commission',
-      'customerId', 'invoiceToId', 'sectorId', 'paintId'
+      'customerId', 'sectorId', 'paintId'
     ];
 
     for (const field of scalarFields) {
@@ -448,18 +438,6 @@ export default function EditScheduleScreen() {
       }
     }
 
-    // Process airbrushings - filter empty and check for changes
-    if (formData.airbrushings !== undefined) {
-      const filteredAirbrushings = filterAirbrushings(formData.airbrushings);
-      const origAirbrushings = originalTask.airbrushings || [];
-
-      if (filteredAirbrushings.length > 0 || origAirbrushings.length > 0) {
-        if (JSON.stringify(filteredAirbrushings) !== JSON.stringify(origAirbrushings)) {
-          processed.airbrushings = filteredAirbrushings;
-        }
-      }
-    }
-
     // Process observation
     if (formData.observation !== undefined) {
       if (hasChanged(formData.observation, originalTask.observation)) {
@@ -543,7 +521,6 @@ export default function EditScheduleScreen() {
         initialData={{
           name: task.name,
           customerId: task.customerId || "",
-          invoiceToId: task.invoiceToId ?? null,
           negotiatingWith: (task as any).negotiatingWith ?? { name: null, phone: null },
           sectorId: task.sectorId ?? undefined,
           serialNumber: task.serialNumber ?? undefined,
@@ -618,6 +595,10 @@ export default function EditScheduleScreen() {
             customGuaranteeText: (task as any).pricing.customGuaranteeText || null,
             layoutFileId: (task as any).pricing.layoutFileId || null,
             layoutFile: (task as any).pricing.layoutFile || null,
+            customForecastDays: (task as any).pricing.customForecastDays || null,
+            simultaneousTasks: (task as any).pricing.simultaneousTasks || null,
+            discountReference: (task as any).pricing.discountReference || null,
+            invoicesToCustomerIds: (task as any).pricing.invoicesToCustomers?.map((c: any) => c.id) || [],
             // Include default empty row if no items exist (matches web)
             items: (task as any).pricing.items && (task as any).pricing.items.length > 0
               ? (task as any).pricing.items.map((item: any) => ({
@@ -648,6 +629,10 @@ export default function EditScheduleScreen() {
             customGuaranteeText: null,
             layoutFileId: null,
             layoutFile: null,
+            customForecastDays: null,
+            simultaneousTasks: null,
+            discountReference: null,
+            invoicesToCustomerIds: [],
             items: [{ description: '', amount: null, observation: null, shouldSync: true }],
           },
         }}

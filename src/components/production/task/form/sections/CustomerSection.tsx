@@ -34,16 +34,6 @@ export default function CustomerSection({
   const isDesignerSector = user?.sector?.privileges === 'DESIGNER';
   const isLogisticSector = user?.sector?.privileges === 'LOGISTIC';
 
-  // Check if user can view restricted fields (matches web logic)
-  const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER'].includes(
-    user?.sector?.privileges || ''
-  );
-
-  // Check if user can view invoiceTo field - DESIGNER cannot see it (only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC)
-  const canViewInvoiceToField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC'].includes(
-    user?.sector?.privileges || ''
-  );
-
   return (
     <FormCard title="Informações do Cliente" icon="IconUser">
       {/* Name - Disabled for financial, warehouse, designer, logistic */}
@@ -88,25 +78,6 @@ export default function CustomerSection({
           )}
         />
       </FormFieldGroup>
-
-      {/* Invoice To Customer - Only visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC (NOT Designer) */}
-      {canViewInvoiceToField && (
-        <FormFieldGroup label="Faturar Para" error={errors.invoiceToId?.message}>
-          <Controller
-            control={control}
-            name="invoiceToId"
-            render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <CustomerSelector
-                value={value}
-                onValueChange={onChange}
-                disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-                error={error?.message}
-                required={false}
-              />
-            )}
-          />
-        </FormFieldGroup>
-      )}
     </FormCard>
   );
 }
