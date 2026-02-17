@@ -210,12 +210,17 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
               <View style={[styles.descriptionColumn, styles.descriptionCell]}>
                 <ThemedText style={styles.tableCellText}>{item.description}</ThemedText>
                 {item.observation && (
-                  <View style={[styles.observationIndicator, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                    <IconNote size={12} color={colors.mutedForeground} />
-                    <View style={[styles.observationBadge, { backgroundColor: colors.destructive }]}>
-                      <ThemedText style={styles.observationBadgeText}>!</ThemedText>
+                  <TouchableOpacity
+                    onPress={() => Alert.alert("Observação", item.observation!)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.observationIndicator, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                      <IconNote size={12} color={colors.mutedForeground} />
+                      <View style={[styles.observationBadge, { backgroundColor: colors.destructive }]}>
+                        <ThemedText style={styles.observationBadgeText}>!</ThemedText>
+                      </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
               </View>
               <ThemedText style={[styles.tableCellText, styles.valueColumn, styles.valueText]}>
@@ -238,20 +243,18 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           {/* Discount */}
           {pricing.discountType && pricing.discountType !== "NONE" && pricing.discountValue && (
             <View style={styles.summaryRow}>
-              <ThemedText style={[styles.summaryLabel, { color: colors.destructive }]}>
-                Desconto{pricing.discountType === "PERCENTAGE" ? ` (${pricing.discountValue}%)` : " (Valor Fixo)"}
-              </ThemedText>
+              <View style={styles.discountLabelContainer}>
+                <ThemedText style={[styles.summaryLabel, { color: colors.destructive }]}>
+                  Desconto{pricing.discountType === "PERCENTAGE" ? ` (${pricing.discountValue}%)` : " (Valor Fixo)"}
+                </ThemedText>
+                {pricing.discountReference && (
+                  <ThemedText style={[styles.discountReference, { color: colors.mutedForeground }]}>
+                    Ref: {pricing.discountReference}
+                  </ThemedText>
+                )}
+              </View>
               <ThemedText style={[styles.summaryValue, { color: colors.destructive }]}>
                 - {formatCurrency(discountAmount)}
-              </ThemedText>
-            </View>
-          )}
-
-          {/* Discount Reference */}
-          {pricing.discountType && pricing.discountType !== "NONE" && pricing.discountReference && (
-            <View style={styles.summaryRow}>
-              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground, fontStyle: 'italic' }]}>
-                Ref: {pricing.discountReference}
               </ThemedText>
             </View>
           )}
@@ -479,6 +482,14 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: fontSize.sm,
+  },
+  discountLabelContainer: {
+    flex: 1,
+    gap: 2,
+  },
+  discountReference: {
+    fontSize: fontSize.xs,
+    fontStyle: "italic",
   },
   summaryValue: {
     fontSize: fontSize.sm,

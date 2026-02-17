@@ -47,7 +47,7 @@ function parseSpot(spot: TRUCK_SPOT | null): {
   lane: LaneId | null;
   spotNumber: SpotNumber | null;
 } {
-  if (!spot || spot === TRUCK_SPOT.PATIO) {
+  if (!spot) {
     return { garage: null, lane: null, spotNumber: null };
   }
 
@@ -81,7 +81,7 @@ export function SpotSelector({
   const parsedSpot = useMemo(() => parseSpot(currentSpot), [currentSpot]);
 
   const [selectedGarage, setSelectedGarage] = useState<GarageId | 'PATIO' | null>(
-    currentSpot === TRUCK_SPOT.PATIO ? 'PATIO' : parsedSpot.garage
+    parsedSpot.garage
   );
   const [selectedLane, setSelectedLane] = useState<LaneId | null>(parsedSpot.lane);
   const [selectedSpotNumber, setSelectedSpotNumber] = useState<SpotNumber | null>(parsedSpot.spotNumber);
@@ -272,11 +272,7 @@ export function SpotSelector({
   // Sync state when currentSpot changes externally
   useEffect(() => {
     const parsed = parseSpot(currentSpot);
-    if (currentSpot === TRUCK_SPOT.PATIO) {
-      setSelectedGarage('PATIO');
-      setSelectedLane(null);
-      setSelectedSpotNumber(null);
-    } else if (parsed.garage) {
+    if (parsed.garage) {
       setSelectedGarage(parsed.garage);
       setSelectedLane(parsed.lane);
       setSelectedSpotNumber(parsed.spotNumber);
@@ -333,7 +329,7 @@ export function SpotSelector({
       )}
 
       {/* Current spot display */}
-      {currentSpot && currentSpot !== TRUCK_SPOT.PATIO && (
+      {currentSpot && (
         <ThemedText style={[styles.currentSpot, { color: colors.mutedForeground }]}>
           Local atual: {currentSpot.replace(/_/g, '-')}
         </ThemedText>

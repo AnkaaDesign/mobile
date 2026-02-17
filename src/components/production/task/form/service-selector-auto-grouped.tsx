@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, Modal, Pressable, TextInput, Text as RNText } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getUsers } from "@/api-client";
 import type { User } from "@/types";
-import { IconNote, IconTrash, IconPlus } from "@tabler/icons-react-native";
+import { IconNote, IconTrash, IconPlus, IconArrowsSort } from "@tabler/icons-react-native";
 
 interface ServiceOrder {
   id?: string;
@@ -41,6 +41,26 @@ export function ServiceSelectorAutoGrouped({
 }: ServiceSelectorAutoGroupedProps) {
   const { colors } = useTheme();
 
+  // Track indices of newly added services that should stay ungrouped until manually organized
+  // We use a counter to generate unique IDs since mobile services don't have field IDs like react-hook-form
+  const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
+  const nextKeyRef = useRef(0);
+  // Map service array indices to stable keys for tracking pending state
+  const serviceKeysRef = useRef<string[]>([]);
+
+  // Keep serviceKeys in sync with the services array length for externally added items
+  // (e.g., items loaded from API or added by other components)
+  useEffect(() => {
+    const currentKeys = serviceKeysRef.current;
+    if (services.length > currentKeys.length) {
+      // New items added externally — assign keys (not marked as pending)
+      for (let i = currentKeys.length; i < services.length; i++) {
+        currentKeys.push(`svc-${nextKeyRef.current++}`);
+      }
+    }
+    // Note: removal is handled by handleRemoveService which updates the ref directly
+  }, [services.length]);
+
   // Group services by type
   const { groupedServices, ungroupedIndices } = useMemo(() => {
     const groups: Record<string, number[]> = {
@@ -54,19 +74,28 @@ export function ServiceSelectorAutoGrouped({
 
     services.forEach((service, index) => {
       const isComplete = service?.type && service?.description && service.description.trim().length >= 3;
+      const key = serviceKeysRef.current[index];
+      const isPending = key ? pendingKeys.has(key) : false;
 
-      if (isComplete) {
-        groups[service.type as string]?.push(index);
-      } else {
+      if (!isComplete || isPending) {
         ungrouped.push(index);
+      } else {
+        groups[service.type as string]?.push(index);
       }
     });
 
     return { groupedServices: groups, ungroupedIndices: ungrouped };
-  }, [services]);
+  }, [services, pendingKeys]);
 
   // Handle adding a new service
   const handleAddService = useCallback(() => {
+    const newKey = `svc-${nextKeyRef.current++}`;
+    serviceKeysRef.current.push(newKey);
+    setPendingKeys(prev => {
+      const updated = new Set(prev);
+      updated.add(newKey);
+      return updated;
+    });
     onChange([
       ...services,
       {
@@ -79,9 +108,23 @@ export function ServiceSelectorAutoGrouped({
     ]);
   }, [services, onChange]);
 
+  // Handle manual organize — clear all pending keys
+  const handleOrganize = useCallback(() => {
+    setPendingKeys(new Set());
+  }, []);
+
   // Handle removing a service
   const handleRemoveService = useCallback(
     (index: number) => {
+      const removedKey = serviceKeysRef.current[index];
+      serviceKeysRef.current = serviceKeysRef.current.filter((_, i) => i !== index);
+      if (removedKey) {
+        setPendingKeys(prev => {
+          const updated = new Set(prev);
+          updated.delete(removedKey);
+          return updated;
+        });
+      }
       onChange(services.filter((_, i) => i !== index));
     },
     [services, onChange]
@@ -214,18 +257,32 @@ export function ServiceSelectorAutoGrouped({
 
   return (
     <View style={styles.container}>
-      {/* Add Service Button */}
-      <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
-        <IconPlus size={16} color={colors.foreground} />
-        <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
-          Adicionar Serviço
-        </ThemedText>
-      </Button>
+      {/* Action Buttons */}
+      <View style={styles.actionButtons}>
+        <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
+          <IconPlus size={16} color={colors.foreground} />
+          <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
+            Adicionar Serviço
+          </ThemedText>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={handleOrganize}
+          disabled={disabled || pendingKeys.size === 0}
+          style={styles.organizeButton}
+        >
+          <IconArrowsSort size={16} color={pendingKeys.size === 0 ? colors.mutedForeground : colors.foreground} />
+          <ThemedText style={{ marginLeft: 4, fontSize: 14, color: pendingKeys.size === 0 ? colors.mutedForeground : colors.foreground }}>
+            Organizar
+          </ThemedText>
+        </Button>
+      </View>
 
       {/* Ungrouped services (being edited) */}
       {ungroupedIndices.length > 0 && (
         <View style={[styles.ungroupedSection, { borderBottomColor: colors.border }]}>
-          {ungroupedIndices.map((index) => (
+          {[...ungroupedIndices].reverse().map((index) => (
             <ServiceRow
               key={index}
               service={services[index]}
@@ -498,7 +555,7 @@ function ServiceRow({
             searchPlaceholder="Buscar usuário..."
             disabled={disabled}
             async={true}
-            queryKey={["users", "service-order", index, includeSectorPrivileges?.join(",") ?? ""]}
+            queryKey={["users", "service-order", includeSectorPrivileges?.join(",") ?? ""]}
             queryFn={searchUsers}
             initialOptions={getUserInitialOptions}
             minSearchLength={0}
@@ -701,10 +758,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexShrink: 0,
   },
+  actionButtons: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
   addButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  organizeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
   },
   error: {
     fontSize: fontSize.xs,

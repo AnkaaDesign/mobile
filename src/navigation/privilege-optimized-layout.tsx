@@ -346,7 +346,7 @@ export function PrivilegeOptimizedDrawerLayout() {
       )}
       screenOptions={({ navigation }) => ({
         headerLeft: () => (
-          canGoBack ? (
+          canGoBack() ? (
             <Pressable
               onPress={goBack}
               style={({ pressed }) => [

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { View, ScrollView, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema } from '@/schemas/ppe-request';
-import { PPE_TYPE, PPE_DELIVERY_MODE, PPE_TYPE_LABELS, ITEM_CATEGORY_TYPE } from '@/constants';
+import { PPE_TYPE, ITEM_CATEGORY_TYPE } from '@/constants';
 import { getItemPpeSize } from '@/utils/ppe-size-mapping';
 import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
@@ -20,14 +20,15 @@ import type { PpeRequestFormData } from '@/schemas/ppe-request';
 import type { Item } from '@/types';
 import { useTheme } from "@/lib/theme";
 
+
 export default function RequestPPEScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
-  // Track all loaded items to find selected item details
-  const [loadedItems, setLoadedItems] = useState<Map<string, Item>>(new Map());
+  // Use a ref for caching loaded items — NOT state, to avoid re-renders inside queryFn
+  const loadedItemsRef = useRef<Map<string, Item>>(new Map());
 
   // Get user's PPE size - user.ppeSize is already the full PpeSize object if included
   // If it's just an ID reference, fetch it; otherwise use it directly
@@ -36,10 +37,13 @@ export default function RequestPPEScreen() {
     enabled: !!ppeSizeId && typeof user?.ppeSize !== 'object',
   });
 
-  // Use directly loaded ppeSize or fetched one
-  const userPpeSize = typeof user?.ppeSize === 'object' && user.ppeSize
-    ? { data: user.ppeSize }
-    : fetchedPpeSize;
+  // Use directly loaded ppeSize or fetched one — memoize to stabilize reference
+  const userPpeSizeData = useMemo(() => {
+    if (typeof user?.ppeSize === 'object' && user.ppeSize) {
+      return user.ppeSize;
+    }
+    return fetchedPpeSize?.data ?? null;
+  }, [user?.ppeSize, fetchedPpeSize?.data]);
 
   const form = useForm<PpeRequestFormData>({
     resolver: zodResolver(ppeRequestSchema),
@@ -60,26 +64,37 @@ export default function RequestPPEScreen() {
 
   // Check if user has PPE sizes configured
   const hasSizesConfigured = useMemo(() => {
-    const ppeSizeData = userPpeSize?.data;
-    if (!ppeSizeData) return false;
-    return !!(ppeSizeData.shirts || ppeSizeData.pants || ppeSizeData.boots ||
-              ppeSizeData.gloves || ppeSizeData.mask || ppeSizeData.sleeves ||
-              ppeSizeData.rainBoots || ppeSizeData.shorts);
-  }, [userPpeSize?.data]);
+    if (!userPpeSizeData) return false;
+    return !!(userPpeSizeData.shirts || userPpeSizeData.pants || userPpeSizeData.boots ||
+              userPpeSizeData.gloves || userPpeSizeData.mask || userPpeSizeData.sleeves ||
+              userPpeSizeData.rainBoots || userPpeSizeData.shorts);
+  }, [userPpeSizeData]);
 
-  // Async query function for PPE items with CLIENT-SIDE size filtering (matching web implementation)
+  // Store userPpeSizeData in a ref so queryFn can access latest value without being a dependency
+  const userPpeSizeDataRef = useRef(userPpeSizeData);
+  useEffect(() => {
+    userPpeSizeDataRef.current = userPpeSizeData;
+  }, [userPpeSizeData]);
+
+  const hasSizesConfiguredRef = useRef(hasSizesConfigured);
+  useEffect(() => {
+    hasSizesConfiguredRef.current = hasSizesConfigured;
+  }, [hasSizesConfigured]);
+
+  // Async query function for PPE items with CLIENT-SIDE size filtering
+  // IMPORTANT: No setState calls inside — only refs. This prevents re-render loops.
   const searchPpeItems = useCallback(async (
     search: string,
     page: number = 1
   ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    const pageSize = 50; // Fetch more items to filter client-side
+    const pageSize = 50;
 
     try {
-      // Fetch PPE items with stock > 0
       const response = await getItems({
         take: pageSize,
         skip: (page - 1) * pageSize,
         where: {
+          isActive: true,
           category: {
             type: ITEM_CATEGORY_TYPE.PPE,
           },
@@ -99,6 +114,9 @@ export default function RequestPPEScreen() {
       let items = response.data || [];
 
       // CLIENT-SIDE FILTERING (matching web implementation)
+      const sizesConfigured = hasSizesConfiguredRef.current;
+      const ppeSizeData = userPpeSizeDataRef.current;
+
       items = items.filter((item: Item) => {
         // 1. Filter by delivery mode - only allow ON_DEMAND or BOTH (or legacy null)
         if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
@@ -106,7 +124,7 @@ export default function RequestPPEScreen() {
         }
 
         // 2. If user has no sizes configured, include all items (filtered only by delivery mode above)
-        if (!hasSizesConfigured || !userPpeSize?.data) {
+        if (!sizesConfigured || !ppeSizeData) {
           return true;
         }
 
@@ -117,7 +135,7 @@ export default function RequestPPEScreen() {
         if (item.ppeType === PPE_TYPE.OTHERS) return true;
 
         // 5. Get user's size for this PPE type
-        const userSize = getPpeSizeByType(userPpeSize.data, item.ppeType);
+        const userSize = getPpeSizeByType(ppeSizeData, item.ppeType);
 
         // 6. Get item's size from measures array (handles both letter and numeric sizes)
         const itemSize = getItemPpeSize(item);
@@ -135,12 +153,8 @@ export default function RequestPPEScreen() {
       const total = response.meta?.totalRecords || items.length;
       const hasMore = response.meta?.hasNextPage || false;
 
-      // Cache loaded items for lookup when selecting
-      setLoadedItems(prev => {
-        const newMap = new Map(prev);
-        items.forEach(item => newMap.set(item.id, item));
-        return newMap;
-      });
+      // Cache loaded items in ref (no re-render!)
+      items.forEach(item => loadedItemsRef.current.set(item.id, item));
 
       return {
         data: items,
@@ -150,7 +164,7 @@ export default function RequestPPEScreen() {
     } catch (_error) {
       return { data: [], hasMore: false };
     }
-  }, [hasSizesConfigured, userPpeSize?.data]);
+  }, []); // Empty deps — reads from refs, never causes re-creation
 
   // Update stock availability when selected item changes
   useEffect(() => {
@@ -169,17 +183,31 @@ export default function RequestPPEScreen() {
   // Get option value and label for Combobox
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => {
-    const parts = [item.name];
-    // Get size from measures
-    const itemSize = getItemPpeSize(item);
-    if (itemSize) parts.push(`- ${itemSize}`);
-    // Add PPE type label
-    if (item.ppeType) {
-      const typeLabel = PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType;
-      parts.push(`(${typeLabel})`);
-    }
-    return parts.join(' ');
+    return item.name;
   }, []);
+
+  // Memoized renderOption to prevent busting Combobox's React.memo
+  const renderPpeOption = useCallback((item: Item, isSelected: boolean) => {
+    return (
+      <View style={{ flex: 1 }}>
+        <ThemedText style={{ fontWeight: isSelected ? "600" : "400" }}>
+          {item.name}
+        </ThemedText>
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+          {item.ppeCA && (
+            <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+              CA: {item.ppeCA}
+            </ThemedText>
+          )}
+          {item.quantity !== undefined && (
+            <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
+              Estoque: {item.quantity}
+            </ThemedText>
+          )}
+        </View>
+      </View>
+    );
+  }, [colors]);
 
   const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
     const requestData = {
@@ -199,6 +227,9 @@ export default function RequestPPEScreen() {
 
   const isLoading = requestMutation.isPending;
 
+  // Stable queryKey using primitive ppeSizeId
+  const queryKey = useMemo(() => ["ppe-items", "request", userPpeSizeData?.id ?? null], [userPpeSizeData?.id]);
+
   return (
     <ThemedView style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom }}>
       <ScrollView style={{ flex: 1, padding: 16 }}>
@@ -214,7 +245,7 @@ export default function RequestPPEScreen() {
                 </ThemedText>
                 <Combobox<Item>
                   async={true}
-                  queryKey={["ppe-items", "request", userPpeSize?.data?.id]}
+                  queryKey={queryKey}
                   queryFn={searchPpeItems}
                   initialOptions={initialOptions}
                   minSearchLength={0}
@@ -224,9 +255,9 @@ export default function RequestPPEScreen() {
                   onValueChange={(newValue) => {
                     const id = Array.isArray(newValue) ? newValue[0] : newValue;
                     onChange(id || '');
-                    // Update selected item from cached items
+                    // Update selected item from cached items (ref, not state)
                     if (id) {
-                      const item = loadedItems.get(id);
+                      const item = loadedItemsRef.current.get(id);
                       if (item) {
                         setSelectedItem(item);
                       }
@@ -243,36 +274,7 @@ export default function RequestPPEScreen() {
                   searchable={true}
                   clearable={false}
                   error={error?.message}
-                  renderOption={(item, isSelected) => {
-                    const itemSize = getItemPpeSize(item);
-                    const typeLabel = item.ppeType ? (PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType) : null;
-
-                    return (
-                      <View style={{ flex: 1 }}>
-                        <ThemedText style={{ fontWeight: isSelected ? "600" : "400" }}>
-                          {item.name}
-                          {itemSize ? ` - ${itemSize}` : ''}
-                        </ThemedText>
-                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
-                          {typeLabel && (
-                            <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                              {typeLabel}
-                            </ThemedText>
-                          )}
-                          {item.ppeCA && (
-                            <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                              CA: {item.ppeCA}
-                            </ThemedText>
-                          )}
-                          {item.quantity !== undefined && (
-                            <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
-                              Estoque: {item.quantity}
-                            </ThemedText>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  }}
+                  renderOption={renderPpeOption}
                 />
                 {error && (
                   <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
@@ -297,20 +299,12 @@ export default function RequestPPEScreen() {
               </ThemedText>
               <ThemedText style={{ fontSize: 13 }}>
                 {selectedItem.name}
-                {getItemPpeSize(selectedItem) ? ` - ${getItemPpeSize(selectedItem)}` : ''}
               </ThemedText>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-                {selectedItem.ppeType && (
-                  <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                    {PPE_TYPE_LABELS[selectedItem.ppeType as PPE_TYPE] || selectedItem.ppeType}
-                  </ThemedText>
-                )}
-                {selectedItem.ppeCA && (
-                  <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                    CA: {selectedItem.ppeCA}
-                  </ThemedText>
-                )}
-              </View>
+              {selectedItem.ppeCA && (
+                <ThemedText style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 4 }}>
+                  CA: {selectedItem.ppeCA}
+                </ThemedText>
+              )}
               {stockAvailable !== null && (
                 <ThemedText style={{
                   fontSize: 12,

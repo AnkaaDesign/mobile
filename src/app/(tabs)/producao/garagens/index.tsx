@@ -84,7 +84,7 @@ export default function GaragesScreen() {
   // Filter logic matches web version:
   // - Must have a truck with layout sections defined (for dimensions)
   // - If truck has a garage spot (B1, B2, B3): always show (even if completed)
-  // - If in PATIO or no spot: only show if forecastDate <= today AND status !== COMPLETED
+  // - If no spot (patio): only show if forecastDate <= today AND status !== COMPLETED
   const garageTrucks = useMemo(() => {
     if (!tasksResponse?.data) return [];
 
@@ -103,8 +103,8 @@ export default function GaragesScreen() {
         const layoutSections = layout?.layoutSections || [];
         if (layoutSections.length === 0) return false;
 
-        // If truck has a spot assigned in a garage (not PATIO), always include it (even if completed)
-        if (truck?.spot && truck.spot !== TRUCK_SPOT.PATIO) {
+        // If truck has a spot assigned in a garage, always include it (even if completed)
+        if (truck?.spot) {
           return true;
         }
 
@@ -168,7 +168,7 @@ export default function GaragesScreen() {
 
   // Handle batch save of all spot changes using single API call
   const handleSaveChanges = useCallback(
-    async (changes: Array<{ truckId: string; newSpot: TRUCK_SPOT }>) => {
+    async (changes: Array<{ truckId: string; newSpot: TRUCK_SPOT | null }>) => {
       // Convert task IDs to truck IDs for the API
       const updates = changes
         .map((change) => {
@@ -180,7 +180,7 @@ export default function GaragesScreen() {
             spot: change.newSpot,
           };
         })
-        .filter((u): u is { truckId: string; spot: TRUCK_SPOT } => u !== null);
+        .filter((u): u is { truckId: string; spot: TRUCK_SPOT | null } => u !== null);
 
       if (updates.length === 0) return;
 

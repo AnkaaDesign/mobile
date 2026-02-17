@@ -129,7 +129,7 @@ export interface ParsedSpot {
  * Parse a spot enum value into its components
  */
 export function parseSpot(spot: TRUCK_SPOT | string | null): ParsedSpot {
-  if (!spot || spot === TRUCK_SPOT.PATIO || spot === 'PATIO') {
+  if (!spot) {
     return { garage: null, lane: null, spotNumber: null };
   }
 
@@ -234,7 +234,6 @@ export const SPOT_LABELS: Record<TRUCK_SPOT, string> = {
   [TRUCK_SPOT.B3_F3_V1]: 'Barracão 3 - Faixa 3 - Vaga 1',
   [TRUCK_SPOT.B3_F3_V2]: 'Barracão 3 - Faixa 3 - Vaga 2',
   [TRUCK_SPOT.B3_F3_V3]: 'Barracão 3 - Faixa 3 - Vaga 3',
-  [TRUCK_SPOT.PATIO]: 'Pátio',
 };
 
 /**

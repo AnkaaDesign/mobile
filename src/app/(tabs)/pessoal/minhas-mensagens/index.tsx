@@ -40,10 +40,10 @@ export default function MinhasMensagensScreen() {
   const [selectedMessage, setSelectedMessage] = useState<MessageWithViewStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 4 columns with padding accounted for
-  const gridPadding = spacing.sm; // outer padding
-  const cardGap = spacing.xxs; // gap between cards
-  const cardWidth = (screenWidth - gridPadding * 2 - cardGap * 3) / 4;
+  // 2 columns with padding accounted for
+  const gridPadding = spacing.md; // outer padding
+  const cardGap = spacing.sm; // gap between cards
+  const cardWidth = (screenWidth - gridPadding * 2 - cardGap) / 2;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -80,7 +80,7 @@ export default function MinhasMensagensScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingHorizontal: gridPadding }]}
         >
           <View style={styles.grid}>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <View key={i} style={[styles.cardWrapper, { width: cardWidth }]}>
                 <Card style={styles.skeletonCard}>
                   <View style={[styles.skeletonLine, { width: "80%", backgroundColor: colors.muted }]} />
@@ -265,12 +265,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xxs,
+    gap: spacing.sm,
   },
   cardWrapper: {
     // width set dynamically
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
   },
   cardHeader: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xxs + 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerMeta: {
@@ -291,25 +291,25 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   cardTitle: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: "700",
-    lineHeight: 12,
+    lineHeight: 16,
   },
   cardDate: {
-    fontSize: 7,
-    lineHeight: 9,
+    fontSize: 10,
+    lineHeight: 13,
     flex: 1,
   },
   newBadge: {
-    paddingHorizontal: 3,
-    paddingVertical: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
     borderRadius: borderRadius.sm,
   },
   newBadgeText: {
     color: "#ffffff",
-    fontSize: 6,
+    fontSize: 8,
     fontWeight: "700",
-    lineHeight: 8,
+    lineHeight: 10,
   },
   cardBody: {
     height: CARD_BODY_HEIGHT,

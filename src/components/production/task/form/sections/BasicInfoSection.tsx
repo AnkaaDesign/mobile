@@ -132,10 +132,10 @@ export default function BasicInfoSection({
       </FormFieldGroup>
 
       {/* Truck Category */}
-      <SimpleFormField label="Categoria do Caminhão" error={errors.truckCategory}>
+      <SimpleFormField label="Categoria do Caminhão" error={errors.truck?.category}>
         <Controller
           control={control}
-          name="truckCategory"
+          name="truck.category"
           render={({ field: { onChange, value } }) => (
             <Combobox
               value={value || ''}
@@ -143,17 +143,17 @@ export default function BasicInfoSection({
               options={truckCategoryOptions}
               placeholder="Selecione a categoria"
               disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-              error={errors.truckCategory?.message}
+              error={errors.truck?.category?.message}
             />
           )}
         />
       </SimpleFormField>
 
       {/* Implement Type */}
-      <SimpleFormField label="Tipo de Implemento" error={errors.implementType}>
+      <SimpleFormField label="Tipo de Implemento" error={errors.truck?.implementType}>
         <Controller
           control={control}
-          name="implementType"
+          name="truck.implementType"
           render={({ field: { onChange, value } }) => (
             <Combobox
               value={value || ''}
@@ -161,7 +161,7 @@ export default function BasicInfoSection({
               options={implementTypeOptions}
               placeholder="Selecione o tipo"
               disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector}
-              error={errors.implementType?.message}
+              error={errors.truck?.implementType?.message}
             />
           )}
         />

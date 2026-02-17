@@ -178,6 +178,7 @@ import {
   IconBrandWhatsapp,
   IconRotateClockwise,
   IconCamera,
+  IconMessageCircle,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -204,7 +205,8 @@ const tablerIcons = [
   IconCircle, IconPhotoPlus, IconFlipHorizontal, IconCalendarStats, IconCalendarWeek, IconCalendarDollar,
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
   IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu,
-  IconBellRinging2, IconDeviceMobile, IconBrandWhatsapp, IconRotateClockwise, IconCamera
+  IconBellRinging2, IconDeviceMobile, IconBrandWhatsapp, IconRotateClockwise, IconCamera,
+  IconMessageCircle
 ];
 
 // Log any undefined icons for debugging
@@ -288,11 +290,14 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
 
   // Status indicators
   "circle-check": IconCircleCheck,
+  "check-circle": IconCircleCheck, // Alias (lucide-style)
   "circle-x": IconCircleX,
+  "x-circle": IconCircleX, // Alias (lucide-style)
   "alert-circle": IconAlertCircle,
   "info-circle": IconInfoCircle,
   "alert-triangle": IconAlertTriangle,
   alertTriangle: IconAlertTriangle, // camelCase version
+  "help-circle": IconAlertCircle, // Alias for help/unknown status
 
   // Sorting and arrows
   "arrows-sort": IconArrowsSort,
@@ -311,13 +316,16 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   "brand-apple": IconBrandApple,
   award: IconAward,
   folder: IconFolder,
+  folders: IconFolder, // Alias (singular fallback)
   id: IconId,
   "user-check": IconUserCheck,
   qrcode: IconQrcode,
   "player-play": IconPlayerPlay,
   play: IconPlayerPlay, // Alias
+  "play-circle": IconPlayerPlay, // Alias (lucide-style)
   "player-pause": IconPlayerPause,
   pause: IconPlayerPause, // Alias
+  "pause-circle": IconPlayerPause, // Alias (lucide-style)
   "chart-bar": IconChartBar,
   "bar-chart": IconChartBar, // Alias
   "chart-line": IconChartLine,
@@ -329,6 +337,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   mail: IconMail,
   phone: IconPhone,
   "map-pin": IconMapPin,
+  message: IconMessageCircle,
+  "message-circle": IconMessageCircle,
 
   // Financial
   "currency-dollar": IconCurrencyDollar,
@@ -422,6 +432,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   // Additional missing icons
   "player-stop": IconPlayerStop,
   stop: IconPlayerStop, // Alias
+  square: IconPlayerStop, // Alias (lucide-style stop)
 
   // New icon mappings for missing icons
   "arrows-up-down": IconArrowsUpDown,
@@ -547,6 +558,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   whatsapp: IconBrandWhatsapp, // Alias
   "rotate-clockwise": IconRotateClockwise,
   rotateClockwise: IconRotateClockwise, // camelCase version
+  "rotate-cw": IconRotateClockwise, // Alias (lucide-style)
   sync: IconRotateClockwise, // Alias
 };
 

@@ -173,6 +173,7 @@ export const TABLER_ICONS = {
   alertTriangle: "IconAlertTriangle", // Alias for favorites icon mapping
   announcement: "IconSpeakerphone",
   notice: "IconBell",
+  message: "IconMessageCircle", // Messages/messaging
 
   // Payments
   dollarSign: "IconCurrencyDollar",

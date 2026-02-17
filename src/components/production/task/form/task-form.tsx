@@ -3,15 +3,16 @@
  * Main form for creating and editing tasks
  */
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { View, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { FormActionBar } from '@/components/forms';
 import { spacing } from '@/constants/design-system';
 import { SECTOR_PRIVILEGES } from '@/constants';
+import { TRUCK_SPOT } from '@/constants';
 
 // Import essential sections immediately
 import BasicInfoSection from './sections/BasicInfoSection';
@@ -22,7 +23,7 @@ import ServicesSection from './sections/ServicesSection';
 // Lazy load heavy sections
 const PricingSection = lazy(() => import('./sections/PricingSection'));
 const TruckLayoutSection = lazy(() => import('./sections/TruckLayoutSection'));
-const TruckSpotSection = lazy(() => import('./sections/TruckSpotSection'));
+const SpotSelector = lazy(() => import('./spot-selector'));
 const FinancialInfoSection = lazy(() => import('./sections/FinancialInfoSection'));
 const FilesSection = lazy(() => import('./sections/FilesSection'));
 const ObservationSection = lazy(() => import('./sections/ObservationSection'));
@@ -40,6 +41,8 @@ interface TaskFormProps {
   initialGeneralPaint?: any;
   /** Initial logo paints array for edit mode */
   initialLogoPaints?: any[];
+  /** Initial invoice-to customer objects for populating the combobox in edit mode */
+  initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
 }
 
 // Section loading placeholder
@@ -60,6 +63,7 @@ export function TaskForm({
   initialCustomer,
   initialGeneralPaint,
   initialLogoPaints,
+  initialInvoiceToCustomers,
 }: TaskFormProps) {
   const { colors } = useTheme();
   const form = useFormContext();
@@ -100,16 +104,49 @@ export function TaskForm({
   const canViewObservation = !isWarehouseUser && !isFinancialUser && !isCommercialUser && !isLogisticUser
     && taskStatus === 'COMPLETED';
 
-  // In edit mode, bypass react-hook-form validation and submit current values directly.
-  // processFormDataForSubmission in the edit page handles change detection and filtering.
-  // The API validates the data server-side. This matches the web approach where
-  // the edit form uses taskUpdateSchema (all optional) vs taskCreateSchema (strict).
+  // Watch truck data for spot selector
+  const truckData = useWatch({ control: form.control, name: 'truck' });
+  const truckId = task?.truck?.id || truckData?.id;
+
+  // Calculate truck length from layout sections for spot selector
+  // Uses the same two-tier cabin logic as web and API
+  const truckLength = useMemo(() => {
+    const layout = existingLayouts?.leftSideLayout || existingLayouts?.rightSideLayout;
+    if (!layout?.layoutSections || layout.layoutSections.length === 0) {
+      return null;
+    }
+    const sectionsSum = layout.layoutSections.reduce(
+      (sum: number, s: any) => sum + (s.width || 0),
+      0
+    );
+    const CABIN_THRESHOLD_SMALL = 7;
+    const CABIN_THRESHOLD_LARGE = 10;
+    const CABIN_LENGTH_SMALL = 2.0;
+    const CABIN_LENGTH_LARGE = 2.4;
+    if (sectionsSum < CABIN_THRESHOLD_SMALL) {
+      return sectionsSum + CABIN_LENGTH_SMALL;
+    }
+    if (sectionsSum < CABIN_THRESHOLD_LARGE) {
+      return sectionsSum + CABIN_LENGTH_LARGE;
+    }
+    return sectionsSum;
+  }, [existingLayouts]);
+
+  // In edit mode, validate through taskUpdateSchema (all optional + auto-fill transform)
+  // then pass raw form values for change detection in processFormDataForSubmission.
+  // In create mode, validate through taskCreateSchema (strict required fields).
   const handleFormSubmit = mode === 'edit'
-    ? async () => {
+    ? form.handleSubmit(async () => {
+        // Schema validated successfully (including auto-fill transforms).
+        // Pass raw values for change detection in processFormDataForSubmission.
         const data = form.getValues();
-        console.log('[TaskForm] Submitting edit form data (bypassing schema):', data);
+        console.log('[TaskForm] Edit mode: schema validation passed');
+        console.log('[TaskForm] Form truck data:', JSON.stringify(data.truck));
+        console.log('[TaskForm] Form status:', data.status, '| paintId:', data.paintId);
         await onSubmit(data);
-      }
+      }, (errors) => {
+        console.error('[TaskForm] Edit mode: schema validation FAILED:', JSON.stringify(errors, null, 2));
+      })
     : form.handleSubmit(async (data: any) => {
         console.log('[TaskForm] Submitting create form data:', data);
         await onSubmit(data);
@@ -176,10 +213,15 @@ export function TaskForm({
 
       {/* 6. Truck Spot */}
       <Suspense fallback={<SectionPlaceholder title="Carregando local..." />}>
-        {canViewTruckSpot && (
-          <TruckSpotSection
-            isSubmitting={isSubmitting}
-            errors={form.formState.errors}
+        {canViewTruckSpot && truckId && (
+          <SpotSelector
+            truckLength={truckLength}
+            currentSpot={(truckData?.spot as TRUCK_SPOT | null) || null}
+            truckId={truckId}
+            onSpotChange={(spot) => {
+              form.setValue('truck.spot', spot, { shouldDirty: true });
+            }}
+            disabled={isSubmitting}
           />
         )}
       </Suspense>
@@ -189,6 +231,7 @@ export function TaskForm({
         {canViewPricing && (
           <PricingSection
             isSubmitting={isSubmitting}
+            initialInvoiceToCustomers={initialInvoiceToCustomers}
           />
         )}
       </Suspense>
@@ -236,7 +279,7 @@ export function TaskForm({
         onCancel={onCancel}
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
-        canSubmit={mode === 'edit' ? true : form.formState.isValid}
+        canSubmit={mode === 'edit' ? form.formState.isDirty : form.formState.isValid}
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />

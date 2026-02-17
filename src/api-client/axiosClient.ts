@@ -740,7 +740,9 @@ const createApiClient = (
           config.url?.includes("/notifications/device-token") ||
           config.url?.includes("/notifications/preferences") ||
           config.url?.includes("/mark-as-read") ||
-          config.url?.includes("/mark-all-as-read");
+          config.url?.includes("/mark-all-as-read") ||
+          config.url?.includes("/mark-viewed") ||
+          config.url?.includes("/dismiss");
 
         // Only show success if the response indicates success
         const isSuccess = response.data?.success !== (false as boolean); // Show success unless explicitly false

@@ -5,17 +5,23 @@ import { tasksListAgendaConfig } from "@/config/list/production/tasks-agenda";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { FAB } from "@/components/ui/fab";
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
 import { hasPrivilege } from "@/utils/user";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { navigationTracker } from "@/utils/navigation-tracker";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTaskDetailMinimalInclude } from "@/hooks/use-task-detail-include";
+import { getTaskById } from "@/api-client";
+import { taskKeys } from "@/hooks/queryKeys";
 
 export default function ProductionPreparationScreen() {
   const { user } = useAuth();
   const { pushWithLoading } = useNavigationLoading();
+  const queryClient = useQueryClient();
+  const taskInclude = useTaskDetailMinimalInclude(user);
 
   // ADMIN, COMMERCIAL, and LOGISTIC can create tasks
   const canCreateTasks =
@@ -88,6 +94,12 @@ export default function ProductionPreparationScreen() {
           ? {
               ...action,
               onPress: (task, router) => {
+                // Prefetch task detail data before navigation starts
+                queryClient.prefetchQuery({
+                  queryKey: taskKeys.detail(task.id, taskInclude),
+                  queryFn: () => getTaskById(task.id, { include: taskInclude }),
+                  staleTime: 1000 * 60 * 10,
+                });
                 // Store where we came from for proper back navigation
                 navigationTracker.setSource('/(tabs)/producao/agenda');
                 router.push(`/(tabs)/producao/agenda/detalhes/${task.id}` as any);
@@ -109,7 +121,7 @@ export default function ProductionPreparationScreen() {
       },
     },
   };
-  }, [isFinancialUser, isLogisticUser, isDesignerUser]);
+  }, [isFinancialUser, isLogisticUser, isDesignerUser, queryClient, taskInclude]);
 
   return (
     <>

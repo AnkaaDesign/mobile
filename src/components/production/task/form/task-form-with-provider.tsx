@@ -7,11 +7,7 @@ import React, { memo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskForm } from './task-form';
-import { taskCreateSchema } from '@/schemas/task';
-import type { TaskCreateFormData } from '@/schemas/task';
-
-// Use TaskCreateFormData as the base form type
-type TaskFormData = TaskCreateFormData;
+import { taskCreateSchema, taskUpdateSchema } from '@/schemas/task';
 
 interface TaskFormWithProviderProps {
   mode?: 'create' | 'edit';
@@ -27,6 +23,8 @@ interface TaskFormWithProviderProps {
   initialGeneralPaint?: any;
   /** Initial logo paints array for edit mode */
   initialLogoPaints?: any[];
+  /** Initial invoice-to customer objects for populating the combobox in edit mode */
+  initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
 }
 
 /**
@@ -43,10 +41,14 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
   initialCustomer,
   initialGeneralPaint,
   initialLogoPaints,
+  initialInvoiceToCustomers,
 }: TaskFormWithProviderProps) {
-  // Initialize form with default values and schema validation
-  const form = useForm<TaskFormData>({
-    resolver: zodResolver(taskCreateSchema),
+  // Initialize form with correct schema per mode:
+  // - Create mode: taskCreateSchema (strict required fields)
+  // - Edit mode: taskUpdateSchema (all optional + auto-fill startedAt/finishedAt on status change)
+  const schema = mode === 'edit' ? taskUpdateSchema : taskCreateSchema;
+  const form = useForm({
+    resolver: zodResolver(schema),
     defaultValues: initialData || {
       name: '',
       customerId: '',
@@ -71,6 +73,7 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         initialCustomer={initialCustomer}
         initialGeneralPaint={initialGeneralPaint}
         initialLogoPaints={initialLogoPaints}
+        initialInvoiceToCustomers={initialInvoiceToCustomers}
       />
     </FormProvider>
   );

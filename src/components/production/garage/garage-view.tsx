@@ -153,7 +153,6 @@ interface AreaLayout {
 // =====================
 
 function parseSpot(spot: TRUCK_SPOT): { garage: GarageId | null; lane: LaneId | null; spotNumber: number | null } {
-  if (spot === TRUCK_SPOT.PATIO) return { garage: null, lane: null, spotNumber: null };
   const match = spot.match(/^B(\d)_F(\d)_V(\d)$/);
   if (!match) return { garage: null, lane: null, spotNumber: null };
   return {
@@ -208,7 +207,7 @@ function calculateSwapAvailability(
   // Find trucks in lane EXCLUDING both dragged AND swap target
   const trucksInLaneAfterSwap = trucks.filter((t) => {
     if (t.id === draggedTruckId || t.id === swapTargetTruckId) return false;
-    if (!t.spot || t.spot === TRUCK_SPOT.PATIO) return false;
+    if (!t.spot) return false;
     const parsed = parseSpot(t.spot);
     return parsed.garage === garageId && parsed.lane === laneId;
   });
@@ -607,7 +606,7 @@ function calculatePreviewPositions(
 // Calculate optimal patio layout based on truck count and screen size
 function calculatePatioLayout(trucks: GarageTruck[], screenWidth: number, maxHeight: number) {
   const patioTrucks = trucks
-    .filter((t) => !t.spot || t.spot === TRUCK_SPOT.PATIO)
+    .filter((t) => !t.spot)
     .sort((a, b) => b.length - a.length); // Sort by length descending
 
   const laneWidth = GARAGE_CONFIG.PATIO_LANE_WIDTH;
@@ -1191,7 +1190,7 @@ const Ruler = memo(function Ruler({ length, scale, orientation, position }: Rule
 interface PendingSpotChange {
   truckId: string;
   originalSpot: TRUCK_SPOT | null;
-  newSpot: TRUCK_SPOT;
+  newSpot: TRUCK_SPOT | null;
 }
 
 // Active drag tracking for cross-garage dragging
@@ -1214,8 +1213,8 @@ interface ContainerBounds {
 
 interface GarageViewProps {
   trucks: GarageTruck[];
-  onTruckMove?: (truckId: string, newSpot: TRUCK_SPOT) => void;
-  onSaveChanges?: (changes: Array<{ truckId: string; newSpot: TRUCK_SPOT }>) => Promise<void>;
+  onTruckMove?: (truckId: string, newSpot: TRUCK_SPOT | null) => void;
+  onSaveChanges?: (changes: Array<{ truckId: string; newSpot: TRUCK_SPOT | null }>) => Promise<void>;
   onRefresh?: () => Promise<void>;
   isRefreshing?: boolean;
   isSaving?: boolean;
@@ -1461,7 +1460,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
       if (newAreaId === 'PATIO') {
         setPendingChanges((prev) => {
           const next = new Map(prev);
-          next.set(truckId, { truckId, originalSpot, newSpot: TRUCK_SPOT.PATIO });
+          next.set(truckId, { truckId, originalSpot, newSpot: null });
           return next;
         });
         setCurrentAreaIndex(newIndex);
@@ -1470,7 +1469,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
           duration: 250,
           easing: Easing.bezier(0.25, 0.1, 0.25, 1),
         });
-        console.log(`[GarageView] Navigated ${direction} to PATIO, moved truck ${truckId} to PATIO`);
+        console.log(`[GarageView] Navigated ${direction} to patio, moved truck ${truckId} to patio`);
         return;
       }
 
@@ -1504,10 +1503,9 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
         if (newSpot) break;
       }
 
-      // If no spot found in target garage, move to PATIO instead
+      // If no spot found in target garage, move to patio instead
       if (!newSpot) {
-        newSpot = TRUCK_SPOT.PATIO;
-        console.log(`[GarageView] No available spot in ${targetGarageId}, moving truck ${truckId} to PATIO`);
+        console.log(`[GarageView] No available spot in ${targetGarageId}, moving truck ${truckId} to patio`);
       } else {
         console.log(`[GarageView] Navigated ${direction} to ${targetGarageId}, moved truck ${truckId} to ${newSpot}`);
       }
@@ -1515,7 +1513,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
       // Add pending change
       setPendingChanges((prev) => {
         const next = new Map(prev);
-        next.set(truckId, { truckId, originalSpot, newSpot: newSpot! });
+        next.set(truckId, { truckId, originalSpot, newSpot });
         return next;
       });
 
@@ -1691,9 +1689,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
       // If direct hit on another truck, swap with that truck
       if (directHitTruck) {
         const targetTruckSpot = directHitTruck.truck.spot!;
-        const swapTargetSpot = draggedTruckCurrentSpot && draggedTruckCurrentSpot !== TRUCK_SPOT.PATIO
-          ? draggedTruckCurrentSpot
-          : TRUCK_SPOT.PATIO;
+        const swapTargetSpot = draggedTruckCurrentSpot || null;
 
         // Don't swap if it's the same truck (shouldn't happen but safety check)
         if (directHitTruck.truck.id === truckId) return false;
@@ -1752,9 +1748,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
         // SWAP: Preferred spot is occupied - swap the two trucks
         const spotKey = `${targetGarageId}_${targetLane}_V${preferredSpotNum}` as keyof typeof TRUCK_SPOT;
         const newSpotForDragged = TRUCK_SPOT[spotKey];
-        const swapTargetSpot = draggedTruckCurrentSpot && draggedTruckCurrentSpot !== TRUCK_SPOT.PATIO
-          ? draggedTruckCurrentSpot
-          : TRUCK_SPOT.PATIO;
+        const swapTargetSpot = draggedTruckCurrentSpot || null;
 
         // Get original spot for the truck being swapped
         const originalSwapTruck = trucks.find((t) => t.id === truckAtPreferredSpot.id);

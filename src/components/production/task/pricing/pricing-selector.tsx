@@ -66,6 +66,8 @@ interface PricingSelectorProps {
   onItemCountChange?: (count: number) => void;
   layoutFiles?: FilePickerItem[];
   onLayoutFilesChange?: (files: FilePickerItem[]) => void;
+  /** Initial invoice-to customer objects for populating the combobox in edit mode */
+  initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
 }
 
 export interface PricingSelectorRef {
@@ -74,7 +76,7 @@ export interface PricingSelectorRef {
 }
 
 export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorProps>(
-  ({ control, disabled, userRole, onItemCountChange, layoutFiles: externalLayoutFiles, onLayoutFilesChange }, ref) => {
+  ({ control, disabled, userRole, onItemCountChange, layoutFiles: externalLayoutFiles, onLayoutFilesChange, initialInvoiceToCustomers }, ref) => {
     const { colors } = useTheme();
     const [validityPeriod, setValidityPeriod] = useState<number | null>(null);
     const [showCustomPayment, setShowCustomPayment] = useState(false);
@@ -183,14 +185,17 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
         const expiresAt = getValues("pricing.expiresAt");
         const items = getValues("pricing.items");
         const hasItems = items && items.length > 0;
+        const validOptions = [15, 30, 60, 90];
 
         if (expiresAt) {
           const today = new Date();
           const diffTime = new Date(expiresAt).getTime() - today.getTime();
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays > 0 && diffDays <= 90) {
+          if (diffDays > 0 && validOptions.includes(diffDays)) {
+            // Exact match with a valid option
             setValidityPeriod(diffDays);
           } else {
+            // No exact match or expired — default to 30 days
             setValidityPeriod(30);
           }
         } else {
@@ -503,6 +508,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
               queryFn={searchCustomers}
               getOptionLabel={getCustomerLabel}
               getOptionValue={getCustomerValue}
+              initialOptions={(initialInvoiceToCustomers || []) as Customer[]}
               clearable
             />
           </View>

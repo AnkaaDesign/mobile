@@ -1,5 +1,6 @@
 import { View, FlatList, RefreshControl } from "react-native";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -63,14 +64,14 @@ export default function SharedFoldersScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-      <View className="flex-1 bg-background">
+      <ThemedView className="flex-1">
         {/* Header */}
-        <View className="p-4 border-b border-border">
+        <ThemedView className="p-4 border-b border-border">
           <Text className="text-2xl font-bold mb-2">Pastas Compartilhadas</Text>
           <Text className="text-sm text-muted-foreground">
             Gerenciar pastas WebDAV do servidor
           </Text>
-        </View>
+        </ThemedView>
 
         {/* Content */}
         {isLoading ? (
@@ -188,7 +189,7 @@ export default function SharedFoldersScreen() {
             )}
           />
         )}
-      </View>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

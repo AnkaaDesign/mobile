@@ -230,13 +230,11 @@ export default function EditScheduleScreen() {
   }, [layoutsData]);
 
   const handleNavigateBack = () => {
-    // Use router.back() for proper stack navigation
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      // Fallback to detail page if can't go back
-      router.push(`/(tabs)/producao/cronograma/detalhes/${id}` as any);
-    }
+    // Always navigate to the detail page after successful edit
+    // router.back() is unreliable in Expo Router - may land on home if stack is shallow
+    const detailRoute = `/(tabs)/producao/cronograma/detalhes/${id}`;
+    console.log('[EditSchedule] Navigating to detail page:', detailRoute);
+    router.replace(detailRoute as any);
   };
 
   const handleSubmit = async (data: any) => {
@@ -253,15 +251,16 @@ export default function EditScheduleScreen() {
       // Check if there are any actual changes
       if (Object.keys(processedData).length === 0) {
         console.log('[EditSchedule] No changes detected, skipping update');
-        handleNavigateBack();
+        Alert.alert("Nenhuma alteração", "Nenhuma alteração foi detectada.");
         return;
       }
 
       const result = await updateAsync({ id, data: processedData });
       console.log('[EditSchedule] API result:', result);
 
+      console.log('[EditSchedule] API response:', { success: result.success, message: result.message, hasData: !!result.data });
       if (result.success) {
-        // API client already shows success alert
+        console.log('[EditSchedule] Update successful, navigating to detail page');
         handleNavigateBack();
       } else {
         // API returned failure
@@ -288,6 +287,41 @@ export default function EditScheduleScreen() {
    */
   const processFormDataForSubmission = (formData: any, originalTask: any): any => {
     const processed: any = {};
+
+    // Helper: Ensure value is a proper array (react-hook-form field arrays can lose Array prototype)
+    const ensureArray = (value: any): any[] => {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value === 'object') {
+        // Convert objects with numeric keys to arrays (e.g., {0: 'a', 1: 'b'} → ['a', 'b'])
+        const keys = Object.keys(value);
+        if (keys.length > 0 && keys.every(k => !isNaN(Number(k)))) {
+          return Object.values(value);
+        }
+      }
+      return [];
+    };
+
+    // Helper: Ensure value is a number (handles formatted currency strings like "R$ 1.234,56")
+    const ensureNumber = (value: any): number | null => {
+      if (value === null || value === undefined || value === '') return null;
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        let cleaned = value.replace(/R\$\s*/g, '').trim();
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+      }
+      return null;
+    };
+
+    // Helper: Normalize a date to a specific time (mutates the date)
+    const normalizeDate = (date: any, hours: number, minutes: number): Date | null => {
+      if (!date) return null;
+      const d = date instanceof Date ? new Date(date.getTime()) : new Date(date);
+      if (isNaN(d.getTime())) return null;
+      d.setHours(hours, minutes, 0, 0);
+      return d;
+    };
 
     // Helper: Check if a value has changed (handles dates, arrays, objects)
     const hasChanged = (current: any, original: any): boolean => {
@@ -353,15 +387,25 @@ export default function EditScheduleScreen() {
 
     for (const field of scalarFields) {
       if (formData[field] !== undefined && hasChanged(formData[field], originalTask[field])) {
+        console.log(`[processFormData] Scalar changed: ${field}`, { current: formData[field], original: originalTask[field] });
         processed[field] = formData[field];
       }
     }
 
-    // Process date fields
+    // Process date fields with normalization (matching web behavior)
     const dateFields = ['entryDate', 'term', 'forecastDate', 'startedAt', 'finishedAt'];
     for (const field of dateFields) {
       if (formData[field] !== undefined && hasChanged(formData[field], originalTask[field])) {
-        processed[field] = formData[field];
+        let dateValue = formData[field];
+        // Normalize times to match web: entryDate/forecastDate→7:30, term→18:00
+        if (dateValue) {
+          if (field === 'entryDate' || field === 'forecastDate') {
+            dateValue = normalizeDate(dateValue, 7, 30);
+          } else if (field === 'term') {
+            dateValue = normalizeDate(dateValue, 18, 0);
+          }
+        }
+        processed[field] = dateValue;
       }
     }
 
@@ -373,10 +417,19 @@ export default function EditScheduleScreen() {
       }
     }
 
-    // Process truck (embedded object)
+    // Process truck (embedded object) - compare only form-relevant fields
     if (formData.truck !== undefined) {
+      const truckFields = ['plate', 'chassisNumber', 'category', 'implementType', 'spot'];
       const orig = originalTask.truck || {};
-      if (hasChanged(formData.truck, orig)) {
+      const currTruck: any = {};
+      const origTruck: any = {};
+      for (const f of truckFields) {
+        currTruck[f] = formData.truck?.[f] ?? null;
+        origTruck[f] = (orig as any)[f] ?? null;
+      }
+      console.log('[processFormData] Truck comparison:', { current: currTruck, original: origTruck, changed: hasChanged(currTruck, origTruck) });
+      if (hasChanged(currTruck, origTruck)) {
+        console.log('[processFormData] Truck changed, including in payload');
         processed.truck = formData.truck;
       }
     }
@@ -384,15 +437,15 @@ export default function EditScheduleScreen() {
     // Process paintIds (logo paints)
     if (formData.paintIds !== undefined) {
       const origIds = (originalTask.logoPaints || []).map((p: any) => p.id).sort();
-      const currIds = [...(formData.paintIds || [])].sort();
+      const currIds = [...ensureArray(formData.paintIds)].sort();
       if (JSON.stringify(currIds) !== JSON.stringify(origIds)) {
         processed.paintIds = formData.paintIds;
       }
     }
 
-    // Process serviceOrders - filter empty and check for changes
+    // Process serviceOrders - ensure array, filter empty and check for changes
     if (formData.serviceOrders !== undefined) {
-      const filteredOrders = filterServiceOrders(formData.serviceOrders);
+      const filteredOrders = filterServiceOrders(ensureArray(formData.serviceOrders));
       const origOrders = (originalTask.serviceOrders || []).map((s: any) => ({
         id: s.id,
         description: s.description,
@@ -423,46 +476,124 @@ export default function EditScheduleScreen() {
       }
     }
 
-    // Process pricing - filter empty items and check for changes
+    // Process pricing - filter empty items, coerce types, and check for changes
     if (formData.pricing !== undefined) {
-      const currPricing = formData.pricing;
+      const currPricing = { ...formData.pricing };
       const origPricing = originalTask.pricing;
 
-      if (currPricing && currPricing.items) {
-        currPricing.items = filterPricingItems(currPricing.items);
+      // Ensure items is a proper array and filter/coerce
+      if (currPricing.items) {
+        currPricing.items = filterPricingItems(ensureArray(currPricing.items)).map((item: any) => ({
+          ...item,
+          // Coerce amount to number (handles formatted currency strings)
+          amount: ensureNumber(item.amount) ?? 0,
+        }));
       }
 
-      // Only include pricing if it has valid items or if there are changes
-      if (currPricing?.items?.length > 0 || (origPricing && hasChanged(currPricing, origPricing))) {
+      // Coerce money fields to numbers (handles formatted currency strings)
+      currPricing.discountValue = ensureNumber(currPricing.discountValue);
+      currPricing.subtotal = ensureNumber(currPricing.subtotal);
+      currPricing.total = ensureNumber(currPricing.total);
+
+      // Ensure invoicesToCustomerIds is a proper array
+      if (currPricing.invoicesToCustomerIds) {
+        currPricing.invoicesToCustomerIds = ensureArray(currPricing.invoicesToCustomerIds);
+      }
+
+      // Build comparable shapes for both current and original pricing
+      // Strip non-comparable fields (id, layoutFile, invoicesToCustomers) and normalize
+      const comparableFields = [
+        'status', 'expiresAt', 'subtotal', 'discountType', 'discountValue', 'total',
+        'paymentCondition', 'downPaymentDate', 'customPaymentText',
+        'guaranteeYears', 'customGuaranteeText', 'customForecastDays',
+        'layoutFileId', 'simultaneousTasks', 'discountReference',
+      ];
+
+      const buildComparablePricing = (p: any) => {
+        if (!p) return null;
+        const comparable: any = {};
+        for (const f of comparableFields) {
+          comparable[f] = p[f] ?? null;
+        }
+        // Normalize items for comparison (only id, description, observation, amount)
+        comparable.items = (p.items || [])
+          .filter((i: any) => i.description && i.description.trim() !== '')
+          .map((i: any) => ({
+            id: i.id || null,
+            description: i.description,
+            observation: i.observation || null,
+            amount: typeof i.amount === 'number' ? i.amount : (ensureNumber(i.amount) ?? 0),
+          }));
+        // Normalize invoicesToCustomerIds
+        comparable.invoicesToCustomerIds = [...(p.invoicesToCustomerIds || p.invoicesToCustomers?.map((c: any) => c.id) || [])].sort();
+        return comparable;
+      };
+
+      const currComparable = buildComparablePricing(currPricing);
+      const origComparable = buildComparablePricing(origPricing);
+      const pricingChanged = hasChanged(currComparable, origComparable);
+      console.log('[processFormData] Pricing comparison:', { changed: pricingChanged, currItems: currComparable?.items?.length, origItems: origComparable?.items?.length });
+      if (pricingChanged) {
+        console.log('[processFormData] Pricing diff:', { curr: JSON.stringify(currComparable), orig: JSON.stringify(origComparable) });
         processed.pricing = currPricing;
       }
     }
 
-    // Process observation
+    // Process observation - compare only description and file IDs
     if (formData.observation !== undefined) {
-      if (hasChanged(formData.observation, originalTask.observation)) {
+      const currObs = formData.observation;
+      const origObs = originalTask.observation;
+
+      // Build comparable shapes
+      const currDescription = currObs?.description || null;
+      const origDescription = origObs?.description || null;
+      const currFileIds = [...(currObs?.fileIds || [])].sort();
+      const origFileIds = [...(origObs?.files?.map((f: any) => f.id) || [])].sort();
+
+      const obsChanged = currDescription !== origDescription || JSON.stringify(currFileIds) !== JSON.stringify(origFileIds);
+      if (obsChanged) {
+        console.log('[processFormData] Observation changed:', { currDescription, origDescription, currFileIds, origFileIds });
         processed.observation = formData.observation;
       }
     }
 
     // Process file IDs (artworkIds, baseFileIds, etc.)
-    // These are handled by their respective sections and passed through
-    const fileIdFields = ['artworkIds', 'baseFileIds', 'budgetIds', 'invoiceIds', 'receiptIds'];
-    for (const field of fileIdFields) {
+    // Only include when actually changed compared to original task
+    const fileIdFieldMap: Record<string, string> = {
+      artworkIds: 'artworks',
+      baseFileIds: 'baseFiles',
+      budgetIds: 'budgets',
+      invoiceIds: 'invoices',
+      receiptIds: 'receipts',
+    };
+    for (const [field, origRelation] of Object.entries(fileIdFieldMap)) {
       if (formData[field] !== undefined) {
-        processed[field] = formData[field];
+        const currIds = [...ensureArray(formData[field])].sort();
+        const origIds = ((originalTask as any)[origRelation] || [])
+          .map((f: any) => f.fileId || f.file?.id || f.id)
+          .filter(Boolean)
+          .sort();
+        if (JSON.stringify(currIds) !== JSON.stringify(origIds)) {
+          console.log(`[processFormData] File IDs changed: ${field}`, { currIds, origIds });
+          processed[field] = currIds;
+        }
       }
     }
 
-    // representativeIds and newRepresentatives are handled by RepresentativesSection
-    // They are only set when there's an actual change (via shouldDirty flag)
+    // representativeIds - only include when changed
     if (formData.representativeIds !== undefined) {
-      processed.representativeIds = formData.representativeIds;
+      const currRepIds = [...ensureArray(formData.representativeIds)].sort();
+      const origRepIds = ((originalTask.representatives || []).map((r: any) => r.id)).sort();
+      if (JSON.stringify(currRepIds) !== JSON.stringify(origRepIds)) {
+        console.log('[processFormData] Representatives changed:', { currRepIds, origRepIds });
+        processed.representativeIds = formData.representativeIds;
+      }
     }
     if (formData.newRepresentatives !== undefined && formData.newRepresentatives.length > 0) {
       processed.newRepresentatives = formData.newRepresentatives;
     }
 
+    console.log('[processFormData] Changed fields:', Object.keys(processed));
     return processed;
   };
 
@@ -536,7 +667,7 @@ export default function EditScheduleScreen() {
           entryDate: task.entryDate ? new Date(task.entryDate) : undefined,
           term: task.term ? new Date(task.term) : undefined,
           forecastDate: task.forecastDate ? new Date(task.forecastDate) : undefined,
-          generalPaintingId: task.paintId ?? undefined,
+          paintId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
           // Initialize serviceOrders with default empty row if none exist (matches web)
           serviceOrders: task.serviceOrders && task.serviceOrders.length > 0
@@ -639,6 +770,7 @@ export default function EditScheduleScreen() {
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}
         initialLogoPaints={task.logoPaints}
+        initialInvoiceToCustomers={(task as any).pricing?.invoicesToCustomers}
         existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

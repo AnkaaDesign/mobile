@@ -36,18 +36,12 @@ export class ErrorBoundary extends Component<Props, State> {
       console.log("Hook error detected, providing manual recovery options");
     }
 
-    // Check if it's an authentication error
+    // Log authentication-related errors but do NOT clear auth data here.
+    // Auth error handling is managed by the axios interceptor (401 → globalAuthErrorHandler).
+    // Clearing auth from the error boundary causes unexpected logouts when render errors
+    // happen to contain "401" in their message or stack trace.
     if (error.message.includes("401") || error.message.includes("Unauthorized") || error.message.includes("Sessão inválida")) {
-      console.warn("Authentication error detected in error boundary");
-      // Clear any stored auth data to force clean login
-      try {
-        import("@/utils/storage").then(({ removeStoredToken, removeUserData }) => {
-          removeStoredToken();
-          removeUserData();
-        });
-      } catch (cleanupError) {
-        console.error("Failed to cleanup auth data:", cleanupError);
-      }
+      console.warn("Authentication-related error detected in error boundary (auth NOT cleared)");
     }
   }
 

@@ -390,7 +390,7 @@ export function LogoPaintsSelector({
       disabled={disabled}
       error={error}
       async={true}
-      queryKey={["paints", "search", "logo"]}
+      queryKey={["paints", "search"]}
       queryFn={searchPaints}
       initialOptions={initialOptions}
       getOptionLabel={getOptionLabel}

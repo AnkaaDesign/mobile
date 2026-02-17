@@ -502,7 +502,7 @@ export function PrivilegeOptimizedFullLayout() {
             shadowOpacity: 0,
           },
           headerLeft: () => (
-            canGoBack ? (
+            canGoBack() ? (
               <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
                 <Pressable
                   onPress={goBack}

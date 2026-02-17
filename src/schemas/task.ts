@@ -1154,7 +1154,7 @@ const taskTruckCreateSchema = z.object({
   // ADDED: Category and implementType fields (from Prisma model lines 1198-1199)
   category: z.string().nullable().optional(), // TruckCategory enum
   implementType: z.string().nullable().optional(), // ImplementType enum
-  // Truck spot in garage (e.g., "B1_F1_V1", "B2_F2_V3", "PATIO", or null)
+  // Truck spot in garage (e.g., "B1_F1_V1", "B2_F2_V3") — null means patio
   spot: z.string().nullable().optional(),
   xPosition: z.number().nullable().optional(),
   yPosition: z.number().nullable().optional(),

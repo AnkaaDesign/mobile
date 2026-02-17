@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { View, ScrollView, Modal, ActivityIndicator } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema, type PpeRequestFormData } from '@/schemas/ppe-request';
-import { PPE_TYPE, PPE_TYPE_LABELS, SECTOR_PRIVILEGES, ITEM_CATEGORY_TYPE } from '@/constants';
+import { PPE_TYPE, SECTOR_PRIVILEGES, ITEM_CATEGORY_TYPE } from '@/constants';
 import { getItemPpeSize } from '@/utils/ppe-size-mapping';
 import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
@@ -33,7 +33,8 @@ export function PpeRequestModal({
   const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
-  const [loadedItems, setLoadedItems] = useState<Map<string, Item>>(new Map());
+  // Use a ref for caching loaded items — NOT state, to avoid re-renders inside queryFn
+  const loadedItemsRef = useRef<Map<string, Item>>(new Map());
 
   // Get user's PPE size - user.ppeSize is already the full PpeSize object if included
   // If it's just an ID reference, fetch it; otherwise use it directly
@@ -42,10 +43,13 @@ export function PpeRequestModal({
     enabled: !!ppeSizeId && typeof user?.ppeSize !== 'object',
   });
 
-  // Use directly loaded ppeSize or fetched one
-  const userPpeSize = typeof user?.ppeSize === 'object' && user.ppeSize
-    ? { data: user.ppeSize }
-    : fetchedPpeSize;
+  // Use directly loaded ppeSize or fetched one — memoize to stabilize reference
+  const userPpeSizeData = useMemo(() => {
+    if (typeof user?.ppeSize === 'object' && user.ppeSize) {
+      return user.ppeSize;
+    }
+    return fetchedPpeSize?.data ?? null;
+  }, [user?.ppeSize, fetchedPpeSize?.data]);
 
   const form = useForm<PpeRequestFormData>({
     resolver: zodResolver(ppeRequestSchema),
@@ -67,26 +71,37 @@ export function PpeRequestModal({
 
   // Check if user has PPE sizes configured
   const hasSizesConfigured = useMemo(() => {
-    const ppeSizeData = userPpeSize?.data;
-    if (!ppeSizeData) return false;
-    return !!(ppeSizeData.shirts || ppeSizeData.pants || ppeSizeData.boots ||
-              ppeSizeData.gloves || ppeSizeData.mask || ppeSizeData.sleeves ||
-              ppeSizeData.rainBoots || ppeSizeData.shorts);
-  }, [userPpeSize?.data]);
+    if (!userPpeSizeData) return false;
+    return !!(userPpeSizeData.shirts || userPpeSizeData.pants || userPpeSizeData.boots ||
+              userPpeSizeData.gloves || userPpeSizeData.mask || userPpeSizeData.sleeves ||
+              userPpeSizeData.rainBoots || userPpeSizeData.shorts);
+  }, [userPpeSizeData]);
 
-  // Async query function for PPE items with CLIENT-SIDE size filtering (like web)
+  // Store in refs so queryFn can access latest value without being a dependency
+  const userPpeSizeDataRef = useRef(userPpeSizeData);
+  useEffect(() => {
+    userPpeSizeDataRef.current = userPpeSizeData;
+  }, [userPpeSizeData]);
+
+  const hasSizesConfiguredRef = useRef(hasSizesConfigured);
+  useEffect(() => {
+    hasSizesConfiguredRef.current = hasSizesConfigured;
+  }, [hasSizesConfigured]);
+
+  // Async query function for PPE items with CLIENT-SIDE size filtering
+  // IMPORTANT: No setState calls inside — only refs. This prevents re-render loops.
   const searchPpeItems = useCallback(async (
     search: string,
     page: number = 1
   ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    const pageSize = 50; // Fetch more items to filter client-side
+    const pageSize = 50;
 
     try {
-      // Fetch ALL PPE items with stock > 0 (like web version)
       const response = await getItems({
         take: pageSize,
         skip: (page - 1) * pageSize,
         where: {
+          isActive: true,
           category: {
             type: ITEM_CATEGORY_TYPE.PPE,
           },
@@ -105,55 +120,48 @@ export function PpeRequestModal({
 
       let items = response.data || [];
 
-      // CLIENT-SIDE FILTERING (exactly like web version)
-      if (hasSizesConfigured && userPpeSize?.data) {
-        items = items.filter((item: Item) => {
-          // 1. Only allow items with ON_DEMAND or BOTH delivery mode (or legacy null)
-          if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
-            return false;
-          }
+      // CLIENT-SIDE FILTERING (matching web implementation)
+      const sizesConfigured = hasSizesConfiguredRef.current;
+      const ppeSizeData = userPpeSizeDataRef.current;
 
-          // 2. If item doesn't have a ppeType, include it
-          if (!item.ppeType) return true;
+      items = items.filter((item: Item) => {
+        // 1. Filter by delivery mode - only allow ON_DEMAND or BOTH (or legacy null)
+        if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
+          return false;
+        }
 
-          // 3. For OTHERS type, always include (no size requirement)
-          if (item.ppeType === PPE_TYPE.OTHERS) return true;
-
-          // 4. Get user's size for this PPE type
-          if (!userPpeSize.data) return true;
-          const userSize = getPpeSizeByType(userPpeSize.data, item.ppeType);
-
-          // 5. Get item's size from measures array
-          const itemSize = getItemPpeSize(item);
-
-          // 6. If item has no size defined, include it
-          if (!itemSize) return true;
-
-          // 7. If user has no size configured for this type, include item
-          if (!userSize) return true;
-
-          // 8. Match user's size with item's size
-          return itemSize === userSize;
-        });
-      } else {
-        // User has no sizes configured - only filter by delivery mode
-        items = items.filter((item: Item) => {
-          if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
-            return false;
-          }
+        // 2. If user has no sizes configured, include all items
+        if (!sizesConfigured || !ppeSizeData) {
           return true;
-        });
-      }
+        }
+
+        // 3. If item doesn't have a ppeType, include it
+        if (!item.ppeType) return true;
+
+        // 4. For OTHERS type, always include (no size requirement)
+        if (item.ppeType === PPE_TYPE.OTHERS) return true;
+
+        // 5. Get user's size for this PPE type
+        const userSize = getPpeSizeByType(ppeSizeData, item.ppeType);
+
+        // 6. Get item's size from measures array
+        const itemSize = getItemPpeSize(item);
+
+        // 7. If item has no size defined, include it
+        if (!itemSize) return true;
+
+        // 8. If user has no size configured for this type, include item
+        if (!userSize) return true;
+
+        // 9. Match user's size with item's size
+        return itemSize === userSize;
+      });
 
       const total = response.meta?.totalRecords || items.length;
       const hasMore = response.meta?.hasNextPage || false;
 
-      // Cache loaded items
-      setLoadedItems(prev => {
-        const newMap = new Map(prev);
-        items.forEach(item => newMap.set(item.id, item));
-        return newMap;
-      });
+      // Cache loaded items in ref (no re-render!)
+      items.forEach(item => loadedItemsRef.current.set(item.id, item));
 
       return {
         data: items,
@@ -164,7 +172,7 @@ export function PpeRequestModal({
       console.error('[PPE Request Modal] Error fetching PPE items:', error);
       return { data: [], hasMore: false };
     }
-  }, [hasSizesConfigured, userPpeSize?.data]);
+  }, []); // Empty deps — reads from refs, never causes re-creation
 
   // Update stock availability when selected item changes
   useEffect(() => {
@@ -184,16 +192,7 @@ export function PpeRequestModal({
   // Get option value and label for Combobox
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => {
-    const parts = [item.name];
-    // Get size from measures
-    const itemSize = getItemPpeSize(item);
-    if (itemSize) parts.push(`- ${itemSize}`);
-    // Show PPE type with proper label
-    if (item.ppeType) {
-      const typeLabel = PPE_TYPE_LABELS[item.ppeType as PPE_TYPE] || item.ppeType;
-      parts.push(`(${typeLabel})`);
-    }
-    return parts.join(' ');
+    return item.name;
   }, []);
 
   const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
@@ -217,11 +216,14 @@ export function PpeRequestModal({
     form.reset();
     setSelectedItem(null);
     setStockAvailable(null);
-    setLoadedItems(new Map());
+    loadedItemsRef.current = new Map();
     onClose();
   }, [form, onClose]);
 
   const isLoading = requestMutation.isPending;
+
+  // Stable queryKey using primitive ppeSizeId
+  const queryKey = useMemo(() => ["ppe-items", "modal", userPpeSizeData?.id ?? null], [userPpeSizeData?.id]);
 
   return (
     <Modal
@@ -249,7 +251,7 @@ export function PpeRequestModal({
                     </Text>
                     <Combobox<Item>
                       async={true}
-                      queryKey={["ppe-items", "modal", userPpeSize?.data?.id]}
+                      queryKey={queryKey}
                       queryFn={searchPpeItems}
                       initialOptions={initialOptions}
                       minSearchLength={0}
@@ -260,7 +262,7 @@ export function PpeRequestModal({
                         const id = Array.isArray(newValue) ? newValue[0] : newValue;
                         onChange(id || '');
                         if (id) {
-                          const item = loadedItems.get(id);
+                          const item = loadedItemsRef.current.get(id);
                           if (item) setSelectedItem(item);
                         } else {
                           setSelectedItem(null);

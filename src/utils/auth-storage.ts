@@ -57,7 +57,9 @@ function decodeTokenExpiry(token: string): number | null {
 }
 
 /**
- * Validate that a token is properly formatted and not expired
+ * Validate that a token is properly formatted.
+ * Does NOT check expiry — the server determines token validity via 401 responses.
+ * This prevents silent client-side logouts due to clock skew or background expiry.
  */
 function validateToken(token: string): { valid: boolean; expiresAt: number | null; error?: string } {
   if (!token || typeof token !== 'string' || token.trim() === '') {
@@ -70,17 +72,8 @@ function validateToken(token: string): { valid: boolean; expiresAt: number | nul
   }
 
   const expiresAt = decodeTokenExpiry(token);
-  if (expiresAt === null) {
-    return { valid: false, expiresAt: null, error: 'Could not decode token expiration' };
-  }
-
-  // Allow 30 second grace period for clock skew
-  const now = Date.now();
-  const isExpired = expiresAt < now - 30000;
-
-  if (isExpired) {
-    return { valid: false, expiresAt, error: 'Token is expired' };
-  }
+  // expiresAt can be null if decode fails, but we still consider the token format valid
+  // The server will reject it with 401 if truly invalid
 
   return { valid: true, expiresAt };
 }
@@ -514,7 +507,9 @@ export const authStorage = AuthStorageManager.getInstance();
 export const storeToken = async (token: string): Promise<void> => {
   const result = await authStorage.storeAuthData(token, null);
   if (!result.success) {
-    throw new Error(result.error || 'Failed to store token');
+    console.warn('[AuthStorage] storeToken warning:', result.error);
+    // Don't throw — a storage failure shouldn't break the login flow.
+    // The token is already in memory and will work for API calls.
   }
 };
 

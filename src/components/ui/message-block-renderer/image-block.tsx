@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, spacing, fontSize } from "@/constants/design-system";
+import { getCurrentApiUrl } from "@/api-client/axiosClient";
 import type { ImageBlock, ImageSizePreset } from "./types";
 
 interface ImageBlockProps {
@@ -69,7 +70,15 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
   } | null>(null);
 
   // Support both 'src' (web standard) and 'url' properties
-  const imageSrc = block.src || block.url;
+  // Resolve API-relative URLs (e.g. "/files/serve/...", "/uploads/...") against the API base URL
+  const rawSrc = block.src || block.url;
+  const imageSrc = useMemo(() => {
+    if (!rawSrc) return rawSrc;
+    if (rawSrc.startsWith("/")) {
+      return `${getCurrentApiUrl()}${rawSrc}`;
+    }
+    return rawSrc;
+  }, [rawSrc]);
 
   // Container width (screen width minus padding)
   const containerWidth = screenWidth - spacing.screenPadding * 2;

@@ -80,7 +80,8 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       }
 
       return true;
-    });
+    })
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   }, [services, visibleTypes, userSectorPrivilege]);
 
   // Group services by type (only visible types)

@@ -329,7 +329,7 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/servidor/database-sync': 'ADMIN',
   '/(tabs)/servidor/rate-limiting': 'ADMIN',
   '/(tabs)/servidor/usuarios': 'ADMIN',
-  '/(tabs)/servidor/servicos': 'ADMIN',
+  '/(tabs)/servidor/services': 'ADMIN',
   '/(tabs)/servidor/shared-folders': 'ADMIN',
   
   // =====================

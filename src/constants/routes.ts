@@ -465,7 +465,7 @@ export const routes = {
       details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
       root: "/servidor/registros-de-alteracoes",
     },
-    databaseSync: "/servidor/sincronizacao-bd",
+    databaseSync: "/servidor/database-sync",
     deployments: {
       create: "/servidor/implantacoes/cadastrar",
       details: (id: string) => `/servidor/implantacoes/detalhes/${id}`,
@@ -478,8 +478,8 @@ export const routes = {
     logs: "/servidor/logs",
     metrics: "/servidor/metricas",
     root: "/servidor",
-    services: "/servidor/servicos",
-    sharedFolders: "/servidor/pastas-compartilhadas",
+    services: "/servidor/services",
+    sharedFolders: "/servidor/shared-folders",
     users: {
       create: "/servidor/usuarios/cadastrar",
       root: "/servidor/usuarios",

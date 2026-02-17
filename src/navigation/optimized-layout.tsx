@@ -239,7 +239,7 @@ export function OptimizedDrawerLayout() {
       )}
       screenOptions={({ navigation }) => ({
         headerLeft: () => (
-          canGoBack ? (
+          canGoBack() ? (
             <Pressable
               onPress={goBack}
               style={({ pressed }) => [

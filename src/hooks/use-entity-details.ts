@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  getItemCategoryById,
-  getItemBrandById,
-  getSupplierById,
-  getUserById,
-  getCustomerById,
-  getSectorById,
-  getPaintById,
-  getPaintFormulaById,
-  getItemById,
-  getFileById,
-  getObservationById,
-  getTruckById,
+  getItemCategories,
+  getItemBrands,
+  getSuppliers,
+  getUsers,
+  getCustomers,
+  getSectors,
+  getPaints,
+  getPaintFormulas,
+  getItems,
+  getFiles,
+  getObservations,
+  getTrucks,
 } from "@/api-client";
 
 interface EntityDetails {
@@ -88,172 +88,280 @@ export function useEntityDetails(entityIds: {
         trucks: new Map(),
       };
 
-      // Fetch all categories
-      const categoryPromises = uniqueCategoryIds.map(async (id) => {
-        try {
-          const response = await getItemCategoryById(id);
-          if (response?.success && response.data) {
-            details.categories.set(id, response.data.name);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch category ${id}:`, error);
-        }
-      });
+      const promises: Promise<void>[] = [];
 
-      // Fetch all brands
-      const brandPromises = uniqueBrandIds.map(async (id) => {
-        try {
-          const response = await getItemBrandById(id);
-          if (response?.success && response.data) {
-            details.brands.set(id, response.data.name);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch brand ${id}:`, error);
-        }
-      });
+      // Batch fetch categories
+      if (uniqueCategoryIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getItemCategories({
+                where: { id: { in: uniqueCategoryIds } },
+                select: { id: true, name: true },
+                limit: uniqueCategoryIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((cat: any) => {
+                  details.categories.set(cat.id, cat.name);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch categories batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all suppliers
-      const supplierPromises = uniqueSupplierIds.map(async (id) => {
-        try {
-          const response = await getSupplierById(id);
-          if (response?.success && response.data) {
-            details.suppliers.set(id, response.data.fantasyName || "");
-          }
-        } catch (error) {
-          console.error(`Failed to fetch supplier ${id}:`, error);
-        }
-      });
+      // Batch fetch brands
+      if (uniqueBrandIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getItemBrands({
+                where: { id: { in: uniqueBrandIds } },
+                select: { id: true, name: true },
+                limit: uniqueBrandIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((brand: any) => {
+                  details.brands.set(brand.id, brand.name);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch brands batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all users
-      const userPromises = uniqueUserIds.map(async (id) => {
-        try {
-          const response = await getUserById(id);
-          if (response?.success && response.data) {
-            details.users.set(id, response.data.name);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch user ${id}:`, error);
-        }
-      });
+      // Batch fetch suppliers
+      if (uniqueSupplierIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getSuppliers({
+                where: { id: { in: uniqueSupplierIds } },
+                select: { id: true, fantasyName: true },
+                limit: uniqueSupplierIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((supplier: any) => {
+                  details.suppliers.set(supplier.id, supplier.fantasyName || "");
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch suppliers batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all customers
-      const customerPromises = uniqueCustomerIds.map(async (id) => {
-        try {
-          const response = await getCustomerById(id);
-          if (response?.success && response.data) {
-            details.customers.set(id, (response.data as any).fantasyName || (response.data as any).name || `Cliente ${id.slice(0, 8)}`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch customer ${id}:`, error);
-        }
-      });
+      // Batch fetch users
+      if (uniqueUserIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getUsers({
+                where: { id: { in: uniqueUserIds } },
+                select: { id: true, name: true },
+                limit: uniqueUserIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((user: any) => {
+                  details.users.set(user.id, user.name);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch users batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all sectors
-      const sectorPromises = uniqueSectorIds.map(async (id) => {
-        try {
-          const response = await getSectorById(id);
-          if (response?.success && response.data) {
-            details.sectors.set(id, response.data.name || "");
-          }
-        } catch (error) {
-          console.error(`Failed to fetch sector ${id}:`, error);
-        }
-      });
+      // Batch fetch customers
+      if (uniqueCustomerIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getCustomers({
+                where: { id: { in: uniqueCustomerIds } },
+                select: { id: true, fantasyName: true, name: true },
+                limit: uniqueCustomerIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((c: any) => {
+                  details.customers.set(c.id, c.fantasyName || c.name || `Cliente ${c.id.slice(0, 8)}`);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch customers batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all paints with full details (hex, finish, brand, manufacturer, etc.)
-      const paintPromises = uniquePaintIds.map(async (id) => {
-        try {
-          const response = await getPaintById(id, {
-            include: {
-              paintBrand: true,
-              paintType: true,
-            },
-          });
-          if (response?.success && response.data) {
-            // Store the full paint object with all properties needed for display
-            details.paints.set(id, response.data);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch paint ${id}:`, error);
-        }
-      });
+      // Batch fetch sectors
+      if (uniqueSectorIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getSectors({
+                where: { id: { in: uniqueSectorIds } },
+                select: { id: true, name: true },
+                limit: uniqueSectorIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((sector: any) => {
+                  details.sectors.set(sector.id, sector.name || "");
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch sectors batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all formulas
-      const formulaPromises = uniqueFormulaIds.map(async (id) => {
-        try {
-          const response = await getPaintFormulaById(id);
-          if (response?.success && response.data) {
-            details.formulas.set(id, (response.data as any).description || (response.data as any).code || `Fórmula ${id.slice(0, 8)}`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch formula ${id}:`, error);
-        }
-      });
+      // Batch fetch paints with full details (hex, finish, brand, type)
+      if (uniquePaintIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getPaints({
+                where: { id: { in: uniquePaintIds } },
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  hexColor: true,
+                  finish: true,
+                  paintBrand: { select: { id: true, name: true } },
+                  paintType: { select: { id: true, name: true } },
+                },
+                limit: uniquePaintIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((paint: any) => {
+                  details.paints.set(paint.id, paint);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch paints batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all items
-      const itemPromises = uniqueItemIds.map(async (id) => {
-        try {
-          const response = await getItemById(id);
-          if (response?.success && response.data) {
-            details.items.set(id, response.data.name || "");
-          }
-        } catch (error) {
-          console.error(`Failed to fetch item ${id}:`, error);
-        }
-      });
+      // Batch fetch formulas
+      if (uniqueFormulaIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getPaintFormulas({
+                where: { id: { in: uniqueFormulaIds } },
+                select: { id: true, description: true, code: true },
+                limit: uniqueFormulaIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((formula: any) => {
+                  details.formulas.set(formula.id, formula.description || formula.code || `Fórmula ${formula.id.slice(0, 8)}`);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch formulas batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all files
-      const filePromises = uniqueFileIds.map(async (id) => {
-        try {
-          const response = await getFileById(id);
-          if (response?.success && response.data) {
-            details.files.set(id, response.data.filename || "");
-          }
-        } catch (error) {
-          console.error(`Failed to fetch file ${id}:`, error);
-        }
-      });
+      // Batch fetch items
+      if (uniqueItemIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getItems({
+                where: { id: { in: uniqueItemIds } },
+                select: { id: true, name: true },
+                limit: uniqueItemIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((item: any) => {
+                  details.items.set(item.id, item.name || "");
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch items batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all observations
-      const observationPromises = uniqueObservationIds.map(async (id) => {
-        try {
-          const response = await getObservationById(id);
-          if (response?.success && response.data) {
-            details.observations.set(id, (response.data as any).content || (response.data as any).description || `Observação ${id.slice(0, 8)}`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch observation ${id}:`, error);
-        }
-      });
+      // Batch fetch files
+      if (uniqueFileIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getFiles({
+                where: { id: { in: uniqueFileIds } },
+                limit: uniqueFileIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((file: any) => {
+                  details.files.set(file.id, file.filename || "");
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch files batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Fetch all trucks
-      const truckPromises = uniqueTruckIds.map(async (id) => {
-        try {
-          const response = await getTruckById(id);
-          if (response?.success && response.data) {
-            details.trucks.set(id, (response.data as any).plate || (response.data as any).model || `Caminhão ${id.slice(0, 8)}`);
-          }
-        } catch (error) {
-          console.error(`Failed to fetch truck ${id}:`, error);
-        }
-      });
+      // Batch fetch observations
+      if (uniqueObservationIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getObservations({
+                where: { id: { in: uniqueObservationIds } },
+                limit: uniqueObservationIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((obs: any) => {
+                  details.observations.set(obs.id, obs.content || obs.description || `Observação ${obs.id.slice(0, 8)}`);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch observations batch:", error);
+            }
+          })()
+        );
+      }
 
-      await Promise.all([
-        ...categoryPromises,
-        ...brandPromises,
-        ...supplierPromises,
-        ...userPromises,
-        ...customerPromises,
-        ...sectorPromises,
-        ...paintPromises,
-        ...formulaPromises,
-        ...itemPromises,
-        ...filePromises,
-        ...observationPromises,
-        ...truckPromises,
-      ]);
+      // Batch fetch trucks
+      if (uniqueTruckIds.length > 0) {
+        promises.push(
+          (async () => {
+            try {
+              const response = await getTrucks({
+                where: { id: { in: uniqueTruckIds } },
+                select: { id: true, plate: true, model: true },
+                limit: uniqueTruckIds.length,
+              } as any);
+              if (response?.data) {
+                response.data.forEach((truck: any) => {
+                  details.trucks.set(truck.id, truck.plate || truck.model || `Caminhão ${truck.id.slice(0, 8)}`);
+                });
+              }
+            } catch (error) {
+              console.error("Failed to fetch trucks batch:", error);
+            }
+          })()
+        );
+      }
 
-      // Ensure Maps are properly returned
+      await Promise.all(promises);
+
       return details;
     },
     enabled:

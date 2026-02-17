@@ -116,7 +116,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Check if user is a team leader (should see filtered view by default)
   // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
   const userIsTeamLeader = user ? isTeamLeader(user) : false
-  const isLeaderOrProduction = userIsTeamLeader
+  const isProductionUser = user ? hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) : false
+  const isLeaderOrProduction = userIsTeamLeader || isProductionUser
   // For team leaders: show tasks from the sector they manage (managedSector.id)
   const userSectorId = userIsTeamLeader ? user?.managedSector?.id : user?.sector?.id
 

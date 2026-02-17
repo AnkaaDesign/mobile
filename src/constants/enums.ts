@@ -2136,7 +2136,7 @@ export enum IMPLEMENT_TYPE {
 /**
  * Truck parking spots in garages
  * Format: B{garage}_F{lane}_V{spot} where garage=1-3, lane=1-3, spot=1-3
- * PATIO = trucks in the yard, not assigned to a garage spot yet
+ * null spot = trucks in the yard, not assigned to a garage spot (patio)
  *
  * Static garage configuration:
  * - 3 Garages: B1, B2, B3 (each with different dimensions)
@@ -2177,8 +2177,6 @@ export enum TRUCK_SPOT {
   B3_F3_V1 = "B3_F3_V1",
   B3_F3_V2 = "B3_F3_V2",
   B3_F3_V3 = "B3_F3_V3",
-  // Patio (outside, not assigned to a garage spot)
-  PATIO = "PATIO",
 }
 
 // Aliases for Prisma compatibility

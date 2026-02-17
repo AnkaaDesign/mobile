@@ -25,8 +25,9 @@ export default function TruckSpotSection({
   const { control } = useFormContext();
   const { user } = useAuth();
 
-  // Watch truck ID to enable/disable this section
-  const truckId = useWatch({ control, name: 'truckId' });
+  // Watch nested truck object to determine if a truck is associated
+  const truck = useWatch({ control, name: 'truck' });
+  const hasTruck = !!(truck?.plate || truck?.category || truck?.chassisNumber);
 
   // Only show for Admin and Logistic users when truck is selected
   const userPrivilege = user?.sector?.privileges;
@@ -37,7 +38,7 @@ export default function TruckSpotSection({
     return null;
   }
 
-  if (!truckId) {
+  if (!hasTruck) {
     return null;
   }
 
@@ -80,7 +81,7 @@ export default function TruckSpotSection({
               placeholder="Selecione o local do caminhão"
               searchPlaceholder="Buscar local..."
               emptyText="Nenhum local encontrado"
-              disabled={isSubmitting || !truckId}
+              disabled={isSubmitting || !hasTruck}
               error={error?.message}
               async={true}
               queryKey={['spots', 'search']}

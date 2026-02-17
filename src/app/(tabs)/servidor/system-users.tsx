@@ -1,6 +1,7 @@
 import { View, FlatList, RefreshControl, Alert } from "react-native";
 import { useState } from "react";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,14 +87,14 @@ export default function SystemUsersScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-      <View className="flex-1 bg-background">
+      <ThemedView className="flex-1">
         {/* Header */}
-        <View className="p-4 border-b border-border">
+        <ThemedView className="p-4 border-b border-border">
           <Text className="text-2xl font-bold mb-2">Usuários do Sistema</Text>
           <Text className="text-sm text-muted-foreground">
             Gerenciar usuários do sistema operacional
           </Text>
-        </View>
+        </ThemedView>
 
         {/* Content */}
         {isLoading ? (
@@ -209,7 +210,7 @@ export default function SystemUsersScreen() {
             )}
           />
         )}
-      </View>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

@@ -318,6 +318,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING],
     children: [
       { id: "meus-feriados", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
+      { id: "minhas-mensagens", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus",
         title: "Meu Bônus",
@@ -631,7 +632,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
       },
       { id: "servidor-logs", title: "Logs do Sistema", icon: "systemLogs", path: "/servidor/logs" },
       { id: "servidor-metricas", title: "Metricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
-      { id: "servidor-pastas-compartilhadas", title: "Pastas Compartilhadas", icon: "sharedFolders", path: "/servidor/pastas-compartilhadas" },
+      { id: "servidor-pastas-compartilhadas", title: "Pastas Compartilhadas", icon: "sharedFolders", path: "/servidor/shared-folders" },
       { id: "servidor-rate-limiting", title: "Rate Limiting", icon: "shield", path: "/servidor/rate-limiting" },
       {
         id: "registros-de-alteracoes",
@@ -643,8 +644,8 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "registros-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/registros-de-alteracoes/detalhes/:id", isDynamic: true },
         ],
       },
-      { id: "servidor-servicos", title: "Servicos do Sistema", icon: "services", path: "/servidor/servicos" },
-      { id: "servidor-sincronizacao-bd", title: "Sincronizacao BD", icon: "repeat", path: "/servidor/sincronizacao-bd", onlyInStaging: true },
+      { id: "servidor-servicos", title: "Servicos do Sistema", icon: "services", path: "/servidor/services" },
+      { id: "servidor-sincronizacao-bd", title: "Sincronizacao BD", icon: "repeat", path: "/servidor/database-sync", onlyInStaging: true },
       {
         id: "servidor-usuarios",
         title: "Usuarios do Sistema",
@@ -653,6 +654,18 @@ export const NAVIGATION_MENU: MenuItem[] = [
         children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuario", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
       },
     ],
+  },
+
+  // ============================================================
+  // MINHAS MENSAGENS - Direct access for roles without "Pessoal" group
+  // (ADMIN, FINANCIAL, LOGISTIC, COMMERCIAL, MAINTENANCE, HUMAN_RESOURCES)
+  // ============================================================
+  {
+    id: "minhas-mensagens-direct",
+    title: "Minhas Mensagens",
+    icon: "message",
+    path: "/pessoal/minhas-mensagens",
+    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.MAINTENANCE, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
   },
 
   // ============================================================
@@ -755,6 +768,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/pessoal/minhas-ferias",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
     children: [{ id: "minhas-ferias-detalhes-direct", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
+  },
+
+  // Minhas Mensagens - Direct access for DESIGNER only (at root level like web)
+  {
+    id: "minhas-mensagens-direct-designer",
+    title: "Minhas Mensagens",
+    icon: "message",
+    path: "/pessoal/minhas-mensagens",
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
   },
 
   // Meus Pontos - Direct access for DESIGNER only (at root level like web)
@@ -891,6 +913,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     sortOrder: 50,
     children: [
       { id: "meus-feriados-production", title: "Feriados", icon: "holiday", path: "/pessoal/meus-feriados" },
+      { id: "minhas-mensagens-production", title: "Minhas Mensagens", icon: "message", path: "/pessoal/minhas-mensagens" },
       {
         id: "meu-bonus-production",
         title: "Meu Bônus",

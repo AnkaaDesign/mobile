@@ -9,6 +9,7 @@ import { SkeletonCard, SkeletonText, SkeletonListItem } from "@/components/ui/sk
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady } from "@/hooks";
+import { useTaskDetailMinimalInclude, useTaskDetailFullInclude } from "@/hooks/use-task-detail-include";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
@@ -30,7 +31,7 @@ import { TaskPricingCard } from "@/components/production/task/detail/task-pricin
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TaskWithServiceOrdersChangelog } from "@/components/ui/task-with-service-orders-changelog";
+import { TaskWithServiceOrdersChangelog, ChangelogSkeleton } from "@/components/ui/task-with-service-orders-changelog";
 import { FileItem, useFileViewer} from "@/components/file";
 import {
   IconFileText,
@@ -56,6 +57,8 @@ export default function ScheduleDetailsScreen() {
   const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("list");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
+  const [showBelowFold, setShowBelowFold] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   // Track screen performance
   const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
@@ -133,134 +136,25 @@ export default function ScheduleDetailsScreen() {
   // Truck details (chassis, category, implement) - Hidden from PRODUCTION users except team leaders (privilege managers)
   const canViewTruckDetails = !isProductionUser || isTeamLeader(user);
 
-  // SINGLE OPTIMIZED INCLUDE - Only fetch what's needed
-  const taskInclude = useMemo(() => ({
-    // Core data - always needed
-    sector: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    customer: {
-      select: {
-        id: true,
-        fantasyName: true,
-        corporateName: true,
-        cnpj: true,
-        cpf: true,
-        phones: true,
-        email: true,
-        address: true,
-        addressNumber: true,
-        neighborhood: true,
-        city: true,
-        state: true,
-        zipCode: true,
-      },
-    },
-    createdBy: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    truck: true,
-    serviceOrders: {
-      select: {
-        id: true,
-        description: true,
-        status: true,
-        type: true,
-        statusOrder: true,
-        assignedToId: true,
-      }
-    },
+  // TWO-PHASE LOADING: Minimal include for fast above-the-fold, full include for below-fold
+  const minimalInclude = useTaskDetailMinimalInclude(user);
+  const fullInclude = useTaskDetailFullInclude(user);
 
-    // Representatives - only for users with restricted fields access
-    ...(canViewRestrictedFields && {
-      representatives: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          role: true,
-          isActive: true,
-        }
-      }
-    }),
-
-    // Only include what user can view - reduces payload
-    ...(canViewObservation && {
-      observation: { select: { id: true, description: true } }
-    }),
-
-    ...(canViewBaseFiles && {
-      baseFiles: {
-        select: { id: true, filename: true, size: true, mimetype: true },
-        take: 20 // Limit initial files
-      }
-    }),
-
-    ...(canViewArtworks && {
-      artworks: {
-        select: { id: true, file: { select: { id: true, filename: true } } },
-        take: 20 // Limit initial artworks
-      }
-    }),
-
-    ...(canViewPricingSection && {
-      pricing: {
-        select: {
-          id: true,
-          total: true,
-          status: true,
-          subtotal: true,
-          discountType: true,
-          discountValue: true,
-          discountReference: true,
-          expiresAt: true,
-          budgetNumber: true,
-          paymentCondition: true,
-          customPaymentText: true,
-          guaranteeYears: true,
-          customGuaranteeText: true,
-          customForecastDays: true,
-          simultaneousTasks: true,
-          layoutFileId: true,
-          layoutFile: true,
-          customerSignatureId: true,
-          customerSignature: true,
-          items: { take: 10 },
-        }
-      }
-    }),
-
-    ...(canViewPaintSections && {
-      generalPainting: true
-    }),
-
-    ...(canViewLogoPaints && {
-      logoPaints: { take: 10 }
-    }),
-  }), [
-    canViewRestrictedFields,
-    canViewObservation,
-    canViewBaseFiles,
-    canViewArtworks,
-    canViewPricingSection,
-    canViewPaintSections,
-    canViewLogoPaints
-  ]);
-
-  // SINGLE OPTIMIZED API CALL - Much faster!
-  const { data: response, isLoading, error, refetch } = useTaskDetail(id as string, {
-    include: taskInclude,
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+  // Phase 1: Fast query with minimal includes (sector, customer, truck, serviceOrders, representatives)
+  const { data: minimalResponse, isLoading, error, refetch } = useTaskDetail(id as string, {
+    include: minimalInclude,
+    staleTime: 1000 * 60 * 10,
   });
 
-  const task = response?.data;
+  // Phase 2: Full query with all includes (pricing, paints, files, observation) - starts when below-fold is shown
+  const { data: fullResponse, refetch: refetchFull } = useTaskDetail(id as string, {
+    include: fullInclude,
+    staleTime: 1000 * 60 * 10,
+    enabled: showBelowFold,
+  });
+
+  // Use full data when available, fall back to minimal data
+  const task = fullResponse?.data ?? minimalResponse?.data;
 
   // Performance logging - track when data is ready
   useEffect(() => {
@@ -278,16 +172,15 @@ export default function ScheduleDetailsScreen() {
     }
   }, [isLoading, task, id, trackDataLoaded]);
 
-  // Get display name with fallbacks
-  const getTaskDisplayName = (task: any) => {
+  // Memoize display name
+  const taskDisplayName = useMemo(() => {
+    if (!task) return "Carregando...";
     if (task.name) return task.name;
     if (task.customer?.fantasyName) return task.customer.fantasyName;
     if (task.serialNumber) return `Série ${task.serialNumber}`;
     if ((task as any).truck?.plate) return (task as any).truck.plate;
     return "Sem nome";
-  };
-
-  const taskDisplayName = task ? getTaskDisplayName(task) : "Carregando...";
+  }, [task]);
 
   // Fetch layouts for truck dimensions - load in parallel with phase 1
   const { data: layouts, isLoading: layoutsLoading } = useLayoutsByTruck((task as any)?.truck?.id || '', {
@@ -309,10 +202,25 @@ export default function ScheduleDetailsScreen() {
     return { width: totalWidth, height };
   }, [layouts]);
 
+  // Memoize changelog prop arrays to prevent child re-renders
+  const serviceOrderIds = useMemo(
+    () => (task?.serviceOrders || []).map((so: any) => so.id),
+    [task?.serviceOrders]
+  );
+
+  const changelogLayoutIds = useMemo(
+    () => [
+      layouts?.leftSideLayout?.id,
+      layouts?.rightSideLayout?.id,
+      layouts?.backSideLayout?.id,
+    ].filter((id): id is string => !!id),
+    [layouts?.leftSideLayout?.id, layouts?.rightSideLayout?.id, layouts?.backSideLayout?.id]
+  );
+
   // Handle refresh
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await Promise.all([refetch(), showBelowFold ? refetchFull() : Promise.resolve()]);
     setRefreshing(false);
     Alert.alert("Sucesso", "Detalhes atualizados");
   };
@@ -370,6 +278,26 @@ export default function ScheduleDetailsScreen() {
       });
     }
   }, [isLoading, task, trackRenderComplete]);
+
+  // Phase 1: Defer below-fold sections until after main content renders
+  useEffect(() => {
+    if (!isLoading && task) {
+      const handle = InteractionManager.runAfterInteractions(() => {
+        setShowBelowFold(true);
+      });
+      return () => handle.cancel();
+    }
+  }, [isLoading, task]);
+
+  // Phase 2: Defer changelog (heaviest section) until after below-fold renders
+  useEffect(() => {
+    if (showBelowFold) {
+      const handle = InteractionManager.runAfterInteractions(() => {
+        setShowChangelog(true);
+      });
+      return () => handle.cancel();
+    }
+  }, [showBelowFold]);
 
   if (isLoading) {
     perfLog.mark('Showing skeleton screen for ScheduleDetailsScreen');
@@ -490,6 +418,9 @@ export default function ScheduleDetailsScreen() {
           {task.serviceOrders && task.serviceOrders.length > 0 && (
             <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
           )}
+
+          {/* === Below-fold sections (deferred for faster perceived render) === */}
+          {showBelowFold && <>
 
           {/* Pricing Card - Only visible to ADMIN, FINANCIAL, and COMMERCIAL sectors */}
           {canViewPricingSection && (task as any)?.pricing && (task as any).pricing.items && (task as any).pricing.items.length > 0 && (
@@ -933,22 +864,7 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Financial summary - Only for Admin and Financial */}
-          {canViewDocuments && task.pricing?.total && (
-            <Card style={styles.sectionCard}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <View style={styles.sectionHeaderLeft}>
-                  <IconCurrencyReal size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Valor Total</ThemedText>
-                </View>
-              </View>
-              <View style={styles.sectionContent}>
-                <ThemedText style={StyleSheet.flatten([styles.summaryValue, { color: colors.primary }])}>
-                  {formatCurrency(task.pricing?.total)}
-                </ThemedText>
-              </View>
-            </Card>
-          )}
+          {/* Total is already displayed inside TaskPricingCard — no duplicate section needed */}
 
           {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {/* Team leaders can swipe to request new cuts for tasks in their managed sector */}
@@ -956,6 +872,9 @@ export default function ScheduleDetailsScreen() {
 
           {/* Airbrushings Table - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
           {canViewAirbrushing && <AirbrushingsTable taskId={id as string} maxHeight={400} />}
+
+          </>}
+          {/* === End below-fold sections === */}
 
           {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
           {/* Team leadership is now determined by managedSector relationship */}
@@ -968,19 +887,19 @@ export default function ScheduleDetailsScreen() {
                 </View>
               </View>
               <View style={styles.sectionContent}>
-                <TaskWithServiceOrdersChangelog
-                  taskId={task.id}
-                  taskName={taskDisplayName}
-                  taskCreatedAt={task.createdAt}
-                  serviceOrderIds={(task.serviceOrders || []).map((so: any) => so.id)}
-                  truckId={(task as any)?.truck?.id}
-                  layoutIds={[
-                    layouts?.leftSideLayout?.id,
-                    layouts?.rightSideLayout?.id,
-                    layouts?.backSideLayout?.id,
-                  ].filter((id): id is string => !!id)}
-                  pricingId={(task as any)?.pricing?.id}
-                />
+                {showChangelog ? (
+                  <TaskWithServiceOrdersChangelog
+                    taskId={task.id}
+                    taskName={taskDisplayName}
+                    taskCreatedAt={task.createdAt}
+                    serviceOrderIds={serviceOrderIds}
+                    truckId={(task as any)?.truck?.id}
+                    layoutIds={changelogLayoutIds}
+                    pricingId={(task as any)?.pricing?.id}
+                  />
+                ) : (
+                  <ChangelogSkeleton />
+                )}
               </View>
             </Card>
           )}
@@ -1100,10 +1019,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     opacity: 0.7,
     marginTop: 2,
-  },
-  summaryValue: {
-    fontSize: fontSize["3xl"],
-    fontWeight: fontWeight.bold,
   },
   cutsScroll: {
     marginTop: spacing.sm,

@@ -37,6 +37,8 @@ import {
   PAINT_FINISH_LABELS,
   SERVICE_ORDER_STATUS_LABELS,
   SERVICE_ORDER_TYPE_LABELS,
+  TASK_STATUS_LABELS,
+  TASK_PRICING_STATUS_LABELS,
   TRUCK_MANUFACTURER_LABELS,
 } from "@/constants/enum-labels";
 import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
@@ -485,7 +487,7 @@ const getEntityTypeLabel = (entityType: CHANGE_LOG_ENTITY_TYPE): string => {
 };
 
 // Timeline item component
-const TimelineItem = ({
+const TimelineItem = React.memo(({
   group,
   isLast,
   entityDetails,
@@ -865,11 +867,17 @@ const TimelineItem = ({
 
         // Special handling for status field - show "Status: old → new" format (matching web)
         if (field === "status") {
+          // Use the correct label map based on entity type
+          const statusLabels = log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK
+            ? TASK_STATUS_LABELS
+            : log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING
+              ? TASK_PRICING_STATUS_LABELS
+              : SERVICE_ORDER_STATUS_LABELS;
           const oldStatusLabel = log.oldValue
-            ? SERVICE_ORDER_STATUS_LABELS[log.oldValue as keyof typeof SERVICE_ORDER_STATUS_LABELS] || String(log.oldValue)
+            ? (statusLabels as Record<string, string>)[log.oldValue] || String(log.oldValue)
             : "Nenhum";
           const newStatusLabel = log.newValue
-            ? SERVICE_ORDER_STATUS_LABELS[log.newValue as keyof typeof SERVICE_ORDER_STATUS_LABELS] || String(log.newValue)
+            ? (statusLabels as Record<string, string>)[log.newValue] || String(log.newValue)
             : "Nenhum";
 
           changes.push(
@@ -1023,10 +1031,12 @@ const TimelineItem = ({
       </View>
     </View>
   );
-};
+});
+
+TimelineItem.displayName = 'TimelineItem';
 
 // Loading skeleton
-const ChangelogSkeleton = () => {
+export const ChangelogSkeleton = React.memo(() => {
   const { colors } = useTheme();
 
   return (
@@ -1046,7 +1056,9 @@ const ChangelogSkeleton = () => {
       ))}
     </View>
   );
-};
+});
+
+ChangelogSkeleton.displayName = 'ChangelogSkeleton';
 
 export function TaskWithServiceOrdersChangelog({
   taskId,
@@ -1070,90 +1082,50 @@ export function TaskWithServiceOrdersChangelog({
     [user]
   );
 
-  // Fetch changelogs for task
-  const { data: taskLogs, isLoading: taskLoading } = useChangeLogs({
-    where: {
-      entityType: CHANGE_LOG_ENTITY_TYPE.TASK,
-      entityId: taskId,
-    },
+  // Build OR conditions to fetch all changelogs in a single query
+  const orConditions = useMemo(() => {
+    const conditions: any[] = [
+      { entityType: CHANGE_LOG_ENTITY_TYPE.TASK, entityId: taskId },
+    ];
+    if (serviceOrderIds.length > 0) {
+      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER, entityId: { in: serviceOrderIds } });
+    }
+    if (truckId) {
+      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.TRUCK, entityId: truckId });
+    }
+    if (layoutIds.length > 0) {
+      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.LAYOUT, entityId: { in: layoutIds } });
+    }
+    if (pricingId) {
+      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.TASK_PRICING, entityId: pricingId });
+    }
+    return conditions;
+  }, [taskId, serviceOrderIds, truckId, layoutIds, pricingId]);
+
+  // Single combined changelog query using OR conditions
+  const { data: allLogsResponse, isLoading } = useChangeLogs({
+    where: { OR: orConditions },
     include: { user: true },
     limit,
     orderBy: { createdAt: "desc" },
   });
 
-  // Fetch changelogs for service orders (one query for all)
-  const { data: serviceOrderLogs, isLoading: serviceOrdersLoading } = useChangeLogs(
-    {
-      where: {
-        entityType: CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER,
-        entityId: { in: serviceOrderIds },
-      },
-      include: { user: true },
-      limit,
-      orderBy: { createdAt: "desc" },
-    },
-    { enabled: serviceOrderIds.length > 0 }
-  );
-
-  // Fetch changelogs for truck
-  const { data: truckLogs, isLoading: truckLoading } = useChangeLogs(
-    {
-      where: {
-        entityType: CHANGE_LOG_ENTITY_TYPE.TRUCK,
-        entityId: truckId!,
-      },
-      include: { user: true },
-      limit,
-      orderBy: { createdAt: "desc" },
-    },
-    { enabled: !!truckId }
-  );
-
-  // Fetch changelogs for layouts
-  const { data: layoutLogs, isLoading: layoutLoading } = useChangeLogs(
-    {
-      where: {
-        entityType: CHANGE_LOG_ENTITY_TYPE.LAYOUT,
-        entityId: { in: layoutIds },
-      },
-      include: { user: true },
-      limit,
-      orderBy: { createdAt: "desc" },
-    },
-    { enabled: layoutIds.length > 0 }
-  );
-
-  // Fetch changelogs for task pricing
-  const { data: pricingLogs, isLoading: pricingLoading } = useChangeLogs(
-    {
-      where: {
-        entityType: CHANGE_LOG_ENTITY_TYPE.TASK_PRICING,
-        entityId: pricingId!,
-      },
-      include: { user: true },
-      limit,
-      orderBy: { createdAt: "desc" },
-    },
-    { enabled: !!pricingId }
-  );
-
-  const isLoading = taskLoading || serviceOrdersLoading || truckLoading || layoutLoading || pricingLoading;
-
-  // Combine and sort all changelogs
+  // Process and filter all changelogs from the single combined response
   const allChangelogs = useMemo(() => {
-    const logs: ChangeLog[] = [];
-    const serviceLogs: ChangeLog[] = serviceOrderLogs?.data || [];
+    const allLogs: ChangeLog[] = allLogsResponse?.data || [];
 
-    if (taskLogs?.data) logs.push(...taskLogs.data);
-    if (truckLogs?.data) logs.push(...truckLogs.data);
-    if (layoutLogs?.data) logs.push(...layoutLogs.data);
-    if (pricingLogs?.data) logs.push(...pricingLogs.data);
+    // Separate service order logs for type-based filtering
+    const serviceLogs = allLogs.filter(
+      (log) => log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER
+    );
+    const nonServiceLogs = allLogs.filter(
+      (log) => log.entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER
+    );
 
     // Build serviceOrderTypeMap from SERVICE_ORDER CREATE actions (matching web)
     const serviceOrderTypeMap = new Map<string, string>();
     serviceLogs.forEach((log) => {
       if (
-        log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER &&
         log.action === CHANGE_LOG_ACTION.CREATE &&
         log.newValue &&
         log.entityId
@@ -1170,13 +1142,12 @@ export function TaskWithServiceOrdersChangelog({
     // Filter service order logs by visible types using the map (matching web)
     // If type can't be determined, hide by default for security
     const filteredServiceLogs = serviceLogs.filter((log) => {
-      if (log.entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) return true;
       const serviceOrderType = serviceOrderTypeMap.get(log.entityId);
       if (!serviceOrderType) return false;
       return visibleServiceOrderTypes.includes(serviceOrderType as SERVICE_ORDER_TYPE);
     });
 
-    logs.push(...filteredServiceLogs);
+    const logs = [...nonServiceLogs, ...filteredServiceLogs];
 
     // Sort by createdAt descending
     logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -1200,7 +1171,7 @@ export function TaskWithServiceOrdersChangelog({
     });
 
     return filteredLogs.slice(0, limit);
-  }, [taskLogs, serviceOrderLogs, truckLogs, layoutLogs, pricingLogs, visibleServiceOrderTypes, limit]);
+  }, [allLogsResponse, visibleServiceOrderTypes, limit]);
 
   // Extract entity IDs for detail fetching - grouped by entity type
   const entityIdsByType = useMemo(() => {
@@ -1311,6 +1282,31 @@ export function TaskWithServiceOrdersChangelog({
   const groupedChangelogs = useMemo(() => groupChangelogsByEntity(allChangelogs), [allChangelogs]);
   const dateGroups = useMemo(() => groupByDate(groupedChangelogs), [groupedChangelogs]);
 
+  // Progressive rendering: show 10 groups initially, expand on demand
+  const INITIAL_VISIBLE = 10;
+  const LOAD_MORE_COUNT = 20;
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
+  const totalGroups = groupedChangelogs.length;
+  const hasMore = visibleCount < totalGroups;
+
+  // Build a limited view of dateGroups respecting visibleCount
+  const visibleDateGroups = useMemo(() => {
+    const result = new Map<string, ChangeLog[][]>();
+    let count = 0;
+    for (const [dateKey, groups] of dateGroups.entries()) {
+      if (count >= visibleCount) break;
+      const remaining = visibleCount - count;
+      const visibleGroups = groups.slice(0, remaining);
+      result.set(dateKey, visibleGroups);
+      count += visibleGroups.length;
+    }
+    return result;
+  }, [dateGroups, visibleCount]);
+
+  const handleShowMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + LOAD_MORE_COUNT, totalGroups));
+  }, [totalGroups]);
+
   if (isLoading) {
     return <ChangelogSkeleton />;
   }
@@ -1328,7 +1324,7 @@ export function TaskWithServiceOrdersChangelog({
 
   return (
     <View style={styles.container}>
-        {Array.from(dateGroups.entries()).map(([dateKey, groups], dateIdx) => (
+        {Array.from(visibleDateGroups.entries()).map(([dateKey, groups], dateIdx) => (
           <View key={dateKey} style={styles.dateSection}>
             {/* Date Header */}
             <View style={styles.dateHeader}>
@@ -1345,7 +1341,7 @@ export function TaskWithServiceOrdersChangelog({
               <TimelineItem
                 key={`${group[0].id}-${idx}`}
                 group={group}
-                isLast={dateIdx === dateGroups.size - 1 && idx === groups.length - 1}
+                isLast={!hasMore && dateIdx === visibleDateGroups.size - 1 && idx === groups.length - 1}
                 entityDetails={entityDetails}
                 userSectorPrivilege={userSectorPrivilege}
               />
@@ -1353,8 +1349,21 @@ export function TaskWithServiceOrdersChangelog({
           </View>
         ))}
 
+        {/* Show more button */}
+        {hasMore && (
+          <TouchableOpacity
+            onPress={handleShowMore}
+            style={[styles.showMoreButton, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            activeOpacity={0.7}
+          >
+            <ThemedText style={[styles.showMoreText, { color: colors.primary }]}>
+              Mostrar mais ({totalGroups - visibleCount} restantes)
+            </ThemedText>
+          </TouchableOpacity>
+        )}
+
         {/* Creation marker */}
-        {taskCreatedAt && (
+        {!hasMore && taskCreatedAt && (
           <View style={styles.creationMarker}>
             <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
             <View style={[styles.creationBadge, { backgroundColor: colors.success + "20", borderColor: colors.success }]}>
@@ -1658,6 +1667,17 @@ const styles = StyleSheet.create({
   // Status change text style (matching web "Status: old → new" format)
   statusChangeText: {
     fontSize: fontSize.xs,
+  },
+  showMoreButton: {
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  showMoreText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
   },
 });
 

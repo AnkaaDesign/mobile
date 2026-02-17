@@ -1520,6 +1520,135 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             );
                                           })()}
                                         </View>
+                                      ) : changelog.field === "layouts" ? (
+                                        /* Special handling for truck layout changes */
+                                        (() => {
+                                          const parseValue = (val: any) => {
+                                            if (val === null || val === undefined) return null;
+                                            if (typeof val === "object" && !Array.isArray(val)) return val;
+                                            if (typeof val === "string") {
+                                              try { return JSON.parse(val); } catch { return null; }
+                                            }
+                                            return null;
+                                          };
+
+                                          const oldLayouts = parseValue(changelog.oldValue);
+                                          const newLayouts = parseValue(changelog.newValue);
+
+                                          const layoutSides = [
+                                            { key: "leftSideLayoutId", label: "Lado Motorista" },
+                                            { key: "rightSideLayoutId", label: "Lado Sapo" },
+                                            { key: "backSideLayoutId", label: "Traseira" },
+                                          ];
+
+                                          const changedSides = layoutSides.filter(({ key }) =>
+                                            (oldLayouts && oldLayouts[key] !== undefined) ||
+                                            (newLayouts && newLayouts[key] !== undefined),
+                                          );
+
+                                          if (changedSides.length === 0) {
+                                            return (
+                                              <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+                                                Sem alterações
+                                              </ThemedText>
+                                            );
+                                          }
+
+                                          const getDimensions = (layout: any) => {
+                                            if (!layout) return null;
+                                            return {
+                                              width: Math.round((layout.totalWidth || 0) * 100),
+                                              height: Math.round((layout.height || 0) * 100),
+                                              doors: layout.doorCount || 0,
+                                            };
+                                          };
+
+                                          return (
+                                            <View style={{ gap: spacing.sm }}>
+                                              {changedSides.map(({ key, label }) => {
+                                                const oldLayout = oldLayouts?.[key] ?? null;
+                                                const newLayout = newLayouts?.[key] ?? null;
+                                                const oldDims = getDimensions(oldLayout);
+                                                const newDims = getDimensions(newLayout);
+
+                                                let content;
+                                                if (!oldDims && newDims) {
+                                                  // Added
+                                                  content = (
+                                                    <View style={styles.fieldValues}>
+                                                      <View style={styles.valueRow}>
+                                                        <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>Nenhum</ThemedText>
+                                                      </View>
+                                                      <View style={styles.valueRow}>
+                                                        <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>
+                                                          {newDims.width}cm × {newDims.height}cm — {newDims.doors} porta{newDims.doors !== 1 ? "s" : ""}
+                                                        </ThemedText>
+                                                      </View>
+                                                    </View>
+                                                  );
+                                                } else if (oldDims && !newDims) {
+                                                  // Removed
+                                                  content = (
+                                                    <View style={styles.fieldValues}>
+                                                      <View style={styles.valueRow}>
+                                                        <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>
+                                                          {oldDims.width}cm × {oldDims.height}cm — {oldDims.doors} porta{oldDims.doors !== 1 ? "s" : ""}
+                                                        </ThemedText>
+                                                      </View>
+                                                      <View style={styles.valueRow}>
+                                                        <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>Nenhum</ThemedText>
+                                                      </View>
+                                                    </View>
+                                                  );
+                                                } else if (oldDims && newDims) {
+                                                  const sameMeasures = oldDims.width === newDims.width && oldDims.height === newDims.height;
+                                                  if (sameMeasures) {
+                                                    // Same measures → show door count change
+                                                    content = (
+                                                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>
+                                                          {oldDims.doors} porta{oldDims.doors !== 1 ? "s" : ""}
+                                                        </ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>→</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>
+                                                          {newDims.doors} porta{newDims.doors !== 1 ? "s" : ""}
+                                                        </ThemedText>
+                                                      </View>
+                                                    );
+                                                  } else {
+                                                    // Different measures → show dimensions change
+                                                    content = (
+                                                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>
+                                                          {oldDims.width}cm × {oldDims.height}cm
+                                                        </ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>→</ThemedText>
+                                                        <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>
+                                                          {newDims.width}cm × {newDims.height}cm
+                                                        </ThemedText>
+                                                      </View>
+                                                    );
+                                                  }
+                                                } else {
+                                                  content = <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>Sem alterações</ThemedText>;
+                                                }
+
+                                                return (
+                                                  <View key={key} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing.sm, backgroundColor: colors.muted + "33" }}>
+                                                    <ThemedText style={{ fontSize: fontSize.xs, fontWeight: "600", marginBottom: spacing.xs, color: colors.foreground }}>
+                                                      {label}
+                                                    </ThemedText>
+                                                    {content}
+                                                  </View>
+                                                );
+                                              })}
+                                            </View>
+                                          );
+                                        })()
                                       ) : (
                                         /* Default field handling */
                                         <View style={styles.fieldValues}>

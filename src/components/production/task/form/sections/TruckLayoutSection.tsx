@@ -27,8 +27,9 @@ export default function TruckLayoutSection({
   const { user } = useAuth();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
 
-  // Watch truck ID to enable/disable this section
-  const truckId = useWatch({ control, name: 'truckId' });
+  // Watch nested truck object to determine if a truck is associated
+  const truck = useWatch({ control, name: 'truck' });
+  const hasTruck = !!(truck?.plate || truck?.category || truck?.chassisNumber);
 
   // Only show for Admin, Logistic, and Production team leaders
   const userPrivilege = user?.sector?.privileges;
@@ -38,7 +39,7 @@ export default function TruckLayoutSection({
 
   const canViewSection = isAdminUser || isLogisticUser || isProductionLeader;
 
-  if (!canViewSection || !truckId) {
+  if (!canViewSection || !hasTruck) {
     return null;
   }
 

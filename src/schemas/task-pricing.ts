@@ -1,5 +1,47 @@
 import { z } from 'zod';
 
+/**
+ * Preprocess money values that might come as formatted strings (e.g., "R$ 6.230,00")
+ * or as numbers. Converts them to a numeric value.
+ */
+const preprocessMoney = (val: unknown): number | null | undefined => {
+  if (val === null || val === undefined || val === '') {
+    return null;
+  }
+  if (typeof val === 'number') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    // Remove currency symbol and whitespace
+    let cleaned = val.replace(/R\$\s*/g, '').trim();
+    // Handle Brazilian format: "6.230,00" -> "6230.00"
+    // First remove thousands separators (dots), then convert decimal comma to dot
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+};
+
+/**
+ * Preprocess discountType to handle null/undefined values gracefully.
+ * Converts null/undefined to 'NONE' to avoid validation errors.
+ */
+const preprocessDiscountType = (val: unknown): string => {
+  if (val === null || val === undefined || val === '') {
+    return 'NONE';
+  }
+  return String(val);
+};
+
+// Preprocess payment condition
+const preprocessPaymentCondition = (val: unknown): string | null => {
+  if (val === null || val === undefined || val === '') {
+    return null;
+  }
+  return String(val);
+};
+
 export const taskPricingStatusSchema = z.enum([
   'DRAFT',
   'APPROVED',
@@ -40,35 +82,66 @@ const taskPricingItemCreateSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().optional().default(''),
   observation: z.string().max(2000).optional().nullable(),
-  amount: z.number().optional().nullable(),
+  // Amount might come as formatted currency string (e.g., "R$ 520,00")
+  amount: z.preprocess(preprocessMoney, z.number().optional().nullable()),
   shouldSync: z.boolean().optional().default(true), // Controls bidirectional sync with ServiceOrder
 });
+
+// Preprocess items array to filter out empty placeholder items
+const taskPricingItemsArraySchema = z.preprocess(
+  (val) => {
+    // Filter out empty pricing items (those without descriptions)
+    if (Array.isArray(val)) {
+      return val.filter((item: any) => item && item.description && item.description.trim() !== '');
+    }
+    return val;
+  },
+  z.array(taskPricingItemCreateSchema).optional().default([])
+);
 
 // Schema that allows optional pricing or validates pricing when items exist
 export const taskPricingCreateNestedSchema = z
   .object({
     expiresAt: z.coerce.date().optional().nullable(),
     status: taskPricingStatusSchema.optional().default('DRAFT'),
-    items: z.array(taskPricingItemCreateSchema).optional().default([]),
-    subtotal: z.number().optional().nullable(),
-    discountType: discountTypeSchema.optional().default('NONE'),
-    discountValue: z.number().optional().nullable(),
-    total: z.number().optional().nullable(),
+    items: taskPricingItemsArraySchema, // Uses preprocessing to filter empty items
+    // These fields might come as formatted currency strings (e.g., "R$ 6.230,00")
+    // from the form, so we preprocess them to convert to numbers
+    subtotal: z.preprocess(preprocessMoney, z.number().optional().nullable()),
+    // discountType: preprocess null/undefined to 'NONE' to avoid validation errors
+    discountType: z.preprocess(preprocessDiscountType, discountTypeSchema.default('NONE')),
+    discountValue: z.preprocess(preprocessMoney, z.number().optional().nullable()),
+    total: z.preprocess(preprocessMoney, z.number().optional().nullable()),
     // Payment Terms
-    paymentCondition: paymentConditionSchema.optional().nullable(),
-    downPaymentDate: z.coerce.date().optional().nullable(),
+    paymentCondition: z.preprocess(
+      preprocessPaymentCondition,
+      paymentConditionSchema.optional().nullable()
+    ),
+    downPaymentDate: z.preprocess(
+      (val) => (val === null || val === undefined || val === '' ? null : val),
+      z.coerce.date().nullable()
+    ).optional(),
     customPaymentText: z.string().max(2000).optional().nullable(),
     // Guarantee Terms
-    guaranteeYears: guaranteeYearsSchema.optional().nullable(),
+    guaranteeYears: z.preprocess(
+      (val) => val === '' || val === null || val === undefined ? null : Number(val),
+      z.number().optional().nullable()
+    ),
     customGuaranteeText: z.string().max(2000).optional().nullable(),
     // Custom Forecast - manual override for production days displayed in budget (1-30 days)
-    customForecastDays: z.number().int().min(1).max(30).optional().nullable(),
+    customForecastDays: z.preprocess(
+      (val) => val === '' || val === null || val === undefined ? null : Number(val),
+      z.number().int().min(1).max(30).optional().nullable()
+    ),
     // Layout File
     layoutFileId: z.string().uuid().optional().nullable(),
     // NEW FIELDS: Multi-customer invoicing support
     invoicesToCustomerIds: z.array(z.string().uuid("Cliente inválido")).optional().nullable(),
     // NEW FIELDS: Advanced pricing features
-    simultaneousTasks: z.number().int().min(1).max(100).optional().nullable(),
+    simultaneousTasks: z.preprocess(
+      (val) => val === '' || val === null || val === undefined ? null : Number(val),
+      z.number().int().min(1).max(100).optional().nullable()
+    ),
     discountReference: z.string().max(500).optional().nullable(),
   })
   .optional()
@@ -99,10 +172,11 @@ export const taskPricingCreateNestedSchema = z
           });
         }
 
-        if (item.amount === null || item.amount === undefined || item.amount < 0) {
+        // Amount can be empty (defaults to 0 for courtesy), only reject negative values
+        if (typeof item.amount === 'number' && item.amount < 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Valor deve ser maior ou igual a zero",
+            message: "Valor não pode ser negativo",
             path: ['items', index, 'amount'],
           });
         }

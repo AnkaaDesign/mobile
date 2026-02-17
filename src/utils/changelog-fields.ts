@@ -641,6 +641,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     logoId: "Logo",
     economicActivityId: "Atividade Econômica",
     registrationStatus: "Status de Registro",
+    stateRegistration: "Inscrição Estadual",
 
     // Nested relationship fields
     "logo.filename": "Nome do Logo",
@@ -1033,10 +1034,16 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         // Return the array as-is to be handled by the UI component with file thumbnails
         return value as any;
       }
-      // Don't format logoPaints/paints/groundPaints as strings - they will be rendered as special cards in the UI
+      // Format logoPaints/paints/groundPaints as comma-separated paint names
       if (field === "logoPaints" || field === "paints" || field === "groundPaints") {
-        // Return the array as-is to be handled by the UI component
-        return value as any;
+        const names = (value as any[])
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item?.name && item?.code) return `${item.name} (${item.code})`;
+            return item?.name || item?.id?.slice(0, 8) || "Tinta";
+          })
+          .filter(Boolean);
+        return names.length > 0 ? names.join(", ") : "Nenhuma";
       }
       if (field === "services") {
         // Format services with description and status
@@ -1090,10 +1097,16 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
     // Paint-specific array handling
     if (entityType === CHANGE_LOG_ENTITY_TYPE.PAINT) {
-      // Don't format paintGrounds as strings - they will be rendered as special cards in the UI
+      // Format paintGrounds/groundPaints as comma-separated paint names
       if (field === "paintGrounds" || field === "groundPaints") {
-        // Return the array as-is to be handled by the UI component
-        return value as any;
+        const names = (value as any[])
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item?.name && item?.code) return `${item.name} (${item.code})`;
+            return item?.name || item?.id?.slice(0, 8) || "Tinta";
+          })
+          .filter(Boolean);
+        return names.length > 0 ? names.join(", ") : "Nenhum";
       }
       if (field === "formulas") {
         return `${value.length} ${value.length === 1 ? "fórmula" : "fórmulas"}`;
@@ -1402,7 +1415,6 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     if (!value || value === "" || value === null) return "Pátio";
 
     if (typeof value === "string") {
-      if (value === "PATIO") return "Pátio";
       // Parse B1_F1_V1 format -> "Garagem 1 - Fila 1 - Vaga 1"
       const match = value.match(/B(\d)_F(\d)_V(\d)/);
       if (match) {
@@ -1461,11 +1473,11 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   // Handle registration status for Customer
   if (field === "registrationStatus" && typeof value === "string") {
     const registrationStatusLabels: Record<string, string> = {
-      ACTIVE: "Active",
-      SUSPENDED: "Suspended",
-      UNFIT: "Unfit",
-      ACTIVE_NOT_REGULAR: "Active Not Regular",
-      DEREGISTERED: "Deregistered",
+      ACTIVE: "Ativa",
+      SUSPENDED: "Suspensa",
+      UNFIT: "Inapta",
+      ACTIVE_NOT_REGULAR: "Ativa Não Regular",
+      DEREGISTERED: "Baixada",
     };
     return registrationStatusLabels[value] || value;
   }
@@ -2036,6 +2048,14 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
   // Handle objects
   if (typeof value === "object") {
+    // Special handling for generalPainting field in TASK - format as readable paint name
+    if (field === "generalPainting" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const data = value as { name?: string; code?: string };
+      if (!data) return "Nenhuma";
+      if (data.name && data.code) return `${data.name} (${data.code})`;
+      return data.name || "Tinta";
+    }
+
     // Special handling for negotiatingWith field in TASK
     if (field === "negotiatingWith" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
       const data = value as { name?: string; phone?: string | null };

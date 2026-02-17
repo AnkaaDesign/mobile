@@ -12,10 +12,13 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface PricingSectionProps {
   isSubmitting?: boolean;
+  /** Initial invoice-to customer objects for populating the combobox in edit mode */
+  initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
 }
 
 export default function PricingSection({
   isSubmitting = false,
+  initialInvoiceToCustomers,
 }: PricingSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();
@@ -44,6 +47,7 @@ export default function PricingSection({
         onItemCountChange={setPricingItemCount}
         layoutFiles={pricingLayoutFiles}
         onLayoutFilesChange={setPricingLayoutFiles}
+        initialInvoiceToCustomers={initialInvoiceToCustomers}
       />
     </FormCard>
   );

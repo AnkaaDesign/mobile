@@ -611,8 +611,9 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
             startNavigation();
           }
 
-          // NEVER use router.back() - it's broken with Drawer navigator
-          // Always use explicit navigation to the correct parent route
+          // Use router.replace() to navigate to parent without growing the stack.
+          // router.back() is broken with Drawer navigator.
+          // router.push() causes stack growth — old screens stay mounted (unmountOnBlur: false).
 
           let targetRoute: string | null = null;
 
@@ -701,7 +702,7 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
           if (targetRoute) {
             const route = targetRoute;
             requestAnimationFrame(() => {
-              router.push(route as any);
+              router.replace(route as any);
             });
           }
         }}
@@ -779,26 +780,33 @@ function InnerLayout() {
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
 
+  // Use primitive deps to prevent recomputation when user object reference changes
+  const sectorPrivilege = extUser?.sector?.privileges;
+  const userSectorsKey = extUser?.sectors?.map((s: any) => s.privilege).join(',');
+
   // Get user privileges - check both sector and sectors for compatibility
   // Must be called before any conditional returns (React hooks rules)
   const userPrivileges = useMemo(() => {
-    if (extUser?.sector?.privileges) {
-      return [extUser.sector.privileges];
+    if (sectorPrivilege) {
+      return [sectorPrivilege];
     }
-    if (extUser?.sectors) {
-      return extUser.sectors.map((s: { privilege: SECTOR_PRIVILEGES }) => s.privilege);
+    if (userSectorsKey) {
+      return userSectorsKey.split(',') as SECTOR_PRIVILEGES[];
     }
     return [SECTOR_PRIVILEGES.BASIC];
-  }, [extUser]);
+  }, [sectorPrivilege, userSectorsKey]);
 
   // Get accessible routes based on privileges
   // Must be called before any conditional returns (React hooks rules)
+  const hasUser = !!user;
   const accessibleRoutes = useMemo(() => {
-    if (!user) return []; // Return empty if no user
+    if (!hasUser) return []; // Return empty if no user
     const routes = getAccessibleRoutes(userPrivileges, extUser);
     console.log(`[PRIVILEGE-NAV] User has access to ${routes.length} routes out of ${ALL_ROUTES.length}`);
     return routes;
-  }, [userPrivileges, extUser, user]);
+    // extUser is intentionally excluded from deps — userPrivileges already captures privilege changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userPrivileges, hasUser]);
 
   // Memoized drawer colors - matching theme palette
   // Must be called before any conditional returns (React hooks rules)
