@@ -192,6 +192,11 @@ export function PpeRequestModal({
   // Get option value and label for Combobox
   const getOptionValue = useCallback((item: Item) => item.id, []);
   const getOptionLabel = useCallback((item: Item) => {
+    const itemSize = getItemPpeSize(item);
+    if (itemSize) {
+      const displaySize = itemSize.startsWith("SIZE_") ? itemSize.replace("SIZE_", "") : itemSize;
+      return `${item.name} - ${displaySize}`;
+    }
     return item.name;
   }, []);
 
