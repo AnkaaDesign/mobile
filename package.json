@@ -145,5 +145,10 @@
     "jest-expo": "^54.0.17",
     "patch-package": "^8.0.0",
     "typescript": "~5.9.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-native": "patches/react-native.patch"
+    }
   }
 }

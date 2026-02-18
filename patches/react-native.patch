@@ -1,0 +1,17 @@
+diff --git a/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm b/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+index 2a677974ca8a929849109f294bddcb239bb202d0..1830bb69b27e1a47c33a16043588805bf0137e11 100644
+--- a/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
++++ b/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+@@ -435,7 +435,11 @@ void ObjCTurboModule::performVoidMethodInvocation(
+     @try {
+       [inv invokeWithTarget:strongModule];
+     } @catch (NSException *exception) {
+-      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      if (shouldVoidMethodsExecuteSync_) {
++        throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      } else {
++        @throw exception;
++      }
+     } @finally {
+       [retainedObjectsForInvocation removeAllObjects];
+     }
