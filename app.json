@@ -132,7 +132,9 @@
         {
           "initialOrientation": "PORTRAIT"
         }
-      ]
+      ],
+      "expo-background-fetch",
+      "expo-task-manager"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -151,7 +153,7 @@
         "projectId": "f8f06f52-853f-4ab6-a783-181208687fa7"
       },
       "apiUrl": "https://api.ankaadesign.com.br",
-      "fallbackApiUrl": "https://api.ankaadesign.com.br"
+      "fallbackApiUrl": "http://192.168.10.180:3030"
     }
   }
 }

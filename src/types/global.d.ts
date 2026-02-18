@@ -6,6 +6,14 @@
  */
 declare global {
   /**
+   * V8-specific captureStackTrace for enhanced error stack traces.
+   * Used by ApiError in axiosClient.ts to maintain proper stack traces.
+   */
+  interface ErrorConstructor {
+    captureStackTrace?(targetObject: object, constructorOpt?: Function): void;
+  }
+
+  /**
    * Node.js/React Native global object
    * In React Native (Hermes engine), `global` is the global object equivalent to
    * `window` in browsers. We declare it as an alias to `globalThis` which is the

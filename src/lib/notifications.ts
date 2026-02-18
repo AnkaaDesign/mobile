@@ -1,6 +1,26 @@
 import * as Notifications from 'expo-notifications';
+import * as TaskManager from 'expo-task-manager';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+
+// Background notification task name
+const BACKGROUND_NOTIFICATION_TASK = 'BACKGROUND-NOTIFICATION-TASK';
+
+// Define background task for handling data-only (silent) push notifications
+// This must be at the top level (outside any component) so it's registered early
+TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
+  if (error) {
+    console.error('[BackgroundNotification] Task error:', error);
+    return;
+  }
+  console.log('[BackgroundNotification] Received background notification:', data);
+});
+
+// Register the task with expo-notifications
+Notifications.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK).catch((error) => {
+  // Will fail in Expo Go or if already registered - safe to ignore
+  console.log('[BackgroundNotification] Task registration:', error?.message || 'success');
+});
 
 // Configure how notifications should be handled when app is in foreground
 Notifications.setNotificationHandler({

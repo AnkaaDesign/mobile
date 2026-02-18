@@ -16,6 +16,7 @@ import {
   getLastNotificationResponse,
   setBadgeCount,
 } from '@/lib/notifications';
+import { notificationCategoriesService } from '@/services/notifications/notificationCategories';
 import { parseDeepLink, generateNotificationLink, ENTITY_ALIAS_MAP, ROUTE_MAP } from '@/lib/deep-linking';
 import { pushNotificationService, markAsRead, notify } from '@/api-client';
 import { notificationKeys } from '@/hooks/queryKeys';
@@ -355,6 +356,13 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       // Error unregistering push token
     }
   }, [expoPushToken]);
+
+  // Initialize notification categories (iOS action buttons)
+  useEffect(() => {
+    notificationCategoriesService.initialize().catch((error) => {
+      console.warn('[PushNotifications] Failed to initialize notification categories:', error);
+    });
+  }, []);
 
   // Setup notification listeners
   useEffect(() => {

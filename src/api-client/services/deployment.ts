@@ -1,34 +1,5 @@
 import { apiClient } from '../axiosClient';
 
-// EventSource type declaration for SSE
-declare global {
-  var EventSource: {
-    new (url: string, eventSourceInitDict?: EventSourceInit): EventSource;
-    prototype: EventSource;
-  };
-  interface EventSource extends EventTarget {
-    readonly url: string;
-    readonly readyState: number;
-    readonly CONNECTING: number;
-    readonly OPEN: number;
-    readonly CLOSED: number;
-    onopen: ((this: EventSource, ev: Event) => any) | null;
-    onmessage: ((this: EventSource, ev: MessageEvent) => any) | null;
-    onerror: ((this: EventSource, ev: Event) => any) | null;
-    close(): void;
-  }
-  interface EventSourceInit {
-    withCredentials?: boolean;
-  }
-  interface MessageEvent<T = any> extends Event {
-    readonly data: T;
-    readonly lastEventId: string;
-    readonly origin: string;
-    readonly ports: ReadonlyArray<any>;
-    readonly source: any;
-  }
-}
-
 // Import proper types from packages
 import type {
   Deployment,

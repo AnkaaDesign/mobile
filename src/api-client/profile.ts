@@ -32,7 +32,7 @@ export class ProfileService {
     return response.data;
   }
 
-  async uploadPhoto(photo: File, userName?: string): Promise<UserUpdateResponse> {
+  async uploadPhoto(photo: any, userName?: string): Promise<UserUpdateResponse> {
     const formData = new FormData();
     formData.append('photo', photo);
 
@@ -71,5 +71,5 @@ export const profileService = new ProfileService();
 
 export const getProfile = () => profileService.getProfile();
 export const updateProfile = (data: UserUpdateFormData) => profileService.updateProfile(data);
-export const uploadPhoto = (photo: File, userName?: string) => profileService.uploadPhoto(photo, userName);
+export const uploadPhoto = (photo: any, userName?: string) => profileService.uploadPhoto(photo, userName);
 export const deletePhoto = () => profileService.deletePhoto();

@@ -208,7 +208,7 @@ export const secullumService = {
       responseType: "blob",
     }),
 
-  importSyncData: (file: File, entityType: string) => {
+  importSyncData: (file: any, entityType: string) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("entityType", entityType);

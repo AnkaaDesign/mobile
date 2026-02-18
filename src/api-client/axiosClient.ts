@@ -15,13 +15,6 @@ import { safeLocalStorage } from "./platform-utils";
 import { apiPerformanceLogger } from "@/utils/api-performance-logger";
 import { ONLINE_API_URL as DEFAULT_API_URL } from "@/constants/api";
 
-// Extend ErrorConstructor to include V8-specific captureStackTrace
-declare global {
-  interface ErrorConstructor {
-    captureStackTrace?(targetObject: object, constructorOpt?: Function): void;
-  }
-}
-
 // =====================
 // Enhanced Type Definitions
 // =====================

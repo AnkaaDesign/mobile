@@ -3,40 +3,10 @@
  *
  * Manages background fetch and notification synchronization.
  * Fetches new notifications periodically even when app is closed.
- *
- * NOTE: Requires expo-background-fetch and expo-task-manager packages.
- * Install with: pnpm add expo-background-fetch expo-task-manager
  */
 
-// TODO: Uncomment when packages are installed
-// import * as BackgroundFetch from 'expo-background-fetch';
-// import * as TaskManager from 'expo-task-manager';
-
-// Stub types until packages are installed
-export enum BackgroundFetchResult {
-  NewData = 1,
-  NoData = 2,
-  Failed = 3,
-}
-
-export enum BackgroundFetchStatus {
-  Denied = 1,
-  Restricted = 2,
-  Available = 3,
-}
-
-const BackgroundFetch = {
-  BackgroundFetchResult,
-  BackgroundFetchStatus,
-  registerTaskAsync: async (_taskName: string, _options?: unknown) => {},
-  unregisterTaskAsync: async (_taskName: string) => {},
-  getStatusAsync: async (): Promise<BackgroundFetchStatus> => BackgroundFetchStatus.Available,
-};
-
-const TaskManager = {
-  defineTask: (_taskName: string, _taskExecutor: any) => {},
-  isTaskRegisteredAsync: async (_taskName: string) => false,
-};
+import * as BackgroundFetch from 'expo-background-fetch';
+import * as TaskManager from 'expo-task-manager';
 import { updateBadgeCount } from './localNotifications';
 import { getUnreadNotifications } from '@/api-client/notification';
 
@@ -213,12 +183,12 @@ export class BackgroundSyncService {
   /**
    * Get background fetch status
    */
-  public async getBackgroundFetchStatus(): Promise<BackgroundFetchStatus> {
+  public async getBackgroundFetchStatus(): Promise<BackgroundFetch.BackgroundFetchStatus | null> {
     try {
       return await BackgroundFetch.getStatusAsync();
     } catch (error) {
       console.error('[BackgroundSync] Failed to get status:', error);
-      return BackgroundFetchStatus.Denied;
+      return BackgroundFetch.BackgroundFetchStatus.Denied;
     }
   }
 
@@ -298,23 +268,31 @@ export async function useBackgroundSync(
  * Check background fetch permissions and status
  */
 export async function checkBackgroundFetchStatus(): Promise<{
-  status: BackgroundFetchStatus;
+  status: BackgroundFetch.BackgroundFetchStatus | null;
   isAvailable: boolean;
   message: string;
 }> {
   try {
     const status = await BackgroundFetch.getStatusAsync();
 
-    const statusMap: Record<BackgroundFetchStatus, { isAvailable: boolean; message: string }> = {
-      [BackgroundFetchStatus.Available]: {
+    if (status === null) {
+      return {
+        status: null,
+        isAvailable: false,
+        message: 'Background fetch status unavailable',
+      };
+    }
+
+    const statusMap: Record<number, { isAvailable: boolean; message: string }> = {
+      [BackgroundFetch.BackgroundFetchStatus.Available]: {
         isAvailable: true,
         message: 'Background fetch is available',
       },
-      [BackgroundFetchStatus.Denied]: {
+      [BackgroundFetch.BackgroundFetchStatus.Denied]: {
         isAvailable: false,
         message: 'Background fetch is denied',
       },
-      [BackgroundFetchStatus.Restricted]: {
+      [BackgroundFetch.BackgroundFetchStatus.Restricted]: {
         isAvailable: false,
         message: 'Background fetch is restricted',
       },
@@ -332,7 +310,7 @@ export async function checkBackgroundFetchStatus(): Promise<{
   } catch (error) {
     console.error('[BackgroundSync] Failed to check status:', error);
     return {
-      status: BackgroundFetchStatus.Denied,
+      status: BackgroundFetch.BackgroundFetchStatus.Denied,
       isAvailable: false,
       message: `Failed to check status: ${error}`,
     };
