@@ -18,6 +18,7 @@ import {
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isTeamLeader } from "@/utils/user";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 interface TeamMenuItem {
   id: string;
@@ -29,6 +30,7 @@ interface TeamMenuItem {
 }
 
 export default function MeuPessoalScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

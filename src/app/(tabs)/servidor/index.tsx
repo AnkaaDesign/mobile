@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { ScrollView, RefreshControl, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -7,11 +7,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Icon } from "@/components/ui/icon";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useServerMetrics, useServerStatus } from "@/hooks/useServer";
 import { routes } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+import { Skeleton } from "@/components/ui/skeleton";
+import { spacing, borderRadius } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
+
 
 const quickAccessItems = [
   { title: "Serviços", icon: "settings", route: routes.server.services, color: "#3b82f6" },
@@ -26,6 +30,7 @@ const quickAccessItems = [
 
 export default function ServidorScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   const {
@@ -42,6 +47,8 @@ export default function ServidorScreen() {
 
   const isLoading = metricsLoading && statusLoading;
 
+  useScreenReady(!isLoading);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -52,7 +59,48 @@ export default function ServidorScreen() {
   };
 
   if (isLoading && !metricsData && !statusData) {
-    return <LoadingScreen message="Carregando servidor..." />;
+    return (
+      <ThemedView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+          {/* System status skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
+              <Skeleton height={20} width={160} />
+              <Skeleton height={24} width={80} borderRadius={borderRadius.full} />
+            </View>
+            <Skeleton height={14} width={120} style={{ marginBottom: spacing.sm }} />
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Skeleton height={14} width={100} />
+              <Skeleton height={14} width={50} />
+            </View>
+          </View>
+
+          {/* Resource usage skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.md }}>
+            <Skeleton height={20} width={140} style={{ marginBottom: spacing.md }} />
+            {["CPU", "Memória", "Disco"].map((label) => (
+              <View key={label} style={{ marginBottom: spacing.md }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.xs }}>
+                  <Skeleton height={14} width={60} />
+                  <Skeleton height={14} width={40} />
+                </View>
+                <Skeleton height={8} width="100%" borderRadius={4} />
+              </View>
+            ))}
+          </View>
+
+          {/* Quick access skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md }}>
+            <Skeleton height={20} width={100} style={{ marginBottom: spacing.md }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <Skeleton key={i} height={80} width="30%" borderRadius={borderRadius.md} />
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   const metrics = metricsData?.data;

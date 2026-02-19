@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -16,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { MobilePaintFormulaCalculator } from "@/components/painting/formula/mobile-paint-formula-calculator";
 import { IconBuildingFactory } from "@tabler/icons-react-native";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function FormulaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
@@ -24,7 +26,6 @@ export default function FormulaDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -97,8 +98,78 @@ export default function FormulaDetailsScreen() {
 
   const { totalRatio: _totalRatio2, totalComponents: _totalComponents2 } = calculateTotals();
 
+  useScreenReady(!isLoading);
+
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da fórmula..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: 16, gap: 16, paddingBottom: 32 }}>
+          {/* MobilePaintFormulaCalculator card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 16 }}>
+            {/* Calculator card header: icon + title */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
+            </View>
+            {/* Volume input area */}
+            <View style={{ gap: 8 }}>
+              <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+              {/* Quick volume buttons row */}
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} style={{ height: 32, flex: 1, borderRadius: 6 }} />
+                ))}
+              </View>
+            </View>
+            {/* Components table skeleton */}
+            <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, overflow: 'hidden' }}>
+              {/* Table header */}
+              <View style={{ flexDirection: 'row', padding: 12, backgroundColor: colors.muted, gap: 8 }}>
+                <Skeleton style={{ width: 24, height: 14, borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, flex: 1, borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: 70, borderRadius: 4 }} />
+              </View>
+              {/* Component rows: color swatch + name + weight */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Skeleton style={{ width: 24, height: 24, borderRadius: 12 }} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Skeleton style={{ height: 13, width: `${50 + i * 8}%`, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 11, width: '30%', borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 14, width: 55, borderRadius: 4 }} />
+                </View>
+              ))}
+              {/* Total row */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 8, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.muted + '60' }}>
+                <Skeleton style={{ width: 24, height: 14, borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+                <View style={{ flex: 1 }} />
+                <Skeleton style={{ height: 14, width: 55, borderRadius: 4 }} />
+              </View>
+            </View>
+            {/* Produce button */}
+            <Skeleton style={{ height: 44, borderRadius: 8 }} />
+          </View>
+          {/* Production history card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 22, width: 30, borderRadius: 10, marginLeft: 'auto' }} />
+            </View>
+            <Skeleton style={{ height: 13, width: '80%', borderRadius: 4 }} />
+            {[1, 2].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 8, borderRadius: 6, backgroundColor: colors.muted + '30' }}>
+                <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                <Skeleton style={{ height: 12, width: '40%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !formula) {

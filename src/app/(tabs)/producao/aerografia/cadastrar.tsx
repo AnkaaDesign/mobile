@@ -3,11 +3,10 @@ import { Stack, router } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAirbrushingMutations } from "@/hooks";
+import { useAirbrushingMutations, useScreenReady} from '@/hooks';
 import { useTasks } from "@/hooks";
 import { airbrushingCreateSchema, type AirbrushingCreateFormData } from '../../../../schemas';
 import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -23,6 +22,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AirbrushingCreateScreen() {
   const { colors } = useTheme();
@@ -63,6 +65,8 @@ export default function AirbrushingCreateScreen() {
       airbrushing: null,
     },
   });
+
+  useScreenReady(!isLoadingTasks);
 
   const tasks = tasksResponse?.data || [];
 
@@ -164,7 +168,45 @@ export default function AirbrushingCreateScreen() {
             headerTintColor: colors.foreground,
           }}
         />
-        <LoadingScreen />
+        <ScrollView style={{ flex: 1 }}>
+          <View style={{ padding: spacing.md, gap: spacing.md }}>
+            {/* Header card */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="50%" height={18} style={{ marginBottom: spacing.md }} />
+              <Skeleton width="80%" height={14} />
+            </View>
+            {/* Task selection */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="30%" height={18} style={{ marginBottom: spacing.md }} />
+              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+              <Skeleton width="100%" height={44} borderRadius={8} />
+            </View>
+            {/* Status */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="25%" height={18} style={{ marginBottom: spacing.md }} />
+              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+              <Skeleton width="100%" height={44} borderRadius={8} />
+            </View>
+            {/* Dates */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
+              <View style={{ marginBottom: spacing.md }}>
+                <Skeleton width="40%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+              <View>
+                <Skeleton width="45%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            </View>
+            {/* Price */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
+              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+              <Skeleton width="100%" height={44} borderRadius={8} />
+            </View>
+          </View>
+        </ScrollView>
       </>
     );
   }

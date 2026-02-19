@@ -49,6 +49,17 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "clientes-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/clientes/cadastrar" },
           { id: "clientes-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/clientes/detalhes/:id", isDynamic: true },
           { id: "clientes-editar", title: "Editar", icon: "edit", path: "/administracao/clientes/editar/:id", isDynamic: true },
+          {
+            id: "representantes",
+            title: "Representantes",
+            icon: "users",
+            path: "/administracao/representantes",
+            children: [
+              { id: "representantes-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/representantes/cadastrar" },
+              { id: "representantes-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/representantes/detalhes/:id", isDynamic: true },
+              { id: "representantes-editar", title: "Editar", icon: "edit", path: "/administracao/representantes/editar/:id", isDynamic: true },
+            ],
+          },
         ],
       },
       {
@@ -718,6 +729,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     path: "/administracao/clientes",
     requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL],
   },
+
 
   // Cronograma - Direct access for DESIGNER, LOGISTIC, COMMERCIAL, PLOTTING
   {

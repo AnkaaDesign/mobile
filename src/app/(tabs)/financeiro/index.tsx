@@ -3,8 +3,10 @@ import { View, Text, ScrollView } from 'react-native';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function FinanceiroScreen() {
+  useScreenReady();
   const router = useRouter();
 
   return (

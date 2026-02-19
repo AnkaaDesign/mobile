@@ -283,11 +283,7 @@ export function SpotSelector({
 
   return (
     <View style={styles.container}>
-      {!truckLength || truckLength <= 0 ? (
-        <ThemedText style={[styles.placeholder, { color: colors.mutedForeground }]}>
-          Preencha o layout do caminhao para selecionar o local
-        </ThemedText>
-      ) : isLoading ? (
+      {!truckLength || truckLength <= 0 ? null : isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
           <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>

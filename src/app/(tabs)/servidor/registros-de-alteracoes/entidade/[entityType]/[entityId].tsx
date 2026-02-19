@@ -1,7 +1,8 @@
-
 import { UnderConstruction } from "@/components/ui/under-construction";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function ChangeLogEntityScreen() {
+  useScreenReady();
   return (
     <UnderConstruction
       title="Registros da Entidade"

@@ -2,18 +2,19 @@ import { useState, useMemo, useCallback } from 'react';
 import { ScrollView, RefreshControl, Alert, Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getCpuTemperature, getSsdHealth, getRaidStatus, getHealthHistory } from '../../../api-client';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/icon';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 // import { useToast } from '@/hooks/use-toast';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+
 
 // Types
 interface ResourceMetrics {
@@ -177,6 +178,8 @@ export default function ServerMetricsScreen() {
 
   const isLoading = metricsLoading || tempLoading || ssdLoading || raidLoading || historyLoading;
   const hasError = metricsError;
+
+  useScreenReady(!isLoading);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -437,7 +440,7 @@ export default function ServerMetricsScreen() {
   }, [metrics, temperatureData, ssdData, raidData, history, alerts, selectedTimeRange]);
 
   if (isLoading && !metricsData) {
-    return <LoadingScreen message="Carregando métricas do servidor..." />;
+    return null;
   }
 
   if (hasError && !metricsData) {

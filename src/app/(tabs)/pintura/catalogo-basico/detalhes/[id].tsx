@@ -8,7 +8,6 @@ import {
   PaintSpecificationsCard,
   PaintGroundPaintsCard,
 } from "@/components/painting/catalog/detail";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -20,6 +19,9 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege, isTeamLeader } from "@/utils";
 import { IconPaint } from "@tabler/icons-react-native";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Basic Catalog Details Screen
@@ -41,7 +43,6 @@ export default function CatalogoBasicoDetailsScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check user permissions - team leaders can view, warehouse can edit
   // Team leadership is now determined by managedSector relationship
@@ -172,6 +173,8 @@ export default function CatalogoBasicoDetailsScreen() {
     },
   });
 
+  useScreenReady(!isLoading);
+
   const paint = paintResponse?.data;
 
   const handleRefresh = React.useCallback(async () => {
@@ -189,7 +192,45 @@ export default function CatalogoBasicoDetailsScreen() {
             headerBackTitle: "Voltar",
           }}
         />
-        <LoadingScreen />
+        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{ padding: 16, gap: 16, paddingBottom: 32 }}>
+            {/* Header card skeleton: icon + name */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+                <Skeleton style={{ height: 20, flex: 1, borderRadius: 4 }} />
+              </View>
+            </View>
+            {/* Color preview + specs card */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+              <Skeleton style={{ height: 100, borderRadius: 0 }} />
+              <View style={{ padding: 16, gap: 10 }}>
+                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
+                </View>
+              </View>
+            </View>
+            {/* Formulas card skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+                <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
+              </View>
+              {[1, 2].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
+                  <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </>
     );
   }

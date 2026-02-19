@@ -7,5 +7,6 @@ import { myTeamWarningsListConfig } from '@/config/list/my-team'
  * The API endpoint handles the filtering based on the user's managedSector.id
  */
 export default function MyTeamWarningsScreen() {
+  // useScreenReady is handled internally by Layout component
   return <Layout config={myTeamWarningsListConfig} />
 }

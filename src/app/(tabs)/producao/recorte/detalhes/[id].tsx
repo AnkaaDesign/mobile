@@ -2,12 +2,11 @@ import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useCut, useCutMutations } from "@/hooks";
+import { useCut, useCutMutations, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
   SECTOR_PRIVILEGES,
@@ -47,6 +46,9 @@ import {
   IconCheck,
   IconAlertTriangle,
 } from "@tabler/icons-react-native";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CuttingDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -104,6 +106,8 @@ export default function CuttingDetailsScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const cut = response?.data;
 
@@ -233,7 +237,47 @@ export default function CuttingDetailsScreen() {
       : "Detalhes do Recorte";
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do recorte..." />;
+    return (
+      <ScrollView style={{ flex: 1 }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="70%" height={22} />
+          </View>
+          {/* General info card - origin, type, duration */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            <Skeleton width="100%" height={120} borderRadius={8} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="40%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Task info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="30%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Dates card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
+            {[1, 2].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="40%" height={14} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !cut) {

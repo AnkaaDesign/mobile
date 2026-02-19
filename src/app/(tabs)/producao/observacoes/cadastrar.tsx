@@ -3,9 +3,9 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useObservationMutations, useTasks } from "@/hooks";
+import { useObservationMutations, useTasks, useScreenReady} from '@/hooks';
 import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
-import { LoadingScreen, ErrorScreen, ThemedText, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
+import { ErrorScreen, ThemedText, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -14,6 +14,9 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CreateObservationScreen() {
   const { colors } = useTheme();
@@ -53,6 +56,8 @@ export default function CreateObservationScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoadingTasks);
 
   const tasks = tasksResponse?.data || [];
 
@@ -159,7 +164,24 @@ export default function CreateObservationScreen() {
             headerTintColor: colors.foreground,
           }}
         />
-        <LoadingScreen />
+        <ScrollView style={{ flex: 1 }}>
+          <View style={{ padding: spacing.md, gap: spacing.md }}>
+            {/* Form card with task + description fields */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="60%" height={18} style={{ marginBottom: spacing.md }} />
+              {/* Tarefa field */}
+              <View style={{ marginBottom: spacing.md }}>
+                <Skeleton width="25%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+              {/* Descrição field */}
+              <View style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={120} borderRadius={8} />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </>
     );
   }

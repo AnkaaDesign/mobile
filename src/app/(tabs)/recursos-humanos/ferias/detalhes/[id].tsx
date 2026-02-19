@@ -18,6 +18,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { SpecificationsCard } from "@/components/human-resources/vacation/detail";
 import { VacationDetailSkeleton } from "@/components/human-resources/vacation/skeleton/vacation-detail-skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function VacationDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -42,6 +43,8 @@ export default function VacationDetailScreen() {
     },
     enabled: !!id,
   });
+
+  useScreenReady(!isLoading);
 
   const handleEdit = () => {
     if (vacation?.data) {

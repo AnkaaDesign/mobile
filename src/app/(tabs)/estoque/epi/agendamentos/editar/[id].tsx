@@ -15,6 +15,7 @@ import { Text } from "@/components/ui/text";
 
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants/enum-labels";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EditPPEScheduleScreen() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function EditPPEScheduleScreen() {
 
   const schedule = null;
   const isLoading = false;
+
+  useScreenReady(!isLoading);
 
   const form = useForm({
     defaultValues: schedule ? {

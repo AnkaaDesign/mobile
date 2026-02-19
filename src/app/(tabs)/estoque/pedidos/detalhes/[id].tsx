@@ -7,11 +7,10 @@ import {
   IconHistory,
   IconPackage,
 } from "@tabler/icons-react-native";
-import { useOrder, useOrderMutations } from "@/hooks";
+import { useOrder, useOrderMutations, useScreenReady} from '@/hooks';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { OrderInfoCard } from "@/components/inventory/order/detail/order-info-card";
 import { OrderItemsTable } from "@/components/inventory/order/detail/order-items-table";
 import { OrderDocumentsCard } from "@/components/inventory/order/detail/order-documents-card";
@@ -22,6 +21,8 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatCurrency } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+
+import { Skeleton } from "@/components/ui/skeleton";
 // import { showToast } from "@/components/ui/toast";
 
 export default function OrderDetailScreen() {
@@ -62,6 +63,8 @@ export default function OrderDetailScreen() {
   });
 
   const { delete: deleteOrder } = useOrderMutations();
+
+  useScreenReady(!isLoading);
 
   const order = response?.data;
 
@@ -132,7 +135,50 @@ export default function OrderDetailScreen() {
   }, [canDelete, order, orderTotal, deleteOrder, id]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando pedido..." />;
+    return (
+      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.container}>
+          {/* Header card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ gap: spacing.xs, flex: 1 }}>
+                <Skeleton width="60%" height={20} borderRadius={4} />
+                <Skeleton width="40%" height={14} borderRadius={4} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                <Skeleton width={36} height={36} borderRadius={8} />
+                <Skeleton width={36} height={36} borderRadius={8} />
+              </View>
+            </View>
+          </View>
+          {/* Order info card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="45%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3, 4, 5].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} borderRadius={4} />
+                <Skeleton width="45%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+          {/* Items table skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="35%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="50%" height={14} borderRadius={4} />
+                <Skeleton width="25%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+          {/* Changelog skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="55%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            <Skeleton width="100%" height={80} borderRadius={8} />
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !order || !id || id === "") {

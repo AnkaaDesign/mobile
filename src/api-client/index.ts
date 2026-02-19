@@ -47,6 +47,7 @@ export * from "./item-price";
 export * from "./maintenance";
 export * from "./message";
 export * from "./notification";
+export * from "./notification-admin";
 export {
   notificationPreferenceService,
   notificationUserPreferenceService,
@@ -129,4 +130,5 @@ export {
 // export * from "./services/statistics"; // Disabled - file doesn't exist
 export * from "./services/deployment";
 export * from "./platform-utils";
+export * from "./representative";
 export * from "./push-notifications";

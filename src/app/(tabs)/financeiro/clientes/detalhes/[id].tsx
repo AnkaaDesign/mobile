@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, FlatList, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useCustomer } from '@/hooks';
+import { useCustomer, useScreenReady} from '@/hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from '@/constants';
 import { useAuth } from '@/contexts/auth-context';
 import { hasAnyPrivilege } from '@/utils';
@@ -103,6 +103,8 @@ export default function FinancialCustomerDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const customer = response?.data;
 

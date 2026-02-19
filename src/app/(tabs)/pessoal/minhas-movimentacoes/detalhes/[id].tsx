@@ -6,7 +6,6 @@ import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate } from "@/utils";
@@ -21,13 +20,13 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Badge } from "@/components/ui/badge";
 import { TASK_STATUS_LABELS, TASK_STATUS } from "@/constants";
 
-export default function MovementDetailScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function MovementDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const id = params?.id || "";
 
@@ -61,6 +60,8 @@ export default function MovementDetailScreen() {
     enabled: !!id && id !== "",
   });
 
+  useScreenReady(!isLoading);
+
   const task = response?.data;
 
   const handleRefresh = useCallback(() => {
@@ -72,7 +73,49 @@ export default function MovementDetailScreen() {
   }, [refetch]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da movimentação..." />;
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Task name header card skeleton */}
+        <View style={{ margin: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 }}>
+              <Skeleton style={{ width: 24, height: 24, borderRadius: 12 }} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 18, width: '65%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+              </View>
+            </View>
+            <Skeleton style={{ height: 24, width: '20%', borderRadius: 10 }} />
+          </View>
+        </View>
+        {/* Info card skeleton */}
+        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <View style={{ gap: 10 }}>
+            {[['25%', '40%'], ['20%', '35%'], ['28%', '55%']].map(([l, r], i) => (
+              <View key={i} style={{ flexDirection: 'row' }}>
+                <Skeleton width={l} height={14} borderRadius={4} />
+                <View style={{ flex: 1 }} />
+                <Skeleton width={r} height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </View>
+        {/* Dates card skeleton */}
+        <View style={{ marginHorizontal: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '25%', borderRadius: 4 }} />
+          <View style={{ gap: 10 }}>
+            {[['20%', '35%'], ['20%', '30%'], ['30%', '35%']].map(([l, r], i) => (
+              <View key={i} style={{ flexDirection: 'row' }}>
+                <Skeleton width={l} height={14} borderRadius={4} />
+                <View style={{ flex: 1 }} />
+                <Skeleton width={r} height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
   }
 
   if (error || !task || !id || id === "") {

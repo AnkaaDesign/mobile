@@ -2,13 +2,12 @@ import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge, getBadgeVariantFromStatus } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { usePpeDelivery, usePpeDeliveryMutations, useMarkPpeDeliveryAsDelivered } from "@/hooks";
+import { usePpeDelivery, usePpeDeliveryMutations, useMarkPpeDeliveryAsDelivered, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
   PPE_DELIVERY_STATUS,
@@ -47,7 +46,8 @@ import {
   IconCalendarCheck
 } from "@tabler/icons-react-native";
 
-export default function PPEDeliveryDetailsScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function PPEDeliveryDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -88,6 +88,8 @@ export default function PPEDeliveryDetailsScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const delivery = response?.data;
 
@@ -219,7 +221,62 @@ export default function PPEDeliveryDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da entrega..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Skeleton style={{ height: 20, width: '55%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                {[1, 2, 3].map(i => <Skeleton key={i} style={{ width: 36, height: 36, borderRadius: 8 }} />)}
+              </View>
+            </View>
+          </View>
+          {/* Status card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '40%', borderRadius: 4, marginBottom: spacing.sm }} />
+            {[1, 2].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Employee card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '35%', borderRadius: 4, marginBottom: spacing.sm }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Item card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '35%', borderRadius: 4, marginBottom: spacing.sm }} />
+            <Skeleton style={{ height: 48, width: '100%', borderRadius: 8, marginBottom: spacing.sm }} />
+            {[1, 2, 3, 4].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Quantity/Dates card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '50%', borderRadius: 4, marginBottom: spacing.sm }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !delivery) {

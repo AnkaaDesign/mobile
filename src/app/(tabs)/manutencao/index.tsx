@@ -3,8 +3,10 @@ import { View, StyleSheet } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconTools } from "@tabler/icons-react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function ManutencaoScreen() {
+  useScreenReady();
   return (
     <ThemedView style={styles.container}>
       <View style={styles.content}>

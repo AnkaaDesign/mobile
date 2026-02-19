@@ -43,7 +43,6 @@ export default function BrandDetailScreen() {
   const id = params?.id || "";
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const {
     data: response,
@@ -97,6 +96,8 @@ export default function BrandDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const brand = response?.data;
   const items = brand?.items || [];

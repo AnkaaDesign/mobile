@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useSector, useSectorMutations } from "@/hooks";
+import { useSector, useSectorMutations, useScreenReady} from '@/hooks';
 import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -17,7 +17,6 @@ import {
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
 // import { showToast } from "@/components/ui/toast";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { hasPrivilege } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
@@ -26,7 +25,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { SpecificationsCard, UsersTable, TasksTable } from "@/components/administration/sector/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
-export default function SectorDetailScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function SectorDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -75,6 +75,8 @@ export default function SectorDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const sector = response?.data;
 
@@ -129,7 +131,80 @@ export default function SectorDetailScreen() {
   }, [refetch]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do setor..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header name card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Skeleton style={{ height: 24, width: '55%', borderRadius: 4 }} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
+              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
+            </View>
+          </View>
+          {/* SpecificationsCard */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
+            <Skeleton style={{ height: 18, width: '45%', borderRadius: 4, marginBottom: spacing.xs }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 22, width: '35%', borderRadius: 11 }} />
+            </View>
+          </View>
+          {/* UsersTable */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+            <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 18, width: '40%', borderRadius: 4 }} />
+            </View>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: i < 2 ? 1 : 0, borderBottomColor: colors.border }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <Skeleton style={{ width: 32, height: 32, borderRadius: 16 }} />
+                  <Skeleton style={{ height: 14, width: 100, borderRadius: 4 }} />
+                </View>
+                <Skeleton style={{ height: 14, width: 70, borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* TasksTable */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+            <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 18, width: '35%', borderRadius: 4 }} />
+            </View>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: i < 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 22, width: 60, borderRadius: 11 }} />
+              </View>
+            ))}
+          </View>
+          {/* ChangelogTimeline */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
+            <Skeleton style={{ height: 18, width: '55%', borderRadius: 4, marginBottom: spacing.xs }} />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
+                <Skeleton style={{ width: 4, height: 50, borderRadius: 2 }} />
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                    <Skeleton style={{ width: 70, height: 18, borderRadius: 4 }} />
+                    <Skeleton style={{ width: 90, height: 18, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 13, width: '60%', borderRadius: 4 }} />
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={{ height: spacing.xxl * 2 }} />
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !sector || !id || id === "") {

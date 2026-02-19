@@ -2,7 +2,6 @@ import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
@@ -28,7 +27,8 @@ import {
   IconX,
 } from "@tabler/icons-react-native";
 
-export default function BorrowDetailsScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function BorrowDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -37,7 +37,6 @@ export default function BorrowDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check permissions
   const canManageWarehouse = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
@@ -48,6 +47,8 @@ export default function BorrowDetailsScreen() {
     select: BORROW_SELECT_DETAIL,
     enabled: !!id && canManageWarehouse,
   });
+
+  useScreenReady(!isLoading);
 
   const borrow = response?.data;
 
@@ -165,7 +166,62 @@ export default function BorrowDetailsScreen() {
   }
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do empréstimo..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Skeleton width="55%" height={20} />
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Skeleton width={36} height={36} borderRadius={8} />
+                <Skeleton width={36} height={36} borderRadius={8} />
+              </View>
+            </View>
+          </View>
+          {/* Status card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Item info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton width="30%" height={14} />
+                <Skeleton width="50%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* User info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton width="30%" height={14} />
+                <Skeleton width="50%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Dates card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !borrow) {

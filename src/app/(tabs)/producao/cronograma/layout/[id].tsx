@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -9,9 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SimpleFormField } from "@/components/ui/simple-form-field";
 import { FormActionBar } from "@/components/forms";
-import { SkeletonCard } from "@/components/ui/loading";
+import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LayoutForm } from "@/components/production/layout/layout-form";
-import { useTaskDetail, useLayoutsByTruck, useLayoutMutations } from "@/hooks";
+import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -60,6 +60,8 @@ export default function LayoutOnlyEditScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoadingTask);
 
   const task = response?.data;
 
@@ -331,9 +333,59 @@ export default function LayoutOnlyEditScreen() {
     });
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeletonLarge} />
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.skeletonScrollContent}
+        >
+          {/* Task Identification Card Skeleton */}
+          <Card style={styles.skeletonInfoCard}>
+            {/* Card header row: icon + title */}
+            <View style={styles.skeletonCardHeader}>
+              <SkeletonCard height={20} width={20} borderRadius={4} />
+              <SkeletonCard height={20} width={180} borderRadius={4} />
+            </View>
+            {/* 3 disabled input fields */}
+            <View style={styles.skeletonCardContent}>
+              <View style={styles.skeletonFieldGroup}>
+                <SkeletonCard height={14} width={100} borderRadius={3} />
+                <SkeletonCard height={40} width="100%" borderRadius={6} />
+              </View>
+              <View style={styles.skeletonFieldGroup}>
+                <SkeletonCard height={14} width={120} borderRadius={3} />
+                <SkeletonCard height={40} width="100%" borderRadius={6} />
+              </View>
+              <View style={styles.skeletonFieldGroup}>
+                <SkeletonCard height={14} width={80} borderRadius={3} />
+                <SkeletonCard height={40} width="100%" borderRadius={6} />
+              </View>
+            </View>
+          </Card>
+
+          {/* Layout Card Skeleton */}
+          <Card style={styles.skeletonLayoutCard}>
+            {/* Card header row: icon + title + badge */}
+            <View style={styles.skeletonCardHeader}>
+              <SkeletonCard height={20} width={20} borderRadius={4} />
+              <SkeletonCard height={20} width={160} borderRadius={4} />
+            </View>
+            {/* Side selector buttons row */}
+            <View style={styles.skeletonCardContent}>
+              <View style={styles.skeletonSideSelector}>
+                <SkeletonCard height={36} borderRadius={6} style={{ flex: 1 }} />
+                <SkeletonCard height={36} borderRadius={6} style={{ flex: 1 }} />
+                <SkeletonCard height={36} borderRadius={6} style={{ flex: 1 }} />
+              </View>
+              {/* Layout form area */}
+              <SkeletonCard height={280} width="100%" borderRadius={8} />
+            </View>
+          </Card>
+        </ScrollView>
+
+        {/* Action bar skeleton at bottom */}
+        <View style={styles.skeletonActionBar}>
+          <SkeletonCard height={44} borderRadius={6} style={{ flex: 1 }} />
+          <SkeletonCard height={44} borderRadius={6} style={{ flex: 1 }} />
         </View>
       </ThemedView>
     );
@@ -547,15 +599,44 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     gap: spacing.md,
   },
-  skeletonContainer: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+  skeletonScrollContent: {
+    padding: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
-  skeleton: {
-    height: 150,
+  skeletonInfoCard: {
+    overflow: 'hidden',
   },
-  skeletonLarge: {
-    height: 400,
+  skeletonLayoutCard: {
+    overflow: 'hidden',
+  },
+  skeletonCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'transparent',
+  },
+  skeletonCardContent: {
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  skeletonFieldGroup: {
+    gap: spacing.xs,
+  },
+  skeletonSideSelector: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  skeletonActionBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'transparent',
   },
   errorContainer: {
     flex: 1,

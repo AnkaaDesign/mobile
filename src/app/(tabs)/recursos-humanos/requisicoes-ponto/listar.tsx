@@ -7,14 +7,17 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTheme } from "@/lib/theme";
+import { spacing } from "@/constants/design-system";
 
 interface TimeAdjustmentRequest {
   id: string;
@@ -31,6 +34,7 @@ interface TimeAdjustmentRequest {
 }
 
 export default function TimeAdjustmentRequestsListScreen() {
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
@@ -43,6 +47,8 @@ export default function TimeAdjustmentRequestsListScreen() {
     error,
     refetch,
   } = useSecullumRequests(showPending);
+
+  useScreenReady(!isLoading);
 
   // Mutations for approve/reject
   const approveMutation = useSecullumApproveRequest();
@@ -261,7 +267,39 @@ export default function TimeAdjustmentRequestsListScreen() {
   );
 
   if (isLoading && !refreshing) {
-    return <LoadingScreen />;
+    return (
+      <ThemedView style={styles.container}>
+        <View style={{ flex: 1, padding: spacing.md, gap: spacing.md }}>
+          {/* Filter buttons skeleton */}
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <Skeleton width="48%" height={36} style={{ borderRadius: 8 }} />
+            <Skeleton width="48%" height={36} style={{ borderRadius: 8 }} />
+          </View>
+          {/* Search bar skeleton */}
+          <Skeleton width="100%" height={44} style={{ borderRadius: 8 }} />
+          {/* Request cards skeleton */}
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.sm }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton width="50%" height={16} />
+                <Skeleton width={80} height={22} style={{ borderRadius: 12 }} />
+              </View>
+              <Skeleton width="65%" height={14} />
+              <View style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, gap: spacing.xs }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width="25%" height={12} />
+                  <Skeleton width="40%" height={12} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width="20%" height={12} />
+                  <Skeleton width="40%" height={12} />
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ThemedView>
+    );
   }
 
   if (error) {

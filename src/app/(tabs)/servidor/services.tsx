@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getServices, startService, stopService, restartService } from '../../../api-client';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { SearchBar } from '@/components/ui/search-bar';
 // import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,8 @@ export default function ServerServicesScreen() {
     queryFn: getServices,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  useScreenReady(!isLoading);
 
   // Service action mutations
   const startMutation = useMutation({
@@ -140,7 +142,7 @@ export default function ServerServicesScreen() {
   };
 
   if (isLoading && !servicesData) {
-    return <LoadingScreen message="Carregando serviços..." />;
+    return null;
   }
 
   if (error && !servicesData) {

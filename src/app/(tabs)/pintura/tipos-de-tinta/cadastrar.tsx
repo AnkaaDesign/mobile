@@ -33,7 +33,6 @@ export default function CreatePaintTypeScreen() {
   const { create } = usePaintTypeMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemSearch] = useState("");
@@ -46,6 +45,8 @@ export default function CreatePaintTypeScreen() {
     searchingFor: itemSearch,
     orderBy: { name: "asc" },
   });
+
+  useScreenReady(!isLoadingItems);
 
   const componentItems = itemsResponse?.data?.map((item) => ({
     value: item.id,

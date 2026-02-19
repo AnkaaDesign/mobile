@@ -42,6 +42,7 @@ import type {
   SeenNotificationGetManyFormData,
   AirbrushingGetManyFormData,
   CutGetManyFormData,
+  RepresentativeGetManyFormData,
 } from '@/schemas';
 import type { SectorGetManyFormData } from '@/types';
 
@@ -191,6 +192,19 @@ export const customerKeys = {
 
   // Specialized queries
   statistics: () => ["customers", "statistics"] as const,
+};
+
+// =====================================================
+// Representative Query Keys
+// =====================================================
+
+export const representativeKeys = {
+  all: ["representatives"] as const,
+  lists: () => ["representatives", "list"] as const,
+  list: (filters?: Partial<RepresentativeGetManyFormData>) => (filters ? (["representatives", "list", filters] as const) : (["representatives", "list"] as const)),
+  details: () => ["representatives", "detail"] as const,
+  detail: (id: string) => (["representatives", "detail", id] as const),
+  byIds: (ids: string[]) => ["representatives", "byIds", ids] as const,
 };
 
 // =====================================================

@@ -36,7 +36,6 @@ export default function ItemDetailScreen() {
   const id = params?.id || "";
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Performance logging - track screen mount
   useEffect(() => {
@@ -166,6 +165,8 @@ export default function ItemDetailScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const item = response?.data;
 

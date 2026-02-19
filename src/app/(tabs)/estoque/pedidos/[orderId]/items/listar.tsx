@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { Layout } from '@/components/list/Layout'
 import { orderItemsListConfig } from '@/config/list/inventory/order-items'
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 /**
  * Order Items List Screen (Nested Route)
@@ -10,6 +11,7 @@ import { orderItemsListConfig } from '@/config/list/inventory/order-items'
  * It extracts the orderId from route params and passes it to the config.
  */
 export default function OrderItemsListScreen() {
+  useScreenReady();
   const { orderId } = useLocalSearchParams<{ orderId: string }>()
 
   // Merge the base config with the dynamic orderId filter

@@ -7,12 +7,14 @@ import { ThemedText } from '@/components/ui/themed-text'
 import { Icon } from '@/components/ui/icon'
 import { FAB } from '@/components/ui/fab'
 import { ErrorScreen } from '@/components/ui/error-screen'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTheme } from '@/lib/theme'
 import { useList } from '@/hooks/list/useList'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
 import { perfLog } from '@/utils/performance-logger'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
+import { useScreenReady } from '@/hooks/use-screen-ready'
 import { Table } from '../Table'
 import { Search } from '../Search'
 import { Filters, Tags } from '../Filters'
@@ -37,6 +39,9 @@ export const Layout = memo(function Layout({
   const { user } = useAuth()
   const { pushWithLoading, startNavigation, endNavigation, isNavigatingRef } = useNavigationLoading()
   const list = useList(config)
+
+  // End navigation overlay when data is ready
+  useScreenReady(!list.isLoading);
 
   // Track page access for recents/most accessed
   usePageTracker({ title: config.title })
@@ -113,25 +118,32 @@ export const Layout = memo(function Layout({
   if (list.isLoading && list.items.length === 0) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.content}>
-          {/* Search bar skeleton */}
-          <View style={[styles.searchContainer, { backgroundColor: colors.card }]}>
-            <View style={{ height: 40, backgroundColor: colors.muted, borderRadius: 8, opacity: 0.3 }} />
+        {/* Search bar skeleton */}
+        <View style={styles.header}>
+          <View style={styles.searchContainer}>
+            <Skeleton style={{ height: 40, borderRadius: 8 }} />
           </View>
+          <View style={styles.actions}>
+            <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+            <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+          </View>
+        </View>
 
-          {/* List items skeletons */}
-          <View style={{ padding: 16 }}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <View key={i} style={[
-                styles.skeletonItem,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  marginBottom: 12
-                }
-              ]}>
-                <View style={{ height: 20, backgroundColor: colors.muted, borderRadius: 4, opacity: 0.3, marginBottom: 8 }} />
-                <View style={{ height: 16, backgroundColor: colors.muted, borderRadius: 4, opacity: 0.3, width: '60%' }} />
+        {/* Table skeleton */}
+        <View style={{ flex: 1, padding: 8 }}>
+          <View style={[styles.skeletonItem, { backgroundColor: colors.card, borderColor: colors.border, padding: 0, overflow: 'hidden' }]}>
+            {/* Table header */}
+            <View style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 14, width: 80, borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: 100, borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: 60, borderRadius: 4 }} />
+            </View>
+            {/* Table rows */}
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Skeleton style={{ height: 16, width: 80, borderRadius: 4 }} />
+                <Skeleton style={{ height: 16, flex: 1, borderRadius: 4 }} />
+                <Skeleton style={{ height: 16, width: 60, borderRadius: 4 }} />
               </View>
             ))}
           </View>

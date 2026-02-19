@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getSystemHealth, getSystemStatus, getMetrics } from '../../../api-client';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/icon';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { DashboardCard } from '@/components/ui/dashboard-card';
+
 
 export default function ServerStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -38,6 +39,8 @@ export default function ServerStatusScreen() {
 
   const isLoading = healthLoading || statusLoading || metricsLoading;
   const hasError = healthError || statusError || metricsError;
+
+  useScreenReady(!isLoading);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -89,7 +92,7 @@ export default function ServerStatusScreen() {
   };
 
   if (isLoading && !healthData && !statusData && !metricsData) {
-    return <LoadingScreen message="Carregando status do servidor..." />;
+    return null;
   }
 
   if (hasError && !healthData && !statusData && !metricsData) {

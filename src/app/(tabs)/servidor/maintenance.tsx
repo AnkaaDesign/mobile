@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSystemStatus, getSystemHealth } from '../../../api-client';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Switch } from '@/components/ui/switch';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,8 @@ export default function ServerMaintenanceScreen() {
     queryFn: getSystemStatus,
     refetchInterval: 30000,
   });
+
+  useScreenReady(!isLoading);
 
   // Query for system health
   const { data: healthData } = useQuery({
@@ -164,7 +166,7 @@ export default function ServerMaintenanceScreen() {
   }, [statusData]);
 
   if (isLoading && !statusData) {
-    return <LoadingScreen message="Carregando configurações..." />;
+    return null;
   }
 
   if (error && !statusData) {

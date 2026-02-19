@@ -8,6 +8,9 @@ import { useFavorites } from "@/contexts/favorites-context";
 import { useState, useEffect, useCallback } from "react";
 import { getMostAccessedPages, getRecentPages, PageAccess } from "@/utils/page-tracker";
 import { getIconInfoByPath } from "@/utils/page-icons";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { Skeleton } from "@/components/ui/skeleton";
+import { spacing, borderRadius } from "@/constants/design-system";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -24,6 +27,9 @@ export default function HomeScreen() {
   const [mostAccessedPages, setMostAccessedPages] = useState<PageAccess[]>([]);
   const [recentPages, setRecentPages] = useState<PageAccess[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+
+  useScreenReady(!isLoading);
 
   const loadPageData = useCallback(async () => {
     const [mostAccessed, recent] = await Promise.all([
@@ -32,6 +38,7 @@ export default function HomeScreen() {
     ]);
     setMostAccessedPages(mostAccessed);
     setRecentPages(recent);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -48,6 +55,62 @@ export default function HomeScreen() {
   // Return null if user is not logged in (during logout transition)
   if (!user) {
     return null;
+  }
+
+  if (isLoading) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md }}>
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: borderRadius.lg,
+              padding: spacing.md,
+              gap: spacing.xl,
+            }}
+          >
+            {/* Header skeleton */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <View style={{ gap: spacing.xs }}>
+                <Skeleton height={20} width={180} />
+                <Skeleton height={14} width={240} />
+              </View>
+              <Skeleton height={16} width={70} />
+            </View>
+
+            {/* Favorites skeleton */}
+            <View style={{ gap: spacing.sm }}>
+              <Skeleton height={20} width={100} />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                ))}
+              </View>
+            </View>
+
+            {/* Recentes skeleton */}
+            <View style={{ gap: spacing.sm }}>
+              <Skeleton height={20} width={100} />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                ))}
+              </View>
+            </View>
+
+            {/* Mais acessadas skeleton */}
+            <View style={{ gap: spacing.sm }}>
+              <Skeleton height={20} width={140} />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   const handleNavigate = (path: string) => {

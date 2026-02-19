@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconFilter, IconLayoutGrid, IconList } from "@tabler/icons-react-native";
@@ -212,8 +213,27 @@ export default function MyTeamVacationsScreen() {
   if (isInitialLoad) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ThemedText>Carregando férias da equipe...</ThemedText>
+        {/* Search bar skeleton */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 8, gap: 8 }}>
+          <Skeleton style={{ flex: 1, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+        </View>
+        {/* List rows skeleton */}
+        <View style={{ paddingHorizontal: 8, gap: 8 }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Skeleton style={{ height: 15, width: '45%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 22, width: '22%', borderRadius: 10 }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '20%', borderRadius: 4 }} />
+              </View>
+            </View>
+          ))}
         </View>
       </ThemedView>
     );

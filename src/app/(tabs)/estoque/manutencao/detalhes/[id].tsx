@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMaintenance } from '@/hooks';
+import { useMaintenance, useScreenReady} from '@/hooks';
 import { ThemedView, ThemedText, Card, CardHeader, CardTitle, CardContent, ErrorScreen, Button, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils';
@@ -9,6 +9,7 @@ import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABEL
 import { useState, useCallback } from 'react';
 import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MaintenanceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -55,6 +56,8 @@ export default function MaintenanceDetailsScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
   const maintenance = (maintenanceResponse?.data || null) as any;
 
   const handleRefresh = useCallback(async () => {
@@ -68,11 +71,54 @@ export default function MaintenanceDetailsScreen() {
 
   if (isLoading && !refreshing) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ThemedText style={styles.loadingText}>Carregando manutenção...</ThemedText>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Main info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+              <Skeleton width="50%" height={20} />
+              <Skeleton width={70} height={24} borderRadius={12} />
+            </View>
+            {[1, 2, 3, 4].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Equipment card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="30%" height={14} />
+                <Skeleton width="50%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Items needed card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} width="30%" height={60} borderRadius={8} />
+              ))}
+            </View>
+            {[1, 2].map(i => (
+              <View key={i} style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, marginBottom: spacing.sm }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
+                  <Skeleton width="50%" height={14} />
+                  <Skeleton width={70} height={20} borderRadius={10} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width="35%" height={12} />
+                  <Skeleton width="25%" height={12} />
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
-      </ThemedView>
+      </ScrollView>
     );
   }
 
@@ -370,14 +416,6 @@ export default function MaintenanceDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
   },
   scrollView: {
     flex: 1,

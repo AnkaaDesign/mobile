@@ -10,7 +10,7 @@ export default function EstoqueEmprestimosCadastrarScreen() {
   const { batchCreateAsync, isLoading: isBatchCreating } = useBorrowBatchMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
+  useScreenReady(true);
 
   const handleSubmit = async (data: {
     userId: string;

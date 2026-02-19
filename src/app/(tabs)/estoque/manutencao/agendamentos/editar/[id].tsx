@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -14,11 +14,14 @@ import { FormActionBar } from "@/components/forms";
 import { Text } from "@/components/ui/text";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
+import { spacing } from "@/constants/design-system";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useMaintenance } from "@/hooks/useMaintenance";
 import { useItems } from "@/hooks/useItem";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 // Schedule form schema
 const maintenanceScheduleUpdateSchema = z.object({
@@ -40,6 +43,7 @@ export default function MaintenanceScheduleEditScreen() {
       item: true,
     },
   });
+
   const schedule = (scheduleResponse?.data || null) as any;
 
   const { data: items } = useItems({
@@ -59,6 +63,8 @@ export default function MaintenanceScheduleEditScreen() {
 
   const isLoading = scheduleLoading;
 
+  useScreenReady(!isLoading);
+
   const handleSubmit = async (_data: MaintenanceScheduleUpdateFormData) => {
     try {
       // TODO: Implement API call to update schedule
@@ -75,12 +81,19 @@ export default function MaintenanceScheduleEditScreen() {
 
   if (scheduleLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-          Carregando agendamento...
-        </Text>
-      </View>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -265,10 +278,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    marginTop: 8,
   },
   errorText: {
     fontSize: 16,

@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getHealthHistory } from '../../../api-client';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 import { ThemedView } from '@/components/ui/themed-view';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Icon } from '@/components/ui/icon';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 import { Badge } from '@/components/ui/badge';
+
 
 Dimensions.get('window');
 
@@ -70,6 +71,8 @@ export default function ServerResourcesScreen() {
   const isLoading = metricsLoading || historyLoading;
   const hasError = metricsError || historyError;
 
+  useScreenReady(!isLoading);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -115,7 +118,7 @@ export default function ServerResourcesScreen() {
   };
 
   if (isLoading && !metricsData && !historyData) {
-    return <LoadingScreen message="Carregando recursos do sistema..." />;
+    return null;
   }
 
   if (hasError && !metricsData && !historyData) {

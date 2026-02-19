@@ -1,17 +1,19 @@
 import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { PositionForm } from "@/components/human-resources/position/form";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { usePosition } from "@/hooks/usePosition";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function PositionEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: positionResponse, isLoading, error, refetch } = usePosition(id!);
+
+  useScreenReady(!isLoading);
   const position = positionResponse?.data;
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando cargo..." />;
+    return null;
   }
 
   if (error || !position) {

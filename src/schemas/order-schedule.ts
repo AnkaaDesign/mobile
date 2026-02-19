@@ -70,6 +70,8 @@ export const orderScheduleOrderBySchema = z.union([
       rescheduleCount: orderByDirectionSchema.optional(),
       originalDate: orderByDirectionSchema.optional(),
       lastRescheduleDate: orderByDirectionSchema.optional(),
+      nextRun: orderByDirectionSchema.optional(),
+      lastRun: orderByDirectionSchema.optional(),
       finishedAt: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
@@ -83,6 +85,8 @@ export const orderScheduleOrderBySchema = z.union([
         frequencyCount: orderByDirectionSchema.optional(),
         isActive: orderByDirectionSchema.optional(),
         specificDate: orderByDirectionSchema.optional(),
+        nextRun: orderByDirectionSchema.optional(),
+        lastRun: orderByDirectionSchema.optional(),
         finishedAt: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
@@ -282,6 +286,36 @@ export const orderScheduleWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      nextRun: z
+        .union([
+          z.date(),
+          z.null(),
+          z.object({
+            equals: z.union([z.date(), z.null()]).optional(),
+            not: z.union([z.date(), z.null()]).optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
+          }),
+        ])
+        .optional(),
+
+      lastRun: z
+        .union([
+          z.date(),
+          z.null(),
+          z.object({
+            equals: z.union([z.date(), z.null()]).optional(),
+            not: z.union([z.date(), z.null()]).optional(),
+            lt: z.coerce.date().optional(),
+            lte: z.coerce.date().optional(),
+            gt: z.coerce.date().optional(),
+            gte: z.coerce.date().optional(),
+          }),
+        ])
+        .optional(),
+
       finishedAt: z
         .union([
           z.date(),
@@ -326,7 +360,6 @@ export const orderScheduleWhereSchema: z.ZodSchema = z.lazy(() =>
         .optional(),
 
       // Relations
-      category: z.any().optional(),
       weeklyConfig: z.any().optional(),
       monthlyConfig: z.any().optional(),
       yearlyConfig: z.any().optional(),
@@ -351,6 +384,8 @@ const orderScheduleFilters = {
   itemIds: z.array(z.string().uuid("Item inválido")).optional(),
   isActive: z.boolean().optional(),
   hasReschedules: z.boolean().optional(),
+  nextRunRange: dateRangeSchema.optional(),
+  lastRunRange: dateRangeSchema.optional(),
   specificDateRange: dateRangeSchema.optional(),
   finishedAtRange: dateRangeSchema.optional(),
   createdAtRange: dateRangeSchema.optional(),
@@ -411,6 +446,56 @@ const orderScheduleTransform = (data: any) => {
   if (data.hasReschedules === true) {
     andConditions.push({ rescheduleCount: { gt: 0 } });
     delete data.hasReschedules;
+  }
+
+  // Handle nextRunRange filter
+  if (data.nextRunRange && typeof data.nextRunRange === "object") {
+    const dateCondition: any = {};
+    if (data.nextRunRange.gte) {
+      const fromDate = data.nextRunRange.gte instanceof Date
+        ? data.nextRunRange.gte
+        : new Date(data.nextRunRange.gte);
+      // Set to start of day (00:00:00)
+      fromDate.setHours(0, 0, 0, 0);
+      dateCondition.gte = fromDate;
+    }
+    if (data.nextRunRange.lte) {
+      const toDate = data.nextRunRange.lte instanceof Date
+        ? data.nextRunRange.lte
+        : new Date(data.nextRunRange.lte);
+      // Set to end of day (23:59:59.999)
+      toDate.setHours(23, 59, 59, 999);
+      dateCondition.lte = toDate;
+    }
+    if (Object.keys(dateCondition).length > 0) {
+      andConditions.push({ nextRun: dateCondition });
+    }
+    delete data.nextRunRange;
+  }
+
+  // Handle lastRunRange filter
+  if (data.lastRunRange && typeof data.lastRunRange === "object") {
+    const dateCondition: any = {};
+    if (data.lastRunRange.gte) {
+      const fromDate = data.lastRunRange.gte instanceof Date
+        ? data.lastRunRange.gte
+        : new Date(data.lastRunRange.gte);
+      // Set to start of day (00:00:00)
+      fromDate.setHours(0, 0, 0, 0);
+      dateCondition.gte = fromDate;
+    }
+    if (data.lastRunRange.lte) {
+      const toDate = data.lastRunRange.lte instanceof Date
+        ? data.lastRunRange.lte
+        : new Date(data.lastRunRange.lte);
+      // Set to end of day (23:59:59.999)
+      toDate.setHours(23, 59, 59, 999);
+      dateCondition.lte = toDate;
+    }
+    if (Object.keys(dateCondition).length > 0) {
+      andConditions.push({ lastRun: dateCondition });
+    }
+    delete data.lastRunRange;
   }
 
   // Handle specificDateRange filter
@@ -582,8 +667,14 @@ export const orderScheduleCreateSchema = z
         case SCHEDULE_FREQUENCY.ONCE:
           return !!data.specificDate;
         case SCHEDULE_FREQUENCY.WEEKLY:
+        case SCHEDULE_FREQUENCY.BIWEEKLY:
           return !!data.dayOfWeek || !!data.weeklyConfigId;
         case SCHEDULE_FREQUENCY.MONTHLY:
+        case SCHEDULE_FREQUENCY.BIMONTHLY:
+        case SCHEDULE_FREQUENCY.QUARTERLY:
+        case SCHEDULE_FREQUENCY.TRIANNUAL:
+        case SCHEDULE_FREQUENCY.QUADRIMESTRAL:
+        case SCHEDULE_FREQUENCY.SEMI_ANNUAL:
           return !!data.dayOfMonth || !!data.monthlyConfigId;
         case SCHEDULE_FREQUENCY.ANNUAL:
           return (!!data.dayOfMonth && !!data.month) || !!data.yearlyConfigId;

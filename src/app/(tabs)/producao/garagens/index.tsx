@@ -21,25 +21,35 @@ export default function GaragesScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // End navigation loading overlay when screen mounts
-  useScreenReady();
-
   // Check privileges - only ADMIN, LOGISTIC, or team leaders can edit positions
   const { isAdmin, user, canAccess } = usePrivileges();
   const userIsTeamLeader = isTeamLeader(user);
   const canEditGaragePositions = isAdmin || userIsTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC]);
 
+  // OR logic: include tasks where truck has a spot (any status), OR not completed with forecastDate <= today
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }, []);
+
   // Fetch tasks with trucks AND their layouts for dimensions
   // Optimized query: only select fields actually used by the garage view
-  // Note: No status filter - completed tasks with garage spots should still be shown
+  // Aligned with web query for consistent data
   const { data: tasksResponse, isLoading, error, refetch } = useTasks({
     page: 1,
-    limit: 100,
-    // Only filter for tasks that have a truck assigned
+    limit: 50,
     where: {
-      truck: {
-        isNot: null,
-      },
+      truck: { isNot: null },
+      OR: [
+        // Trucks with a garage spot assigned (any status, including completed)
+        { truck: { spot: { not: null } } },
+        // Non-completed trucks with forecastDate <= today (for patio display)
+        {
+          status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
+          forecastDate: { lte: todayStr },
+        },
+      ],
     },
     select: {
       id: true,
@@ -48,6 +58,8 @@ export default function GaragesScreen() {
       serialNumber: true,
       forecastDate: true,
       finishedAt: true,
+      entryDate: true,
+      term: true,
       truck: {
         select: {
           id: true,
@@ -80,6 +92,9 @@ export default function GaragesScreen() {
     },
   });
 
+  // End navigation loading overlay when data is ready (top-level hook call)
+  useScreenReady(!isLoading);
+
   // Transform tasks to garage trucks format
   // Filter logic matches web version:
   // - Must have a truck with layout sections defined (for dimensions)
@@ -98,15 +113,16 @@ export default function GaragesScreen() {
 
         const truck = task.truck as any;
 
-        // Must have a layout defined (for dimensions)
-        const layout = truck?.leftSideLayout || truck?.rightSideLayout;
-        const layoutSections = layout?.layoutSections || [];
-        if (layoutSections.length === 0) return false;
-
-        // If truck has a spot assigned in a garage, always include it (even if completed)
+        // If truck has a spot assigned in a garage, always include it
+        // (even if completed or without layout — use default length)
         if (truck?.spot) {
           return true;
         }
+
+        // For patio/unassigned trucks: must have a layout defined (for dimensions)
+        const layout = truck?.leftSideLayout || truck?.rightSideLayout;
+        const layoutSections = layout?.layoutSections || [];
+        if (layoutSections.length === 0) return false;
 
         // For patio: only include if forecastDate <= today AND status is not COMPLETED
         const forecastDate = (task as any).forecastDate;
@@ -160,6 +176,8 @@ export default function GaragesScreen() {
           paintHex: (task.generalPainting as any)?.hex || null,
           length: truckLength,
           originalLength: sectionsSum > 0 ? sectionsSum : undefined,
+          entryDate: (task as any).entryDate || null,
+          term: (task as any).term || null,
           forecastDate: (task as any).forecastDate || null,
           finishedAt: (task as any).finishedAt || null,
         };

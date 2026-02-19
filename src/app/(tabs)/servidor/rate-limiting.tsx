@@ -4,15 +4,14 @@ import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/api-client";
 import { useTheme } from "@/lib/theme";
-
-interface ThrottlerStats {
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScreenReady } from "@/hooks/use-screen-ready";interface ThrottlerStats {
   totalKeys: number;
   activeKeys: number;
   blockedKeys: number;
@@ -43,6 +42,8 @@ export default function RateLimitingScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  useScreenReady(!isLoading);
 
   const fetchData = async (showLoading = true) => {
     try {
@@ -148,7 +149,18 @@ export default function RateLimitingScreen() {
   if (isLoading) {
     return (
       <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-        <LoadingScreen />
+        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>
       </PrivilegeGuard>
     );
   }

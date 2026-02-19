@@ -7,6 +7,7 @@ import { myTeamBorrowsListConfig } from '@/config/list/my-team'
 import { useCurrentUser } from '@/hooks'
 import { useTheme } from '@/lib/theme'
 import { isTeamLeader } from '@/utils/user'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { ListConfig } from '@/components/list/types'
 import type { Borrow } from '@/types'
 
@@ -49,8 +50,19 @@ export default function MyTeamBorrowsScreen() {
   if (isLoadingUser) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ThemedText>Carregando empréstimos da equipe...</ThemedText>
+        <View style={{ padding: 16, gap: 12 }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <View key={i} style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 22, width: '22%', borderRadius: 10 }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
+              </View>
+            </View>
+          ))}
         </View>
       </ThemedView>
     )

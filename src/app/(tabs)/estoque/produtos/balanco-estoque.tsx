@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconClipboardCheck, IconAlertTriangle, IconDeviceFloppy } from "@tabler/icons-react-native";
 
 const TABLET_WIDTH_THRESHOLD = 768;
-import { useItemsInfiniteMobile, useItemBatchMutations } from "@/hooks";
+import { useItemsInfiniteMobile, useItemBatchMutations, useScreenReady } from "@/hooks";
 import type { Item } from "@/types";
 import {
   ThemedView,
@@ -39,6 +39,8 @@ export default function StockBalancePage() {
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_WIDTH_THRESHOLD;
   const [refreshing, setRefreshing] = useState(false);
+
+  useScreenReady();
   const [searchText, setSearchText] = useState("");
   const [displaySearchText, setDisplaySearchText] = useState("");
   const [adjustments, setAdjustments] = useState<Map<string, number>>(new Map());

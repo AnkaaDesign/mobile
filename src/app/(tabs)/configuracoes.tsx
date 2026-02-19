@@ -4,8 +4,10 @@ import { IconUser, IconCalendar, IconPackage, IconActivity, IconChevronRight } f
 import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
 import { useColorScheme } from "nativewind";
 import { routes } from "@/constants";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function SettingsScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";

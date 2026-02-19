@@ -6,10 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClock, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
 import { TouchableOpacity } from "react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function ScheduleDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -24,6 +26,8 @@ export default function ScheduleDetailScreen() {
     error,
     refetch,
   } = useSecullumHorarioById(id, { enabled: !!id });
+
+  useScreenReady(!isLoading);
 
   const schedule = response?.data?.data;
 
@@ -45,16 +49,45 @@ export default function ScheduleDetailScreen() {
       <ThemedView style={styles.container}>
         <ScrollView style={styles.scrollView}>
           <View style={styles.content}>
-            <Card style={styles.card}>
-              <View style={styles.skeletonHeader}>
-                <View style={[styles.skeleton, { width: 200, height: 24, backgroundColor: colors.muted }]} />
+            {/* Header card skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Skeleton width="60%" height={22} />
+                <Skeleton width={36} height={36} style={{ borderRadius: borderRadius.md }} />
               </View>
-              <View style={styles.skeletonBody}>
+            </View>
+            {/* Status card skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+              <Skeleton width="25%" height={18} style={{ marginBottom: spacing.xs }} />
+              <View style={{ flexDirection: 'row', gap: spacing.xl }}>
+                <Skeleton width="40%" height={32} />
+                <Skeleton width="35%" height={32} />
+              </View>
+            </View>
+            {/* Times card skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+              <Skeleton width="50%" height={18} style={{ marginBottom: spacing.xs }} />
+              {[1, 2].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                  <Skeleton width="25%" height={14} />
+                  <Skeleton width="30%" height={40} />
+                  <Skeleton width="30%" height={40} />
+                </View>
+              ))}
+            </View>
+            {/* Additional info card skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+              <Skeleton width="50%" height={18} style={{ marginBottom: spacing.xs }} />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
                 {[1, 2, 3, 4].map((i) => (
-                  <View key={i} style={[styles.skeleton, { width: "100%", height: 48, backgroundColor: colors.muted, marginBottom: spacing.sm }]} />
+                  <View key={i} style={{ width: '48%', gap: spacing.xs }}>
+                    <Skeleton width="80%" height={12} />
+                    <Skeleton width="60%" height={16} />
+                  </View>
                 ))}
               </View>
-            </Card>
+            </View>
+            <View style={{ height: spacing.xxl * 2 }} />
           </View>
         </ScrollView>
       </ThemedView>

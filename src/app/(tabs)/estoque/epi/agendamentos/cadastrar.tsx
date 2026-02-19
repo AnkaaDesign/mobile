@@ -14,8 +14,10 @@ import { spacing } from "@/constants/design-system";
 
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants/enum-labels";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function CreatePPEScheduleScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
 

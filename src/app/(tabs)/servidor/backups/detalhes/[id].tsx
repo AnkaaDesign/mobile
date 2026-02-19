@@ -5,7 +5,6 @@ import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useBackup, useBackupMutations } from "@/hooks/useBackup";
@@ -15,8 +14,10 @@ import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
-const styles = StyleSheet.create({
+
+import { Skeleton } from "@/components/ui/skeleton";const styles = StyleSheet.create({
   card: {
     padding: spacing.md,
   },
@@ -49,6 +50,8 @@ export default function BackupDetailsScreen() {
   const { colors } = useTheme();
 
   const { data: backup, isLoading, refetch, isFetching } = useBackup(id!);
+
+  useScreenReady(!isLoading);
   const { restore, delete: deleteBackup } = useBackupMutations();
 
   const handleRestore = () => {
@@ -101,7 +104,18 @@ export default function BackupDetailsScreen() {
   };
 
   if (isLoading || !backup) {
-    return <LoadingScreen />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   return (

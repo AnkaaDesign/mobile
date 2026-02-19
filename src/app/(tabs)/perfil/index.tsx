@@ -14,7 +14,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { getProfile, updateProfile, uploadPhoto, deletePhoto } from "@/api-client/profile";
-import { useKeyboardAwareScroll } from "@/hooks";
+import { useKeyboardAwareScroll, useScreenReady} from '@/hooks';
+import { Skeleton } from "@/components/ui/skeleton";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
 import { IconCamera, IconTrash } from "@tabler/icons-react-native";
@@ -60,6 +61,8 @@ export default function ProfileScreen() {
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useScreenReady(!isLoading);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -252,8 +255,45 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.safeArea, styles.loadingContainer, { backgroundColor: colors.background }]} edges={[]}>
-        <ThemedText>Carregando...</ThemedText>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Photo card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: borderRadius.lg }]}>
+            <Skeleton height={22} width={120} style={{ marginBottom: spacing.md }} />
+            <View style={{ alignItems: "center", gap: spacing.md }}>
+              <Skeleton height={100} width={100} borderRadius={50} />
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                <Skeleton height={36} width={100} borderRadius={borderRadius.md} />
+              </View>
+            </View>
+          </View>
+
+          {/* Basic info card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: borderRadius.lg }]}>
+            <Skeleton height={22} width={160} style={{ marginBottom: spacing.md }} />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <View key={i} style={styles.inputContainer}>
+                <Skeleton height={14} width={80} style={{ marginBottom: spacing.xs }} />
+                <Skeleton height={44} width="100%" borderRadius={borderRadius.md} />
+              </View>
+            ))}
+          </View>
+
+          {/* Address card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: borderRadius.lg }]}>
+            <Skeleton height={22} width={100} style={{ marginBottom: spacing.md }} />
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={styles.inputContainer}>
+                <Skeleton height={14} width={80} style={{ marginBottom: spacing.xs }} />
+                <Skeleton height={44} width="100%" borderRadius={borderRadius.md} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }

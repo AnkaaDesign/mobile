@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useQuery } from "@tanstack/react-query";
 import { bonusService } from "@/api-client";
-import { bonusKeys } from "@/hooks";
+import { bonusKeys, useScreenReady} from '@/hooks';
 import { formatCurrency } from "@/utils";
 import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant, SECTOR_PRIVILEGES } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
@@ -17,7 +17,8 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import type { Bonus, Task } from "@/types";
 
-// Helper to get Portuguese month name
+
+import { Skeleton } from "@/components/ui/skeleton";// Helper to get Portuguese month name
 const getMonthName = (month: number): string => {
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -105,6 +106,8 @@ export default function BonusDetailScreen() {
     },
     enabled: !!id,
   });
+
+  useScreenReady(!isLoading);
 
   // Extract bonus from response
   let bonus: Bonus | null = null;
@@ -229,9 +232,69 @@ export default function BonusDetailScreen() {
     return (
       <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN]}>
         <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <ThemedText style={styles.loadingText}>Carregando detalhes...</ThemedText>
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
+            {/* User info card skeleton */}
+            <View style={{ margin: spacing.md, marginBottom: 0, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, gap: spacing.sm, alignItems: 'center' }}>
+              <Skeleton style={{ height: 20, width: '60%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Skeleton style={{ height: 14, width: 80, borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: 80, borderRadius: 4 }} />
+              </View>
+            </View>
+            {/* Period card skeleton */}
+            <View style={{ margin: spacing.md, marginBottom: 0, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, gap: spacing.sm, alignItems: 'center' }}>
+              <Skeleton style={{ height: 12, width: 80, borderRadius: 4 }} />
+              <Skeleton style={{ height: 28, width: 120, borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: 160, borderRadius: 4 }} />
+            </View>
+            {/* Bonus amount card skeleton */}
+            <View style={{ margin: spacing.md, marginBottom: 0, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Skeleton style={{ height: 16, width: 120, borderRadius: 4 }} />
+              </View>
+              <View style={{ gap: spacing.md }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Skeleton style={{ height: 16, width: '35%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 16, width: '30%', borderRadius: 4 }} />
+                </View>
+              </View>
+            </View>
+            {/* Performance details card skeleton */}
+            <View style={{ margin: spacing.md, marginBottom: 0, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Skeleton style={{ height: 16, width: 160, borderRadius: 4 }} />
+              </View>
+              <View style={{ gap: spacing.md }}>
+                {[0.55, 0.4, 0.65, 0.5, 0.45].map((w, i) => (
+                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Skeleton style={{ height: 14, width: `${Math.round(w * 100)}%` as any, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 40, borderRadius: 4 }} />
+                  </View>
+                ))}
+              </View>
+            </View>
+            {/* Commission card skeleton */}
+            <View style={{ margin: spacing.md, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Skeleton style={{ height: 16, width: 140, borderRadius: 4 }} />
+              </View>
+              <View style={{ gap: spacing.md }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Skeleton style={{ height: 24, width: 120, borderRadius: 12 }} />
+                    <Skeleton style={{ height: 24, width: 40, borderRadius: 12 }} />
+                  </View>
+                ))}
+              </View>
+            </View>
           </View>
         </ThemedView>
       </PrivilegeGuard>

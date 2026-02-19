@@ -17,6 +17,7 @@ import { formSpacing } from "@/constants/form-styles";
 import { useItems } from "@/hooks/useItem";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 // Schedule form schema
 const maintenanceScheduleCreateSchema = z.object({
@@ -37,6 +38,7 @@ export default function MaintenanceScheduleCreateScreen({
   onSuccess,
   onCancel,
 }: MaintenanceScheduleCreateScreenProps) {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
 

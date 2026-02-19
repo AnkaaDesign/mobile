@@ -1,19 +1,21 @@
 import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { WarningForm } from "@/components/human-resources/warning/form";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useWarning } from "@/hooks/useWarning";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function WarningEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: warningResponse, isLoading, error, refetch } = useWarning(id!, {
     include: { witness: true, attachments: true }
   });
+
+  useScreenReady(!isLoading);
   const warning = warningResponse?.data;
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando advertência..." />;
+    return null;
   }
 
   if (error || !warning) {

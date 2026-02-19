@@ -30,7 +30,6 @@ function ItemEditScreen() {
   const { goBack } = useNavigationLoading();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const {
     data: response,
@@ -106,6 +105,8 @@ function ItemEditScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const item = response?.data;
 

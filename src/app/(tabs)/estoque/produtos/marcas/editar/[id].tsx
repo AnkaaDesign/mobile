@@ -14,6 +14,9 @@ import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function BrandEditScreenWrapper() {
   return (
     <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]} requireAll={false}>
@@ -30,7 +33,6 @@ function BrandEditScreen() {
   const { goBack } = useNavigationLoading();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const {
     data: response,
@@ -44,6 +46,8 @@ function BrandEditScreen() {
       name: true,
     },
   });
+
+  useScreenReady(!isLoading);
 
   const brand = response?.data;
 
@@ -73,9 +77,14 @@ function BrandEditScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
         </View>
+      </View>
       </SafeAreaView>
     );
   }

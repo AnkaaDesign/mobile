@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { usePpeDelivery } from '@/hooks';
+import { usePpeDelivery, useScreenReady } from '@/hooks';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -55,6 +56,8 @@ export default function TeamPpeDeliveryDetailScreen() {
     enabled: !!id && id !== "",
   });
 
+  useScreenReady(!isLoading);
+
   const delivery = response?.data;
 
   // Note: Team leaders can only VIEW deliveries, not edit or delete them.
@@ -80,10 +83,51 @@ export default function TeamPpeDeliveryDetailScreen() {
     return (
       <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
         <View style={styles.container}>
+          {/* Header card skeleton */}
+          <Card style={styles.headerCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Skeleton style={{ width: 24, height: 24, borderRadius: 12 }} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
+              </View>
+            </View>
+          </Card>
+          {/* Employee card skeleton */}
           <Card style={styles.card}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando detalhes da entrega...
-            </ThemedText>
+            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4, marginBottom: spacing.sm }} />
+            <View style={{ gap: 10 }}>
+              {[['25%', '40%'], ['20%', '35%']].map(([l, r], i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width={l} height={14} borderRadius={4} />
+                  <Skeleton width={r} height={14} borderRadius={4} />
+                </View>
+              ))}
+            </View>
+          </Card>
+          {/* Item card skeleton */}
+          <Card style={styles.card}>
+            <Skeleton style={{ height: 16, width: '35%', borderRadius: 4, marginBottom: spacing.sm }} />
+            <View style={{ gap: 10 }}>
+              {[['28%', '45%'], ['22%', '30%'], ['30%', '25%']].map(([l, r], i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width={l} height={14} borderRadius={4} />
+                  <Skeleton width={r} height={14} borderRadius={4} />
+                </View>
+              ))}
+            </View>
+          </Card>
+          {/* Delivery card skeleton */}
+          <Card style={styles.card}>
+            <Skeleton style={{ height: 16, width: '45%', borderRadius: 4, marginBottom: spacing.sm }} />
+            <View style={{ gap: 10 }}>
+              {[['25%', '35%'], ['30%', '28%']].map(([l, r], i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width={l} height={14} borderRadius={4} />
+                  <Skeleton width={r} height={14} borderRadius={4} />
+                </View>
+              ))}
+            </View>
           </Card>
         </View>
       </View>

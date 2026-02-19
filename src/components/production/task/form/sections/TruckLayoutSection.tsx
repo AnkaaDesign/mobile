@@ -10,6 +10,7 @@ import { FormCard } from '@/components/ui/form-section';
 import { ThemedText } from '@/components/ui/themed-text';
 import { LayoutForm } from '@/components/production/layout/layout-form';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/lib/theme';
 import { SECTOR_PRIVILEGES } from '@/constants';
 
 interface TruckLayoutSectionProps {
@@ -25,6 +26,7 @@ export default function TruckLayoutSection({
 }: TruckLayoutSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
 
   // Watch nested truck object to determine if a truck is associated
@@ -52,19 +54,20 @@ export default function TruckLayoutSection({
   return (
     <FormCard title="Layout do Caminhão" icon="IconTruck">
       {/* Side Selector */}
-      <View style={styles.sideSelector}>
+      <View style={[styles.sideSelector, { backgroundColor: colors.muted }]}>
         {(['left', 'right', 'back'] as const).map((side) => (
           <View
             key={side}
             style={[
               styles.sideSelectorItem,
-              selectedSide === side && styles.sideSelectorItemActive
+              selectedSide === side && [styles.sideSelectorItemActive, { backgroundColor: colors.card }]
             ]}
             onTouchEnd={() => setSelectedSide(side)}
           >
             <ThemedText style={[
               styles.sideSelectorLabel,
-              selectedSide === side && styles.sideSelectorLabelActive
+              { color: colors.mutedForeground },
+              selectedSide === side && { color: colors.foreground, fontWeight: '600' }
             ]}>
               {sideLabels[side]}
             </ThemedText>
@@ -93,10 +96,10 @@ export default function TruckLayoutSection({
       />
 
       {/* Total Length Display */}
-      <View style={styles.totalLength}>
-        <ThemedText style={styles.totalLengthLabel}>Comprimento Total:</ThemedText>
+      <View style={[styles.totalLength, { borderTopColor: colors.border }]}>
+        <ThemedText style={[styles.totalLengthLabel, { color: colors.mutedForeground }]}>Comprimento Total:</ThemedText>
         <ThemedText style={styles.totalLengthValue}>
-          {calculateTotalLength(useWatch({ control, name: 'layouts' }))} cm
+          {(calculateTotalLength(useWatch({ control, name: 'layouts' })) * 100).toFixed(0)} cm
         </ThemedText>
       </View>
     </FormCard>
@@ -125,7 +128,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
     padding: 4,
   },
   sideSelectorItem: {
@@ -135,7 +137,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   sideSelectorItemActive: {
-    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -144,11 +145,6 @@ const styles = StyleSheet.create({
   },
   sideSelectorLabel: {
     fontSize: 14,
-    color: '#666',
-  },
-  sideSelectorLabelActive: {
-    color: '#000',
-    fontWeight: '600',
   },
   totalLength: {
     flexDirection: 'row',
@@ -157,11 +153,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
   },
   totalLengthLabel: {
     fontSize: 14,
-    color: '#666',
   },
   totalLengthValue: {
     fontSize: 16,

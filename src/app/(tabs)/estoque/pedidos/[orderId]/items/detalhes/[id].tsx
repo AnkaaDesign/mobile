@@ -3,8 +3,8 @@ import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconEdit, IconTrash, IconPackage, IconCalendar, IconCurrency } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderItem, useOrderItemMutations } from "@/hooks";
-import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, FAB } from "@/components/ui";
+import { useOrderItem, useOrderItemMutations, useScreenReady} from '@/hooks';
+import { ThemedView, ThemedText, ErrorScreen, FAB } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 
 import { useTheme } from "@/lib/theme";
@@ -12,6 +12,9 @@ import { formatCurrency, formatDate } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderItemDetailScreen() {
   const router = useRouter();
@@ -51,6 +54,8 @@ export default function OrderItemDetailScreen() {
     },
     enabled: !!id,
   });
+
+  useScreenReady(!isLoading);
 
   const { delete: deleteOrderItem } = useOrderItemMutations();
 
@@ -101,7 +106,18 @@ export default function OrderItemDetailScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando item..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   if (error || !orderItem) {

@@ -69,9 +69,11 @@ interface TaskInfoCardProps {
   canViewRestrictedFields?: boolean;
   /** Whether user can view truck details (chassisNumber, category, implementType). Hidden from PRODUCTION users except team leaders. Defaults to true. */
   canViewTruckDetails?: boolean;
+  /** Whether the current user is from the Designer sector. Used to filter representatives (MARKETING only, COMMERCIAL fallback). */
+  isDesignerUser?: boolean;
 }
 
-export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true }) => {
+export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true, isDesignerUser = false }) => {
   const { colors } = useTheme();
 
   // Handle phone call
@@ -113,8 +115,16 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
   }, []);
 
 
-  // Check if we have representatives to display
-  const hasRepresentatives = task.representatives && task.representatives.length > 0;
+  // Filter representatives: Designers only see MARKETING reps (fallback to COMMERCIAL)
+  const visibleRepresentatives = React.useMemo(() => {
+    if (!task.representatives || task.representatives.length === 0) return [];
+    if (isDesignerUser) {
+      const marketing = task.representatives.filter(r => r.role === RepresentativeRole.MARKETING);
+      return marketing.length > 0 ? marketing : task.representatives.filter(r => r.role === RepresentativeRole.COMMERCIAL);
+    }
+    return task.representatives;
+  }, [task.representatives, isDesignerUser]);
+  const hasRepresentatives = visibleRepresentatives.length > 0;
 
   return (
     <Card style={styles.card}>
@@ -141,7 +151,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
         )}
 
         {/* Representatives - Each displayed as its own field (like web) */}
-        {canViewRestrictedFields && hasRepresentatives && task.representatives!.map((rep) => (
+        {canViewRestrictedFields && hasRepresentatives && visibleRepresentatives.map((rep) => (
           <View key={rep.id} style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconUser size={18} color={colors.mutedForeground} />

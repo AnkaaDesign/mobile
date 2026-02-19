@@ -7,11 +7,12 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { LoadingScreen } from '@/components/ui/loading-screen';
 import { ErrorScreen } from '@/components/ui/error-screen';
 import { Combobox } from '@/components/ui/combobox';
 import { SearchBar } from '@/components/ui/search-bar';
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import { useScreenReady } from '@/hooks/use-screen-ready';
+
 
 interface LogEntry {
   timestamp: string;
@@ -64,6 +65,8 @@ export default function ServerLogsScreen() {
     enabled: !!selectedService,
     refetchInterval: autoRefresh ? 5000 : false, // Auto-refresh every 5 seconds if enabled
   });
+
+  useScreenReady(!isLoading);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -144,7 +147,7 @@ export default function ServerLogsScreen() {
   }, {} as Record<string, number>);
 
   if (isLoading && !logsData) {
-    return <LoadingScreen />;
+    return null;
   }
 
   return (

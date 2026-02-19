@@ -34,7 +34,7 @@ export default function CreateComponentScreen() {
   const { create: createComponent, isLoading } = usePaintFormulaComponentMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
+  useScreenReady(!isLoading);
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();

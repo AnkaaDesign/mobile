@@ -3,7 +3,6 @@ import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
@@ -11,9 +10,13 @@ import { useSharedFolders } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { formatFileSize } from "@/utils/file";
 import { Separator } from "@/components/ui/separator";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+
 
 export default function SharedFoldersScreen() {
   const { data, isLoading, refetch, isFetching } = useSharedFolders();
+
+  useScreenReady(!isLoading);
 
   const getPermissionLevel = (permissions: string): "full" | "read-write" | "read-only" | "restricted" => {
     if (permissions.includes("drwxrwsr-x") || permissions.includes("drwxrwxr-x")) {
@@ -74,9 +77,7 @@ export default function SharedFoldersScreen() {
         </ThemedView>
 
         {/* Content */}
-        {isLoading ? (
-          <LoadingScreen />
-        ) : !data?.data || data.data.length === 0 ? (
+        {isLoading ? null : !data?.data || data.data.length === 0 ? (
           <EmptyState
             icon="folder-share"
             title="Nenhuma pasta encontrada"

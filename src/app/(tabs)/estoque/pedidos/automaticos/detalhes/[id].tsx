@@ -12,7 +12,7 @@ import {
   IconHistory,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations, useOrders } from "@/hooks";
+import { useOrderSchedule, useOrderScheduleMutations, useOrders, useScreenReady} from '@/hooks';
 import type { OrderScheduleInclude } from '../../../../../../schemas';
 import {
   ThemedView,
@@ -21,7 +21,6 @@ import {
   Badge,
   Button,
   ErrorScreen,
-  LoadingScreen,
 } from "@/components/ui";
 
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
@@ -37,6 +36,9 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AutomaticOrderDetailScreen() {
   const router = useRouter();
@@ -67,6 +69,8 @@ export default function AutomaticOrderDetailScreen() {
   } = useOrderSchedule(scheduleId, {
     include,
   });
+
+  useScreenReady(!isLoading);
 
   const schedule = response?.data;
 
@@ -179,7 +183,40 @@ export default function AutomaticOrderDetailScreen() {
   }, [canEdit, scheduleId, router]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando agendamento automático..." />;
+    return (
+      <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { gap: 16 }]} showsVerticalScrollIndicator={false}>
+          {/* Frequency config card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Skeleton width="55%" height={18} borderRadius={4} />
+              <Skeleton width={60} height={22} borderRadius={11} />
+            </View>
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Skeleton width="35%" height={14} borderRadius={4} />
+                <Skeleton width="45%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+          {/* Items card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="30%" height={18} borderRadius={4} style={{ marginBottom: 12 }} />
+            <Skeleton width="100%" height={60} borderRadius={8} />
+          </View>
+          {/* Execution info card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="55%" height={18} borderRadius={4} style={{ marginBottom: 12 }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Skeleton width="40%" height={14} borderRadius={4} />
+                <Skeleton width="40%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   if (error) {

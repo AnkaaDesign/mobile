@@ -510,6 +510,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
               getOptionValue={getCustomerValue}
               initialOptions={(initialInvoiceToCustomers || []) as Customer[]}
               clearable
+              minSearchLength={0}
+              searchPlaceholder="Buscar cliente..."
             />
           </View>
         )}

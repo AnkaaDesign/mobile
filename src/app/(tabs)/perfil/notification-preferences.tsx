@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 import { IconCheck, IconX, IconRotate } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -261,6 +262,8 @@ export default function NotificationPreferencesScreen() {
   const [preferences, setPreferences] = useState<Record<string, NotificationChannel[]>>({});
   const [originalPreferences, setOriginalPreferences] = useState<Record<string, NotificationChannel[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+
+  useScreenReady(!isLoading);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());

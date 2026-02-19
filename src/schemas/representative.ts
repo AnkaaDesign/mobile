@@ -148,7 +148,23 @@ export const representativeBatchDeleteSchema = z.object({
     .max(50, 'Máximo de 50 exclusões por operação'),
 });
 
+// Inline representative creation (used in task create to create reps alongside the task)
+export const representativeCreateInlineSchema = z.object({
+  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres'),
+  phone: z.string().min(1, 'Telefone é obrigatório').regex(phoneRegex, 'Formato de telefone inválido'),
+  email: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : val),
+    z.string().email('Email inválido').optional(),
+  ),
+  role: z.nativeEnum(RepresentativeRole, {
+    errorMap: () => ({ message: 'Função inválida' }),
+  }),
+  isActive: z.boolean().optional().default(true),
+  customerId: z.string().uuid('ID do cliente inválido').optional(),
+});
+
 // Type exports
+export type RepresentativeCreateInlineFormData = z.infer<typeof representativeCreateInlineSchema>;
 export type RepresentativeCreateFormData = z.infer<typeof representativeCreateSchema>;
 export type RepresentativeUpdateFormData = z.infer<typeof representativeUpdateSchema>;
 export type RepresentativeGetManyFormData = z.infer<typeof representativeGetManySchema>;

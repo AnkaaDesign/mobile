@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TaskForm } from "@/components/production/task/form";
-import { useTaskMutations } from "@/hooks";
+import { useTaskMutations, useScreenReady} from '@/hooks';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
@@ -16,6 +16,8 @@ export default function CreateServiceOrderScreen() {
   const { getBackPath } = useNavigationHistory();
   // Fixed: isCreating doesn't exist, use isLoading instead
   const { createAsync, isLoading: isCreating } = useTaskMutations();
+
+  useScreenReady(!isCreating);
 
   const handleSubmit = async (data: TaskCreateFormData) => {
     try {

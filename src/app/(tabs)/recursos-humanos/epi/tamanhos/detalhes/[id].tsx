@@ -18,6 +18,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { SizeCard, EmployeeCard, MeasurementsCard, DeliveryCompatibilityCard } from "@/components/human-resources/ppe/size/detail";
 import { PpeSizeDetailSkeleton } from "@/components/human-resources/ppe/size/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function PPESizeDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -45,6 +46,8 @@ export default function PPESizeDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const ppeSize = response?.data;
 

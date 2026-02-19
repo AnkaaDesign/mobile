@@ -72,6 +72,7 @@ export interface RepresentativeGetManyResponse {
     page: number;
     pageSize: number;
     pageCount: number;
+    hasNextPage: boolean;
   };
 }
 

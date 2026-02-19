@@ -9,14 +9,15 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
 import { IconClock, IconUser, IconCalendar, IconMapPin, IconCamera, IconPhone, IconMail, IconBuilding, IconEdit, IconX } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+import { Skeleton } from "@/components/ui/skeleton";const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface TimeEntryDetail {
   id: string;
@@ -72,6 +73,8 @@ export default function TimeEntryDetailsScreen() {
     take: 100,
     userId: "mock-user-id", // Provide a mock userId to enable the query
   });
+
+  useScreenReady(!isLoading);
 
   // Find the specific entry (mock implementation)
   const timeEntry = useMemo(() => {
@@ -166,7 +169,77 @@ export default function TimeEntryDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <ThemedView style={styles.container}>
+        <View style={[styles.scrollContent, { paddingTop: spacing.md }]}>
+          {/* Employee / Funcionário card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+                <Skeleton style={{ height: 18, width: 100, borderRadius: 4 }} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Skeleton style={{ height: 24, width: 90, borderRadius: 12 }} />
+                <Skeleton style={{ height: 24, width: 70, borderRadius: 12 }} />
+              </View>
+            </View>
+            <View style={styles.content}>
+              {[['80px', '150px'], ['120px', '180px'], ['100px', '140px']].map(([l, v], i) => (
+                <View key={i} style={styles.infoRow}>
+                  <Skeleton style={{ height: 14, width: parseInt(l), borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: parseInt(v), borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Time records card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+                <Skeleton style={{ height: 18, width: 160, borderRadius: 4 }} />
+              </View>
+            </View>
+            <View style={styles.content}>
+              {[0, 1].map((i) => (
+                <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.md, gap: spacing.sm }}>
+                  <Skeleton style={{ height: 16, width: 80, borderRadius: 4 }} />
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                      <Skeleton style={{ height: 12, width: 50, borderRadius: 4 }} />
+                      <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                    </View>
+                    <View style={{ width: 2, height: 30, backgroundColor: colors.border, marginHorizontal: spacing.md }} />
+                    <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                      <Skeleton style={{ height: 12, width: 40, borderRadius: 4 }} />
+                      <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Summary card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+                <Skeleton style={{ height: 18, width: 80, borderRadius: 4 }} />
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={{ flex: 1, minWidth: 100, alignItems: 'center', padding: spacing.sm, backgroundColor: colors.muted, borderRadius: 8, gap: 4 }}>
+                  <Skeleton style={{ height: 12, width: 80, borderRadius: 4 }} />
+                  <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </ThemedView>
+    );
   }
 
   if (error) {

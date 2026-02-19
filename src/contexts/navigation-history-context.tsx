@@ -20,6 +20,58 @@ interface NavigationHistoryProviderProps {
   children: ReactNode;
 }
 
+// Known action segments that should be stripped along with their dynamic parameter
+const ACTION_SEGMENTS = ['detalhes', 'editar', 'layout', 'precificacao'];
+
+/**
+ * Compute a parent route from the current pathname when history is empty.
+ * Examples:
+ *   /producao/garagens          → /(tabs)/producao
+ *   /producao/agenda/detalhes/123 → /(tabs)/producao/agenda
+ *   /administracao/clientes/editar/abc → /(tabs)/administracao/clientes
+ *   /administracao/clientes/cadastrar  → /(tabs)/administracao/clientes
+ *   /producao                   → /(tabs)/inicio
+ */
+function computeParentRoute(pathname: string): string {
+  // Strip the /(tabs) prefix for easier manipulation
+  let path = pathname.replace(/^\/\(tabs\)\//, '/').replace(/^\//, '');
+
+  // Split into segments
+  const segments = path.split('/').filter(Boolean);
+
+  if (segments.length <= 1) {
+    // Already at a top-level section — go home
+    return '/(tabs)/inicio';
+  }
+
+  // Strip /cadastrar suffix
+  if (segments[segments.length - 1] === 'cadastrar') {
+    segments.pop();
+    const parent = '/(tabs)/' + segments.join('/');
+    return parent;
+  }
+
+  // Strip action segments (detalhes/[id], editar/[id], layout/[id], precificacao/[id])
+  for (const action of ACTION_SEGMENTS) {
+    const actionIndex = segments.indexOf(action);
+    if (actionIndex !== -1) {
+      // Strip the action segment and everything after it (the dynamic id)
+      const parent = segments.slice(0, actionIndex);
+      if (parent.length === 0) {
+        return '/(tabs)/inicio';
+      }
+      return '/(tabs)/' + parent.join('/');
+    }
+  }
+
+  // Default: strip the last segment
+  segments.pop();
+  if (segments.length === 0) {
+    return '/(tabs)/inicio';
+  }
+  return '/(tabs)/' + segments.join('/');
+}
+
 // Helper to determine if a screen should reset when left
 function shouldResetOnLeave(screenPath: string): boolean {
   if (screenPath.includes("/cadastrar") || screenPath.includes("/editar")) {
@@ -85,8 +137,11 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       // Remove current from history
       historyRef.current = currentHistory.slice(0, -1);
       r.replace(previousPath as any);
-    } else if (r.canGoBack()) {
-      r.back();
+    } else {
+      // Compute parent route from current pathname
+      const current = currentPathnameRef.current;
+      const parentRoute = computeParentRoute(current);
+      r.replace(parentRoute as any);
     }
   }, []);
 

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useUser } from "@/hooks";
+import { useUser, useScreenReady} from '@/hooks';
 import { useAuth } from '../../../../../contexts/auth-context';
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -137,6 +137,8 @@ export default function EmployeeDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const employee = response?.data;
 

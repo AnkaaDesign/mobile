@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { USER_STATUS } from "@/constants";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 interface PersonalMenuItem {
   id: string;
@@ -32,6 +33,7 @@ interface PersonalMenuItem {
 }
 
 export default function PessoalScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

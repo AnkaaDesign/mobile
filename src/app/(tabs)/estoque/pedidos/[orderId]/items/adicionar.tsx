@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrderItemMutations, useItems, useOrder } from "@/hooks";
 import { orderItemCreateSchema } from '../../../../../../schemas';
 import type { OrderItemCreateFormData } from '../../../../../../schemas';
-import { ThemedView, ThemedText, ErrorScreen, LoadingScreen, Button } from "@/components/ui";
+import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +19,10 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+
 export default function AddOrderItemScreen() {
   const router = useRouter();
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
@@ -27,6 +31,9 @@ export default function AddOrderItemScreen() {
   const { user } = useAuth();
   // Check permissions
   const canCreate = user && hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+
+  // Signal screen ready on mount (create-like screen, order loading shows inline skeleton)
+  useScreenReady();
 
   if (!canCreate) {
     return (
@@ -139,7 +146,18 @@ export default function AddOrderItemScreen() {
   };
 
   if (orderLoading) {
-    return <LoadingScreen message="Carregando pedido..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   if (orderError || !order) {

@@ -24,7 +24,7 @@ import { TagManager } from "@/components/administration/customer/form/tag-manage
 import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { Text } from "@/components/ui/text";
-import { spacing, fontSize } from "@/constants/design-system";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 import { Card } from "@/components/ui/card";
@@ -41,7 +41,6 @@ export default function CustomerEditScreen() {
   const queryClient = useQueryClient();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -121,6 +120,8 @@ export default function CustomerEditScreen() {
       streetType: null,
     },
   });
+
+  useScreenReady(!isLoading);
 
   const { updateAsync } = useCustomerMutations();
 
@@ -385,14 +386,110 @@ export default function CustomerEditScreen() {
   }));
 
   if (isLoading) {
+    const cardStyle = {
+      backgroundColor: colors.card,
+      borderRadius: borderRadius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    };
+    const fieldSkeleton = (i: number) => (
+      <View key={i} style={{ marginBottom: spacing.sm }}>
+        <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+        <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
+      </View>
+    );
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.scrollContent}>
-            <View style={styles.skeletonRows}>
-              <Skeleton height={48} width="100%" />
-              <Skeleton height={48} width="100%" />
-              <Skeleton height={48} width="100%" />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Informações Básicas */}
+          <View style={cardStyle}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton width={20} height={20} borderRadius={4} />
+              <Skeleton width="45%" height={18} />
+            </View>
+            {/* Document type toggles + input */}
+            <View style={{ marginBottom: spacing.sm }}>
+              <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+              <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "center" }}>
+                <View style={{ flexDirection: "row", gap: spacing.xs }}>
+                  <Skeleton width={55} height={36} borderRadius={borderRadius.md} />
+                  <Skeleton width={55} height={36} borderRadius={borderRadius.md} />
+                </View>
+                <Skeleton style={{ flex: 1 }} height={44} borderRadius={borderRadius.md} />
+              </View>
+            </View>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(fieldSkeleton)}
+          </View>
+
+          {/* Logo */}
+          <View style={cardStyle}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton width={20} height={20} borderRadius={4} />
+              <Skeleton width="20%" height={18} />
+            </View>
+            <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+            <Skeleton width="100%" height={80} borderRadius={borderRadius.md} />
+          </View>
+
+          {/* Endereço */}
+          <View style={cardStyle}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton width={20} height={20} borderRadius={4} />
+              <Skeleton width="30%" height={18} />
+            </View>
+            {[1, 2, 3].map(fieldSkeleton)}
+            {/* Número + Complemento row */}
+            <View style={{ flexDirection: "row", gap: spacing.md, marginBottom: spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <Skeleton width="45%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+                <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Skeleton width="55%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+                <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
+              </View>
+            </View>
+            {fieldSkeleton(4)}
+            {/* Cidade + Estado row */}
+            <View style={{ flexDirection: "row", gap: spacing.md }}>
+              <View style={{ flex: 1 }}>
+                <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+                <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+                <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
+              </View>
+            </View>
+          </View>
+
+          {/* Contato */}
+          <View style={cardStyle}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton width={20} height={20} borderRadius={4} />
+              <Skeleton width="25%" height={18} />
+            </View>
+            <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+            <Skeleton width="100%" height={80} borderRadius={borderRadius.md} />
+          </View>
+
+          {/* Tags */}
+          <View style={cardStyle}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton width={20} height={20} borderRadius={4} />
+              <Skeleton width="20%" height={18} />
+            </View>
+            <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
+            <View style={{ flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" }}>
+              <Skeleton width={70} height={32} borderRadius={borderRadius.full} />
+              <Skeleton width={90} height={32} borderRadius={borderRadius.full} />
+              <Skeleton width={60} height={32} borderRadius={borderRadius.full} />
             </View>
           </View>
         </ScrollView>
@@ -985,8 +1082,5 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: "600",
-  },
-  skeletonRows: {
-    gap: 8,
   },
 });

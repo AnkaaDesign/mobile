@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateSupplier, useKeyboardAwareScroll, useCepLookup } from "@/hooks";
+import { useCreateSupplier, useKeyboardAwareScroll, useCepLookup, useScreenReady} from '@/hooks';
 import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
@@ -74,6 +74,8 @@ export default function SupplierCreateScreen() {
       console.error('CEP lookup error:', error);
     },
   });
+
+  useScreenReady();
 
   // Watch zipCode field and trigger lookup when complete
   const zipCode = form.watch('zipCode');

@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { payrollService } from "@/api-client";
@@ -17,6 +17,9 @@ import { formatCurrency } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { PrivilegeGuard } from "@/components/privilege-guard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+import { spacing } from "@/constants/design-system";
 
 function getMonthName(month?: number): string {
   if (!month) return "";
@@ -57,6 +60,8 @@ export default function PayrollDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  useScreenReady(!loading);
 
   // Fetch payroll data - Backend handles both regular UUIDs and live IDs
   useEffect(() => {
@@ -256,10 +261,38 @@ export default function PayrollDetailScreen() {
   if (loading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando detalhes...</ThemedText>
-        </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
+          {/* General Info Card Skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="50%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="40%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Financial Card Skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton width="30%" height={18} style={{ marginBottom: spacing.sm }} />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Skeleton width="45%" height={14} />
+                <Skeleton width="25%" height={14} />
+              </View>
+            ))}
+            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+              <Skeleton width="35%" height={16} />
+              <Skeleton width="30%" height={16} />
+            </View>
+            <View style={{ backgroundColor: colors.primary, borderRadius: 8, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Skeleton width="35%" height={18} />
+              <Skeleton width="30%" height={20} />
+            </View>
+          </View>
+          <View style={{ height: spacing.xxl * 2 }} />
+        </ScrollView>
       </ThemedView>
     );
   }

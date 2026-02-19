@@ -20,6 +20,7 @@ import { groupNotificationsByDate, NotificationSection } from '@/utils/notificat
 import type { Notification } from '@/types';
 import * as Haptics from 'expo-haptics';
 import { extendedColors } from '@/lib/theme/extended-colors';
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function NotificationCenterScreen() {
   const router = useRouter();
@@ -43,6 +44,8 @@ export default function NotificationCenterScreen() {
     // Filter to show notifications for current user or global notifications
     userId: user?.id,
   });
+
+  useScreenReady(!isLoading);
   const flatNotifications = (items ?? []) as Notification[];
 
   // Mutations

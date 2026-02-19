@@ -7,6 +7,7 @@ import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from "../consta
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { taskPricingCreateNestedSchema } from "./task-pricing";
+import { representativeCreateInlineSchema } from "./representative";
 
 // =====================
 // Include Schema Based on Prisma Schema (Second Level Only)
@@ -1111,6 +1112,7 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_TYPE.PRODUCTION),
   assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
   observation: z.string().nullable().optional(), // For rejection/approval notes
+  shouldSync: z.boolean().optional().default(true), // Sync with pricing items (matches web)
   startedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
 });
@@ -1172,8 +1174,8 @@ const taskTruckCreateSchema = z.object({
 // Base task create schema with all relations
 export const taskCreateSchema = z
   .object({
-    // Basic fields
-    name: createNameSchema(3, 200, "nome da tarefa"),
+    // Basic fields - name is optional (web allows creating tasks without a name)
+    name: createNameSchema(3, 200, "nome da tarefa").nullable().optional(),
     status: z
       .enum(Object.values(TASK_STATUS) as [string, ...string[]], {
         errorMap: () => ({ message: "status inválido" }),
@@ -1199,6 +1201,11 @@ export const taskCreateSchema = z
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     // Representatives relationship
     representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
+    newRepresentatives: z.array(representativeCreateInlineSchema).optional(),
+
+    // Batch creation fields (UI-only, used to create multiple tasks from plate × serialNumber combinations)
+    plates: z.array(z.string()).optional(),
+    serialNumbers: z.array(z.number()).optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),
@@ -1282,6 +1289,7 @@ export const taskUpdateSchema = z
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
     // Representatives relationship
     representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
+    newRepresentatives: z.array(representativeCreateInlineSchema).optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),

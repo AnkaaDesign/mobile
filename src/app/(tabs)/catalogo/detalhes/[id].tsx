@@ -1,14 +1,13 @@
 import React from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
-import { usePaintDetail } from "@/hooks";
+import { usePaintDetail, useScreenReady} from '@/hooks';
 import {
   PaintFormulasCard,
   PaintRelatedPaintsCard,
   PaintSpecificationsCard,
   PaintGroundPaintsCard,
 } from "@/components/painting/catalog/detail";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,7 +17,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { IconPaint } from "@tabler/icons-react-native";
 
-/**
+
+import { Skeleton } from "@/components/ui/skeleton";/**
  * View-Only Catalog Details Screen for Leaders
  *
  * This screen provides a read-only view of paint catalog items for leaders.
@@ -154,6 +154,8 @@ export default function CatalogoDetailsScreen() {
     },
   });
 
+  useScreenReady(!isLoading);
+
   const paint = paintResponse?.data;
 
   const handleRefresh = React.useCallback(async () => {
@@ -171,7 +173,18 @@ export default function CatalogoDetailsScreen() {
             headerBackTitle: "Voltar",
           }}
         />
-        <LoadingScreen />
+        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>
       </>
     );
   }

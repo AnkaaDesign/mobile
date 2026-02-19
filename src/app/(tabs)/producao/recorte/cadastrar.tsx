@@ -3,7 +3,7 @@ import { router, Stack } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCutMutations } from "@/hooks";
+import { useCutMutations, useScreenReady} from '@/hooks';
 import { cutCreateSchema, type CutCreateFormData } from "@/schemas";
 import {
   CUT_STATUS,
@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 
 export default function CreateCuttingScreen() {
+  useScreenReady();
   const { colors } = useTheme();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);

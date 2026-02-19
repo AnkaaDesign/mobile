@@ -5,7 +5,6 @@ import { usePosition, usePositionMutations } from "@/hooks/usePosition";
 import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -19,8 +18,10 @@ import { hasPrivilege } from "@/utils";
 import { SpecificationsCard, RemunerationHistoryCard, RelatedUsersCard } from "@/components/human-resources/position/detail";
 
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
-export default function PositionDetailScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function PositionDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -71,6 +72,8 @@ export default function PositionDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const position = response?.data;
 
@@ -125,7 +128,64 @@ export default function PositionDetailScreen() {
   }, [refetch]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do cargo..." />;
+    return (
+      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Header card skeleton: position name + action buttons */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Skeleton style={{ height: 22, width: '55%', borderRadius: 4 }} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
+              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
+              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
+            </View>
+          </View>
+          {/* Specifications card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 16, width: 130, borderRadius: 4 }} />
+            </View>
+            {[0.7, 0.5, 0.6, 0.55].map((w, i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 14, width: `${Math.round(w * 100)}%` as any, borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: 60, borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Remuneration history card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 16, width: 160, borderRadius: 4 }} />
+            </View>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Related users card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ height: 16, width: 120, borderRadius: 4 }} />
+            </View>
+            {[0, 1, 2, 3].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Skeleton style={{ width: 36, height: 36, borderRadius: 18 }} />
+                <View style={{ gap: 4, flex: 1 }}>
+                  <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 12, width: '40%', borderRadius: 4 }} />
+                </View>
+              </View>
+            ))}
+          </View>
+          {/* Changelog skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md, height: 220 }}>
+            <Skeleton style={{ height: 16, width: 180, borderRadius: 4 }} />
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !position || !id || id === "") {

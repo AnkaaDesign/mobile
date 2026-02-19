@@ -3,8 +3,10 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { StockBalanceBatchCreateForm } from "@/components/inventory/stock-balance/form";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function StockBalanceCreateScreen() {
+  useScreenReady();
   const router = useRouter();
 
   const handleCancel = () => {

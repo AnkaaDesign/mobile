@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { contactMethodSchema } from '../../schemas';
 import { z } from "zod";
 import { useAuth } from "@/contexts/auth-context";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -37,6 +38,7 @@ const registerFormSchema = z
 type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export default function RegisterScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const { register: registerUser } = useAuth();

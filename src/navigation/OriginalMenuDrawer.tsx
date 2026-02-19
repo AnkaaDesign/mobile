@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -28,7 +29,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptics";
-import { useRouter, usePathname, useNavigation } from "expo-router";
+import { usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
@@ -63,7 +64,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { theme, setTheme, isDark: isDarkMode } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const { clearHistory } = useNavigationHistory();
-  const router = useRouter();
+  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -75,7 +76,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFavorites, setShowFavorites] = useState(true);
-  const [navigatingItemId, setNavigatingItemId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTogglingTheme, setIsTogglingTheme] = useState(false);
 
@@ -278,28 +278,19 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         return;
       }
 
+      // Prevent double-navigation
+      if (isNavigatingRef.current) return;
+
       const tabRoute = routeToMobilePath(path);
 
-      console.log('📱 [MENU NAV] ========== START ==========');
-      console.log('📱 [MENU NAV] Current pathname:', pathnameRef.current);
-      console.log('📱 [MENU NAV] Target route:', tabRoute);
+      // Close drawer and user menu first so overlay is visible
+      props.navigation?.closeDrawer?.();
+      closeUserMenu();
 
-      try {
-        // Always use push for consistent behavior
-        // The navigation history context will track the proper history
-        console.log('📱 [MENU NAV] Navigating with push');
-        router.push(tabRoute as any);
-
-        props.navigation?.closeDrawer?.();
-        closeUserMenu();
-        console.log('📱 [MENU NAV] Navigation successful');
-      } catch (error) {
-        console.error('📱 [MENU NAV] Navigation failed:', error);
-      }
-
-      console.log('📱 [MENU NAV] ========== END ==========');
+      // Navigate with loading overlay
+      pushWithLoading(tabRoute);
     },
-    [router, props.navigation, closeUserMenu],
+    [pushWithLoading, isNavigatingRef, props.navigation, closeUserMenu],
   );
 
   // Get first submenu path for navigation
@@ -381,18 +372,10 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       // INSTANT haptic feedback - fires immediately on touch
       impactHaptic();
 
-      // INSTANT visual feedback
-      setNavigatingItemId(item.id);
-
-      requestAnimationFrame(() => {
-        const targetPath = getFirstSubmenuPath(item);
-        if (targetPath) {
-          navigateToPath(targetPath);
-        }
-
-        // Keep loading state until navigation completes
-        setTimeout(() => setNavigatingItemId(null), 1500);
-      });
+      const targetPath = getFirstSubmenuPath(item);
+      if (targetPath) {
+        navigateToPath(targetPath);
+      }
     },
     [navigateToPath],
   );
@@ -405,7 +388,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       const isExpanded = expandedMenus[item.id];
       const isActive = isItemActive(item);
       const isInPath = isInActivePath(item);
-      const isNavigating = navigatingItemId === item.id;
       const chevronAnimation = hasChildren ? getChevronAnimation(item.id) : null;
 
       const chevronRotation = chevronAnimation?.interpolate({
@@ -476,15 +458,11 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               delayLongPress={500}
               style={({ pressed }) => ({
                 flex: 1,
-                // More pronounced scale feedback
-                transform: pressed ? [{ scale: 0.96 }] : isNavigating ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                opacity: pressed ? 0.7 : isNavigating ? 0.85 : 1,
-                // Green-tinted background for better visual feedback
+                transform: pressed ? [{ scale: 0.96 }] : [{ scale: 1 }],
+                opacity: pressed ? 0.7 : 1,
                 backgroundColor: pressed
                   ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
-                  : isNavigating && !isActive
-                    ? (isDarkMode ? "rgba(21, 128, 61, 0.1)" : "rgba(21, 128, 61, 0.08)")
-                    : "transparent",
+                  : "transparent",
                 borderRadius: 8,
               })}
               accessibilityRole="button"
@@ -494,16 +472,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
               <View style={styles.menuItemInner}>
                 <View style={[styles.menuItemContent, { paddingLeft }]}>
                   <View style={styles.menuItemIcon}>
-                    {/* Show loading indicator when navigating */}
-                    {isNavigating ? (
-                      <ActivityIndicator
-                        size="small"
-                        color={isActive ? "#fafafa" : "#15803d"}
-                        style={{ width: 20, height: 20 }}
-                      />
-                    ) : (
-                      getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")
-                    )}
+                    {getIconComponentLocal(item.icon, isActive ? "onPrimary" : isInPath ? "primary" : "navigation")}
                   </View>
                   <Text
                     style={[
@@ -518,10 +487,10 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    {isNavigating ? "Carregando..." : (item.title || item.id || 'Untitled')}
+                    {item.title || item.id || 'Untitled'}
                   </Text>
 
-                  {item.isContextual && !isNavigating && (
+                  {item.isContextual && (
                     <View style={styles.contextualBadge}>
                       <Text style={styles.contextualBadgeText}>ATUAL</Text>
                     </View>
@@ -529,7 +498,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 </View>
 
                 {/* Favorite toggle button - only for items with paths */}
-                {item.path && !item.isContextual && !isNavigating && (() => {
+                {item.path && !item.isContextual && (() => {
                   const itemPath = item.path; // Capture path to ensure TypeScript narrowing
                   return (
                     <Pressable
@@ -594,7 +563,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         </View>
       );
     },
-    [expandedMenus, navigatingItemId, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers],
+    [expandedMenus, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers],
   );
 
   return (

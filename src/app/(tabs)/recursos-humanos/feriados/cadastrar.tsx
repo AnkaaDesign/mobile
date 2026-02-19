@@ -7,8 +7,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconCalendar } from "@tabler/icons-react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function HolidaysCreateScreen() {
+  useScreenReady();
   const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
 

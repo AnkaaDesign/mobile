@@ -13,10 +13,11 @@ import Animated, {
 import { FAB } from "@/components/ui/fab";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
-import { usePaintMutations } from "@/hooks";
+import { usePaintMutations, useScreenReady} from '@/hooks';
 import { spacing } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
 import { hasAnyPrivilege } from '../../../../utils';
@@ -318,6 +319,8 @@ export default function CatalogListScreen() {
     totalItemsLoaded,
     totalCount,
   } = usePaintsInfiniteMobile(queryParams, pageSize);
+
+  useScreenReady(!isLoading);
 
   // Apply client-side sorting (matching web version and view-only catalog)
   const paints = useMemo(() => {
@@ -769,9 +772,27 @@ export default function CatalogListScreen() {
 
         {/* Content */}
         {isLoading || !viewLoaded ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <ThemedText style={styles.loadingText}>Carregando catálogo...</ThemedText>
+          <View style={{ flex: 1, padding: spacing.md, gap: spacing.md }}>
+            {/* Paint card skeletons matching the catalogue layout */}
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={[styles.paintCard, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+                {/* Color preview skeleton */}
+                <Skeleton style={{ height: 128, borderRadius: 0 }} />
+                {/* Card content */}
+                <View style={{ padding: spacing.md, gap: spacing.sm }}>
+                  <Skeleton style={{ height: 18, width: '60%', borderRadius: 4 }} />
+                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 22, width: 50, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 22, width: 70, borderRadius: 4 }} />
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Skeleton style={{ height: 14, width: 80, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 60, borderRadius: 4 }} />
+                  </View>
+                </View>
+              </View>
+            ))}
           </View>
         ) : (
           <>

@@ -7,8 +7,10 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconCalendar } from "@tabler/icons-react-native";
 import { useHoliday } from "@/hooks/useHoliday";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function HolidayEditScreen() {
   const { colors } = useTheme();
@@ -20,6 +22,8 @@ export default function HolidayEditScreen() {
   const { data: response, isLoading } = useHoliday(id, {
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const holiday = response?.data;
 
@@ -48,9 +52,15 @@ export default function HolidayEditScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          <Card style={styles.card}>
-            <ThemedText>Carregando...</ThemedText>
-          </Card>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.xs }} />
+            <Skeleton width="100%" height={44} />
+            <Skeleton width="100%" height={44} />
+          </View>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="100%" height={44} />
+          </View>
+          <View style={{ height: spacing.xxl * 2 }} />
         </View>
       </ScrollView>
     );

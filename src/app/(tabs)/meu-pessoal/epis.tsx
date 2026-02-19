@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useMyTeamPpeDeliveriesInfinite } from "@/hooks/use-my-team-ppe-deliveries-infinite";
 import { deletePpeDelivery } from "@/api-client";
+import { Skeleton } from "@/components/ui/skeleton";
 // import { showToast } from "@/components/ui/toast";
 
 import { ThemedView, ErrorScreen, EmptyState, ListActionButton, SearchBar } from "@/components/ui";
@@ -277,13 +278,27 @@ export default function TeamEPIsScreen() {
 
   if (isInitialLoad) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Card style={styles.loadingCard}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando EPIs da equipe...
-            </ThemedText>
-          </Card>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Search bar skeleton */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 8, gap: 8 }}>
+          <Skeleton style={{ flex: 1, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+        </View>
+        {/* Table rows skeleton */}
+        <View style={{ paddingHorizontal: 8, gap: 8 }}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <View key={i} style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Skeleton style={{ height: 15, width: '40%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 22, width: '22%', borderRadius: 10 }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
+              </View>
+            </View>
+          ))}
         </View>
       </ThemedView>
     );

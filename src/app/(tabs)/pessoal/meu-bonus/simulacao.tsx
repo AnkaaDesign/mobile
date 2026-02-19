@@ -7,10 +7,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { usePositions, useTasks, useUsers } from "@/hooks";
+import { usePositions, useTasks, useUsers, useScreenReady } from "@/hooks";
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
 import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BonusSimulationScreen() {
   const { colors } = useTheme();
@@ -237,13 +238,54 @@ export default function BonusSimulationScreen() {
 
   const isLoading = userLoading || tasksLoading || positionsLoading;
 
+  useScreenReady(!isLoading || refreshing);
+
   if (isLoading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando simulação...</ThemedText>
-        </View>
+        <ScrollView style={styles.scrollView} scrollEnabled={false}>
+          {/* Simulation Controls Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 16 }]}>
+            <Skeleton style={{ height: 20, width: '40%', borderRadius: 4 }} />
+            {/* Task input row */}
+            <View style={{ gap: 8 }}>
+              <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 48, width: '100%', borderRadius: 6 }} />
+            </View>
+            {/* Position buttons */}
+            <View style={{ gap: 8 }}>
+              <Skeleton style={{ height: 14, width: '20%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Skeleton style={{ flex: 1, height: 44, borderRadius: 8 }} />
+                <Skeleton style={{ flex: 1, height: 44, borderRadius: 8 }} />
+                <Skeleton style={{ flex: 1, height: 44, borderRadius: 8 }} />
+              </View>
+            </View>
+            {/* Performance level */}
+            <View style={{ gap: 8 }}>
+              <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Skeleton style={{ width: 48, height: 48, borderRadius: 8 }} />
+                <Skeleton style={{ flex: 1, height: 48, borderRadius: 8 }} />
+                <Skeleton style={{ width: 48, height: 48, borderRadius: 8 }} />
+              </View>
+            </View>
+          </View>
+
+          {/* Simulation Result Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 12 }]}>
+            <Skeleton style={{ height: 20, width: '50%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 44, width: '55%', borderRadius: 4, alignSelf: 'center' }} />
+            <View style={{ gap: 10 }}>
+              {[['20%', '25%'], ['30%', '20%'], ['25%', '15%'], ['40%', '18%'], ['45%', '20%']].map(([l, r], i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width={l} height={14} borderRadius={4} />
+                  <Skeleton width={r} height={14} borderRadius={4} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </ThemedView>
     );
   }

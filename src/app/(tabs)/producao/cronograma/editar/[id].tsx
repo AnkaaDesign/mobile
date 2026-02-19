@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form/task-form-with-provider";
 import { SkeletonCard } from "@/components/ui/loading";
-import { useTaskMutations, useLayoutsByTruck, useTaskDetail } from "@/hooks";
+import { useTaskMutations, useLayoutsByTruck, useTaskDetail, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
@@ -22,6 +22,7 @@ export default function EditScheduleScreen() {
   const { colors } = useTheme();
   const { goBack } = useNavigationHistory();
   const { updateAsync, isLoading } = useTaskMutations();
+
   const [checkingPermission, setCheckingPermission] = useState(true);
 
   // Check permissions - ADMIN, FINANCIAL, COMMERCIAL, and LOGISTIC can edit tasks
@@ -167,6 +168,8 @@ export default function EditScheduleScreen() {
       },
     }
   });
+
+  useScreenReady(!isLoadingTask);
 
   const task = response?.data;
 

@@ -12,7 +12,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { fontSize } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
-import { usePpeDelivery, usePpeDeliveryMutations } from "@/hooks";
+import { usePpeDelivery, usePpeDeliveryMutations, useScreenReady} from '@/hooks';
 import { hasPrivilege, formatDate, formatDateTime } from "@/utils";
 import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { IconRefresh, IconAlertTriangle, IconShield, IconUser, IconPackage } from "@tabler/icons-react-native";
@@ -60,6 +60,8 @@ export default function PPEDetailsScreen() {
     },
     enabled: !!params.id && canManagePpe,
   });
+
+  useScreenReady(!isLoading);
 
   const ppeDelivery = response?.data;
 

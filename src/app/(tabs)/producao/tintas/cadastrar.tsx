@@ -14,7 +14,7 @@ export default function CreatePaintScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
+  useScreenReady(!isPaintLoading);
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);

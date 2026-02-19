@@ -21,6 +21,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { transformMessageContent } from "@/utils/message-transformer";
 import { useMyMessages, useMarkMessageAsViewed } from "@/hooks/useMyMessages";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 type MessageWithViewStatus = any;
 
@@ -36,6 +37,8 @@ export default function MinhasMensagensScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { data: messages, isLoading, error, refetch } = useMyMessages();
+
+  useScreenReady(!isLoading);
   const { mutate: markAsViewed } = useMarkMessageAsViewed();
   const [selectedMessage, setSelectedMessage] = useState<MessageWithViewStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);

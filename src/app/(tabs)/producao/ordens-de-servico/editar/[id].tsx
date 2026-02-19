@@ -3,7 +3,7 @@ import { Alert, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form";
-import { useTaskDetail, useTaskMutations } from "@/hooks";
+import { useTaskDetail, useTaskMutations, useScreenReady} from '@/hooks';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
@@ -84,6 +84,8 @@ export default function EditServiceOrderScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const handleSubmit = async (data: any) => {
     try {

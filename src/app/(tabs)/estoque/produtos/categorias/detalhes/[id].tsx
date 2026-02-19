@@ -44,7 +44,6 @@ export default function CategoryDetailScreen() {
   const id = params?.id || "";
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const {
     data: response,
@@ -99,6 +98,8 @@ export default function CategoryDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const category = response?.data;
   const items = category?.items || [];

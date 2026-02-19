@@ -9,14 +9,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { bonusKeys } from "@/hooks";
+import { bonusKeys, useScreenReady } from "@/hooks";
 import { bonusService } from "@/api-client";
 import { formatCurrency, getBonusPeriod } from "@/utils";
 import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
-import type { Task, Bonus } from "@/types";
-
-// Month names in Portuguese
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Task, Bonus } from "@/types";// Month names in Portuguese
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -285,13 +284,65 @@ export default function CurrentBonusScreen() {
 
   const isLoading = userLoading || bonusLoading;
 
+  useScreenReady(!isLoading || refreshing);
+
   if (isLoading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando bônus...</ThemedText>
-        </View>
+        <ScrollView style={styles.scrollView} scrollEnabled={false}>
+          {/* Period Info Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 8 }]}>
+            <Skeleton style={{ height: 12, width: '25%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 28, width: '40%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 12, width: '50%', borderRadius: 4 }} />
+          </View>
+
+          {/* Bonus Amount Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 12 }]}>
+            <Skeleton style={{ height: 18, width: '40%', borderRadius: 4 }} />
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '28%', borderRadius: 4 }} />
+              </View>
+              <View style={{ height: 1, backgroundColor: colors.border }} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton style={{ height: 14, width: '32%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              </View>
+            </View>
+          </View>
+
+          {/* Performance Details Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 12 }]}>
+            <Skeleton style={{ height: 18, width: '50%', borderRadius: 4 }} />
+            <View style={{ gap: 10 }}>
+              {[['30%', '25%'], ['20%', '30%'], ['45%', '20%'], ['38%', '18%'], ['42%', '18%'], ['50%', '20%']].map(([l, r], i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width={l} height={14} borderRadius={4} />
+                  <Skeleton width={r} height={14} borderRadius={4} />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Commission Status Card skeleton */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 12 }]}>
+            <Skeleton style={{ height: 18, width: '45%', borderRadius: 4 }} />
+            <View style={{ gap: 12 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Skeleton style={{ height: 24, width: '50%', borderRadius: 12 }} />
+                  <Skeleton style={{ height: 24, width: '15%', borderRadius: 12 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </ThemedView>
     );
   }

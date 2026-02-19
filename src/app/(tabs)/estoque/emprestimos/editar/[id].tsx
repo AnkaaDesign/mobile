@@ -1,11 +1,10 @@
-import { View } from "react-native";
+import { View, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { BorrowReturnForm } from "@/components/inventory/borrow/form/borrow-return-form";
-import { SkeletonCard } from "@/components/ui/loading";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { useBorrow, useBorrowMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -13,6 +12,8 @@ import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { BORROW_SELECT_FORM } from "@/api-client/select-patterns";
 import { StyleSheet } from "react-native";
 import { spacing } from "@/constants/design-system";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTheme } from "@/lib/theme";
 
 export default function BorrowEditScreenWrapper() {
   return (
@@ -25,10 +26,10 @@ export default function BorrowEditScreenWrapper() {
 function BorrowEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
   const { updateAsync, markAsLostAsync } = useBorrowMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Fetch borrow details with optimized select (40-60% less data)
   const {
@@ -38,6 +39,8 @@ function BorrowEditScreen() {
   } = useBorrow(id!, {
     select: BORROW_SELECT_FORM,
   });
+
+  useScreenReady(!isLoading);
 
   const borrow = response?.data;
 
@@ -82,12 +85,28 @@ function BorrowEditScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 2 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
         </View>
-      </ThemedView>
+      </ScrollView>
     );
   }
 
@@ -121,12 +140,5 @@ function BorrowEditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  skeletonContainer: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  skeleton: {
-    height: 200,
   },
 });

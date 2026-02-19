@@ -24,6 +24,7 @@ import {
 } from "@/components/personal/warning/detail";
 import { WarningDetailSkeleton } from "@/components/personal/warning/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function WarningDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -69,6 +70,8 @@ export default function WarningDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const warning = response?.data;
 

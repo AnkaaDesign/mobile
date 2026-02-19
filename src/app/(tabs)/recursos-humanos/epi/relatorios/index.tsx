@@ -6,6 +6,7 @@ import { IconChartBar, IconPackage, IconActivity, IconMask } from "@tabler/icons
 
 import { ThemedView, ThemedText } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 interface ReportCard {
   title: string;
@@ -17,6 +18,7 @@ interface ReportCard {
 }
 
 export default function PpeReportsScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

@@ -10,31 +10,39 @@ import { useState, useCallback } from "react";
 import { formatCurrency } from "@/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function ProducaoScreen() {
   const { user } = useAuth();
-
-  // Check if user is FINANCIAL or ADMIN - only they see the dashboard
-  const privilege = user?.sector?.privileges;
-  const isFinancialOrAdmin = privilege === SECTOR_PRIVILEGES.FINANCIAL || privilege === SECTOR_PRIVILEGES.ADMIN;
-
-  // Non-admin/financial users go directly to cronograma
-  if (!isFinancialOrAdmin) {
-    return <Redirect href="/producao/cronograma" />;
-  }
   const { colors } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: dashboard, isLoading, error, refetch } = useProductionDashboard({ timePeriod });
+  // Check if user is FINANCIAL or ADMIN - only they see the dashboard
+  const privilege = user?.sector?.privileges;
+  const isFinancialOrAdmin = privilege === SECTOR_PRIVILEGES.FINANCIAL || privilege === SECTOR_PRIVILEGES.ADMIN;
+
+  // Only fetch dashboard data for ADMIN/FINANCIAL users (enabled flag prevents fetch otherwise)
+  const { data: dashboard, isLoading, error, refetch } = useProductionDashboard(
+    { timePeriod },
+    { enabled: isFinancialOrAdmin }
+  );
+
+  // Always call useScreenReady at top level — non-admin users are immediately ready
+  useScreenReady(isFinancialOrAdmin ? !isLoading : true);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  // Non-admin/financial users go directly to cronograma
+  if (!isFinancialOrAdmin) {
+    return <Redirect href="/producao/cronograma" />;
+  }
 
   if (isLoading && !refreshing) {
     return (

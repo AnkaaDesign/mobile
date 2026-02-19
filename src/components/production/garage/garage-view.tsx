@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState, useCallback, memo, useRef, useEffect } from 'react';
 import { View, Dimensions, Pressable, StyleSheet, Alert, ScrollView, RefreshControl } from 'react-native';
-import Svg, { Rect, G, Text as SvgText, Line } from 'react-native-svg';
+import Svg, { Rect, G, Text as SvgText, Line, Polygon, Defs, ClipPath } from 'react-native-svg';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -126,6 +126,8 @@ export interface GarageTruck {
   paintHex?: string | null;
   length: number;
   originalLength?: number;
+  entryDate?: string | null; // Task entry date
+  term?: string | null; // Task deadline
   forecastDate?: string | null; // Forecast date - when truck is expected to arrive at company
   finishedAt?: string | null; // Task completion date - null if not complete
 }
@@ -778,6 +780,7 @@ const TruckElement = memo(function TruckElement({
   onDragEnded,
   disabled = false,
 }: TruckElementProps) {
+  const { colors } = useTheme();
   const width = GARAGE_CONFIG.TRUCK_WIDTH_TOP_VIEW * scale;
   const truckFullLength = getTruckLength(truck); // Use full length including cabin
   const height = truckFullLength * scale;
@@ -1083,6 +1086,11 @@ const TruckElement = memo(function TruckElement({
         ref={truckViewRef}
         style={[{ position: 'absolute', left: baseX - strokePadding, top: baseY - strokePadding, width: svgWidth, height: svgHeight }, animatedStyle]}>
         <Svg width={svgWidth} height={svgHeight}>
+          <Defs>
+            <ClipPath id={`truck-clip-${truck.id}`}>
+              <Rect x={strokePadding} y={strokePadding} width={width} height={height} rx={3} />
+            </ClipPath>
+          </Defs>
           <Rect
             x={strokePadding}
             y={strokePadding}
@@ -1093,6 +1101,15 @@ const TruckElement = memo(function TruckElement({
             strokeWidth={strokeWidth}
             rx={3}
           />
+          <G clipPath={`url(#truck-clip-${truck.id})`}>
+            {/* Corner flag: primary if entryDate exists, destructive if not — only for patio trucks */}
+            {!truck.spot && (
+              <Polygon
+                points={`${svgWidth - strokePadding - 10},${strokePadding} ${svgWidth - strokePadding},${strokePadding} ${svgWidth - strokePadding},${strokePadding + 10}`}
+                fill={truck.entryDate ? colors.primary : colors.destructive}
+              />
+            )}
+          </G>
           <G rotation={-90} origin={`${svgWidth / 2}, ${svgHeight / 2}`}>
             <SvgText
               x={svgWidth / 2}

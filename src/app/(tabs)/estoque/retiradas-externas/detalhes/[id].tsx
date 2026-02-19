@@ -2,12 +2,11 @@ import { useState } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { IconEdit, IconTrash, IconCheck, IconX, IconHistory, IconCurrencyReal, IconTruckDelivery } from "@tabler/icons-react-native";
-import { useExternalWithdrawal, useExternalWithdrawalMutations } from "@/hooks";
+import { useExternalWithdrawal, useExternalWithdrawalMutations, useScreenReady} from '@/hooks';
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ExternalWithdrawalInfoCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-info-card";
 import { ExternalWithdrawalItemsCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-items-card";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -19,7 +18,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
-export default function ExternalWithdrawalDetailScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function ExternalWithdrawalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
@@ -50,6 +50,8 @@ export default function ExternalWithdrawalDetailScreen() {
   });
 
   const { delete: deleteWithdrawal, update: updateWithdrawal } = useExternalWithdrawalMutations();
+
+  useScreenReady(!isLoading);
 
   const withdrawal = response?.data;
 
@@ -219,7 +221,45 @@ export default function ExternalWithdrawalDetailScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}>
+              <Skeleton style={{ height: 20, width: '50%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
+                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
+              </View>
+            </View>
+          </View>
+          {/* Info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '45%', borderRadius: 4, marginBottom: spacing.sm }} />
+            {[1, 2, 3, 4, 5].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+          {/* Items card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
+            <Skeleton style={{ height: 18, width: '35%', borderRadius: 4, marginBottom: spacing.sm }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, marginBottom: spacing.sm }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
+                  <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+                </View>
+                <Skeleton style={{ height: 12, width: '35%', borderRadius: 4 }} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !withdrawal) {

@@ -6,8 +6,10 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconChevronRight } from "@tabler/icons-react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function PreferencesIndexScreen() {
+  useScreenReady();
   const { colors } = useTheme();
   const router = useRouter();
 

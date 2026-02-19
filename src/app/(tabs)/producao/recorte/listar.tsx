@@ -7,10 +7,11 @@ import { SECTOR_PRIVILEGES, CUT_STATUS } from '@/constants/enums';
 import { CutRequestModal } from '@/components/production/cuts/form/cut-request-modal';
 import { canRequestCutForTask } from '@/utils/permissions/entity-permissions';
 import { useFileViewer } from '@/components/file';
-import { useCutMutations } from '@/hooks';
+import { useCutMutations, useScreenReady} from '@/hooks';
 import type { Cut } from '@/types';
 
 export default function CuttingListScreen() {
+  useScreenReady();
   const { user } = useAuth();
   const { actions: fileViewerActions } = useFileViewer();
   const { update } = useCutMutations();

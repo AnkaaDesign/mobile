@@ -39,8 +39,10 @@ import {
   IconLayoutGrid,
   IconLayoutList,
 } from "@tabler/icons-react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
-// Badge colors - unified neutral, more subtle (for type, brand, finish, manufacturer)
+
+import { Skeleton } from "@/components/ui/skeleton";// Badge colors - unified neutral, more subtle (for type, brand, finish, manufacturer)
 const BADGE_COLORS = {
   light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },  // neutral-200/70, neutral-600
   dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },      // neutral-700/50, neutral-300
@@ -314,6 +316,8 @@ function CatalogViewOnlyListScreen() {
     totalItemsLoaded,
     totalCount,
   } = usePaintsInfiniteMobile(queryParams, pageSize);
+
+  useScreenReady(!isLoading);
 
   // Apply client-side sorting (matching web version)
   const paints = useMemo(() => {
@@ -714,10 +718,14 @@ function CatalogViewOnlyListScreen() {
 
         {/* Content */}
         {isLoading || !viewLoaded ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <ThemedText style={styles.loadingText}>Carregando catálogo...</ThemedText>
-          </View>
+          <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+      </View>
         ) : (
           <>
             {/* Minimized View - 6 column grid */}

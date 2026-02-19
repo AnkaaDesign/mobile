@@ -22,6 +22,9 @@ import {
   IconBuildingFactory,
 } from "@tabler/icons-react-native";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function ComponentDetailsScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -29,7 +32,6 @@ export default function ComponentDetailsScreen() {
   const { delete: deleteComponent } = usePaintFormulaComponentMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -53,6 +55,8 @@ export default function ComponentDetailsScreen() {
       }
     }
   });
+
+  useScreenReady(!isLoading);
 
   // Memoize component data for display
   const componentData = useMemo(() => {
@@ -106,9 +110,50 @@ export default function ComponentDetailsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={styles.loadingText}>Carregando componente...</ThemedText>
+      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        {/* Ratio card skeleton */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          </View>
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Skeleton style={{ height: 40, width: '40%', borderRadius: 6 }} />
+            <Skeleton style={{ height: 12, width: '35%', borderRadius: 4, marginTop: 8 }} />
+          </View>
+        </View>
+        {/* Item information card skeleton */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 18, width: '70%', borderRadius: 4 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Skeleton style={{ height: 28, width: 90, borderRadius: 6 }} />
+            <Skeleton style={{ height: 28, width: 80, borderRadius: 6 }} />
+          </View>
+        </View>
+        {/* Formula card skeleton */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '30%', borderRadius: 4 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 13, width: '50%', borderRadius: 4 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+          </View>
+        </View>
       </View>
     );
   }

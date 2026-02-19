@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderScheduleMutations } from "@/hooks";
+import { useOrderScheduleMutations, useScreenReady} from '@/hooks';
 import { orderScheduleCreateSchema} from '../../../../../schemas';
 import type { OrderScheduleCreateFormData } from '../../../../../schemas';
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS } from "@/constants";
@@ -16,7 +16,6 @@ import {
   Input,
 
   Switch,
-  LoadingScreen,
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
@@ -32,7 +31,11 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function CreateAutomaticOrderScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -124,7 +127,18 @@ export default function CreateAutomaticOrderScreen() {
   }
 
   if (isSubmitting) {
-    return <LoadingScreen message="Criando agendamento automático..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   return (

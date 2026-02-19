@@ -333,3 +333,13 @@ export const PulseView: React.FC<PulseViewProps> = ({ children, isLoading = fals
 
 // Alias for backward compatibility
 export const Loading = LoadingSpinner;
+
+// Skeleton component re-exports for convenience
+export { FormSkeleton } from "./form-skeleton";
+export type { FormSkeletonProps, FormCardConfig } from "./form-skeleton";
+
+export { DashboardSkeleton } from "./dashboard-skeleton";
+export type { DashboardSkeletonProps, DashboardSectionConfig, DashboardItemLayout } from "./dashboard-skeleton";
+
+export { ConfigurableDetailSkeleton } from "./detail-skeleton";
+export type { ConfigurableDetailSkeletonProps, SectionConfig, SectionType } from "./detail-skeleton";

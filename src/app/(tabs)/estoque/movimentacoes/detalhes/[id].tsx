@@ -27,7 +27,6 @@ export default function ActivityDetailScreen() {
   const { deleteAsync } = useActivityMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Permission check
   const canManageWarehouse = useMemo(() => {
@@ -141,6 +140,8 @@ export default function ActivityDetailScreen() {
     },
     enabled: !!params.id && canManageWarehouse,
   });
+
+  useScreenReady(!isLoading);
 
   const activity = response?.data;
 

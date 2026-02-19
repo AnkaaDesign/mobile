@@ -9,6 +9,9 @@ import { IconGripVertical, IconCheck, IconX } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, Button, ErrorScreen } from "@/components/ui";
 import { usePositions, usePositionBatchMutations } from "@/hooks";
 import { useTheme } from "@/lib/theme";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { spacing, borderRadius } from "@/constants/design-system";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Position {
   id: string;
@@ -30,6 +33,8 @@ export default function PositionHierarchyScreen() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useScreenReady(!isLoading);
 
   useEffect(() => {
     if (positionsData?.data) {
@@ -134,9 +139,42 @@ export default function PositionHierarchyScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando cargos...</ThemedText>
+        {/* Header skeleton */}
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Skeleton style={{ height: 22, width: '55%', borderRadius: borderRadius.sm }} />
+          <Skeleton style={{ height: 14, width: '75%', borderRadius: borderRadius.sm, marginTop: spacing.xs }} />
+        </View>
+        {/* Button row skeleton */}
+        <View style={[styles.actionButtons]}>
+          <Skeleton style={{ flex: 1, height: 37, borderRadius: borderRadius.md }} />
+          <Skeleton style={{ flex: 1, height: 37, borderRadius: borderRadius.md }} />
+        </View>
+        {/* Position item skeletons matching the draggable list */}
+        <View style={{ paddingHorizontal: spacing.md, gap: spacing.sm }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: 12,
+                borderRadius: borderRadius.md,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.card,
+                gap: 12,
+              }}
+            >
+              {/* Grip handle area */}
+              <Skeleton style={{ width: 20, height: 20, borderRadius: borderRadius.sm }} />
+              {/* Hierarchy number */}
+              <Skeleton style={{ width: 28, height: 14, borderRadius: borderRadius.sm }} />
+              {/* Position name */}
+              <Skeleton style={{ flex: 1, height: 14, borderRadius: borderRadius.sm }} />
+              {/* Remuneration */}
+              <Skeleton style={{ width: 60, height: 12, borderRadius: borderRadius.sm }} />
+            </View>
+          ))}
         </View>
       </ThemedView>
     );

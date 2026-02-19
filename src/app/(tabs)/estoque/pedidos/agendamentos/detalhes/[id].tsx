@@ -13,7 +13,7 @@ import {
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations, useOrders } from "@/hooks";
+import { useOrderSchedule, useOrderScheduleMutations, useOrders, useScreenReady} from '@/hooks';
 import type { OrderScheduleInclude } from '../../../../../../schemas';
 import {
   ThemedView,
@@ -22,7 +22,6 @@ import {
   Badge,
   Button,
   ErrorScreen,
-  LoadingScreen,
 } from "@/components/ui";
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 
@@ -37,6 +36,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderScheduleDetailsScreen() {
   const router = useRouter();
@@ -68,6 +70,8 @@ export default function OrderScheduleDetailsScreen() {
   } = useOrderSchedule(scheduleId, {
     include,
   });
+
+  useScreenReady(!isLoading);
 
   const schedule = response?.data;
 
@@ -188,7 +192,45 @@ export default function OrderScheduleDetailsScreen() {
   }, [canEdit, scheduleId, router]);
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes do agendamento..." />;
+    return (
+      <ThemedView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent]} showsVerticalScrollIndicator={false}>
+          {/* Header card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.sm }}>
+            <Skeleton width="55%" height={22} borderRadius={4} />
+            <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+              <Skeleton width={60} height={22} borderRadius={11} />
+              <Skeleton width={80} height={22} borderRadius={11} />
+            </View>
+          </View>
+          {/* Frequency config card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="55%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} borderRadius={4} />
+                <Skeleton width="45%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+          {/* Items card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="30%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            <Skeleton width="100%" height={60} borderRadius={8} />
+          </View>
+          {/* Execution info card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="55%" height={18} borderRadius={4} style={{ marginBottom: spacing.md }} />
+            {[1, 2].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="40%" height={14} borderRadius={4} />
+                <Skeleton width="40%" height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   if (error) {

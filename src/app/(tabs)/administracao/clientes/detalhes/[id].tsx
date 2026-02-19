@@ -36,7 +36,6 @@ export default function CustomerDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const id = params?.id || "";
 
@@ -93,6 +92,8 @@ export default function CustomerDetailScreen() {
     enabled: !!id && id !== "",
   });
 
+  useScreenReady(!isLoading);
+
   const customer = response?.data;
 
   const handleEdit = () => {
@@ -112,9 +113,7 @@ export default function CustomerDetailScreen() {
   if (isLoading) {
     return (
       <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <CustomerDetailSkeleton />
-        </View>
+        <CustomerDetailSkeleton />
       </View>
     );
   }

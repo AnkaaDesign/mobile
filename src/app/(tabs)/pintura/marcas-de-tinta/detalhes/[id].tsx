@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -26,6 +25,9 @@ import {
 } from "@tabler/icons-react-native";
 import { ComponentsTable } from "@/components/painting/paint-type/detail";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function PaintBrandDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
@@ -34,7 +36,6 @@ export default function PaintBrandDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
@@ -66,6 +67,8 @@ export default function PaintBrandDetailsScreen() {
     },
     enabled: !!id,
   });
+
+  useScreenReady(!isLoading);
 
   const paintBrand = response?.data;
 
@@ -116,7 +119,68 @@ export default function PaintBrandDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da marca de tinta..." />;
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: 16, gap: 16, paddingBottom: 32 }}>
+          {/* Header card: name + action buttons */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Skeleton style={{ height: 22, width: '55%', borderRadius: 4 }} />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
+                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
+              </View>
+            </View>
+          </View>
+          {/* Basic info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+            </View>
+          </View>
+          {/* Statistics card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '35%', borderRadius: 4 }} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {[1, 2].map((i) => (
+                <View key={i} style={{ flex: 1, backgroundColor: colors.muted, borderRadius: 8, padding: 16, alignItems: 'center', gap: 8 }}>
+                  <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
+                  <Skeleton style={{ height: 28, width: '50%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 13, width: '60%', borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Related paints card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+            </View>
+            {[1, 2, 3].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                <Skeleton style={{ width: 40, height: 40, borderRadius: 6 }} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
+                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <Skeleton style={{ height: 20, width: 50, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 20, width: 45, borderRadius: 4 }} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !paintBrand) {

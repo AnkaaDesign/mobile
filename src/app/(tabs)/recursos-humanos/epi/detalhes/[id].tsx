@@ -22,6 +22,7 @@ import { DeliveriesTable, SchedulesTable } from "@/components/human-resources/pp
 
 // Import skeleton
 import { PpeDetailSkeleton } from "@/components/human-resources/ppe/skeleton";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -120,6 +121,8 @@ export default function PPEDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!itemLoading);
 
   const item = itemResponse?.data;
 

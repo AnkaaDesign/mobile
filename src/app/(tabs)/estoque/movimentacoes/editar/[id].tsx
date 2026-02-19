@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EditMovementPage() {
+  useScreenReady();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   useEffect(() => {

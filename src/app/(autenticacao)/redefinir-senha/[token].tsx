@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordResetSchema, PasswordResetFormData } from '../../../schemas';
 import { authService } from '../../../api-client';
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -21,6 +22,7 @@ import { shadow, spacing, borderRadius } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 
 export default function ResetPasswordScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const [isLoading, setIsLoading] = useState(false);

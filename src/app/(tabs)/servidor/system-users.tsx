@@ -5,7 +5,6 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
@@ -13,12 +12,14 @@ import { useSystemUsers, useDeleteSystemUser } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
-
-export default function SystemUsersScreen() {
+import { Skeleton } from "@/components/ui/skeleton";
+import { useScreenReady } from "@/hooks/use-screen-ready";export default function SystemUsersScreen() {
   const { colors } = useTheme();
   const { data, isLoading, refetch, isFetching } = useSystemUsers();
   const { mutateAsync: deleteUser } = useDeleteSystemUser();
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+
+  useScreenReady(!isLoading);
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
@@ -98,7 +99,18 @@ export default function SystemUsersScreen() {
 
         {/* Content */}
         {isLoading ? (
-          <LoadingScreen />
+          <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>
         ) : !data?.data || data.data.length === 0 ? (
           <EmptyState
             icon="users"

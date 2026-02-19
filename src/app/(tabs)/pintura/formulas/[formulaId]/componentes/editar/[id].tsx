@@ -27,14 +27,14 @@ import {
   IconEdit,
 } from "@tabler/icons-react-native";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function EditComponentScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { update: updateComponent, isLoading: isUpdating } = usePaintFormulaComponentMutations();
-
-  // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Keyboard-aware scrolling
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -65,6 +65,9 @@ export default function EditComponentScreen() {
       }
     }
   });
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady(!isLoadingComponent);
 
   // Fetch available items for selection
   const {
@@ -170,9 +173,44 @@ export default function EditComponentScreen() {
 
   if (isLoadingComponent) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={styles.loadingText}>Carregando componente...</ThemedText>
+      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        {/* Header card skeleton */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 12, width: '70%', borderRadius: 4 }} />
+            </View>
+          </View>
+        </View>
+        {/* Current component info card */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
+        </View>
+        {/* Item selection card */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 44, borderRadius: 6 }} />
+        </View>
+        {/* Ratio card */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 13, width: '55%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 44, borderRadius: 6 }} />
+        </View>
       </View>
     );
   }

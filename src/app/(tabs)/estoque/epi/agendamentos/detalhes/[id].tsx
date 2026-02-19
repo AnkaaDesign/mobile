@@ -10,8 +10,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
-import { LoadingScreen } from "@/components/ui/loading-screen";
-
 import { formatDate, formatDateTime } from "@/utils";
 
 import {
@@ -23,6 +21,10 @@ import {
   IconEdit,
   IconTrash,
 } from "@tabler/icons-react-native";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PPEScheduleDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,6 +38,8 @@ export default function PPEScheduleDetailsScreen() {
   // Mock data for now
   const schedule = null;
   const isLoading = false;
+
+  useScreenReady(!isLoading);
   const error = null;
   const refetch = async () => {};
 
@@ -68,7 +72,18 @@ export default function PPEScheduleDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando agendamento..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   if (error || !schedule) {

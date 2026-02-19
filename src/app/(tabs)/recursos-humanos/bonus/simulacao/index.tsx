@@ -6,12 +6,13 @@ import { ThemedView, ThemedText, EmptyState, Combobox } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
-import { useUsers, useTasks, usePositions } from "@/hooks";
+import { useUsers, useTasks, usePositions, useScreenReady} from '@/hooks';
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
 import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { PrivilegeGuard } from "@/components/privilege-guard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Standard position names for simulation
 const POSITION_OPTIONS = [
@@ -246,13 +247,61 @@ export default function BonusSimulationScreen() {
   }, [refetchTasks, refetchUsers]);
 
   const isLoading = tasksLoading || usersLoading;
+  useScreenReady(!isLoading);
 
   if (isLoading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando simulação...</ThemedText>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          {/* Header card skeleton: period + inputs */}
+          <View style={{ margin: 16, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, gap: 16 }}>
+            <View style={{ gap: 4 }}>
+              <Skeleton style={{ height: 12, width: 100, borderRadius: 4 }} />
+              <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 12, width: 50, borderRadius: 4 }} />
+                <Skeleton style={{ height: 42, borderRadius: 8 }} />
+              </View>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 12, width: 90, borderRadius: 4 }} />
+                <Skeleton style={{ height: 42, borderRadius: 8 }} />
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 12, width: 50, borderRadius: 4 }} />
+                <Skeleton style={{ height: 42, borderRadius: 8 }} />
+              </View>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 12, width: 45, borderRadius: 4 }} />
+                <Skeleton style={{ height: 42, borderRadius: 8 }} />
+              </View>
+            </View>
+          </View>
+          {/* Users list skeleton */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 0, gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 150, borderRadius: 4 }} />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={{ padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, gap: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Skeleton style={{ height: 18, width: '50%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 22, width: 80, borderRadius: 4 }} />
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Skeleton style={{ height: 11, width: 40, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 42, borderRadius: 8 }} />
+                  </View>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Skeleton style={{ height: 11, width: 70, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 42, borderRadius: 8 }} />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       </ThemedView>
     );

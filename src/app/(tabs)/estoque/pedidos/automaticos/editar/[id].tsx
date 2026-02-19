@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useOrderSchedule, useOrderScheduleMutations } from "@/hooks";
+import { useOrderSchedule, useOrderScheduleMutations, useScreenReady} from '@/hooks';
 import { orderScheduleUpdateSchema, mapOrderScheduleToFormData, type OrderScheduleUpdateFormData, type OrderScheduleInclude } from '../../../../../../schemas';
 import type { OrderSchedule } from '../../../../../../types';
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES, routes } from "@/constants";
@@ -18,7 +18,6 @@ import {
   Input,
   
   Switch,
-  LoadingScreen,
   ErrorScreen,
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
@@ -28,6 +27,9 @@ import { FrequencySelector } from "@/components/inventory/order/schedule/frequen
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditAutomaticOrderScreen() {
   const router = useRouter();
@@ -57,6 +59,8 @@ export default function EditAutomaticOrderScreen() {
   } = useOrderSchedule(scheduleId, {
     include,
   });
+
+  useScreenReady(!isLoadingSchedule);
 
   const schedule = response?.data as OrderSchedule | undefined;
 
@@ -161,7 +165,18 @@ export default function EditAutomaticOrderScreen() {
   }
 
   if (isLoadingSchedule) {
-    return <LoadingScreen message="Carregando agendamento..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   if (scheduleError) {
@@ -189,7 +204,18 @@ export default function EditAutomaticOrderScreen() {
   }
 
   if (isSubmitting) {
-    return <LoadingScreen message="Atualizando agendamento automático..." />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   return (

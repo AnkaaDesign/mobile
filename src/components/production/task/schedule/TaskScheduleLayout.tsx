@@ -3,7 +3,6 @@ import {
   View,
   SectionList,
   StyleSheet,
-  ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
   Dimensions,
@@ -15,11 +14,13 @@ import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
 import { FAB } from '@/components/ui/fab'
 import { ErrorScreen } from '@/components/ui/error-screen'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTheme } from '@/lib/theme'
 import { useAuth } from '@/contexts/auth-context'
 import { usePageTracker } from '@/hooks/use-page-tracker'
 import { perfLog } from '@/utils/performance-logger'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
+import { useScreenReady } from '@/hooks/use-screen-ready'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { isTeamLeader, hasPrivilege } from '@/utils/user'
@@ -208,6 +209,10 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     error: tasksError,
     refresh: refreshTasks,
   } = useTasksInfiniteMobile(queryParams);
+
+  // End navigation overlay when data is ready
+  const dataReady = !tasksLoading && !sectorsLoading;
+  useScreenReady(dataReady);
 
   // Group tasks by status for agenda view (client-side grouping is fast)
   const { preparationTasks, inProductionTasks, completedTasks } = useMemo(() => {
@@ -698,44 +703,68 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   }, [config.table.actions, user])
 
   // ============================================================================
-  // Loading State
+  // Computed loading/error flags (used inline — NO early returns to keep
+  // the component tree stable across Drawer navigator re-renders)
   // ============================================================================
 
-  if ((tasksLoading || sectorsLoading) && allTasks.length === 0) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-            Carregando cronograma...
-          </ThemedText>
-        </View>
-      </ThemedView>
-    )
-  }
+  const isInitialLoading = (tasksLoading || sectorsLoading) && allTasks.length === 0;
+  const isInitialError = !!tasksError && allTasks.length === 0;
 
-  // ============================================================================
-  // Error State
-  // ============================================================================
-
-  if (tasksError && allTasks.length === 0) {
-    return (
-      <ThemedView style={styles.container}>
+  return (
+    <ThemedView style={styles.container}>
+      {isInitialLoading ? (
+        <>
+          {/* Search bar skeleton */}
+          <View style={styles.header}>
+            <View style={styles.searchContainer}>
+              <Skeleton style={{ height: 40, borderRadius: 8 }} />
+            </View>
+            <View style={styles.actions}>
+              <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+              <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+            </View>
+          </View>
+          {/* Section skeleton — 3 sections matching agenda layout */}
+          <View style={{ padding: 8, gap: 16 }}>
+            {[1, 2, 3].map((section) => (
+              <View key={section} style={{ gap: 8 }}>
+                {/* Section header with status indicator */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingVertical: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Skeleton style={{ width: 4, height: 20, borderRadius: 2 }} />
+                    <Skeleton style={{ height: 18, width: section === 1 ? 130 : section === 2 ? 120 : 90, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 14, width: 65, borderRadius: 4 }} />
+                </View>
+                {/* Table card */}
+                <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {/* Table header row */}
+                  <View style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <Skeleton style={{ height: 12, width: 70, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 12, width: 90, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 12, width: 65, borderRadius: 4 }} />
+                  </View>
+                  {/* Table data rows */}
+                  {[1, 2, 3, 4, 5].map((row) => (
+                    <View key={row} style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: row < 5 ? 1 : 0, borderBottomColor: colors.border }}>
+                      <Skeleton style={{ height: 14, width: 70, borderRadius: 4 }} />
+                      <Skeleton style={{ height: 14, flex: 1, borderRadius: 4 }} />
+                      <Skeleton style={{ height: 14, width: 65, borderRadius: 4 }} />
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : isInitialError ? (
         <ErrorScreen
           message="Erro ao carregar cronograma"
           detail={(tasksError as Error)?.message || 'Erro desconhecido'}
           onRetry={handleRefresh}
         />
-      </ThemedView>
-    )
-  }
-
-  // ============================================================================
-  // Render
-  // ============================================================================
-
-  return (
-    <ThemedView style={styles.container}>
+      ) : (
+        <>
       {/* Header with Search and Actions */}
       <View style={styles.header}>
         <View style={styles.searchContainer}>
@@ -957,6 +986,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           icon="plus"
           onPress={handleCreate}
         />
+      )}
+
+        </>
       )}
 
       {/* Column Visibility Panel */}

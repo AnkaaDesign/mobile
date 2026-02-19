@@ -3,7 +3,6 @@ import { Stack, useLocalSearchParams, router } from "expo-router";
 import { ScrollView, View, StyleSheet, TouchableOpacity } from "react-native";
 import { usePaintDetail, useScreenReady } from '../../../../../hooks';
 import { PaintCatalogCard, PaintFormulaDetail, MobileProductionCalculator } from "@/components/painting";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Text as ThemedText } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
@@ -18,6 +17,9 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { IconEdit } from "@tabler/icons-react-native";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 const styles = StyleSheet.create({
   card: {
@@ -58,7 +60,6 @@ export default function PaintDetailsScreen() {
   const { user } = useAuth();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -88,6 +89,8 @@ export default function PaintDetailsScreen() {
     },
   });
 
+  useScreenReady(!isLoading);
+
   const paint = paintResponse?.data;
 
   if (isLoading) {
@@ -99,7 +102,41 @@ export default function PaintDetailsScreen() {
             headerBackTitle: "Voltar",
           }}
         />
-        <LoadingScreen />
+        <ScrollView style={{ flex: 1 }}>
+          <View style={{ padding: spacing.md, gap: spacing.md }}>
+            {/* Production context header card */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
+              <Skeleton width="80%" height={14} />
+            </View>
+            {/* Tabs skeleton */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={36} borderRadius={8} />
+                <Skeleton width="30%" height={36} borderRadius={8} />
+                <Skeleton width="30%" height={36} borderRadius={8} />
+              </View>
+              {/* Overview content */}
+              <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+              {[1, 2, 3, 4].map(i => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                  <Skeleton width="35%" height={14} />
+                  <Skeleton width="40%" height={14} />
+                </View>
+              ))}
+            </View>
+            {/* Production status card */}
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+              <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+              {[1, 2, 3].map(i => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                  <Skeleton width="40%" height={14} />
+                  <Skeleton width="20%" height={22} borderRadius={12} />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </>
     );
   }

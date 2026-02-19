@@ -17,6 +17,7 @@ import { TouchableOpacity } from "react-native";
 import { HolidayCard } from "@/components/human-resources/holiday/detail";
 import { HolidayDetailSkeleton } from "@/components/human-resources/holiday/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function HolidayDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -33,6 +34,8 @@ export default function HolidayDetailScreen() {
   } = useHoliday(id, {
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const holiday = response?.data;
 

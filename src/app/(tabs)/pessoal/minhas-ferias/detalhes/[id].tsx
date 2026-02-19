@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useVacation, useVacationMutations } from "@/hooks";
+import { useVacation, useVacationMutations, useScreenReady} from '@/hooks';
 import { VACATION_STATUS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ export default function MyVacationDetailScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const vacation = response?.data;
 

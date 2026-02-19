@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useUser } from "@/hooks";
+import { useUser, useScreenReady } from '@/hooks';
+import { Skeleton } from "@/components/ui/skeleton";
 import { getFileUrl } from "@/utils/file-utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -130,6 +131,8 @@ export default function EmployeeDetailScreen() {
     enabled: !!id && id !== "",
   });
 
+  useScreenReady(!isLoading);
+
   const employee = response?.data;
 
   const handleRefresh = useCallback(() => {
@@ -142,14 +145,52 @@ export default function EmployeeDetailScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Card style={styles.loadingCard}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando dados do funcionário...
-            </ThemedText>
-          </Card>
-        </View>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView style={styles.scrollView}>
+          <View style={[styles.container, { paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.md }]}>
+            {/* Profile header card skeleton */}
+            <Card style={{ padding: spacing.lg }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Skeleton style={{ width: 64, height: 64, borderRadius: 32 }} />
+                <View style={{ marginLeft: spacing.lg, flex: 1, gap: 8 }}>
+                  <Skeleton style={{ height: 20, width: '60%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 22, width: '30%', borderRadius: 10 }} />
+                </View>
+              </View>
+            </Card>
+            {/* Contact card skeleton */}
+            <Card style={{ padding: spacing.md, gap: 12 }}>
+              <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+              <View style={{ gap: 10 }}>
+                {[1, 2].map((i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+                    <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Skeleton style={{ height: 11, width: '20%', borderRadius: 4 }} />
+                      <Skeleton style={{ height: 15, width: '55%', borderRadius: 4 }} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </Card>
+            {/* Professional info card skeleton */}
+            <Card style={{ padding: spacing.md, gap: 12 }}>
+              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
+              <View style={{ gap: 10 }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+                    <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Skeleton style={{ height: 11, width: '20%', borderRadius: 4 }} />
+                      <Skeleton style={{ height: 15, width: `${40 + i * 5}%`, borderRadius: 4 }} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </Card>
+          </View>
+        </ScrollView>
       </ThemedView>
     );
   }

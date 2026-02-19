@@ -9,8 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EmployeesCreateScreen() {
+  useScreenReady();
   const { colors } = useTheme();
   const [formData, setFormData] = useState({
     name: "",

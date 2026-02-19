@@ -1,4 +1,4 @@
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,9 +12,10 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { Text } from "@/components/ui/text";
 
-import { usePpeDeliveryMutations, usePpeDelivery, useItems, useUsers } from "@/hooks";
+import { usePpeDeliveryMutations, usePpeDelivery, useItems, useUsers, useScreenReady} from '@/hooks';
 import { PPE_DELIVERY_STATUS } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PPEDeliveryUpdateFormData {
   itemId?: string;
@@ -52,6 +53,8 @@ export default function EditPPEDeliveryScreen() {
   });
 
   const isLoading = updateMutation.isPending || isDeliveryLoading;
+
+  useScreenReady(!isLoading);
 
   const itemOptions: ComboboxOption[] =
     items?.data?.map((item) => ({
@@ -94,12 +97,19 @@ export default function EditPPEDeliveryScreen() {
 
   if (isDeliveryLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-          Carregando entrega...
-        </Text>
-      </View>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -258,10 +268,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    marginTop: 8,
   },
   errorText: {
     fontSize: 16,

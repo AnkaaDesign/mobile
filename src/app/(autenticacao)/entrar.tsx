@@ -3,6 +3,7 @@ import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboar
 import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 import { signInSchema, SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
@@ -21,6 +22,7 @@ import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
 
 export default function LoginScreen() {
+  useScreenReady();
   const router = useRouter();
   const { login } = useAuth();
   const { clearHistory } = useNavigationHistory();

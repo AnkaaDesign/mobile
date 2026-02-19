@@ -9,6 +9,7 @@ import { useMySecullumCalculations } from "@/hooks/secullum";
 import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
 import type { CalculationRow } from "@/types/secullum";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },
@@ -82,6 +83,8 @@ export default function MeusPontosScreen() {
     startDate,
     endDate,
   });
+
+  useScreenReady(!isLoading);
 
   // Parse calculation data (same approach as web version)
   const calculations: CalculationRow[] = useMemo(() => {

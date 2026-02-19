@@ -2,12 +2,11 @@ import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useObservationDetail, useObservationMutations } from "@/hooks";
+import { useObservationDetail, useObservationMutations, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -18,6 +17,9 @@ import {
   ObservationInfoCard,
   ObservationFilesCard,
 } from "@/components/production/observation/detail";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ObservationDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -67,6 +69,8 @@ export default function ObservationDetailsScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const observation = response?.data;
 
@@ -120,7 +124,35 @@ export default function ObservationDetailsScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando detalhes da observação..." />;
+    return (
+      <ScrollView style={{ flex: 1 }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Header card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="70%" height={22} />
+          </View>
+          {/* Info card skeleton - task name, customer, description */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+            <Skeleton width="100%" height={60} borderRadius={8} style={{ marginTop: spacing.sm }} />
+          </View>
+          {/* Files card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="30%" height={18} style={{ marginBottom: spacing.md }} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <Skeleton width={80} height={80} borderRadius={8} />
+              <Skeleton width={80} height={80} borderRadius={8} />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   if (error || !observation) {

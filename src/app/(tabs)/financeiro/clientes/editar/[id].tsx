@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconReceipt2, IconDeviceFloppy, IconX, IconSearch, IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useCustomer, useCustomerMutations, useCnpjLookup, useCepLookup } from "@/hooks";
+import { useCustomer, useCustomerMutations, useCnpjLookup, useCepLookup, useScreenReady} from '@/hooks';
 import { customerUpdateSchema, type CustomerUpdateFormData } from "@/schemas";
 import {
   ThemedView,
@@ -128,6 +128,8 @@ export default function FinancialCustomerEditScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
 
   const {
     control,

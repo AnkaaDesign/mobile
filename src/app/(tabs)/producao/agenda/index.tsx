@@ -16,8 +16,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTaskDetailMinimalInclude } from "@/hooks/use-task-detail-include";
 import { getTaskById } from "@/api-client";
 import { taskKeys } from "@/hooks/queryKeys";
-
 export default function ProductionPreparationScreen() {
+  // useScreenReady is called inside TaskScheduleLayout with data loading state
   const { user } = useAuth();
   const { pushWithLoading } = useNavigationLoading();
   const queryClient = useQueryClient();

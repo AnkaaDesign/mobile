@@ -26,6 +26,9 @@ import {
   IconBoxSeam,
 } from "@tabler/icons-react-native";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function EditPaintTypeScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -33,7 +36,6 @@ export default function EditPaintTypeScreen() {
   const { update } = usePaintTypeMutations();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemSearch] = useState("");
@@ -53,6 +55,8 @@ export default function EditPaintTypeScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoading);
   const paintType = paintTypeResponse?.data;
 
   // Fetch component items
@@ -142,9 +146,54 @@ export default function EditPaintTypeScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <ThemedText style={styles.loadingText}>Carregando tipo de tinta...</ThemedText>
+      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        {/* Header card skeleton */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 12, width: '70%', borderRadius: 4 }} />
+            </View>
+          </View>
+        </View>
+        {/* Basic info card: name field */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 44, borderRadius: 6 }} />
+        </View>
+        {/* Ground configuration card */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 13, width: '80%', borderRadius: 4 }} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ gap: 4, flex: 1 }}>
+              <Skeleton style={{ height: 15, width: '45%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 12, width: '75%', borderRadius: 4 }} />
+            </View>
+            <Skeleton style={{ width: 44, height: 26, borderRadius: 13 }} />
+          </View>
+        </View>
+        {/* Components card */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: '35%', borderRadius: 4 }} />
+          </View>
+          <Skeleton style={{ height: 44, borderRadius: 6 }} />
+        </View>
+        {/* Action buttons skeleton */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Skeleton style={{ height: 44, flex: 1, borderRadius: 8 }} />
+          <Skeleton style={{ height: 44, flex: 1, borderRadius: 8 }} />
+        </View>
       </View>
     );
   }

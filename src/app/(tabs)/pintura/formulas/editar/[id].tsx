@@ -1,4 +1,4 @@
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Stack, router, useLocalSearchParams, Redirect } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,15 @@ import { spacing } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
 
+
+import { Skeleton } from "@/components/ui/skeleton";
+
 export default function EditFormulaScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   // Check user permissions
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -27,6 +29,8 @@ export default function EditFormulaScreen() {
     },
     enabled: !!id && canEdit,
   });
+
+  useScreenReady(!isLoading);
 
   const formula = response?.data;
 
@@ -63,9 +67,21 @@ export default function EditFormulaScreen() {
             title: "Editar Fórmula",
           }}
         />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={styles.loadingText}>Carregando fórmula...</ThemedText>
+        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+          {/* Header info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
+              <Skeleton style={{ height: 18, width: '50%', borderRadius: 4 }} />
+            </View>
+            <Skeleton style={{ height: 13, width: '70%', borderRadius: 4 }} />
+          </View>
+          {/* Redirect info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+            <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 13, width: '80%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 13, width: '65%', borderRadius: 4 }} />
+          </View>
         </View>
       </>
     );

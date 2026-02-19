@@ -17,6 +17,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 // Import modular components
 import { DeliveryCard, EmployeeCard, ItemDetailsCard } from "@/components/human-resources/ppe/delivery/detail";
 import { PpeDeliveryDetailSkeleton } from "@/components/human-resources/ppe/delivery/skeleton";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function HRPPEDeliveryDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -52,6 +53,8 @@ export default function HRPPEDeliveryDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const delivery = response?.data;
 

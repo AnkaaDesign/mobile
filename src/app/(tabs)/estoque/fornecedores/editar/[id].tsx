@@ -4,9 +4,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll, useCepLookup } from "@/hooks";
+import { useSupplierDetail, useUpdateSupplier, useKeyboardAwareScroll, useCepLookup, useScreenReady} from '@/hooks';
 import { supplierUpdateSchema, type SupplierUpdateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Button } from "@/components/ui/button";
 import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -17,6 +19,9 @@ import { TagManager } from "@/components/inventory/supplier/form";
 import { PhoneArrayInput } from "@/components/ui";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { formSpacing } from "@/constants/form-styles";
+
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SupplierEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -39,6 +44,8 @@ export default function SupplierEditScreen() {
   const { data: supplier, isLoading, error } = useSupplierDetail(id!, {
     enabled: !!id,
   });
+
+  useScreenReady(!isLoading);
 
   const form = useForm<SupplierUpdateFormData>({
     resolver: zodResolver(supplierUpdateSchema),
@@ -252,9 +259,14 @@ export default function SupplierEditScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
         </View>
+      </View>
       </SafeAreaView>
     );
   }
@@ -262,8 +274,12 @@ export default function SupplierEditScreen() {
   if (error || !supplier?.data) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.errorContainer}>
+          <ThemedText style={styles.errorTitle}>Fornecedor não encontrado</ThemedText>
+          <ThemedText style={styles.errorMessage}>O fornecedor que você está procurando não existe ou foi removido.</ThemedText>
+          <Button onPress={handleCancel}>
+            <ThemedText style={styles.buttonText}>Voltar para lista</ThemedText>
+          </Button>
         </View>
       </SafeAreaView>
     );
@@ -632,5 +648,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  errorMessage: {
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: "white",
   },
 });

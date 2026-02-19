@@ -7,7 +7,6 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -31,8 +30,10 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
-interface TimeAdjustmentRequest {
+
+import { Skeleton } from "@/components/ui/skeleton";interface TimeAdjustmentRequest {
   Id: number;
   Data: string;
   DataFim: string | null;
@@ -171,6 +172,8 @@ export default function RequisitionsListScreen() {
     error,
     refetch,
   } = useSecullumRequests(showPending);
+
+  useScreenReady(!isLoading);
 
   // Mutations for approve/reject
   const approveMutation = useSecullumApproveRequest();
@@ -576,7 +579,18 @@ export default function RequisitionsListScreen() {
   };
 
   if (isLoading && !refreshing) {
-    return <LoadingScreen />;
+    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+        </View>
+        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+        </View>
+      </View>;
   }
 
   if (error) {

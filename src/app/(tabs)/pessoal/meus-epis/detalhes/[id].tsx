@@ -2,10 +2,9 @@ import { useState } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePpeDelivery } from "@/hooks";
+import { usePpeDelivery, useScreenReady} from '@/hooks';
 import { ThemedView } from "@/components/ui/themed-view";
 import { Header } from "@/components/ui/header";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -16,7 +15,8 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 // Import detail card components
 import { PpeDeliveryCard, PpeItemCard, CertificateCard } from "@/components/personal/ppe-delivery/detail";
 
-export default function PpeDeliveryDetailScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function PpeDeliveryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -42,6 +42,8 @@ export default function PpeDeliveryDetailScreen() {
     enabled: !!id,
   });
 
+  useScreenReady(!isLoading);
+
   const delivery = response?.data;
 
   const handleRefresh = async () => {
@@ -54,7 +56,44 @@ export default function PpeDeliveryDetailScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Header card skeleton */}
+        <View style={{ margin: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <Skeleton style={{ width: 40, height: 40, borderRadius: 20 }} />
+            <View style={{ flex: 1, gap: 8 }}>
+              <Skeleton style={{ height: 20, width: '60%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+            </View>
+          </View>
+        </View>
+        {/* Delivery info card skeleton */}
+        <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
+          <View style={{ gap: 10 }}>
+            {[['30%', '30%'], ['35%', '25%'], ['28%', '35%']].map(([l, r], i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton width={l} height={14} borderRadius={4} />
+                <Skeleton width={r} height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </View>
+        {/* Item info card skeleton */}
+        <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
+          <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
+          <View style={{ gap: 10 }}>
+            {[['25%', '40%'], ['30%', '20%']].map(([l, r], i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton width={l} height={14} borderRadius={4} />
+                <Skeleton width={r} height={14} borderRadius={4} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
   }
 
   if (error || !delivery) {

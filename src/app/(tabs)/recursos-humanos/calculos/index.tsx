@@ -14,6 +14,7 @@ import { USER_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CalculationRow } from "@/types/secullum";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },
@@ -124,6 +125,8 @@ export default function CalculationsListScreen() {
       endDate,
     } : undefined
   );
+
+  useScreenReady(!isLoading);
 
   // Parse calculation data
   const calculations: CalculationRow[] = useMemo(() => {

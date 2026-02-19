@@ -7,8 +7,10 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUsers, IconList, IconSearch } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function FuncionariosIndexScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

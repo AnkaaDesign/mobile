@@ -3,7 +3,8 @@
 
 import React, { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
-import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "react-native";
+import { DrawerActions } from "@react-navigation/native";
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
@@ -13,9 +14,8 @@ import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
-import { router, usePathname, useNavigation } from "expo-router";
+import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
-import { navigationTracker } from '@/utils/navigation-tracker';
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -51,6 +51,11 @@ const ALL_ROUTES = [
   { name: "administracao/clientes/listar", title: "Clientes" },
   { name: "administracao/clientes/detalhes/[id]", title: "Detalhes do Cliente" },
   { name: "administracao/clientes/editar/[id]", title: "Editar Cliente" },
+  { name: "administracao/representantes/index", title: "Representantes" },
+  { name: "administracao/representantes/listar", title: "Representantes" },
+  { name: "administracao/representantes/cadastrar", title: "Cadastrar Representante" },
+  { name: "administracao/representantes/detalhes/[id]", title: "Detalhes do Representante" },
+  { name: "administracao/representantes/editar/[id]", title: "Editar Representante" },
   { name: "administracao/colaboradores/index", title: "Colaboradores" },
   { name: "administracao/colaboradores/cadastrar", title: "Cadastrar Colaborador" },
   { name: "administracao/colaboradores/editar-em-lote", title: "Editar Colaboradores em Lote" },
@@ -500,6 +505,13 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
+    // COMMERCIAL users can access representative routes and customer routes
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.COMMERCIAL) && (
+      path.startsWith('administracao/representantes/') ||
+      path.startsWith('administracao/clientes/')
+    )) {
+      return true;
+    }
     // NOTE: Team leader routes (meu-pessoal/) are now filtered at component level
     // via isTeamLeader() check, not by privilege. Remove privilege-based filter.
     // Note: DESIGNER users should use /catalogo (view-only) instead of /pintura
@@ -578,7 +590,8 @@ const NotificationBell = React.memo(function NotificationBell({ color, onPress }
 
 // Extracted HeaderBackButton component to prevent unmount/remount on every render
 interface HeaderBackButtonProps {
-  pathname: string;
+  routeName: string;
+  goBack: () => void;
   isNavigatingRef: React.RefObject<boolean>;
   startNavigation: () => void;
   isDark: boolean;
@@ -587,15 +600,16 @@ interface HeaderBackButtonProps {
 }
 
 const HeaderBackButton = React.memo(function HeaderBackButton({
-  pathname,
+  routeName,
+  goBack,
   isNavigatingRef,
   startNavigation,
   isDark,
   headerText,
   buttonPressed,
 }: HeaderBackButtonProps) {
-  // Determine if we should show back button - never show on home page
-  const showBackButton = pathname !== '/(tabs)/inicio';
+  // Use route.name from screenOptions — synchronously correct, not stale like pathname
+  const showBackButton = routeName !== 'inicio';
 
   if (!showBackButton) {
     // Add spacing even when there's no back button for consistency
@@ -606,105 +620,22 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
     <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
       <Pressable
         onPress={() => {
+          // Haptic feedback for immediate tactile response
+          if (Platform.OS === 'ios') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+
           // Show loading overlay for visual feedback
           if (!isNavigatingRef.current) {
             startNavigation();
           }
 
-          // Use router.replace() to navigate to parent without growing the stack.
-          // router.back() is broken with Drawer navigator.
-          // router.push() causes stack growth — old screens stay mounted (unmountOnBlur: false).
-
-          let targetRoute: string | null = null;
-
-          if (pathname.includes('/detalhes/')) {
-            if (pathname.includes('/producao/agenda/detalhes/')) {
-              targetRoute = '/(tabs)/producao/agenda';
-            } else if (pathname.includes('/producao/cronograma/detalhes/')) {
-              targetRoute = '/(tabs)/producao/cronograma';
-            } else if (pathname.includes('/producao/ordens-de-servico/detalhes/')) {
-              targetRoute = '/(tabs)/producao/ordens-de-servico';
-            } else {
-              const pathParts = pathname.split('/');
-              const section = pathParts.slice(0, pathParts.indexOf('detalhes')).join('/');
-              targetRoute = section;
-            }
-
-          } else if (pathname.includes('/layout/')) {
-            targetRoute = '/(tabs)/inicio';
-            if (navigationTracker.hasSource()) {
-              const source = navigationTracker.getSource();
-              if (source) {
-                targetRoute = source;
-                navigationTracker.clearSource();
-              }
-            } else if (pathname.includes('/producao/cronograma/layout/')) {
-              targetRoute = '/(tabs)/producao/cronograma';
-            } else {
-              const pathParts = pathname.split('/');
-              const section = pathParts.slice(0, pathParts.indexOf('layout')).join('/');
-              targetRoute = section;
-            }
-
-          } else if (pathname.includes('/precificacao/')) {
-            targetRoute = '/(tabs)/inicio';
-            if (navigationTracker.hasSource()) {
-              const source = navigationTracker.getSource();
-              if (source) {
-                targetRoute = source;
-                navigationTracker.clearSource();
-              }
-            } else if (pathname.includes('/producao/agenda/precificacao/')) {
-              targetRoute = '/(tabs)/producao/agenda';
-            } else {
-              const pathParts = pathname.split('/');
-              const section = pathParts.slice(0, pathParts.indexOf('precificacao')).join('/');
-              targetRoute = section;
-            }
-
-          } else if (pathname.includes('/editar/')) {
-            targetRoute = '/(tabs)/inicio';
-            if (navigationTracker.hasSource()) {
-              const source = navigationTracker.getSource();
-              if (source) {
-                targetRoute = source;
-                navigationTracker.clearSource();
-              }
-            } else if (pathname.includes('/producao/')) {
-              targetRoute = '/(tabs)/producao/agenda';
-            } else if (pathname.includes('/ordens-de-servico/')) {
-              targetRoute = '/(tabs)/producao/ordens-de-servico';
-            } else {
-              const pathParts = pathname.split('/');
-              const section = pathParts.slice(0, pathParts.indexOf('editar')).join('/');
-              targetRoute = section;
-            }
-
-          } else if (pathname.includes('/cadastrar')) {
-            if (pathname.includes('/producao/agenda/cadastrar')) {
-              targetRoute = '/(tabs)/producao/agenda';
-            } else if (pathname.includes('/producao/cronograma/cadastrar')) {
-              targetRoute = '/(tabs)/producao/cronograma';
-            } else if (pathname.includes('/producao/ordens-de-servico/cadastrar')) {
-              targetRoute = '/(tabs)/producao/ordens-de-servico';
-            } else {
-              targetRoute = pathname.replace('/cadastrar', '');
-            }
-
-          } else if (pathname === '/(tabs)/inicio' || pathname === '/inicio') {
-            // Already at home, do nothing
-
-          } else {
-            targetRoute = '/(tabs)/inicio';
-          }
-
-          // Defer navigation to next frame so overlay renders before heavy work
-          if (targetRoute) {
-            const route = targetRoute;
-            requestAnimationFrame(() => {
-              router.replace(route as any);
-            });
-          }
+          // Defer navigation to next frame so overlay renders before heavy work starts
+          requestAnimationFrame(() => {
+            // Delegate to NavigationHistoryContext.goBack() which uses history
+            // when available, or computes the parent route from the current pathname
+            goBack();
+          });
         }}
         style={({ pressed }) => [
           styles.headerButton,
@@ -775,7 +706,6 @@ function InnerLayout() {
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
   const { setDrawerMode } = useDrawerMode();
-  const pathname = usePathname();
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
@@ -842,32 +772,39 @@ function InnerLayout() {
     }
   }, [user]);
 
-  // Guard ref to prevent rapid drawer open/close races
-  const drawerOperationRef = useRef(false);
+  // Timestamp-based debounce for drawer operations (100ms)
+  const lastDrawerOpenRef = useRef(0);
 
   // Handler to open notifications drawer
   // IMPORTANT: These hooks must be called BEFORE any conditional returns to avoid
   // "Rendered fewer hooks than expected" error when user logs out
   const openNotificationsDrawer = useCallback((navigation: any) => {
-    if (drawerOperationRef.current) return;
-    drawerOperationRef.current = true;
+    const now = Date.now();
+    if (now - lastDrawerOpenRef.current < 100) return;
+    lastDrawerOpenRef.current = now;
     setDrawerMode('notifications');
-    requestAnimationFrame(() => {
-      navigation.openDrawer();
-      setTimeout(() => { drawerOperationRef.current = false; }, 500);
-    });
+    navigation.dispatch(DrawerActions.openDrawer());
   }, [setDrawerMode]);
 
   // Handler to open menu drawer
   const openMenuDrawer = useCallback((navigation: any) => {
-    if (drawerOperationRef.current) return;
-    drawerOperationRef.current = true;
+    const now = Date.now();
+    if (now - lastDrawerOpenRef.current < 100) return;
+    lastDrawerOpenRef.current = now;
     setDrawerMode('menu');
-    requestAnimationFrame(() => {
-      navigation.openDrawer();
-      setTimeout(() => { drawerOperationRef.current = false; }, 500);
-    });
+    navigation.dispatch(DrawerActions.openDrawer());
   }, [setDrawerMode]);
+
+  // Reset stale state when app returns from background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        // Reset debounce so drawer can open immediately after returning
+        lastDrawerOpenRef.current = 0;
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   // Show loading screen while auth is being determined or during logout redirect
   // This must come AFTER all hooks are called
@@ -912,7 +849,8 @@ function InnerLayout() {
           swipeEnabled: !route.name.includes('notifications'),
           headerLeft: () => (
             <HeaderBackButton
-              pathname={pathname}
+              routeName={route.name}
+              goBack={goBack}
               isNavigatingRef={isNavigatingRef}
               startNavigation={startNavigation}
               isDark={isDark}

@@ -8,6 +8,7 @@ import { useAdministrationDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function AdministracaoScreen() {
   const { colors } = useTheme();
@@ -17,6 +18,8 @@ export default function AdministracaoScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: dashboard, isLoading, error, refetch } = useAdministrationDashboard({ timePeriod });
+
+  useScreenReady(!isLoading);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

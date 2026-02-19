@@ -19,9 +19,6 @@ export default function EditPaintScreen() {
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // End navigation loading overlay when screen mounts
-  useScreenReady();
-
   const {
     data: response,
     isLoading: isLoadingPaint,
@@ -46,6 +43,9 @@ export default function EditPaintScreen() {
       },
     },
   });
+
+  // End navigation loading overlay when screen mounts
+  useScreenReady(!isLoadingPaint);
 
   const paint = response?.data;
 

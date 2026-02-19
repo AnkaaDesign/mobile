@@ -4,7 +4,7 @@ import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } f
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useObservation, useObservationMutations } from "@/hooks";
+import { useObservation, useObservationMutations, useScreenReady} from '@/hooks';
 import { observationUpdateSchema, type ObservationUpdateFormData } from "@/schemas";
 import { ErrorScreen, ThemedText, ThemedView, Card, Button, Input, Skeleton, SimpleFormField } from "@/components/ui";
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
@@ -60,6 +60,8 @@ export default function EditObservationScreen() {
       files: true,
     },
   });
+
+  useScreenReady(!isLoadingObservation);
 
   const observation = observationResponse?.data;
 

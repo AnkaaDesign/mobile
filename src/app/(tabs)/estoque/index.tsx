@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
 import { formatCurrency } from "@/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EstoqueScreen() {
   const { colors } = useTheme();
@@ -18,6 +19,8 @@ export default function EstoqueScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: dashboard, isLoading, error, refetch } = useInventoryDashboard({ timePeriod, includeInactive: false });
+
+  useScreenReady(!isLoading);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

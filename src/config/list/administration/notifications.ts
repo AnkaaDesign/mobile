@@ -23,7 +23,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
   title: 'Notificações',
 
   query: {
-    hook: 'useNotificationsInfiniteMobile',
+    hook: 'useAdminNotificationsInfiniteMobile',
     defaultSort: { field: 'sentAt', direction: 'desc' },
     pageSize: 25,
     include: {

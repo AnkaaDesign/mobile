@@ -26,6 +26,7 @@ export * from "./order";
 export * from "./paint";
 export * from "./paint-brand";
 export * from "./position";
+export * from "./representative";
 export * from "./preferences";
 export * from "./warning";
 export * from "./sector";

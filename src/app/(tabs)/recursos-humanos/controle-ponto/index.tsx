@@ -13,6 +13,7 @@ import { CalculationsTable, CalculationsColumnDrawer } from "@/components/person
 import { USER_STATUS } from "@/constants";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 interface TimeEntry {
   id: string;
@@ -120,6 +121,8 @@ export default function TimeEntriesListScreen() {
     error,
     refetch,
   } = useSecullumTimeEntries(queryParams);
+
+  useScreenReady(!isLoading);
 
   // Transform time entries
   const timeEntries = useMemo(() => {

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordRecoverySchema, PasswordRecoveryFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -19,6 +20,7 @@ import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
 
 export default function RecoverPasswordScreen() {
+  useScreenReady();
   const router = useRouter();
   const { recoverPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);

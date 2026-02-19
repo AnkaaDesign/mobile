@@ -6,23 +6,24 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { SkeletonCard } from "@/components/ui/loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
+import { useTheme } from "@/lib/theme";
 import type { PaintFormula } from "@/types";
 import type { PaintUpdateFormData, PaintFormulaCreateFormData } from "@/schemas";
 
 export default function EditCatalogScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
   const { updateAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const {
     data: response,
@@ -39,6 +40,8 @@ export default function EditCatalogScreen() {
       },
     },
   });
+
+  useScreenReady(!isLoadingPaint);
 
   const paint = response?.data;
 
@@ -124,9 +127,28 @@ export default function EditCatalogScreen() {
         />
         <ThemedView style={styles.container}>
           <View style={styles.skeletonContainer}>
-            <SkeletonCard style={styles.skeleton} />
-            <SkeletonCard style={styles.skeleton} />
-            <SkeletonCard style={styles.skeleton} />
+            {/* Header info card: name, code, hex */}
+            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }]}>
+              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+              <Skeleton style={{ height: 14, width: '20%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+              <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+            </View>
+            {/* Type/brand/finish selectors */}
+            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }]}>
+              <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 40, borderRadius: 6 }} />
+            </View>
+            {/* Formulas card */}
+            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }]}>
+              <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '70%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
+            </View>
           </View>
         </ThemedView>
       </>

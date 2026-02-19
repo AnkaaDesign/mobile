@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMaintenance } from '@/hooks';
+import { useMaintenance, useScreenReady} from '@/hooks';
 import { ThemedView, ThemedText, Card, ErrorScreen, Button, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
 import { formatDate, formatDateTime } from '@/utils';
@@ -9,6 +9,7 @@ import { MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS } from '@/constant
 import { useState, useCallback } from 'react';
 import { IconCalendar, IconAlertCircle, IconClock } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MaintenanceScheduleDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +25,8 @@ export default function MaintenanceScheduleDetailsScreen() {
       triggeredSchedules: true,
     },
   });
+
+  useScreenReady(!isLoading);
   const schedule = (scheduleResponse?.data || null) as any;
 
   const handleRefresh = useCallback(async () => {
@@ -37,11 +40,25 @@ export default function MaintenanceScheduleDetailsScreen() {
 
   if (isLoading && !refreshing) {
     return (
-      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={styles.loadingContainer}>
-          <ThemedText style={styles.loadingText}>Carregando agendamento...</ThemedText>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Schedule info card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+              <Skeleton width="55%" height={20} />
+              <Skeleton width={70} height={24} borderRadius={12} />
+            </View>
+            {/* Schedule details section */}
+            <Skeleton width="50%" height={16} style={{ marginBottom: spacing.md }} />
+            {[1, 2, 3, 4].map(i => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                <Skeleton width="35%" height={14} />
+                <Skeleton width="45%" height={14} />
+              </View>
+            ))}
+          </View>
         </View>
-      </ThemedView>
+      </ScrollView>
     );
   }
 
@@ -196,14 +213,6 @@ export default function MaintenanceScheduleDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
   },
   scrollView: {
     flex: 1,

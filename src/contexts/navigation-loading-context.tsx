@@ -15,6 +15,8 @@ interface NavigationLoadingContextType {
   startNavigation: () => void;
   /** End navigation and hide overlay */
   endNavigation: () => void;
+  /** Claim overlay — prevents auto-hide on pathname change until endNavigation() is called */
+  claimOverlay: () => void;
   /** Force reset all navigation state (emergency use only) */
   forceReset: () => void;
   /** Navigate with automatic loading state management */
@@ -49,6 +51,10 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previousPathnameRef = useRef<string | null>(null);
 
+  // When a screen calls claimOverlay(), auto-hide on pathname change is suppressed.
+  // The screen must call endNavigation() explicitly (via useScreenReady(isReady)).
+  const overlayClaimedRef = useRef(false);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -61,6 +67,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const showOverlay = useCallback(() => {
     // Set ref immediately for synchronous double-click guard
     isNavigatingRef.current = true;
+    overlayClaimedRef.current = false; // Reset claim for new navigation
     setOverlayVisible(true);
 
     // Clear any existing timeout
@@ -73,6 +80,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   const hideOverlay = useCallback(() => {
     // Clear ref immediately
     isNavigatingRef.current = false;
+    overlayClaimedRef.current = false;
     setOverlayVisible(false);
 
     // Clear any pending timeouts
@@ -80,6 +88,10 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+  }, []);
+
+  const claimOverlay = useCallback(() => {
+    overlayClaimedRef.current = true;
   }, []);
 
   // Failsafe: force hide if stuck too long
@@ -94,13 +106,15 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     }
   }, [overlayVisible, hideOverlay]);
 
-  // Auto-end navigation when pathname changes (navigation completed)
+  // Auto-end navigation when pathname changes (fallback for already-mounted screens
+  // whose useScreenReady() won't re-fire). Skipped if a screen has claimed the overlay
+  // via claimOverlay() — those screens manage dismissal via useScreenReady(isReady).
   useEffect(() => {
     if (pathname && previousPathnameRef.current !== pathname) {
       previousPathnameRef.current = pathname;
 
-      // If overlay is visible, hide it — navigation completed
-      if (isNavigatingRef.current) {
+      // If overlay is visible and not claimed by a screen, hide it
+      if (isNavigatingRef.current && !overlayClaimedRef.current) {
         hideOverlay();
       }
     }
@@ -201,6 +215,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     isNavigatingRef,
     startNavigation,
     endNavigation,
+    claimOverlay,
     forceReset,
     navigateWithLoading,
     pushWithLoading,
@@ -210,6 +225,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   }), [
     startNavigation,
     endNavigation,
+    claimOverlay,
     forceReset,
     navigateWithLoading,
     pushWithLoading,

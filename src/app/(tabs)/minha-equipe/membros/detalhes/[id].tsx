@@ -33,7 +33,6 @@ export default function TeamMemberDetailsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const id = params?.id || "";
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
@@ -57,6 +56,8 @@ export default function TeamMemberDetailsScreen() {
   } = useTeamStaffUsers(queryParams, {
     enabled: !!id && id !== "" && userIsTeamLeader,
   });
+
+  useScreenReady(!isLoading);
 
   // Extract the employee from the response (first item since we filter by ID)
   const employee = useMemo(() => {

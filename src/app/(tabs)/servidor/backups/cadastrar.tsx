@@ -13,6 +13,7 @@ import { useBackupMutations } from "@/hooks/useBackup";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 const styles = StyleSheet.create({
   card: {
@@ -42,6 +43,7 @@ const styles = StyleSheet.create({
 });
 
 export default function CreateBackupScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const { create } = useBackupMutations();

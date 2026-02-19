@@ -5,16 +5,21 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField, FormFieldGroup } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Combobox } from '@/components/ui/combobox';
 import { CustomerSelector } from '../customer-selector';
+import { PlateTagsInput } from '../plate-tags-input';
+import { SerialNumberRangeInput } from '../serial-number-range-input';
 import { toTitleCase } from '@/utils/formatters';
 import { useAuth } from '@/hooks/useAuth';
 import { useSectors } from '@/hooks';
+import { useTheme } from '@/lib/theme';
+import { ThemedText } from '@/components/ui/themed-text';
+import { IconCopy } from '@tabler/icons-react-native';
 import {
   TRUCK_CATEGORY,
   IMPLEMENT_TYPE,
@@ -45,6 +50,22 @@ export default function BasicInfoSection({
 }: BasicInfoSectionProps) {
   const { control, watch } = useFormContext();
   const { user } = useAuth();
+  const { colors } = useTheme();
+
+  // Watch plates and serial numbers for task count preview (create mode only)
+  const plates = useWatch({ control, name: 'plates' }) || [];
+  const serialNumbers = useWatch({ control, name: 'serialNumbers' }) || [];
+
+  // Calculate expected task count for batch creation
+  const expectedTaskCount = React.useMemo(() => {
+    if (mode !== 'create') return 1;
+    const plateCount = plates.length || 1;
+    const serialCount = serialNumbers.length || 1;
+    if (plates.length > 0 && serialNumbers.length > 0) {
+      return plateCount * serialCount;
+    }
+    return Math.max(plateCount, serialCount);
+  }, [mode, plates.length, serialNumbers.length]);
 
   // Check user sector privileges
   const userPrivilege = user?.sector?.privileges;
@@ -226,6 +247,46 @@ export default function BasicInfoSection({
           )}
         />
       </SimpleFormField>
+
+      {/* Plates - Only in create mode (batch creation) */}
+      {mode === 'create' && (
+        <PlateTagsInput
+          control={control}
+          disabled={isSubmitting || serialNumbers.length > 1}
+        />
+      )}
+
+      {/* Serial Numbers - Only in create mode (batch creation) */}
+      {mode === 'create' && (
+        <SerialNumberRangeInput
+          control={control}
+          disabled={isSubmitting || plates.length > 1}
+        />
+      )}
+
+      {/* Task Count Preview - Only when combining plates and serial numbers */}
+      {mode === 'create' && plates.length > 0 && serialNumbers.length > 0 && expectedTaskCount > 1 && (
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: 12,
+          padding: 12,
+          borderRadius: 8,
+          borderWidth: 1,
+          backgroundColor: colors.primary + '15',
+          borderColor: colors.primary,
+        }}>
+          <IconCopy size={16} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>
+              {expectedTaskCount} tarefas serão criadas
+            </ThemedText>
+            <ThemedText style={{ fontSize: 12, marginTop: 2, opacity: 0.8, color: colors.primary }}>
+              {plates.length} {plates.length === 1 ? 'placa' : 'placas'} × {serialNumbers.length} {serialNumbers.length === 1 ? 'número de série' : 'números de série'}
+            </ThemedText>
+          </View>
+        </View>
+      )}
 
       {/* Sector */}
       <SimpleFormField label="Setor" error={errors.sectorId}>

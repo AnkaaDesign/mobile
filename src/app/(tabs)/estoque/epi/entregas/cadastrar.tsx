@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 
-import { usePpeDeliveryMutations, useItems, useUsers } from "@/hooks";
+import { usePpeDeliveryMutations, useItems, useUsers, useScreenReady} from '@/hooks';
 import { PPE_DELIVERY_STATUS } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 
@@ -24,6 +24,7 @@ interface PPEDeliveryCreateFormData {
 }
 
 export default function CreatePPEDeliveryScreen() {
+  useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
   const { createAsync, createMutation } = usePpeDeliveryMutations();

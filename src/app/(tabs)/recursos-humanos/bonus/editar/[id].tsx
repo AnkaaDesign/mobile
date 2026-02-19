@@ -1,16 +1,18 @@
 import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { BonusForm } from "@/components/human-resources/bonus/form";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useBonus } from "@/hooks/bonus";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function BonusEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: bonus, isLoading, error, refetch } = useBonus(id!);
 
+  useScreenReady(!isLoading);
+
   if (isLoading) {
-    return <LoadingScreen message="Carregando bônus..." />;
+    return null;
   }
 
   if (error || !bonus) {

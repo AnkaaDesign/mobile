@@ -3,15 +3,15 @@ import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert }
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconArrowLeft, IconTrash, IconBellOff, IconBell } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNotification, useNotificationMutations, useAuth } from "@/hooks";
+import { useNotification, useNotificationMutations, useAuth, useScreenReady} from '@/hooks';
 import { ThemedView, ThemedText, ErrorScreen, Card } from "@/components/ui";
 import { NotificationCard } from "@/components/personal/notification/detail/notification-card";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { seenNotificationService } from "@/api-client/notification";
 
-export default function MyNotificationDetailsScreen() {
+
+import { Skeleton } from "@/components/ui/skeleton";export default function MyNotificationDetailsScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -32,6 +32,8 @@ export default function MyNotificationDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const notification = response?.data;
 
@@ -116,7 +118,30 @@ export default function MyNotificationDetailsScreen() {
   }, [notification, currentUser?.id, refetch]);
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {/* Header skeleton */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+          <Skeleton style={{ width: 32, height: 32, borderRadius: 16 }} />
+          <Skeleton style={{ height: 18, width: '40%', borderRadius: 4 }} />
+          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+            <Skeleton style={{ width: 32, height: 32, borderRadius: 16 }} />
+            <Skeleton style={{ width: 32, height: 32, borderRadius: 16 }} />
+          </View>
+        </View>
+        {/* Notification card skeleton */}
+        <View style={{ margin: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: 12 }}>
+          <Skeleton style={{ height: 20, width: '70%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
+          <View style={{ gap: 8, marginTop: 4 }}>
+            <Skeleton style={{ height: 14, width: '95%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '85%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '90%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
+          </View>
+        </View>
+      </View>
+    );
   }
 
   if (error || !notification) {

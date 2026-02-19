@@ -33,7 +33,6 @@ export default function BorrowDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
-  useScreenReady();
 
   const id = params?.id || "";
 
@@ -47,6 +46,8 @@ export default function BorrowDetailScreen() {
     select: BORROW_SELECT_DETAIL,
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const borrow = response?.data;
 

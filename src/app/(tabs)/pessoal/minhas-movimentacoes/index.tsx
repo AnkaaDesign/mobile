@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useMyActivitiesInfiniteMobile } from "@/hooks";
+import { useMyActivitiesInfiniteMobile, useScreenReady } from '@/hooks';
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -137,6 +138,8 @@ export default function MyMovementsScreen() {
     shouldPrefetch,
   } = useMyActivitiesInfiniteMobile(queryParams);
 
+  useScreenReady(!isLoading);
+
   // Type alias for activities
   const activities = items as Activity[];
 
@@ -210,13 +213,24 @@ export default function MyMovementsScreen() {
 
   if (isInitialLoad) {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Card style={styles.loadingCard}>
-            <ThemedText style={{ color: colors.mutedForeground }}>
-              Carregando suas movimentações...
-            </ThemedText>
-          </Card>
+      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Search bar skeleton */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 8, gap: 8 }}>
+          <Skeleton style={{ flex: 1, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+          <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+        </View>
+        {/* Table rows skeleton */}
+        <View style={{ paddingHorizontal: 8, gap: 8 }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <View key={i} style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ gap: 6, flex: 1 }}>
+                <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 12, width: '35%', borderRadius: 4 }} />
+              </View>
+              <Skeleton style={{ height: 14, width: '20%', borderRadius: 4 }} />
+            </View>
+          ))}
         </View>
       </ThemedView>
     );

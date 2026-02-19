@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useUser } from "@/hooks";
+import { useUser, useScreenReady} from '@/hooks';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone } from "@tabler/icons-react-native";
@@ -78,6 +79,8 @@ export default function EmployeeEditScreen() {
     enabled: !!id && id !== "",
   });
 
+  useScreenReady(!isFetching);
+
   const employee = response?.data;
 
   useEffect(() => {
@@ -115,9 +118,25 @@ export default function EmployeeEditScreen() {
 
   if (isFetching) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <ThemedText style={{ color: colors.mutedForeground }}>Carregando...</ThemedText>
-      </View>
+      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.container}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.xs }} />
+            <Skeleton width="100%" height={44} />
+            <Skeleton width="100%" height={44} />
+          </View>
+          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="55%" height={18} style={{ marginBottom: spacing.xs }} />
+            <Skeleton width="100%" height={44} />
+            <Skeleton width="100%" height={44} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <Skeleton width="48%" height={44} />
+            <Skeleton width="48%" height={44} />
+          </View>
+          <View style={{ height: spacing.xxl * 2 }} />
+        </View>
+      </ScrollView>
     );
   }
 

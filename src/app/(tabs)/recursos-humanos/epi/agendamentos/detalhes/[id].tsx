@@ -19,6 +19,7 @@ import { TouchableOpacity } from "react-native";
 import { ScheduleCard, EmployeeCard, PpeItemsCard, DeliveryHistoryCard, TimelineCard } from "@/components/human-resources/ppe/schedule/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { PpeScheduleDetailSkeleton } from "@/components/human-resources/ppe/schedule/skeleton/ppe-schedule-detail-skeleton";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function PPEScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -59,6 +60,8 @@ export default function PPEScheduleDetailsScreen() {
     },
     enabled: !!id && id !== "",
   });
+
+  useScreenReady(!isLoading);
 
   const schedule = response?.data;
 

@@ -1,17 +1,19 @@
 import { View, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { VacationForm } from "@/components/human-resources/vacation/form";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useVacation } from "@/hooks/useVacation";
+import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function VacationEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: vacationResponse, isLoading, error, refetch } = useVacation(id!);
+
+  useScreenReady(!isLoading);
   const vacation = vacationResponse?.data;
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando férias..." />;
+    return null;
   }
 
   if (error || !vacation) {

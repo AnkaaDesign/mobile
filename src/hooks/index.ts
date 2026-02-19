@@ -105,6 +105,7 @@ export * from "./use-entity-details";
 // Other Module Hooks
 // =====================================================
 export * from "./useCustomer";
+export * from "./useRepresentative";
 // export * from "./useTruck"; // Disabled - file removed
 export * from "./useLayout";
 
@@ -135,6 +136,7 @@ export * from "./use-my-bonuses-with-live";
 export * from "./use-my-borrows-infinite-mobile";
 export * from "./use-change-logs-infinite-mobile";
 export * from "./use-customers-infinite-mobile";
+export * from "./use-representatives-infinite-mobile";
 export * from "./use-external-withdrawals-infinite-mobile";
 export * from "./use-files-infinite-mobile";
 export * from "./use-holidays-infinite-mobile";
@@ -143,6 +145,7 @@ export * from "./use-item-categories-infinite-mobile";
 export * from "./use-items-infinite-mobile";
 export * from "./use-maintenance-infinite-mobile";
 export * from "./use-notifications-infinite-mobile";
+export * from "./use-admin-notifications-infinite-mobile";
 export * from "./use-orders-infinite-mobile";
 export * from "./use-order-items-infinite-mobile";
 export * from "./use-paints-infinite-mobile";

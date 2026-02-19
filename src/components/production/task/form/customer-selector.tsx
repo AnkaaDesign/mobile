@@ -118,11 +118,13 @@ export function CustomerSelector({
         <View style={styles.optionContainer}>
           {/* Customer Logo */}
           {logoUrl ? (
-            <Image
-              source={{ uri: logoUrl }}
-              style={styles.logoImage}
-              resizeMode="cover"
-            />
+            <View style={styles.logoWrapper}>
+              <Image
+                source={{ uri: logoUrl }}
+                style={styles.logoImage}
+                resizeMode="cover"
+              />
+            </View>
           ) : (
             <View style={[
               styles.simpleLogo,
@@ -217,15 +219,20 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
   },
+  logoWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
   logoImage: {
     width: 32,
     height: 32,
-    borderRadius: 16,
   },
   simpleLogo: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,

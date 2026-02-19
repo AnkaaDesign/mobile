@@ -63,9 +63,6 @@ export default function ScheduleDetailsScreen() {
   // Track screen performance
   const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
 
-  // End navigation loading overlay when screen mounts
-  useScreenReady();
-
   // Performance logging - track screen mount
   const mountTime = useRef(performance.now());
   useEffect(() => {
@@ -145,6 +142,10 @@ export default function ScheduleDetailsScreen() {
     include: minimalInclude,
     staleTime: 1000 * 60 * 10,
   });
+
+  // End navigation loading overlay when Phase 1 data is ready (not just on mount)
+  // This keeps the overlay visible until content is ready, preventing skeleton flash
+  useScreenReady(!isLoading);
 
   // Phase 2: Full query with all includes (pricing, paints, files, observation) - starts when below-fold is shown
   const { data: fullResponse, refetch: refetchFull } = useTaskDetail(id as string, {
@@ -301,28 +302,24 @@ export default function ScheduleDetailsScreen() {
 
   if (isLoading) {
     perfLog.mark('Showing skeleton screen for ScheduleDetailsScreen');
-    // Show skeleton instead of blank loading screen
+    // Show skeleton that mirrors the actual page structure
     return (
       <ScrollView
         style={[styles.scrollView, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          {/* Header skeleton */}
-          <SkeletonCard height={80} style={{ marginBottom: 16 }} />
+          {/* Header card skeleton: task name + action buttons */}
+          <SkeletonCard height={56} style={{ borderRadius: 8 }} />
 
-          {/* Info card skeleton */}
-          <SkeletonCard height={200} style={{ marginBottom: 16 }} />
+          {/* TaskInfoCard skeleton: customer, serial, truck, status, sector */}
+          <SkeletonCard height={220} style={{ borderRadius: 8 }} />
 
-          {/* Dates card skeleton */}
-          <SkeletonCard height={150} style={{ marginBottom: 16 }} />
+          {/* TaskDatesCard skeleton: entry date, term, forecast date */}
+          <SkeletonCard height={160} style={{ borderRadius: 8 }} />
 
-          {/* Services skeleton */}
-          <SkeletonCard height={300} style={{ marginBottom: 16 }} />
-
-          {/* Additional sections */}
-          <SkeletonCard height={200} style={{ marginBottom: 16 }} />
-          <SkeletonCard height={250} />
+          {/* TaskServicesCard skeleton */}
+          <SkeletonCard height={180} style={{ borderRadius: 8 }} />
         </View>
       </ScrollView>
     );
@@ -389,7 +386,7 @@ export default function ScheduleDetailsScreen() {
             customer: task.customer,
             representatives: (task as any).representatives,
             details: task.details ?? "",
-          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} />
+          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} />
 
           {/* Dates Card - Datas */}
           <TaskDatesCard task={{

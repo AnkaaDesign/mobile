@@ -4,12 +4,13 @@ import { Text } from "@/components/ui/text";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { Icon } from "@/components/ui/icon";
 
 import { apiClient } from "@/api-client";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+
 
 interface SyncStatus {
   lastSync?: string;
@@ -24,6 +25,8 @@ export default function DatabaseSyncScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useScreenReady(!isLoading);
 
   const fetchSyncStatus = async (showLoading = true) => {
     try {
@@ -101,11 +104,7 @@ export default function DatabaseSyncScreen() {
   };
 
   if (isLoading) {
-    return (
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-        <LoadingScreen />
-      </PrivilegeGuard>
-    );
+    return null;
   }
 
   return (

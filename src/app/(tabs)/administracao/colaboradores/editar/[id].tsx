@@ -1,10 +1,13 @@
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+import { Skeleton } from "@/components/ui/skeleton";
+import { spacing, borderRadius } from "@/constants/design-system";
 
 export default function EditCollaboratorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -70,14 +73,34 @@ export default function EditCollaboratorScreen() {
     },
   });
 
+  useScreenReady(!isLoading);
+
   if (isLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
-          Carregando colaborador...
-        </Text>
-      </View>
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Form card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: spacing.xs }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
+          {/* Second card */}
+          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={{ marginBottom: spacing.md }}>
+                <Skeleton width="30%" height={14} style={{ marginBottom: spacing.xs }} />
+                <Skeleton width="100%" height={44} borderRadius={8} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -100,10 +123,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-    marginTop: 8,
   },
   errorText: {
     fontSize: 16,

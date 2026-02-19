@@ -7,12 +7,15 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
 import { ProgressWithMarkers } from "@/components/ui/progress-with-markers";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconRefresh, IconCloudCheck, IconDatabase, IconClock, IconAlertTriangle, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconHistory, IconSettings } from "@tabler/icons-react-native";
 import { differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
+import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTheme } from "@/lib/theme";
+import { spacing } from "@/constants/design-system";
 
 interface SyncStatus {
   isRunning: boolean;
@@ -55,12 +58,15 @@ interface SystemHealth {
 }
 
 export default function SyncStatusScreen() {
+  const { colors } = useTheme();
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [metrics, setMetrics] = useState<SyncMetrics | null>(null);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useScreenReady(!isLoading);
 
   // Load sync status and metrics
   const loadSyncData = useCallback(async () => {
@@ -270,7 +276,64 @@ export default function SyncStatusScreen() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <ThemedView style={styles.container}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={{ padding: spacing.md, gap: spacing.md }}>
+          {/* Status card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Skeleton width={24} height={24} style={{ borderRadius: 12 }} />
+              <Skeleton width="40%" height={18} />
+              <Skeleton width={80} height={24} style={{ borderRadius: 12, marginLeft: 'auto' }} />
+            </View>
+            {[1, 2].map((i) => (
+              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Skeleton width="45%" height={14} />
+                <Skeleton width="30%" height={14} />
+              </View>
+            ))}
+          </View>
+          {/* Controls card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="55%" height={16} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <Skeleton width={100} height={36} style={{ borderRadius: 8 }} />
+              <Skeleton width={90} height={36} style={{ borderRadius: 8 }} />
+            </View>
+          </View>
+          {/* Entity status card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="45%" height={16} />
+            {[1, 2, 3, 4].map((i) => (
+              <View key={i} style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, gap: spacing.sm }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton width="40%" height={14} />
+                  <Skeleton width={70} height={20} style={{ borderRadius: 10 }} />
+                </View>
+                <View style={{ flexDirection: 'row', gap: spacing.md }}>
+                  <Skeleton width="30%" height={12} />
+                  <Skeleton width="30%" height={12} />
+                </View>
+                <Skeleton width="100%" height={4} style={{ borderRadius: 2 }} />
+              </View>
+            ))}
+          </View>
+          {/* System health card skeleton */}
+          <View style={{ backgroundColor: colors.card, borderRadius: 8, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
+            <Skeleton width="40%" height={16} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ flex: 1, alignItems: 'center', gap: spacing.xs }}>
+                  <Skeleton width="80%" height={12} />
+                  <Skeleton width={60} height={24} style={{ borderRadius: 12 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={{ height: spacing.xxl * 2 }} />
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   if (error) {

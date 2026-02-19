@@ -3,6 +3,7 @@ import { View, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
@@ -15,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { maskPhone } from "@/utils";
 
 export default function VerificationCodeScreen() {
+  useScreenReady();
   const router = useRouter();
   const { verifyCode, resendVerification } = useAuth();
   const [error, setError] = useState("");
