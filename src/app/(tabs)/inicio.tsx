@@ -32,13 +32,16 @@ export default function HomeScreen() {
   useScreenReady(!isLoading);
 
   const loadPageData = useCallback(async () => {
-    const [mostAccessed, recent] = await Promise.all([
-      getMostAccessedPages(6),
-      getRecentPages(6),
-    ]);
-    setMostAccessedPages(mostAccessed);
-    setRecentPages(recent);
-    setIsLoading(false);
+    try {
+      const [mostAccessed, recent] = await Promise.all([
+        getMostAccessedPages(6),
+        getRecentPages(6),
+      ]);
+      setMostAccessedPages(mostAccessed);
+      setRecentPages(recent);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -66,44 +69,63 @@ export default function HomeScreen() {
               backgroundColor: colors.card,
               borderRadius: borderRadius.lg,
               padding: spacing.md,
-              gap: spacing.xl,
+              gap: 20,
             }}
           >
-            {/* Header skeleton */}
+            {/* Header skeleton — greeting + date on left, time on right */}
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <View style={{ gap: spacing.xs }}>
-                <Skeleton height={20} width={180} />
-                <Skeleton height={14} width={240} />
+              <View style={{ gap: spacing.xs, flex: 1 }}>
+                <Skeleton height={16} width={180} borderRadius={4} />
+                <Skeleton height={12} width={240} borderRadius={3} />
               </View>
-              <Skeleton height={16} width={70} />
+              <Skeleton height={14} width={70} borderRadius={3} />
             </View>
 
-            {/* Favorites skeleton */}
-            <View style={{ gap: spacing.sm }}>
-              <Skeleton height={20} width={100} />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+            {/* Favoritos skeleton — icon + title header, then 3-column grid cards */}
+            <View style={{ gap: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Skeleton height={22} width={22} borderRadius={4} />
+                <Skeleton height={16} width={80} borderRadius={4} />
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                  <View key={i} style={{ width: "31%", padding: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.muted, gap: 4 }}>
+                    <Skeleton height={26} width={26} borderRadius={6} />
+                    <Skeleton height={11} width={i === 0 ? "80%" : i === 1 ? "60%" : "70%"} borderRadius={3} />
+                  </View>
                 ))}
               </View>
             </View>
 
             {/* Recentes skeleton */}
-            <View style={{ gap: spacing.sm }}>
-              <Skeleton height={20} width={100} />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+            <View style={{ gap: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Skeleton height={22} width={22} borderRadius={4} />
+                <Skeleton height={16} width={70} borderRadius={4} />
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                  <View key={i} style={{ width: "31%", padding: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.muted, gap: 4 }}>
+                    <Skeleton height={26} width={26} borderRadius={6} />
+                    <Skeleton height={11} width={i % 3 === 0 ? "80%" : i % 3 === 1 ? "60%" : "70%"} borderRadius={3} />
+                  </View>
                 ))}
               </View>
             </View>
 
             {/* Mais acessadas skeleton */}
-            <View style={{ gap: spacing.sm }}>
-              <Skeleton height={20} width={140} />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+            <View style={{ gap: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Skeleton height={22} width={22} borderRadius={4} />
+                <Skeleton height={16} width={120} borderRadius={4} />
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} height={70} width="31%" borderRadius={borderRadius.md} />
+                  <View key={i} style={{ width: "31%", padding: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.muted, gap: 4 }}>
+                    <Skeleton height={26} width={26} borderRadius={6} />
+                    <Skeleton height={11} width={i % 3 === 0 ? "75%" : i % 3 === 1 ? "55%" : "65%"} borderRadius={3} />
+                    <Skeleton height={9} width={50} borderRadius={2} />
+                  </View>
                 ))}
               </View>
             </View>

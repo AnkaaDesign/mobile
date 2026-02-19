@@ -30,23 +30,60 @@ export default function RecursosHumanosScreen() {
   if (isLoading && !refreshing) {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: 16, gap: 16 }}>
+        <View style={{ padding: 16, gap: 20 }}>
+          {/* Acesso Rápido skeleton — 4 cards in 2x2 grid */}
           <View style={{ gap: 12 }}>
-            <Skeleton style={{ height: 24, width: 150, borderRadius: 4 }} />
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 130, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {[1, 2, 3, 4].map((i) => (
-                <View key={i} style={{ width: "47%", minWidth: 150 }}>
-                  <Skeleton style={{ height: 80, borderRadius: 8 }} />
+                <View key={i} style={{ flex: 1, minWidth: "45%", backgroundColor: colors.card, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Skeleton style={{ width: 24, height: 24, borderRadius: 6 }} />
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 16, width: 30, borderRadius: 4 }} />
+                  </View>
                 </View>
               ))}
             </View>
           </View>
+          {/* Métricas de RH skeleton — 6 cards in 2x3 grid */}
           <View style={{ gap: 12 }}>
-            <Skeleton style={{ height: 24, width: 200, borderRadius: 4 }} />
+            <Skeleton style={{ height: 22, width: 140, borderRadius: 4 }} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <View key={i} style={{ width: "48%", backgroundColor: colors.card, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                    <Skeleton style={{ height: 11, width: 80, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 14, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 18, width: 50, borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Status dos Funcionários skeleton — card with 3 progress bars */}
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 190, borderRadius: 4 }} />
+            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 10 }}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ gap: 4 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Skeleton style={{ height: 14, width: 100 + i * 10, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 14, width: 40, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 6, borderRadius: 3, width: `${90 - i * 12}%` }} />
+                </View>
+              ))}
+            </View>
+          </View>
+          {/* Métricas de Férias skeleton — 3 centered stat cards */}
+          <View style={{ gap: 12 }}>
+            <Skeleton style={{ height: 22, width: 160, borderRadius: 4 }} />
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <View key={i} style={{ width: "47%", minWidth: 150 }}>
-                  <Skeleton style={{ height: 100, borderRadius: 8 }} />
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ flex: 1, minWidth: "45%", backgroundColor: colors.card, padding: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: 6 }}>
+                  <Skeleton style={{ height: 12, width: 90, borderRadius: 4 }} />
+                  <Skeleton style={{ height: 28, width: 40, borderRadius: 4 }} />
                 </View>
               ))}
             </View>

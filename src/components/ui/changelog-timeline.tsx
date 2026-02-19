@@ -1422,7 +1422,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             </View>
                                           );
                                         })()
-                                      ) : (changelog.field === "logoPaints" || changelog.field === "paints" || changelog.field === "paintGrounds" || changelog.field === "groundPaints") ? (
+                                      ) : (changelog.field === "logoPaints" || changelog.field === "logoPaintIds" || changelog.field === "paints" || changelog.field === "paintGrounds" || changelog.field === "groundPaints") ? (
                                         /* Special handling for paint arrays */
                                         (() => {
                                           const oldPaints = getPaintObjects(oldParsed);
@@ -1441,7 +1441,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             </View>
                                           );
                                         })()
-                                      ) : (changelog.field === "artworks" || changelog.field === "budgets" || changelog.field === "invoices" || changelog.field === "receipts") ? (
+                                      ) : (changelog.field === "artworks" || changelog.field === "artworkIds" || changelog.field === "baseFileIds" || changelog.field === "budgets" || changelog.field === "invoices" || changelog.field === "receipts") ? (
                                         /* Special handling for file fields - show thumbnails */
                                         <View style={styles.fieldValues}>
                                           <View>
@@ -1520,6 +1520,62 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                             );
                                           })()}
                                         </View>
+                                      ) : changelog.field === "truck.leftSideLayoutId" ||
+                                        changelog.field === "truck.rightSideLayoutId" ||
+                                        changelog.field === "truck.backSideLayoutId" ? (
+                                        /* Special handling for individual truck layout fields */
+                                        (() => {
+                                          const parseLayoutValue = (val: any) => {
+                                            if (!val) return null;
+                                            if (typeof val === "string" && val.trim().startsWith("{")) {
+                                              try { return JSON.parse(val); } catch { return null; }
+                                            }
+                                            return typeof val === "object" ? val : null;
+                                          };
+
+                                          const oldLayout = parseLayoutValue(changelog.oldValue);
+                                          const newLayout = parseLayoutValue(changelog.newValue);
+
+                                          const sideName = changelog.field.includes("leftSide")
+                                            ? "Lado Motorista"
+                                            : changelog.field.includes("rightSide")
+                                              ? "Lado Sapo"
+                                              : "Traseira";
+
+                                          const getDimensions = (layout: any) => {
+                                            if (!layout) return null;
+                                            return {
+                                              width: Math.round((layout.totalWidth || 0) * 100),
+                                              height: Math.round((layout.height || 0) * 100),
+                                              doors: layout.doorCount || 0,
+                                            };
+                                          };
+
+                                          const oldDims = getDimensions(oldLayout);
+                                          const newDims = getDimensions(newLayout);
+
+                                          return (
+                                            <View style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing.sm, backgroundColor: colors.muted + "33" }}>
+                                              <ThemedText style={{ fontSize: fontSize.xs, fontWeight: "600", marginBottom: spacing.xs, color: colors.foreground }}>
+                                                {sideName}
+                                              </ThemedText>
+                                              <View style={styles.fieldValues}>
+                                                <View style={styles.valueRow}>
+                                                  <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                  <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>
+                                                    {oldDims ? `${oldDims.width}cm × ${oldDims.height}cm — ${oldDims.doors} porta${oldDims.doors !== 1 ? "s" : ""}` : "Nenhum"}
+                                                  </ThemedText>
+                                                </View>
+                                                <View style={styles.valueRow}>
+                                                  <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                  <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>
+                                                    {newDims ? `${newDims.width}cm × ${newDims.height}cm — ${newDims.doors} porta${newDims.doors !== 1 ? "s" : ""}` : "Nenhum"}
+                                                  </ThemedText>
+                                                </View>
+                                              </View>
+                                            </View>
+                                          );
+                                        })()
                                       ) : changelog.field === "layouts" ? (
                                         /* Special handling for truck layout changes */
                                         (() => {
@@ -1646,6 +1702,48 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
                                                   </View>
                                                 );
                                               })}
+                                            </View>
+                                          );
+                                        })()
+                                      ) : changelog.field === "serviceOrders" ? (
+                                        /* Special handling for serviceOrders - show count */
+                                        (() => {
+                                          const parseSOValue = (val: any) => {
+                                            if (val === null || val === undefined) return null;
+                                            if (typeof val === "number") return { count: val };
+                                            if (typeof val === "object" && !Array.isArray(val)) return val;
+                                            if (typeof val === "string") {
+                                              try {
+                                                const parsed = JSON.parse(val);
+                                                if (typeof parsed === "number") return { count: parsed };
+                                                return parsed;
+                                              } catch { return null; }
+                                            }
+                                            return null;
+                                          };
+                                          const getSOCount = (val: any) => {
+                                            if (!val) return 0;
+                                            if (typeof val === "number") return val;
+                                            if (val.count !== undefined) return val.count;
+                                            if (Array.isArray(val.ids)) return val.ids.length;
+                                            return 0;
+                                          };
+                                          const oldSOCount = getSOCount(parseSOValue(changelog.oldValue));
+                                          const newSOCount = getSOCount(parseSOValue(changelog.newValue));
+                                          return (
+                                            <View style={styles.fieldValues}>
+                                              <View style={styles.valueRow}>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Antes:</ThemedText>
+                                                <ThemedText style={{ fontSize: fontSize.xs, color: colors.destructive, fontWeight: "500" }}>
+                                                  {oldSOCount === 0 ? "Nenhuma" : `${oldSOCount} ordem${oldSOCount > 1 ? "s" : ""} de serviço`}
+                                                </ThemedText>
+                                              </View>
+                                              <View style={styles.valueRow}>
+                                                <ThemedText style={StyleSheet.flatten([styles.valueLabel, { color: colors.mutedForeground }])}>Depois:</ThemedText>
+                                                <ThemedText style={{ fontSize: fontSize.xs, color: colors.success, fontWeight: "500" }}>
+                                                  {newSOCount === 0 ? "Nenhuma" : `${newSOCount} ordem${newSOCount > 1 ? "s" : ""} de serviço`}
+                                                </ThemedText>
+                                              </View>
                                             </View>
                                           );
                                         })()

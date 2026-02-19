@@ -118,32 +118,54 @@ export const Layout = memo(function Layout({
   if (list.isLoading && list.items.length === 0) {
     return (
       <ThemedView style={styles.container}>
-        {/* Search bar skeleton */}
+        {/* Search bar skeleton — mirrors Search component structure */}
         <View style={styles.header}>
           <View style={styles.searchContainer}>
-            <Skeleton style={{ height: 40, borderRadius: 8 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, gap: 8 }}>
+              <Skeleton style={{ width: 20, height: 20, borderRadius: 10 }} />
+              <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
+            </View>
           </View>
           <View style={styles.actions}>
-            <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
-            <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+            {[1, 2].map((i) => (
+              <View key={i} style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+              </View>
+            ))}
           </View>
         </View>
 
         {/* Table skeleton */}
         <View style={{ flex: 1, padding: 8 }}>
-          <View style={[styles.skeletonItem, { backgroundColor: colors.card, borderColor: colors.border, padding: 0, overflow: 'hidden' }]}>
-            {/* Table header */}
-            <View style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton style={{ height: 14, width: 80, borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: 100, borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: 60, borderRadius: 4 }} />
+          <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 8, overflow: 'hidden' }}>
+            {/* Table header — mirrors Header: minHeight 40, paddingHorizontal 12 per cell */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+              <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                <Skeleton style={{ height: 8, width: 65, borderRadius: 2 }} />
+                <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+              </View>
+              <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                <Skeleton style={{ height: 8, width: 45, borderRadius: 2 }} />
+                <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+              </View>
+              <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                <Skeleton style={{ height: 8, width: 55, borderRadius: 2 }} />
+                <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+              </View>
             </View>
-            {/* Table rows */}
+            {/* Table rows — mirrors Row: minHeight 48, alternating bg, paddingHorizontal 12 per cell */}
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <View key={i} style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <Skeleton style={{ height: 16, width: 80, borderRadius: 4 }} />
-                <Skeleton style={{ height: 16, flex: 1, borderRadius: 4 }} />
-                <Skeleton style={{ height: 16, width: 60, borderRadius: 4 }} />
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, backgroundColor: i % 2 === 0 ? colors.card : colors.background, borderBottomWidth: i < 8 ? 1 : 0, borderBottomColor: colors.border }}>
+                <View style={{ flex: 2, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }}>
+                  <Skeleton style={{ width: 18, height: 18, borderRadius: 4 }} />
+                  <Skeleton style={{ height: 12, width: i % 3 === 0 ? '40%' : i % 3 === 1 ? '58%' : '48%', borderRadius: 4 }} />
+                </View>
+                <View style={{ flex: 1.5, paddingHorizontal: 12 }}>
+                  <Skeleton style={{ height: 12, width: i % 2 === 0 ? '50%' : '35%', borderRadius: 4 }} />
+                </View>
+                <View style={{ flex: 1.2, paddingHorizontal: 12 }}>
+                  <Skeleton style={{ height: 12, width: i % 2 === 0 ? '55%' : '40%', borderRadius: 4 }} />
+                </View>
               </View>
             ))}
           </View>
@@ -341,11 +363,6 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     flex: 1,
-  },
-  skeletonItem: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
   },
   content: {
     flex: 1,

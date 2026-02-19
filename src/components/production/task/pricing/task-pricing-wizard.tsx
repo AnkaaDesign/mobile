@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto } from "@tabler/icons-react-native";
+import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice } from "@tabler/icons-react-native";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { MultiStepFormContainer } from "@/components/forms";
+import { DatePicker } from "@/components/ui/date-picker";
 import { BudgetPreview } from "./budget-preview";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
@@ -83,6 +84,12 @@ const STATUS_OPTIONS = [
   { value: "REJECTED", label: "Rejeitado" },
   { value: "CANCELLED", label: "Cancelado" },
 ];
+
+// Forecast days options (1-30)
+const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
+  value: String(i + 1),
+  label: `${i + 1} ${i + 1 === 1 ? 'dia' : 'dias'}`,
+}));
 
 interface TaskPricingWizardProps {
   taskId: string;
@@ -157,10 +164,15 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
           return defaultExpiry;
         })(),
         paymentCondition: null,
+        downPaymentDate: null,
         customPaymentText: null,
         guaranteeYears: null,
         customGuaranteeText: null,
         layoutFileId: null,
+        customForecastDays: null,
+        simultaneousTasks: null,
+        discountReference: null,
+        invoicesToCustomerIds: [],
       },
     },
     mode: "onChange",
@@ -186,10 +198,15 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     setValue("pricing.subtotal", p.subtotal || 0);
     setValue("pricing.total", p.total || 0);
     setValue("pricing.paymentCondition", p.paymentCondition ?? null);
+    setValue("pricing.downPaymentDate", p.downPaymentDate ? new Date(p.downPaymentDate) : null);
     setValue("pricing.customPaymentText", p.customPaymentText ?? null);
     setValue("pricing.guaranteeYears", p.guaranteeYears ?? null);
     setValue("pricing.customGuaranteeText", p.customGuaranteeText ?? null);
     setValue("pricing.layoutFileId", p.layoutFileId ?? null);
+    setValue("pricing.customForecastDays", p.customForecastDays ?? null);
+    setValue("pricing.simultaneousTasks", p.simultaneousTasks ?? null);
+    setValue("pricing.discountReference", p.discountReference ?? null);
+    setValue("pricing.invoicesToCustomerIds", p.invoicesToCustomers?.map((c: any) => c.id) || []);
 
     if (p.items && p.items.length > 0) {
       setValue(
@@ -503,10 +520,14 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
   const pricingStatus = useWatch({ control, name: "pricing.status" }) || "DRAFT";
   const discountType = useWatch({ control, name: "pricing.discountType" }) || "NONE";
   const discountValue = useWatch({ control, name: "pricing.discountValue" });
+  const discountReference = useWatch({ control, name: "pricing.discountReference" });
   const paymentCondition = useWatch({ control, name: "pricing.paymentCondition" });
+  const downPaymentDate = useWatch({ control, name: "pricing.downPaymentDate" });
   const customPaymentText = useWatch({ control, name: "pricing.customPaymentText" });
   const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
   const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
+  const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
+  const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
 
   // Initialize
   useEffect(() => {
@@ -660,7 +681,22 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
         </View>
       </View>
 
-      {/* Payment & Guarantee */}
+      {/* Discount Reference - only show when discount is active */}
+      {discountType !== "NONE" && (
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
+          <TextInput
+            value={discountReference || ""}
+            onChangeText={(t) => setValue("pricing.discountReference", t || null)}
+            placeholder="Justificativa ou referência para o desconto aplicado..."
+            placeholderTextColor={colors.mutedForeground}
+            maxLength={500}
+            style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground, minHeight: 42 }]}
+          />
+        </View>
+      )}
+
+      {/* Payment Condition & Down Payment Date */}
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
         <View style={styles.row}>
           <View style={styles.halfField}>
@@ -677,16 +713,12 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
             />
           </View>
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
-            <Combobox
-              value={currentGuaranteeOption}
-              onValueChange={handleGuaranteeChange}
-              options={GUARANTEE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
+            <DatePicker
+              value={downPaymentDate ? new Date(downPaymentDate) : undefined}
+              onChange={(date) => setValue("pricing.downPaymentDate", date || null)}
+              mode="date"
               placeholder="Selecione"
-              searchable={false}
-              avoidKeyboard={false}
-              onOpen={() => {}}
-              onClose={() => {}}
             />
           </View>
         </View>
@@ -708,6 +740,21 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
         </View>
       )}
 
+      {/* Guarantee */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
+        <Combobox
+          value={currentGuaranteeOption}
+          onValueChange={handleGuaranteeChange}
+          options={GUARANTEE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+          placeholder="Selecione"
+          searchable={false}
+          avoidKeyboard={false}
+          onOpen={() => {}}
+          onClose={() => {}}
+        />
+      </View>
+
       {/* Custom Guarantee Text */}
       {showCustomGuarantee && (
         <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
@@ -723,6 +770,37 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
           />
         </View>
       )}
+
+      {/* Simultaneous Tasks & Forecast Days */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <View style={styles.row}>
+          <View style={styles.halfField}>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tarefas Simultâneas</ThemedText>
+            <Input
+              type="number"
+              value={simultaneousTasks ?? null}
+              onChange={(value) => {
+                const numVal = value ? Number(value) : null;
+                setValue("pricing.simultaneousTasks", numVal);
+              }}
+              placeholder="1-100"
+            />
+          </View>
+          <View style={styles.halfField}>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
+            <Combobox
+              value={customForecastDays ? String(customForecastDays) : ""}
+              onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
+              options={FORECAST_DAYS_OPTIONS}
+              placeholder="Auto"
+              searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
+            />
+          </View>
+        </View>
+      </View>
 
       {/* Layout Approved */}
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>

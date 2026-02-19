@@ -888,6 +888,7 @@ function InnerLayout() {
           // Use detachInactiveScreens for memory optimization while keeping state
           unmountOnBlur: false,
           detachInactiveScreens: true, // Detach from view hierarchy but keep in memory
+          freezeOnBlur: false, // Prevent screen freeze on Drawer navigation
         };
       }}
     >

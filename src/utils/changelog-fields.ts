@@ -307,6 +307,9 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     // Direct truck fields (when truck data is embedded in task changelog)
     category: "Categoria do Caminhão",
     implementType: "Tipo de Implemento",
+    "truck.leftSideLayoutId": "Layout Lado Motorista",
+    "truck.rightSideLayoutId": "Layout Lado Sapo",
+    "truck.backSideLayoutId": "Layout Traseira",
     // Nested relationship fields
     "customer.fantasyName": "Nome Fantasia do Cliente",
     "customer.corporateName": "Razão Social do Cliente",
@@ -2209,6 +2212,19 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       if (data.rejectedCount) {
         return `${data.rejectedCount} ${data.rejectedCount === 1 ? "entrega rejeitada" : "entregas rejeitadas"}`;
       }
+    }
+
+    // Handle individual truck layout fields
+    if (
+      (field === "truck.leftSideLayoutId" || field === "truck.rightSideLayoutId" || field === "truck.backSideLayoutId") &&
+      entityType === CHANGE_LOG_ENTITY_TYPE.TASK
+    ) {
+      const layout = value as any;
+      if (!layout) return "Nenhum";
+      const w = Math.round((layout.totalWidth || 0) * 100);
+      const h = Math.round((layout.height || 0) * 100);
+      const d = layout.doorCount || 0;
+      return `${w}cm × ${h}cm — ${d} porta${d !== 1 ? "s" : ""}`;
     }
 
     return JSON.stringify(value, null, 2);

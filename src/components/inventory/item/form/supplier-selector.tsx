@@ -1,10 +1,14 @@
 import { useMemo, useCallback } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { ThemedText } from "@/components/ui/themed-text";
 import { getSuppliers } from '@/api-client';
+import { useTheme } from "@/lib/theme";
+import { fontSize, fontWeight } from "@/constants/design-system";
+import { SupplierLogoDisplay } from "@/components/ui/supplier-logo-display";
+import { formatCNPJ } from "@/utils";
 import type { ItemCreateFormData, ItemUpdateFormData } from '../../../../schemas';
 import type { Supplier } from '@/types';
 
@@ -17,6 +21,7 @@ interface SupplierSelectorProps {
 
 export function SupplierSelector({ disabled, initialSupplier }: SupplierSelectorProps) {
   const { control } = useFormContext<ItemFormData>();
+  const { colors } = useTheme();
 
   // Memoize initial options to prevent infinite loop
   const initialOptions = useMemo(
@@ -40,6 +45,10 @@ export function SupplierSelector({ disabled, initialSupplier }: SupplierSelector
       select: {
         id: true,
         fantasyName: true,
+        corporateName: true,
+        cnpj: true,
+        logoId: true,
+        logo: { select: { id: true } },
       },
     };
 
@@ -62,6 +71,50 @@ export function SupplierSelector({ disabled, initialSupplier }: SupplierSelector
   const getOptionLabel = useCallback((supplier: Supplier) => supplier.fantasyName, []);
   const getOptionValue = useCallback((supplier: Supplier) => supplier.id, []);
 
+  // Custom render option with avatar and metadata
+  const renderOption = useCallback(
+    (option: Supplier, isSelected: boolean) => (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+        <SupplierLogoDisplay
+          logo={option.logo}
+          supplierName={option.fantasyName}
+          size="sm"
+          shape="rounded"
+        />
+        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <Text
+            style={{
+              fontSize: fontSize.base,
+              fontWeight: isSelected ? fontWeight.semibold : fontWeight.medium,
+              color: colors.foreground,
+            }}
+            numberOfLines={1}
+          >
+            {option.fantasyName}
+          </Text>
+          {(option.corporateName || option.cnpj) && (
+            <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap" }}>
+              {option.corporateName && (
+                <Text
+                  style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}
+                  numberOfLines={1}
+                >
+                  {option.corporateName}
+                </Text>
+              )}
+              {option.cnpj && (
+                <Text style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
+                  {option.corporateName ? " \u2022 " : ""}{formatCNPJ(option.cnpj)}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+      </View>
+    ),
+    [colors]
+  );
+
   return (
     <Controller
       control={control}
@@ -80,6 +133,7 @@ export function SupplierSelector({ disabled, initialSupplier }: SupplierSelector
             initialOptions={initialOptions}
             getOptionLabel={getOptionLabel}
             getOptionValue={getOptionValue}
+            renderOption={renderOption}
             placeholder="Selecione um fornecedor"
             searchPlaceholder="Buscar fornecedor..."
             emptyText="Nenhum fornecedor encontrado"

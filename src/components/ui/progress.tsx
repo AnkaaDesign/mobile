@@ -15,7 +15,6 @@ const Progress = React.forwardRef<View, ProgressProps>(({ value = 0, max = 100, 
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
   const containerStyles: ViewStyle = {
-    position: "relative",
     height: 8,
     width: "100%",
     overflow: "hidden",
@@ -34,11 +33,14 @@ const Progress = React.forwardRef<View, ProgressProps>(({ value = 0, max = 100, 
 Progress.displayName = "Progress";
 
 function Indicator({ value, style, colors }: { value: number; style?: ViewStyle; colors: any }) {
-  const progress = useDerivedValue(() => value ?? 0);
+  const animatedProgress = useDerivedValue(() => {
+    return withSpring(value ?? 0, { overshootClamping: true });
+  });
 
   const animatedStyle = useAnimatedStyle(() => {
+    const clamped = interpolate(animatedProgress.value, [0, 100], [0, 100], Extrapolation.CLAMP);
     return {
-      width: withSpring(`${interpolate(progress.value, [0, 100], [0, 100], Extrapolation.CLAMP)}%`, { overshootClamping: true }),
+      width: `${clamped}%`,
     };
   });
 

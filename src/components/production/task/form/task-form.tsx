@@ -162,9 +162,9 @@ export function TaskForm({
   }
 
   return (
-    <>
+    <View style={[styles.wrapper, { backgroundColor: colors.background }]}>
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
@@ -247,19 +247,21 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 9. Financial Information */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando informações financeiras..." />}>
-        {canViewFinancialInfo && (
-          <FinancialInfoSection
-            isSubmitting={isSubmitting}
-            errors={form.formState.errors}
-            initialPricingFiles={task?.pricingFiles}
-            initialInvoiceFiles={task?.invoiceFiles}
-            initialReceiptFiles={task?.receiptFiles}
-            initialBankSlipFiles={task?.bankSlipFiles}
-          />
-        )}
-      </Suspense>
+      {/* 9. Financial Information - Only in edit mode */}
+      {mode === 'edit' && (
+        <Suspense fallback={<SectionPlaceholder title="Carregando informações financeiras..." />}>
+          {canViewFinancialInfo && (
+            <FinancialInfoSection
+              isSubmitting={isSubmitting}
+              errors={form.formState.errors}
+              initialPricingFiles={task?.pricingFiles}
+              initialInvoiceFiles={task?.invoiceFiles}
+              initialReceiptFiles={task?.receiptFiles}
+              initialBankSlipFiles={task?.bankSlipFiles}
+            />
+          )}
+        </Suspense>
+      )}
 
       {/* 11. Observation - Last section */}
       <Suspense fallback={<SectionPlaceholder title="Carregando observações..." />}>
@@ -283,11 +285,14 @@ export function TaskForm({
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },

@@ -13,6 +13,7 @@ export const suppliersListConfig: ListConfig<Supplier> = {
     defaultSort: { field: 'fantasyName', direction: 'asc' },
     pageSize: 25,
     include: {
+      logo: true,
       items: true,
       _count: {
         select: {

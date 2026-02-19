@@ -14,7 +14,10 @@ import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
 import { IconNote, IconTrash, IconPlus, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice } from "@tabler/icons-react-native";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
+import { DatePicker } from "@/components/ui/date-picker";
 import { getCustomers } from "@/api-client";
+import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
+import { formatCNPJ } from "@/utils";
 import type { Customer } from "@/types";
 
 // Payment condition options
@@ -108,6 +111,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
     const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
     const invoicesToCustomerIds = useWatch({ control, name: "pricing.invoicesToCustomerIds" });
+    const downPaymentDate = useWatch({ control, name: "pricing.downPaymentDate" });
 
     // Customer search for invoice-to selector
     const searchCustomers = useCallback(async (search: string, page: number = 1) => {
@@ -116,7 +120,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           orderBy: { fantasyName: "asc" },
           page,
           take: 20,
-          select: { id: true, fantasyName: true, cnpj: true, cpf: true, corporateName: true },
+          select: { id: true, fantasyName: true, cnpj: true, cpf: true, corporateName: true, logoId: true, logo: { select: { id: true } } },
         };
         if (search && search.trim()) {
           params.searchingFor = search.trim();
@@ -129,6 +133,50 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     }, []);
     const getCustomerLabel = useCallback((c: Customer) => c.fantasyName, []);
     const getCustomerValue = useCallback((c: Customer) => c.id, []);
+
+    // Custom render option for invoice-to customer combobox with avatar
+    const renderInvoiceCustomerOption = useCallback(
+      (customer: Customer, isSelected: boolean) => (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+          <CustomerLogoDisplay
+            logo={customer.logo}
+            customerName={customer.fantasyName || ""}
+            size="sm"
+            shape="rounded"
+          />
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+            <RNText
+              style={{
+                fontSize: 16,
+                fontWeight: isSelected ? "600" : "500",
+                color: colors.foreground,
+              }}
+              numberOfLines={1}
+            >
+              {customer.fantasyName}
+            </RNText>
+            {(customer.corporateName || customer.cnpj) && (
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap" }}>
+                {customer.corporateName && (
+                  <RNText
+                    style={{ fontSize: 14, color: colors.mutedForeground }}
+                    numberOfLines={1}
+                  >
+                    {customer.corporateName}
+                  </RNText>
+                )}
+                {customer.cnpj && (
+                  <RNText style={{ fontSize: 14, color: colors.mutedForeground }}>
+                    {customer.corporateName ? " \u2022 " : ""}{formatCNPJ(customer.cnpj)}
+                  </RNText>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+      ),
+      [colors]
+    );
 
     // Current payment condition
     const currentPaymentCondition = useMemo(() => {
@@ -508,6 +556,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
               queryFn={searchCustomers}
               getOptionLabel={getCustomerLabel}
               getOptionValue={getCustomerValue}
+              renderOption={renderInvoiceCustomerOption}
               initialOptions={(initialInvoiceToCustomers || []) as Customer[]}
               clearable
               minSearchLength={0}
@@ -582,21 +631,35 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
-        {/* Payment Condition */}
+        {/* Payment Condition + Down Payment Date */}
         {hasPricingItems && (
           <View style={styles.section}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
-            <Combobox
-              value={currentPaymentCondition}
-              onValueChange={handlePaymentConditionChange}
-              disabled={disabled}
-              options={PAYMENT_CONDITIONS.map((opt) => ({
-                value: opt.value,
-                label: opt.label,
-              }))}
-              placeholder="Selecione"
-              searchable={false}
-            />
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
+                <Combobox
+                  value={currentPaymentCondition}
+                  onValueChange={handlePaymentConditionChange}
+                  disabled={disabled}
+                  options={PAYMENT_CONDITIONS.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                  placeholder="Selecione"
+                  searchable={false}
+                />
+              </View>
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
+                <DatePicker
+                  value={downPaymentDate ? new Date(downPaymentDate) : undefined}
+                  onChange={(date) => setValue("pricing.downPaymentDate", date || null)}
+                  mode="date"
+                  placeholder="Selecione"
+                  disabled={disabled}
+                />
+              </View>
+            </View>
           </View>
         )}
 

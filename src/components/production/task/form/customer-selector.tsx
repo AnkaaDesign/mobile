@@ -1,10 +1,10 @@
 import { useMemo, useCallback } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { getCustomers } from "@/api-client";
 import { useTheme } from "@/lib/theme";
-import { getFileUrl } from "@/utils/file-utils";
 import type { Customer } from "@/types";
+import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
 
 interface CustomerSelectorProps {
   value?: string;
@@ -111,30 +111,15 @@ export function CustomerSelector({
         return null;
       }
 
-      // Get logo URL if available (url is computed, not a DB field - use getFileUrl)
-      const logoUrl = customer?.logo?.id ? getFileUrl(customer.logo as any) : undefined;
-
       return (
         <View style={styles.optionContainer}>
           {/* Customer Logo */}
-          {logoUrl ? (
-            <View style={styles.logoWrapper}>
-              <Image
-                source={{ uri: logoUrl }}
-                style={styles.logoImage}
-                resizeMode="cover"
-              />
-            </View>
-          ) : (
-            <View style={[
-              styles.simpleLogo,
-              { backgroundColor: colors.primary + '20', borderColor: colors.primary }
-            ]}>
-              <Text style={[styles.logoText, { color: colors.primary }]}>
-                {customer?.fantasyName?.charAt(0)?.toUpperCase() || "?"}
-              </Text>
-            </View>
-          )}
+          <CustomerLogoDisplay
+            logo={customer?.logo}
+            customerName={customer?.fantasyName || ""}
+            size="sm"
+            shape="rounded"
+          />
 
           {/* Customer Info */}
           <View style={styles.customerInfo}>
@@ -218,28 +203,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     flex: 1,
-  },
-  logoWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  logoImage: {
-    width: 32,
-    height: 32,
-  },
-  simpleLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  logoText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
   customerInfo: {
     flex: 1,

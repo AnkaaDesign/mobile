@@ -6,7 +6,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form/task-form-with-provider";
-import { SkeletonCard } from "@/components/ui/loading";
+import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { useTaskMutations, useLayoutsByTruck, useTaskDetail, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
@@ -608,11 +608,15 @@ export default function EditScheduleScreen() {
   if (checkingPermission || !user || !canEdit) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
-        </View>
+        <FormSkeleton
+          cards={[
+            { title: true, titleWidth: "50%", fields: 3 },
+            { title: true, titleWidth: "35%", fields: 4, fieldLayout: "grid" },
+            { title: true, titleWidth: "45%", fields: 3 },
+            { title: true, titleWidth: "40%", fields: 2, toggleCount: 1 },
+          ]}
+          showActionBar
+        />
       </ThemedView>
     );
   }
@@ -620,11 +624,15 @@ export default function EditScheduleScreen() {
   if (isLoadingTask) {
     return (
       <ThemedView style={styles.container}>
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
-          <SkeletonCard style={styles.skeleton} />
-        </View>
+        <FormSkeleton
+          cards={[
+            { title: true, titleWidth: "50%", fields: 3 },
+            { title: true, titleWidth: "35%", fields: 4, fieldLayout: "grid" },
+            { title: true, titleWidth: "45%", fields: 3 },
+            { title: true, titleWidth: "40%", fields: 2, toggleCount: 1 },
+          ]}
+          showActionBar
+        />
       </ThemedView>
     );
   }
@@ -786,12 +794,5 @@ export default function EditScheduleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  skeletonContainer: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  skeleton: {
-    height: 200,
   },
 });

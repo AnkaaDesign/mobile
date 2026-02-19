@@ -13,6 +13,7 @@ import { SupplierTableRowSwipe } from "./supplier-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatPhone } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { SupplierLogoDisplay } from "@/components/ui/supplier-logo-display";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -56,9 +57,17 @@ export const createColumnDefinitions = (): TableColumn[] => [
     sortable: true,
     width: 0,
     accessor: (supplier: Supplier) => (
-      <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
-        {supplier.fantasyName}
-      </ThemedText>
+      <View style={styles.nameContainer}>
+        <SupplierLogoDisplay
+          logo={supplier.logo}
+          supplierName={supplier.fantasyName}
+          size="sm"
+          shape="rounded"
+        />
+        <ThemedText style={StyleSheet.flatten([styles.cellText, styles.nameText])} numberOfLines={2}>
+          {supplier.fantasyName}
+        </ThemedText>
+      </View>
     ),
   },
   {
@@ -760,7 +769,13 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     fontSize: fontSize.xs, // Smaller for codes
   },
+  nameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   nameText: {
+    flex: 1,
     fontWeight: fontWeight.medium,
     fontSize: fontSize.xs,
   },

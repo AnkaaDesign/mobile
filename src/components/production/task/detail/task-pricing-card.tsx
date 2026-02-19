@@ -32,6 +32,10 @@ interface TaskPricingCardProps {
   customerName?: string;
   contactName?: string;
   termDate?: Date | string | null;
+  // Vehicle identification
+  serialNumber?: string | null;
+  plate?: string | null;
+  chassisNumber?: string | null;
 }
 
 type PricingStatus = "DRAFT" | "APPROVED" | "REJECTED" | "CANCELLED";
@@ -43,7 +47,7 @@ const STATUS_CONFIG: Record<PricingStatus, { label: string; variant: "secondary"
   CANCELLED: { label: "Cancelado", variant: "cancelled" },
 };
 
-export function TaskPricingCard({ pricing, customerId, customerName, contactName, termDate }: TaskPricingCardProps) {
+export function TaskPricingCard({ pricing, customerId, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: TaskPricingCardProps) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
   const [isExporting, setIsExporting] = useState(false);
@@ -64,6 +68,9 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
         customerName,
         contactName,
         termDate,
+        serialNumber,
+        plate,
+        chassisNumber,
       });
     } catch (error) {
       console.error("Error exporting PDF:", error);

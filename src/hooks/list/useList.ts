@@ -69,17 +69,34 @@ export function useList<T extends { id: string }>(
 
   // Build query params for API
   const queryParams = useMemo(
-    () => ({
-      orderBy: sort.orderBy,
-      ...(search.text ? { searchingFor: search.text } : {}),
-      ...filters.apiParams,
-      ...(config.query.forcedParams || {}), // Forced params (e.g., sectorIds for team filtering)
-      // Prefer select over include for optimized data fetching
-      ...(config.query.select ? { select: config.query.select } : {}),
-      ...(config.query.include && !config.query.select ? { include: config.query.include } : {}),
-      where: config.query.where, // Base where clause
-      limit: config.query.pageSize || 25,
-    }),
+    () => {
+      // Clone the base where clause, removing any keys that filters will override
+      // This prevents conflicting conditions (e.g., where.status=COMPLETED AND status=CANCELLED)
+      let where = config.query.where ? { ...config.query.where } : undefined;
+      if (where) {
+        const filterKeys = Object.keys(filters.apiParams);
+        for (const key of filterKeys) {
+          if (key in where) {
+            delete where[key];
+          }
+        }
+        if (Object.keys(where).length === 0) {
+          where = undefined;
+        }
+      }
+
+      return {
+        orderBy: sort.orderBy,
+        ...(search.text ? { searchingFor: search.text } : {}),
+        ...filters.apiParams,
+        ...(config.query.forcedParams || {}), // Forced params (e.g., sectorIds for team filtering)
+        // Prefer select over include for optimized data fetching
+        ...(config.query.select ? { select: config.query.select } : {}),
+        ...(config.query.include && !config.query.select ? { include: config.query.include } : {}),
+        ...(where ? { where } : {}),
+        limit: config.query.pageSize || 25,
+      };
+    },
     [sort.orderBy, search.text, filters.apiParams, config.query.forcedParams, config.query.select, config.query.include, config.query.where, config.query.pageSize]
   )
 

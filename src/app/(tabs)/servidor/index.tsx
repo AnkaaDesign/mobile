@@ -211,7 +211,7 @@ export default function ServidorScreen() {
                   {Math.round(cpuUsage)}%
                 </ThemedText>
               </ThemedView>
-              <Progress value={cpuUsage} style={{ height: 8 }} />
+              <Progress value={cpuUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(cpuUsage) }} />
               {metrics?.cpu?.cores && (
                 <ThemedText className="text-xs text-muted-foreground mt-1">
                   {metrics.cpu.cores} núcleos
@@ -235,7 +235,7 @@ export default function ServidorScreen() {
                   {Math.round(memoryUsage)}%
                 </ThemedText>
               </ThemedView>
-              <Progress value={memoryUsage} style={{ height: 8 }} />
+              <Progress value={memoryUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(memoryUsage) }} />
               {metrics?.memory && (
                 <ThemedText className="text-xs text-muted-foreground mt-1">
                   {formatBytes(metrics.memory.used)} /{" "}
@@ -258,7 +258,7 @@ export default function ServidorScreen() {
                   {Math.round(diskUsage)}%
                 </ThemedText>
               </ThemedView>
-              <Progress value={diskUsage} style={{ height: 8 }} />
+              <Progress value={diskUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(diskUsage) }} />
               {metrics?.disk && (
                 <ThemedText className="text-xs text-muted-foreground mt-1">
                   {formatBytes(metrics.disk.used)} /{" "}

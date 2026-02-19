@@ -366,6 +366,7 @@ export function FilePicker({
   };
 
   const iconColor = disabled ? colors.mutedForeground : colors.foreground;
+  const enabledButtonCount = [showCamera, showVideoCamera, showGallery, showFilePicker].filter(Boolean).length;
 
   // Render single file preview (full width)
   const renderSingleFilePreview = () => {
@@ -552,7 +553,7 @@ export function FilePicker({
               </View>
 
               {!isLoading && (
-                <View style={styles.actionButtons}>
+                <View style={[styles.actionButtons, enabledButtonCount === 4 && styles.actionButtonsGrid]}>
                   {showCamera && (
                     <TouchableOpacity
                       onPress={(e) => {
@@ -645,7 +646,7 @@ export function FilePicker({
                 </View>
 
                 {!isLoading && (
-                  <View style={styles.actionButtons}>
+                  <View style={[styles.actionButtons, enabledButtonCount === 4 && styles.actionButtonsGrid]}>
                     {showCamera && (
                       <TouchableOpacity
                         onPress={(e) => {
@@ -769,8 +770,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.xxs,
-    maxWidth: 76,
     justifyContent: "flex-end",
+  },
+  actionButtonsGrid: {
+    maxWidth: 76,
   },
   iconButton: {
     width: 34,

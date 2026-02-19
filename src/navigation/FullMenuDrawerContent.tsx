@@ -23,6 +23,7 @@ import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
 import { useFavorites } from '@/contexts/favorites-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useNavigationLoading } from '@/contexts/navigation-loading-context';
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { maskPhone } from '@/utils';
 
@@ -68,6 +69,7 @@ function FullMenuDrawerContent({
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
 
   const isDarkMode = isDark;
 
@@ -164,7 +166,7 @@ function FullMenuDrawerContent({
     return null;
   };
 
-  // Path navigation with error handling
+  // Path navigation with loading overlay + double-click guard
   const navigateToPath = useCallback(
     (path: string) => {
       if (!path || typeof path !== "string" || path.trim() === "") {
@@ -172,22 +174,18 @@ function FullMenuDrawerContent({
         return;
       }
 
+      // Prevent double-navigation
+      if (isNavigatingRef.current) return;
+
       const tabRoute = routeToMobilePath(path);
 
-      try {
-        router.push(tabRoute as any);
-        navigation?.closeDrawer?.();
-      } catch (error) {
-        console.warn("Navigation failed for route:", tabRoute, error);
-        try {
-          router.push('/(tabs)/inicio' as any);
-          navigation?.closeDrawer?.();
-        } catch (fallbackError) {
-          console.error("Fallback navigation also failed:", fallbackError);
-        }
-      }
+      // Close drawer first so overlay is visible
+      navigation?.closeDrawer?.();
+
+      // Navigate with loading overlay
+      pushWithLoading(tabRoute);
     },
-    [router, navigation],
+    [pushWithLoading, isNavigatingRef, navigation],
   );
 
   // Check if menu item is active
@@ -238,15 +236,13 @@ function FullMenuDrawerContent({
       // Instant visual feedback
       setNavigatingItemId(item.id);
 
-      requestAnimationFrame(() => {
-        const targetPath = getFirstSubmenuPath(item);
-        if (targetPath) {
-          navigateToPath(targetPath);
-        }
+      const targetPath = getFirstSubmenuPath(item);
+      if (targetPath) {
+        navigateToPath(targetPath);
+      }
 
-        // Reset navigation state after navigation completes
-        setTimeout(() => setNavigatingItemId(null), 1500);
-      });
+      // Reset navigation state after navigation completes
+      setTimeout(() => setNavigatingItemId(null), 1500);
     },
     [navigateToPath],
   );

@@ -281,13 +281,12 @@ export function CopyFromTaskModal({
 
   const categoryOrder = [
     "Acoes Rapidas",
-    "Basico",
-    "Referencias",
-    "Arquivos",
-    "Recursos Compartilhados",
-    "Recursos Individuais",
+    "Informacoes Gerais",
+    "Datas",
+    "Comercial",
+    "Pintura e Artes",
+    "Producao",
     "Veiculo",
-    "Observacoes",
   ];
 
   const handleToggleField = useCallback((field: CopyableTaskField) => {

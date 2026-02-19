@@ -89,6 +89,9 @@ interface ComboboxProps<TData = ComboboxOption> {
   showCount?: boolean;
   hideDefaultBadges?: boolean;
 
+  // Fixed content rendered between search and scrollable list
+  fixedTopContent?: React.ReactNode;
+
   // UI behavior
   hideDescription?: boolean;
   avoidKeyboard?: boolean; // Whether to use KeyboardAvoidingView in the modal (default: true)
@@ -160,6 +163,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   singleMode = false,
   showCount = true,
   hideDefaultBadges = false,
+  fixedTopContent,
   hideDescription = false,
   avoidKeyboard = true,
   size = "default",
@@ -990,6 +994,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
               </View>
             )}
 
+            {fixedTopContent}
+
             <FlatList
               data={filteredOptions}
               renderItem={renderItem}
@@ -1148,6 +1154,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                 </View>
               </View>
             )}
+
+            {fixedTopContent}
 
             <FlatList
               data={filteredOptions}

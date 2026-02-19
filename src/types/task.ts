@@ -71,7 +71,7 @@ export interface Task extends BaseEntity {
   artworks?: Artwork[];
   logoPaints?: Paint[];
   serviceOrders?: ServiceOrder[];
-  pricing?: TaskPricing; // Task pricing (one-to-many: one pricing can be shared across multiple tasks)
+  pricing?: TaskPricing; // Task pricing (one-to-one: each task has its own unique pricing)
   airbrushings?: Airbrushing[];
   cuts?: Cut[];
   truck?: Truck;

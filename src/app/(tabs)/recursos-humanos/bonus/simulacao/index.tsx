@@ -6,10 +6,11 @@ import { ThemedView, ThemedText, EmptyState, Combobox } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
-import { useUsers, useTasks, usePositions, useScreenReady} from '@/hooks';
+import { useUsers, usePositions, useScreenReady} from '@/hooks';
 import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
-import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
+import { USER_STATUS } from "@/constants";
+import { bonusService } from "@/api-client";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,27 +56,30 @@ export default function BonusSimulationScreen() {
   const { year: periodYear, month: periodMonth } = getCurrentPayrollPeriod();
   const currentPeriod = getBonusPeriod(periodYear, periodMonth);
 
-  // Prepare date range for current period
-  const startDate = new Date(currentPeriod.startDate);
-  startDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(currentPeriod.endDate);
-  endDate.setHours(23, 59, 59, 999);
+  // Fetch period task stats from lightweight endpoint (no Secullum)
+  const [taskStatsLoading, setTaskStatsLoading] = useState(true);
+  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number } | null>(null);
 
-  // Fetch current period tasks (completed with commission)
-  const { data: currentPeriodTasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
-    where: {
-      status: TASK_STATUS.COMPLETED,
-      finishedAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-      commission: {
-        in: [COMMISSION_STATUS.FULL_COMMISSION, COMMISSION_STATUS.PARTIAL_COMMISSION],
-      },
-    },
-    limit: 1000,
-    enabled: true,
-  });
+  const fetchPeriodStats = useCallback(async () => {
+    setTaskStatsLoading(true);
+    try {
+      const response = await bonusService.getPeriodTaskStats(periodYear, periodMonth);
+      const data = (response.data as any)?.data ?? response.data;
+      setPeriodTaskStats({
+        rawCount: Number(data.totalRawTaskCount) || 0,
+        weightedCount: Number(data.totalWeightedTasks) || 0,
+        suspendedCount: Number(data.totalSuspendedTasks) || 0,
+      });
+    } catch (err) {
+      console.error('[BonusSimulation] Failed to fetch period task stats:', err);
+    } finally {
+      setTaskStatsLoading(false);
+    }
+  }, [periodYear, periodMonth]);
+
+  useEffect(() => {
+    fetchPeriodStats();
+  }, [fetchPeriodStats]);
 
   // Fetch contracted users with bonifiable positions
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useUsers({
@@ -90,36 +94,14 @@ export default function BonusSimulationScreen() {
     limit: 100,
   });
 
-  // Calculate weighted task count from API (full = 1.0, partial = 0.5)
-  const taskCountStats = useMemo(() => {
-    if (!currentPeriodTasks?.data) return { weighted: 0, full: 0, partial: 0 };
-
-    let fullCount = 0;
-    let partialCount = 0;
-
-    currentPeriodTasks.data.forEach((task) => {
-      if (task.commission === COMMISSION_STATUS.FULL_COMMISSION) {
-        fullCount++;
-      } else if (task.commission === COMMISSION_STATUS.PARTIAL_COMMISSION) {
-        partialCount++;
-      }
-    });
-
-    return {
-      weighted: fullCount + (partialCount * 0.5),
-      full: fullCount,
-      partial: partialCount,
-    };
-  }, [currentPeriodTasks]);
-
-  // Set initial task quantity from current period (only once on load)
+  // Set initial task quantity from period stats (only once on load)
   useEffect(() => {
-    if (taskCountStats.weighted > 0 && !hasUserModified && taskInput === "") {
-      setTaskQuantity(taskCountStats.weighted);
-      setOriginalTaskQuantity(taskCountStats.weighted);
-      setTaskInput(taskCountStats.weighted.toFixed(1).replace('.', ','));
+    if (periodTaskStats && periodTaskStats.weightedCount > 0 && !hasUserModified && taskInput === "") {
+      setTaskQuantity(periodTaskStats.weightedCount);
+      setOriginalTaskQuantity(periodTaskStats.weightedCount);
+      setTaskInput(periodTaskStats.weightedCount.toFixed(1).replace('.', ','));
     }
-  }, [taskCountStats.weighted, hasUserModified, taskInput]);
+  }, [periodTaskStats, hasUserModified, taskInput]);
 
   // Filter to only eligible users (bonifiable position and performance level > 0)
   const eligibleUsers = useMemo(() => {
@@ -239,14 +221,14 @@ export default function BonusSimulationScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchTasks(), refetchUsers()]);
+      await Promise.all([fetchPeriodStats(), refetchUsers()]);
       setSimulatedUsers([]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchTasks, refetchUsers]);
+  }, [fetchPeriodStats, refetchUsers]);
 
-  const isLoading = tasksLoading || usersLoading;
+  const isLoading = taskStatsLoading || usersLoading;
   useScreenReady(!isLoading);
 
   if (isLoading && !refreshing) {
@@ -331,16 +313,16 @@ export default function BonusSimulationScreen() {
             </View>
 
             {/* Current period task count info */}
-            {taskCountStats.weighted > 0 && !isTaskQuantityModified && (
+            {periodTaskStats && periodTaskStats.weightedCount > 0 && !isTaskQuantityModified && (
               <View style={[styles.periodTaskInfo, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
                 <View style={styles.periodTaskInfoContent}>
                   <IconCalculator size={16} color={colors.primary} />
                   <ThemedText style={[styles.periodTaskInfoText, { color: colors.primary }]}>
-                    {taskCountStats.weighted.toFixed(1)} tarefas ponderadas
+                    {periodTaskStats.weightedCount.toFixed(1)} tarefas ponderadas
                   </ThemedText>
                 </View>
                 <ThemedText style={[styles.periodTaskInfoSubtext, { color: colors.mutedForeground }]}>
-                  ({taskCountStats.full} integral + {taskCountStats.partial} parcial)
+                  ({periodTaskStats.rawCount} total{periodTaskStats.suspendedCount > 0 ? `, ${periodTaskStats.suspendedCount} suspensa${periodTaskStats.suspendedCount !== 1 ? 's' : ''}` : ''})
                 </ThemedText>
               </View>
             )}

@@ -427,6 +427,9 @@ export default function ScheduleDetailsScreen() {
               customerName={task.customer?.corporateName || task.customer?.fantasyName}
               contactName={(task as any).negotiatingWith?.name}
               termDate={task.term}
+              serialNumber={(task as any).serialNumber}
+              plate={(task as any).truck?.plate}
+              chassisNumber={(task as any).truck?.chassisNumber}
             />
           )}
 

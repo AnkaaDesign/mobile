@@ -760,6 +760,7 @@ interface TruckElementProps {
   onEdgeDetection?: (absoluteX: number) => void; // Called during drag with absolute screen X
   onDragStarted?: () => void; // Called when drag starts to show preview indicators
   onDragEnded?: () => void; // Called when drag ends to clear edge state
+  onDoubleTap?: () => void; // Called when truck is double-tapped
   disabled?: boolean; // Disable dragging (read-only mode)
 }
 
@@ -778,6 +779,7 @@ const TruckElement = memo(function TruckElement({
   onEdgeDetection,
   onDragStarted,
   onDragEnded,
+  onDoubleTap,
   disabled = false,
 }: TruckElementProps) {
   const { colors } = useTheme();
@@ -1074,6 +1076,18 @@ const TruckElement = memo(function TruckElement({
       runOnJS(handleDragEnd)(finalTranslationX, finalTranslationY);
     });
 
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .enabled(!disabled && !!onDoubleTap)
+    .onEnd(() => {
+      'worklet';
+      if (onDoubleTap) {
+        runOnJS(onDoubleTap)();
+      }
+    });
+
+  const composedGesture = Gesture.Exclusive(doubleTapGesture, panGesture);
+
   // Add stroke padding to prevent clipping
   const strokeWidth = 1.5;
   const strokePadding = strokeWidth;
@@ -1081,7 +1095,7 @@ const TruckElement = memo(function TruckElement({
   const svgHeight = height + strokePadding * 2;
 
   return (
-    <GestureDetector gesture={panGesture}>
+    <GestureDetector gesture={composedGesture}>
       <Animated.View
         ref={truckViewRef}
         style={[{ position: 'absolute', left: baseX - strokePadding, top: baseY - strokePadding, width: svgWidth, height: svgHeight }, animatedStyle]}>
@@ -1245,6 +1259,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
   const [dragOverEdge, setDragOverEdge] = useState<'left' | 'right' | null>(null);
   const [containerBounds, setContainerBounds] = useState<ContainerBounds | null>(null);
   const [activeDragTruckId, setActiveDragTruckId] = useState<string | null>(null); // Track which truck is being dragged
+  const [selectedTruckId, setSelectedTruckId] = useState<string | null>(null); // Track which truck was double-tapped for patio action
   const containerRef = useRef<View>(null);
   const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -1444,6 +1459,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
   const handlePrevArea = useCallback(() => {
     const newIndex = currentAreaIndex > 0 ? currentAreaIndex - 1 : AREAS.length - 1;
     setCurrentAreaIndex(newIndex);
+    setSelectedTruckId(null); // Clear selection on area change
     // Animate carousel to show new area
     carouselOffset.value = withTiming(newIndex * visibleAreaWidth, {
       duration: 300,
@@ -1454,6 +1470,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
   const handleNextArea = useCallback(() => {
     const newIndex = currentAreaIndex < AREAS.length - 1 ? currentAreaIndex + 1 : 0;
     setCurrentAreaIndex(newIndex);
+    setSelectedTruckId(null); // Clear selection on area change
     // Animate carousel to show new area
     carouselOffset.value = withTiming(newIndex * visibleAreaWidth, {
       duration: 300,
@@ -1848,6 +1865,21 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
     setPendingChanges(new Map());
   }, []);
 
+  // Send selected truck to patio (set spot to null)
+  const handleSendToPatio = useCallback((truckId: string) => {
+    const originalTruck = trucks.find((t) => t.id === truckId);
+    const originalSpot = originalTruck?.spot || null;
+
+    if (originalSpot === null) return; // Already in patio
+
+    setPendingChanges((prev) => {
+      const next = new Map(prev);
+      next.set(truckId, { truckId, originalSpot, newSpot: null });
+      return next;
+    });
+    setSelectedTruckId(null);
+  }, [trucks]);
+
   const hasChanges = pendingChanges.size > 0;
 
   const getAreaTitle = (areaId: AreaId) => (areaId === 'PATIO' ? 'Pátio' : `Barracão ${areaId.slice(1)}`);
@@ -1880,7 +1912,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
               {AREAS.map((area, index) => (
                 <Pressable
                   key={area}
-                  onPress={() => setCurrentAreaIndex(index)}
+                  onPress={() => { setCurrentAreaIndex(index); setSelectedTruckId(null); }}
                   style={[
                     styles.dot,
                     { backgroundColor: index === currentAreaIndex ? (area === 'PATIO' ? '#0EA5E9' : '#F59E0B') : '#D1D5DB' },
@@ -2091,7 +2123,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
                       onNavigateNext={handleNextArea}
                       onNavigateWithTruck={readOnly ? undefined : (direction) => handleNavigateWithTruck(truck.id, direction)}
                       onEdgeDetection={readOnly ? undefined : (absoluteX) => handleEdgeDetection(truck.id, absoluteX)}
-                      onDragStarted={readOnly ? undefined : () => setActiveDragTruckId(truck.id)}
+                      onDragStarted={readOnly ? undefined : () => { setActiveDragTruckId(truck.id); setSelectedTruckId(null); }}
                       onDragEnded={handleDragEnded}
                       disabled={readOnly}
                     />
@@ -2112,12 +2144,66 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
                         onNavigateNext={handleNextArea}
                         onNavigateWithTruck={readOnly ? undefined : (direction) => handleNavigateWithTruck(truck.id, direction)}
                         onEdgeDetection={readOnly ? undefined : (absoluteX) => handleEdgeDetection(truck.id, absoluteX)}
-                        onDragStarted={readOnly ? undefined : () => setActiveDragTruckId(truck.id)}
+                        onDragStarted={readOnly ? undefined : () => { setActiveDragTruckId(truck.id); setSelectedTruckId(null); }}
                         onDragEnded={handleDragEnded}
+                        onDoubleTap={readOnly ? undefined : () => setSelectedTruckId(selectedTruckId === truck.id ? null : truck.id)}
                         disabled={readOnly}
                       />
                     ))
                   )}
+
+              {/* Floating "Send to Pátio" button overlay when a truck is double-tapped */}
+              {selectedTruckId && !isPatio && (() => {
+                const selectedTruck = garageLayout?.lanes
+                  .flatMap((lane) => lane.trucks)
+                  .find((t) => t.id === selectedTruckId);
+                if (!selectedTruck) return null;
+
+                const truckWidth = GARAGE_CONFIG.TRUCK_WIDTH_TOP_VIEW * scale;
+                const truckHeight = getTruckLength(selectedTruck) * scale;
+                const truckX = selectedTruck.xPosition * scale;
+                const truckY = selectedTruck.yPosition * scale;
+                const buttonWidth = 100;
+                const buttonHeight = 32;
+                // Center button horizontally on truck, position above it
+                const buttonLeft = truckX + truckWidth / 2 - buttonWidth / 2;
+                const buttonTop = truckY - buttonHeight - 6;
+
+                return (
+                  <>
+                    {/* Dismiss overlay - tap anywhere else to close */}
+                    <Pressable
+                      style={{ position: 'absolute', top: -200, left: -200, right: -200, bottom: -200, zIndex: 199 }}
+                      onPress={() => setSelectedTruckId(null)}
+                    />
+                    {/* Send to Pátio button */}
+                    <Pressable
+                      style={{
+                        position: 'absolute',
+                        left: buttonLeft,
+                        top: buttonTop < 0 ? truckY + truckHeight + 6 : buttonTop,
+                        width: buttonWidth,
+                        height: buttonHeight,
+                        backgroundColor: colors.primary,
+                        borderRadius: 8,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 200,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 5,
+                      }}
+                      onPress={() => handleSendToPatio(selectedTruckId)}
+                    >
+                      <Text style={{ color: colors.primaryForeground, fontSize: 11, fontWeight: '600' }}>
+                        Enviar p/ Pátio
+                      </Text>
+                    </Pressable>
+                  </>
+                );
+              })()}
               </View>
               </View>
             </View>

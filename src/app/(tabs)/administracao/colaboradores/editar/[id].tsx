@@ -6,8 +6,7 @@ import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { Skeleton } from "@/components/ui/skeleton";
-import { spacing, borderRadius } from "@/constants/design-system";
+import { FormSkeleton } from "@/components/ui/form-skeleton";
 
 export default function EditCollaboratorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -77,30 +76,14 @@ export default function EditCollaboratorScreen() {
 
   if (isLoading) {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          {/* Form card skeleton */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={{ marginBottom: spacing.md }}>
-                <Skeleton width="30%" height={14} style={{ marginBottom: spacing.xs }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            ))}
-          </View>
-          {/* Second card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 4 }).map((_, i) => (
-              <View key={i} style={{ marginBottom: spacing.md }}>
-                <Skeleton width="30%" height={14} style={{ marginBottom: spacing.xs }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
+      <FormSkeleton
+        cards={[
+          { title: true, titleWidth: "45%", fields: 5 },
+          { title: true, titleWidth: "35%", fields: 4 },
+          { title: true, titleWidth: "40%", fields: 3, toggleCount: 1 },
+        ]}
+        showActionBar
+      />
     );
   }
 

@@ -91,7 +91,13 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   }, []);
 
   const claimOverlay = useCallback(() => {
-    overlayClaimedRef.current = true;
+    // Only claim if a navigation is actually in progress.
+    // Without this guard, screens calling useScreenReady(false) on mount
+    // (when no navigation is happening) would set a stale claim that
+    // prevents auto-hide on the NEXT navigation.
+    if (isNavigatingRef.current) {
+      overlayClaimedRef.current = true;
+    }
   }, []);
 
   // Failsafe: force hide if stuck too long

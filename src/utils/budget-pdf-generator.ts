@@ -14,6 +14,7 @@ interface BudgetPdfOptions {
   // Vehicle identification
   serialNumber?: string | null;
   plate?: string | null;
+  chassisNumber?: string | null;
 }
 
 // Constants for PDF layout calculations - EXACTLY matching web version
@@ -393,7 +394,7 @@ function formatGuaranteeHtml(text: string): string {
  * Uses expo-print to generate the PDF and expo-sharing to share it
  * EXACTLY matching the web version output
  */
-export async function exportBudgetPdf({ pricing, customerName, contactName, termDate, serialNumber, plate }: BudgetPdfOptions): Promise<void> {
+export async function exportBudgetPdf({ pricing, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: BudgetPdfOptions): Promise<void> {
   if (!pricing || !pricing.items || pricing.items.length === 0) {
     throw new Error("Nenhum item de precificação encontrado");
   }
@@ -464,6 +465,7 @@ export async function exportBudgetPdf({ pricing, customerName, contactName, term
     // Vehicle identification
     serialNumber: serialNumber || null,
     plate: plate || null,
+    chassisNumber: chassisNumber || null,
     // NEW FIELDS: Multi-customer invoicing and advanced pricing
     invoicesToCustomers: pricing.invoicesToCustomers || null,
     simultaneousTasks: pricing.simultaneousTasks || null,
@@ -510,6 +512,7 @@ interface BudgetHtmlData {
   // Vehicle identification
   serialNumber: string | null;
   plate: string | null;
+  chassisNumber: string | null;
   // NEW FIELDS: Multi-customer invoicing and advanced pricing
   invoicesToCustomers: Array<{ fantasyName: string; corporateName: string }> | null;
   simultaneousTasks: number | null;
@@ -1047,7 +1050,7 @@ function generateBudgetHtml(data: BudgetHtmlData): string {
       <div class="customer-section">
         <div class="customer-name">À ${escapeHtml(formatCorporateName(data.corporateName))}</div>
         ${data.contactName ? `<div class="contact-line">Caro ${escapeHtml(data.contactName)}</div>` : ""}
-        <p class="intro-text">Conforme solicitado, apresentamos nossa proposta de preço para execução dos serviços abaixo descriminados${data.serialNumber || data.plate ? ` no veículo${data.serialNumber ? ` nº série: <strong>${escapeHtml(data.serialNumber)}</strong>` : ''}${data.serialNumber && data.plate ? ',' : ''}${data.plate ? ` placa: <strong style="font-weight: 600;">${escapeHtml(data.plate)}</strong>` : ''}` : ''}.</p>
+        <p class="intro-text">Conforme solicitado, apresentamos nossa proposta de preço para execução dos serviços abaixo descriminados${data.serialNumber || data.plate || data.chassisNumber ? ` no veículo${data.serialNumber ? ` nº série: <strong>${escapeHtml(data.serialNumber)}</strong>` : ''}${data.serialNumber && (data.plate || data.chassisNumber) ? ',' : ''}${data.plate ? ` placa: <strong style="font-weight: 600;">${escapeHtml(data.plate)}</strong>` : ''}${data.plate && data.chassisNumber ? ',' : ''}${data.chassisNumber ? ` chassi: <strong style="font-weight: 600;">${escapeHtml(data.chassisNumber)}</strong>` : ''}` : ''}.</p>
         ${simultaneousTasksHtml}
         ${discountReferenceHtml}
       </div>

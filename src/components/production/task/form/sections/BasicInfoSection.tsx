@@ -15,11 +15,11 @@ import { CustomerSelector } from '../customer-selector';
 import { PlateTagsInput } from '../plate-tags-input';
 import { SerialNumberRangeInput } from '../serial-number-range-input';
 import { toTitleCase } from '@/utils/formatters';
-import { useAuth } from '@/hooks/useAuth';
-import { useSectors } from '@/hooks';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { IconCopy } from '@tabler/icons-react-native';
+import { useAuth } from '@/hooks/useAuth';
+import { useSectors } from '@/hooks';
 import {
   TRUCK_CATEGORY,
   IMPLEMENT_TYPE,
@@ -48,7 +48,7 @@ export default function BasicInfoSection({
   initialCustomer,
   task
 }: BasicInfoSectionProps) {
-  const { control, watch } = useFormContext();
+  const { control } = useFormContext();
   const { user } = useAuth();
   const { colors } = useTheme();
 
@@ -188,65 +188,71 @@ export default function BasicInfoSection({
         />
       </SimpleFormField>
 
-      {/* Serial Number */}
-      <SimpleFormField label="Número de Série" error={errors.serialNumber}>
-        <Controller
-          control={control}
-          name="serialNumber"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <Input
-              value={value || ''}
-              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
-              onBlur={onBlur}
-              placeholder="Ex: ABC123456"
-              maxLength={50}
-              autoCapitalize="characters"
-              error={!!errors.serialNumber}
-              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
-            />
-          )}
-        />
-      </SimpleFormField>
+      {/* Serial Number - Only in edit mode */}
+      {mode === 'edit' && (
+        <SimpleFormField label="Número de Série" error={errors.serialNumber}>
+          <Controller
+            control={control}
+            name="serialNumber"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ''}
+                onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
+                onBlur={onBlur}
+                placeholder="Ex: ABC123456"
+                maxLength={50}
+                autoCapitalize="characters"
+                error={!!errors.serialNumber}
+                editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
 
-      {/* License Plate */}
-      <SimpleFormField label="Placa" error={errors.plate}>
-        <Controller
-          control={control}
-          name="truck.plate"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <Input
-              value={value || ''}
-              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
-              onBlur={onBlur}
-              placeholder="Ex: ABC-1234"
-              maxLength={10}
-              autoCapitalize="characters"
-              error={!!errors.truck?.plate}
-              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
-            />
-          )}
-        />
-      </SimpleFormField>
+      {/* License Plate - Only in edit mode */}
+      {mode === 'edit' && (
+        <SimpleFormField label="Placa" error={errors.plate}>
+          <Controller
+            control={control}
+            name="truck.plate"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ''}
+                onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
+                onBlur={onBlur}
+                placeholder="Ex: ABC-1234"
+                maxLength={10}
+                autoCapitalize="characters"
+                error={!!errors.truck?.plate}
+                editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
 
-      {/* Chassis Number */}
-      <SimpleFormField label="Chassi" error={errors.chassisNumber}>
-        <Controller
-          control={control}
-          name="truck.chassisNumber"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <Input
-              value={value || ''}
-              onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
-              onBlur={onBlur}
-              placeholder="Ex: 9BWZZZ377VT004251"
-              maxLength={17}
-              autoCapitalize="characters"
-              error={!!errors.truck?.chassisNumber}
-              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
-            />
-          )}
-        />
-      </SimpleFormField>
+      {/* Chassis Number - Only in edit mode */}
+      {mode === 'edit' && (
+        <SimpleFormField label="Chassi" error={errors.chassisNumber}>
+          <Controller
+            control={control}
+            name="truck.chassisNumber"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ''}
+                onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
+                onBlur={onBlur}
+                placeholder="Ex: 9BWZZZ377VT004251"
+                maxLength={17}
+                autoCapitalize="characters"
+                error={!!errors.truck?.chassisNumber}
+                editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
+              />
+            )}
+          />
+        </SimpleFormField>
+      )}
 
       {/* Plates - Only in create mode (batch creation) */}
       {mode === 'create' && (

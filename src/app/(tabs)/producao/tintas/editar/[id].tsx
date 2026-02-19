@@ -6,7 +6,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { SkeletonCard } from "@/components/ui/loading";
+import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
@@ -116,11 +116,13 @@ export default function EditPaintScreen() {
           }}
         />
         <ThemedView style={styles.container}>
-          <View style={styles.skeletonContainer}>
-            <SkeletonCard style={styles.skeleton} />
-            <SkeletonCard style={styles.skeleton} />
-            <SkeletonCard style={styles.skeleton} />
-          </View>
+          <FormSkeleton
+            cards={[
+              { title: true, titleWidth: "50%", fields: 2 },
+              { title: true, titleWidth: "35%", fields: 3 },
+            ]}
+            showActionBar
+          />
         </ThemedView>
       </>
     );
@@ -187,12 +189,5 @@ export default function EditPaintScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  skeletonContainer: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
-  skeleton: {
-    height: 200,
   },
 });

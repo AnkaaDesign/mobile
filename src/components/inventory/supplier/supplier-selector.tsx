@@ -5,6 +5,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { fontSize, fontWeight} from "@/constants/design-system";
 import type { Supplier } from '../../../types';
+import { SupplierLogoDisplay } from "@/components/ui/supplier-logo-display";
+import { formatCNPJ } from "@/utils";
 
 interface SupplierSelectorProps {
   value?: string;
@@ -54,6 +56,7 @@ export function SupplierSelector({
       page: page,
       take: 50,
       where: { isActive: true },
+      include: { logo: true },
     };
 
     // Only add search filter if there's a search term
@@ -76,31 +79,46 @@ export function SupplierSelector({
     }
   };
 
-  // Custom render option with CNPJ
+  // Custom render option with avatar and CNPJ
   const renderOption = useCallback(
     (option: Supplier, isSelected: boolean) => {
       return (
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: fontSize.base,
-              fontWeight: isSelected ? fontWeight.semibold : fontWeight.medium,
-              color: colors.foreground,
-            }}
-          >
-            {option.fantasyName}
-          </Text>
-          {option.cnpj && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+          <SupplierLogoDisplay
+            logo={option.logo}
+            supplierName={option.fantasyName}
+            size="sm"
+            shape="rounded"
+          />
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
             <Text
               style={{
-                fontSize: fontSize.xs,
-                color: colors.mutedForeground,
-                marginTop: 2,
+                fontSize: fontSize.base,
+                fontWeight: isSelected ? fontWeight.semibold : fontWeight.medium,
+                color: colors.foreground,
               }}
+              numberOfLines={1}
             >
-              CNPJ: {option.cnpj}
+              {option.fantasyName}
             </Text>
-          )}
+            {(option.corporateName || option.cnpj) && (
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap" }}>
+                {option.corporateName && (
+                  <Text
+                    style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}
+                    numberOfLines={1}
+                  >
+                    {option.corporateName}
+                  </Text>
+                )}
+                {option.cnpj && (
+                  <Text style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
+                    {option.corporateName ? " \u2022 " : ""}{formatCNPJ(option.cnpj)}
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
         </View>
       );
     },

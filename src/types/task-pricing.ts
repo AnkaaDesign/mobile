@@ -57,7 +57,7 @@ export type TaskPricing = {
   simultaneousTasks: number | null; // Number of tasks being quoted together (for bulk discounts)
   discountReference: string | null; // Reference text for discount justification (e.g., "Desconto por volume de 3 implementos")
 
-  tasks?: any[]; // Tasks that share this pricing (one-to-many)
+  task?: any; // One-to-one relationship with task
   items?: TaskPricingItem[];
   createdAt?: Date;
   updatedAt?: Date;

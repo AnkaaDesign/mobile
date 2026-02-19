@@ -74,7 +74,9 @@ export const guaranteeYearsSchema = z.number().refine(
 export const taskPricingItemSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().min(1, 'Descrição é obrigatória').max(400),
+  observation: z.string().max(2000).optional().nullable(),
   amount: z.number().min(0, 'Valor deve ser maior ou igual a zero'),
+  shouldSync: z.boolean().optional().default(true),
 });
 
 // Lenient item schema for nested creation (allows incomplete items during editing)
@@ -231,6 +233,8 @@ export const taskPricingSchema = z.object({
   // Guarantee Terms
   guaranteeYears: guaranteeYearsSchema.optional().nullable(),
   customGuaranteeText: z.string().max(2000).optional().nullable(),
+  // Custom Forecast
+  customForecastDays: z.number().int().min(1).max(30).optional().nullable(),
   // Layout File
   layoutFileId: z.string().uuid().optional().nullable(),
   customerSignatureId: z.string().uuid().optional().nullable(),

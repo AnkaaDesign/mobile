@@ -10,7 +10,8 @@ import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getUsers } from "@/api-client";
 import type { User } from "@/types";
-import { IconNote, IconTrash, IconPlus, IconArrowsSort } from "@tabler/icons-react-native";
+import { IconNote, IconTrash, IconPlus, IconArrowsSort, IconGripVertical } from "@tabler/icons-react-native";
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 
 interface ServiceOrder {
   id?: string;
@@ -29,6 +30,7 @@ interface ServiceSelectorAutoGroupedProps {
   error?: string;
   userPrivilege?: string;
   currentUserId?: string;
+  onProductionReorder?: (descriptions: string[]) => void;
 }
 
 export function ServiceSelectorAutoGrouped({
@@ -38,6 +40,7 @@ export function ServiceSelectorAutoGrouped({
   error,
   userPrivilege,
   currentUserId,
+  onProductionReorder,
 }: ServiceSelectorAutoGroupedProps) {
   const { colors } = useTheme();
 
@@ -112,6 +115,40 @@ export function ServiceSelectorAutoGrouped({
   const handleOrganize = useCallback(() => {
     setPendingKeys(new Set());
   }, []);
+
+  // Reorder items within a single type group
+  const handleReorderWithinGroup = useCallback(
+    (type: string, from: number, to: number) => {
+      const serviceIndices = groupedServices[type];
+      if (!serviceIndices || serviceIndices.length < 2) return;
+      if (from === to) return;
+
+      // Extract items at the group's global indices
+      const currentValues = [...services];
+      const groupItems = serviceIndices.map(i => currentValues[i]);
+
+      // Apply array move on the local group items
+      const [moved] = groupItems.splice(from, 1);
+      groupItems.splice(to, 0, moved);
+
+      // Place reordered items back into the same global index slots
+      const newValues = [...currentValues];
+      serviceIndices.forEach((globalIndex, localIndex) => {
+        newValues[globalIndex] = groupItems[localIndex];
+      });
+
+      onChange(newValues);
+
+      // Notify parent to reorder synced pricing items for PRODUCTION groups
+      if (type === SERVICE_ORDER_TYPE.PRODUCTION && onProductionReorder) {
+        const newDescriptionOrder = groupItems
+          .map((item: any) => item.description)
+          .filter(Boolean);
+        onProductionReorder(newDescriptionOrder);
+      }
+    },
+    [groupedServices, services, onChange, onProductionReorder]
+  );
 
   // Handle removing a service
   const handleRemoveService = useCallback(
@@ -230,27 +267,59 @@ export function ServiceSelectorAutoGrouped({
           </ThemedText>
         </View>
 
-        <View style={styles.servicesList}>
-          {serviceIndices.map((index) => (
-            <ServiceRow
-              key={index}
-              service={services[index]}
-              index={index}
-              type={type}
-              disabled={disabled}
-              onRemove={() => handleRemoveService(index)}
-              onDescriptionChange={handleServiceDescriptionChange}
-              onTypeChange={handleServiceTypeChange}
-              onAssignedToChange={handleAssignedToChange}
-              onStatusChange={handleStatusChange}
-              onObservationChange={handleObservationChange}
-              isGrouped={true}
-              userPrivilege={userPrivilege}
-              currentUserId={currentUserId}
-              allowedServiceOrderTypes={visibleServiceOrderTypes}
-            />
-          ))}
-        </View>
+        {serviceIndices.length >= 2 ? (
+          <DraggableFlatList
+            data={serviceIndices}
+            scrollEnabled={false}
+            keyExtractor={(item) => `so-${item}`}
+            onDragEnd={({ from, to }) => handleReorderWithinGroup(type, from, to)}
+            renderItem={({ item: index, drag, isActive }: RenderItemParams<number>) => (
+              <ScaleDecorator>
+                <ServiceRow
+                  service={services[index]}
+                  index={index}
+                  type={type}
+                  disabled={disabled}
+                  onRemove={() => handleRemoveService(index)}
+                  onDescriptionChange={handleServiceDescriptionChange}
+                  onTypeChange={handleServiceTypeChange}
+                  onAssignedToChange={handleAssignedToChange}
+                  onStatusChange={handleStatusChange}
+                  onObservationChange={handleObservationChange}
+                  isGrouped={true}
+                  userPrivilege={userPrivilege}
+                  currentUserId={currentUserId}
+                  allowedServiceOrderTypes={visibleServiceOrderTypes}
+                  showDragHandle={!disabled}
+                  onDrag={drag}
+                  isBeingDragged={isActive}
+                />
+              </ScaleDecorator>
+            )}
+          />
+        ) : (
+          <View style={styles.servicesList}>
+            {serviceIndices.map((index) => (
+              <ServiceRow
+                key={index}
+                service={services[index]}
+                index={index}
+                type={type}
+                disabled={disabled}
+                onRemove={() => handleRemoveService(index)}
+                onDescriptionChange={handleServiceDescriptionChange}
+                onTypeChange={handleServiceTypeChange}
+                onAssignedToChange={handleAssignedToChange}
+                onStatusChange={handleStatusChange}
+                onObservationChange={handleObservationChange}
+                isGrouped={true}
+                userPrivilege={userPrivilege}
+                currentUserId={currentUserId}
+                allowedServiceOrderTypes={visibleServiceOrderTypes}
+              />
+            ))}
+          </View>
+        )}
       </View>
     );
   };
@@ -334,6 +403,9 @@ interface ServiceRowProps {
   userPrivilege?: string;
   currentUserId?: string;
   allowedServiceOrderTypes: string[];
+  showDragHandle?: boolean;
+  onDrag?: () => void;
+  isBeingDragged?: boolean;
 }
 
 function ServiceRow({
@@ -351,6 +423,9 @@ function ServiceRow({
   initialAssignedUser,
   userPrivilege,
   allowedServiceOrderTypes,
+  showDragHandle,
+  onDrag,
+  isBeingDragged,
 }: ServiceRowProps) {
   const { colors } = useTheme();
   const [observationModal, setObservationModal] = useState<{ visible: boolean; text: string }>({
@@ -507,7 +582,16 @@ function ServiceRow({
   const hasObservation = !!service.observation && service.observation.trim().length > 0;
 
   return (
-    <View style={styles.serviceRow}>
+    <View style={[styles.serviceRow, isBeingDragged && { backgroundColor: colors.accent, borderRadius: 8 }]}>
+      {/* Drag handle row */}
+      {showDragHandle && (
+        <View style={styles.dragHandleRow}>
+          <View style={styles.dragHandle} onTouchStart={onDrag}>
+            <IconGripVertical size={20} color={colors.mutedForeground} />
+          </View>
+        </View>
+      )}
+
       {/* Row 1: Type (if not grouped) */}
       {!isGrouped && (
         <View style={styles.typeRow}>
@@ -704,6 +788,13 @@ const styles = StyleSheet.create({
   },
   serviceRow: {
     gap: spacing.xs,
+    padding: spacing.xs,
+  },
+  dragHandleRow: {
+    alignItems: "center",
+  },
+  dragHandle: {
+    padding: spacing.xs,
   },
   typeRow: {
     marginBottom: spacing.xs,

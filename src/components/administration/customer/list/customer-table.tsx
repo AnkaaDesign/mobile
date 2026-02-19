@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet, Image } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import type { Customer } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
@@ -10,8 +10,8 @@ import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CustomerTableRowSwipe } from "./customer-table-row-swipe";
 import { formatCNPJ, formatCPF, formatBrazilianPhone, formatDateTime } from "@/utils";
-import { getFileUrl } from '@/utils/file';
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { CustomerLogoDisplay } from "@/components/ui/customer-logo-display";
 
 export interface TableColumn {
   key: string;
@@ -58,22 +58,12 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (customer: Customer) => (
       <View style={styles.nameContainer}>
-        {customer.logo?.id ? (
-          <Image
-            source={{ uri: getFileUrl(customer.logo!) }}
-            style={[styles.logoImage, { borderColor: extendedColors.neutral[300] }]}
-            onError={(_e) => {
-              // On error, the fallback avatar will be shown via react-native's onError handling
-              console.log('Failed to load logo for customer:', customer.fantasyName);
-            }}
-          />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
-            <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
-              {customer.fantasyName?.charAt(0)?.toUpperCase() || "?"}
-            </ThemedText>
-          </View>
-        )}
+        <CustomerLogoDisplay
+          logo={customer.logo}
+          customerName={customer.fantasyName}
+          size="sm"
+          shape="rounded"
+        />
         <ThemedText style={styles.nameText} numberOfLines={1}>
           {customer.fantasyName}
         </ThemedText>
@@ -783,23 +773,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-  },
-  logoImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    borderWidth: 1,
   },
   nameText: {
     flex: 1,

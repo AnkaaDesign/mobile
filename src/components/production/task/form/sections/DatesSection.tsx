@@ -56,6 +56,7 @@ export default function DatesSection({
             name="forecastDate"
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
+                type="datetime"
                 value={value ? new Date(value) : undefined}
                 onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a previsão"

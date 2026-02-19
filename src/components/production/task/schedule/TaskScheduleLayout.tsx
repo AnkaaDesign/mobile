@@ -23,7 +23,7 @@ import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { useScreenReady } from '@/hooks/use-screen-ready'
 import { useTasksInfiniteMobile, useSectorsInfiniteMobile } from '@/hooks'
 import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
-import { isTeamLeader, hasPrivilege } from '@/utils/user'
+import { isTeamLeader, hasPrivilege, isUserAdmin } from '@/utils/user'
 import { Search } from '@/components/list/Search'
 import { useDebouncedSearch } from '@/hooks/useDebouncedSearch'
 import { Filters } from '@/components/list/Filters'
@@ -118,7 +118,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
   const userIsTeamLeader = user ? isTeamLeader(user) : false
   const isProductionUser = user ? hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) : false
-  const isLeaderOrProduction = userIsTeamLeader || isProductionUser
+  const userIsAdmin = user ? isUserAdmin(user) : false
+  const isLeaderOrProduction = !userIsAdmin && (userIsTeamLeader || isProductionUser)
   // For team leaders: show tasks from the sector they manage (managedSector.id)
   const userSectorId = userIsTeamLeader ? user?.managedSector?.id : user?.sector?.id
 
@@ -165,7 +166,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       ...(searchText ? { searchingFor: searchText } : {}),
       ...filterValuesWithoutStatus,
       include: config.query.include,
-      limit: shouldGroupByStatus ? 300 : 100, // Optimized: Reduced initial load
+      limit: shouldGroupByStatus ? 1000 : 100, // Match web's limit of 1000 per status table
     };
   }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include])
 
@@ -185,7 +186,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       orderBy,
       ...(searchText ? { searchingFor: searchText } : {}),
       include: config.query.include,
-      limit: shouldGroupByStatus ? 300 : 100, // Optimized: Reduced initial load
+      limit: shouldGroupByStatus ? 1000 : 100, // Match web's limit of 1000 per status table
     };
 
     // For agenda view, use preparation filters but remove status filter (like web)
@@ -411,22 +412,22 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           })
         }
       } else {
-        // Default order for other users: Preparation, In Production, Completed
-        // Section 1: Em Preparação (PREPARATION + WAITING_PRODUCTION)
-        if (tasksByStatus.preparation.length > 0) {
-          result.push({
-            title: 'Em Preparação',
-            sectorId: 'preparation',
-            data: tasksByStatus.preparation,
-          })
-        }
-
-        // Section 2: Em Produção (IN_PRODUCTION)
+        // Default order for other users: In Production, Preparation, Completed
+        // Section 1: Em Produção (IN_PRODUCTION) - First for non-financial
         if (tasksByStatus.inProduction.length > 0) {
           result.push({
             title: 'Em Produção',
             sectorId: 'in-production',
             data: tasksByStatus.inProduction,
+          })
+        }
+
+        // Section 2: Em Preparação (PREPARATION + WAITING_PRODUCTION)
+        if (tasksByStatus.preparation.length > 0) {
+          result.push({
+            title: 'Em Preparação',
+            sectorId: 'preparation',
+            data: tasksByStatus.preparation,
           })
         }
 
@@ -714,45 +715,69 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     <ThemedView style={styles.container}>
       {isInitialLoading ? (
         <>
-          {/* Search bar skeleton */}
+          {/* Search bar skeleton — mirrors Search component structure */}
           <View style={styles.header}>
             <View style={styles.searchContainer}>
-              <Skeleton style={{ height: 40, borderRadius: 8 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, gap: 8 }}>
+                <Skeleton style={{ width: 20, height: 20, borderRadius: 10 }} />
+                <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
+              </View>
             </View>
             <View style={styles.actions}>
-              <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
-              <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+                  <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
+                </View>
+              ))}
             </View>
           </View>
-          {/* Section skeleton — 3 sections matching agenda layout */}
+          {/* Section skeleton — 3 sections matching the real layout */}
           <View style={{ padding: 8, gap: 16 }}>
             {[1, 2, 3].map((section) => (
-              <View key={section} style={{ gap: 8 }}>
+              <View key={section} style={{ gap: 0 }}>
                 {/* Section header with status indicator */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingVertical: 12 }}>
+                <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Skeleton style={{ width: 4, height: 20, borderRadius: 2 }} />
-                    <Skeleton style={{ height: 18, width: section === 1 ? 130 : section === 2 ? 120 : 90, borderRadius: 4 }} />
+                    <Skeleton style={{ height: 16, width: section === 1 ? 120 : section === 2 ? 110 : 80, borderRadius: 4 }} />
                   </View>
-                  <Skeleton style={{ height: 14, width: 65, borderRadius: 4 }} />
+                  <Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
                 </View>
                 {/* Table card */}
                 <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  {/* Table header row */}
-                  <View style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                    <Skeleton style={{ height: 12, width: 70, borderRadius: 4 }} />
-                    <Skeleton style={{ height: 12, width: 90, borderRadius: 4 }} />
-                    <Skeleton style={{ height: 12, width: 65, borderRadius: 4 }} />
+                  {/* Table header — mirrors Header component: minHeight 40, paddingHorizontal 12 */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 65, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
+                    <View style={{ flex: 1.3, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 40, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
+                    <View style={{ flex: 1.1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 55, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
                   </View>
-                  {/* Table data rows */}
+                  {/* Table data rows — mirrors Row: minHeight 48, alternating bg, paddingHorizontal 12 */}
                   {[1, 2, 3, 4, 5].map((row) => (
-                    <View key={row} style={{ flexDirection: 'row', padding: 10, gap: 12, borderBottomWidth: row < 5 ? 1 : 0, borderBottomColor: colors.border }}>
-                      <Skeleton style={{ height: 14, width: 70, borderRadius: 4 }} />
-                      <Skeleton style={{ height: 14, flex: 1, borderRadius: 4 }} />
-                      <Skeleton style={{ height: 14, width: 65, borderRadius: 4 }} />
+                    <View key={row} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, backgroundColor: row % 2 === 0 ? colors.card : colors.background, borderBottomWidth: row < 5 ? 1 : 0, borderBottomColor: colors.border }}>
+                      <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ width: 18, height: 18, borderRadius: 4 }} />
+                        <Skeleton style={{ height: 12, width: row % 3 === 0 ? '45%' : row % 3 === 1 ? '60%' : '52%', borderRadius: 4 }} />
+                      </View>
+                      <View style={{ flex: 1.3, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ height: 12, width: row <= 1 ? '60%' : '20%', borderRadius: 4 }} />
+                      </View>
+                      <View style={{ flex: 1.1, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ height: 12, width: row <= 1 ? '75%' : '20%', borderRadius: 4 }} />
+                      </View>
                     </View>
                   ))}
                 </View>
+                {/* Table card bottom border (matches sectionFooter) */}
+                <View style={[styles.sectionFooter, { backgroundColor: colors.card, borderColor: colors.border }]} />
               </View>
             ))}
           </View>

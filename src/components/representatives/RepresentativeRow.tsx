@@ -1,16 +1,18 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useRef } from 'react';
 import {
   View,
+  Text,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { IconTrash, IconAlertCircle } from '@tabler/icons-react-native';
+import { IconTrash, IconAlertCircle, IconPlus } from '@tabler/icons-react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/ui/combobox';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize, borderRadius } from '@/constants/design-system';
+import { representativeService } from '@/services/representativeService';
 import {
   Representative,
   RepresentativeRole,
@@ -32,8 +34,6 @@ interface RepresentativeRowProps {
   invoiceToId?: string; // Billing customer (legacy single)
   invoiceToCustomerIds?: string[]; // Multiple billing customer IDs from pricing
   customerOptions?: CustomerOption[]; // Options for customer selection when creating new representatives
-  availableRepresentatives: Representative[];
-  loadingRepresentatives: boolean;
   onUpdate: (updates: Partial<RepresentativeRowData>) => void;
   onRemove: () => void;
   disabled?: boolean;
@@ -49,8 +49,6 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
   invoiceToId,
   invoiceToCustomerIds,
   customerOptions = [],
-  availableRepresentatives,
-  loadingRepresentatives,
   onUpdate,
   onRemove,
   disabled = false,
@@ -93,38 +91,39 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
     }));
   }, []);
 
-  // Filter representatives by selected role AND customer (matches web logic)
-  // Show: reps matching the role that belong to customer, invoiceTo customers, or are global
-  const filteredRepresentatives = useMemo(() => {
-    if (!row.role) return [];
+  // Cache fetched representatives for lookup on selection
+  const fetchedRepsRef = useRef<Map<string, Representative>>(new Map());
 
-    return availableRepresentatives.filter((rep) => {
-      // Filter by role first
-      if (rep.role !== row.role) return false;
-
-      // Build set of valid customer IDs (primary + all invoiceTo customers)
-      const validCustomerIds = new Set<string>();
-      if (customerId) validCustomerIds.add(customerId);
-      if (invoiceToCustomerIds && invoiceToCustomerIds.length > 0) {
-        invoiceToCustomerIds.forEach(id => validCustomerIds.add(id));
-      } else if (invoiceToId) {
-        validCustomerIds.add(invoiceToId);
-      }
-
-      // If task has any customer associations, show reps that:
-      // 1. Belong to any of the associated customers, OR
-      // 2. Have no customer (global representatives)
-      if (validCustomerIds.size > 0) {
-        return (
-          (rep.customerId && validCustomerIds.has(rep.customerId)) ||
-          !rep.customerId
-        );
-      }
-
-      // If no customer on task, show all representatives with this role
-      return true;
+  // Async query function for the Combobox
+  const queryFn = useCallback(async (searchTerm: string, page?: number) => {
+    if (!row.role) return { data: [] as Representative[], hasMore: false };
+    const response = await representativeService.getAll({
+      search: searchTerm || undefined,
+      role: row.role as RepresentativeRole,
+      isActive: true,
+      page: page || 1,
+      pageSize: 20,
     });
-  }, [availableRepresentatives, row.role, customerId, invoiceToId, invoiceToCustomerIds]);
+    // Cache fetched reps for lookup on selection
+    response.data.forEach(rep => fetchedRepsRef.current.set(rep.id, rep));
+    return {
+      data: response.data,
+      hasMore: response.meta.page < response.meta.pageCount,
+    };
+  }, [row.role]);
+
+  // Query key changes when role changes, triggering a re-fetch
+  const queryKey = useMemo(() => ['representatives', 'combobox', row.role], [row.role]);
+
+  // Provide the currently selected rep as initial option so the Combobox can display it
+  const initialOptions = useMemo(() => {
+    if (row.id && !row.id.startsWith('temp-') && row.name) {
+      const rep = { id: row.id, name: row.name, phone: row.phone || '', email: row.email || '', role: row.role, isActive: true } as Representative;
+      fetchedRepsRef.current.set(rep.id, rep);
+      return [rep];
+    }
+    return [];
+  }, [row.id, row.name, row.phone, row.email, row.role]);
 
 
   // Handle role change (matches web - resets representative selection when role changes)
@@ -174,8 +173,8 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
           isEditing: true, // This will trigger showCreateInputs
         });
       } else {
-        // Find selected representative and copy its data
-        const selectedRep = filteredRepresentatives.find((rep) => rep.id === selectedValue);
+        // Find selected representative from cache
+        const selectedRep = fetchedRepsRef.current.get(selectedValue);
         if (selectedRep) {
           onUpdate({
             id: selectedRep.id,
@@ -190,7 +189,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
         }
       }
     },
-    [filteredRepresentatives, onUpdate]
+    [onUpdate]
   );
 
   // Handle input changes for create mode
@@ -216,7 +215,7 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
     [onUpdate]
   );
 
-  const isDisabled = disabled || readOnly || row.isSaving || loadingRepresentatives;
+  const isDisabled = disabled || readOnly || row.isSaving;
 
   // Format phone for display (matches web)
   const formatPhoneDisplay = (phone: string) => {
@@ -231,42 +230,29 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
     return phone;
   };
 
-  // Build representative options - "Cadastrar novo" first, then existing representatives (matches web)
-  // Always include the currently selected representative even if not in filtered list
-  const representativeOptions = useMemo(() => {
-    const options = [
-      {
-        value: CREATE_NEW_OPTION,
-        label: 'Cadastrar novo',
-        description: 'Criar novo representante',
-      },
-      ...filteredRepresentatives.map((rep) => ({
-        value: rep.id,
-        label: `${rep.name} - ${formatPhoneDisplay(rep.phone)}`,
-        description: rep.email || undefined,
-      })),
-    ];
+  // Option accessors for Representative type
+  const getOptionValue = useCallback((rep: Representative) => rep.id, []);
+  const getOptionLabel = useCallback((rep: Representative) => `${rep.name} - ${formatPhoneDisplay(rep.phone)}`, []);
+  const getOptionDescription = useCallback((rep: Representative) => rep.email || undefined, []);
 
-    // If current row has an existing representative (non-temp ID with data),
-    // ensure it's in options even if not in filtered list (handles loading state, etc.)
-    const isExistingRep = row.id && !row.id.startsWith('temp-') && row.name;
-    const isAlreadyInOptions = filteredRepresentatives.some((rep) => rep.id === row.id);
-
-    if (isExistingRep && !isAlreadyInOptions) {
-      options.push({
-        value: row.id,
-        label: `${row.name} - ${formatPhoneDisplay(row.phone)}`,
-        description: row.email || undefined,
-      });
-    }
-
-    return options;
-  }, [filteredRepresentatives, row.id, row.name, row.phone, row.email]);
+  // Fixed top content for "Cadastrar novo" button (pinned between search and scrollable list)
+  const fixedTopContent = useMemo(() => (
+    <TouchableOpacity
+      style={[
+        styles.createOption,
+        { borderBottomColor: colors.border },
+      ]}
+      onPress={() => handleRepresentativeChange(CREATE_NEW_OPTION)}
+    >
+      <IconPlus size={20} color={colors.primary} />
+      <Text style={[styles.createOptionText, { color: colors.primary }]}>
+        Cadastrar novo
+      </Text>
+    </TouchableOpacity>
+  ), [colors, handleRepresentativeChange]);
 
   // Determine the current representative value for the combobox
-  const currentRepresentativeValue = showCreateInputs
-    ? CREATE_NEW_OPTION
-    : (row.id && !row.id.startsWith('temp-') ? row.id : '');
+  const currentRepresentativeValue = row.id && !row.id.startsWith('temp-') ? row.id : '';
 
   return (
     <View style={styles.container}>
@@ -336,18 +322,22 @@ export const RepresentativeRow: React.FC<RepresentativeRowProps> = ({
         </>
       ) : (
         /* Representative Selection */
-        <Combobox
+        <Combobox<Representative>
           value={currentRepresentativeValue}
           onValueChange={handleRepresentativeChange}
-          options={representativeOptions}
+          async
+          queryKey={queryKey}
+          queryFn={queryFn}
+          initialOptions={initialOptions}
+          minSearchLength={0}
+          getOptionValue={getOptionValue}
+          getOptionLabel={getOptionLabel}
+          getOptionDescription={getOptionDescription}
           placeholder={row.role ? 'Selecione ou cadastre novo' : 'Selecione função primeiro'}
           disabled={!row.role || isDisabled}
-          loading={loadingRepresentatives}
-          searchable={filteredRepresentatives.length > 5}
+          searchable={true}
           clearable={false}
-          getOptionValue={(opt) => opt.value}
-          getOptionLabel={(opt) => opt.label}
-          getOptionDescription={(opt) => opt.description}
+          fixedTopContent={fixedTopContent}
         />
       )}
 
@@ -412,5 +402,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.xs,
+  },
+  createOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: spacing.sm,
+  },
+  createOptionText: {
+    fontSize: fontSize.base,
+    fontWeight: '500' as const,
+    flex: 1,
   },
 });

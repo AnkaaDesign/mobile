@@ -7,10 +7,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
-import { usePositions, useTasks, useUsers, useScreenReady } from "@/hooks";
-import { formatCurrency, getBonusPeriod, getCurrentPayrollPeriod } from "@/utils";
+import { usePositions, useUsers, useScreenReady } from "@/hooks";
+import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
-import { TASK_STATUS, COMMISSION_STATUS, USER_STATUS } from "@/constants";
+import { USER_STATUS } from "@/constants";
+import { bonusService } from "@/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function BonusSimulationScreen() {
@@ -28,29 +29,30 @@ export default function BonusSimulationScreen() {
 
   // Get current bonus period
   const { year: periodYear, month: periodMonth } = getCurrentPayrollPeriod();
-  const currentPeriod = getBonusPeriod(periodYear, periodMonth);
+  // Fetch period task stats from lightweight endpoint (no Secullum)
+  const [taskStatsLoading, setTaskStatsLoading] = useState(false);
+  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number } | null>(null);
 
-  // Prepare date range for current period
-  const startDate = new Date(currentPeriod.startDate);
-  startDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(currentPeriod.endDate);
-  endDate.setHours(23, 59, 59, 999);
+  const fetchPeriodStats = useCallback(async () => {
+    setTaskStatsLoading(true);
+    try {
+      const response = await bonusService.getPeriodTaskStats(periodYear, periodMonth);
+      const data = (response.data as any)?.data ?? response.data;
+      setPeriodTaskStats({
+        rawCount: Number(data.totalRawTaskCount) || 0,
+        weightedCount: Number(data.totalWeightedTasks) || 0,
+        suspendedCount: Number(data.totalSuspendedTasks) || 0,
+      });
+    } catch (err) {
+      console.error('[BonusSimulation] Failed to fetch period task stats:', err);
+    } finally {
+      setTaskStatsLoading(false);
+    }
+  }, [periodYear, periodMonth]);
 
-  // Fetch ALL tasks in the period (no user filter)
-  const { data: currentPeriodTasks, isLoading: tasksLoading, refetch: refetchTasks } = useTasks({
-    where: {
-      status: TASK_STATUS.COMPLETED,
-      finishedAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-      commission: {
-        in: [COMMISSION_STATUS.FULL_COMMISSION, COMMISSION_STATUS.PARTIAL_COMMISSION],
-      },
-    },
-    limit: 1000,
-    enabled: true,
-  });
+  useEffect(() => {
+    fetchPeriodStats();
+  }, [fetchPeriodStats]);
 
   // Fetch all positions to determine hierarchy
   const { data: positionsData, isLoading: positionsLoading } = usePositions({
@@ -81,40 +83,8 @@ export default function BonusSimulationScreen() {
     };
   }, [allUsersData]);
 
-  // Calculate task counts by commission type
-  const tasksByCommission = useMemo(() => {
-    if (!currentPeriodTasks?.data) {
-      return {
-        noCommission: 0,
-        partialCommission: 0,
-        fullCommission: 0,
-        suspendedCommission: 0,
-      };
-    }
-
-    return currentPeriodTasks.data.reduce((counts, task) => {
-      if (task.commission === COMMISSION_STATUS.NO_COMMISSION) {
-        counts.noCommission += 1;
-      } else if (task.commission === COMMISSION_STATUS.PARTIAL_COMMISSION) {
-        counts.partialCommission += 1;
-      } else if (task.commission === COMMISSION_STATUS.FULL_COMMISSION) {
-        counts.fullCommission += 1;
-      } else if (task.commission === COMMISSION_STATUS.SUSPENDED_COMMISSION) {
-        counts.suspendedCommission += 1;
-      }
-      return counts;
-    }, {
-      noCommission: 0,
-      partialCommission: 0,
-      fullCommission: 0,
-      suspendedCommission: 0,
-    });
-  }, [currentPeriodTasks]);
-
-  // Calculate total weighted task count from ALL tasks
-  const totalWeightedTasks = useMemo(() => {
-    return tasksByCommission.fullCommission + (tasksByCommission.partialCommission * 0.5);
-  }, [tasksByCommission]);
+  // Use weighted task count from period stats
+  const totalWeightedTasks = periodTaskStats?.weightedCount || 0;
 
   // Calculate eligible users count
   const eligibleUsersCount = useMemo(() => {
@@ -187,11 +157,11 @@ export default function BonusSimulationScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchTasks(), refetchUser()]);
+      await Promise.all([fetchPeriodStats(), refetchUser()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchTasks, refetchUser]);
+  }, [fetchPeriodStats, refetchUser]);
 
   const handlePerformanceLevelChange = useCallback((direction: "up" | "down") => {
     setSelectedPerformanceLevel((prev) => {
@@ -236,7 +206,7 @@ export default function BonusSimulationScreen() {
     }
   }, [maxTaskQuantity]);
 
-  const isLoading = userLoading || tasksLoading || positionsLoading;
+  const isLoading = userLoading || taskStatsLoading || positionsLoading;
 
   useScreenReady(!isLoading || refreshing);
 
