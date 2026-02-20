@@ -16,6 +16,8 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
 import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
@@ -194,15 +196,22 @@ export function VacationForm({
   const handleSubmit = async (data: VacationCreateFormData | VacationUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as VacationCreateFormData);
+        const result = await createAsync(data as VacationCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.humanResources.vacations.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (vacation) {
         await updateAsync({
           id: vacation.id,
           data: data as VacationUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.humanResources.vacations.details(vacation.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar as férias");
     }

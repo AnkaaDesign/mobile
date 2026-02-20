@@ -1,37 +1,19 @@
+import React from 'react'
 import type { ListConfig } from '@/components/list/types'
 import type { Representative } from '@/types'
-import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS, REPRESENTATIVE_ROLE_COLORS } from '@/types/representative'
+import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS } from '@/types/representative'
 import { canEditRepresentatives } from '@/utils/permissions/entity-permissions'
 import { formatBrazilianPhone } from '@/utils'
-import { fontWeight } from '@/constants/design-system'
-import { View, StyleSheet } from 'react-native'
-import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
+import type { BadgeVariant } from '@/constants/badge-colors'
 
-const styles = StyleSheet.create({
-  nameText: {
-    flex: 1,
-    fontWeight: fontWeight.medium,
-    fontSize: 12,
-  },
-  cellText: {
-    fontSize: 12,
-  },
-  mutedText: {
-    fontSize: 12,
-    opacity: 0.5,
-  },
-  roleBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  roleBadgeText: {
-    fontSize: 10,
-    fontWeight: fontWeight.semibold,
-    color: '#ffffff',
-  },
-})
+const ROLE_BADGE_VARIANTS: Record<RepresentativeRole, BadgeVariant> = {
+  [RepresentativeRole.COMMERCIAL]: 'blue',
+  [RepresentativeRole.MARKETING]: 'purple',
+  [RepresentativeRole.COORDINATOR]: 'green',
+  [RepresentativeRole.FINANCIAL]: 'orange',
+  [RepresentativeRole.FLEET_MANAGER]: 'gray',
+}
 
 export const representativesListConfig: ListConfig<Representative> = {
   key: 'administration-representatives',
@@ -68,26 +50,28 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (rep: Representative) => (
-          <ThemedText style={styles.nameText} numberOfLines={2}>
-            {rep.name}
-          </ThemedText>
-        ),
+        render: (rep: Representative) => rep.name,
         style: { fontWeight: '500' },
       },
       {
         key: 'role',
         label: 'FUNÇÃO',
         sortable: true,
-        width: 1.2,
-        align: 'center',
-        render: (rep: Representative) => (
-          <View style={[styles.roleBadge, { backgroundColor: REPRESENTATIVE_ROLE_COLORS[rep.role] }]}>
-            <ThemedText style={styles.roleBadgeText}>
-              {REPRESENTATIVE_ROLE_LABELS[rep.role]}
-            </ThemedText>
-          </View>
-        ),
+        width: 1.8,
+        align: 'left',
+        render: (rep: Representative) => {
+          const variant = ROLE_BADGE_VARIANTS[rep.role] || 'default'
+          const label = REPRESENTATIVE_ROLE_LABELS[rep.role] || rep.role || '-'
+          return (
+            <Badge
+              variant={variant}
+              size="sm"
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {label}
+            </Badge>
+          )
+        },
       },
       {
         key: 'customer',
@@ -95,23 +79,15 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (rep: Representative) => (
-          <ThemedText style={styles.cellText} numberOfLines={1}>
-            {rep.customer?.fantasyName || '-'}
-          </ThemedText>
-        ),
+        render: (rep: Representative) => rep.customer?.fantasyName || '-',
       },
       {
         key: 'phone',
         label: 'TELEFONE',
         sortable: false,
-        width: 1.5,
+        width: 2.0,
         align: 'left',
-        render: (rep: Representative) => (
-          <ThemedText style={styles.cellText} numberOfLines={1}>
-            {formatBrazilianPhone(rep.phone)}
-          </ThemedText>
-        ),
+        render: (rep: Representative) => formatBrazilianPhone(rep.phone),
       },
       {
         key: 'email',
@@ -119,23 +95,21 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (rep: Representative) => (
-          <ThemedText style={styles.cellText} numberOfLines={1}>
-            {rep.email || '-'}
-          </ThemedText>
-        ),
+        render: (rep: Representative) => rep.email || '-',
       },
       {
         key: 'isActive',
         label: 'STATUS',
         sortable: false,
         width: 1.0,
-        align: 'center',
+        align: 'left',
         render: (rep: Representative) => (
-          <Badge variant={rep.isActive ? 'default' : 'secondary'} size="sm">
-            <ThemedText style={{ fontSize: 10 }}>
-              {rep.isActive ? 'Ativo' : 'Inativo'}
-            </ThemedText>
+          <Badge
+            variant={rep.isActive ? 'active' : 'inactive'}
+            size="sm"
+            style={{ alignSelf: 'flex-start' }}
+          >
+            {rep.isActive ? 'Ativo' : 'Inativo'}
           </Badge>
         ),
       },

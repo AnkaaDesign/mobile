@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { useTheme } from "@/lib/theme";
+import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconPalette } from "@tabler/icons-react-native";
@@ -31,8 +32,6 @@ interface PaintGridMinimizedProps {
 const GRID_GAP = 6;
 const PADDING = 12;
 
-// Tablet detection threshold (lowered to support smaller tablets)
-const TABLET_WIDTH_THRESHOLD = 624;
 
 export function PaintGridMinimized({
   paints,

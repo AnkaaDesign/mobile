@@ -1,12 +1,13 @@
 
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import type { User } from '../../../../types';
-import { formatZipCode, formatDate, getAge } from "@/utils";
+import { formatDate, getAge } from "@/utils";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconHome, IconBuildingCommunity, IconMap, IconMailbox, IconUser, IconCake, IconHash } from "@tabler/icons-react-native";
+import { IconUser, IconExternalLink } from "@tabler/icons-react-native";
 
 interface AddressCardProps {
   employee: User;
@@ -17,6 +18,65 @@ export function AddressCard({ employee }: AddressCardProps) {
 
   const hasAddress = employee.address || employee.neighborhood || employee.city || employee.state || employee.zipCode;
   const hasPersonalInfo = employee.birth || employee.payrollNumber;
+
+  const handleOpenMaps = () => {
+    const addressParts = [
+      employee.address,
+      employee.addressNumber,
+      employee.neighborhood,
+      employee.city,
+      employee.state,
+      employee.zipCode,
+    ].filter(Boolean);
+
+    const fullAddress = addressParts.join(", ");
+
+    if (!fullAddress) {
+      Alert.alert("Aviso", "Endereço incompleto");
+      return;
+    }
+
+    const encodedAddress = encodeURIComponent(fullAddress);
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+
+    Linking.openURL(url).catch(() => {
+      Alert.alert("Erro", "Não foi possível abrir o mapa");
+    });
+  };
+
+  const getFullAddress = () => {
+    const parts = [];
+
+    if (employee.address) {
+      let streetLine = employee.address;
+      if (employee.addressNumber) {
+        streetLine += `, ${employee.addressNumber}`;
+      }
+      parts.push(streetLine);
+    }
+
+    if (employee.addressComplement) {
+      parts.push(employee.addressComplement);
+    }
+
+    if (employee.neighborhood) {
+      parts.push(employee.neighborhood);
+    }
+
+    if (employee.city || employee.state) {
+      const cityState = [employee.city, employee.state].filter(Boolean).join(" - ");
+      parts.push(cityState);
+    }
+
+    if (employee.zipCode) {
+      const formatted = employee.zipCode.replace(/(\d{5})(\d{3})/, "$1-$2");
+      parts.push(`CEP: ${formatted}`);
+    }
+
+    return parts.join("\n");
+  };
+
+  const fullAddress = getFullAddress();
 
   return (
     <Card style={styles.card}>
@@ -37,39 +97,20 @@ export function AddressCard({ employee }: AddressCardProps) {
             </ThemedText>
 
             {employee.birth && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconCake size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Data de Nascimento
-                  </ThemedText>
-                </View>
-                <ThemedText
-                  style={[styles.value, { color: colors.foreground }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {formatDate(employee.birth)} ({getAge(employee.birth)} anos)
-                </ThemedText>
-              </View>
+              <DetailField
+                label="Data de Nascimento"
+                value={`${formatDate(employee.birth)} (${getAge(employee.birth)} anos)`}
+                icon="cake"
+              />
             )}
 
             {employee.payrollNumber && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconHash size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Número da Folha
-                  </ThemedText>
-                </View>
-                <ThemedText
-                  style={[styles.value, { color: colors.foreground }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {employee.payrollNumber}
-                </ThemedText>
-              </View>
+              <DetailField
+                label="Número da Folha"
+                value={employee.payrollNumber}
+                icon="hash"
+                monospace
+              />
             )}
 
             {hasAddress && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
@@ -83,83 +124,26 @@ export function AddressCard({ employee }: AddressCardProps) {
               Endereço
             </ThemedText>
 
-            {employee.address && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconHome size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Endereço
-                  </ThemedText>
-                </View>
-                <View style={styles.addressValueContainer}>
-                  <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                    {employee.address}
-                    {employee.addressNumber && `, ${employee.addressNumber}`}
-                  </ThemedText>
-                  {employee.addressComplement && (
-                    <ThemedText style={[styles.complementText, { color: colors.mutedForeground }]}>
-                      {employee.addressComplement}
-                    </ThemedText>
-                  )}
-                </View>
-              </View>
-            )}
-
-            {employee.neighborhood && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconBuildingCommunity size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Bairro
-                  </ThemedText>
-                </View>
-                <ThemedText
-                  style={[styles.value, { color: colors.foreground }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {employee.neighborhood}
+            <TouchableOpacity
+              onPress={handleOpenMaps}
+              style={[
+                styles.fullAddressBox,
+                { backgroundColor: colors.muted, borderColor: colors.border },
+              ]}
+              activeOpacity={0.7}
+            >
+              <View style={styles.addressBoxContent}>
+                <ThemedText style={[styles.addressBoxValue, { color: colors.foreground }]}>
+                  {fullAddress}
                 </ThemedText>
-              </View>
-            )}
-
-            {(employee.city || employee.state) && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconMap size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Cidade/Estado
+                <View style={styles.openMapsRow}>
+                  <ThemedText style={[styles.openMapsText, { color: colors.primary }]}>
+                    Abrir no Google Maps
                   </ThemedText>
+                  <IconExternalLink size={14} color={colors.primary} />
                 </View>
-                <ThemedText
-                  style={[styles.value, { color: colors.foreground }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {employee.city}
-                  {employee.city && employee.state && " - "}
-                  {employee.state}
-                </ThemedText>
               </View>
-            )}
-
-            {employee.zipCode && (
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "80" }]}>
-                <View style={styles.labelWithIcon}>
-                  <IconMailbox size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    CEP
-                  </ThemedText>
-                </View>
-                <ThemedText
-                  style={[styles.value, styles.monospace, { color: colors.foreground }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {formatZipCode(employee.zipCode)}
-                </ThemedText>
-              </View>
-            )}
+            </TouchableOpacity>
           </>
         ) : hasPersonalInfo ? null : (
           <View style={styles.emptyState}>
@@ -212,42 +196,28 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: spacing.xs,
   },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  fullAddressBox: {
     borderRadius: borderRadius.md,
-    gap: spacing.md,
+    borderWidth: 1,
+    padding: spacing.md,
   },
-  labelWithIcon: {
+  addressBoxContent: {
+    gap: spacing.sm,
+  },
+  addressBoxValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    lineHeight: fontSize.sm * 1.6,
+  },
+  openMapsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    flexShrink: 0,
+    marginTop: spacing.xs,
   },
-  label: {
+  openMapsText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    textAlign: "right",
-    flex: 1,
-  },
-  addressValueContainer: {
-    alignItems: "flex-end",
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  complementText: {
-    fontSize: fontSize.xs,
-    marginTop: spacing.xs / 2,
-  },
-  monospace: {
-    fontFamily: "monospace",
   },
   emptyState: {
     alignItems: "center",

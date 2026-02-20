@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,22 +14,20 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { Text } from "@/components/ui/text";
 
-import { usePpeDeliveryMutations, usePpeDelivery, useItems, useUsers, useScreenReady} from '@/hooks';
-import { PPE_DELIVERY_STATUS } from "@/constants";
+import { usePpeDeliveryMutations, usePpeDelivery, useScreenReady } from "@/hooks";
+import { useAuth } from "@/contexts/auth-context";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
+import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
+import { hasPrivilege } from "@/utils";
+import { routeToMobilePath } from "@/utils/route-mapper";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface PPEDeliveryUpdateFormData {
-  itemId?: string;
-  quantity?: number;
-  scheduledDate?: Date | null;
-  status?: string;
-}
 
 export default function EditPPEDeliveryScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user: currentUser } = useAuth();
   const { updateAsync, updateMutation } = usePpeDeliveryMutations();
 
   const { data: delivery, isLoading: isDeliveryLoading } = usePpeDelivery(id, {
@@ -37,36 +37,34 @@ export default function EditPPEDeliveryScreen() {
     },
   });
 
-  const { data: items } = useItems({ orderBy: { name: "asc" } });
-  const { data: users } = useUsers({ orderBy: { name: "asc" } });
-
-  const form = useForm<PPEDeliveryUpdateFormData>({
-    defaultValues: delivery?.data ? {
-      itemId: delivery.data.itemId ?? undefined,
-      quantity: delivery.data.quantity,
-      status: delivery.data.status,
-    } : {
-      itemId: undefined,
+  const form = useForm<PpeDeliveryUpdateFormData>({
+    resolver: zodResolver(ppeDeliveryUpdateSchema),
+    defaultValues: {
       quantity: 0,
       status: PPE_DELIVERY_STATUS.PENDING,
     },
   });
 
+  // Reset form when delivery data loads
+  useEffect(() => {
+    if (delivery?.data) {
+      const formData = mapPpeDeliveryToFormData(delivery.data);
+      form.reset(formData);
+    }
+  }, [delivery?.data]);
+
+  // Auto-set actualDeliveryDate when status changes to DELIVERED
+  const watchedStatus = form.watch("status");
+  useEffect(() => {
+    if (watchedStatus === PPE_DELIVERY_STATUS.DELIVERED) {
+      form.setValue("actualDeliveryDate", new Date(), { shouldDirty: true });
+    }
+  }, [watchedStatus]);
+
   const isLoading = updateMutation.isPending || isDeliveryLoading;
+  const canEditStatus = hasPrivilege(currentUser, SECTOR_PRIVILEGES.WAREHOUSE);
 
   useScreenReady(!isLoading);
-
-  const itemOptions: ComboboxOption[] =
-    items?.data?.map((item) => ({
-      value: item.id,
-      label: `${item.uniCode || ""} ${item.name}`.trim(),
-    })) || [];
-
-  const userOptions: ComboboxOption[] =
-    users?.data?.map((user) => ({
-      value: user.id,
-      label: user.name,
-    })) || [];
 
   const statusOptions: ComboboxOption[] = Object.entries(PPE_DELIVERY_STATUS_LABELS).map(
     ([value, label]) => ({
@@ -75,17 +73,23 @@ export default function EditPPEDeliveryScreen() {
     })
   );
 
-  const handleSubmit = async (data: PPEDeliveryUpdateFormData) => {
+  const handleSubmit = async (data: PpeDeliveryUpdateFormData) => {
     try {
       if (!id) {
         Alert.alert("Erro", "ID de entrega não encontrado");
         return;
       }
+
+      const submitData: PpeDeliveryUpdateFormData & { statusOrder?: number } = { ...data };
+      if (data.status) {
+        submitData.statusOrder = PPE_DELIVERY_STATUS_ORDER[data.status];
+      }
+
       await updateAsync({
         id,
-        data,
+        data: submitData,
       });
-      router.back();
+      router.replace(routeToMobilePath(routes.inventory.ppe.deliveries.details(id)) as any);
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao atualizar a entrega de EPI");
     }
@@ -101,7 +105,7 @@ export default function EditPPEDeliveryScreen() {
         <View style={{ padding: spacing.md, gap: spacing.md }}>
           <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
             <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <View key={i} style={{ marginBottom: spacing.md }}>
                 <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
                 <Skeleton width="100%" height={44} borderRadius={8} />
@@ -136,48 +140,7 @@ export default function EditPPEDeliveryScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Basic Information */}
           <FormCard title="Informações Básicas" icon="IconShield">
-            {/* Item */}
-            <FormFieldGroup
-              label="Item EPI"
-              required
-              error={form.formState.errors.itemId?.message}
-            >
-              <Controller
-                control={form.control}
-                name="itemId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={itemOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o item"
-                    disabled={isLoading}
-                    searchable
-                    clearable
-                    error={error?.message}
-                  />
-                )}
-              />
-            </FormFieldGroup>
-
-            {/* User - Read-only, cannot be changed after creation */}
-            <FormFieldGroup
-              label="Funcionário"
-              required
-            >
-              <Combobox
-                options={userOptions}
-                value={delivery?.data?.userId || undefined}
-                onValueChange={() => {}} // Read-only
-                placeholder="Selecione o funcionário"
-                disabled={true}
-                searchable
-                clearable={false}
-              />
-            </FormFieldGroup>
-
             {/* Quantity */}
             <FormFieldGroup
               label="Quantidade"
@@ -208,28 +171,30 @@ export default function EditPPEDeliveryScreen() {
               />
             </FormFieldGroup>
 
-            {/* Status */}
-            <FormFieldGroup
-              label="Status"
-              error={form.formState.errors.status?.message}
-            >
-              <Controller
-                control={form.control}
-                name="status"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={statusOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o status"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable
-                    error={error?.message}
-                  />
-                )}
-              />
-            </FormFieldGroup>
+            {/* Status - Only visible for WAREHOUSE privilege */}
+            {canEditStatus && (
+              <FormFieldGroup
+                label="Status"
+                error={form.formState.errors.status?.message}
+              >
+                <Controller
+                  control={form.control}
+                  name="status"
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <Combobox
+                      options={statusOptions}
+                      value={value || undefined}
+                      onValueChange={onChange}
+                      placeholder="Selecione o status"
+                      disabled={isLoading}
+                      searchable={false}
+                      clearable
+                      error={error?.message}
+                    />
+                  )}
+                />
+              </FormFieldGroup>
+            )}
           </FormCard>
 
           <View style={styles.spacing} />

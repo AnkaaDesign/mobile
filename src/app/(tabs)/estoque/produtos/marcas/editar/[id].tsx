@@ -63,7 +63,7 @@ function BrandEditScreen() {
       });
 
       // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.products.brands.root) as any);
+      router.replace(routeToMobilePath(routes.inventory.products.brands.details(id!)) as any);
     } catch (error) {
       // API client already shows error alert
       console.error("Error updating brand:", error);

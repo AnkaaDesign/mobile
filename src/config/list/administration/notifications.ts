@@ -24,7 +24,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
 
   query: {
     hook: 'useAdminNotificationsInfiniteMobile',
-    defaultSort: { field: 'sentAt', direction: 'desc' },
+    defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 25,
     include: {
       seenBy: true,
@@ -55,6 +55,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         align: 'center',
         render: (notification) => IMPORTANCE_LABELS[notification.importance] || notification.importance,
         format: 'badge',
+        badgeEntity: 'NOTIFICATION',
       },
       {
         key: 'type',
@@ -84,12 +85,12 @@ export const notificationsListConfig: ListConfig<Notification> = {
       },
       {
         key: 'sentAt',
-        label: 'ENVIADO EM',
+        label: 'STATUS',
         sortable: true,
-        width: 1.5,
-        align: 'left',
-        render: (notification) => notification.sentAt || '-',
-        format: 'datetime',
+        width: 1.0,
+        align: 'center',
+        render: (notification) => notification.sentAt ? 'Enviada' : 'Pendente',
+        format: 'badge',
       },
       {
         key: 'createdAt',
@@ -101,7 +102,7 @@ export const notificationsListConfig: ListConfig<Notification> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['title', 'type', 'sentAt'],
+    defaultVisible: ['title', 'importance', 'sentAt'],
     rowHeight: 72,
     actions: [
       {

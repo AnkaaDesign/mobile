@@ -69,7 +69,7 @@ const isOverdue = (task: Task) => {
 export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "name",
-    header: "NOME",
+    header: "LOGOMARCA",
     align: "left",
     sortable: true,
     width: 0,
@@ -88,13 +88,13 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "customer.fantasyName",
-    header: "CLIENTE",
+    header: "RAZÃO SOCIAL",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (task: Task) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {task.customer?.fantasyName || "-"}
+        {task.customer?.corporateName || task.customer?.fantasyName || "-"}
       </ThemedText>
     ),
   },

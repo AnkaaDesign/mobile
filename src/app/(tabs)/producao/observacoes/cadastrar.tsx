@@ -116,7 +116,7 @@ export default function CreateObservationScreen() {
     if (backPath) {
       goBack();
     } else {
-      router.push(routeToMobilePath(routes.production.observations.list) as any);
+      router.replace(routeToMobilePath(routes.production.observations.list) as any);
     }
   };
 

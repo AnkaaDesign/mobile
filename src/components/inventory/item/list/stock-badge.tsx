@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/icon";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { fontSize, spacing } from "@/constants/design-system";
 import type { Item } from '../../../../types';
-import { determineStockLevel } from "@/utils";
+import { determineStockLevel, formatQuantity } from "@/utils";
 import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 
 interface StockBadgeProps {
@@ -109,7 +109,7 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
         {showIcon && <Icon name={stockStatus.icon} size={iconSize} color={stockStatus.color} />}
         {showQuantity && (
           <Text style={quantityStyle}>
-            {item.quantity} {item.measures && item.measures.length > 0 ? item.measures[0].unit : "un"}
+            {formatQuantity(item.quantity)} {item.measures && item.measures.length > 0 ? item.measures[0].unit : "un"}
           </Text>
         )}
         <Text>{stockStatus.label}</Text>

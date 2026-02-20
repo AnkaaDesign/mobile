@@ -22,6 +22,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -98,22 +100,18 @@ export default function AirbrushingCreateScreen() {
 
     setIsSubmitting(true);
     try {
-      await createAsync({
+      const result = await createAsync({
         ...data,
         // Convert price to number if it's a string
         price: typeof data.price === 'string' ? parseFloat(data.price) || null : data.price,
       });
 
-      Alert.alert(
-        "Sucesso",
-        "Airbrushing criado com sucesso!",
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      if (newId) {
+        router.replace(routeToMobilePath(routes.production.airbrushings.details(newId)) as any);
+      } else {
+        router.back();
+      }
     } catch (error: any) {
       Alert.alert(
         "Erro",

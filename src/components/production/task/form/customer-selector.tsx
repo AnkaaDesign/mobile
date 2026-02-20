@@ -36,7 +36,7 @@ export function CustomerSelector({
   onValueChange,
   disabled = false,
   error,
-  label = "Cliente",
+  label = "Razão Social",
   placeholder = "Selecione um cliente",
   required = false,
   initialCustomer,
@@ -47,7 +47,7 @@ export function CustomerSelector({
   const initialOptions = useMemo(() => initialCustomer ? [initialCustomer] : [], [initialCustomer?.id]);
 
   // Memoize callbacks to prevent infinite loop
-  const getOptionLabel = useCallback((customer: Customer) => customer.fantasyName, []);
+  const getOptionLabel = useCallback((customer: Customer) => customer.corporateName || customer.fantasyName, []);
   const getOptionValue = useCallback((customer: Customer) => customer.id, []);
 
   // Search function for Combobox - optimized for performance
@@ -116,14 +116,14 @@ export function CustomerSelector({
           {/* Customer Logo */}
           <CustomerLogoDisplay
             logo={customer?.logo}
-            customerName={customer?.fantasyName || ""}
+            customerName={customer?.corporateName || customer?.fantasyName || ""}
             size="sm"
             shape="rounded"
           />
 
           {/* Customer Info */}
           <View style={styles.customerInfo}>
-            {/* Fantasy Name (Primary) */}
+            {/* Corporate Name (Primary) */}
             <Text
               style={[
                 styles.fantasyName,
@@ -132,17 +132,17 @@ export function CustomerSelector({
               ]}
               numberOfLines={1}
             >
-              {customer?.fantasyName || ""}
+              {customer?.corporateName || customer?.fantasyName || ""}
             </Text>
 
-            {/* Corporate Name & CNPJ/CPF (Secondary) */}
+            {/* Fantasy Name & CNPJ/CPF (Secondary) */}
             <View style={styles.secondaryInfo}>
-              {customer?.corporateName && (
+              {customer?.fantasyName && (
                 <Text
                   style={[styles.secondaryText, { color: colors.mutedForeground }]}
                   numberOfLines={1}
                 >
-                  {customer.corporateName}
+                  {customer.fantasyName}
                 </Text>
               )}
 

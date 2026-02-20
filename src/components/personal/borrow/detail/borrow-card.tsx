@@ -7,6 +7,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconPackage} from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
 import { getBadgeVariant, getBadgeColors } from "@/constants/badge-colors";
+import { formatQuantity } from "@/utils";
 import { BORROW_STATUS_LABELS } from "@/constants/enum-labels";
 
 interface BorrowCardProps {
@@ -51,7 +52,7 @@ export function BorrowCard({ borrow }: BorrowCardProps) {
               Quantidade Emprestada
             </ThemedText>
             <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {borrow.quantity}
+              {formatQuantity(borrow.quantity)}
             </ThemedText>
           </View>
         </View>

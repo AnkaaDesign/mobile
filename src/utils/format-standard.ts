@@ -115,15 +115,23 @@ export function formatNumberWithDecimals(value: number, decimals: number = 2, lo
 }
 
 /**
- * Tax/ICMS/IPI formatter - display as percentage
+ * Tax/ICMS/IPI formatter - display as percentage with 2 decimal places
  */
 export function formatTaxPercentage(value: number): string {
-  return `${value}%`;
+  return `${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}%`;
 }
 
 /**
  * Quantity formatter with Brazilian locale
+ * Auto-detects: integers show no decimals, fractional shows 2 decimals
+ * Pass explicit decimals to override
  */
-export function formatQuantity(value: number, decimals: number = 0): string {
-  return formatNumberWithDecimals(value, decimals, "pt-BR");
+export function formatQuantity(value: number, decimals?: number): string {
+  if (decimals !== undefined) {
+    return formatNumberWithDecimals(value, decimals, "pt-BR");
+  }
+  if (value % 1 === 0) {
+    return new Intl.NumberFormat("pt-BR").format(value);
+  }
+  return formatNumberWithDecimals(value, 2, "pt-BR");
 }

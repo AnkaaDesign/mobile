@@ -15,7 +15,8 @@ import type { PaintBrandCreateFormData } from '../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-// import { showToast } from "@/components/ui/toast";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 import {
   IconTag,
 } from "@tabler/icons-react-native";
@@ -62,9 +63,13 @@ export default function CreatePaintBrandScreen() {
     setIsSubmitting(true);
 
     try {
-      await create(data);
-      // API client already shows success alert
-      router.back();
+      const result = await create(data);
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      if (newId) {
+        router.replace(routeToMobilePath(routes.painting.paintBrands.details(newId)) as any);
+      } else {
+        router.back();
+      }
     } catch (_error) {
       // API client already shows error alert
     } finally {

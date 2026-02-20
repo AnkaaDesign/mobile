@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege, formatDateTime } from "@/utils";
+import { hasPrivilege, formatDateTime, formatCurrency } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
 import {
   IconFlask,
@@ -304,7 +304,7 @@ export default function ComponentDetailsScreen() {
                 <View style={styles.infoRow}>
                   <ThemedText style={styles.infoLabel}>Preço por Litro:</ThemedText>
                   <ThemedText style={styles.infoValue}>
-                    R$ {componentData.formula.pricePerLiter.toFixed(2)}
+                    {formatCurrency(componentData.formula.pricePerLiter)}
                   </ThemedText>
                 </View>
               )}

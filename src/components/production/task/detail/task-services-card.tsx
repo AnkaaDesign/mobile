@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable, Text as RNText } from "react-native";
+import React, { useMemo } from "react";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +41,6 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
   const { colors } = useTheme();
   const { user } = useAuth();
   const { update } = useServiceOrderMutations();
-  const [observationModal, setObservationModal] = useState<{ visible: boolean; text: string }>({
-    visible: false,
-    text: '',
-  });
 
   // Check if user should see detailed view (with dates, users, etc.)
   const hasDetailedView = useMemo(() => hasDetailedServiceOrderView(user), [user]);
@@ -198,26 +194,34 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       >
         {/* Row 1: Description + Observation indicator */}
         <View style={styles.descriptionRow}>
-          <ThemedText
-            style={[styles.serviceName, { color: colors.foreground }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {service.description}
-          </ThemedText>
+          {(() => {
+            const isOutrosWithObservation = service.description === 'Outros' && !!service.observation;
+            const displayDescription = isOutrosWithObservation ? service.observation : service.description;
+            return (
+              <>
+                <ThemedText
+                  style={[styles.serviceName, { color: colors.foreground }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {displayDescription}
+                </ThemedText>
 
-          {/* Observation indicator */}
-          {service.observation && (
-            <TouchableOpacity
-              style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-              onPress={() => setObservationModal({ visible: true, text: service.observation || '' })}
-            >
-              <IconNote size={14} color={colors.mutedForeground} />
-              <View style={styles.observationBadge}>
-                <RNText style={styles.observationBadgeText}>!</RNText>
-              </View>
-            </TouchableOpacity>
-          )}
+                {/* Observation indicator */}
+                {!isOutrosWithObservation && service.observation && (
+                  <TouchableOpacity
+                    style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    onPress={() => Alert.alert("Observação", service.observation!)}
+                  >
+                    <IconNote size={14} color={colors.mutedForeground} />
+                    <View style={styles.observationBadge}>
+                      <ThemedText style={styles.observationBadgeText}>!</ThemedText>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </>
+            );
+          })()}
         </View>
 
         {/* Row 2: Responsible + Dates */}
@@ -354,36 +358,6 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
         {visibleTypes.map((type) => renderTypeGroup(type))}
       </View>
 
-      {/* Observation Modal */}
-      <Modal
-        visible={observationModal.visible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setObservationModal({ visible: false, text: '' })}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setObservationModal({ visible: false, text: '' })}
-        >
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.modalHeader}>
-              <IconNote size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.modalTitle, { color: colors.foreground }]}>
-                Observação
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.modalText, { color: colors.mutedForeground }]}>
-              {observationModal.text}
-            </ThemedText>
-            <TouchableOpacity
-              style={[styles.modalCloseButton, { backgroundColor: colors.primary }]}
-              onPress={() => setObservationModal({ visible: false, text: '' })}
-            >
-              <RNText style={styles.modalCloseButtonText}>Fechar</RNText>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
     </Card>
   );
 };
@@ -530,51 +504,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     flexShrink: 0,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 320,
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  modalTitle: {
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  modalText: {
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.5,
-    marginBottom: spacing.lg,
-  },
-  modalCloseButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCloseButtonText: {
-    color: '#ffffff',
-    fontSize: fontSize.sm,
-    fontWeight: '600',
   },
 });

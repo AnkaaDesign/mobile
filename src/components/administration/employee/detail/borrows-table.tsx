@@ -14,6 +14,7 @@ import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-sl
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useBorrowsInfiniteMobile } from "@/hooks";
 import { BORROW_STATUS } from "@/constants";
+import { formatQuantity } from "@/utils";
 
 interface BorrowsTableProps {
   employee: User;
@@ -168,7 +169,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
         {visibleColumnKeys.includes("quantity") && (
           <View style={styles.cell}>
             <ThemedText style={[styles.cellText, { color: colors.foreground }]}>
-              {borrow.quantity}
+              {formatQuantity(borrow.quantity)}
             </ThemedText>
           </View>
         )}

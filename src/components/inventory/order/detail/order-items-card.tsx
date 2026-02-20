@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity, formatTaxPercentage } from "@/utils";
 import type { Order, OrderItem } from "../../../../types";
 import {
   IconShoppingCart,
@@ -133,7 +133,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
               Qtd. Pedida
             </ThemedText>
             <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-              {summary.totalOrdered}
+              {formatQuantity(summary.totalOrdered)}
             </ThemedText>
           </View>
 
@@ -143,7 +143,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
               Qtd. Recebida
             </ThemedText>
             <ThemedText style={[styles.summaryValue, { color: colors.primary }]}>
-              {summary.totalReceived}
+              {formatQuantity(summary.totalReceived)}
             </ThemedText>
           </View>
 
@@ -233,7 +233,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                       Pedido:
                     </ThemedText>
                     <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                      {orderItem.orderedQuantity}
+                      {formatQuantity(orderItem.orderedQuantity)}
                     </ThemedText>
                   </View>
                   <View style={styles.detailRow}>
@@ -241,7 +241,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                       Recebido:
                     </ThemedText>
                     <ThemedText style={[styles.detailValue, { color: colors.primary }]}>
-                      {orderItem.receivedQuantity || 0}
+                      {formatQuantity(orderItem.receivedQuantity ?? 0)}
                     </ThemedText>
                   </View>
                 </View>
@@ -261,14 +261,14 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
                       {orderItem.icms > 0 && (
                         <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
                           <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
-                            ICMS: {orderItem.icms}%
+                            ICMS: {formatTaxPercentage(orderItem.icms)}
                           </ThemedText>
                         </View>
                       )}
                       {orderItem.ipi > 0 && (
                         <View style={[styles.taxBadge, { backgroundColor: colors.muted }]}>
                           <ThemedText style={[styles.taxText, { color: colors.mutedForeground }]}>
-                            IPI: {orderItem.ipi}%
+                            IPI: {formatTaxPercentage(orderItem.ipi)}
                           </ThemedText>
                         </View>
                       )}

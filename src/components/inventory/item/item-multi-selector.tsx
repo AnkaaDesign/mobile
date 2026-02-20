@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
+import { formatQuantity } from "@/utils";
 
 interface ItemMultiSelectorProps {
   value?: string[];
@@ -188,7 +189,7 @@ export function ItemMultiSelector({
                         </Badge>
                       )}
                       <Badge variant="outline">
-                        <ThemedText size="xs">Estoque: {item.quantity}</ThemedText>
+                        <ThemedText size="xs">Estoque: {formatQuantity(item.quantity)}</ThemedText>
                       </Badge>
                     </View>
                   </View>

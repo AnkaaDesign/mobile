@@ -11,7 +11,7 @@ import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { bonusKeys, useScreenReady } from "@/hooks";
 import { bonusService } from "@/api-client";
-import { formatCurrency, getBonusPeriod } from "@/utils";
+import { formatCurrency, formatPercentage, getBonusPeriod } from "@/utils";
 import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -459,7 +459,7 @@ export default function CurrentBonusScreen() {
                   </ThemedText>
                   <ThemedText style={[styles.detailValue, { color: '#059669' }]}>
                     +{hasPercentage
-                      ? `${percentageValue}%`
+                      ? formatPercentage(percentageValue, 2)
                       : formatCurrency(getNumericValue(extra.value))}
                   </ThemedText>
                 </View>
@@ -475,7 +475,7 @@ export default function CurrentBonusScreen() {
                   </ThemedText>
                   <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
                     -{hasPercentage
-                      ? `${percentageValue}%`
+                      ? formatPercentage(percentageValue, 2)
                       : formatCurrency(getNumericValue(discount.value))}
                   </ThemedText>
                 </View>

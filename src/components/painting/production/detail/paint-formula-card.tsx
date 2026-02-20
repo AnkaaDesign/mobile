@@ -100,11 +100,11 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
                       <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
                         <View style={styles.metricHeader}>
                           <IconCurrencyDollar size={14} color={colors.mutedForeground} />
-                          <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                          <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])} numberOfLines={1} ellipsizeMode="tail">
                             Preço/L
                           </ThemedText>
                         </View>
-                        <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                        <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
                           {formatCurrency(formula.pricePerLiter)}/L
                         </ThemedText>
                       </View>
@@ -114,11 +114,11 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
                     <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
                       <View style={styles.metricHeader}>
                         <IconWeight size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])} numberOfLines={1} ellipsizeMode="tail">
                           Densidade
                         </ThemedText>
                       </View>
-                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
                         {Number(formula.density).toFixed(3)} g/ml
                       </ThemedText>
                     </View>
@@ -127,11 +127,11 @@ export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
                     <View style={StyleSheet.flatten([styles.metricItem, { backgroundColor: colors.muted + "50" }])}>
                       <View style={styles.metricHeader}>
                         <IconFlask size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                        <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])} numberOfLines={1} ellipsizeMode="tail">
                           Componentes
                         </ThemedText>
                       </View>
-                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+                      <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
                         {formula.components?.length || 0}
                       </ThemedText>
                     </View>

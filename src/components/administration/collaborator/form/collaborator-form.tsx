@@ -15,6 +15,8 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
 import type { UserCreateFormData, UserUpdateFormData } from "@/schemas/user";
@@ -322,15 +324,22 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
   const handleSubmit = async (data: UserCreateFormData | UserUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as UserCreateFormData);
+        const result = await createAsync(data as UserCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.administration.collaborators.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (user) {
         await updateAsync({
           id: user.id,
           data: data as UserUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.administration.collaborators.details(user.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o colaborador");
     }

@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatDate } from "@/utils";
+import { formatDate, formatCurrency } from "@/utils";
 import { AIRBRUSHING_STATUS_LABELS } from "@/constants";
 
 interface AirbrushingFilterTagsProps {
@@ -112,7 +112,7 @@ export function AirbrushingFilterTags({
         if (where.price.gte !== undefined) {
           tags.push({
             key: "price-min",
-            label: `Preço mín: R$ ${where.price.gte}`,
+            label: `Preço mín: ${formatCurrency(where.price.gte)}`,
             onRemove: () => {
               const newWhere = { ...where };
               if (where.price.lte !== undefined) {
@@ -128,7 +128,7 @@ export function AirbrushingFilterTags({
         if (where.price.lte !== undefined) {
           tags.push({
             key: "price-max",
-            label: `Preço máx: R$ ${where.price.lte}`,
+            label: `Preço máx: ${formatCurrency(where.price.lte)}`,
             onRemove: () => {
               const newWhere = { ...where };
               if (where.price.gte !== undefined) {

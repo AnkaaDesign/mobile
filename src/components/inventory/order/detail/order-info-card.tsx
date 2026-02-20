@@ -4,23 +4,12 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { OrderStatusBadge } from "../list/order-status-badge";
+import { DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey, formatBrazilianPhone } from "@/utils";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { formatDate, formatDateTime, formatCurrency, formatCNPJ, formatPixKey } from "@/utils";
 import type { Order } from "../../../../types";
-import {
-  IconPackage,
-  IconTruck,
-  IconId,
-  IconFileText,
-  IconCurrencyReal,
-  IconCalendar,
-  IconNotes,
-  IconPhone,
-  IconMail,
-  IconCreditCard,
-  IconBrandWhatsapp,
-} from "@tabler/icons-react-native";
+import { IconPackage } from "@tabler/icons-react-native";
 import { PAYMENT_METHOD_LABELS } from "@/constants";
 
 interface OrderInfoCardProps {
@@ -43,27 +32,6 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
       return total + subtotal + icmsAmount + ipiAmount;
     }, 0);
   }, [order?.items]);
-
-  const handlePhonePress = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    Linking.openURL(`tel:${cleanPhone}`).catch(() => {});
-  };
-
-  const handleWhatsAppPress = async (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    // Try opening WhatsApp app directly first
-    try {
-      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
-    } catch {
-      // Fallback to web WhatsApp
-      try {
-        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
-      } catch {
-        // Silent fail
-      }
-    }
-  };
 
   const handleEmailPress = () => {
     if (order.supplier?.email) {
@@ -100,81 +68,50 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
           {order.supplier ? (
             <View style={styles.supplierContent}>
               {/* Fantasy Name */}
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                <View style={styles.infoLabel}>
-                  <IconTruck size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                    Nome Fantasia
-                  </ThemedText>
-                </View>
-                <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                  {order.supplier.fantasyName}
-                </ThemedText>
-              </View>
+              <DetailField
+                label="Nome Fantasia"
+                value={order.supplier.fantasyName}
+                icon="truck"
+              />
 
               {/* CNPJ */}
               {order.supplier.cnpj && (
-                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLabel}>
-                    <IconId size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                      CNPJ
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                    {formatCNPJ(order.supplier.cnpj)}
-                  </ThemedText>
-                </View>
+                <DetailField
+                  label="CNPJ"
+                  value={formatCNPJ(order.supplier.cnpj)}
+                  icon="id"
+                  monospace
+                />
               )}
 
               {/* Phone */}
               {order.supplier.phones && order.supplier.phones.length > 0 && (
-                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLabel}>
-                    <IconPhone size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                      Telefone
-                    </ThemedText>
-                  </View>
-                  <View style={styles.phoneContainer}>
-                    <TouchableOpacity
-                      onPress={() => handlePhonePress(order.supplier!.phones[0])}
-                      activeOpacity={0.7}
-                    >
-                      <ThemedText style={[styles.phoneValue, { color: "#16a34a" }]}>
-                        {formatBrazilianPhone(order.supplier!.phones[0])}
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleWhatsAppPress(order.supplier!.phones[0])}
-                      activeOpacity={0.7}
-                    >
-                      <IconBrandWhatsapp size={20} color="#16a34a" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                <DetailPhoneField
+                  label="Telefone"
+                  phone={order.supplier.phones[0]}
+                  icon="phone"
+                />
               )}
 
               {/* Email */}
               {order.supplier.email && (
-                <TouchableOpacity
-                  style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}
-                  onPress={handleEmailPress}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.infoLabel}>
-                    <IconMail size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                      Email
-                    </ThemedText>
-                  </View>
-                  <ThemedText
-                    style={[styles.valueText, styles.linkText, { color: colors.primary }]}
-                    numberOfLines={1}
-                  >
-                    {order.supplier.email}
-                  </ThemedText>
-                </TouchableOpacity>
+                <DetailField
+                  label="Email"
+                  icon="mail"
+                  value={
+                    <TouchableOpacity
+                      onPress={handleEmailPress}
+                      activeOpacity={0.7}
+                    >
+                      <ThemedText
+                        style={[styles.linkText, { color: colors.primary }]}
+                        numberOfLines={1}
+                      >
+                        {order.supplier.email}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  }
+                />
               )}
             </View>
           ) : (
@@ -194,120 +131,81 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
           </ThemedText>
 
           {/* Description */}
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.infoLabel}>
-              <IconFileText size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                Descrição
-              </ThemedText>
-            </View>
-            <ThemedText
-              style={[styles.valueText, { color: colors.foreground }]}
-              numberOfLines={2}
-            >
-              {order.description || "-"}
-            </ThemedText>
-          </View>
+          <DetailField
+            label="Descrição"
+            value={order.description || "-"}
+            icon="file-text"
+          />
 
           {/* Total Value */}
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.infoLabel}>
-              <IconCurrencyReal size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                Valor Total
+          <DetailField
+            label="Valor Total"
+            icon="coins"
+            value={
+              <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
+                {formatCurrency(orderTotal)}
               </ThemedText>
-            </View>
-            <ThemedText style={[styles.valueText, styles.totalValue, { color: colors.primary }]}>
-              {formatCurrency(orderTotal)}
-            </ThemedText>
-          </View>
+            }
+          />
 
           {/* Forecast */}
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.infoLabel}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                Previsão de Entrega
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-              {order.forecast ? formatDate(order.forecast) : "-"}
-            </ThemedText>
-          </View>
+          <DetailField
+            label="Previsão de Entrega"
+            value={order.forecast ? formatDate(order.forecast) : "-"}
+            icon="calendar"
+          />
 
           {/* Created At */}
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.infoLabel}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                Data do Pedido
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-              {formatDateTime(order.createdAt)}
-            </ThemedText>
-          </View>
+          <DetailField
+            label="Data do Pedido"
+            value={formatDateTime(order.createdAt)}
+            icon="calendar"
+          />
 
           {/* Updated At */}
           {order.updatedAt && (
-            <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.infoLabel}>
-                <IconCalendar size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                  Atualizado em
-                </ThemedText>
-              </View>
-              <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                {formatDateTime(order.updatedAt)}
-              </ThemedText>
-            </View>
+            <DetailField
+              label="Atualizado em"
+              value={formatDateTime(order.updatedAt)}
+              icon="calendar"
+            />
           )}
 
           {/* Total Items */}
-          <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.infoLabel}>
-              <IconPackage size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                Total de Itens
-              </ThemedText>
-            </View>
-            <Badge variant="secondary" size="sm">
-              <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
-                {order.items?.length || 0} itens
-              </ThemedText>
-            </Badge>
-          </View>
+          <DetailField
+            label="Total de Itens"
+            icon="package"
+            value={
+              <Badge variant="secondary" size="sm">
+                <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                  {order.items?.length || 0} itens
+                </ThemedText>
+              </Badge>
+            }
+          />
 
           {/* Origin (if from schedule) */}
           {order.orderSchedule && (
-            <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.infoLabel}>
-                <IconCalendar size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                  Origem
-                </ThemedText>
-              </View>
-              <Badge variant="outline" size="sm">
-                <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
-                  Agendado
-                </ThemedText>
-              </Badge>
-            </View>
+            <DetailField
+              label="Origem"
+              icon="calendar"
+              value={
+                <Badge variant="outline" size="sm">
+                  <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                    Agendado
+                  </ThemedText>
+                </Badge>
+              }
+            />
           )}
 
           {/* Notes */}
           {order.notes && (
-            <View style={[styles.notesContainer, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.notesHeader}>
-                <IconNotes size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                  Observações
-                </ThemedText>
-              </View>
-              <ThemedText style={[styles.notesText, { color: colors.foreground }]}>
-                {order.notes}
-              </ThemedText>
-            </View>
+            <DetailField
+              label="Observações"
+              value={order.notes}
+              icon="note"
+            />
           )}
         </View>
 
@@ -323,48 +221,34 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
               </ThemedText>
 
               {/* Payment Method */}
-              <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                <View style={styles.infoLabel}>
-                  <IconCreditCard size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                    Método de Pagamento
-                  </ThemedText>
-                </View>
-                <Badge variant="outline" size="sm">
-                  <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
-                    {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
-                  </ThemedText>
-                </Badge>
-              </View>
+              <DetailField
+                label="Método de Pagamento"
+                icon="receipt"
+                value={
+                  <Badge variant="outline" size="sm">
+                    <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                      {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
+                    </ThemedText>
+                  </Badge>
+                }
+              />
 
               {/* PIX Key (only when payment method is PIX) */}
               {order.paymentMethod === "PIX" && order.paymentPix && (
-                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLabel}>
-                    <IconCreditCard size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                      Chave Pix
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                    {formatPixKey(order.paymentPix)}
-                  </ThemedText>
-                </View>
+                <DetailField
+                  label="Chave Pix"
+                  value={formatPixKey(order.paymentPix)}
+                  icon="receipt"
+                />
               )}
 
               {/* Due Days (only when payment method is BANK_SLIP) */}
               {order.paymentMethod === "BANK_SLIP" && order.paymentDueDays && (
-                <View style={[styles.infoRow, { backgroundColor: colors.muted + "50" }]}>
-                  <View style={styles.infoLabel}>
-                    <IconCalendar size={16} color={colors.mutedForeground} />
-                    <ThemedText style={[styles.labelText, { color: colors.mutedForeground }]}>
-                      Prazo de Vencimento
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={[styles.valueText, { color: colors.foreground }]}>
-                    {order.paymentDueDays} dias
-                  </ThemedText>
-                </View>
+                <DetailField
+                  label="Prazo de Vencimento"
+                  value={`${order.paymentDueDays} dias`}
+                  icon="calendar"
+                />
               )}
             </View>
           </>
@@ -416,48 +300,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   supplierContent: {
-    gap: spacing.sm,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    minHeight: 44,
-  },
-  infoLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    flex: 1,
-  },
-  labelText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  valueText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    textAlign: "right",
-    flex: 1,
-  },
-  phoneContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  phoneValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    fontFamily: "monospace",
+    gap: spacing.md,
   },
   totalValue: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
   },
   linkText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
     textDecorationLine: "underline",
   },
   emptyText: {
@@ -467,20 +318,5 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-  },
-  notesContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-  },
-  notesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  notesText: {
-    fontSize: fontSize.sm,
-    lineHeight: 20,
   },
 });

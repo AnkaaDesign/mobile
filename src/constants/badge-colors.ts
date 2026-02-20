@@ -681,6 +681,33 @@ export const ENTITY_BADGE_CONFIG = {
     [COMMISSION_STATUS.NO_COMMISSION]: "orange" as BadgeVariant,      // Orange - no commission (warning)
     [COMMISSION_STATUS.SUSPENDED_COMMISSION]: "red" as BadgeVariant,  // Red - commission suspended (critical)
   },
+
+  // Backup Status / Type / Priority (lowercase values from API)
+  BACKUP: {
+    // Status
+    completed: "completed" as BadgeVariant,    // Green
+    in_progress: "inProgress" as BadgeVariant, // Blue
+    pending: "pending" as BadgeVariant,        // Amber
+    failed: "failed" as BadgeVariant,          // Red
+    // Type
+    database: "blue" as BadgeVariant,
+    files: "purple" as BadgeVariant,
+    system: "teal" as BadgeVariant,
+    full: "indigo" as BadgeVariant,
+    // Priority
+    low: "muted" as BadgeVariant,
+    medium: "pending" as BadgeVariant,
+    high: "warning" as BadgeVariant,
+    critical: "destructive" as BadgeVariant,
+    // Enabled/disabled (schedule)
+    true: "active" as BadgeVariant,            // Green
+    false: "inactive" as BadgeVariant,         // Gray
+    // Fallback display labels (when rawValue is undefined)
+    Ativo: "active" as BadgeVariant,
+    Inativo: "inactive" as BadgeVariant,
+    Sim: "active" as BadgeVariant,
+    "Não": "inactive" as BadgeVariant,
+  },
 };
 
 /**
@@ -709,6 +736,8 @@ export const GENERIC_STATUS_CONFIG: Record<string, BadgeVariant> = {
   FULFILLED: "amber",
   RECEIVED: "received",
   SENT: "sent",
+  Enviada: "sent",
+  Pendente: "pending",
   ON_HOLD: "onHold",
   SUSPENDED: "suspended",
   BLOCKED: "blocked",

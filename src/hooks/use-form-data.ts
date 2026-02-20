@@ -89,10 +89,13 @@ export function useUsersForCombobox(options?: {
 export function useActiveUsersMinimal(options?: {
   enabled?: boolean;
   limit?: number;
+  where?: any;
+  orderBy?: any;
 }) {
+  const { where, ...rest } = options || {};
   return useUsersMinimal({
-    ...options,
-    where: { isActive: true, status: { not: 'DISMISSED' } },
+    ...rest,
+    where: { ...where, isActive: true, status: { not: 'DISMISSED' } },
   });
 }
 

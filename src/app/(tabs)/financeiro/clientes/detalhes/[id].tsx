@@ -25,7 +25,6 @@ import {
   ContactInfoCard,
   AddressCard,
   TasksTable,
-  CustomerDocumentsCard,
   CustomerInvoicesCard,
 } from "@/components/administration/customer/detail";
 import { CustomerDetailSkeleton } from "@/components/administration/customer/skeleton";
@@ -200,9 +199,6 @@ export default function FinancialCustomerDetailScreen() {
       <CustomerCard customer={customer} />
       <ContactInfoCard customer={customer} />
       <AddressCard customer={customer} />
-
-      {/* Financial Documents - Always shown in financial module */}
-      {canViewDocuments && <CustomerDocumentsCard customer={customer} />}
 
       {/* Invoices - Priority in financial view */}
       {canViewDocuments && <CustomerInvoicesCard customer={customer} />}

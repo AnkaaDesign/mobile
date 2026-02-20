@@ -1,7 +1,7 @@
 
 import { View, Pressable , StyleSheet} from "react-native";
 import type { Item } from '../../../../types';
-import { formatCurrency, determineStockLevel } from "@/utils";
+import { formatCurrency, formatQuantity, determineStockLevel } from "@/utils";
 import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -63,7 +63,7 @@ export function ItemCard({ item, onPress, showActions: _showActions = true, vari
             <View style={styles.detailRow}>
               <ThemedText style={styles.label}>Quantidade:</ThemedText>
               <Badge variant={getBadgeVariant()}>
-                <ThemedText style={styles.badgeText}>{item.quantity}</ThemedText>
+                <ThemedText style={styles.badgeText}>{formatQuantity(item.quantity)}</ThemedText>
               </Badge>
             </View>
 

@@ -49,6 +49,11 @@ export default function GaragesScreen() {
           status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
           forecastDate: { lte: todayStr },
         },
+        // Non-completed trucks that already arrived (have entryDate) but may not have forecastDate
+        {
+          status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
+          entryDate: { lte: todayStr },
+        },
       ],
     },
     select: {
@@ -124,16 +129,28 @@ export default function GaragesScreen() {
         const layoutSections = layout?.layoutSections || [];
         if (layoutSections.length === 0) return false;
 
-        // For patio: only include if forecastDate <= today AND status is not COMPLETED
+        // For patio: only include if forecastDate <= today OR entryDate <= today, AND status is not COMPLETED
         const forecastDate = (task as any).forecastDate;
-        if (!forecastDate) return false;
+        const entryDate = (task as any).entryDate;
+        if (!forecastDate && !entryDate) return false;
 
         // Must not have COMPLETED status for patio display
         if (task.status === TASK_STATUS.COMPLETED) return false;
 
-        const forecast = new Date(forecastDate);
-        forecast.setHours(0, 0, 0, 0);
-        return forecast <= today;
+        // Show if truck already arrived (entryDate) or is expected (forecastDate)
+        if (entryDate) {
+          const entry = new Date(entryDate);
+          entry.setHours(0, 0, 0, 0);
+          if (entry <= today) return true;
+        }
+
+        if (forecastDate) {
+          const forecast = new Date(forecastDate);
+          forecast.setHours(0, 0, 0, 0);
+          return forecast <= today;
+        }
+
+        return false;
       })
       .map((task): GarageTruck => {
         const truck = task.truck as any;

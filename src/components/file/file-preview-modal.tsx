@@ -643,7 +643,10 @@ export function FilePreviewModal({
     });
 
   // Pan gesture - Smooth panning when zoomed, swipe navigation when not
+  // minDistance(10) prevents pan from stealing tap events on Android
+  // (without it, sub-pixel finger movement activates pan before tap can recognize)
   const panGesture = Gesture.Pan()
+    .minDistance(10)
     .onStart(() => {
       'worklet';
       // Save current position at start of gesture to prevent teleporting
@@ -875,7 +878,7 @@ export function FilePreviewModal({
   };
 
   return (
-    <Modal visible={visible} animationType="fade" statusBarTranslucent>
+    <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <StatusBar barStyle="light-content" backgroundColor={isDark ? '#1a1a1a' : '#e5e5e5'} translucent />
 
       <View style={[styles.container, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}>
@@ -964,8 +967,9 @@ export function FilePreviewModal({
                           horizontal={false}
                           spacing={10}
                           // Zoom configuration - allow much greater zoom for detailed viewing
-                          minScale={0.5}
-                          maxScale={10}
+                          // minScale=1.0 prevents Android from rendering low-res bitmaps (fixes blur)
+                          minScale={1.0}
+                          maxScale={15}
                           scale={1.0}
                           // Android rendering quality improvements - fixes blur issue
                           enableAntialiasing={true}

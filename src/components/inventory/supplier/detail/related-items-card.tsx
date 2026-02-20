@@ -6,7 +6,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Item } from "@/types";
-import { formatCurrency, determineStockLevel, getStockLevelTextColor } from "@/utils";
+import { formatCurrency, formatQuantity, determineStockLevel, getStockLevelTextColor } from "@/utils";
 import { STOCK_LEVEL_LABELS, routes } from "@/constants";
 import { cn } from "@/lib/utils";
 
@@ -127,7 +127,7 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
 
                 <View className="flex flex-row justify-between items-center mt-2 pt-2 border-t border-border/50">
                   <Text className="text-sm font-medium text-muted-foreground">
-                    Qtd: <Text className="text-foreground font-semibold">{item.quantity}</Text>
+                    Qtd: <Text className="text-foreground font-semibold">{formatQuantity(item.quantity)}</Text>
                   </Text>
                   <Text className="text-sm font-semibold text-foreground">
                     {formatCurrency(item.price || 0)}

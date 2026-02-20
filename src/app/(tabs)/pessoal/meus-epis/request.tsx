@@ -16,6 +16,7 @@ import { PPE_TYPE, ITEM_CATEGORY_TYPE } from '@/constants';
 import { getItemPpeSize } from '@/utils/ppe-size-mapping';
 import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
 import { cn } from "@/lib/utils";
+import { formatQuantity } from "@/utils";
 import type { PpeRequestFormData } from '@/schemas/ppe-request';
 import type { Item } from '@/types';
 import { useTheme } from "@/lib/theme";
@@ -201,7 +202,7 @@ export default function RequestPPEScreen() {
           )}
           {item.quantity !== undefined && (
             <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
-              Estoque: {item.quantity}
+              Estoque: {formatQuantity(item.quantity)}
             </ThemedText>
           )}
         </View>

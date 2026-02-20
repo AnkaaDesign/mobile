@@ -7,7 +7,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { useProductionDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatPercentage } from "@/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -256,7 +256,7 @@ export default function ProducaoScreen() {
               { title: "Cortes Realizados", value: data?.cuttingOperations?.totalCuts?.value || 0, icon: "scissors", color: "#22c55e" },
               { title: "Aerografias", value: data?.airbrushingMetrics?.totalAirbrushJobs?.value || 0, icon: "brush", color: "#a855f7" },
               { title: "Receita Total", value: formatCurrency(data?.revenueAnalysis?.revenueByMonth?.reduce((sum, item) => sum + item.value, 0) || 0), icon: "currency-dollar", color: "#f97316" },
-              { title: "Taxa Utilização", value: `${data?.garageUtilization?.utilizationRate?.value || 0}%`, icon: "chart-bar", color: "#06b6d4" },
+              { title: "Taxa Utilização", value: formatPercentage(data?.garageUtilization?.utilizationRate?.value || 0, 1), icon: "chart-bar", color: "#06b6d4" },
               { title: "Total Barracões", value: data?.garageUtilization?.totalGarages?.value || 0, icon: "building", color: "#8b5cf6" },
             ].map((metric) => (
               <View
@@ -505,7 +505,7 @@ export default function ProducaoScreen() {
             >
               <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Taxa de Uso</Text>
               <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 24 }}>
-                {data?.garageUtilization?.utilizationRate?.value || 0}%
+                {formatPercentage(data?.garageUtilization?.utilizationRate?.value || 0, 1)}
               </Text>
             </View>
             <View

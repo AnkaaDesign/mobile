@@ -8,6 +8,7 @@ import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
 import { useItems } from "@/hooks";
 import type { Item } from "@/types";
 
+import { formatCurrency, formatQuantity } from "@/utils";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -225,11 +226,11 @@ export function ExternalWithdrawalItemSelector({
             </View>
             <View style={styles.itemStock}>
               <Text style={styles.itemStockText}>
-                Estoque: {item.quantity}
+                Estoque: {formatQuantity(item.quantity)}
               </Text>
               {item.prices?.[0]?.value && (
                 <Text style={styles.itemPriceText}>
-                  R$ {item.prices[0].value.toFixed(2)}
+                  {formatCurrency(item.prices[0].value)}
                 </Text>
               )}
             </View>

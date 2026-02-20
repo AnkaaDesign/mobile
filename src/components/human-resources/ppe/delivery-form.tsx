@@ -47,7 +47,7 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
       isActive: true,
     },
     orderBy: { name: "asc" },
-    include: { measures: true }, // Include measures to get SIZE
+    include: { measures: true, brand: true },
   });
 
   const form = useForm<PpeDeliveryCreateFormData>({
@@ -192,10 +192,18 @@ export function PpeDeliveryForm({ preselectedUser, preselectedItem, onSuccess, o
                 }, [items?.data, selectedUser]);
 
                 const itemOptions: ComboboxOption[] =
-                  filteredItems.map((item) => ({
-                    value: item.id,
-                    label: `${item.name}${(item as any).ppeSize ? ` • ${(item as any).ppeSize}` : ""}${item.ppeCA ? ` - CA: ${item.ppeCA}` : ""}`,
-                  }));
+                  filteredItems.map((item) => {
+                    const itemSize = getItemPpeSize(item);
+                    const displaySize = itemSize
+                      ? (itemSize.startsWith("SIZE_") ? itemSize.replace("SIZE_", "") : itemSize)
+                      : null;
+                    const brandName = (item as any).brand?.name || null;
+                    const labelParts = [item.name, brandName, displaySize].filter(Boolean);
+                    return {
+                      value: item.id,
+                      label: labelParts.join(" - "),
+                    };
+                  });
 
                 return (
                   <Combobox

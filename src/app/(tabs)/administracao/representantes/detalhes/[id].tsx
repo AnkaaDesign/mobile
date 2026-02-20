@@ -3,19 +3,28 @@ import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-nativ
 import { useLocalSearchParams, router } from "expo-router";
 import { useRepresentative, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS, REPRESENTATIVE_ROLE_COLORS } from "@/types/representative";
+import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS } from "@/types/representative";
+import type { BadgeVariant } from "@/constants/badge-colors";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { formatBrazilianPhone } from "@/utils";
-import { IconUser, IconEdit, IconHistory, IconPhone, IconMail, IconBuilding } from "@tabler/icons-react-native";
+import { IconUser, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const ROLE_BADGE_VARIANTS: Record<RepresentativeRole, BadgeVariant> = {
+  [RepresentativeRole.COMMERCIAL]: 'blue',
+  [RepresentativeRole.MARKETING]: 'purple',
+  [RepresentativeRole.COORDINATOR]: 'green',
+  [RepresentativeRole.FINANCIAL]: 'orange',
+  [RepresentativeRole.FLEET_MANAGER]: 'gray',
+};
 
 export default function RepresentativeDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -213,61 +222,69 @@ export default function RepresentativeDetailScreen() {
         </Card>
 
         {/* Basic Info Card */}
-        <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconUser size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
-          </View>
-          <View style={styles.infoGrid}>
-            <InfoRow label="Nome" value={rep.name} />
-            <InfoRow
-              label="Função"
-              value={
-                <View style={[styles.roleBadge, { backgroundColor: REPRESENTATIVE_ROLE_COLORS[rep.role as RepresentativeRole] }]}>
-                  <ThemedText style={styles.roleBadgeText}>
-                    {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
-                  </ThemedText>
-                </View>
-              }
-            />
-            <InfoRow
-              label="Status"
-              value={
-                <Badge variant={rep.isActive ? "default" : "secondary"} size="sm">
-                  <ThemedText style={{ fontSize: 11 }}>
-                    {rep.isActive ? "Ativo" : "Inativo"}
-                  </ThemedText>
-                </Badge>
-              }
-            />
-            <InfoRow
-              label="Cliente"
-              value={rep.customer?.fantasyName || "-"}
-            />
-          </View>
-        </Card>
+        <DetailCard title="Informações Básicas" icon="user">
+          <DetailField
+            label="Nome"
+            value={rep.name}
+            icon="user"
+          />
+          <DetailField
+            label="Função"
+            value={
+              <Badge
+                variant={ROLE_BADGE_VARIANTS[rep.role as RepresentativeRole] || 'default'}
+                size="sm"
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
+              </Badge>
+            }
+            icon="briefcase"
+          />
+          <DetailField
+            label="Status"
+            value={
+              <Badge variant={rep.isActive ? "default" : "secondary"} size="sm">
+                <ThemedText style={{ fontSize: 11 }}>
+                  {rep.isActive ? "Ativo" : "Inativo"}
+                </ThemedText>
+              </Badge>
+            }
+            icon="circle-check"
+          />
+          <DetailField
+            label="Cliente"
+            value={rep.customer?.fantasyName || "-"}
+            icon="building"
+          />
+        </DetailCard>
 
         {/* Contact Details Card */}
-        <Card style={styles.card}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <IconPhone size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.sectionTitle}>Contato</ThemedText>
-          </View>
-          <View style={styles.infoGrid}>
-            <InfoRow label="Telefone" value={formatBrazilianPhone(rep.phone)} />
-            <InfoRow label="E-mail" value={rep.email || "-"} />
-            <InfoRow
-              label="Acesso ao Sistema"
-              value={
-                <Badge variant={rep.email ? "default" : "secondary"} size="sm">
-                  <ThemedText style={{ fontSize: 11 }}>
-                    {rep.email ? "Habilitado" : "Desabilitado"}
-                  </ThemedText>
-                </Badge>
-              }
+        <DetailCard title="Contato" icon="phone">
+          {rep.phone && (
+            <DetailPhoneField
+              label="Telefone"
+              phone={rep.phone}
+              icon="phone"
             />
-          </View>
-        </Card>
+          )}
+          <DetailField
+            label="E-mail"
+            value={rep.email || "-"}
+            icon="mail"
+          />
+          <DetailField
+            label="Acesso ao Sistema"
+            value={
+              <Badge variant={rep.email ? "default" : "secondary"} size="sm">
+                <ThemedText style={{ fontSize: 11 }}>
+                  {rep.email ? "Habilitado" : "Desabilitado"}
+                </ThemedText>
+              </Badge>
+            }
+            icon="lock"
+          />
+        </DetailCard>
 
         {/* Changelog Timeline */}
         <Card style={styles.card}>
@@ -291,42 +308,6 @@ export default function RepresentativeDetailScreen() {
     </ScrollView>
   );
 }
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  const { colors } = useTheme();
-  return (
-    <View style={infoRowStyles.row}>
-      <ThemedText style={[infoRowStyles.label, { color: colors.mutedForeground }]}>
-        {label}
-      </ThemedText>
-      {typeof value === "string" ? (
-        <ThemedText style={[infoRowStyles.value, { color: colors.foreground }]}>
-          {value}
-        </ThemedText>
-      ) : (
-        value
-      )}
-    </View>
-  );
-}
-
-const infoRowStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.xs,
-  },
-  label: {
-    fontSize: fontSize.sm,
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-    flex: 1,
-    textAlign: "right",
-  },
-});
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -384,21 +365,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: "500",
   },
-  infoGrid: {
-    gap: spacing.xs,
-  },
   content: {
-    gap: spacing.sm,
-  },
-  roleBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  roleBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#ffffff",
+    gap: spacing.md,
   },
   errorContent: {
     alignItems: "center",

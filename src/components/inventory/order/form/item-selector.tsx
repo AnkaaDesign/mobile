@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getItems } from "@/api-client";
+import { formatCurrency } from "@/utils";
 import type { Item } from "@/types";
 
 interface OrderItemSelectorProps {
@@ -67,7 +68,7 @@ export function OrderItemSelector({
       label: initialItem.uniCode ? `${initialItem.uniCode} - ${initialItem.name}` : initialItem.name,
       description: [
         `Estoque: ${stockInfo}`,
-        priceInfo ? `Preço: R$ ${priceInfo.toFixed(2)}` : null,
+        priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
         supplier ? `Fornecedor: ${supplier}` : null,
       ].filter(Boolean).join(" | "),
       metadata: {
@@ -163,7 +164,7 @@ export function OrderItemSelector({
           label: item.uniCode ? `${item.uniCode} - ${item.name}` : item.name,
           description: [
             `Estoque: ${stockInfo}`,
-            priceInfo ? `Preço: R$ ${priceInfo.toFixed(2)}` : null,
+            priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
             supplier ? `Fornecedor: ${supplier}` : null,
           ].filter(Boolean).join(" | "),
           metadata: {
@@ -231,7 +232,7 @@ export function OrderItemSelector({
           {metadata.price && (
             <Badge variant="outline" style={styles.priceBadge}>
               <ThemedText style={styles.priceBadgeText}>
-                R$ {metadata.price.toFixed(2)}
+                {formatCurrency(metadata.price)}
               </ThemedText>
             </Badge>
           )}

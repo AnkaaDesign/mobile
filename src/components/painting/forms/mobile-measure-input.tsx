@@ -10,7 +10,7 @@ import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { measureUtils } from "@/utils";
+import { measureUtils, formatDensity } from "@/utils";
 import { MEASURE_UNIT } from "@/constants";
 
 interface MobileMeasureInputProps {
@@ -58,7 +58,7 @@ export function MobileMeasureInput({
             success: true,
             density: result.density,
           });
-          setDensity(result.density.toFixed(4));
+          setDensity(result.density.toFixed(3));
         } else {
           setCalculationResult({
             success: false,
@@ -133,7 +133,7 @@ export function MobileMeasureInput({
         success: true,
         density: result.density,
       });
-      setDensity(result.density.toFixed(4));
+      setDensity(result.density.toFixed(3));
       setAutoCalculateDensity(false);
     } else {
       setCalculationResult({
@@ -248,7 +248,7 @@ export function MobileMeasureInput({
               {calculationResult.success ? (
                 <View>
                   <Text className="font-medium">Densidade calculada:</Text>
-                  <Text>{calculationResult.density?.toFixed(4)} g/ml</Text>
+                  <Text>{formatDensity(calculationResult.density!)} g/ml</Text>
                   {autoCalculateDensity && <Text className="text-xs mt-1">Calculada automaticamente a partir do peso e volume</Text>}
                 </View>
               ) : (

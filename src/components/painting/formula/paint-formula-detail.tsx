@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { PaintFormulaComponentCard } from "./paint-formula-component-card";
+import { formatDensity } from "@/utils";
 import type { PaintFormula } from '../../../types';
 
 interface PaintFormulaDetailProps {
@@ -177,7 +178,7 @@ export function PaintFormulaDetail({ formula, showComponents = true, showCalcula
             </View>
 
             <View className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
-              <Text className="text-xs text-blue-700 dark:text-blue-300 mb-2">Com base na densidade calculada ({metrics.calculatedDensity.toFixed(4)} g/ml):</Text>
+              <Text className="text-xs text-blue-700 dark:text-blue-300 mb-2">Com base na densidade calculada ({formatDensity(metrics.calculatedDensity)} g/ml):</Text>
               <View className="space-y-1">
                 <Text className="text-xs text-blue-600 dark:text-blue-400">1 litro ≈ {(metrics.calculatedDensity * 1000).toFixed(0)}g</Text>
                 <Text className="text-xs text-blue-600 dark:text-blue-400">100ml ≈ {(metrics.calculatedDensity * 100).toFixed(1)}g</Text>

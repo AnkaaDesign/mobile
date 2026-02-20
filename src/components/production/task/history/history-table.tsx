@@ -50,7 +50,7 @@ const availableWidth = screenWidth - 32; // Account for padding
 export const createColumnDefinitions = (): TableColumn[] => [
   {
     key: "name",
-    header: "Nome",
+    header: "Logomarca",
     align: "left",
     sortable: true,
     width: 0,
@@ -69,13 +69,13 @@ export const createColumnDefinitions = (): TableColumn[] => [
   },
   {
     key: "customer.fantasyName",
-    header: "Cliente",
+    header: "Razão Social",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (task: Task) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {task.customer?.fantasyName || "-"}
+        {task.customer?.corporateName || task.customer?.fantasyName || "-"}
       </ThemedText>
     ),
   },

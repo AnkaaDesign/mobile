@@ -2,7 +2,7 @@
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { Card } from "@/components/ui/card";
 import type { OrderItem } from '../../../../types';
-import { formatCurrency } from '../../../../utils';
+import { formatCurrency, formatQuantity } from '../../../../utils';
 
 interface ItemsListProps {
   items: OrderItem[];
@@ -21,7 +21,7 @@ export function ItemsList({ items }: ItemsListProps) {
       </View>
       <View style={styles.itemQuantity}>
         <Text style={styles.quantity}>
-          {item.orderedQuantity} {item.item?.measureUnit || "un"}
+          {formatQuantity(item.orderedQuantity)} {item.item?.measureUnit || "un"}
         </Text>
         {item.unitPrice && (
           <Text style={styles.price}>

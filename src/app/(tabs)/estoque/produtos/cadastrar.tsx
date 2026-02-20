@@ -22,9 +22,9 @@ export default function ItemCreateScreen() {
 
       const result = await createAsync(validatedData);
 
-      if (result.success) {
+      if (result.success && result.data) {
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.inventory.products.root) as any);
+        router.replace(routeToMobilePath(routes.inventory.products.details(result.data.id)) as any);
       }
     } catch (error) {
       // API client already shows error alert

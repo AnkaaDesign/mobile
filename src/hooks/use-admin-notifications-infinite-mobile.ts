@@ -25,10 +25,28 @@ export function useAdminNotificationsInfiniteMobile(
   const { enabled = true, ...filters } = params || {};
 
   const queryParams = useMemo(
-    () => ({
-      ...filters,
-      limit: MOBILE_PAGE_SIZE,
-    }),
+    () => {
+      const { orderBy, ...rest } = filters;
+
+      // The generic useSort hook produces orderBy as an object (e.g., { sentAt: 'desc' }),
+      // but the API expects flat params: orderBy=sentAt&order=desc
+      let flatOrderBy: string | undefined;
+      let flatOrder: string | undefined;
+      if (orderBy && typeof orderBy === 'object') {
+        const key = Object.keys(orderBy)[0];
+        flatOrderBy = key;
+        flatOrder = (orderBy as Record<string, string>)[key];
+      } else if (typeof orderBy === 'string') {
+        flatOrderBy = orderBy;
+      }
+
+      return {
+        ...rest,
+        ...(flatOrderBy ? { orderBy: flatOrderBy } : {}),
+        ...(flatOrder ? { order: flatOrder } : {}),
+        limit: MOBILE_PAGE_SIZE,
+      };
+    },
     [filters]
   );
 

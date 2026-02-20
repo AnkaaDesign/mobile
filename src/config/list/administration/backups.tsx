@@ -1,8 +1,15 @@
+import React from 'react'
+import { View } from 'react-native'
+import { Text } from '@/components/ui/text'
+import { Icon } from '@/components/ui/icon'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useBackupSystemHealth } from '@/hooks/useBackup'
+import { borderRadius } from '@/constants/design-system'
 import type { ListConfig } from '@/components/list/types'
 import type { BackupMetadata } from '@/api-client/backup'
 import { canEditUsers } from '@/utils/permissions/entity-permissions'
 
-// Status labels from the actual codebase
+// Status labels
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pendente',
   in_progress: 'Em Progresso',
@@ -10,14 +17,15 @@ const STATUS_LABELS: Record<string, string> = {
   failed: 'Falhou',
 }
 
-// Type labels from the actual codebase
+// Type labels
 const TYPE_LABELS: Record<string, string> = {
   database: 'Banco de Dados',
   files: 'Arquivos',
+  system: 'Sistema',
   full: 'Completo',
 }
 
-// Priority labels from the actual codebase
+// Priority labels
 const PRIORITY_LABELS: Record<string, string> = {
   low: 'Baixa',
   medium: 'Média',
@@ -25,12 +33,65 @@ const PRIORITY_LABELS: Record<string, string> = {
   critical: 'Crítica',
 }
 
+/** Stats cards header component — uses useBackupSystemHealth hook */
+function BackupStatsHeader({ colors }: { colors: any }) {
+  const { data: health, isLoading } = useBackupSystemHealth()
+
+  if (isLoading || !health) {
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 8 }}>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <View key={i} style={{ width: '31.5%' }}>
+            <Skeleton height={64} width="100%" borderRadius={borderRadius.md} />
+          </View>
+        ))}
+      </View>
+    )
+  }
+
+  const stats = [
+    { label: 'Total', value: health.totalBackups, icon: 'database', color: '#3b82f6' },
+    { label: 'Concluídos', value: health.completedBackups, icon: 'circle-check', color: '#22c55e' },
+    { label: 'Progresso', value: health.inProgressBackups, icon: 'activity', color: '#f59e0b' },
+    { label: 'Falhos', value: health.failedBackups, icon: 'x-circle', color: '#ef4444' },
+    { label: 'Agendados', value: health.scheduledBackups, icon: 'clock', color: '#14b8a6' },
+    { label: 'Tamanho', value: health.totalSize || '0 B', icon: 'hard-drive', color: '#8b5cf6' },
+  ]
+
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 8 }}>
+      {stats.map((stat) => (
+        <View
+          key={stat.label}
+          style={{
+            width: '31.5%',
+            backgroundColor: colors.card,
+            borderRadius: borderRadius.md,
+            padding: 10,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <Icon name={stat.icon} size={13} color={stat.color} />
+            <Text style={{ fontSize: 10, color: colors.mutedForeground }} numberOfLines={1}>{stat.label}</Text>
+          </View>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.foreground }} numberOfLines={1}>{stat.value}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 export const backupsListConfig: ListConfig<BackupMetadata> = {
   key: 'administration-backups',
   title: 'Backups do Sistema',
 
+  header: (colors) => <BackupStatsHeader colors={colors} />,
+
   query: {
-    hook: 'useBackups',
+    hook: 'useBackupsInfiniteMobile',
+    mutationsHook: 'useBackupMutations',
     defaultSort: { field: 'createdAt', direction: 'desc' },
     pageSize: 20,
   },
@@ -54,6 +115,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         align: 'center',
         render: (backup) => TYPE_LABELS[backup.type] || backup.type,
         format: 'badge',
+        badgeEntity: 'BACKUP',
       },
       {
         key: 'status',
@@ -63,6 +125,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         align: 'center',
         render: (backup) => STATUS_LABELS[backup.status] || backup.status,
         format: 'badge',
+        badgeEntity: 'BACKUP',
       },
       {
         key: 'size',
@@ -86,6 +149,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         align: 'center',
         render: (backup) => backup.priority ? PRIORITY_LABELS[backup.priority] : '-',
         format: 'badge',
+        badgeEntity: 'BACKUP',
       },
       {
         key: 'encrypted',
@@ -95,6 +159,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         align: 'center',
         render: (backup) => backup.encrypted ? 'Sim' : 'Não',
         format: 'badge',
+        badgeEntity: 'BACKUP',
       },
       {
         key: 'duration',
@@ -125,6 +190,12 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
     rowHeight: 72,
     actions: [
       {
+        key: 'view',
+        label: 'Ver Detalhes',
+        icon: 'eye',
+        route: (backup) => `/servidor/backups/detalhes/${backup.id}`,
+      },
+      {
         key: 'delete',
         label: 'Excluir',
         icon: 'trash',
@@ -133,8 +204,13 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
           title: 'Confirmar Exclusão',
           message: 'Deseja realmente excluir este backup? Esta ação não pode ser desfeita.',
         },
-        onPress: async (backup, _, mutations) => {
-          await mutations?.delete?.(backup.id)
+        onPress: async (backup, _, context) => {
+          const del = context?.delete
+          if (typeof del === 'function') {
+            await del(backup.id)
+          } else if ((del as any)?.mutateAsync) {
+            await (del as any).mutateAsync(backup.id)
+          }
         },
       },
     ],
@@ -163,6 +239,7 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         options: [
           { label: 'Banco de Dados', value: 'database' },
           { label: 'Arquivos', value: 'files' },
+          { label: 'Sistema', value: 'system' },
           { label: 'Completo', value: 'full' },
         ],
         placeholder: 'Selecione os tipos',
@@ -209,30 +286,26 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         key: 'type',
         label: 'Tipo',
         path: 'type',
-        format: (value) => TYPE_LABELS[value] || value
+        format: (value) => TYPE_LABELS[value] || value,
       },
       {
         key: 'status',
         label: 'Status',
         path: 'status',
-        format: (value) => STATUS_LABELS[value] || value
+        format: (value) => STATUS_LABELS[value] || value,
       },
-      {
-        key: 'size',
-        label: 'Tamanho (bytes)',
-        path: 'size'
-      },
+      { key: 'size', label: 'Tamanho (bytes)', path: 'size' },
       {
         key: 'priority',
         label: 'Prioridade',
         path: 'priority',
-        format: (value) => value ? PRIORITY_LABELS[value] : '-'
+        format: (value) => (value ? PRIORITY_LABELS[value] : '-'),
       },
       {
         key: 'encrypted',
         label: 'Criptografado',
         path: 'encrypted',
-        format: (value) => value ? 'Sim' : 'Não'
+        format: (value) => (value ? 'Sim' : 'Não'),
       },
       { key: 'duration', label: 'Duração (ms)', path: 'duration' },
       { key: 'description', label: 'Descrição', path: 'description' },
@@ -255,12 +328,18 @@ export const backupsListConfig: ListConfig<BackupMetadata> = {
         variant: 'destructive',
         confirm: {
           title: 'Confirmar Exclusão',
-          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'backup' : 'backups'}?`,
+          message: (count: number) => `Deseja excluir ${count} ${count === 1 ? 'backup' : 'backups'}?`,
         },
-        onPress: async (ids, mutations) => {
-          await mutations?.batchDeleteAsync?.({ ids: Array.from(ids) })
+        onPress: async (ids, context) => {
+          await context?.batchDeleteAsync?.({ ids: Array.from(ids) })
         },
       },
     ],
+  },
+
+  emptyState: {
+    icon: 'database',
+    title: 'Nenhum backup encontrado',
+    description: 'Crie seu primeiro backup para proteger seus dados',
   },
 }

@@ -7,7 +7,7 @@ import Icon from "@/components/ui/icon";
 import { useMyPpeDeliveriesInfinite } from '@/hooks/use-my-ppe-deliveries-infinite';
 import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS, PPE_TYPE_LABELS, PPE_TYPE } from '@/constants';
 import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from '@/constants/badge-colors';
-import { formatDate } from '@/utils';
+import { formatDate, formatQuantity } from '@/utils';
 import { cn } from "@/lib/utils";
 import { PersonalPpeDeliveryFilterModal } from "./personal-ppe-delivery-filter-modal";
 import { PersonalPpeDeliveryFilterTags } from "./personal-ppe-delivery-filter-tags";
@@ -91,7 +91,7 @@ export function PersonalPpeDeliveryList({ className }: PersonalPpeDeliveryListPr
             <View className="flex-row items-center gap-2">
               <Icon name="package" size={16} className="text-muted-foreground" />
               <Text className="text-sm text-muted-foreground">
-                Quantidade: {delivery.quantity}
+                Quantidade: {formatQuantity(delivery.quantity)}
               </Text>
             </View>
 

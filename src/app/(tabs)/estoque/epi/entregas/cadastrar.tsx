@@ -1,77 +1,177 @@
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { Combobox } from "@/components/ui/combobox";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 
-import { usePpeDeliveryMutations, useItems, useUsers, useScreenReady} from '@/hooks';
-import { PPE_DELIVERY_STATUS } from "@/constants";
-import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
-
-interface PPEDeliveryCreateFormData {
-  itemId: string;
-  userId: string;
-  quantity: number;
-  scheduledDate?: Date | null;
-  status: string;
-}
+import { usePpeDeliveryMutations, useScreenReady } from "@/hooks";
+import { useAuth } from "@/contexts/auth-context";
+import { getItems, getUsers } from "@/api-client";
+import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, ITEM_CATEGORY_TYPE, PPE_TYPE, routes } from "@/constants";
+import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { getItemPpeSize } from "@/utils/ppe-size-mapping";
+import type { Item, User } from "@/types";
 
 export default function CreatePPEDeliveryScreen() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
+  const { user: currentUser } = useAuth();
   const { createAsync, createMutation } = usePpeDeliveryMutations();
 
-  const { data: items } = useItems({ orderBy: { name: "asc" } });
-  const { data: users } = useUsers({ orderBy: { name: "asc" } });
-
-  const form = useForm<PPEDeliveryCreateFormData>({
+  const form = useForm<PpeDeliveryCreateFormData>({
+    resolver: zodResolver(ppeDeliveryCreateSchema),
     defaultValues: {
       itemId: "",
       userId: "",
-      quantity: 0,
-      scheduledDate: null,
-      status: PPE_DELIVERY_STATUS.PENDING,
+      quantity: 1,
+      status: PPE_DELIVERY_STATUS.APPROVED,
+      statusOrder: PPE_DELIVERY_STATUS_ORDER[PPE_DELIVERY_STATUS.APPROVED],
     },
   });
 
   const isLoading = createMutation.isPending;
 
-  const itemOptions: ComboboxOption[] =
-    items?.data?.map((item) => ({
-      value: item.id,
-      label: `${item.uniCode || ""} ${item.name}`.trim(),
-    })) || [];
+  // Track selected user's PPE size for item filtering
+  const selectedUserId = form.watch("userId");
+  const selectedUserRef = useRef<User | null>(null);
+  const loadedUsersRef = useRef<Map<string, User>>(new Map());
 
-  const userOptions: ComboboxOption[] =
-    users?.data?.map((user) => ({
-      value: user.id,
-      label: user.name,
-    })) || [];
+  // Update selectedUserRef when userId changes
+  useEffect(() => {
+    if (selectedUserId) {
+      const user = loadedUsersRef.current.get(selectedUserId);
+      selectedUserRef.current = user || null;
+    } else {
+      selectedUserRef.current = null;
+    }
+  }, [selectedUserId]);
 
-  const statusOptions: ComboboxOption[] = Object.entries(PPE_DELIVERY_STATUS_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  // Async query for users with pagination
+  const searchUsers = useCallback(async (search: string, page = 1) => {
+    const pageSize = 50;
+    try {
+      const response = await getUsers({
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+        where: { status: { not: USER_STATUS.DISMISSED } },
+        orderBy: { name: "asc" },
+        include: { ppeSize: true },
+        searchingFor: search || undefined,
+      });
+      const users = response.data || [];
+      users.forEach((u) => loadedUsersRef.current.set(u.id, u));
+      return {
+        data: users,
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch {
+      return { data: [], hasMore: false };
+    }
+  }, []);
+
+  const userQueryKey = useMemo(() => ["users", "ppe-delivery-create"], []);
+  const getUserValue = useCallback((u: User) => u.id, []);
+  const getUserLabel = useCallback((u: User) => u.name, []);
+
+  // Async query for PPE items + client-side size filtering.
+  // Fetches all PPE items at once (catalogs are small) to avoid
+  // infinite pagination when client-side filtering removes items.
+  const searchItems = useCallback(async (search: string) => {
+    try {
+      const response = await getItems({
+        take: 500,
+        where: {
+          isActive: true,
+          category: { type: ITEM_CATEGORY_TYPE.PPE },
+        },
+        include: { measures: true, brand: true },
+        searchingFor: search || undefined,
+        orderBy: { name: "asc" },
+      });
+
+      let items = response.data || [];
+
+      // Client-side PPE size filtering based on selected user
+      const user = selectedUserRef.current;
+      if (user?.ppeSize) {
+        const userPpeSize = (user as any).ppeSize;
+        items = items.filter((item: Item) => {
+          if (!item.ppeType) return true;
+          if (item.ppeType === PPE_TYPE.OTHERS) return true;
+
+          const itemSize = getItemPpeSize(item);
+          if (!itemSize) return true;
+
+          let userSize: string | null = null;
+          if (item.ppeType === PPE_TYPE.SHIRT || item.ppeType === PPE_TYPE.SLEEVES) {
+            userSize = userPpeSize?.shirts || userPpeSize?.sleeves || null;
+          } else if (item.ppeType === PPE_TYPE.PANTS) {
+            userSize = userPpeSize?.pants || null;
+          } else if (item.ppeType === PPE_TYPE.BOOTS) {
+            userSize = userPpeSize?.boots || null;
+          } else if (item.ppeType === PPE_TYPE.GLOVES) {
+            userSize = userPpeSize?.gloves || null;
+          } else if (item.ppeType === PPE_TYPE.MASK) {
+            userSize = userPpeSize?.mask || null;
+          } else if (item.ppeType === PPE_TYPE.RAIN_BOOTS) {
+            userSize = userPpeSize?.rainBoots || null;
+          }
+
+          if (!userSize) return true;
+          return itemSize === userSize;
+        });
+      }
+
+      return {
+        data: items,
+        hasMore: false,
+      };
+    } catch {
+      return { data: [], hasMore: false };
+    }
+  }, []);
+
+  // Re-query items when selected user changes (for size filtering)
+  const itemQueryKey = useMemo(
+    () => ["ppe-items", "delivery-create", selectedUserId || "none"],
+    [selectedUserId]
   );
 
-  const handleSubmit = async (data: PPEDeliveryCreateFormData) => {
+  const getItemValue = useCallback((item: Item) => item.id, []);
+  const getItemLabel = useCallback((item: Item) => {
+    const itemSize = getItemPpeSize(item);
+    const displaySize = itemSize
+      ? itemSize.startsWith("SIZE_") ? itemSize.replace("SIZE_", "") : itemSize
+      : null;
+    const brandName = (item as any).brand?.name || null;
+    return [item.name, brandName, displaySize].filter(Boolean).join(" - ");
+  }, []);
+
+  const handleSubmit = async (data: PpeDeliveryCreateFormData) => {
     try {
-      // Add statusOrder property required by the API
-      const formDataWithStatusOrder = {
+      const result = await createAsync({
         ...data,
-        statusOrder: 0,
-      };
-      await createAsync(formDataWithStatusOrder);
-      router.back();
+        status: PPE_DELIVERY_STATUS.APPROVED,
+        statusOrder: PPE_DELIVERY_STATUS_ORDER[PPE_DELIVERY_STATUS.APPROVED],
+        reviewedBy: currentUser?.id || null,
+      });
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      if (newId) {
+        router.replace(routeToMobilePath(routes.inventory.ppe.deliveries.details(newId)) as any);
+      } else {
+        router.back();
+      }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao criar a entrega de EPI");
     }
@@ -94,8 +194,47 @@ export default function CreatePPEDeliveryScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Basic Information */}
           <FormCard title="Informações Básicas" icon="IconShield">
+            {/* User */}
+            <FormFieldGroup
+              label="Colaborador"
+              required
+              error={form.formState.errors.userId?.message}
+            >
+              <Controller
+                control={form.control}
+                name="userId"
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <Combobox<User>
+                    async
+                    queryKey={userQueryKey}
+                    queryFn={searchUsers}
+                    minSearchLength={0}
+                    debounceMs={300}
+                    value={value || undefined}
+                    onValueChange={(newValue) => {
+                      const id = Array.isArray(newValue) ? newValue[0] : newValue;
+                      onChange(id || "");
+                      if (id) {
+                        selectedUserRef.current = loadedUsersRef.current.get(id) || null;
+                      } else {
+                        selectedUserRef.current = null;
+                      }
+                    }}
+                    getOptionValue={getUserValue}
+                    getOptionLabel={getUserLabel}
+                    placeholder="Selecione o colaborador"
+                    searchPlaceholder="Buscar colaborador..."
+                    emptyText="Nenhum colaborador encontrado"
+                    disabled={isLoading}
+                    searchable
+                    clearable
+                    error={error?.message}
+                  />
+                )}
+              />
+            </FormFieldGroup>
+
             {/* Item */}
             <FormFieldGroup
               label="Item EPI"
@@ -106,35 +245,22 @@ export default function CreatePPEDeliveryScreen() {
                 control={form.control}
                 name="itemId"
                 render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={itemOptions}
+                  <Combobox<Item>
+                    async
+                    queryKey={itemQueryKey}
+                    queryFn={searchItems}
+                    minSearchLength={0}
+                    debounceMs={300}
                     value={value || undefined}
-                    onValueChange={onChange}
+                    onValueChange={(newValue) => {
+                      const id = Array.isArray(newValue) ? newValue[0] : newValue;
+                      onChange(id || "");
+                    }}
+                    getOptionValue={getItemValue}
+                    getOptionLabel={getItemLabel}
                     placeholder="Selecione o item"
-                    disabled={isLoading}
-                    searchable
-                    clearable
-                    error={error?.message}
-                  />
-                )}
-              />
-            </FormFieldGroup>
-
-            {/* User */}
-            <FormFieldGroup
-              label="Funcionário"
-              required
-              error={form.formState.errors.userId?.message}
-            >
-              <Controller
-                control={form.control}
-                name="userId"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={userOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o funcionário"
+                    searchPlaceholder="Buscar EPI..."
+                    emptyText="Nenhum EPI encontrado"
                     disabled={isLoading}
                     searchable
                     clearable
@@ -155,43 +281,20 @@ export default function CreatePPEDeliveryScreen() {
                 name="quantity"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={String(value || 0)}
+                    value={String(value || 1)}
                     onChangeText={(text: string | number | null) => {
                       if (!text) {
-                        onChange(0);
+                        onChange(1);
                         return;
                       }
                       const numValue = parseInt(String(text));
-                      onChange(isNaN(numValue) ? 0 : numValue);
+                      onChange(isNaN(numValue) ? 1 : numValue);
                     }}
                     onBlur={onBlur}
-                    placeholder="0"
+                    placeholder="1"
                     editable={!isLoading}
                     error={!!form.formState.errors.quantity}
                     keyboardType="number-pad"
-                  />
-                )}
-              />
-            </FormFieldGroup>
-
-            {/* Status */}
-            <FormFieldGroup
-              label="Status"
-              error={form.formState.errors.status?.message}
-            >
-              <Controller
-                control={form.control}
-                name="status"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={statusOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o status"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable
-                    error={error?.message}
                   />
                 )}
               />

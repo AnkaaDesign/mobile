@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -266,7 +266,7 @@ export default function AddOrderItemScreen() {
                         styles.itemInfoValue,
                         { color: selectedItem.quantity > 0 ? colors.primary : colors.destructive }
                       ])}>
-                        {selectedItem.quantity}
+                        {formatQuantity(selectedItem.quantity)}
                       </ThemedText>
                     </View>
                   )}
@@ -477,7 +477,7 @@ const ItemOption: React.FC<ItemOptionProps> = ({ option, isSelected }) => {
             styles.itemOptionStock,
             { color: item.quantity > 0 ? colors.primary : colors.destructive }
           ])}>
-            Estoque: {item.quantity}
+            Estoque: {formatQuantity(item.quantity)}
           </ThemedText>
         )}
       </View>

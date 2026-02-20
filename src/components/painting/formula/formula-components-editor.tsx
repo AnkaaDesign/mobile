@@ -12,10 +12,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { paintFormulaComponentService } from "@/api-client/paint";
 import { canBeUsedInPaintFormula } from "@/utils/measure";
+import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import type { Item } from "../../../types";
-
-// Breakpoint for tablet detection
-const TABLET_BREAKPOINT = 768;
 
 interface FormulaComponentsEditorProps {
   availableItems?: Item[];
@@ -25,7 +23,7 @@ interface FormulaComponentsEditorProps {
 export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }: FormulaComponentsEditorProps) {
   const { colors } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const isTablet = screenWidth >= TABLET_BREAKPOINT;
+  const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
   const { control, setValue, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,

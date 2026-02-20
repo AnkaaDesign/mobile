@@ -269,6 +269,9 @@ export const Layout = memo(function Layout({
         </View>
       </View>
 
+      {/* Optional custom header */}
+      {config.header?.(colors, user)}
+
       {/* Filter Tags */}
       {config.filters && list.filters.activeCount > 0 && (
         <Tags {...list.filters.tags} />

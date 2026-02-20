@@ -76,7 +76,7 @@ export default function CreateCatalogScreen() {
         }
 
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
+        router.replace(routeToMobilePath(routes.painting.catalog.details(paintId)) as any);
       }
     } catch (error) {
       // API client already shows error alert
@@ -87,7 +87,11 @@ export default function CreateCatalogScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
+    }
   };
 
   return (

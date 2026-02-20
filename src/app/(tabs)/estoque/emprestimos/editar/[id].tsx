@@ -56,7 +56,7 @@ function BorrowEditScreen() {
       });
 
       // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+      router.replace(routeToMobilePath(routes.inventory.borrows.details(id)) as any);
     } catch (error) {
       // API client already shows error alert
       console.error("Error returning borrow:", error);
@@ -72,7 +72,7 @@ function BorrowEditScreen() {
       });
 
       // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+      router.replace(routeToMobilePath(routes.inventory.borrows.details(id)) as any);
     } catch (error) {
       // API client already shows error alert
       console.error("Error marking borrow as lost:", error);

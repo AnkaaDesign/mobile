@@ -63,15 +63,13 @@ export default function CreateAutomaticOrderScreen() {
   });
 
   const { create: createOrderSchedule } = useOrderScheduleMutations({
-    onCreateSuccess: (_data) => {
-      Alert.alert("Sucesso", "Agendamento automático criado com sucesso", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.push(routeToMobilePath(routes.inventory.orders.automatic.root) as any);
-          },
-        },
-      ]);
+    onCreateSuccess: (data) => {
+      const resultId = (data as any)?.id || (data as any)?.data?.id;
+      if (resultId) {
+        router.replace(routeToMobilePath(routes.inventory.orders.automatic.details(resultId)) as any);
+      } else {
+        router.replace(routeToMobilePath(routes.inventory.orders.automatic.root) as any);
+      }
     },
   });
 

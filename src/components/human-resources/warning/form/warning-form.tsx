@@ -17,6 +17,8 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { warningCreateSchema, warningUpdateSchema } from "@/schemas/warning";
 import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/warning";
@@ -127,15 +129,22 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
   const handleSubmit = async (data: WarningCreateFormData | WarningUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as WarningCreateFormData);
+        const result = await createAsync(data as WarningCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.humanResources.warnings.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (warning) {
         await updateAsync({
           id: warning.id,
           data: data as WarningUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.humanResources.warnings.details(warning.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a advertência");
     }

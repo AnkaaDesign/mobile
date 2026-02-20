@@ -5,6 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE } from "@/constants";
 
+import { formatCurrency } from "@/utils";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,7 @@ export function ExternalWithdrawalItemCard({
           {type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE && (
             <View style={styles.priceInfo}>
               <Text style={styles.priceText}>
-                Preço item: R$ {(itemPrice ?? 0).toFixed(2)}
+                Preço item: {formatCurrency(itemPrice ?? 0)}
               </Text>
               {hasCustomPrice && (
                 <Badge variant="outline" style={styles.customPriceBadge}>

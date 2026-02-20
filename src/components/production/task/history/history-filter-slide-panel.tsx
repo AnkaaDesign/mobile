@@ -109,7 +109,7 @@ export function HistoryFilterSlidePanel({
   const customerOptions = useMemo(() =>
     customersData?.data?.map((customer) => ({
       value: customer.id,
-      label: customer.fantasyName,
+      label: customer.corporateName || customer.fantasyName,
     })) || [],
   [customersData]);
 
@@ -196,7 +196,7 @@ export function HistoryFilterSlidePanel({
 
         {/* Multi-Select: Customers */}
         <MultiSelectFilter
-          label="Clientes"
+          label="Razão Social"
           icon={getFilterIcon('customerIds')}
           value={localFilters.customerIds || []}
           onChange={(values) => updateFilter('customerIds', values.length > 0 ? values : undefined)}

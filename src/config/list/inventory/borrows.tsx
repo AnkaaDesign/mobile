@@ -6,6 +6,7 @@ import {
   BORROW_STATUS_LABELS,
 } from '@/constants'
 import { canEditBorrows } from '@/utils/permissions/entity-permissions'
+import { formatQuantity } from '@/utils'
 import { Badge } from '@/components/ui/badge'
 import { getBadgeVariant } from '@/constants/badge-colors'
 import { isTabletWidth } from '@/lib/table-utils'
@@ -120,7 +121,7 @@ export const borrowsListConfig: ListConfig<Borrow> = {
         sortable: true,
         width: 0.8,
         align: 'center',
-        render: (borrow) => borrow.quantity,
+        render: (borrow) => formatQuantity(borrow.quantity),
         format: 'number',
       },
       {

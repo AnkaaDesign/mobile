@@ -12,7 +12,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ItemTableRowSwipe } from "./item-table-row-swipe";
 import { StockStatusIndicator } from "./stock-status-indicator";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -139,7 +139,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
       <View style={styles.quantityCell}>
         <StockStatusIndicator item={item} />
         <ThemedText style={styles.quantityText} numberOfLines={1}>
-          {item.quantity || 0}
+          {formatQuantity(item.quantity || 0)}
         </ThemedText>
       </View>
     ),
@@ -814,6 +814,43 @@ export const ItemTable = React.memo<ItemTableProps>(
       );
     }
 
+    // For detail pages (disableVirtualization), use a simple ScrollView instead of FlatList
+    // to avoid FlatList-inside-ScrollView layout issues on iOS
+    if (disableVirtualization) {
+      const handleScrollEnd = (event: any) => {
+        handleScroll();
+        const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+        const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
+        if (distanceFromBottom < layoutMeasurement.height * (onEndReachedThreshold || 0.5)) {
+          onEndReached?.();
+        }
+      };
+
+      return (
+        <View style={styles.wrapper}>
+          <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: "transparent", borderColor: colors.border }])} onPress={handleContainerPress}>
+            {renderHeader()}
+            <ScrollView
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={true}
+              style={styles.flatList}
+              onScroll={handleScrollEnd}
+              scrollEventThrottle={16}
+            >
+              {items.length === 0
+                ? renderEmpty()
+                : items.map((item, index) => (
+                    <React.Fragment key={item.id}>
+                      {renderRow({ item, index } as any)}
+                    </React.Fragment>
+                  ))}
+              {ListFooterComponent !== undefined ? ListFooterComponent : renderFooter()}
+            </ScrollView>
+          </Pressable>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.wrapper}>
         <Pressable style={StyleSheet.flatten([styles.container, { backgroundColor: "transparent", borderColor: colors.border }])} onPress={handleContainerPress}>
@@ -830,22 +867,19 @@ export const ItemTable = React.memo<ItemTableProps>(
             scrollEventThrottle={16}
             ListFooterComponent={ListFooterComponent !== undefined ? ListFooterComponent : renderFooter()}
             ListEmptyComponent={renderEmpty}
-            // Virtualization settings - disable for small detail page lists to prevent row disappearing
-            removeClippedSubviews={!disableVirtualization}
-            maxToRenderPerBatch={disableVirtualization ? 50 : 10}
-            windowSize={disableVirtualization ? 21 : 5}
-            initialNumToRender={disableVirtualization ? 50 : 15}
-            updateCellsBatchingPeriod={disableVirtualization ? 100 : 50}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            initialNumToRender={15}
+            updateCellsBatchingPeriod={50}
             getItemLayout={(_data, index) => ({
-              length: 60, // Fixed row height
-              offset: 60 * index,
+              length: 48,
+              offset: 48 * index,
               index,
             })}
             style={styles.flatList}
             showsVerticalScrollIndicator={true}
             contentContainerStyle={{ flexGrow: 1 }}
-            // Enable nested scrolling for detail page tables inside ScrollView
-            nestedScrollEnabled={disableVirtualization}
           />
         </Pressable>
       </View>
@@ -856,16 +890,13 @@ export const ItemTable = React.memo<ItemTableProps>(
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    height: '100%',
-    minHeight: 100,
     paddingHorizontal: 8,
     paddingBottom: 16,
     backgroundColor: "transparent",
   },
   container: {
     flex: 1,
-    height: '100%',
-    backgroundColor: "white",
+    backgroundColor: "transparent",
     borderRadius: 8,
     borderWidth: 1,
     overflow: "hidden",
@@ -951,14 +982,14 @@ const styles = StyleSheet.create({
   },
   rowContent: {
     flexDirection: "row",
-    alignItems: "stretch", // Changed from 'center' to 'stretch' to ensure all cells have same height
-    minHeight: 36,
+    alignItems: "stretch",
+    minHeight: 48,
   },
   cell: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 6,
     justifyContent: "center",
-    minHeight: 36,
+    minHeight: 48,
   },
   centerAlign: {
     alignItems: "center",

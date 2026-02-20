@@ -2,10 +2,11 @@
 import { View, StyleSheet, Image } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBuilding, IconCertificate, IconUser} from "@tabler/icons-react-native";
+import { IconBuilding } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
 import { formatCNPJ, formatCPF } from "@/utils";
 import { getFileUrl } from '@/utils/file';
@@ -56,99 +57,25 @@ export function CustomerCard({ customer }: CustomerCardProps) {
             </View>
           </View>
 
-          {/* Identification Section */}
-          <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-              Identificação
-            </ThemedText>
-            <View style={styles.fieldsContainer}>
-              {/* Fantasy Name */}
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                  Nome Fantasia
-                </ThemedText>
-                <ThemedText
-                  style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {customer.fantasyName}
-                </ThemedText>
-              </View>
+          {/* Identification Fields */}
+          <View style={styles.fieldsContainer}>
+            <DetailField label="Nome Fantasia" value={customer.fantasyName} icon="building" />
 
-              {/* Corporate Name */}
-              {customer.corporateName && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Razão Social
-                  </ThemedText>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {customer.corporateName}
-                  </ThemedText>
-                </View>
-              )}
+            {customer.corporateName && (
+              <DetailField label="Razão Social" value={customer.corporateName} icon="building" />
+            )}
 
-              {/* CNPJ */}
-              {customer.cnpj && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <View style={styles.fieldLabelWithIcon}>
-                    <IconCertificate size={16} color={colors.mutedForeground} />
-                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      CNPJ
-                    </ThemedText>
-                  </View>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {formatCNPJ(customer.cnpj)}
-                  </ThemedText>
-                </View>
-              )}
+            {customer.cnpj && (
+              <DetailField label="CNPJ" value={formatCNPJ(customer.cnpj)} icon="certificate" />
+            )}
 
-              {/* CPF */}
-              {customer.cpf && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <View style={styles.fieldLabelWithIcon}>
-                    <IconUser size={16} color={colors.mutedForeground} />
-                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      CPF
-                    </ThemedText>
-                  </View>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {formatCPF(customer.cpf)}
-                  </ThemedText>
-                </View>
-              )}
+            {customer.cpf && (
+              <DetailField label="CPF" value={formatCPF(customer.cpf)} icon="user" />
+            )}
 
-              {/* Situação Cadastral */}
-              {customer.registrationStatus && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <View style={styles.fieldLabelWithIcon}>
-                    <IconCertificate size={16} color={colors.mutedForeground} />
-                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      Situação Cadastral
-                    </ThemedText>
-                  </View>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {customer.registrationStatus}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
+            {customer.registrationStatus && (
+              <DetailField label="Situação Cadastral" value={customer.registrationStatus} icon="certificate" />
+            )}
           </View>
 
           {/* Tags Section */}
@@ -199,7 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   infoContainer: {
     gap: spacing.xl,
@@ -231,41 +158,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize["2xl"],
     fontWeight: fontWeight.bold,
   },
+  fieldsContainer: {
+    gap: spacing.md,
+  },
   section: {
     gap: spacing.lg,
   },
   subsectionHeader: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
-  },
-  fieldsContainer: {
-    gap: spacing.md,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    gap: spacing.md,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    flexShrink: 0,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 0,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
   },
   tagsSection: {
     paddingTop: spacing.xl,

@@ -14,6 +14,7 @@ import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import { StockBalanceBatchResultModal, StockBalanceBatchResult } from "./stock-balance-batch-result-modal";
+import { formatQuantity } from "@/utils";
 import type { BatchOperationResult } from "@/types/common";
 import {
   IconArrowLeft,
@@ -404,20 +405,20 @@ export function StockBalanceBatchCreateForm({
                     {/* Show stock on mobile (non-tablet) below the name */}
                     {!isTablet && (
                       <ThemedText style={[styles.tableItemStock, { color: colors.mutedForeground }]}>
-                        Estoque: {item.currentStock}
+                        Estoque: {formatQuantity(item.currentStock)}
                       </ThemedText>
                     )}
                   </View>
                   {isTablet && (
                     <View style={styles.tableStockCol}>
                       <ThemedText style={[styles.tableStockText, { color: colors.mutedForeground }]}>
-                        {item.currentStock}
+                        {formatQuantity(item.currentStock)}
                       </ThemedText>
                     </View>
                   )}
                   <View style={styles.tableCountCol}>
                     <ThemedText style={[styles.tableCountText, { color: colors.foreground }]}>
-                      {item.countedQuantity}
+                      {formatQuantity(item.countedQuantity)}
                     </ThemedText>
                   </View>
                   <View style={styles.tableDiffCol}>
@@ -444,7 +445,7 @@ export function StockBalanceBatchCreateForm({
                             : colors.mutedForeground,
                         }
                       ]}>
-                        {item.difference > 0 ? `+${item.difference}` : item.difference}
+                        {item.difference > 0 ? `+${formatQuantity(item.difference)}` : formatQuantity(item.difference)}
                       </ThemedText>
                     </View>
                   </View>

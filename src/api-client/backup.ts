@@ -88,6 +88,9 @@ export interface ScheduledBackupJob {
   next: number;
   jobName?: string; // Full job name for internal use
   key?: string; // Job key for deletion
+  type?: "database" | "files" | "system" | "full";
+  enabled?: boolean;
+  priority?: "low" | "medium" | "high" | "critical";
 }
 
 export interface BackupQueryParams {

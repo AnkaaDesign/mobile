@@ -167,7 +167,7 @@ export default function ServerLogsScreen() {
         </ThemedView>
 
         {/* Filter Controls */}
-        <ThemedView className="flex-row gap-2 mb-3">
+        <ThemedView className="flex-row gap-2 mb-3" style={{ alignItems: "stretch" }}>
           <ThemedView className="flex-1">
             <SearchBar
               placeholder="Filtrar logs..."
@@ -188,6 +188,7 @@ export default function ServerLogsScreen() {
             ]}
             placeholder="Nível"
             searchable={false}
+            style={{ minWidth: 110, justifyContent: "center" }}
           />
         </ThemedView>
 
@@ -201,15 +202,16 @@ export default function ServerLogsScreen() {
                 value: limit.value.toString(),
                 label: limit.label
               }))}
-              placeholder="Selecionar"
+              placeholder="Linhas"
               searchable={false}
+              style={{ minWidth: 130 }}
             />
 
             <Button
               variant="outline"
               size="default"
               onPress={() => setAutoRefresh(!autoRefresh)}
-              className="flex-row items-center gap-1"
+              style={{ height: 42 }}
             >
               <Icon
                 name={autoRefresh ? 'pause' : 'play'}

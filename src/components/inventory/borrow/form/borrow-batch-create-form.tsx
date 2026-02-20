@@ -14,12 +14,13 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
 import { useItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog } from "@/hooks";
-import { useUsersMinimal } from "@/hooks/use-form-data";
+import { useActiveUsersMinimal } from "@/hooks/use-form-data";
 import { ITEM_CATEGORY_TYPE } from "@/constants";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { BorrowBatchResultModal, BorrowBatchResult } from "./borrow-batch-result-modal";
+import { formatQuantity } from "@/utils";
 import type { BatchOperationResult } from "@/types/common";
 import {
   IconPackage,
@@ -155,8 +156,8 @@ export function BorrowBatchCreateForm({
     [multiStepForm, itemMetadataCache],
   );
 
-  // Fetch users - using minimal data for 95% reduction
-  const { data: users, isLoading: isLoadingUsers } = useUsersMinimal({
+  // Fetch active users - using minimal data for 95% reduction
+  const { data: users, isLoading: isLoadingUsers } = useActiveUsersMinimal({
     orderBy: { name: "asc" },
     limit: 100, // API max limit is 100
   });
@@ -408,7 +409,7 @@ export function BorrowBatchCreateForm({
                     </View>
                     <View style={styles.tableQtyCol}>
                       <ThemedText style={[styles.tableQtyText, { color: colors.foreground }]}>
-                        {item.quantity}
+                        {formatQuantity(item.quantity)}
                       </ThemedText>
                     </View>
                   </View>

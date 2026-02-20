@@ -17,7 +17,7 @@ import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-sl
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 
 interface DeliveriesTableProps {
   item: Item;
@@ -260,7 +260,7 @@ export function DeliveriesTable({ item, maxHeight = 500 }: DeliveriesTableProps)
                         {/* Quantity Section */}
                         {showQuantity && (
                           <View style={styles.quantitySection}>
-                            <ThemedText style={styles.quantity}>{delivery.quantity} un</ThemedText>
+                            <ThemedText style={styles.quantity}>{formatQuantity(delivery.quantity)} un</ThemedText>
                           </View>
                         )}
 

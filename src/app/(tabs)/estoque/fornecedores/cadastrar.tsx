@@ -131,14 +131,7 @@ export default function SupplierCreateScreen() {
         const result = await createAsync(formData as any);
 
         if (result?.data) {
-          Alert.alert("Sucesso", "Fornecedor criado com sucesso!", [
-            {
-              text: "OK",
-              onPress: () => {
-                router.replace(routeToMobilePath(routes.inventory.suppliers.root) as any);
-              },
-            },
-          ]);
+          router.replace(routeToMobilePath(routes.inventory.suppliers.details(result.data.id)) as any);
         } else {
           Alert.alert("Erro", "Erro ao criar fornecedor");
         }
@@ -147,14 +140,7 @@ export default function SupplierCreateScreen() {
         const result = await createAsync(data);
 
         if (result?.data) {
-          Alert.alert("Sucesso", "Fornecedor criado com sucesso!", [
-            {
-              text: "OK",
-              onPress: () => {
-                router.replace(routeToMobilePath(routes.inventory.suppliers.root) as any);
-              },
-            },
-          ]);
+          router.replace(routeToMobilePath(routes.inventory.suppliers.details(result.data.id)) as any);
         } else {
           Alert.alert("Erro", "Erro ao criar fornecedor");
         }

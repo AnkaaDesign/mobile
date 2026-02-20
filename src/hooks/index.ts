@@ -173,6 +173,8 @@ export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
 export * from "./use-observations-infinite-mobile";
 export * from "./use-paint-brands-infinite-mobile";
+export * from "./use-backups-infinite-mobile";
+export * from "./use-scheduled-backups-infinite-mobile";
 export * from "./use-deployments-infinite-mobile";
 export * from "./use-paint-productions-infinite-mobile";
 export * from "./use-paint-formula-components-infinite-mobile";

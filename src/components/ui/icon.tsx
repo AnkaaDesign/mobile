@@ -179,6 +179,22 @@ import {
   IconRotateClockwise,
   IconCamera,
   IconMessageCircle,
+  IconCertificate,
+  IconBarcode,
+  IconCategory,
+  IconCake,
+  IconBuildingCommunity,
+  IconMailbox,
+  IconShieldOff,
+  IconArrowBarToUp,
+  IconHanger,
+  IconShirt,
+  IconShoe,
+  IconUmbrella,
+  IconMask,
+  IconHandGrab,
+  IconCreditCard,
+  IconScale,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -206,7 +222,9 @@ const tablerIcons = [
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
   IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu,
   IconBellRinging2, IconDeviceMobile, IconBrandWhatsapp, IconRotateClockwise, IconCamera,
-  IconMessageCircle
+  IconMessageCircle, IconCertificate, IconBarcode, IconCategory, IconCake, IconBuildingCommunity,
+  IconMailbox, IconShieldOff, IconArrowBarToUp, IconHanger, IconShirt, IconShoe, IconUmbrella,
+  IconMask, IconHandGrab, IconCreditCard, IconScale
 ];
 
 // Log any undefined icons for debugging
@@ -556,6 +574,30 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   "brand-whatsapp": IconBrandWhatsapp,
   brandWhatsapp: IconBrandWhatsapp, // camelCase version
   whatsapp: IconBrandWhatsapp, // Alias
+  certificate: IconCertificate,
+  barcode: IconBarcode,
+  category: IconCategory,
+  cake: IconCake,
+  birthday: IconCake, // Alias
+  "building-community": IconBuildingCommunity,
+  buildingCommunity: IconBuildingCommunity, // camelCase version
+  neighborhood: IconBuildingCommunity, // Alias
+  mailbox: IconMailbox,
+  "shield-off": IconShieldOff,
+  shieldOff: IconShieldOff, // camelCase version
+  "arrow-bar-to-up": IconArrowBarToUp,
+  arrowBarToUp: IconArrowBarToUp, // camelCase version
+  hanger: IconHanger,
+  shirt: IconShirt,
+  shoe: IconShoe,
+  umbrella: IconUmbrella,
+  mask: IconMask,
+  "hand-grab": IconHandGrab,
+  handGrab: IconHandGrab, // camelCase version
+  "credit-card": IconCreditCard,
+  creditCard: IconCreditCard, // camelCase version
+  scale: IconScale,
+  weight: IconScale, // Alias
   "rotate-clockwise": IconRotateClockwise,
   rotateClockwise: IconRotateClockwise, // camelCase version
   "rotate-cw": IconRotateClockwise, // Alias (lucide-style)

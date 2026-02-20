@@ -13,7 +13,7 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui";
-import { formatCurrency } from '@/utils';
+import { formatCurrency, formatPercentage } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -486,7 +486,7 @@ export default function PayrollDetailScreen() {
                           <ThemedText style={styles.financialLabel}>{extra.reference || `Extra ${index + 1}`}</ThemedText>
                           <ThemedText style={[styles.financialValue, { color: '#059669' }]}>
                             +{hasPercentage
-                              ? `${percentageValue}%`
+                              ? formatPercentage(percentageValue, 2)
                               : formatCurrency(getNumericValue(extra.value))}
                           </ThemedText>
                         </View>

@@ -364,10 +364,10 @@ export default function CustomerEditScreen() {
     if (isDirty || hasNewLogo) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.administration.customers.list) as any) },
+        { text: "Descartar", style: "destructive", onPress: () => router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any) },
       ]);
     } else {
-      router.push(routeToMobilePath(routes.administration.customers.list) as any);
+      router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any);
     }
   };
 

@@ -122,7 +122,7 @@ function ItemEditScreen() {
       });
 
       // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.products.root) as any);
+      router.replace(routeToMobilePath(routes.inventory.products.details(id)) as any);
     } catch (error) {
       // API client already shows error alert
       console.error("Error updating item:", error);

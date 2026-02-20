@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconClock, IconTrendingUp, IconTrendingDown, IconCalendar, IconDots, IconPackage } from "@tabler/icons-react-native";
 import type { User, Activity } from '../../../../types';
 import { ACTIVITY_REASON, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION } from "@/constants";
-import { formatRelativeTime, formatDate } from "@/utils";
+import { formatRelativeTime, formatDate, formatQuantity } from "@/utils";
 import { startOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -351,7 +351,7 @@ export function ActivitiesTimelineCard({ employee, maxHeight = 500 }: Activities
                               ]}
                             >
                               <ThemedText style={[styles.operationBadgeText, { color: "#FFFFFF" }]}>
-                                {isInbound ? "↑" : "↓"} {Math.abs(activity.quantity)}
+                                {isInbound ? "↑" : "↓"} {formatQuantity(Math.abs(activity.quantity))}
                               </ThemedText>
                             </View>
                           </View>

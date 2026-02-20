@@ -98,7 +98,13 @@ export default function CreateRepresentativeScreen() {
         {
           text: "Descartar",
           style: "destructive",
-          onPress: () => router.push(routeToMobilePath(routes.administration.representatives.list) as any),
+          onPress: () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace(routeToMobilePath(routes.administration.representatives.list) as any);
+            }
+          },
         },
       ],
     );

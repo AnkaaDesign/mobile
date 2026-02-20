@@ -8,6 +8,8 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -170,7 +172,7 @@ export function ExternalWithdrawalCreateForm() {
 
       if (result.success && result.data) {
         await resetForm();
-        router.replace(`/inventory/external-withdrawals/${result.data.id}` as any);
+        router.replace(routeToMobilePath(routes.inventory.externalWithdrawals.details(result.data.id)) as any);
       }
     } catch (error) {
       console.error("Submission error:", error);

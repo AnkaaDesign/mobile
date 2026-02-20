@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import { formatCurrencyPrecise } from "@/utils/format-standard";
 import type { OrderItem } from '../../../../types';
 import { IconCheck, IconX, IconClock, IconDeviceFloppy, IconReload, IconShoppingCart, IconTruck, IconAlertCircle } from "@tabler/icons-react-native";
@@ -336,7 +336,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                 <tr>
                   <td>${item.item?.uniCode || '-'}</td>
                   <td class="font-medium">${item.item?.name || 'Item desconhecido'}</td>
-                  <td class="text-center">${item.orderedQuantity}</td>
+                  <td class="text-center">${item.orderedQuantity.toLocaleString('pt-BR')}</td>
                   <td class="text-right">${formatCurrencyPrecise(item.unitPrice || 0)}</td>
                   <td class="text-right">${formatCurrencyPrecise((item.unitPrice || 0) * item.orderedQuantity)}</td>
                 </tr>
@@ -561,7 +561,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                   <View style={styles.quantityRow}>
                     <ThemedText style={styles.quantityLabel}>Pedido:</ThemedText>
                     <ThemedText style={styles.quantityValue}>
-                      {orderItem.orderedQuantity}
+                      {formatQuantity(orderItem.orderedQuantity)}
                     </ThemedText>
                   </View>
 
@@ -597,7 +597,7 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
                         styles.quantityValue,
                         { color: orderItem.receivedQuantity === orderItem.orderedQuantity ? colors.primary : colors.foreground }
                       ])}>
-                        {orderItem.receivedQuantity || 0}
+                        {formatQuantity(orderItem.receivedQuantity ?? 0)}
                       </ThemedText>
                     )}
                   </View>

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import type { Order } from '../../../../types';
 import { IconReceipt, IconCoin } from "@tabler/icons-react-native";
 
@@ -49,7 +49,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <ThemedText style={styles.statValue}>
-                {order.items.reduce((sum, item) => sum + item.orderedQuantity, 0)}
+                {formatQuantity(order.items.reduce((sum, item) => sum + item.orderedQuantity, 0))}
               </ThemedText>
               <ThemedText style={styles.statLabel}>Unidades</ThemedText>
             </View>

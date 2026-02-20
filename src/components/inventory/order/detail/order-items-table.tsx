@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import { StockStatusIndicator } from "@/components/inventory/item/list/stock-status-indicator";
 import type { Order, Item } from "@/types";
 import {
@@ -93,7 +93,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
               Qtd. Pedida
             </ThemedText>
             <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
-              {summary.totalOrdered}
+              {formatQuantity(summary.totalOrdered)}
             </ThemedText>
           </View>
           <View style={styles.summaryItem}>
@@ -101,7 +101,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
               Qtd. Recebida
             </ThemedText>
             <ThemedText style={[styles.summaryValue, { color: colors.primary }]}>
-              {summary.totalReceived}
+              {formatQuantity(summary.totalReceived)}
             </ThemedText>
           </View>
           <View style={styles.summaryItem}>
@@ -198,7 +198,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
                       <View style={styles.stockCell}>
                         <StockStatusIndicator item={item as Item} />
                         <ThemedText style={styles.stockText}>
-                          {item.quantity || 0}
+                          {formatQuantity(item.quantity ?? 0)}
                         </ThemedText>
                       </View>
                     ) : (
@@ -211,7 +211,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
                   {/* Quantity Column - received/ordered */}
                   <View style={[styles.cell, styles.quantityColumn]}>
                     <ThemedText style={[styles.quantityText, { color: received >= ordered && ordered > 0 ? colors.primary : colors.foreground }]}>
-                      {received}/{ordered}
+                      {formatQuantity(received)}/{formatQuantity(ordered)}
                     </ThemedText>
                   </View>
                 </Pressable>

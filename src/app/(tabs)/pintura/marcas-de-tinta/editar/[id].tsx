@@ -15,7 +15,8 @@ import type { PaintBrandUpdateFormData } from '../../../../../schemas';
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
-// import { showToast } from "@/components/ui/toast";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 import {
   IconTag,
 } from "@tabler/icons-react-native";
@@ -83,8 +84,7 @@ export default function EditPaintBrandScreen() {
 
     try {
       await update({ id, data });
-      // API client already shows success alert
-      router.back();
+      router.replace(routeToMobilePath(routes.painting.paintBrands.details(id)) as any);
     } catch (_error) {
       // API client already shows error alert
     } finally {

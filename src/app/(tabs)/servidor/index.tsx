@@ -213,7 +213,7 @@ export default function ServidorScreen() {
               </ThemedView>
               <Progress value={cpuUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(cpuUsage) }} />
               {metrics?.cpu?.cores && (
-                <ThemedText className="text-xs text-muted-foreground mt-1">
+                <ThemedText className="text-xs text-muted-foreground mt-1" style={{ lineHeight: 18 }}>
                   {metrics.cpu.cores} núcleos
                 </ThemedText>
               )}
@@ -237,7 +237,7 @@ export default function ServidorScreen() {
               </ThemedView>
               <Progress value={memoryUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(memoryUsage) }} />
               {metrics?.memory && (
-                <ThemedText className="text-xs text-muted-foreground mt-1">
+                <ThemedText className="text-xs text-muted-foreground mt-1" style={{ lineHeight: 18 }}>
                   {formatBytes(metrics.memory.used)} /{" "}
                   {formatBytes(metrics.memory.total)}
                 </ThemedText>
@@ -260,7 +260,7 @@ export default function ServidorScreen() {
               </ThemedView>
               <Progress value={diskUsage} style={{ height: 8 }} indicatorStyle={{ backgroundColor: getUsageColor(diskUsage) }} />
               {metrics?.disk && (
-                <ThemedText className="text-xs text-muted-foreground mt-1">
+                <ThemedText className="text-xs text-muted-foreground mt-1" style={{ lineHeight: 18 }}>
                   {formatBytes(metrics.disk.used)} /{" "}
                   {formatBytes(metrics.disk.total)}
                 </ThemedText>
@@ -298,7 +298,9 @@ export default function ServidorScreen() {
                     </ThemedView>
                     <ThemedText
                       className="text-xs font-medium text-center"
-                      numberOfLines={1}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.8}
                     >
                       {item.title}
                     </ThemedText>

@@ -10,7 +10,7 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconHistory, IconUser, IconPackage, IconCalendar, IconCircleCheck, IconClock, IconAlertTriangle } from "@tabler/icons-react-native";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
-import { formatDate, formatRelativeTime } from "@/utils";
+import { formatDate, formatRelativeTime, formatQuantity } from "@/utils";
 
 import type { PpeDeliverySchedule } from '../../../../../types';
 
@@ -178,7 +178,7 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
                             { color: colors.foreground },
                           ])}
                         >
-                          {delivery.item.name} ({delivery.quantity}x)
+                          {delivery.item.name} ({formatQuantity(delivery.quantity)}x)
                         </ThemedText>
                       </View>
                     )}

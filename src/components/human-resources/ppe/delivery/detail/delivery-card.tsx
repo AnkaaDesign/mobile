@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconCalendar, IconNumber } from "@tabler/icons-react-native";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
 import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
 import type { PpeDelivery } from '../../../../../types';
@@ -68,7 +68,7 @@ export function DeliveryCard({ delivery }: DeliveryCardProps) {
               <IconNumber size={16} color={colors.mutedForeground} style={styles.infoIcon} />
               <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Quantidade</ThemedText>
             </View>
-            <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{delivery.quantity}</ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{formatQuantity(delivery.quantity)}</ThemedText>
           </View>
         </View>
       </View>

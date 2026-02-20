@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import {
   IconChartLine,
   IconCurrencyDollar,
@@ -12,7 +13,7 @@ import {
   IconActivity,
 } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
-import { formatCurrency, itemUtils, determineStockLevel, getStockLevelMessage } from "@/utils";
+import { formatCurrency, formatQuantity, itemUtils, determineStockLevel, getStockLevelMessage } from "@/utils";
 import {
   STOCK_LEVEL,
   STOCK_LEVEL_LABELS,
@@ -214,33 +215,24 @@ export function MetricsCard({ item }: MetricsCardProps) {
 
           {/* Stock Levels */}
           <View style={styles.stockLevelsContainer}>
-            <View style={StyleSheet.flatten([styles.stockLevelRow, { backgroundColor: colors.muted + "50" }])}>
-              <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: colors.mutedForeground }])}>
-                Quantidade Atual
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: colors.foreground }])}>
-                {item.quantity}
-              </ThemedText>
-            </View>
+            <DetailField
+              label="Quantidade Atual"
+              value={formatQuantity(item.quantity)}
+              icon="package"
+            />
             {item.maxQuantity !== null && (
-              <View style={StyleSheet.flatten([styles.stockLevelRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: colors.mutedForeground }])}>
-                  Máximo
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: colors.foreground }])}>
-                  {item.maxQuantity}
-                </ThemedText>
-              </View>
+              <DetailField
+                label="Máximo"
+                value={formatQuantity(item.maxQuantity)}
+                icon="arrow-bar-to-up"
+              />
             )}
             {item.reorderPoint !== null && (
-              <View style={StyleSheet.flatten([styles.stockLevelRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelLabel, { color: colors.mutedForeground }])}>
-                  Ponto de Reposição
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.stockLevelValue, { color: colors.foreground }])}>
-                  {item.reorderPoint}
-                </ThemedText>
-              </View>
+              <DetailField
+                label="Ponto de Reposição"
+                value={formatQuantity(item.reorderPoint)}
+                icon="alert-triangle"
+              />
             )}
           </View>
 
@@ -263,7 +255,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
                   0
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.progressLabel, { color: colors.mutedForeground }])}>
-                  {item.maxQuantity}
+                  {formatQuantity(item.maxQuantity)}
                 </ThemedText>
               </View>
             </View>
@@ -437,24 +429,8 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm + 10,
   },
   stockLevelsContainer: {
-    gap: spacing.sm,
+    gap: spacing.md,
     marginTop: spacing.sm,
-  },
-  stockLevelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  stockLevelLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  stockLevelValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
   },
   progressContainer: {
     marginTop: spacing.md,

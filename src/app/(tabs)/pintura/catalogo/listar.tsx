@@ -4,6 +4,7 @@ import type { FlatList as FlatListType } from "react-native";
 import { Stack, router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePageTracker } from "@/hooks/use-page-tracker";
+import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -54,8 +55,6 @@ const TAG_BADGE_COLORS = {
   dark: { bg: '#d4d4d4', text: '#262626' },   // neutral-300, neutral-800
 };
 
-// Tablet detection threshold (lowered to support smaller tablets)
-const TABLET_WIDTH_THRESHOLD = 624;
 
 export default function CatalogListScreen() {
   const { colors, isDark } = useTheme();

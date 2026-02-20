@@ -8,7 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamPpeDeliveryTableRowSwipe } from "./team-ppe-delivery-table-row-swipe";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS, PPE_DELIVERY_STATUS } from "@/constants";
 
@@ -83,7 +83,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (delivery: PpeDelivery) => (
       <View style={styles.centerAlign}>
         <Badge variant="secondary" size="sm">
-          <ThemedText style={styles.quantityText}>{delivery.quantity || 1}</ThemedText>
+          <ThemedText style={styles.quantityText}>{formatQuantity(delivery.quantity || 1)}</ThemedText>
         </Badge>
       </View>
     ),

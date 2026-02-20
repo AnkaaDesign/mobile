@@ -64,7 +64,7 @@ function CategoryEditScreen() {
       });
 
       // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.products.categories.root) as any);
+      router.replace(routeToMobilePath(routes.inventory.products.categories.details(id!)) as any);
     } catch (error) {
       // API client already shows error alert
       console.error("Error updating category:", error);

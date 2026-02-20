@@ -1,7 +1,6 @@
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconComponents, IconWeight } from "@tabler/icons-react-native";
@@ -30,102 +29,84 @@ export function ComponentsUsedCard({ production }: ComponentsUsedCardProps) {
         </View>
       </View>
       <View style={styles.content}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={[styles.table, { borderColor: colors.border + "50" }]}>
-            {/* Header Row */}
-            <View style={[styles.tableHeaderRow, { backgroundColor: colors.muted }]}>
-              <View style={[styles.tableHeaderCell, styles.componentColumn]}>
-                <ThemedText style={StyleSheet.flatten([styles.tableHeaderText, { color: colors.foreground }])}>
-                  COMPONENTE
-                </ThemedText>
-              </View>
-              <View style={[styles.tableHeaderCell, styles.percentColumn]}>
-                <ThemedText style={StyleSheet.flatten([styles.tableHeaderText, { color: colors.foreground }])}>
-                  PERCENTUAL
-                </ThemedText>
-              </View>
-              <View style={[styles.tableHeaderCell, styles.quantityColumn]}>
-                <ThemedText style={StyleSheet.flatten([styles.tableHeaderText, { color: colors.foreground }])}>
-                  QUANTIDADE
-                </ThemedText>
-              </View>
+        <View style={[styles.table, { borderColor: colors.border + "50" }]}>
+          {/* Header Row */}
+          <View style={[styles.tableHeaderRow, { backgroundColor: colors.muted }]}>
+            <View style={[styles.tableHeaderCell, styles.componentColumn]}>
+              <ThemedText style={StyleSheet.flatten([styles.tableHeaderText, { color: colors.foreground }])} numberOfLines={1}>
+                COMPONENTE
+              </ThemedText>
             </View>
+            <View style={[styles.tableHeaderCell, styles.quantityColumn]}>
+              <ThemedText style={StyleSheet.flatten([styles.tableHeaderText, { color: colors.foreground }])} numberOfLines={1}>
+                QUANTIDADE
+              </ThemedText>
+            </View>
+          </View>
 
-            {/* Component Rows */}
-            {components
-              .sort((a, b) => b.ratio - a.ratio)
-              .map((component, index) => {
-                const componentWeightGrams = (totalWeightGrams * component.ratio) / 100;
-                const isLastRow = index === components.length - 1;
+          {/* Component Rows */}
+          {components
+            .sort((a, b) => b.ratio - a.ratio)
+            .map((component, index) => {
+              const componentWeightGrams = (totalWeightGrams * component.ratio) / 100;
+              const isLastRow = index === components.length - 1;
 
-                return (
-                  <View
-                    key={component.id}
-                    style={[
-                      styles.tableRow,
-                      { borderBottomColor: colors.border },
-                      !isLastRow && styles.tableRowBorder,
-                    ]}
-                  >
-                    <View style={[styles.tableCell, styles.componentColumn]}>
-                      <View style={styles.componentInfo}>
-                        {component.item?.uniCode && (
-                          <ThemedText style={StyleSheet.flatten([styles.uniCode, { color: colors.mutedForeground }])}>
-                            {component.item.uniCode}
-                          </ThemedText>
-                        )}
-                        <ThemedText style={StyleSheet.flatten([styles.componentName, { color: colors.foreground }])}>
-                          {component.item?.name || "Item não encontrado"}
+              return (
+                <View
+                  key={component.id}
+                  style={[
+                    styles.tableRow,
+                    { borderBottomColor: colors.border },
+                    !isLastRow && styles.tableRowBorder,
+                  ]}
+                >
+                  <View style={[styles.tableCell, styles.componentColumn]}>
+                    <View style={styles.componentInfo}>
+                      {component.item?.uniCode && (
+                        <ThemedText style={StyleSheet.flatten([styles.uniCode, { color: colors.mutedForeground }])} numberOfLines={1} ellipsizeMode="tail">
+                          {component.item.uniCode}
                         </ThemedText>
-                      </View>
-                    </View>
-                    <View style={[styles.tableCell, styles.percentColumn]}>
-                      <Badge variant="secondary">
-                        <ThemedText style={{ fontSize: fontSize.xs }}>
-                          {component.ratio.toFixed(2)}%
-                        </ThemedText>
-                      </Badge>
-                    </View>
-                    <View style={[styles.tableCell, styles.quantityColumn]}>
-                      <View style={styles.quantityInfo}>
-                        <IconWeight size={14} color={colors.mutedForeground} />
-                        <ThemedText
-                          style={StyleSheet.flatten([
-                            componentWeightGrams >= 100 ? styles.quantityLarge : styles.quantityMedium,
-                            { color: colors.foreground },
-                          ])}
-                        >
-                          {componentWeightGrams < 20 ? componentWeightGrams.toFixed(2) : Math.round(componentWeightGrams)} g
-                        </ThemedText>
-                      </View>
+                      )}
+                      <ThemedText style={StyleSheet.flatten([styles.componentName, { color: colors.foreground }])} numberOfLines={1} ellipsizeMode="tail">
+                        {component.item?.name || "Item não encontrado"}
+                      </ThemedText>
                     </View>
                   </View>
-                );
-              })}
-
-            {/* Total Row */}
-            <View style={[styles.tableRow, styles.totalRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={[styles.tableCell, styles.componentColumn]}>
-                <ThemedText style={StyleSheet.flatten([styles.totalText, { color: colors.foreground }])}>
-                  Total
-                </ThemedText>
-              </View>
-              <View style={[styles.tableCell, styles.percentColumn]}>
-                <Badge variant="default">
-                  <ThemedText style={{ fontSize: fontSize.xs }}>100.00%</ThemedText>
-                </Badge>
-              </View>
-              <View style={[styles.tableCell, styles.quantityColumn]}>
-                <View style={styles.quantityInfo}>
-                  <IconWeight size={14} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.totalQuantity, { color: colors.foreground }])}>
-                    {Math.round(totalWeightGrams)} g
-                  </ThemedText>
+                  <View style={[styles.tableCell, styles.quantityColumn]}>
+                    <View style={styles.quantityInfo}>
+                      <IconWeight size={14} color={colors.mutedForeground} />
+                      <ThemedText
+                        style={StyleSheet.flatten([
+                          componentWeightGrams >= 100 ? styles.quantityLarge : styles.quantityMedium,
+                          { color: colors.foreground },
+                        ])}
+                        numberOfLines={1}
+                      >
+                        {componentWeightGrams < 20 ? componentWeightGrams.toFixed(2) : Math.round(componentWeightGrams)} g
+                      </ThemedText>
+                    </View>
+                  </View>
                 </View>
+              );
+            })}
+
+          {/* Total Row */}
+          <View style={[styles.tableRow, styles.totalRow, { backgroundColor: colors.muted + "50" }]}>
+            <View style={[styles.tableCell, styles.componentColumn]}>
+              <ThemedText style={StyleSheet.flatten([styles.totalText, { color: colors.foreground }])}>
+                Total
+              </ThemedText>
+            </View>
+            <View style={[styles.tableCell, styles.quantityColumn]}>
+              <View style={styles.quantityInfo}>
+                <IconWeight size={14} color={colors.mutedForeground} />
+                <ThemedText style={StyleSheet.flatten([styles.totalQuantity, { color: colors.foreground }])}>
+                  {Math.round(totalWeightGrams)} g
+                </ThemedText>
               </View>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </View>
     </Card>
   );
@@ -183,14 +164,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   componentColumn: {
-    width: 200,
-  },
-  percentColumn: {
-    width: 100,
-    alignItems: "center",
+    flex: 1,
   },
   quantityColumn: {
-    width: 120,
     alignItems: "flex-end",
   },
   componentInfo: {

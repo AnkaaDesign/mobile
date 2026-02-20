@@ -13,8 +13,11 @@ const MOBILE_USERS_PAGE_SIZE = 25;
  */
 export function useUsersInfiniteMobile(params?: Partial<UserGetManyFormData> & { enabled?: boolean }) {
   // Prepare parameters with mobile-optimized page size
+  // Default to isActive: true (matching web behavior: hide dismissed users)
+  // The API's userTransform converts isActive:true → status: { not: 'DISMISSED' }
   const queryParams = useMemo(
     () => ({
+      isActive: true,
       ...params,
       limit: MOBILE_USERS_PAGE_SIZE,
     }),

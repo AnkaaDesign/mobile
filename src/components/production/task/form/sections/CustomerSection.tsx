@@ -37,7 +37,7 @@ export default function CustomerSection({
   return (
     <FormCard title="Informações do Cliente" icon="IconUser">
       {/* Name - Disabled for financial, warehouse, designer, logistic */}
-      <SimpleFormField label="Nome da Tarefa" required error={errors.name}>
+      <SimpleFormField label="Logomarca" required error={errors.name}>
         <Controller
           control={control}
           name="name"
@@ -62,7 +62,7 @@ export default function CustomerSection({
       </SimpleFormField>
 
       {/* Customer - Disabled for financial, warehouse, designer */}
-      <FormFieldGroup label="Cliente" error={errors.customerId?.message}>
+      <FormFieldGroup label="Razão Social" error={errors.customerId?.message}>
         <Controller
           control={control}
           name="customerId"

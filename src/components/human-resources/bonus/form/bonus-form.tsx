@@ -18,6 +18,8 @@ import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/
 import { ThemedText } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { bonusCreateSchema, bonusUpdateSchema } from "@/schemas/bonus";
 import type { BonusCreateFormData, BonusUpdateFormData } from "@/schemas/bonus";
@@ -79,15 +81,22 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
   const handleSubmit = async (data: BonusCreateFormData | BonusUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as BonusCreateFormData);
+        const result = await createAsync(data as BonusCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.humanResources.bonifications.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (bonus) {
         await updateAsync({
           id: bonus.id,
           data: data as BonusUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.humanResources.bonifications.details(bonus.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o bônus");
     }

@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ACTIVITY_OPERATION, ACTIVITY_OPERATION_LABELS, ACTIVITY_REASON_LABELS } from "@/constants";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 interface TeamActivityTableProps {
@@ -84,7 +84,7 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(({ activitie
               <View style={styles.quantityRow}>
                 <Icon name="hash" size="xs" variant="muted" />
                 <ThemedText style={styles.detailText}>
-                  Quantidade: {item.quantity} {item.item?.measureUnit || 'un'}
+                  Quantidade: {formatQuantity(item.quantity)} {item.item?.measureUnit || 'un'}
                 </ThemedText>
               </View>
               {item.user && (

@@ -6,6 +6,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { IconPackage, IconTag, IconCertificate, IconRuler, IconBarcode } from "@tabler/icons-react-native";
 import type { PpeDelivery } from '@/types';
+import { formatQuantity } from "@/utils";
 
 interface TeamPpeItemCardProps {
   delivery: PpeDelivery;
@@ -95,7 +96,7 @@ export function TeamPpeItemCard({ delivery }: TeamPpeItemCardProps) {
             </ThemedText>
           </View>
           <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-            {delivery.quantity || 1}
+            {formatQuantity(delivery.quantity || 1)}
           </ThemedText>
         </View>
       </View>

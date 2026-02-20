@@ -1,8 +1,42 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Supplier } from '@/types'
 import { canEditSuppliers } from '@/utils/permissions/entity-permissions'
-import { formatBrazilianPhone, formatCNPJ } from '@/utils'
+import { formatBrazilianPhone, formatCNPJ, getFileUrl } from '@/utils'
 import { isTabletWidth } from '@/lib/table-utils'
+import { extendedColors } from '@/lib/theme/extended-colors'
+import { fontWeight } from '@/constants/design-system'
+import { View, Image, StyleSheet } from 'react-native'
+import { ThemedText } from '@/components/ui/themed-text'
+
+const styles = StyleSheet.create({
+  nameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 12,
+    fontWeight: fontWeight.semibold,
+  },
+  logoImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  nameText: {
+    flex: 1,
+    fontWeight: fontWeight.medium,
+    fontSize: 12,
+  },
+})
 
 export const suppliersListConfig: ListConfig<Supplier> = {
   key: 'inventory-suppliers',
@@ -31,7 +65,28 @@ export const suppliersListConfig: ListConfig<Supplier> = {
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (supplier) => supplier.fantasyName,
+        render: (supplier: Supplier) => (
+          <View style={styles.nameContainer}>
+            {supplier.logo?.id ? (
+              <Image
+                source={{ uri: getFileUrl(supplier.logo!) }}
+                style={[styles.logoImage, { borderColor: extendedColors.neutral[300] }]}
+                onError={() => {
+                  console.log('Failed to load logo for supplier:', supplier.fantasyName)
+                }}
+              />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: extendedColors.neutral[200] }]}>
+                <ThemedText style={[styles.avatarText, { color: extendedColors.neutral[600] }]}>
+                  {supplier.fantasyName?.charAt(0)?.toUpperCase() || '?'}
+                </ThemedText>
+              </View>
+            )}
+            <ThemedText style={styles.nameText} numberOfLines={2}>
+              {supplier.fantasyName}
+            </ThemedText>
+          </View>
+        ),
         style: { fontWeight: '500' },
       },
       {

@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { fontSize } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
 import { usePpeDelivery, usePpeDeliveryMutations, useScreenReady} from '@/hooks';
-import { hasPrivilege, formatDate, formatDateTime } from "@/utils";
+import { hasPrivilege, formatDate, formatDateTime, formatQuantity } from "@/utils";
 import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { IconRefresh, IconAlertTriangle, IconShield, IconUser, IconPackage } from "@tabler/icons-react-native";
 import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detail-skeleton";
@@ -249,7 +249,7 @@ export default function PPEDetailsScreen() {
 
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Quantidade</ThemedText>
-                <ThemedText style={styles.value}>{ppeDelivery.quantity}</ThemedText>
+                <ThemedText style={styles.value}>{formatQuantity(ppeDelivery.quantity)}</ThemedText>
               </View>
 
               <View style={styles.infoRow}>

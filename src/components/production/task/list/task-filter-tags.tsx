@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { TASK_STATUS_LABELS } from "@/constants";
+import { formatCurrency } from "@/utils";
 import { useSectors, useCustomers, useUsers } from "@/hooks";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -102,7 +103,7 @@ export function TaskFilterTags({
         if (customer) {
           tags.push({
             key: `customer-${index}`,
-            label: `Cliente: ${customer.fantasyName}`,
+            label: `Razão Social: ${customer.corporateName || customer.fantasyName}`,
             onRemove: () => {
               const newCustomers = filters.customerIds.filter((id: string) => id !== customerId);
               onFilterChange({
@@ -230,11 +231,11 @@ export function TaskFilterTags({
       const { from, to } = filters.priceRange;
       const rangeStr =
         from && to
-          ? `R$ ${from.toFixed(2)} - R$ ${to.toFixed(2)}`
+          ? `${formatCurrency(from)} - ${formatCurrency(to)}`
           : from
-            ? `≥ R$ ${from.toFixed(2)}`
+            ? `≥ ${formatCurrency(from)}`
             : to
-              ? `≤ R$ ${to.toFixed(2)}`
+              ? `≤ ${formatCurrency(to)}`
               : "";
       tags.push({
         key: "priceRange",

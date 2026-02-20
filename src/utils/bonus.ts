@@ -1,4 +1,5 @@
 // packages/utils/src/bonus.ts
+import { formatCurrency } from "./formatters";
 
 // REMOVED: Incorrect hardcoded bonus matrix
 // The correct bonus calculation is implemented in the API using polynomial-based algorithm
@@ -509,7 +510,7 @@ export function getDiscountBreakdown(
       type: d.type,
       displayValue: d.type === 'percentage'
         ? `${(d.amount / originalValue * 100).toFixed(2)}%`
-        : `R$ ${d.amount.toFixed(2)}`,
+        : formatCurrency(d.amount),
       discountAmount: d.amount,
     })),
   };

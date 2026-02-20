@@ -4,6 +4,7 @@ import { IconX, IconSearch, IconBriefcase, IconUsers, IconCurrencyDollar, IconBu
 import { useTheme } from "@/lib/theme";
 import { useSectors } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { formatCurrency } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -125,11 +126,11 @@ export function PositionFilterTags({ filters, searchText, onFilterChange, onSear
       const { min, max } = filters.remunerationRange;
       let rangeText = "Remuneração: ";
       if (min !== undefined && max !== undefined) {
-        rangeText += `R$ ${min} - R$ ${max}`;
+        rangeText += `${formatCurrency(min)} - ${formatCurrency(max)}`;
       } else if (min !== undefined) {
-        rangeText += `≥ R$ ${min}`;
+        rangeText += `≥ ${formatCurrency(min)}`;
       } else if (max !== undefined) {
-        rangeText += `≤ R$ ${max}`;
+        rangeText += `≤ ${formatCurrency(max)}`;
       }
 
       tags.push(

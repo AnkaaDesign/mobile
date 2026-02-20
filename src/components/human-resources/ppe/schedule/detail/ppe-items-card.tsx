@@ -8,6 +8,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconShield, IconPackage, IconHash } from "@tabler/icons-react-native";
 import { PPE_TYPE_LABELS } from "@/constants";
+import { formatQuantity } from "@/utils";
 import type { PpeDeliverySchedule } from '../../../../../types';
 
 interface PpeItemsCardProps {
@@ -160,7 +161,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
                       { color: colors.mutedForeground },
                     ])}
                   >
-                    Quantidade: {item.quantity}
+                    Quantidade: {formatQuantity(item.quantity)}
                   </ThemedText>
                 </View>
                 <Badge variant="secondary">
@@ -171,7 +172,7 @@ export function PpeItemsCard({ schedule }: PpeItemsCardProps) {
                       fontWeight: fontWeight.bold,
                     }}
                   >
-                    {item.quantity}x
+                    {formatQuantity(item.quantity)}x
                   </ThemedText>
                 </Badge>
               </View>

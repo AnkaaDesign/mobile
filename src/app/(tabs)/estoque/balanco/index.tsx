@@ -5,7 +5,7 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
-export default function StockBalanceCreateScreen() {
+export default function StockBalanceScreen() {
   useScreenReady();
   const router = useRouter();
 

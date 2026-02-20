@@ -26,6 +26,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 export default function CreateCuttingScreen() {
   useScreenReady();
@@ -72,14 +74,14 @@ export default function CreateCuttingScreen() {
 
     setIsSubmitting(true);
     try {
-      await createAsync(data);
+      const result = await createAsync(data);
 
-      Alert.alert("Sucesso", "Recorte criado com sucesso!", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]);
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      if (newId) {
+        router.replace(routeToMobilePath(routes.production.cutting.details(newId)) as any);
+      } else {
+        router.back();
+      }
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Não foi possível criar o recorte. Tente novamente.");
     } finally {

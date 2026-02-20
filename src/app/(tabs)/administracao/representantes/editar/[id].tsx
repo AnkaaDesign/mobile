@@ -112,12 +112,12 @@ export default function EditRepresentativeScreen() {
           {
             text: "Descartar",
             style: "destructive",
-            onPress: () => router.push(routeToMobilePath(routes.administration.representatives.list) as any),
+            onPress: () => router.replace(routeToMobilePath(routes.administration.representatives.details(id)) as any),
           },
         ],
       );
     } else {
-      router.push(routeToMobilePath(routes.administration.representatives.list) as any);
+      router.replace(routeToMobilePath(routes.administration.representatives.details(id)) as any);
     }
   };
 

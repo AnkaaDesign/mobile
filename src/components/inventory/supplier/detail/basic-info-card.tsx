@@ -1,10 +1,11 @@
 import { View, StyleSheet, Image } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBuilding, IconCertificate } from "@tabler/icons-react-native";
+import { IconBuilding } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
 import { formatCNPJ } from "@/utils";
 import { getFileUrl } from "@/utils/file";
@@ -55,61 +56,17 @@ export function BasicInfoCard({ supplier }: BasicInfoCardProps) {
             </View>
           </View>
 
-          {/* Identification Section */}
-          <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-              Identificação
-            </ThemedText>
-            <View style={styles.fieldsContainer}>
-              {/* Fantasy Name */}
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                  Nome Fantasia
-                </ThemedText>
-                <ThemedText
-                  style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {supplier.fantasyName}
-                </ThemedText>
-              </View>
+          {/* Identification Fields */}
+          <View style={styles.fieldsContainer}>
+            <DetailField label="Nome Fantasia" value={supplier.fantasyName} icon="building" />
 
-              {/* Corporate Name */}
-              {supplier.corporateName && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Razão Social
-                  </ThemedText>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {supplier.corporateName}
-                  </ThemedText>
-                </View>
-              )}
+            {supplier.corporateName && (
+              <DetailField label="Razão Social" value={supplier.corporateName} icon="building" />
+            )}
 
-              {/* CNPJ */}
-              {supplier.cnpj && (
-                <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                  <View style={styles.fieldLabelWithIcon}>
-                    <IconCertificate size={16} color={colors.mutedForeground} />
-                    <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                      CNPJ
-                    </ThemedText>
-                  </View>
-                  <ThemedText
-                    style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {formatCNPJ(supplier.cnpj)}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
+            {supplier.cnpj && (
+              <DetailField label="CNPJ" value={formatCNPJ(supplier.cnpj)} icon="certificate" />
+            )}
           </View>
         </View>
       </View>
@@ -139,7 +96,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   infoContainer: {
     gap: spacing.xl,
@@ -171,40 +128,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize["2xl"],
     fontWeight: fontWeight.bold,
   },
-  section: {
-    gap: spacing.lg,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
   fieldsContainer: {
     gap: spacing.md,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    gap: spacing.md,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    flexShrink: 0,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flexShrink: 0,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
   },
 });

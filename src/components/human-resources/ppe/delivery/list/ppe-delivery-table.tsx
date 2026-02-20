@@ -8,7 +8,7 @@ import { PpeDeliveryListSkeleton } from "../skeleton/ppe-delivery-list-skeleton"
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { spacing } from "@/constants/design-system";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS } from "@/constants";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import type { PpeDelivery } from '../../../../../types';
 
 interface PpeDeliveryTableProps {
@@ -92,7 +92,7 @@ export const PpeDeliveryTable = memo(({ deliveries, isLoading, error, onDelivery
             <ThemedText style={styles.ppeDetails} numberOfLines={1}>
               {delivery.item?.ppeType || "-"}
             </ThemedText>
-            <ThemedText style={styles.quantity}>{delivery.quantity} un</ThemedText>
+            <ThemedText style={styles.quantity}>{formatQuantity(delivery.quantity)} un</ThemedText>
           </View>
 
           {/* Right Section - Status and Date */}

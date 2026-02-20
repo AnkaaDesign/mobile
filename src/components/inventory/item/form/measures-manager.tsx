@@ -156,7 +156,7 @@ export function MeasuresManager({ disabled }: MeasuresManagerProps) {
                         <View style={styles.measureIcon}>{getMeasureTypeIcon(measure.measureType)}</View>
                         <View style={styles.measureInfo}>
                           <ThemedText style={StyleSheet.flatten([styles.measureValue, { color: colors.foreground }])}>
-                            {measure.value.toLocaleString("pt-BR")} {MEASURE_UNIT_LABELS[measure.unit]}
+                            {measure.value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} {MEASURE_UNIT_LABELS[measure.unit]}
                           </ThemedText>
                           <ThemedText style={StyleSheet.flatten([styles.measureType, { color: colors.mutedForeground }])}>{MEASURE_TYPE_LABELS[measure.measureType]}</ThemedText>
                         </View>

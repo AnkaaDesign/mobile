@@ -272,8 +272,9 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                 horizontal={false}
                 spacing={10}
                 // Zoom configuration - allow much greater zoom for detailed viewing
-                minScale={0.5}
-                maxScale={10}
+                // minScale=1.0 prevents Android from rendering low-res bitmaps (fixes blur)
+                minScale={1.0}
+                maxScale={15}
                 scale={1.0}
                 // Android rendering quality improvements
                 enableAntialiasing={true}

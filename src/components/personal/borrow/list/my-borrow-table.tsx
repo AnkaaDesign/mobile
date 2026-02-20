@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyBorrowTableRowSwipe } from "./my-borrow-table-row-swipe";
-import { formatDate} from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import { extendedColors} from "@/lib/theme/extended-colors";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 
@@ -101,7 +101,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     accessor: (borrow: Borrow) => (
       <View style={styles.centerAlign}>
         <ThemedText style={styles.cellText}>
-          {borrow.quantity}
+          {formatQuantity(borrow.quantity)}
         </ThemedText>
       </View>
     ),

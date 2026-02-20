@@ -27,6 +27,8 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { MAINTENANCE_STATUS } from "@/constants";
 import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 interface MaintenanceFormProps {
   mode: "create" | "update";
@@ -87,15 +89,22 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
   const handleSubmit = async (data: MaintenanceCreateFormData | MaintenanceUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as MaintenanceCreateFormData);
+        const result = await createAsync(data as MaintenanceCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.inventory.maintenance.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (maintenance) {
         await updateAsync({
           id: maintenance.id,
           data: data as MaintenanceUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.inventory.maintenance.details(maintenance.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a manutenção");
     }

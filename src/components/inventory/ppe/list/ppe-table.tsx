@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useSwipeRow } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PpeTableRowSwipe } from "./ppe-table-row-swipe";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 import type { SortConfig } from "@/lib/sort-utils";
 
@@ -140,7 +140,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
           </ThemedText>
         </Badge>
         <ThemedText style={styles.quantityText} numberOfLines={1}>
-          {item.quantity || 0}
+          {formatQuantity(item.quantity || 0)}
         </ThemedText>
       </View>
     ),

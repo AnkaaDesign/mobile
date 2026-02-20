@@ -1911,7 +1911,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
     // Percentage fields
     if (field === "icms" || field === "ipi" || field === "margin" || field === "minimumMargin" || field === "monthlyConsumptionTrendPercent" || field === "ratio") {
-      return `${value.toLocaleString("pt-BR")}%`;
+      return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
     }
 
     // Time fields (days)

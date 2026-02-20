@@ -51,11 +51,11 @@ export const TaskCustomerCard: React.FC<TaskCustomerCardProps> = ({ customer }) 
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconUser size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Cliente</ThemedText>
+        <ThemedText style={styles.title}>Razão Social</ThemedText>
       </View>
 
       <View style={styles.content}>
-        <ThemedText style={styles.customerName}>{customer.fantasyName}</ThemedText>
+        <ThemedText style={styles.customerName}>{customer.corporateName || customer.fantasyName}</ThemedText>
 
         {formattedDocument && (
           <View style={styles.infoRow}>

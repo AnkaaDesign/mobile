@@ -348,7 +348,7 @@ export const routes = {
       },
     },
     products: {
-      stockBalance: "/estoque/produtos/balanco-estoque",
+      stockBalance: "/estoque/balanco",
       brands: {
         create: "/estoque/produtos/marcas/cadastrar",
         details: (id: string) => `/estoque/produtos/marcas/detalhes/${id}`,
@@ -468,6 +468,9 @@ export const routes = {
   // Server - Servidor - Server Management
   server: {
     backup: "/servidor/backups/listar",
+    backupCreate: "/servidor/backups/cadastrar",
+    backupSchedule: "/servidor/backups/agendamentos",
+    backupDetails: (id: string) => `/servidor/backups/detalhes/${id}`,
     changeLogs: {
       details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
       root: "/servidor/registros-de-alteracoes",

@@ -1,5 +1,5 @@
+import { useState, useCallback } from "react";
 import { View, ScrollView, Alert } from "react-native";
-import { useState } from "react";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -7,23 +7,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Icon } from "@/components/ui/icon";
 import { Combobox } from "@/components/ui/combobox";
 import { PrivilegeGuard } from "@/components/privilege-guard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
-import { useBackupMutations } from "@/hooks/useBackup";
-import { Icon } from "@/components/ui/icon";
+import { useBackupMutations, useBackupUtils } from "@/hooks/useBackup";
 import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { spacing } from "@/constants/design-system";
 
-type RetentionPeriod = "1_day" | "3_days" | "1_week" | "2_weeks" | "1_month" | "3_months" | "6_months" | "1_year";
-
-const TYPE_OPTIONS = [
-  { value: "database", label: "Banco de Dados" },
-  { value: "files", label: "Arquivos" },
-  { value: "system", label: "Sistema" },
-  { value: "full", label: "Completo" },
-];
+type RetentionPeriod = '1_day' | '3_days' | '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months' | '1_year';
 
 const PRIORITY_OPTIONS = [
   { value: "low", label: "Baixa" },
@@ -32,11 +25,17 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Crítica" },
 ];
 
-const COMPRESSION_OPTIONS = [
-  { value: "1", label: "1 - Mais rápido" },
-  { value: "3", label: "3 - Rápido" },
-  { value: "6", label: "6 - Padrão" },
-  { value: "9", label: "9 - Melhor compressão" },
+const FREQUENCY_OPTIONS = [
+  { value: "daily", label: "Diariamente" },
+  { value: "weekly", label: "Semanalmente" },
+  { value: "monthly", label: "Mensalmente" },
+];
+
+const TYPE_OPTIONS = [
+  { value: "database", label: "Banco de Dados" },
+  { value: "files", label: "Arquivos" },
+  { value: "system", label: "Sistema" },
+  { value: "full", label: "Completo" },
 ];
 
 const RETENTION_OPTIONS = [
@@ -50,78 +49,87 @@ const RETENTION_OPTIONS = [
   { value: "1_year", label: "1 ano" },
 ];
 
-interface CreateBackupForm {
+const TIME_OPTIONS = Array.from({ length: 24 }, (_, h) => ({
+  value: `${h.toString().padStart(2, "0")}:00`,
+  label: `${h.toString().padStart(2, "0")}:00`,
+}));
+
+interface ScheduleForm {
   name: string;
-  description: string;
   type: "database" | "files" | "system" | "full";
+  frequency: "daily" | "weekly" | "monthly";
+  time: string;
   priority: "low" | "medium" | "high" | "critical";
-  compressionLevel: number;
   encrypted: boolean;
+  compressionLevel: number;
   autoDelete: {
     enabled: boolean;
     retention: RetentionPeriod;
   };
 }
 
-const INITIAL_FORM: CreateBackupForm = {
+const INITIAL_FORM: ScheduleForm = {
   name: "",
-  description: "",
   type: "database",
+  frequency: "daily",
+  time: "23:00",
   priority: "medium",
-  compressionLevel: 6,
   encrypted: false,
+  compressionLevel: 6,
   autoDelete: {
     enabled: false,
     retention: "1_week",
   },
 };
 
-export default function CreateBackupScreen() {
-  useScreenReady();
+export default function CreateBackupScheduleScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { create } = useBackupMutations();
-
-  const [form, setForm] = useState<CreateBackupForm>({ ...INITIAL_FORM });
+  const [form, setForm] = useState<ScheduleForm>({ ...INITIAL_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+  const { schedule: scheduleMutation } = useBackupMutations();
+  const { generateCronExpression } = useBackupUtils();
+
+  useScreenReady(true);
+
+  const handleCreate = useCallback(async () => {
     if (!form.name.trim()) {
-      Alert.alert("Erro", "Nome do backup é obrigatório");
+      Alert.alert("Erro", "Nome do agendamento é obrigatório");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      await create.mutateAsync({
+      const cron = generateCronExpression(form.frequency, form.time);
+
+      await scheduleMutation.mutateAsync({
         name: form.name,
         type: form.type,
-        description: form.description,
+        enabled: true,
+        cron,
         priority: form.priority,
         compressionLevel: form.compressionLevel,
         encrypted: form.encrypted,
         autoDelete: form.autoDelete.enabled ? form.autoDelete : undefined,
       });
-      Alert.alert("Sucesso", "Backup criado com sucesso");
+
+      Alert.alert("Sucesso", "Agendamento criado com sucesso");
       router.back();
     } catch {
-      Alert.alert("Erro", "Falha ao criar backup");
+      Alert.alert("Erro", "Falha ao criar agendamento");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [form, generateCronExpression, scheduleMutation, router]);
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView className="flex-1">
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-          {/* Header */}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>Criar Novo Backup</Text>
-            <Button variant="ghost" size="sm" onPress={() => router.back()}>
-              <Icon name="x" size={20} color={colors.mutedForeground} />
-            </Button>
-          </View>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>
+            Novo Agendamento
+          </Text>
 
           {/* Name */}
           <Card style={{ padding: spacing.md, marginBottom: 12 }}>
@@ -129,21 +137,11 @@ export default function CreateBackupScreen() {
             <Input
               value={form.name}
               onChangeText={(text) => setForm({ ...form, name: String(text ?? "") })}
-              placeholder="Ex: backup_sistema_2024"
+              placeholder="Nome do agendamento"
             />
           </Card>
 
-          {/* Description */}
-          <Card style={{ padding: spacing.md, marginBottom: 12 }}>
-            <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 8 }}>Descrição (Opcional)</Text>
-            <Input
-              value={form.description}
-              onChangeText={(text) => setForm({ ...form, description: String(text ?? "") })}
-              placeholder="Descrição do backup"
-            />
-          </Card>
-
-          {/* Type & Priority & Compression */}
+          {/* Type & Frequency */}
           <Card style={{ padding: spacing.md, marginBottom: 12 }}>
             <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Configuração</Text>
 
@@ -152,8 +150,19 @@ export default function CreateBackupScreen() {
                 <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Tipo de Backup</Text>
                 <Combobox
                   value={form.type}
-                  onValueChange={(v) => setForm({ ...form, type: (typeof v === "string" ? v : "database") as CreateBackupForm["type"] })}
+                  onValueChange={(v) => setForm({ ...form, type: (typeof v === "string" ? v : "database") as any })}
                   options={TYPE_OPTIONS}
+                  searchable={false}
+                  clearable={false}
+                />
+              </View>
+
+              <View>
+                <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Frequência</Text>
+                <Combobox
+                  value={form.frequency}
+                  onValueChange={(v) => setForm({ ...form, frequency: (typeof v === "string" ? v : "daily") as any })}
+                  options={FREQUENCY_OPTIONS}
                   searchable={false}
                   clearable={false}
                 />
@@ -161,22 +170,22 @@ export default function CreateBackupScreen() {
 
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Prioridade</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Horário</Text>
                   <Combobox
-                    value={form.priority}
-                    onValueChange={(v) => setForm({ ...form, priority: (typeof v === "string" ? v : "medium") as CreateBackupForm["priority"] })}
-                    options={PRIORITY_OPTIONS}
+                    value={form.time}
+                    onValueChange={(v) => setForm({ ...form, time: typeof v === "string" ? v : "23:00" })}
+                    options={TIME_OPTIONS}
                     searchable={false}
                     clearable={false}
                   />
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Compressão</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, marginBottom: 6 }}>Prioridade</Text>
                   <Combobox
-                    value={form.compressionLevel.toString()}
-                    onValueChange={(v) => setForm({ ...form, compressionLevel: parseInt(typeof v === "string" ? v : "6") })}
-                    options={COMPRESSION_OPTIONS}
+                    value={form.priority}
+                    onValueChange={(v) => setForm({ ...form, priority: (typeof v === "string" ? v : "medium") as any })}
+                    options={PRIORITY_OPTIONS}
                     searchable={false}
                     clearable={false}
                   />
@@ -201,7 +210,7 @@ export default function CreateBackupScreen() {
             </View>
           </Card>
 
-          {/* Auto-delete / Retention */}
+          {/* Auto-delete */}
           <Card style={{ padding: spacing.md, marginBottom: 12 }}>
             <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>Retenção</Text>
 
@@ -240,7 +249,7 @@ export default function CreateBackupScreen() {
                   <View style={{ flexDirection: "row", gap: 6 }}>
                     <Icon name="alert-triangle" size={14} color="#f59e0b" style={{ marginTop: 1 }} />
                     <Text style={{ fontSize: 12, color: "#f59e0b", flex: 1 }}>
-                      Este backup será excluído automaticamente em{" "}
+                      Cada backup será excluído automaticamente em{" "}
                       {RETENTION_OPTIONS.find((o) => o.value === form.autoDelete.retention)?.label || "?"}{" "}
                       após a criação.
                     </Text>
@@ -252,9 +261,9 @@ export default function CreateBackupScreen() {
 
           {/* Actions */}
           <View style={{ gap: 8, paddingBottom: 32 }}>
-            <Button onPress={handleSubmit} disabled={isSubmitting}>
-              <Icon name="database" size={16} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Backup"}</Text>
+            <Button onPress={handleCreate} disabled={isSubmitting}>
+              <Icon name="clock" size={16} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Agendamento"}</Text>
             </Button>
             <Button variant="outline" onPress={() => router.back()} disabled={isSubmitting}>
               <Text style={{ color: colors.foreground }}>Cancelar</Text>

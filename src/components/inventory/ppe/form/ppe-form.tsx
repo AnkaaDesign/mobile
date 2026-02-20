@@ -12,6 +12,8 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { FormActionBar } from "@/components/forms";
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { itemCreateSchema, itemUpdateSchema } from "@/schemas/item";
 import type { ItemCreateFormData, ItemUpdateFormData } from "@/schemas/item";
@@ -84,15 +86,22 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
   const handleSubmit = async (data: ItemCreateFormData | ItemUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as ItemCreateFormData);
+        const result = await createAsync(data as ItemCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.inventory.ppe.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (item) {
         await updateAsync({
           id: item.id,
           data: data as ItemUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.inventory.ppe.details(item.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o EPI");
     }

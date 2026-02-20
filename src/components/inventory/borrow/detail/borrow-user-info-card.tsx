@@ -2,14 +2,11 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from '../../../../types';
-import {
-  IconUser,
-  IconBriefcase,
-  IconBuilding,
-} from "@tabler/icons-react-native";
+import { IconUser } from "@tabler/icons-react-native";
 
 interface BorrowUserInfoCardProps {
   borrow: Borrow & {
@@ -59,37 +56,13 @@ export const BorrowUserInfoCard: React.FC<BorrowUserInfoCardProps> = ({ borrow }
 
       <View style={styles.content}>
         {/* User Name */}
-        <View style={styles.infoItem}>
-          <IconUser size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nome</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {user.name}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Nome" value={user.name} icon="user" />
 
         {/* Position */}
-        <View style={styles.infoItem}>
-          <IconBriefcase size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cargo</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {user.position ? user.position.name : "-"}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Cargo" value={user.position ? user.position.name : "-"} icon="briefcase" />
 
         {/* Sector */}
-        <View style={styles.infoItem}>
-          <IconBuilding size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Setor</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {user.sector ? user.sector.name : "-"}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Setor" value={user.sector ? user.sector.name : "-"} icon="building" />
       </View>
     </Card>
   );
@@ -118,23 +91,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
-  },
-  infoItem: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
   },
   emptyText: {
     fontSize: fontSize.sm,

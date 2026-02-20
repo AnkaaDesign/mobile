@@ -14,6 +14,7 @@ import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-sl
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { usePpeDeliveriesInfiniteMobile } from "@/hooks";
 import { PPE_DELIVERY_STATUS } from "@/constants";
+import { formatQuantity } from "@/utils";
 
 interface PpeDeliveriesTableProps {
   employee: User;
@@ -155,7 +156,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
         {visibleColumnKeys.includes("quantity") && (
           <View style={styles.cell}>
             <ThemedText style={[styles.cellText, { color: colors.foreground }]}>
-              {delivery.quantity}
+              {formatQuantity(delivery.quantity)}
             </ThemedText>
           </View>
         )}

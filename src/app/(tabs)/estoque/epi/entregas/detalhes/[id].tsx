@@ -19,7 +19,7 @@ import {
   ASSIGNMENT_TYPE_LABELS,
   CHANGE_LOG_ENTITY_TYPE
 } from "@/constants";
-import { hasPrivilege, formatDate, formatDateTime, formatRelativeTime, formatCurrency } from "@/utils";
+import { hasPrivilege, formatDate, formatDateTime, formatRelativeTime, formatCurrency, formatQuantity } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
 import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
@@ -508,7 +508,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PPED
               <View style={styles.quantityRow}>
                 <ThemedText style={styles.detailLabel}>Quantidade Entregue</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.primary }])}>
-                  {delivery.quantity}
+                  {formatQuantity(delivery.quantity)}
                 </ThemedText>
               </View>
               {delivery.item?.measureUnit && (
@@ -650,7 +650,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PPED
                   <View style={styles.badgeContainer}>
                     {delivery.ppeSchedule.ppeItems.map((ppeItem: any, index: number) => (
                       <Badge key={index} variant="secondary" textStyle={styles.ppeBadgeText}>
-                        {PPE_TYPE_LABELS[ppeItem.ppeType as keyof typeof PPE_TYPE_LABELS] || ppeItem.ppeType} ({ppeItem.quantity}x)
+                        {PPE_TYPE_LABELS[ppeItem.ppeType as keyof typeof PPE_TYPE_LABELS] || ppeItem.ppeType} ({formatQuantity(ppeItem.quantity)}x)
                       </Badge>
                     ))}
                   </View>

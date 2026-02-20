@@ -437,7 +437,7 @@ export default function LayoutOnlyEditScreen() {
               </View>
               <View style={styles.cardContent}>
                 {/* Task Name - Disabled */}
-                <SimpleFormField label="Nome da Tarefa">
+                <SimpleFormField label="Logomarca">
                   <Input
                     value={task.name}
                     editable={false}
@@ -456,9 +456,9 @@ export default function LayoutOnlyEditScreen() {
 
                 {/* Customer - Disabled */}
                 {task.customer && (
-                  <SimpleFormField label="Cliente">
+                  <SimpleFormField label="Razão Social">
                     <Input
-                      value={task.customer.fantasyName || ""}
+                      value={task.customer.corporateName || task.customer.fantasyName || ""}
                       editable={false}
                       style={[styles.disabledInput, { backgroundColor: colors.muted }]}
                     />

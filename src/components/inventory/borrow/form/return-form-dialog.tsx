@@ -15,7 +15,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconLoader, IconX, IconPackageImport, IconCheck } from "@tabler/icons-react-native";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import type { Borrow } from "@/types";
 
 // Define return condition enum
@@ -170,7 +170,7 @@ export function ReturnFormDialog({ open, onOpenChange, borrow, onSubmit }: Retur
                     Quantidade:
                   </ThemedText>
                   <ThemedText style={styles.infoValue}>
-                    {borrow.quantity}
+                    {formatQuantity(borrow.quantity)}
                   </ThemedText>
                 </View>
 

@@ -15,7 +15,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useMultiStepForm } from "@/hooks";
 import type { FormStep } from "@/components/ui/form-steps";
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatQuantity } from "@/utils";
 import {
   MultiStepFormContainer,
   ItemSelectorTable,
@@ -439,7 +439,7 @@ export function OrderBatchCreateForm({
                           Item #{index + 1}
                         </ThemedText>
                         <ThemedText style={styles.reviewItemDetails}>
-                          {item.quantity}x @ {formatCurrency(item.price || 0)}
+                          {formatQuantity(item.quantity)}x @ {formatCurrency(item.price || 0)}
                         </ThemedText>
                       </View>
                       <ThemedText style={styles.reviewItemTotal}>

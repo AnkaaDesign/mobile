@@ -61,7 +61,7 @@ const ALL_ROUTES = [
   { name: "estoque/produtos/index", title: "Produtos" },
   { name: "estoque/produtos/cadastrar", title: "Cadastrar Produto" },
   { name: "estoque/produtos/listar", title: "Produtos" },
-  { name: "estoque/produtos/balanco-estoque", title: "Balanço de Estoque" },
+  { name: "estoque/balanco/index", title: "Balanço de Estoque" },
   { name: "estoque/produtos/detalhes/[id]", title: "Detalhes do Produto" },
   { name: "estoque/produtos/editar/[id]", title: "Editar Produto" },
   { name: "estoque/produtos/categorias/index", title: "Categorias" },

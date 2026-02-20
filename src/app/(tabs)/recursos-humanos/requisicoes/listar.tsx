@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ScrollView, Modal, Pressable, Dimensions } from "react-native";
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ScrollView, Modal, Pressable, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
+import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import { useSecullumRequests, useSecullumApproveRequest, useSecullumRejectRequest } from "@/hooks/secullum";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -162,8 +163,8 @@ export default function RequisitionsListScreen() {
   const [rejectReason, setRejectReason] = useState("");
   const [showDetailView, setShowDetailView] = useState(false);
 
-  const screenWidth = Dimensions.get('window').width;
-  const isTablet = screenWidth >= 768;
+  const { width: screenWidth } = useWindowDimensions();
+  const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
 
   // Fetch time adjustment requests
   const {

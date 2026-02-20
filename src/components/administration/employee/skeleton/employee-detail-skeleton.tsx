@@ -24,7 +24,18 @@ function SkeletonCard({ children }: { children: ReactNode }) {
 
 function CardHeader({ width = "40%" }: { width?: string }) {
   return (
-    <View style={{ marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: '#e5e5e5' }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+        paddingBottom: spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: "transparent",
+      }}
+    >
+      <Skeleton width={20} height={20} borderRadius={4} />
       <Skeleton width={width} height={18} />
     </View>
   );
@@ -52,7 +63,7 @@ function TableCard({ rowCount = 3 }: { rowCount?: number }) {
       }}
     >
       {/* Table header */}
-      <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+      <View style={{ padding: spacing.md }}>
         <Skeleton width="40%" height={18} />
       </View>
       {/* Table rows */}
@@ -64,8 +75,6 @@ function TableCard({ rowCount = 3 }: { rowCount?: number }) {
             justifyContent: "space-between",
             paddingHorizontal: spacing.md,
             paddingVertical: spacing.sm,
-            borderBottomWidth: i < rowCount - 1 ? 1 : 0,
-            borderBottomColor: colors.border,
           }}
         >
           <Skeleton width="25%" height={13} />
@@ -99,7 +108,7 @@ export function EmployeeDetailSkeleton() {
           <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} />
           <InfoRow />
           <InfoRow />
-          <View style={{ height: 1, backgroundColor: '#e5e5e5', marginVertical: spacing.xs }} />
+          <View style={{ height: 1, marginVertical: spacing.xs }} />
           <Skeleton width="30%" height={13} style={{ marginBottom: spacing.xs }} />
           <InfoRow />
           <InfoRow />

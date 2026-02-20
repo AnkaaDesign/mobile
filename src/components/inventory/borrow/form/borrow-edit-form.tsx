@@ -18,7 +18,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { useItem } from "@/hooks";
-import { useUsersMinimal, useItemsMinimal } from "@/hooks/use-form-data";
+import { useActiveUsersMinimal, useItemsMinimal } from "@/hooks/use-form-data";
 import { BORROW_STATUS } from "@/constants";
 import type { Borrow } from "@/types";
 
@@ -83,8 +83,8 @@ export function BorrowEditForm({ borrow, onSubmit, onCancel, isSubmitting }: Bor
     limit: 200,
   });
 
-  // Fetch users - using minimal data for 95% reduction
-  const { data: users } = useUsersMinimal({
+  // Fetch active users - using minimal data for 95% reduction
+  const { data: users } = useActiveUsersMinimal({
     where: userSearch ? { name: { contains: userSearch, mode: 'insensitive' } } : undefined,
     orderBy: { name: "asc" },
     limit: 200,

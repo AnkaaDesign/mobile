@@ -25,7 +25,6 @@ import {
   BasicInfoCard,
   ContactDetailsCard,
   AddressInfoCard,
-  DocumentsCard,
   ItemsTable,
   OrdersTable,
 } from "@/components/inventory/supplier/detail";
@@ -185,10 +184,9 @@ export default function SupplierDetailScreen() {
             <BasicInfoCard supplier={supplier} />
             <ContactDetailsCard supplier={supplier} />
             <AddressInfoCard supplier={supplier} />
-            <DocumentsCard supplier={supplier} />
 
             {/* Items Table */}
-            <ItemsTable supplier={supplier} maxHeight={400} />
+            <ItemsTable supplier={supplier} maxHeight={500} />
 
             {/* Orders Table */}
             <OrdersTable supplier={supplier} maxHeight={400} />

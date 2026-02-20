@@ -8,7 +8,7 @@ import { ThemedView, ThemedText, ErrorScreen, FAB } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 
 import { useTheme } from "@/lib/theme";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency, formatDate, formatQuantity } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -223,21 +223,21 @@ export default function OrderItemDetailScreen() {
               <View style={styles.quantityCard}>
                 <ThemedText style={styles.quantityLabel}>Pedido</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.primary }])}>
-                  {orderItem?.data?.orderedQuantity || 0}
+                  {formatQuantity(orderItem?.data?.orderedQuantity ?? 0)}
                 </ThemedText>
               </View>
 
               <View style={styles.quantityCard}>
                 <ThemedText style={styles.quantityLabel}>Atendido</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.warning }])}>
-                  {orderItem?.data?.receivedQuantity || 0}
+                  {formatQuantity(orderItem?.data?.receivedQuantity ?? 0)}
                 </ThemedText>
               </View>
 
               <View style={styles.quantityCard}>
                 <ThemedText style={styles.quantityLabel}>Recebido</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.primary }])}>
-                  {orderItem?.data?.receivedQuantity || 0}
+                  {formatQuantity(orderItem?.data?.receivedQuantity ?? 0)}
                 </ThemedText>
               </View>
 
@@ -245,7 +245,7 @@ export default function OrderItemDetailScreen() {
                 <View style={styles.quantityCard}>
                   <ThemedText style={styles.quantityLabel}>Pendente</ThemedText>
                   <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.destructive }])}>
-                    {pendingQuantity}
+                    {formatQuantity(pendingQuantity)}
                   </ThemedText>
                 </View>
               )}
@@ -254,7 +254,7 @@ export default function OrderItemDetailScreen() {
                 <View style={styles.quantityCard}>
                   <ThemedText style={styles.quantityLabel}>A Receber</ThemedText>
                   <ThemedText style={StyleSheet.flatten([styles.quantityValue, { color: colors.warning }])}>
-                    {pendingReceive}
+                    {formatQuantity(pendingReceive)}
                   </ThemedText>
                 </View>
               )}
@@ -281,7 +281,7 @@ export default function OrderItemDetailScreen() {
 
               <View style={styles.priceRow}>
                 <ThemedText style={styles.priceLabel}>Quantidade:</ThemedText>
-                <ThemedText style={styles.priceValue}>{orderItem?.data?.orderedQuantity || 0}</ThemedText>
+                <ThemedText style={styles.priceValue}>{formatQuantity(orderItem?.data?.orderedQuantity ?? 0)}</ThemedText>
               </View>
 
               <View style={StyleSheet.flatten([styles.priceRow, styles.totalRow])}>

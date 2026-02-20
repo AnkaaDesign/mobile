@@ -22,6 +22,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,16 +149,7 @@ export default function AirbrushingEditScreen() {
         },
       });
 
-      Alert.alert(
-        "Sucesso",
-        "Airbrushing atualizado com sucesso!",
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      router.replace(routeToMobilePath(routes.production.airbrushings.details(id as string)) as any);
     } catch (error: any) {
       Alert.alert(
         "Erro",

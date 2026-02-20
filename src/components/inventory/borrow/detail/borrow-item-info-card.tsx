@@ -2,16 +2,11 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from '../../../../types';
-import {
-  IconPackage,
-  IconBarcode,
-  IconTag,
-  IconCategory,
-  IconTruck,
-} from "@tabler/icons-react-native";
+import { IconPackage } from "@tabler/icons-react-native";
 
 interface BorrowItemInfoCardProps {
   borrow: Borrow & {
@@ -67,62 +62,26 @@ export const BorrowItemInfoCard: React.FC<BorrowItemInfoCardProps> = ({ borrow }
 
       <View style={styles.content}>
         {/* Item Name */}
-        <View style={styles.infoItem}>
-          <IconPackage size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nome</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {item.name}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Nome" value={item.name} icon="package" />
 
         {/* UniCode */}
         {item.uniCode && (
-          <View style={styles.infoItem}>
-            <IconBarcode size={20} color={colors.mutedForeground} />
-            <View style={styles.infoText}>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Código</ThemedText>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>
-                {item.uniCode}
-              </ThemedText>
-            </View>
-          </View>
+          <DetailField label="Código" value={item.uniCode} icon="barcode" monospace />
         )}
 
         {/* Brand */}
-        <View style={styles.infoItem}>
-          <IconTag size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Marca</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {item.brand ? item.brand.name : "-"}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Marca" value={item.brand ? item.brand.name : "-"} icon="tag" />
 
         {/* Category */}
-        <View style={styles.infoItem}>
-          <IconCategory size={20} color={colors.mutedForeground} />
-          <View style={styles.infoText}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Categoria</ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {item.category ? item.category.name : "-"}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField label="Categoria" value={item.category ? item.category.name : "-"} icon="tags" />
 
         {/* Supplier */}
         {item.supplier && (
-          <View style={styles.infoItem}>
-            <IconTruck size={20} color={colors.mutedForeground} />
-            <View style={styles.infoText}>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Fornecedor</ThemedText>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {item.supplier.fantasyName || item.supplier.corporateName || "-"}
-              </ThemedText>
-            </View>
-          </View>
+          <DetailField
+            label="Fornecedor"
+            value={item.supplier.fantasyName || item.supplier.corporateName || "-"}
+            icon="truck"
+          />
         )}
       </View>
     </Card>
@@ -152,26 +111,6 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.md,
-  },
-  infoItem: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  monoValue: {
-    fontFamily: "monospace",
   },
   emptyText: {
     fontSize: fontSize.sm,

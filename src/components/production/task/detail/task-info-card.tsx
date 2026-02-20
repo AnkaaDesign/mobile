@@ -51,6 +51,7 @@ interface TaskInfoCardProps {
     truck?: Truck;
     customer?: {
       fantasyName: string;
+      corporateName?: string;
     };
     negotiatingWith?: {
       name: string;
@@ -142,10 +143,10 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconBuilding size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Cliente</ThemedText>
+              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Razão Social</ThemedText>
             </View>
             <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer?.fantasyName || "-"}</ThemedText>
+              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer?.corporateName || task.customer?.fantasyName || "-"}</ThemedText>
             </View>
           </View>
         )}

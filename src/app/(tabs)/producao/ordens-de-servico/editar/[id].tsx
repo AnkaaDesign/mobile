@@ -130,7 +130,7 @@ export default function EditServiceOrderScreen() {
               router.back();
             } else {
               // Fallback to detail page if can't go back
-              router.push(routeToMobilePath(routes.production.serviceOrders.details(id!)) as any);
+              router.replace(routeToMobilePath(routes.production.serviceOrders.details(id!)) as any);
             }
           }
         },

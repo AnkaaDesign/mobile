@@ -3,7 +3,7 @@
     "name": "Ankaa Design",
     "slug": "ankaa-design",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon-1024.png",
     "scheme": "ankaadesign",
     "userInterfaceStyle": "automatic",

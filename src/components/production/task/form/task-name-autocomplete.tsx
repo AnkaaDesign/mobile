@@ -61,7 +61,7 @@ export function TaskNameAutocomplete({ control, disabled }: TaskNameAutocomplete
       name="name"
       render={({ field, fieldState }) => (
         <View>
-          <FormFieldGroup label="Nome da Tarefa" error={fieldState.error?.message}>
+          <FormFieldGroup label="Logomarca" error={fieldState.error?.message}>
             <View style={styles.inputContainer}>
               <Input
                 value={inputValue}

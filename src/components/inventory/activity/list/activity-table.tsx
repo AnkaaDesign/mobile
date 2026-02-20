@@ -472,7 +472,7 @@ export const ActivityTable = React.memo<ActivityTableProps>(
             <ActivityTableRowSwipe
               key={item.id}
               activityId={item.id}
-              activityDescription={`${item.item?.name || "Item"} - ${item.quantity} un`}
+              activityDescription={`${item.item?.name || "Item"} - ${formatQuantity(item.quantity)} un`}
               onDelete={onActivityDelete}
               disabled={showSelection}
             >

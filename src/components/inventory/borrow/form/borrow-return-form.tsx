@@ -10,6 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import type { Borrow } from '../../../../types';
 import { IconLoader, IconPackage, IconFileText } from "@tabler/icons-react-native";
 import { BORROW_STATUS } from "@/constants";
+import { formatQuantity } from "@/utils";
 
 interface BorrowReturnFormProps {
   borrow: Borrow & {
@@ -142,7 +143,7 @@ export function BorrowReturnForm({ borrow, onReturn, onMarkAsLost, onCancel, isS
               {/* Quantity */}
               <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>Quantidade:</ThemedText>
-                <ThemedText style={styles.infoValue}>{borrow.quantity}</ThemedText>
+                <ThemedText style={styles.infoValue}>{formatQuantity(borrow.quantity)}</ThemedText>
               </View>
 
               {/* Created At */}

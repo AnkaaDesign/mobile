@@ -8,6 +8,7 @@ import type { Borrow } from "@/types";
 import { router } from "expo-router";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { formatQuantity } from "@/utils";
 
 interface BorrowItemCardProps {
   borrow: Borrow;
@@ -118,7 +119,7 @@ export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
                 Estoque Atual
               </ThemedText>
               <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-                {borrow.item.quantity}
+                {formatQuantity(borrow.item.quantity)}
               </ThemedText>
             </View>
           )}

@@ -93,7 +93,7 @@ export default function EditObservationScreen() {
       goBack();
     } else {
       // Fallback to details page if no history
-      router.push(routeToMobilePath(routes.production.observations.details(id!)) as any);
+      router.replace(routeToMobilePath(routes.production.observations.details(id!)) as any);
     }
   };
 
@@ -110,16 +110,7 @@ export default function EditObservationScreen() {
         data,
       });
 
-      Alert.alert(
-        "Sucesso",
-        "Observação atualizada com sucesso!",
-        [
-          {
-            text: "OK",
-            onPress: handleNavigateBack,
-          },
-        ]
-      );
+      router.replace(routeToMobilePath(routes.production.observations.details(id as string)) as any);
     } catch (error: any) {
       Alert.alert(
         "Erro",

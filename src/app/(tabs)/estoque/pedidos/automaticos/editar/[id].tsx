@@ -88,7 +88,7 @@ export default function EditAutomaticOrderScreen() {
         {
           text: "OK",
           onPress: () => {
-            router.push(routeToMobilePath(routes.inventory.orders.automatic.details(scheduleId)) as any);
+            router.replace(routeToMobilePath(routes.inventory.orders.automatic.details(scheduleId)) as any);
           },
         },
       ]);

@@ -256,7 +256,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
           },
           { id: "produtos-detalhes", title: "Detalhes", icon: "eye", path: "/estoque/produtos/detalhes/:id", isDynamic: true },
           { id: "produtos-editar", title: "Editar", icon: "edit", path: "/estoque/produtos/editar/:id", isDynamic: true },
-          { id: "produtos-balanco-estoque", title: "Balanco de Estoque", icon: "scale", path: "/estoque/produtos/balanco-estoque" },
+          { id: "produtos-balanco-estoque", title: "Balanco de Estoque", icon: "scale", path: "/estoque/balanco" },
           {
             id: "produtos-marcas",
             title: "Marcas",
@@ -628,6 +628,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
         children: [
           { id: "servidor-backups-listar", title: "Listar", icon: "list", path: "/servidor/backups/listar" },
           { id: "servidor-backups-cadastrar", title: "Criar Backup", icon: "plus", path: "/servidor/backups/cadastrar" },
+          { id: "servidor-backups-agendamentos", title: "Agendamentos", icon: "clock", path: "/servidor/backups/agendamentos" },
           { id: "servidor-backups-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/backups/detalhes/:id", isDynamic: true },
         ],
       },

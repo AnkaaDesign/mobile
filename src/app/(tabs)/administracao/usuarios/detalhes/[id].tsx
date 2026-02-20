@@ -33,7 +33,9 @@ import {
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 
-import { Skeleton } from "@/components/ui/skeleton";export default function UserDetailScreen() {
+import { UserDetailSkeleton } from "@/components/administration/user/skeleton/user-detail-skeleton";
+
+export default function UserDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { pushWithLoading } = useNavigationLoading();
@@ -141,87 +143,9 @@ import { Skeleton } from "@/components/ui/skeleton";export default function User
 
   if (isLoading) {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.md }}>
-          {/* Header card - user name + edit button */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Skeleton style={{ height: 24, width: '55%', borderRadius: 4 }} />
-            <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
-          </View>
-          {/* UserCard - basic info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <Skeleton style={{ height: 18, width: '45%', borderRadius: 4, marginBottom: spacing.xs }} />
-            {Array.from({ length: 4 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-          {/* UserAddressCard */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <Skeleton style={{ height: 18, width: '50%', borderRadius: 4, marginBottom: spacing.xs }} />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-          {/* UserLoginInfoCard */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <Skeleton style={{ height: 18, width: '55%', borderRadius: 4, marginBottom: spacing.xs }} />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <Skeleton style={{ height: 12, width: '35%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 22, width: '50%', borderRadius: 4 }} />
-                </View>
-              </View>
-            ))}
-          </View>
-          {/* UserPpeSizesCard */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <Skeleton style={{ height: 18, width: '40%', borderRadius: 4, marginBottom: spacing.xs }} />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <View key={i} style={{ flex: 1, minWidth: '45%', padding: spacing.md, gap: spacing.xs }}>
-                  <Skeleton style={{ height: 12, width: '60%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 20, width: '40%', borderRadius: 4 }} />
-                </View>
-              ))}
-            </View>
-          </View>
-          {/* UserTasksTable */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-            <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton style={{ height: 18, width: '40%', borderRadius: 4 }} />
-            </View>
-            {Array.from({ length: 2 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: i < 1 ? 1 : 0, borderBottomColor: colors.border }}>
-                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 22, width: 60, borderRadius: 11 }} />
-              </View>
-            ))}
-          </View>
-          {/* ChangelogTimeline */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <Skeleton style={{ height: 18, width: '55%', borderRadius: 4, marginBottom: spacing.xs }} />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
-                <Skeleton style={{ width: 4, height: 50, borderRadius: 2 }} />
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-                    <Skeleton style={{ width: 70, height: 18, borderRadius: 4 }} />
-                    <Skeleton style={{ width: 90, height: 18, borderRadius: 4 }} />
-                  </View>
-                  <Skeleton style={{ height: 13, width: '60%', borderRadius: 4 }} />
-                </View>
-              </View>
-            ))}
-          </View>
-          <View style={{ height: spacing.md }} />
+      <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm }}>
+          <UserDetailSkeleton />
         </View>
       </ScrollView>
     );

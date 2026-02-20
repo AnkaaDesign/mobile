@@ -13,6 +13,7 @@ import { BorrowTableRowSwipe } from "./borrow-table-row-swipe";
 import { getDefaultVisibleColumns } from "./borrow-column-visibility-manager";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { formatQuantity } from "@/utils";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -165,7 +166,7 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (borrow: Borrow) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {borrow.quantity} un
+        {formatQuantity(borrow.quantity)} un
       </ThemedText>
     ),
   },

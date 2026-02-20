@@ -13,6 +13,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { FormActionBar, FormActionBarProps } from "./FormActionBar";
+import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 
@@ -92,8 +93,6 @@ export interface MultiStepFormContainerProps {
   footer?: React.ReactNode;
 }
 
-// Tablet breakpoint
-const TABLET_BREAKPOINT = 768;
 
 export function MultiStepFormContainer({
   steps,
@@ -121,7 +120,7 @@ export function MultiStepFormContainer({
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isTablet = width >= TABLET_BREAKPOINT;
+  const isTablet = width >= TABLET_WIDTH_THRESHOLD;
 
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === steps.length;

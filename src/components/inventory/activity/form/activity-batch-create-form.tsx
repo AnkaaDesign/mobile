@@ -15,13 +15,14 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing, formLayout } from "@/constants/form-styles";
 import { useOrders, useOrderItems, useMultiStepForm, useKeyboardAwareScroll, useBatchResultDialog, useItems } from "@/hooks";
-import { useUsersMinimal, useItemsForCombobox } from "@/hooks/use-form-data";
+import { useActiveUsersMinimal, useItemsForCombobox } from "@/hooks/use-form-data";
 import { ACTIVITY_OPERATION, ACTIVITY_REASON } from "@/constants";
 import { ACTIVITY_REASON_LABELS } from "@/constants/enum-labels";
 import { FormSteps, FormStep } from "@/components/ui/form-steps";
 import { ItemSelectorTable } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { ActivityBatchResultModal, ActivityBatchResult } from "./activity-batch-result-modal";
+import { formatQuantity } from "@/utils";
 import type { BatchOperationResult } from "@/types/common";
 import {
   IconArrowLeft,
@@ -233,8 +234,8 @@ export function ActivityBatchCreateForm({
     [multiStepForm, itemMetadataCache],
   );
 
-  // Fetch users for selection (minimal data - 95% reduction)
-  const { data: users, isLoading: isLoadingUsers } = useUsersMinimal({
+  // Fetch active users for selection (minimal data - 95% reduction)
+  const { data: users, isLoading: isLoadingUsers } = useActiveUsersMinimal({
     limit: 100,
   });
 
@@ -676,7 +677,7 @@ export function ActivityBatchCreateForm({
                       </View>
                       <View style={styles.tableQtyCol}>
                         <ThemedText style={[styles.tableQtyText, { color: colors.foreground }]}>
-                          {item.quantity}
+                          {formatQuantity(item.quantity)}
                         </ThemedText>
                       </View>
                     </View>

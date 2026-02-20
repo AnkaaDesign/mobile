@@ -611,7 +611,7 @@ export const OrderTable = React.memo<OrderTableProps>(
             initialNumToRender={15}
             updateCellsBatchingPeriod={50}
             getItemLayout={(_data, index) => ({
-              length: 48, // Fixed row height (2 rows format)
+              length: 48,
               offset: 48 * index,
               index,
             })}

@@ -13,7 +13,8 @@ import { FormCard, FormFieldGroup, FormRow } from "@/components/ui/form-section"
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
+import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { TagManager } from "@/components/inventory/supplier/form";
 import { PhoneArrayInput } from "@/components/ui";
@@ -205,14 +206,7 @@ export default function SupplierEditScreen() {
         const result = await updateAsync(formData as any);
 
         if (result?.data) {
-          Alert.alert("Sucesso", "Fornecedor atualizado com sucesso!", [
-            {
-              text: "OK",
-              onPress: () => {
-                router.back();
-              },
-            },
-          ]);
+          router.replace(routeToMobilePath(routes.inventory.suppliers.details(id!)) as any);
         } else {
           Alert.alert("Erro", "Erro ao atualizar fornecedor");
         }
@@ -221,14 +215,7 @@ export default function SupplierEditScreen() {
         const result = await updateAsync(changedFields);
 
         if (result?.data) {
-          Alert.alert("Sucesso", "Fornecedor atualizado com sucesso!", [
-            {
-              text: "OK",
-              onPress: () => {
-                router.back();
-              },
-            },
-          ]);
+          router.replace(routeToMobilePath(routes.inventory.suppliers.details(id!)) as any);
         } else {
           Alert.alert("Erro", "Erro ao atualizar fornecedor");
         }

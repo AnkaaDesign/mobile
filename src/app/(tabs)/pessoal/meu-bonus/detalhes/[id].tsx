@@ -9,7 +9,7 @@ import { useTheme } from "@/lib/theme";
 import { useQuery } from "@tanstack/react-query";
 import { bonusService } from "@/api-client";
 import { bonusKeys, useCurrentUser, useScreenReady} from '@/hooks';
-import { formatCurrency } from "@/utils";
+import { formatCurrency, formatPercentage } from "@/utils";
 import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
 import { Icon } from "@/components/ui/icon";
@@ -408,7 +408,7 @@ export default function BonusDetailScreen() {
                     </ThemedText>
                     <ThemedText style={[styles.detailValue, { color: '#059669' }]}>
                       +{hasPercentage
-                        ? `${percentageValue}%`
+                        ? formatPercentage(percentageValue, 2)
                         : formatCurrency(toNumber(extra.value))}
                     </ThemedText>
                   </View>
@@ -424,7 +424,7 @@ export default function BonusDetailScreen() {
                     </ThemedText>
                     <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
                       -{hasPercentage
-                        ? `${percentageValue}%`
+                        ? formatPercentage(percentageValue, 2)
                         : formatCurrency(toNumber(discount.value))}
                     </ThemedText>
                   </View>

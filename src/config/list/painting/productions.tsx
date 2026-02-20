@@ -1,5 +1,29 @@
+import { View, StyleSheet } from 'react-native'
+import { ThemedText } from '@/components/ui/themed-text'
+import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { fontSize, fontWeight } from '@/constants/design-system'
 import type { ListConfig } from '@/components/list/types'
 import type { PaintProduction } from '@/types'
+
+const styles = StyleSheet.create({
+  paintCell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  paintInfo: {
+    flex: 1,
+  },
+  paintName: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  paintType: {
+    fontSize: fontSize.xs,
+    opacity: 0.6,
+    marginTop: 1,
+  },
+})
 
 export const productionsListConfig: ListConfig<PaintProduction> = {
   key: 'painting-productions',
@@ -31,8 +55,32 @@ export const productionsListConfig: ListConfig<PaintProduction> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (production) => (production as any).formula?.paint?.name || 'Tinta',
-        style: { fontWeight: '500' },
+        render: (production) => {
+          const paint = (production as any).formula?.paint
+          const paintName = paint?.name || 'Tinta'
+          const paintType = paint?.paintType?.name || ''
+          return (
+            <View style={styles.paintCell}>
+              <PaintPreview
+                paint={paint}
+                baseColor={paint?.hex || '#808080'}
+                width={32}
+                height={32}
+                borderRadius={6}
+              />
+              <View style={styles.paintInfo}>
+                <ThemedText style={styles.paintName} numberOfLines={1} ellipsizeMode="tail">
+                  {paintName}
+                </ThemedText>
+                {paintType ? (
+                  <ThemedText style={styles.paintType} numberOfLines={1} ellipsizeMode="tail">
+                    {paintType}
+                  </ThemedText>
+                ) : null}
+              </View>
+            </View>
+          )
+        },
       },
       {
         key: 'paintCode',

@@ -13,6 +13,8 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { sectorCreateSchema, sectorUpdateSchema } from "@/schemas/sector";
 import type { SectorCreateFormData, SectorUpdateFormData } from "@/schemas/sector";
@@ -63,7 +65,14 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
           name: data.name!,
           privileges: data.privileges! as SECTOR_PRIVILEGES,
         };
-        await createAsync(createData);
+        const result = await createAsync(createData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.administration.sectors.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (sector) {
         const updateData = {
           name: data.name,
@@ -73,9 +82,9 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
           id: sector.id,
           data: updateData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.administration.sectors.details(sector.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o setor");
     }

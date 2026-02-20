@@ -217,7 +217,7 @@ export function SimpleTaskCreateForm({ onSubmit, onCancel, isSubmitting = false 
                 <TaskNameAutocomplete control={form.control} disabled={isSubmitting} />
 
                 {/* Customer */}
-                <FormFieldGroup label="Cliente" error={form.formState.errors.customerId?.message}>
+                <FormFieldGroup label="Razão Social" error={form.formState.errors.customerId?.message}>
                   <Controller
                     control={form.control}
                     name="customerId"

@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { getItems } from "@/api-client";
-import { formatNumber } from "@/utils";
+import { formatNumber, formatCurrency } from "@/utils";
 
 interface OrderMultiItemSelectorProps {
   value?: string[];
@@ -108,7 +108,7 @@ export function OrderMultiItemSelector({
           value: item.id,
           description: [
             `Estoque: ${stockInfo}`,
-            priceInfo ? `Preço: R$ ${priceInfo.toFixed(2)}` : null,
+            priceInfo ? `Preço: ${formatCurrency(priceInfo)}` : null,
             supplier ? `Fornecedor: ${supplier}` : null,
           ].filter(Boolean).join(" | "),
           metadata: {
@@ -192,7 +192,7 @@ export function OrderMultiItemSelector({
           {metadata.price && (
             <Badge variant="outline" style={styles.priceBadge}>
               <ThemedText style={styles.priceBadgeText}>
-                R$ {metadata.price.toFixed(2)}
+                {formatCurrency(metadata.price)}
               </ThemedText>
             </Badge>
           )}

@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/lib/theme/theme-provider";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
+import { hasPrivilege, formatDensity } from "@/utils";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { IconEdit } from "@tabler/icons-react-native";
 
@@ -294,7 +294,7 @@ export default function PaintDetailsScreen() {
                       <ThemedText className="text-sm text-muted-foreground">{bestFormula.description || "Fórmula selecionada automaticamente"}</ThemedText>
                       <View className="flex-row items-center gap-2">
                         <Badge variant="secondary">{bestFormula.components?.length || 0} componentes</Badge>
-                        {bestFormula.density && <Badge variant="outline">{bestFormula.density.toFixed(4)} g/ml</Badge>}
+                        {bestFormula.density && <Badge variant="outline">{formatDensity(bestFormula.density)} g/ml</Badge>}
                       </View>
                     </View>
                   </Card>

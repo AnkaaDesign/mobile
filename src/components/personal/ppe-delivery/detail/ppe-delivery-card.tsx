@@ -8,7 +8,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import type { PpeDelivery } from "@/types";
 import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
 import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 
 interface PpeDeliveryCardProps {
   delivery: PpeDelivery;
@@ -53,7 +53,7 @@ export function PpeDeliveryCard({ delivery }: PpeDeliveryCardProps) {
             <Icon name="hash" size={16} color={colors.mutedForeground} />
             <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Quantidade</ThemedText>
           </View>
-          <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{delivery.quantity || 1}</ThemedText>
+          <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{formatQuantity(delivery.quantity || 1)}</ThemedText>
         </View>
 
         {/* Scheduled Date */}

@@ -2,11 +2,11 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
-import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp } from "@tabler/icons-react-native";
+import { IconPhoneCall } from "@tabler/icons-react-native";
 import type { Customer } from '../../../../types';
-import { formatBrazilianPhone } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
 
 interface ContactInfoCardProps {
@@ -15,29 +15,6 @@ interface ContactInfoCardProps {
 
 export function ContactInfoCard({ customer }: ContactInfoCardProps) {
   const { colors } = useTheme();
-
-  const handlePhonePress = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-      Alert.alert("Erro", "Não foi possível abrir o discador");
-    });
-  };
-
-  const handleWhatsAppPress = async (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    // Try opening WhatsApp app directly first
-    try {
-      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
-    } catch {
-      // Fallback to web WhatsApp
-      try {
-        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
-      } catch {
-        Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
-      }
-    }
-  };
 
   const handleEmailPress = (email: string) => {
     Linking.openURL(`mailto:${email}`).catch(() => {
@@ -91,69 +68,46 @@ export function ContactInfoCard({ customer }: ContactInfoCardProps) {
       <View style={styles.content}>
           {/* Email */}
           {customer.email && (
-            <TouchableOpacity
-              onPress={() => handleEmailPress(customer.email!)}
-              style={StyleSheet.flatten([styles.infoItem])}
-              activeOpacity={0.7}
-            >
-              <IconMail size={20} color={colors.mutedForeground} />
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>E-mail</ThemedText>
-                <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                  {customer.email}
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
+            <DetailField
+              label="E-mail"
+              value={
+                <TouchableOpacity onPress={() => handleEmailPress(customer.email!)} activeOpacity={0.7}>
+                  <ThemedText style={{ color: "#16a34a", fontSize: 14, fontWeight: "600" }}>
+                    {customer.email}
+                  </ThemedText>
+                </TouchableOpacity>
+              }
+              icon="mail"
+            />
           )}
 
           {/* Phone Numbers */}
           {customer.phones && customer.phones.length > 0 && (
             <>
               {customer.phones.map((phone, index) => (
-                <View
+                <DetailPhoneField
                   key={index}
-                  style={styles.infoItem}
-                >
-                  <IconPhone size={20} color={colors.mutedForeground} />
-                  <View style={styles.infoText}>
-                    <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                      Telefone{customer.phones.length > 1 ? ` ${index + 1}` : ""}
-                    </ThemedText>
-                    <View style={styles.phoneRow}>
-                      <TouchableOpacity onPress={() => handlePhonePress(phone)} activeOpacity={0.7}>
-                        <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                          {formatBrazilianPhone(phone)}
-                        </ThemedText>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleWhatsAppPress(phone)}
-                        activeOpacity={0.7}
-                        style={styles.whatsappIcon}
-                      >
-                        <IconBrandWhatsapp size={20} color="#16a34a" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
+                  label={`Telefone${customer.phones.length > 1 ? ` ${index + 1}` : ""}`}
+                  phone={phone}
+                  icon="phone"
+                />
               ))}
             </>
           )}
 
           {/* Website */}
           {customer.site && (
-            <TouchableOpacity
-              onPress={() => handleWebsitePress(customer.site!)}
-              style={styles.infoItem}
-              activeOpacity={0.7}
-            >
-              <IconWorld size={20} color={colors.mutedForeground} />
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Website</ThemedText>
-                <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                  {customer.site}
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
+            <DetailField
+              label="Website"
+              value={
+                <TouchableOpacity onPress={() => handleWebsitePress(customer.site!)} activeOpacity={0.7}>
+                  <ThemedText style={{ color: "#16a34a", fontSize: 14, fontWeight: "600" }}>
+                    {customer.site}
+                  </ThemedText>
+                </TouchableOpacity>
+              }
+              icon="world"
+            />
           )}
       </View>
     </Card>
@@ -182,32 +136,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.sm,
-  },
-  infoItem: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  phoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  whatsappIcon: {
-    padding: spacing.xs / 2,
+    gap: spacing.md,
   },
   emptyState: {
     alignItems: "center",

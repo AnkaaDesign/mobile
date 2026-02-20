@@ -111,7 +111,7 @@ export default function BasicInfoSection({
   return (
     <FormCard title="Informações Básicas" icon="IconFileText">
       {/* Task Name */}
-      <SimpleFormField label="Nome da Tarefa" error={errors.name}>
+      <SimpleFormField label="Logomarca" error={errors.name}>
         <Controller
           control={control}
           name="name"
@@ -135,7 +135,7 @@ export default function BasicInfoSection({
       </SimpleFormField>
 
       {/* Customer */}
-      <FormFieldGroup label="Cliente" error={errors.customerId?.message}>
+      <FormFieldGroup label="Razão Social" error={errors.customerId?.message}>
         <Controller
           control={control}
           name="customerId"

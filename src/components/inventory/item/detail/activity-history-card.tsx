@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { IconClock, IconTrendingUp, IconTrendingDown, IconCalendar, IconDots, IconUser } from "@tabler/icons-react-native";
 import type { Item, Activity } from '../../../../types';
 import { ACTIVITY_REASON, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION } from "@/constants";
-import { formatRelativeTime, formatDate } from "@/utils";
+import { formatRelativeTime, formatDate, formatQuantity } from "@/utils";
 import { startOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -328,7 +328,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
                             </Badge>
                             <View style={StyleSheet.flatten([styles.operationBadge, { backgroundColor: isInbound ? extendedColors.green[700] : extendedColors.red[700] }])}>
                               <ThemedText style={StyleSheet.flatten([styles.operationBadgeText, { color: "#FFFFFF" }])}>
-                                {isInbound ? "↑" : "↓"} {Math.abs(activity.quantity)}
+                                {isInbound ? "↑" : "↓"} {formatQuantity(Math.abs(activity.quantity))}
                               </ThemedText>
                             </View>
                           </View>

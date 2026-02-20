@@ -205,7 +205,10 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           </View>
 
           {/* Table Body */}
-          {pricing.items.map((item, index) => (
+          {pricing.items.map((item, index) => {
+            const isOutrosWithObservation = item.description === 'Outros' && !!item.observation;
+            const displayDescription = isOutrosWithObservation ? item.observation : item.description;
+            return (
             <View
               key={item.id || index}
               style={[
@@ -215,8 +218,8 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
               ]}
             >
               <View style={[styles.descriptionColumn, styles.descriptionCell]}>
-                <ThemedText style={styles.tableCellText}>{item.description}</ThemedText>
-                {item.observation && (
+                <ThemedText style={styles.tableCellText}>{displayDescription}</ThemedText>
+                {!isOutrosWithObservation && item.observation && (
                   <TouchableOpacity
                     onPress={() => Alert.alert("Observação", item.observation!)}
                     activeOpacity={0.7}
@@ -234,7 +237,8 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
                 {formatCurrency(typeof item.amount === "number" ? item.amount : Number(item.amount) || 0)}
               </ThemedText>
             </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Pricing Summary */}
@@ -318,11 +322,11 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
               <IconPhoto size={16} color={colors.mutedForeground} />
               <ThemedText style={styles.infoSectionTitle}>Layout Aprovado</ThemedText>
             </View>
-            <TouchableOpacity onPress={handleViewLayoutFile} activeOpacity={0.8}>
+            <TouchableOpacity onPress={handleViewLayoutFile} activeOpacity={0.7} style={styles.layoutImageContainer}>
               <Image
                 source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/thumbnail/${pricing.layoutFile.id}` }}
                 style={styles.layoutImage}
-                resizeMode="contain"
+                resizeMode="cover"
               />
             </TouchableOpacity>
           </View>
@@ -537,9 +541,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     lineHeight: 22,
   },
+  layoutImageContainer: {
+    alignSelf: "flex-start",
+  },
   layoutImage: {
-    width: "100%",
     height: 192,
+    width: 256,
     borderRadius: borderRadius.md,
   },
   signatureContainer: {

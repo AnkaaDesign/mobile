@@ -3,6 +3,8 @@ import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } f
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
+import { routeToMobilePath } from '@/utils/route-mapper';
+import { routes } from '@/constants';
 import { orderUpdateSchema } from '@/schemas';
 import type { OrderUpdateFormData } from '@/schemas';
 import { useOrderMutations, useOrder } from '@/hooks';
@@ -238,7 +240,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           if (onSuccess) {
             onSuccess();
           } else {
-            router.back();
+            router.replace(routeToMobilePath(routes.inventory.orders.details(orderId)) as any);
           }
         }
       } catch (error) {

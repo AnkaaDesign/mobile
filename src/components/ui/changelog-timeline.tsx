@@ -33,7 +33,7 @@ import {
   SERVICE_ORDER_TYPE_LABELS,
   TRUCK_MANUFACTURER_LABELS,
 } from "@/constants/enum-labels";
-import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
+import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel, formatQuantity } from "@/utils";
 import { getApiBaseUrl } from "@/utils/file";
 import { useChangeLogs } from "@/hooks";
 import { useTheme } from "@/lib/theme";
@@ -309,7 +309,7 @@ const renderCutsCards = (cuts: any[], colors: any) => {
               {cut.quantity && (
                 <View style={{ flexDirection: "row", gap: 2 }}>
                   <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Qtd:</ThemedText>
-                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{cut.quantity}</ThemedText>
+                  <ThemedText style={{ fontSize: 10, color: colors.foreground }}>{formatQuantity(cut.quantity)}</ThemedText>
                 </View>
               )}
               {cut.origin && (

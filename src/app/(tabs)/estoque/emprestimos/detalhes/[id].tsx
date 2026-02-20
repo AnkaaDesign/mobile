@@ -13,18 +13,14 @@ import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { hasPrivilege } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
 import { routeToMobilePath } from '@/utils/route-mapper';
-import { BorrowStatusCard } from "@/components/inventory/borrow/detail/borrow-status-card";
 import { BorrowItemInfoCard } from "@/components/inventory/borrow/detail/borrow-item-info-card";
 import { BorrowUserInfoCard } from "@/components/inventory/borrow/detail/borrow-user-info-card";
 import { BorrowDatesCard } from "@/components/inventory/borrow/detail/borrow-dates-card";
 import { BorrowHistoryCard } from "@/components/inventory/borrow/detail/borrow-history-card";
-import { BORROW_SELECT_DETAIL } from "@/api-client/select-patterns";
 import {
-  IconRefresh,
   IconEdit,
   IconTrash,
   IconCheck,
-  IconX,
 } from "@tabler/icons-react-native";
 
 
@@ -42,9 +38,23 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
   const canManageWarehouse = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const isAdmin = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
-  // Fetch borrow details with optimized select (40-60% less data)
+  // Fetch borrow details with include for full relations
   const { data: response, isLoading, error, refetch } = useBorrow(id as string, {
-    select: BORROW_SELECT_DETAIL,
+    include: {
+      item: {
+        include: {
+          brand: true,
+          category: true,
+          supplier: true,
+        },
+      },
+      user: {
+        include: {
+          position: true,
+          sector: true,
+        },
+      },
+    },
     enabled: !!id && canManageWarehouse,
   });
 
@@ -87,33 +97,6 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
                   status: BORROW_STATUS.RETURNED,
                   returnedAt: new Date(),
                 },
-              });
-              // API client already shows success alert
-              await refetch();
-            } catch (_error) {
-              // API client already shows error alert
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // Handle mark as lost
-  const handleMarkAsLost = () => {
-    Alert.alert(
-      "Marcar como Perdido",
-      "Tem certeza que deseja marcar este item como perdido? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Marcar como Perdido",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await update({
-                id: id as string,
-                data: { status: BORROW_STATUS.LOST },
               });
               // API client already shows success alert
               await refetch();
@@ -255,14 +238,15 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
               </ThemedText>
             </View>
             <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
+              {borrow.status === BORROW_STATUS.ACTIVE && (
+                <TouchableOpacity
+                  onPress={handleReturn}
+                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                  activeOpacity={0.7}
+                >
+                  <IconCheck size={18} color={colors.primaryForeground} />
+                </TouchableOpacity>
+              )}
               {canManageWarehouse && (
                 <TouchableOpacity
                   onPress={handleEdit}
@@ -285,8 +269,8 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
           </CardContent>
         </Card>
 
-        {/* Status Card */}
-        <BorrowStatusCard borrow={borrow} />
+        {/* Borrow Details Card (includes status) */}
+        <BorrowDatesCard borrow={borrow} />
 
         {/* Item Information Card */}
         <BorrowItemInfoCard borrow={borrow as any} />
@@ -294,38 +278,8 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
         {/* User Information Card */}
         <BorrowUserInfoCard borrow={borrow} />
 
-        {/* Borrow Details/Dates Card */}
-        <BorrowDatesCard borrow={borrow} />
-
         {/* History Card */}
         <BorrowHistoryCard borrow={borrow} />
-
-        {/* Action Buttons */}
-        {borrow.status === BORROW_STATUS.ACTIVE && (
-          <Card style={styles.actionsCard}>
-            <TouchableOpacity
-              onPress={handleReturn}
-              style={StyleSheet.flatten([styles.returnButton, { backgroundColor: colors.primary }])}
-              activeOpacity={0.7}
-            >
-              <IconCheck size={20} color={colors.primaryForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.buttonText, { color: colors.primaryForeground }])}>
-                Devolver Item
-              </ThemedText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleMarkAsLost}
-              style={StyleSheet.flatten([styles.lostButton, { borderColor: colors.border, backgroundColor: colors.card }])}
-              activeOpacity={0.7}
-            >
-              <IconX size={20} color={colors.destructive} />
-              <ThemedText style={StyleSheet.flatten([styles.buttonText, { color: colors.destructive }])}>
-                Marcar como Perdido
-              </ThemedText>
-            </TouchableOpacity>
-          </Card>
-        )}
 
         {/* Bottom spacing for mobile navigation */}
         <View style={{ height: spacing.xxl * 2 }} />
@@ -368,30 +322,5 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: "center",
     justifyContent: "center",
-  },
-  actionsCard: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  returnButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-  },
-  lostButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-  },
-  buttonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
 });

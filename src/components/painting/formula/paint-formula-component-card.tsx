@@ -5,7 +5,7 @@ import { Text } from "@/components/ui/text";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { measureUtils } from "@/utils";
+import { measureUtils, formatDensity, formatQuantity } from "@/utils";
 import { MEASURE_UNIT } from "@/constants";
 import type { PaintFormulaComponent } from '../../../types';
 
@@ -38,7 +38,7 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
             )}
             {item && (
               <Text className="text-xs text-muted-foreground">
-                Estoque: {item.quantity} {item.measures?.[0]?.unit || "un"}
+                Estoque: {formatQuantity(item.quantity)} {item.measures?.[0]?.unit || "un"}
               </Text>
             )}
           </View>
@@ -104,7 +104,7 @@ export function PaintFormulaComponentCard({ component, showCalculations = true }
                   <Icon name="gauge" size={14} className="text-muted-foreground" />
                   <Text className="text-sm text-muted-foreground">Densidade do item:</Text>
                 </View>
-                <Text className="text-sm font-medium">{(weightMeasure.value / volumeMeasure.value).toFixed(4)} g/ml</Text>
+                <Text className="text-sm font-medium">{formatDensity(weightMeasure.value / volumeMeasure.value)} g/ml</Text>
               </View>
             )}
           </View>

@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PPE_TYPE_LABELS } from "@/constants";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
+import { formatQuantity } from "@/utils";
 import type { SortConfig } from "@/lib/sort-utils";
 
 export interface TableColumn {
@@ -100,7 +101,7 @@ const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (item: Item) => (
       <ThemedText style={StyleSheet.flatten([styles.cellText, styles.numberText])} numberOfLines={1}>
-        {item.quantity || 0}
+        {formatQuantity(item.quantity || 0)}
       </ThemedText>
     ),
   },

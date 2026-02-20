@@ -306,6 +306,9 @@ export interface ListConfig<T extends { id: string }> {
   key: string
   title: string
 
+  // Optional header render function (rendered between search row and filter tags)
+  header?: (colors: any, user: any) => ReactNode
+
   // Query
   query: {
     hook: string // Name of the infinite query hook

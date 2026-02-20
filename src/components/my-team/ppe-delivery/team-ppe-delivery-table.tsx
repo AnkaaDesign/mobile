@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS, ENTITY_BADGE_CONFIG, BADGE_COLORS } from "@/constants";
-import { formatDate } from "@/utils";
+import { formatDate, formatQuantity } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface TeamPpeDeliveryTableProps {
@@ -86,7 +86,7 @@ export const TeamPpeDeliveryTable = React.memo<TeamPpeDeliveryTableProps>(
               <View style={styles.detailsSection}>
                 <View style={styles.detailRow}>
                   <ThemedText style={styles.detailLabel}>Quantidade:</ThemedText>
-                  <ThemedText style={styles.detailValue}>{item.quantity}</ThemedText>
+                  <ThemedText style={styles.detailValue}>{formatQuantity(item.quantity)}</ThemedText>
                 </View>
                 {item.scheduledDate && (
                   <View style={styles.detailRow}>

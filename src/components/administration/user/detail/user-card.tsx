@@ -5,11 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconBuilding, IconShieldCheck } from "@tabler/icons-react-native";
+import { IconShieldCheck } from "@tabler/icons-react-native";
 import { getBadgeVariant } from "@/constants/badge-colors";
 import { getUserStatusBadgeText } from "@/utils/user";
+import { formatDate } from "@/utils";
 
 interface UserCardProps {
   user: User;
@@ -53,56 +55,49 @@ export function UserCard({ user }: UserCardProps) {
           </View>
         </View>
 
-        {/* Quick Info Grid */}
-        <View style={styles.infoGrid}>
-          {user.position && (
-            <View style={styles.infoItem}>
-              <View style={[styles.infoIcon, { backgroundColor: colors.primary + "10" }]}>
-                <IconBriefcase size={18} color={colors.primary} />
-              </View>
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                  Cargo
-                </ThemedText>
-                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                  {user.position.name}
-                </ThemedText>
-              </View>
-            </View>
-          )}
+        {/* Personal Info */}
+        {user.birth && (
+          <DetailField
+            label="Data de Nascimento"
+            value={formatDate(user.birth)}
+            icon="cake"
+          />
+        )}
 
-          {user.sector && (
-            <View style={styles.infoItem}>
-              <View style={[styles.infoIcon, { backgroundColor: colors.primary + "10" }]}>
-                <IconBuilding size={18} color={colors.primary} />
-              </View>
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                  Setor
-                </ThemedText>
-                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                  {user.sector.name}
-                </ThemedText>
-              </View>
-            </View>
-          )}
+        {/* Professional Info */}
+        {user.payrollNumber && (
+          <DetailField
+            label="Número da Folha"
+            value={user.payrollNumber}
+            icon="hash"
+            monospace
+          />
+        )}
 
-          {user.managedSector && (
-            <View style={styles.infoItem}>
-              <View style={[styles.infoIcon, { backgroundColor: colors.warning + "10" }]}>
-                <IconShieldCheck size={18} color={colors.warning} />
-              </View>
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                  Setor Gerenciado
-                </ThemedText>
-                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                  {user.managedSector.name}
-                </ThemedText>
-              </View>
-            </View>
-          )}
-        </View>
+        {user.position && (
+          <DetailField
+            label="Cargo"
+            value={user.position.name}
+            icon="briefcase"
+          />
+        )}
+
+        {user.sector && (
+          <DetailField
+            label="Setor"
+            value={user.sector.name}
+            icon="building"
+          />
+        )}
+
+        {user.managedSector && (
+          <DetailField
+            label="Setor Gerenciado"
+            value={user.managedSector.name}
+            icon="shield-check"
+            iconColor={colors.warning}
+          />
+        )}
       </View>
     </Card>
   );
@@ -153,31 +148,5 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-  },
-  infoGrid: {
-    gap: spacing.md,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoText: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: fontSize.xs,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
   },
 });

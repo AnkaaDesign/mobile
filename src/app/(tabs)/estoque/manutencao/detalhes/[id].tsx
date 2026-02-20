@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMaintenance, useScreenReady} from '@/hooks';
 import { ThemedView, ThemedText, Card, CardHeader, CardTitle, CardContent, ErrorScreen, Button, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
-import { formatCurrency, formatDate, formatDateTime } from '@/utils';
+import { formatCurrency, formatQuantity, formatDate, formatDateTime } from '@/utils';
 import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
 import { useState, useCallback } from 'react';
 import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
@@ -288,7 +288,7 @@ export default function MaintenanceDetailsScreen() {
                     <View style={styles.stockItem}>
                       <ThemedText style={styles.detailLabel}>Estoque</ThemedText>
                       <ThemedText style={styles.stockValue}>
-                        {targetItem.quantity || 0}
+                        {formatQuantity(targetItem.quantity || 0)}
                         {targetItem.measureUnit && ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}`}
                       </ThemedText>
                     </View>
@@ -367,7 +367,7 @@ export default function MaintenanceDetailsScreen() {
                             <View style={styles.maintenanceItemRow}>
                               <ThemedText style={styles.maintenanceItemLabel}>Necessário:</ThemedText>
                               <ThemedText style={styles.maintenanceItemValue}>
-                                {maintenanceItem.quantity} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
+                                {formatQuantity(maintenanceItem.quantity)} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
                               </ThemedText>
                             </View>
                             <View style={styles.maintenanceItemRow}>
@@ -376,7 +376,7 @@ export default function MaintenanceDetailsScreen() {
                                 styles.maintenanceItemValue,
                                 { color: hasStock ? colors.success : colors.destructive }
                               ]}>
-                                {item.quantity || 0} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
+                                {formatQuantity(item.quantity || 0)} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
                               </ThemedText>
                             </View>
                             {item.prices && item.prices.length > 0 && (

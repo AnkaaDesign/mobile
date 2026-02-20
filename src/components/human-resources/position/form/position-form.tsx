@@ -14,6 +14,8 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
 import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
@@ -56,15 +58,22 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
   const handleSubmit = async (data: PositionCreateFormData | PositionUpdateFormData) => {
     try {
       if (mode === "create") {
-        await createAsync(data as PositionCreateFormData);
+        const result = await createAsync(data as PositionCreateFormData);
+        const newId = (result as any)?.data?.id || (result as any)?.id;
+        onSuccess?.();
+        if (newId) {
+          router.replace(routeToMobilePath(routes.humanResources.positions.details(newId)) as any);
+        } else {
+          router.back();
+        }
       } else if (position) {
         await updateAsync({
           id: position.id,
           data: data as PositionUpdateFormData,
         });
+        onSuccess?.();
+        router.replace(routeToMobilePath(routes.humanResources.positions.details(position.id)) as any);
       }
-      onSuccess?.();
-      router.back();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o cargo");
     }

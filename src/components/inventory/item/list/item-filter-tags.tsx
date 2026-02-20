@@ -24,6 +24,7 @@ import { useTheme } from "@/lib/theme";
 import { useItemBrands, useItemCategories, useSuppliers } from "@/hooks";
 import { MEASURE_UNIT, STOCK_LEVEL, STOCK_LEVEL_LABELS, ITEM_CATEGORY_TYPE_LABELS } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { formatCurrency } from "@/utils";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -338,11 +339,11 @@ export function ItemFilterTags({ filters, searchText, onFilterChange, onSearchCh
       const { min, max } = filters.totalPriceRange;
       let rangeText = "Preço: ";
       if (min !== undefined && max !== undefined) {
-        rangeText += `R$ ${min} - R$ ${max}`;
+        rangeText += `${formatCurrency(min)} - ${formatCurrency(max)}`;
       } else if (min !== undefined) {
-        rangeText += `≥ R$ ${min}`;
+        rangeText += `≥ ${formatCurrency(min)}`;
       } else if (max !== undefined) {
-        rangeText += `≤ R$ ${max}`;
+        rangeText += `≤ ${formatCurrency(max)}`;
       }
 
       tags.push(

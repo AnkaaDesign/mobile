@@ -1,11 +1,11 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPhone, IconMail, IconPhoneCall, IconWorld, IconBrandWhatsapp, IconCreditCard } from "@tabler/icons-react-native";
+import { IconPhoneCall } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
-import { formatBrazilianPhone } from "@/utils";
 // import { showToast } from "@/components/ui/toast";
 
 interface ContactDetailsCardProps {
@@ -14,29 +14,6 @@ interface ContactDetailsCardProps {
 
 export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
   const { colors } = useTheme();
-
-  const handlePhonePress = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    Linking.openURL(`tel:${cleanPhone}`).catch(() => {
-      Alert.alert("Erro", "Não foi possível abrir o discador");
-    });
-  };
-
-  const handleWhatsAppPress = async (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    // Try opening WhatsApp app directly first
-    try {
-      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
-    } catch {
-      // Fallback to web WhatsApp
-      try {
-        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
-      } catch {
-        Alert.alert("Erro", "Não foi possível abrir o WhatsApp");
-      }
-    }
-  };
 
   const handleEmailPress = (email: string) => {
     Linking.openURL(`mailto:${email}`).catch(() => {
@@ -90,82 +67,51 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
       <View style={styles.content}>
         {/* Email */}
         {supplier.email && (
-          <TouchableOpacity
-            onPress={() => handleEmailPress(supplier.email!)}
-            style={StyleSheet.flatten([styles.infoItem])}
-            activeOpacity={0.7}
-          >
-            <IconMail size={20} color={colors.mutedForeground} />
-            <View style={styles.infoText}>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>E-mail</ThemedText>
-              <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                {supplier.email}
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
+          <DetailField
+            label="E-mail"
+            value={
+              <TouchableOpacity onPress={() => handleEmailPress(supplier.email!)} activeOpacity={0.7}>
+                <ThemedText style={{ color: "#16a34a", fontSize: 14, fontWeight: "600" }}>
+                  {supplier.email}
+                </ThemedText>
+              </TouchableOpacity>
+            }
+            icon="mail"
+          />
         )}
 
         {/* Phone Numbers */}
         {supplier.phones && supplier.phones.length > 0 && (
           <>
             {supplier.phones.map((phone, index) => (
-              <View
+              <DetailPhoneField
                 key={index}
-                style={styles.infoItem}
-              >
-                <IconPhone size={20} color={colors.mutedForeground} />
-                <View style={styles.infoText}>
-                  <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                    Telefone{supplier.phones!.length > 1 ? ` ${index + 1}` : ""}
-                  </ThemedText>
-                  <View style={styles.phoneRow}>
-                    <TouchableOpacity onPress={() => handlePhonePress(phone)} activeOpacity={0.7}>
-                      <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                        {formatBrazilianPhone(phone)}
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleWhatsAppPress(phone)}
-                      activeOpacity={0.7}
-                      style={styles.whatsappIcon}
-                    >
-                      <IconBrandWhatsapp size={20} color="#16a34a" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
+                label={`Telefone${supplier.phones!.length > 1 ? ` ${index + 1}` : ""}`}
+                phone={phone}
+                icon="phone"
+              />
             ))}
           </>
         )}
 
         {/* Website */}
         {supplier.site && (
-          <TouchableOpacity
-            onPress={() => handleWebsitePress(supplier.site!)}
-            style={styles.infoItem}
-            activeOpacity={0.7}
-          >
-            <IconWorld size={20} color={colors.mutedForeground} />
-            <View style={styles.infoText}>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Website</ThemedText>
-              <ThemedText style={[styles.value, { color: "#16a34a" }]}>
-                {supplier.site}
-              </ThemedText>
-            </View>
-          </TouchableOpacity>
+          <DetailField
+            label="Website"
+            value={
+              <TouchableOpacity onPress={() => handleWebsitePress(supplier.site!)} activeOpacity={0.7}>
+                <ThemedText style={{ color: "#16a34a", fontSize: 14, fontWeight: "600" }}>
+                  {supplier.site}
+                </ThemedText>
+              </TouchableOpacity>
+            }
+            icon="world"
+          />
         )}
 
         {/* Pix */}
         {supplier.pix && (
-          <View style={styles.infoItem}>
-            <IconCreditCard size={20} color={colors.mutedForeground} />
-            <View style={styles.infoText}>
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Chave Pix</ThemedText>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {supplier.pix}
-              </ThemedText>
-            </View>
-          </View>
+          <DetailField label="Chave Pix" value={supplier.pix} icon="credit-card" />
         )}
       </View>
     </Card>
@@ -194,32 +140,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   content: {
-    gap: spacing.sm,
-  },
-  infoItem: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  phoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  whatsappIcon: {
-    padding: spacing.xs / 2,
+    gap: spacing.md,
   },
   emptyState: {
     alignItems: "center",

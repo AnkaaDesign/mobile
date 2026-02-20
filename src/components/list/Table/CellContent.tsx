@@ -58,40 +58,40 @@ const cellStyles = StyleSheet.create({
     flex: 1,
   },
   emptyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
     backgroundColor: '#6b7280',
     alignSelf: 'flex-start',
   },
   emptyBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#fff',
   },
   countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   countBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#ffffff',
     textAlign: 'center',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   statusBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   baseText: {
     fontSize: 12,
@@ -325,7 +325,7 @@ export const CellContent = memo(function CellContent({
     case 'percentage':
       return (
         <ThemedText style={[cellStyles.baseText, style]} numberOfLines={2} ellipsizeMode="tail">
-          {typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : String(value)}
+          {typeof value === 'number' ? `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : String(value)}
         </ThemedText>
       )
 
@@ -338,9 +338,8 @@ export const CellContent = memo(function CellContent({
 
     case 'count-badge': {
       // Fixed-width default badge for count values (like itemsCount, taskCount)
-      // Matches web: bg-neutral-500 (#737373)
-      // Dark mode: lighter gray (#a3a3a3 neutral-400) for visibility
-      const countBgColor = colorScheme === 'dark' ? '#a3a3a3' : '#737373'
+      // Matches web: bg-neutral-500 (#737373) in both light and dark modes
+      const countBgColor = '#737373'
       return (
         <View style={[cellStyles.countBadge, { backgroundColor: countBgColor }]}>
           <Text style={cellStyles.countBadgeText}>
@@ -372,10 +371,10 @@ export const CellContent = memo(function CellContent({
         const displayLabel = stringValue
 
         return (
-          <View style={[cellStyles.statusBadge, { backgroundColor: badgeColors.bg }]}>
+          <View style={[cellStyles.statusBadge, { backgroundColor: badgeColors.bg, maxWidth: '100%' }]}>
             <Text
               style={[cellStyles.statusBadgeText, { color: badgeColors.text }]}
-              numberOfLines={2}
+              numberOfLines={1}
               ellipsizeMode="tail"
             >
               {displayLabel}
