@@ -3,20 +3,21 @@
  * Main form for creating and editing tasks
  */
 
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense, lazy } from 'react';
 import { View, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { FormActionBar } from '@/components/forms';
+import { FormCard } from '@/components/ui/form-section';
 import { spacing } from '@/constants/design-system';
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { TRUCK_SPOT } from '@/constants';
 
 // Import essential sections immediately
 import BasicInfoSection from './sections/BasicInfoSection';
-import RepresentativesSection from './sections/RepresentativesSection';
+import ResponsiblesSection from './sections/ResponsiblesSection';
 import DatesSection from './sections/DatesSection';
 import ServicesSection from './sections/ServicesSection';
 
@@ -69,11 +70,22 @@ export function TaskForm({
   const form = useFormContext();
   const { user } = useAuth();
   const [isReady, setIsReady] = useState(false);
-
   // Defer heavy sections loading
   useEffect(() => {
-    // Show essential sections immediately
     setIsReady(true);
+  }, []);
+
+  // Track layout changes OUTSIDE react-hook-form (matching web pattern).
+  // LayoutForm initial emissions are filtered by TruckLayoutSection, so
+  // only real user modifications reach here.
+  const [hasLayoutChanges, setHasLayoutChanges] = useState(false);
+  const modifiedLayoutStatesRef = useRef<Record<string, any>>({});
+  const modifiedLayoutSidesRef = useRef<Set<string>>(new Set());
+
+  const handleLayoutChange = useCallback((side: string, data: any) => {
+    modifiedLayoutStatesRef.current[side] = data;
+    modifiedLayoutSidesRef.current.add(side);
+    setHasLayoutChanges(true);
   }, []);
 
   // Check if form context exists
@@ -111,7 +123,7 @@ export function TaskForm({
   // Calculate truck length from layout sections for spot selector
   // Uses the same two-tier cabin logic as web and API
   const truckLength = useMemo(() => {
-    const layout = existingLayouts?.leftSideLayout || existingLayouts?.rightSideLayout;
+    const layout = existingLayouts?.left || existingLayouts?.right;
     if (!layout?.layoutSections || layout.layoutSections.length === 0) {
       return null;
     }
@@ -137,20 +149,50 @@ export function TaskForm({
   // In create mode, validate through taskCreateSchema (strict required fields).
   const handleFormSubmit = mode === 'edit'
     ? form.handleSubmit(async () => {
-        // Schema validated successfully (including auto-fill transforms).
-        // Pass raw values for change detection in processFormDataForSubmission.
+        // Schema validated — pass raw values for change detection in processFormDataForSubmission
         const data = form.getValues();
-        console.log('[TaskForm] Edit mode: schema validation passed');
-        console.log('[TaskForm] Form truck data:', JSON.stringify(data.truck));
-        console.log('[TaskForm] Form status:', data.status, '| paintId:', data.paintId);
+        // Attach layout changes (tracked outside form state, matching web)
+        if (hasLayoutChanges) {
+          data._layoutChanges = {
+            modifiedSides: Array.from(modifiedLayoutSidesRef.current),
+            states: { ...modifiedLayoutStatesRef.current },
+          };
+        }
         await onSubmit(data);
-      }, (errors) => {
-        console.error('[TaskForm] Edit mode: schema validation FAILED:', JSON.stringify(errors, null, 2));
+      }, (validationErrors) => {
+        console.error('[TaskForm] Edit validation failed:', Object.keys(validationErrors));
       })
     : form.handleSubmit(async (data: any) => {
-        console.log('[TaskForm] Submitting create form data:', data);
         await onSubmit(data);
       });
+
+  // === DEBUG: Log form state to diagnose submit button not enabling ===
+  const { isDirty, dirtyFields, isValid, isValidating, errors } = form.formState;
+  const dirtyFieldKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
+  const errorKeys = Object.keys(errors);
+  const prevDebugRef = useRef<string>('');
+
+  useEffect(() => {
+    if (mode !== 'edit') return;
+    const debugKey = JSON.stringify({ dirtyCount: dirtyFieldKeys.length, hasLayoutChanges, isValid, isValidating, errorCount: errorKeys.length });
+    if (debugKey !== prevDebugRef.current) {
+      prevDebugRef.current = debugKey;
+      console.log('[TaskForm DEBUG] ===== Form State Changed =====');
+      console.log('[TaskForm DEBUG] dirtyFields (excl. layouts):', dirtyFieldKeys.length > 0 ? dirtyFieldKeys : '(none)');
+      console.log('[TaskForm DEBUG] hasLayoutChanges:', hasLayoutChanges);
+      console.log('[TaskForm DEBUG] isValid:', isValid, '| isValidating:', isValidating);
+      console.log('[TaskForm DEBUG] errors:', errorKeys.length > 0 ? errorKeys : '(none)');
+      if (errorKeys.length > 0) {
+        errorKeys.forEach(key => {
+          const err = (errors as any)[key];
+          console.log(`[TaskForm DEBUG]   error[${key}]:`, err?.message || err?.type || JSON.stringify(err));
+        });
+      }
+      console.log('[TaskForm DEBUG] canSubmit would be:', dirtyFieldKeys.length > 0 || hasLayoutChanges);
+      console.log('[TaskForm DEBUG] ===============================');
+    }
+  }, [mode, dirtyFieldKeys.length, hasLayoutChanges, isValid, isValidating, errorKeys.length]);
+  // === END DEBUG ===
 
   if (!isReady) {
     return (
@@ -177,11 +219,11 @@ export function TaskForm({
         errors={form.formState.errors}
       />
 
-      {/* 2. Representatives */}
-      <RepresentativesSection
+      {/* 2. Responsibles */}
+      <ResponsiblesSection
         isSubmitting={isSubmitting}
         errors={form.formState.errors}
-        initialRepresentatives={task?.representatives}
+        initialResponsibles={task?.responsibles}
         task={task}
       />
 
@@ -207,6 +249,7 @@ export function TaskForm({
             isSubmitting={isSubmitting}
             errors={form.formState.errors}
             existingLayouts={existingLayouts}
+            onLayoutChange={handleLayoutChange}
           />
         )}
       </Suspense>
@@ -214,15 +257,17 @@ export function TaskForm({
       {/* 6. Truck Spot */}
       <Suspense fallback={<SectionPlaceholder title="Carregando local..." />}>
         {canViewTruckSpot && truckId && (
-          <SpotSelector
-            truckLength={truckLength}
-            currentSpot={(truckData?.spot as TRUCK_SPOT | null) || null}
-            truckId={truckId}
-            onSpotChange={(spot) => {
-              form.setValue('truck.spot', spot, { shouldDirty: true });
-            }}
-            disabled={isSubmitting}
-          />
+          <FormCard title="Local do Caminhão" icon="IconMapPin">
+            <SpotSelector
+              truckLength={truckLength}
+              currentSpot={(truckData?.spot as TRUCK_SPOT | null) || null}
+              truckId={truckId}
+              onSpotChange={(spot) => {
+                form.setValue('truck.spot', spot, { shouldDirty: true });
+              }}
+              disabled={isSubmitting}
+            />
+          </FormCard>
         )}
       </Suspense>
 
@@ -277,11 +322,20 @@ export function TaskForm({
       </ScrollView>
 
       {/* Form Action Bar */}
+      {/* In edit mode, check form dirty fields (excluding 'layouts' which is tracked separately)
+          OR layout changes (tracked outside form state, matching web pattern). */}
       <FormActionBar
         onCancel={onCancel}
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
-        canSubmit={mode === 'edit' ? form.formState.isDirty : form.formState.isValid}
+        canSubmit={mode === 'edit'
+          ? (() => {
+              // Exclude 'layouts' from dirty check — layouts are tracked separately via hasLayoutChanges
+              const dirtyKeys = Object.keys(form.formState.dirtyFields).filter(k => k !== 'layouts');
+              return dirtyKeys.length > 0 || hasLayoutChanges;
+            })()
+          : form.formState.isValid
+        }
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />

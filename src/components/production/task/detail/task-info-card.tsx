@@ -8,11 +8,11 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 
 import type { Task, Truck } from '../../../../types';
-import type { Representative } from '@/types/representative';
+import type { Responsible } from '@/types/responsible';
 import {
-  REPRESENTATIVE_ROLE_LABELS,
-  RepresentativeRole,
-} from '@/types/representative';
+  RESPONSIBLE_ROLE_LABELS,
+  ResponsibleRole,
+} from '@/types/responsible';
 import { TaskStatusBadge } from "../list/task-status-badge";
 import { formatChassis } from "@/utils";
 import { getSpotLabel } from "@/types/garage";
@@ -57,7 +57,7 @@ interface TaskInfoCardProps {
       name: string;
       phone: string;
     };
-    representatives?: Representative[];
+    responsibles?: Responsible[];
     details?: string;
   };
   truckDimensions?: {
@@ -66,11 +66,11 @@ interface TaskInfoCardProps {
   } | null;
   /** Whether user can view financial fields (invoiceTo, commission). Defaults to false for safety. */
   canViewFinancialFields?: boolean;
-  /** Whether user can view restricted fields (negotiatingWith, forecastDate, representatives). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
+  /** Whether user can view restricted fields (negotiatingWith, forecastDate, responsibles). Only ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER. Defaults to false for safety. */
   canViewRestrictedFields?: boolean;
   /** Whether user can view truck details (chassisNumber, category, implementType). Hidden from PRODUCTION users except team leaders. Defaults to true. */
   canViewTruckDetails?: boolean;
-  /** Whether the current user is from the Designer sector. Used to filter representatives (MARKETING only, COMMERCIAL fallback). */
+  /** Whether the current user is from the Designer sector. Used to filter responsibles (MARKETING only, COMMERCIAL fallback). */
   isDesignerUser?: boolean;
 }
 
@@ -116,16 +116,16 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
   }, []);
 
 
-  // Filter representatives: Designers only see MARKETING reps (fallback to COMMERCIAL)
-  const visibleRepresentatives = React.useMemo(() => {
-    if (!task.representatives || task.representatives.length === 0) return [];
+  // Filter responsibles: Designers only see MARKETING responsibles (fallback to COMMERCIAL)
+  const visibleResponsibles = React.useMemo(() => {
+    if (!task.responsibles || task.responsibles.length === 0) return [];
     if (isDesignerUser) {
-      const marketing = task.representatives.filter(r => r.role === RepresentativeRole.MARKETING);
-      return marketing.length > 0 ? marketing : task.representatives.filter(r => r.role === RepresentativeRole.COMMERCIAL);
+      const marketing = task.responsibles.filter(r => r.role === ResponsibleRole.MARKETING);
+      return marketing.length > 0 ? marketing : task.responsibles.filter(r => r.role === ResponsibleRole.COMMERCIAL);
     }
-    return task.representatives;
-  }, [task.representatives, isDesignerUser]);
-  const hasRepresentatives = visibleRepresentatives.length > 0;
+    return task.responsibles;
+  }, [task.responsibles, isDesignerUser]);
+  const hasResponsibles = visibleResponsibles.length > 0;
 
   return (
     <Card style={styles.card}>
@@ -151,31 +151,31 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         )}
 
-        {/* Representatives - Each displayed as its own field (like web) */}
-        {canViewRestrictedFields && hasRepresentatives && visibleRepresentatives.map((rep) => (
-          <View key={rep.id} style={styles.infoSection}>
+        {/* Responsibles - Each displayed as its own field (like web) */}
+        {canViewRestrictedFields && hasResponsibles && visibleResponsibles.map((resp) => (
+          <View key={resp.id} style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconUser size={18} color={colors.mutedForeground} />
               <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Representante {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
+                Responsável {RESPONSIBLE_ROLE_LABELS[resp.role as ResponsibleRole]}
               </ThemedText>
             </View>
-            <View style={[styles.infoCard, styles.representativeRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{rep.name}</ThemedText>
-              {rep.phone && (
-                <View style={styles.representativePhoneActions}>
+            <View style={[styles.infoCard, styles.responsibleRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{resp.name}</ThemedText>
+              {resp.phone && (
+                <View style={styles.responsiblePhoneActions}>
                   <TouchableOpacity
                     style={styles.phoneButton}
-                    onPress={() => handleCallPhone(rep.phone)}
+                    onPress={() => handleCallPhone(resp.phone)}
                     activeOpacity={0.7}
                   >
                     <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
-                      {formatPhoneDisplay(rep.phone)}
+                      {formatPhoneDisplay(resp.phone)}
                     </ThemedText>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.whatsappIconButton}
-                    onPress={() => handleWhatsApp(rep.phone)}
+                    onPress={() => handleWhatsApp(resp.phone)}
                     activeOpacity={0.7}
                   >
                     <IconBrandWhatsapp size={20} color="#16a34a" />
@@ -186,8 +186,8 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
           </View>
         ))}
 
-        {/* Legacy Negotiating With Contact - Fallback for old data without representatives */}
-        {canViewRestrictedFields && !hasRepresentatives && task.negotiatingWith && (
+        {/* Legacy Negotiating With Contact - Fallback for old data without responsibles */}
+        {canViewRestrictedFields && !hasResponsibles && task.negotiatingWith && (
           <View style={styles.infoSection}>
             <View style={styles.infoHeader}>
               <IconUser size={18} color={colors.mutedForeground} />
@@ -195,10 +195,10 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
                 Negociando com
               </ThemedText>
             </View>
-            <View style={[styles.infoCard, styles.representativeRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <View style={[styles.infoCard, styles.responsibleRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
               <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{task.negotiatingWith.name}</ThemedText>
               {task.negotiatingWith.phone && (
-                <View style={styles.representativePhoneActions}>
+                <View style={styles.responsiblePhoneActions}>
                   <TouchableOpacity
                     style={styles.phoneButton}
                     onPress={() => handleCallPhone(task.negotiatingWith!.phone)}
@@ -451,12 +451,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 8,
   },
-  representativeRow: {
+  responsibleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  representativePhoneActions: {
+  responsiblePhoneActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,

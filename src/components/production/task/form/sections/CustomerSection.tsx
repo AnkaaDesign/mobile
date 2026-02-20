@@ -1,7 +1,7 @@
 /**
  * Customer Section Component
  * Handles customer and invoice information
- * Note: Representatives are now in a separate RepresentativesSection (matching web structure)
+ * Note: Responsibles are now in a separate ResponsiblesSection (matching web structure)
  */
 
 import React from 'react';

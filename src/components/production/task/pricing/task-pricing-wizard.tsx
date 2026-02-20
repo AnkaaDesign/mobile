@@ -32,6 +32,7 @@ import { useTaskPricingByTask } from "@/hooks/useTaskPricing";
 import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SERVICE_ORDER_TYPE } from "@/constants/enums";
+import { RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { formatCurrency } from "@/utils";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -131,6 +132,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
           name: true,
         },
       },
+      responsibles: true,
     },
   });
   const task = taskResponse?.data;
@@ -173,6 +175,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         simultaneousTasks: null,
         discountReference: null,
         invoicesToCustomerIds: [],
+        responsibleId: null,
       },
     },
     mode: "onChange",
@@ -207,6 +210,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     setValue("pricing.simultaneousTasks", p.simultaneousTasks ?? null);
     setValue("pricing.discountReference", p.discountReference ?? null);
     setValue("pricing.invoicesToCustomerIds", p.invoicesToCustomers?.map((c: any) => c.id) || []);
+    setValue("pricing.responsibleId", p.responsibleId ?? null);
 
     if (p.items && p.items.length > 0) {
       setValue(
@@ -446,6 +450,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                   canEditStatus={canEditStatus}
                   layoutFiles={layoutFiles}
                   onLayoutFilesChange={setLayoutFiles}
+                  taskResponsibles={task?.responsibles}
                 />
               </CardContent>
             </Card>
@@ -487,7 +492,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                       corporateName: task.customer.corporateName ?? undefined,
                       fantasyName: task.customer.fantasyName ?? undefined,
                     } : undefined,
-                    representatives: task.representatives,
+                    responsibles: task.responsibles,
                   } : undefined}
                 />
               </CardContent>
@@ -508,9 +513,10 @@ interface Step1Props {
   canEditStatus: boolean;
   layoutFiles: FilePickerItem[];
   onLayoutFilesChange: (files: FilePickerItem[]) => void;
+  taskResponsibles?: Array<{ id: string; name: string; role: string }>;
 }
 
-function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange }: Step1Props) {
+function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange, taskResponsibles }: Step1Props) {
   const { colors } = useTheme();
   const { setValue, getValues } = useFormContext();
   const [validityPeriod, setValidityPeriod] = useState<string>("");
@@ -801,6 +807,28 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
           </View>
         </View>
       </View>
+
+      {/* Budget Responsible */}
+      {taskResponsibles && taskResponsibles.length > 0 && (
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Responsável do Orçamento</ThemedText>
+          <Combobox
+            value={getValues("pricing.responsibleId") || ""}
+            onValueChange={(v) => setValue("pricing.responsibleId", v || null)}
+            options={taskResponsibles
+              .filter((r: any) => !r.id.startsWith('temp-'))
+              .map((r: any) => ({
+                value: r.id,
+                label: `${r.name} (${RESPONSIBLE_ROLE_LABELS[r.role as keyof typeof RESPONSIBLE_ROLE_LABELS] || r.role})`,
+              }))}
+            placeholder="Selecione o responsável"
+            searchable={false}
+            avoidKeyboard={false}
+            onOpen={() => {}}
+            onClose={() => {}}
+          />
+        </View>
+      )}
 
       {/* Layout Approved */}
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>

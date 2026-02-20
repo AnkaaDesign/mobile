@@ -67,7 +67,7 @@ export function useTaskDetailMinimalInclude(user: any) {
       },
     },
     ...(canViewRestrictedFields && {
-      representatives: {
+      responsibles: {
         select: {
           id: true,
           name: true,
@@ -128,7 +128,7 @@ export function useTaskDetailFullInclude(user: any) {
       },
     },
     ...(canViewRestrictedFields && {
-      representatives: {
+      responsibles: {
         select: {
           id: true,
           name: true,

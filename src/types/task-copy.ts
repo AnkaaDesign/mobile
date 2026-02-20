@@ -18,7 +18,7 @@ export type CopyableTaskField =
   | 'term'
   | 'forecastDate'
   | 'commission'
-  | 'representatives'
+  | 'responsibles'
   | 'customerId'
   | 'pricingId'
   | 'paintId'
@@ -49,7 +49,7 @@ export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
   'term',
   'forecastDate',
   'commission',
-  'representatives',
+  'responsibles',
   'customerId',
   'pricingId',
   'paintId',
@@ -77,7 +77,7 @@ export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'
   entryDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   term: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   forecastDate: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
-  representatives: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  responsibles: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   customerId: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
   // Commission - disabled for Financial, Designer, Logistic, Warehouse
@@ -205,9 +205,9 @@ export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMet
     isShared: false,
     createNewInstances: false,
   },
-  representatives: {
-    label: 'Representantes',
-    description: 'Representantes associados a tarefa',
+  responsibles: {
+    label: 'Responsáveis',
+    description: 'Responsáveis associados a tarefa',
     category: 'Comercial',
     isShared: true,
     createNewInstances: false,

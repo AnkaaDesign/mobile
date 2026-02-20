@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,30 +10,15 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize, borderRadius } from '@/constants/design-system';
 import {
-  RepresentativeRole,
-  RepresentativeRowData,
-} from '@/types/representative';
-import { RepresentativeRow } from './RepresentativeRow';
+  ResponsibleRole,
+  ResponsibleRowData,
+} from '@/types/responsible';
+import { ResponsibleRow } from './ResponsibleRow';
 
-interface CustomerOption {
-  id: string;
-  name: string;
-}
-
-interface InvoiceToCustomer {
-  id: string;
-  fantasyName?: string;
-  corporateName?: string;
-}
-
-interface RepresentativeManagerProps {
-  customerId?: string | null;
-  customerName?: string; // Display name for primary customer
-  invoiceToId?: string | null; // Billing customer (legacy single)
-  invoiceToName?: string; // Display name for billing customer (legacy single)
-  invoiceToCustomers?: InvoiceToCustomer[]; // Multiple billing customers from pricing
-  value: RepresentativeRowData[];
-  onChange: (rows: RepresentativeRowData[]) => void;
+interface ResponsibleManagerProps {
+  companyId?: string | null;
+  value: ResponsibleRowData[];
+  onChange: (rows: ResponsibleRowData[]) => void;
   disabled?: boolean;
   readOnly?: boolean;
   minRows?: number;
@@ -41,26 +26,22 @@ interface RepresentativeManagerProps {
   label?: string;
   error?: string;
   helperText?: string;
-  allowedRoles?: RepresentativeRole[];
+  allowedRoles?: ResponsibleRole[];
   required?: boolean;
 }
 
 // Generate a unique temporary ID for new rows (matches web format: temp-{timestamp}-{random})
 const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
-  customerId,
-  customerName,
-  invoiceToId,
-  invoiceToName,
-  invoiceToCustomers,
+export const ResponsibleManager: React.FC<ResponsibleManagerProps> = ({
+  companyId,
   value = [],
   onChange,
   disabled = false,
   readOnly = false,
   minRows = 0,
   maxRows = 10,
-  label = 'Representantes',
+  label = 'Responsáveis',
   error,
   helperText,
   allowedRoles,
@@ -68,76 +49,56 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  // Build customer options for the dropdown when creating new representatives
-  const customerOptions: CustomerOption[] = useMemo(() => {
-    const options: CustomerOption[] = [];
-    if (customerId && customerName) {
-      options.push({ id: customerId, name: customerName });
-    }
-    // Support multiple invoiceTo customers from pricing
-    if (invoiceToCustomers && invoiceToCustomers.length > 0) {
-      invoiceToCustomers.forEach(c => {
-        if (c.id !== customerId) {
-          options.push({ id: c.id, name: c.fantasyName || c.corporateName || 'Cliente' });
-        }
-      });
-    } else if (invoiceToId && invoiceToName && invoiceToId !== customerId) {
-      // Legacy single invoiceTo fallback
-      options.push({ id: invoiceToId, name: invoiceToName });
-    }
-    return options;
-  }, [customerId, customerName, invoiceToId, invoiceToName, invoiceToCustomers]);
-
   // Ensure at least minRows are always present (matches web behavior)
   useEffect(() => {
     if (value.length < minRows) {
-      const emptyRows: RepresentativeRowData[] = Array.from(
+      const emptyRows: ResponsibleRowData[] = Array.from(
         { length: minRows - value.length },
         (_, i) => ({
           id: generateTempId(),
           name: '',
           phone: '',
           email: null,
-          role: allowedRoles?.[0] || RepresentativeRole.COMMERCIAL,
+          role: allowedRoles?.[0] || ResponsibleRole.COMMERCIAL,
           isActive: true,
           isNew: true,
           isEditing: false, // Start with combobox visible, not edit mode (matches web)
           isSaving: false,
           error: null,
-          customerId: customerId || null, // Default to primary customer
+          companyId: null, // User explicitly selects via CustomerCombobox
         })
       );
       onChange([...value, ...emptyRows]);
     }
-  }, [value.length, minRows, onChange, allowedRoles, customerId]);
+  }, [value.length, minRows, onChange, allowedRoles, companyId]);
 
-  // Add a new representative row
+  // Add a new responsible row
   const handleAddRow = useCallback(() => {
     if (value.length >= maxRows) {
-      Alert.alert('Limite atingido', `Máximo de ${maxRows} representantes permitido`);
+      Alert.alert('Limite atingido', `Máximo de ${maxRows} responsáveis permitido`);
       return;
     }
 
-    const newRow: RepresentativeRowData = {
+    const newRow: ResponsibleRowData = {
       id: generateTempId(),
       name: '',
       phone: '',
       email: null,
-      role: allowedRoles?.[0] || RepresentativeRole.COMMERCIAL,
+      role: allowedRoles?.[0] || ResponsibleRole.COMMERCIAL,
       isActive: true,
       isNew: true,
       isEditing: false, // Start with combobox visible, not edit mode (matches web)
       isSaving: false,
       error: null,
-      customerId: customerId || null, // Default to primary customer
+      companyId: null, // User explicitly selects via CustomerCombobox
     };
 
     onChange([...value, newRow]);
-  }, [value, maxRows, allowedRoles, onChange, customerId]);
+  }, [value, maxRows, allowedRoles, onChange, companyId]);
 
   // Update a specific row (using index like web version)
   const handleUpdateRow = useCallback(
-    (index: number, updates: Partial<RepresentativeRowData>) => {
+    (index: number, updates: Partial<ResponsibleRowData>) => {
       const updatedRows = value.map((row, i) => {
         if (i === index) {
           return { ...row, ...updates, error: null };
@@ -153,7 +114,7 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
   const handleRemoveRow = useCallback(
     (index: number) => {
       if (value.length <= minRows) {
-        Alert.alert('Mínimo de representantes', `Você deve ter pelo menos ${minRows} representante(s)`);
+        Alert.alert('Mínimo de responsáveis', `Você deve ter pelo menos ${minRows} responsável(is)`);
         return;
       }
       const updatedRows = value.filter((_, i) => i !== index);
@@ -166,18 +127,15 @@ export const RepresentativeManager: React.FC<RepresentativeManagerProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Representative rows */}
+      {/* Responsible rows */}
       {value.length > 0 ? (
         <View style={styles.rowsContainer}>
           {value.map((row, index) => (
-            <RepresentativeRow
+            <ResponsibleRow
               key={row.id}
               row={row}
               index={index}
-              customerId={customerId || ''}
-              invoiceToId={invoiceToId || ''}
-              invoiceToCustomerIds={invoiceToCustomers?.map(c => c.id)}
-              customerOptions={customerOptions}
+              companyId={companyId || ''}
               onUpdate={(updates) => handleUpdateRow(index, updates)}
               onRemove={() => handleRemoveRow(index)}
               disabled={disabled}

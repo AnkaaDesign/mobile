@@ -137,7 +137,7 @@ export default function ScheduleDetailsScreen() {
   const minimalInclude = useTaskDetailMinimalInclude(user);
   const fullInclude = useTaskDetailFullInclude(user);
 
-  // Phase 1: Fast query with minimal includes (sector, customer, truck, serviceOrders, representatives)
+  // Phase 1: Fast query with minimal includes (sector, customer, truck, serviceOrders, responsibles)
   const { data: minimalResponse, isLoading, error, refetch } = useTaskDetail(id as string, {
     include: minimalInclude,
     staleTime: 1000 * 60 * 10,
@@ -384,7 +384,7 @@ export default function ScheduleDetailsScreen() {
             ...task,
             truck: task.truck,
             customer: task.customer,
-            representatives: (task as any).representatives,
+            responsibles: (task as any).responsibles,
             details: task.details ?? "",
           }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} />
 
@@ -425,7 +425,12 @@ export default function ScheduleDetailsScreen() {
               pricing={(task as any).pricing}
               customerId={task.customer?.id}
               customerName={task.customer?.corporateName || task.customer?.fantasyName}
-              contactName={(task as any).negotiatingWith?.name}
+              contactName={
+                (task as any).pricing?.responsible?.name
+                || (task as any).responsibles?.find((r: any) => r.role === "COMMERCIAL")?.name
+                || (task as any).responsibles?.[0]?.name
+                || (task as any).negotiatingWith?.name
+              }
               termDate={task.term}
               serialNumber={(task as any).serialNumber}
               plate={(task as any).truck?.plate}

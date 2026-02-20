@@ -766,7 +766,7 @@ const TimelineItem = React.memo(({
     // Per-field permission filtering (matching web's inline filtering)
     const alwaysHiddenFields = ["statusOrder", "colorOrder", "services", "serviceOrders", "serviceOrderIds"];
     const financialFieldsList = ["pricingId", "budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
-    const restrictedFieldsList = ["forecastDate", "representatives", "representativeIds", "negotiatingWith"];
+    const restrictedFieldsList = ["forecastDate", "responsibles", "responsibleIds", "negotiatingWith"];
     const invoiceToFieldsList = ["invoiceTo", "invoiceToId"];
 
     const canViewFinancial =
@@ -1263,7 +1263,7 @@ export function TaskWithServiceOrdersChangelog({
         extractUserFromNegotiating(log.newValue);
       }
 
-      // Note: representatives/representativeIds are NOT added to userIds (matching web)
+      // Note: responsibles/responsibleIds are NOT added to userIds (matching web)
     });
 
     return {

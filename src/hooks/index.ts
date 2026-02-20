@@ -105,7 +105,7 @@ export * from "./use-entity-details";
 // Other Module Hooks
 // =====================================================
 export * from "./useCustomer";
-export * from "./useRepresentative";
+// export * from "./useResponsible"; // Removed - migrated to use-responsibles-infinite-mobile
 // export * from "./useTruck"; // Disabled - file removed
 export * from "./useLayout";
 
@@ -136,7 +136,7 @@ export * from "./use-my-bonuses-with-live";
 export * from "./use-my-borrows-infinite-mobile";
 export * from "./use-change-logs-infinite-mobile";
 export * from "./use-customers-infinite-mobile";
-export * from "./use-representatives-infinite-mobile";
+export * from "./use-responsibles-infinite-mobile";
 export * from "./use-external-withdrawals-infinite-mobile";
 export * from "./use-files-infinite-mobile";
 export * from "./use-holidays-infinite-mobile";

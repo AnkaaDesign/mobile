@@ -144,6 +144,13 @@ export const bonusService = {
   getMyLiveBonus: (params?: BonusPayrollParams) =>
     apiClient.get<{ success: boolean; message: string; data: any | null }>('/bonuses/my-live-bonus', { params }),
 
+  /**
+   * Get period task stats for bonus simulation (no admin privileges required)
+   * Returns lightweight task counts and averages without Secullum
+   */
+  getMyPeriodTaskStats: (year: number, month: number) =>
+    apiClient.get<any>(`/bonuses/my-period-stats/${year}/${month}`),
+
   // =====================================================
   // Live Bonus Calculation Endpoints (NEW - Clean Implementation)
   // =====================================================

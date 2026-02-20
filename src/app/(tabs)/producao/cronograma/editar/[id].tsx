@@ -62,7 +62,7 @@ export default function EditScheduleScreen() {
           fantasyName: true,
         }
       },
-      representatives: {
+      responsibles: {
         select: {
           id: true,
           name: true,
@@ -240,34 +240,61 @@ export default function EditScheduleScreen() {
     router.replace(detailRoute as any);
   };
 
+  /**
+   * Deep sanitize data before sending to the API:
+   * - Convert objects with numeric keys back to proper arrays
+   *   (react-hook-form field arrays can lose their Array prototype)
+   * - Remove undefined values
+   */
+  const deepSanitizeForApi = (obj: any): any => {
+    if (obj === null || obj === undefined) return obj;
+    if (obj instanceof Date) return obj;
+    if (Array.isArray(obj)) return obj.map(deepSanitizeForApi);
+    if (typeof obj === 'object') {
+      const keys = Object.keys(obj);
+      // Check if this object should be an array (all numeric keys)
+      if (keys.length > 0 && keys.every(k => !isNaN(Number(k)))) {
+        return keys
+          .sort((a, b) => Number(a) - Number(b))
+          .map(k => deepSanitizeForApi(obj[k]));
+      }
+      // Regular object - recurse into each value
+      const result: any = {};
+      for (const key of keys) {
+        if (obj[key] !== undefined) {
+          result[key] = deepSanitizeForApi(obj[key]);
+        }
+      }
+      return result;
+    }
+    return obj;
+  };
+
   const handleSubmit = async (data: any) => {
     if (!id) return;
 
     try {
-      console.log('[EditSchedule] Starting task update for id:', id);
-      console.log('[EditSchedule] Raw form data:', JSON.stringify(data, null, 2));
-
       // Process form data: filter empty items and prepare for API
       const processedData = processFormDataForSubmission(data, task);
-      console.log('[EditSchedule] Processed data:', JSON.stringify(processedData, null, 2));
+
+      // Deep sanitize: convert any remaining object-with-numeric-keys back to arrays
+      // Safety net for react-hook-form field arrays that lose their Array prototype
+      const sanitizedData = deepSanitizeForApi(processedData);
+
+      console.log('[EditSchedule] Changed fields:', Object.keys(sanitizedData));
 
       // Check if there are any actual changes
-      if (Object.keys(processedData).length === 0) {
-        console.log('[EditSchedule] No changes detected, skipping update');
+      if (Object.keys(sanitizedData).length === 0) {
         Alert.alert("Nenhuma alteração", "Nenhuma alteração foi detectada.");
         return;
       }
 
-      const result = await updateAsync({ id, data: processedData });
-      console.log('[EditSchedule] API result:', result);
+      const result = await updateAsync({ id, data: sanitizedData });
 
-      console.log('[EditSchedule] API response:', { success: result.success, message: result.message, hasData: !!result.data });
       if (result.success) {
-        console.log('[EditSchedule] Update successful, navigating to detail page');
         handleNavigateBack();
       } else {
-        // API returned failure
-        console.error('[EditSchedule] Task update failed:', result);
+        console.error('[EditSchedule] Task update failed:', result?.message);
         Alert.alert(
           "Erro ao atualizar tarefa",
           result?.message || "Não foi possível atualizar a tarefa. Tente novamente."
@@ -275,7 +302,6 @@ export default function EditScheduleScreen() {
       }
     } catch (error: any) {
       console.error("[EditSchedule] Error updating task:", error);
-      // API client already shows error alert
     }
   };
 
@@ -390,7 +416,6 @@ export default function EditScheduleScreen() {
 
     for (const field of scalarFields) {
       if (formData[field] !== undefined && hasChanged(formData[field], originalTask[field])) {
-        console.log(`[processFormData] Scalar changed: ${field}`, { current: formData[field], original: originalTask[field] });
         processed[field] = formData[field];
       }
     }
@@ -430,11 +455,44 @@ export default function EditScheduleScreen() {
         currTruck[f] = formData.truck?.[f] ?? null;
         origTruck[f] = (orig as any)[f] ?? null;
       }
-      console.log('[processFormData] Truck comparison:', { current: currTruck, original: origTruck, changed: hasChanged(currTruck, origTruck) });
       if (hasChanged(currTruck, origTruck)) {
-        console.log('[processFormData] Truck changed, including in payload');
-        processed.truck = formData.truck;
+        // Only send form-relevant truck fields, not the entire form object
+        processed.truck = {};
+        for (const f of truckFields) {
+          processed.truck[f] = formData.truck?.[f] ?? null;
+        }
       }
+    }
+
+    // Process layout changes (tracked outside form state, matching web pattern)
+    // Layout data is attached as _layoutChanges by TaskForm's handleFormSubmit
+    if (formData._layoutChanges) {
+      const { modifiedSides, states } = formData._layoutChanges;
+      if (modifiedSides && modifiedSides.length > 0) {
+        // Start with existing truck data or create new
+        const consolidatedTruck: any = processed.truck || {};
+
+        for (const side of modifiedSides) {
+          const sideData = states[side];
+          if (sideData?.layoutSections?.length > 0) {
+            // Map internal side names to API field names (matching web)
+            const layoutFieldName = side === 'left' ? 'leftSideLayout'
+              : side === 'right' ? 'rightSideLayout'
+              : 'backSideLayout';
+
+            consolidatedTruck[layoutFieldName] = {
+              height: sideData.height,
+              layoutSections: sideData.layoutSections,
+              photoId: sideData.photoId || null,
+            };
+          }
+        }
+
+        processed.truck = consolidatedTruck;
+        console.log('[processFormData] Layout changes consolidated into truck:', modifiedSides);
+      }
+      // Clean up the temporary field
+      delete formData._layoutChanges;
     }
 
     // Process paintIds (logo paints)
@@ -449,32 +507,44 @@ export default function EditScheduleScreen() {
     // Process serviceOrders - ensure array, filter empty and check for changes
     if (formData.serviceOrders !== undefined) {
       const filteredOrders = filterServiceOrders(ensureArray(formData.serviceOrders));
+      // Normalize both sides consistently to avoid false positives
+      // (null vs undefined vs "" must be treated the same)
+      const normalizeSOField = (val: any) => (val === '' || val === undefined || val === null) ? null : val;
       const origOrders = (originalTask.serviceOrders || []).map((s: any) => ({
         id: s.id,
         description: s.description,
-        status: s.status,
+        status: s.status || 'PENDING',
         statusOrder: s.statusOrder,
         type: s.type,
-        assignedToId: s.assignedToId,
-        observation: s.observation,
+        assignedToId: normalizeSOField(s.assignedToId),
+        observation: normalizeSOField(s.observation),
       }));
 
       // Compare filtered orders with original (ignoring non-essential fields)
       const currForCompare = filteredOrders.map((s: any) => ({
         id: s.id,
         description: s.description,
-        status: s.status,
+        status: s.status || 'PENDING',
         statusOrder: s.statusOrder,
         type: s.type,
-        assignedToId: s.assignedToId,
-        observation: s.observation,
+        assignedToId: normalizeSOField(s.assignedToId),
+        observation: normalizeSOField(s.observation),
       }));
 
       if (JSON.stringify(currForCompare) !== JSON.stringify(origOrders)) {
-        processed.serviceOrders = filteredOrders;
-        console.log('[EditSchedule] Service orders changed:', {
-          original: origOrders.length,
-          filtered: filteredOrders.length,
+        // Clean service orders: only send API-relevant fields
+        processed.serviceOrders = filteredOrders.map((s: any) => {
+          const clean: any = {
+            description: s.description,
+            status: s.status || 'PENDING',
+            statusOrder: s.statusOrder,
+            type: s.type,
+            assignedToId: s.assignedToId ?? null,
+            observation: s.observation ?? null,
+          };
+          // Preserve existing IDs (not temp IDs)
+          if (s.id && !s.id.startsWith('temp-')) clean.id = s.id;
+          return clean;
         });
       }
     }
@@ -488,7 +558,6 @@ export default function EditScheduleScreen() {
       if (currPricing.items) {
         currPricing.items = filterPricingItems(ensureArray(currPricing.items)).map((item: any) => ({
           ...item,
-          // Coerce amount to number (handles formatted currency strings)
           amount: ensureNumber(item.amount) ?? 0,
         }));
       }
@@ -499,9 +568,9 @@ export default function EditScheduleScreen() {
       currPricing.total = ensureNumber(currPricing.total);
 
       // Ensure invoicesToCustomerIds is a proper array
-      if (currPricing.invoicesToCustomerIds) {
-        currPricing.invoicesToCustomerIds = ensureArray(currPricing.invoicesToCustomerIds);
-      }
+      currPricing.invoicesToCustomerIds = currPricing.invoicesToCustomerIds
+        ? ensureArray(currPricing.invoicesToCustomerIds)
+        : [];
 
       // Build comparable shapes for both current and original pricing
       // Strip non-comparable fields (id, layoutFile, invoicesToCustomers) and normalize
@@ -512,11 +581,24 @@ export default function EditScheduleScreen() {
         'layoutFileId', 'simultaneousTasks', 'discountReference',
       ];
 
+      // Numeric pricing fields that must be coerced to 0 when null/undefined
+      // to avoid false positives (form initialData uses || 0, API may return null)
+      const numericPricingFields = ['subtotal', 'discountValue', 'total', 'guaranteeYears', 'customForecastDays', 'simultaneousTasks'];
+
       const buildComparablePricing = (p: any) => {
         if (!p) return null;
         const comparable: any = {};
         for (const f of comparableFields) {
-          comparable[f] = p[f] ?? null;
+          let val = p[f] ?? null;
+          // Normalize numeric fields: null/undefined/0 → 0 (matches form initialData || 0)
+          if (numericPricingFields.includes(f)) {
+            val = ensureNumber(val) ?? 0;
+          }
+          // Normalize string fields: empty string → null
+          if (typeof val === 'string' && val.trim() === '') {
+            val = null;
+          }
+          comparable[f] = val;
         }
         // Normalize items for comparison (only id, description, observation, amount)
         comparable.items = (p.items || [])
@@ -534,11 +616,64 @@ export default function EditScheduleScreen() {
 
       const currComparable = buildComparablePricing(currPricing);
       const origComparable = buildComparablePricing(origPricing);
+
+      // Normalize date fields to ISO strings for stable comparison
+      // (avoids Date object vs string mismatches)
+      for (const dateField of ['expiresAt', 'downPaymentDate']) {
+        for (const obj of [currComparable, origComparable]) {
+          if (obj && obj[dateField]) {
+            const d = obj[dateField] instanceof Date ? obj[dateField] : new Date(obj[dateField]);
+            obj[dateField] = isNaN(d.getTime()) ? null : d.toISOString();
+          }
+        }
+      }
+
       const pricingChanged = hasChanged(currComparable, origComparable);
-      console.log('[processFormData] Pricing comparison:', { changed: pricingChanged, currItems: currComparable?.items?.length, origItems: origComparable?.items?.length });
+
       if (pricingChanged) {
-        console.log('[processFormData] Pricing diff:', { curr: JSON.stringify(currComparable), orig: JSON.stringify(origComparable) });
-        processed.pricing = currPricing;
+        // DEBUG: Log what differs in pricing to detect false positives
+        if (currComparable && origComparable) {
+          const diffs: string[] = [];
+          for (const key of Object.keys(currComparable)) {
+            const c = JSON.stringify(currComparable[key]);
+            const o = JSON.stringify(origComparable[key]);
+            if (c !== o) diffs.push(`${key}: ${o} → ${c}`);
+          }
+          console.log('[processFormData] Pricing diffs:', diffs.length > 0 ? diffs : 'none (deep object diff)');
+        }
+        // Guard: when original had no pricing, only send if user actually added content
+        // (not just the default empty template)
+        if (!origPricing) {
+          const items = ensureArray(currPricing.items);
+          const hasNonEmptyItems = items.some((item: any) => item.description && item.description.trim() !== '');
+          const hasNonDefaultValues = (ensureNumber(currPricing.subtotal) ?? 0) > 0 ||
+            (ensureNumber(currPricing.total) ?? 0) > 0 ||
+            currPricing.paymentCondition || currPricing.guaranteeYears ||
+            currPricing.customPaymentText || currPricing.customGuaranteeText ||
+            currPricing.customForecastDays || currPricing.simultaneousTasks ||
+            currPricing.layoutFileId;
+          if (!hasNonEmptyItems && !hasNonDefaultValues) {
+            console.log('[processFormData] Pricing: default template unchanged, skipping');
+          } else {
+            processed.pricing = currPricing;
+          }
+        } else {
+          processed.pricing = currPricing;
+        }
+
+        // Clean pricing payload: strip relation objects and non-API fields
+        if (processed.pricing) {
+          const { id: _pricingId, layoutFile: _layoutFile, invoicesToCustomers: _invoicesToCustomers, ...cleanPricing } = processed.pricing;
+          // Clean items: strip shouldSync, clean temp IDs
+          if (cleanPricing.items) {
+            cleanPricing.items = ensureArray(cleanPricing.items).map((item: any) => {
+              const { shouldSync: _shouldSync, ...cleanItem } = item;
+              if (cleanItem.id?.startsWith('temp-')) delete cleanItem.id;
+              return cleanItem;
+            });
+          }
+          processed.pricing = cleanPricing;
+        }
       }
     }
 
@@ -555,8 +690,11 @@ export default function EditScheduleScreen() {
 
       const obsChanged = currDescription !== origDescription || JSON.stringify(currFileIds) !== JSON.stringify(origFileIds);
       if (obsChanged) {
-        console.log('[processFormData] Observation changed:', { currDescription, origDescription, currFileIds, origFileIds });
-        processed.observation = formData.observation;
+        // Only send description and fileIds, not the files relation objects
+        processed.observation = {
+          description: currObs?.description || null,
+          fileIds: currObs?.fileIds || [],
+        };
       }
     }
 
@@ -577,23 +715,21 @@ export default function EditScheduleScreen() {
           .filter(Boolean)
           .sort();
         if (JSON.stringify(currIds) !== JSON.stringify(origIds)) {
-          console.log(`[processFormData] File IDs changed: ${field}`, { currIds, origIds });
           processed[field] = currIds;
         }
       }
     }
 
-    // representativeIds - only include when changed
-    if (formData.representativeIds !== undefined) {
-      const currRepIds = [...ensureArray(formData.representativeIds)].sort();
-      const origRepIds = ((originalTask.representatives || []).map((r: any) => r.id)).sort();
+    // responsibleIds - only include when changed
+    if (formData.responsibleIds !== undefined) {
+      const currRepIds = [...ensureArray(formData.responsibleIds)].sort();
+      const origRepIds = ((originalTask.responsibles || []).map((r: any) => r.id)).sort();
       if (JSON.stringify(currRepIds) !== JSON.stringify(origRepIds)) {
-        console.log('[processFormData] Representatives changed:', { currRepIds, origRepIds });
-        processed.representativeIds = formData.representativeIds;
+        processed.responsibleIds = formData.responsibleIds;
       }
     }
-    if (formData.newRepresentatives !== undefined && formData.newRepresentatives.length > 0) {
-      processed.newRepresentatives = formData.newRepresentatives;
+    if (formData.newResponsibles !== undefined && formData.newResponsibles.length > 0) {
+      processed.newResponsibles = formData.newResponsibles;
     }
 
     console.log('[processFormData] Changed fields:', Object.keys(processed));
@@ -653,8 +789,6 @@ export default function EditScheduleScreen() {
     );
   }
 
-  console.log('[EditScheduleScreen] Existing layouts:', existingLayouts);
-
   return (
     <ThemedView className="flex-1">
       <TaskForm
@@ -685,11 +819,11 @@ export default function EditScheduleScreen() {
             ? task.serviceOrders.map((s) => ({
                 id: s.id,
                 description: s.description,
-                status: s.status ?? undefined,
+                status: s.status || 'PENDING',
                 statusOrder: s.statusOrder,
                 type: s.type,
-                assignedToId: s.assignedToId || null,
-                observation: s.observation || null,
+                assignedToId: s.assignedToId ?? null,
+                observation: s.observation ?? null,
                 startedAt: s.startedAt ? new Date(s.startedAt) : null,
                 finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
                 shouldSync: (s as any).shouldSync !== false,
@@ -720,7 +854,7 @@ export default function EditScheduleScreen() {
           artworkIds: (task as any).artworks?.map((f: any) => f.fileId || f.file?.id || f.id) || [],
           // Include base files for edit mode
           baseFiles: (task as any).baseFiles || [],
-          baseFileIds: (task as any).baseFiles?.map((f: any) => f.id) || [],
+          baseFileIds: (task as any).baseFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
           // Include pricing for edit mode (with default empty item row, matches web)
           pricing: (task as any).pricing ? {
             id: (task as any).pricing.id,

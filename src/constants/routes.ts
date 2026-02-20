@@ -51,12 +51,12 @@ export const routes = {
       list: "/administracao/registros-de-alteracoes/listar",
       root: "/administracao/registros-de-alteracoes",
     },
-    representatives: {
-      root: "/administracao/representantes",
-      list: "/administracao/representantes/listar",
-      create: "/administracao/representantes/cadastrar",
-      details: (id: string) => `/administracao/representantes/detalhes/${id}`,
-      edit: (id: string) => `/administracao/representantes/editar/${id}`,
+    responsibles: {
+      root: "/administracao/responsaveis",
+      list: "/administracao/responsaveis/listar",
+      create: "/administracao/responsaveis/cadastrar",
+      details: (id: string) => `/administracao/responsaveis/detalhes/${id}`,
+      edit: (id: string) => `/administracao/responsaveis/editar/${id}`,
     },
     monitoring: {
       dashboard: "/administracao/monitoramento/dashboard",

@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { useRepresentative, useScreenReady } from "@/hooks";
+import { useResponsible, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS } from "@/types/representative";
+import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import type { BadgeVariant } from "@/constants/badge-colors";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,15 +18,15 @@ import { TouchableOpacity } from "react-native";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const ROLE_BADGE_VARIANTS: Record<RepresentativeRole, BadgeVariant> = {
-  [RepresentativeRole.COMMERCIAL]: 'blue',
-  [RepresentativeRole.MARKETING]: 'purple',
-  [RepresentativeRole.COORDINATOR]: 'green',
-  [RepresentativeRole.FINANCIAL]: 'orange',
-  [RepresentativeRole.FLEET_MANAGER]: 'gray',
+const ROLE_BADGE_VARIANTS: Record<ResponsibleRole, BadgeVariant> = {
+  [ResponsibleRole.COMMERCIAL]: 'blue',
+  [ResponsibleRole.MARKETING]: 'purple',
+  [ResponsibleRole.COORDINATOR]: 'green',
+  [ResponsibleRole.FINANCIAL]: 'orange',
+  [ResponsibleRole.FLEET_MANAGER]: 'gray',
 };
 
-export default function RepresentativeDetailScreen() {
+export default function ResponsibleDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
@@ -34,11 +34,11 @@ export default function RepresentativeDetailScreen() {
   const id = params?.id || "";
 
   const {
-    data: representative,
+    data: responsible,
     isLoading,
     error,
     refetch,
-  } = useRepresentative(id, {
+  } = useResponsible(id, {
     select: {
       id: true,
       name: true,
@@ -46,10 +46,10 @@ export default function RepresentativeDetailScreen() {
       phone: true,
       email: true,
       isActive: true,
-      customerId: true,
+      companyId: true,
       createdAt: true,
       updatedAt: true,
-      customer: {
+      company: {
         select: {
           id: true,
           fantasyName: true,
@@ -61,11 +61,11 @@ export default function RepresentativeDetailScreen() {
 
   useScreenReady(!isLoading);
 
-  const rep = (representative as any)?.data || representative;
+  const rep = (responsible as any)?.data || responsible;
 
   const handleEdit = () => {
     if (rep) {
-      router.push(routeToMobilePath(routes.administration.representatives.edit(rep.id)) as any);
+      router.push(routeToMobilePath(routes.administration.responsibles.edit(rep.id)) as any);
     }
   };
 
@@ -171,10 +171,10 @@ export default function RepresentativeDetailScreen() {
                 <IconUser size={32} color={colors.mutedForeground} />
               </View>
               <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
-                Representante não encontrado
+                Responsável não encontrado
               </ThemedText>
               <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-                O representante solicitado não foi encontrado ou pode ter sido removido.
+                O responsável solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
               <Button onPress={() => router.back()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
@@ -232,11 +232,11 @@ export default function RepresentativeDetailScreen() {
             label="Função"
             value={
               <Badge
-                variant={ROLE_BADGE_VARIANTS[rep.role as RepresentativeRole] || 'default'}
+                variant={ROLE_BADGE_VARIANTS[rep.role as ResponsibleRole] || 'default'}
                 size="sm"
                 style={{ alignSelf: 'flex-start' }}
               >
-                {REPRESENTATIVE_ROLE_LABELS[rep.role as RepresentativeRole]}
+                {RESPONSIBLE_ROLE_LABELS[rep.role as ResponsibleRole]}
               </Badge>
             }
             icon="briefcase"
@@ -253,8 +253,8 @@ export default function RepresentativeDetailScreen() {
             icon="circle-check"
           />
           <DetailField
-            label="Cliente"
-            value={rep.customer?.fantasyName || "-"}
+            label="Empresa"
+            value={rep.company?.fantasyName || "-"}
             icon="building"
           />
         </DetailCard>
@@ -294,7 +294,7 @@ export default function RepresentativeDetailScreen() {
           </View>
           <View style={styles.content}>
             <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.REPRESENTATIVE}
+              entityType={CHANGE_LOG_ENTITY_TYPE.RESPONSIBLE}
               entityId={rep.id}
               entityName={rep.name}
               entityCreatedAt={rep.createdAt}

@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRepresentative, useRepresentativeMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
-import { representativeUpdateSchema } from "@/schemas/representative";
-import type { RepresentativeUpdateFormData } from "@/schemas/representative";
-import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS } from "@/types/representative";
-import { Input, Combobox, ErrorScreen, Skeleton } from "@/components/ui";
+import { useResponsibleMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
+import { getCustomers } from "@/api-client";
+import { responsibleCreateSchema } from "@/schemas/responsible";
+import type { ResponsibleCreateFormData } from "@/schemas/responsible";
+import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
+import { Input, Combobox } from "@/components/ui";
 import { FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
@@ -17,37 +18,23 @@ import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
 import { Switch } from "@/components/ui/switch";
 import { IconUser, IconLock, IconCheck } from "@tabler/icons-react-native";
 
-const roleOptions = Object.values(RepresentativeRole).map((role) => ({
+const roleOptions = Object.values(ResponsibleRole).map((role) => ({
   value: role,
-  label: REPRESENTATIVE_ROLE_LABELS[role],
+  label: RESPONSIBLE_ROLE_LABELS[role],
 }));
 
-export default function EditRepresentativeScreen() {
+export default function CreateResponsibleScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSystemAccess, setHasSystemAccess] = useState(false);
 
-  const id = params?.id || "";
-
-  const {
-    data: existingData,
-    isLoading: isLoadingData,
-    error: loadError,
-    refetch,
-  } = useRepresentative(id, {
-    enabled: !!id && id !== "",
-  });
-
-  const rep = (existingData as any)?.data || existingData;
-
-  useScreenReady(!isLoadingData);
+  useScreenReady();
 
   const { handlers, refs } = useKeyboardAwareScroll();
 
@@ -61,29 +48,24 @@ export default function EditRepresentativeScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid, isDirty },
-    reset,
-  } = useForm<RepresentativeUpdateFormData>({
-    resolver: zodResolver(representativeUpdateSchema),
+    formState: { errors, isValid },
+  } = useForm<ResponsibleCreateFormData>({
+    resolver: zodResolver(responsibleCreateSchema),
     mode: "onChange",
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: undefined,
+      password: undefined,
+      companyId: "",
+      role: ResponsibleRole.COMMERCIAL,
+      isActive: true,
+    },
   });
 
-  const { updateAsync } = useRepresentativeMutations();
+  const { createAsync } = useResponsibleMutations();
 
-  useEffect(() => {
-    if (rep) {
-      reset({
-        name: rep.name || "",
-        phone: rep.phone || "",
-        email: rep.email || undefined,
-        role: rep.role || RepresentativeRole.COMMERCIAL,
-        isActive: rep.isActive ?? true,
-      });
-      setHasSystemAccess(!!rep.email);
-    }
-  }, [rep, reset]);
-
-  const onSubmit = async (data: RepresentativeUpdateFormData) => {
+  const onSubmit = async (data: ResponsibleCreateFormData) => {
     try {
       setIsSubmitting(true);
 
@@ -92,101 +74,41 @@ export default function EditRepresentativeScreen() {
         data.password = undefined;
       }
 
-      await updateAsync({ id, data });
-      Alert.alert("Sucesso", "Representante atualizado com sucesso!");
-      router.replace(routeToMobilePath(routes.administration.representatives.details(id)) as any);
+      const result = await createAsync(data);
+      Alert.alert("Sucesso", "Responsável cadastrado com sucesso!");
+      const resultId = (result as any)?.data?.id || (result as any)?.id;
+      if (resultId) {
+        router.replace(routeToMobilePath(routes.administration.responsibles.details(resultId)) as any);
+      } else {
+        router.replace(routeToMobilePath(routes.administration.responsibles.list) as any);
+      }
     } catch (error: any) {
-      Alert.alert("Erro", error?.message || "Erro ao atualizar representante");
+      Alert.alert("Erro", error?.message || "Erro ao cadastrar responsável");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    if (isDirty) {
-      Alert.alert(
-        "Descartar Alterações",
-        "Você tem alterações não salvas. Deseja descartá-las?",
-        [
-          { text: "Continuar Editando", style: "cancel" },
-          {
-            text: "Descartar",
-            style: "destructive",
-            onPress: () => router.replace(routeToMobilePath(routes.administration.representatives.details(id)) as any),
+    Alert.alert(
+      "Descartar Cadastro",
+      "Deseja descartar o cadastro do responsável?",
+      [
+        { text: "Continuar Editando", style: "cancel" },
+        {
+          text: "Descartar",
+          style: "destructive",
+          onPress: () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace(routeToMobilePath(routes.administration.responsibles.list) as any);
+            }
           },
-        ],
-      );
-    } else {
-      router.replace(routeToMobilePath(routes.administration.representatives.details(id)) as any);
-    }
+        },
+      ],
+    );
   };
-
-  if (isLoadingData) {
-    const cardStyle = {
-      backgroundColor: colors.card,
-      borderRadius: borderRadius.lg,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-    };
-    const fieldSkeleton = (i: number) => (
-      <View key={i} style={{ marginBottom: spacing.sm }}>
-        <Skeleton width="35%" height={13} style={{ marginBottom: spacing.xs }} borderRadius={4} />
-        <Skeleton width="100%" height={44} borderRadius={borderRadius.md} />
-      </View>
-    );
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Informações Básicas: Nome, Telefone, Cliente (read-only), Função */}
-          <View style={cardStyle}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton width={20} height={20} borderRadius={4} />
-              <Skeleton width="45%" height={18} />
-            </View>
-            {[1, 2, 3, 4].map(fieldSkeleton)}
-          </View>
-
-          {/* Acesso ao Sistema: toggle switch + conditionally email + password */}
-          <View style={cardStyle}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton width={20} height={20} borderRadius={4} />
-              <Skeleton width="50%" height={18} />
-            </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing.xs }}>
-              <Skeleton width="60%" height={16} />
-              <Skeleton width={44} height={26} borderRadius={13} />
-            </View>
-          </View>
-
-          {/* Status: Ativo switch */}
-          <View style={cardStyle}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton width={20} height={20} borderRadius={4} />
-              <Skeleton width="20%" height={18} />
-            </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing.xs }}>
-              <Skeleton width="20%" height={16} />
-              <Skeleton width={44} height={26} borderRadius={13} />
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  if (loadError || !rep) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-        <ErrorScreen message="Erro ao carregar representante" detail={loadError?.message || "Representante não encontrado"} onRetry={refetch} />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
@@ -215,16 +137,16 @@ export default function EditRepresentativeScreen() {
             </View>
           </View>
           <View style={styles.content}>
-            <FormFieldGroup label="Nome" error={errors.name?.message}>
+            <FormFieldGroup label="Nome" required error={errors.name?.message}>
               <Controller
                 control={control}
                 name="name"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={value || ""}
+                    value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
-                    placeholder="Nome do representante"
+                    placeholder="Nome do responsável"
                     maxLength={100}
                     error={!!errors.name}
                     editable={!isSubmitting}
@@ -233,13 +155,13 @@ export default function EditRepresentativeScreen() {
               />
             </FormFieldGroup>
 
-            <FormFieldGroup label="Telefone" error={errors.phone?.message}>
+            <FormFieldGroup label="Telefone" required error={errors.phone?.message}>
               <Controller
                 control={control}
                 name="phone"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    value={value || ""}
+                    value={value}
                     onChangeText={onChange}
                     onBlur={onBlur}
                     placeholder="(00) 00000-0000"
@@ -251,23 +173,48 @@ export default function EditRepresentativeScreen() {
               />
             </FormFieldGroup>
 
-            {/* Customer display (read-only in edit) */}
-            {rep.customer && (
-              <FormFieldGroup label="Cliente">
-                <Input
-                  value={rep.customer.fantasyName || ""}
-                  editable={false}
-                />
-              </FormFieldGroup>
-            )}
+            <FormFieldGroup label="Empresa" required error={errors.companyId?.message}>
+              <Controller
+                control={control}
+                name="companyId"
+                render={({ field: { onChange, value } }) => (
+                  <Combobox
+                    value={value || ""}
+                    onValueChange={(v) => onChange(v?.toString() || "")}
+                    async
+                    queryKey={["customers-search"]}
+                    queryFn={async (searchTerm: string) => {
+                      const response = await getCustomers({
+                        search: searchTerm,
+                        limit: 20,
+                      } as any);
+                      return {
+                        data: (response.data || []).map((c: any) => ({
+                          value: c.id,
+                          label: c.fantasyName || c.corporateName || c.id,
+                        })),
+                        hasMore: false,
+                      };
+                    }}
+                    minSearchLength={0}
+                    placeholder="Buscar empresa..."
+                    searchPlaceholder="Digite o nome da empresa..."
+                    emptyText="Nenhuma empresa encontrada"
+                    searchable
+                    clearable
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
+            </FormFieldGroup>
 
-            <FormFieldGroup label="Função" error={errors.role?.message}>
+            <FormFieldGroup label="Função" required error={errors.role?.message}>
               <Controller
                 control={control}
                 name="role"
                 render={({ field: { onChange, value } }) => (
                   <Combobox
-                    value={value || ""}
+                    value={value}
                     onValueChange={(v) => onChange(v?.toString() || "")}
                     options={roleOptions}
                     placeholder="Selecione a função"
@@ -299,7 +246,7 @@ export default function EditRepresentativeScreen() {
 
             {hasSystemAccess && (
               <>
-                <FormFieldGroup label="E-mail" error={errors.email?.message}>
+                <FormFieldGroup label="E-mail" required error={errors.email?.message}>
                   <Controller
                     control={control}
                     name="email"
@@ -319,7 +266,7 @@ export default function EditRepresentativeScreen() {
                   />
                 </FormFieldGroup>
 
-                <FormFieldGroup label="Nova Senha" error={errors.password?.message}>
+                <FormFieldGroup label="Senha" required error={errors.password?.message}>
                   <Controller
                     control={control}
                     name="password"
@@ -328,7 +275,7 @@ export default function EditRepresentativeScreen() {
                         value={value || ""}
                         onChangeText={onChange}
                         onBlur={onBlur}
-                        placeholder="Deixe em branco para manter a atual"
+                        placeholder="Mínimo 6 caracteres"
                         secureTextEntry
                         error={!!errors.password}
                         editable={!isSubmitting}
@@ -372,8 +319,8 @@ export default function EditRepresentativeScreen() {
           onCancel={handleCancel}
           onSubmit={handleSubmit(onSubmit)}
           isSubmitting={isSubmitting}
-          canSubmit={isValid && isDirty}
-          submitLabel="Salvar Alterações"
+          canSubmit={isValid}
+          submitLabel="Criar"
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -271,10 +271,10 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     observationId: "Observação",
     truckId: "Caminhão",
     negotiatingWith: "Negociando Com", // DEPRECATED - kept for historical changelog records
-    representatives: "Representantes",
+    responsibles: "Responsáveis",
     // Relationship fields
     sector: "Setor",
-    customer: "Cliente",
+    customer: "Razão Social",
     invoiceTo: "Faturar Para",
     budget: "Orçamento",
     nfe: "Nota Fiscal",
@@ -303,7 +303,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     relatedTasks: "Tarefas Relacionadas",
     relatedTo: "Relacionado a",
     trucks: "Caminhões",
-    representativeIds: "Representantes",
+    responsibleIds: "Responsáveis",
     // Direct truck fields (when truck data is embedded in task changelog)
     category: "Categoria do Caminhão",
     implementType: "Tipo de Implemento",
@@ -359,7 +359,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     logo: "Logo",
 
     // Legacy fields (may exist in old data)
-    representativeName: "Nome do Representante",
+    responsibleName: "Nome do Responsável",
     country: "País",
     observations: "Observações",
     statusOrder: "Ordem do Status",
@@ -1084,17 +1084,17 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       if (field === "relatedTasks" || field === "relatedTo") {
         return `${value.length} ${value.length === 1 ? "tarefa relacionada" : "tarefas relacionadas"}`;
       }
-      if (field === "representatives" || field === "representativeIds") {
-        // Format representatives with name and phone
+      if (field === "responsibles" || field === "responsibleIds") {
+        // Format responsibles with name and phone
         if (value.length > 0 && typeof value[0] === "object" && value[0].name) {
           return value.map((rep: { name?: string; phone?: string; role?: string }) => {
-            const name = rep.name || "Representante";
+            const name = rep.name || "Responsável";
             const phone = rep.phone ? formatBrazilianPhone(rep.phone) : "";
             return phone ? `${name} - ${phone}` : name;
           }).join("\n");
         }
         // Fallback to count for IDs only
-        return `${value.length} ${value.length === 1 ? "representante" : "representantes"}`;
+        return `${value.length} ${value.length === 1 ? "responsável" : "responsáveis"}`;
       }
     }
 

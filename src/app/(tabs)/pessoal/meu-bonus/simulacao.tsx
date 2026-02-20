@@ -36,7 +36,7 @@ export default function BonusSimulationScreen() {
   const fetchPeriodStats = useCallback(async () => {
     setTaskStatsLoading(true);
     try {
-      const response = await bonusService.getPeriodTaskStats(periodYear, periodMonth);
+      const response = await bonusService.getMyPeriodTaskStats(periodYear, periodMonth);
       const data = (response.data as any)?.data ?? response.data;
       setPeriodTaskStats({
         rawCount: Number(data.totalRawTaskCount) || 0,

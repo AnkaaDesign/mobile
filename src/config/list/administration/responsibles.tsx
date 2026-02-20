@@ -1,26 +1,30 @@
 import React from 'react'
 import type { ListConfig } from '@/components/list/types'
-import type { Representative } from '@/types'
-import { RepresentativeRole, REPRESENTATIVE_ROLE_LABELS } from '@/types/representative'
-import { canEditRepresentatives } from '@/utils/permissions/entity-permissions'
+import type { Responsible } from '@/types'
+import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from '@/types/responsible'
+import { canEditResponsibles } from '@/utils/permissions/entity-permissions'
 import { formatBrazilianPhone } from '@/utils'
 import { Badge } from '@/components/ui/badge'
 import type { BadgeVariant } from '@/constants/badge-colors'
 
-const ROLE_BADGE_VARIANTS: Record<RepresentativeRole, BadgeVariant> = {
-  [RepresentativeRole.COMMERCIAL]: 'blue',
-  [RepresentativeRole.MARKETING]: 'purple',
-  [RepresentativeRole.COORDINATOR]: 'green',
-  [RepresentativeRole.FINANCIAL]: 'orange',
-  [RepresentativeRole.FLEET_MANAGER]: 'gray',
+const ROLE_BADGE_VARIANTS: Record<ResponsibleRole, BadgeVariant> = {
+  [ResponsibleRole.COMMERCIAL]: 'blue',
+  [ResponsibleRole.OWNER]: 'indigo',
+  [ResponsibleRole.SELLER]: 'cyan',
+  [ResponsibleRole.REPRESENTATIVE]: 'teal',
+  [ResponsibleRole.COORDINATOR]: 'green',
+  [ResponsibleRole.MARKETING]: 'purple',
+  [ResponsibleRole.FINANCIAL]: 'orange',
+  [ResponsibleRole.FLEET_MANAGER]: 'gray',
+  [ResponsibleRole.DRIVER]: 'yellow',
 }
 
-export const representativesListConfig: ListConfig<Representative> = {
-  key: 'administration-representatives',
-  title: 'Representantes',
+export const responsiblesListConfig: ListConfig<Responsible> = {
+  key: 'administration-responsibles',
+  title: 'Responsáveis',
 
   query: {
-    hook: 'useRepresentativesInfiniteMobile',
+    hook: 'useResponsiblesInfiniteMobile',
     defaultSort: { field: 'name', direction: 'asc' },
     pageSize: 25,
     select: {
@@ -30,10 +34,10 @@ export const representativesListConfig: ListConfig<Representative> = {
       phone: true,
       email: true,
       isActive: true,
-      customerId: true,
+      companyId: true,
       createdAt: true,
       updatedAt: true,
-      customer: {
+      company: {
         select: {
           id: true,
           fantasyName: true,
@@ -50,7 +54,7 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 2.0,
         align: 'left',
-        render: (rep: Representative) => rep.name,
+        render: (resp: Responsible) => resp.name,
         style: { fontWeight: '500' },
       },
       {
@@ -59,9 +63,9 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 1.8,
         align: 'left',
-        render: (rep: Representative) => {
-          const variant = ROLE_BADGE_VARIANTS[rep.role] || 'default'
-          const label = REPRESENTATIVE_ROLE_LABELS[rep.role] || rep.role || '-'
+        render: (resp: Responsible) => {
+          const variant = ROLE_BADGE_VARIANTS[resp.role] || 'default'
+          const label = RESPONSIBLE_ROLE_LABELS[resp.role] || resp.role || '-'
           return (
             <Badge
               variant={variant}
@@ -74,12 +78,12 @@ export const representativesListConfig: ListConfig<Representative> = {
         },
       },
       {
-        key: 'customer',
-        label: 'CLIENTE',
+        key: 'company',
+        label: 'EMPRESA',
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (rep: Representative) => rep.customer?.fantasyName || '-',
+        render: (resp: Responsible) => resp.company?.corporateName || resp.company?.fantasyName || '-',
       },
       {
         key: 'phone',
@@ -87,7 +91,7 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: false,
         width: 2.0,
         align: 'left',
-        render: (rep: Representative) => formatBrazilianPhone(rep.phone),
+        render: (resp: Responsible) => formatBrazilianPhone(resp.phone),
       },
       {
         key: 'email',
@@ -95,7 +99,7 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (rep: Representative) => rep.email || '-',
+        render: (resp: Responsible) => resp.email || '-',
       },
       {
         key: 'isActive',
@@ -103,13 +107,13 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: false,
         width: 1.0,
         align: 'left',
-        render: (rep: Representative) => (
+        render: (resp: Responsible) => (
           <Badge
-            variant={rep.isActive ? 'active' : 'inactive'}
+            variant={resp.isActive ? 'active' : 'inactive'}
             size="sm"
             style={{ alignSelf: 'flex-start' }}
           >
-            {rep.isActive ? 'Ativo' : 'Inativo'}
+            {resp.isActive ? 'Ativo' : 'Inativo'}
           </Badge>
         ),
       },
@@ -119,7 +123,7 @@ export const representativesListConfig: ListConfig<Representative> = {
         sortable: true,
         width: 1.8,
         align: 'left',
-        render: (rep: Representative) => rep.createdAt,
+        render: (resp: Responsible) => resp.createdAt,
         format: 'date',
       },
     ],
@@ -131,8 +135,8 @@ export const representativesListConfig: ListConfig<Representative> = {
         label: 'Visualizar',
         icon: 'eye',
         variant: 'default',
-        onPress: (rep, router) => {
-          router.push(`/administracao/representantes/detalhes/${rep.id}`)
+        onPress: (resp, router) => {
+          router.push(`/administracao/responsaveis/detalhes/${resp.id}`)
         },
       },
       {
@@ -140,8 +144,8 @@ export const representativesListConfig: ListConfig<Representative> = {
         label: 'Editar',
         icon: 'pencil',
         variant: 'default',
-        onPress: (rep, router) => {
-          router.push(`/administracao/representantes/editar/${rep.id}`)
+        onPress: (resp, router) => {
+          router.push(`/administracao/responsaveis/editar/${resp.id}`)
         },
       },
       {
@@ -151,10 +155,10 @@ export const representativesListConfig: ListConfig<Representative> = {
         variant: 'destructive',
         confirm: {
           title: 'Confirmar Exclusão',
-          message: (rep) => `Deseja excluir o representante "${rep.name}"?`,
+          message: (resp) => `Deseja excluir o responsável "${resp.name}"?`,
         },
-        onPress: async (rep, _, context) => {
-          await context?.delete?.(rep.id)
+        onPress: async (resp, _, context) => {
+          await context?.delete?.(resp.id)
         },
       },
     ],
@@ -166,8 +170,8 @@ export const representativesListConfig: ListConfig<Representative> = {
         key: 'role',
         label: 'Função',
         type: 'select',
-        options: Object.values(RepresentativeRole).map((role) => ({
-          label: REPRESENTATIVE_ROLE_LABELS[role],
+        options: Object.values(ResponsibleRole).map((role) => ({
+          label: RESPONSIBLE_ROLE_LABELS[role],
           value: role,
         })),
         placeholder: 'Selecione a função',
@@ -186,20 +190,20 @@ export const representativesListConfig: ListConfig<Representative> = {
   },
 
   search: {
-    placeholder: 'Buscar representantes...',
+    placeholder: 'Buscar responsáveis...',
     debounce: 300,
   },
 
   export: {
-    title: 'Representantes',
-    filename: 'representantes',
+    title: 'Responsáveis',
+    filename: 'responsaveis',
     formats: ['csv', 'json', 'pdf'],
     columns: [
       { key: 'name', label: 'Nome', path: 'name' },
       { key: 'role', label: 'Função', path: 'role' },
       { key: 'phone', label: 'Telefone', path: 'phone' },
       { key: 'email', label: 'E-mail', path: 'email' },
-      { key: 'customer', label: 'Cliente', path: 'customer.fantasyName' },
+      { key: 'company', label: 'Empresa', path: 'company.corporateName' },
       { key: 'isActive', label: 'Status', path: 'isActive', format: (value: boolean) => value ? 'Ativo' : 'Inativo' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
       { key: 'updatedAt', label: 'Atualizado Em', path: 'updatedAt', format: 'date' },
@@ -208,9 +212,9 @@ export const representativesListConfig: ListConfig<Representative> = {
 
   actions: {
     create: {
-      label: 'Cadastrar Representante',
-      route: '/administracao/representantes/cadastrar',
-      canCreate: canEditRepresentatives,
+      label: 'Cadastrar Responsável',
+      route: '/administracao/responsaveis/cadastrar',
+      canCreate: canEditResponsibles,
     },
     bulk: [
       {
@@ -220,7 +224,7 @@ export const representativesListConfig: ListConfig<Representative> = {
         variant: 'destructive',
         confirm: {
           title: 'Confirmar Exclusão',
-          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'representante' : 'representantes'}?`,
+          message: (count) => `Deseja excluir ${count} ${count === 1 ? 'responsável' : 'responsáveis'}?`,
         },
         onPress: async (ids, context) => {
           await context?.batchDeleteAsync?.({ ids: Array.from(ids) })

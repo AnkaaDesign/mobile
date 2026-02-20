@@ -7,7 +7,7 @@ import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from "../consta
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { taskPricingCreateNestedSchema } from "./task-pricing";
-import { representativeCreateInlineSchema } from "./representative";
+import { responsibleCreateInlineSchema } from "./responsible";
 
 // =====================
 // Include Schema Based on Prisma Schema (Second Level Only)
@@ -1199,9 +1199,9 @@ export const taskCreateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    // Representatives relationship
-    representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
-    newRepresentatives: z.array(representativeCreateInlineSchema).optional(),
+    // Responsibles relationship
+    responsibleIds: z.array(z.string().uuid("ID de responsável inválido")).optional(),
+    newResponsibles: z.array(responsibleCreateInlineSchema).optional(),
 
     // Batch creation fields (UI-only, used to create multiple tasks from plate × serialNumber combinations)
     plates: z.array(z.string()).optional(),
@@ -1287,9 +1287,9 @@ export const taskUpdateSchema = z
     paintId: z.string().uuid("Tinta inválida").nullable().optional(),
     customerId: z.string().uuid("Cliente inválido").nullable().optional(),
     sectorId: z.string().uuid("Setor inválido").nullable().optional(),
-    // Representatives relationship
-    representativeIds: z.array(z.string().uuid("ID de representante inválido")).optional(),
-    newRepresentatives: z.array(representativeCreateInlineSchema).optional(),
+    // Responsibles relationship
+    responsibleIds: z.array(z.string().uuid("ID de responsável inválido")).optional(),
+    newResponsibles: z.array(responsibleCreateInlineSchema).optional(),
 
     // Relations - Many-to-many file relations (arrays)
     budgetIds: z.array(z.string().uuid("Budget inválido")).optional(),

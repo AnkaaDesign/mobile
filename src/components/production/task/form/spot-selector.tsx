@@ -283,7 +283,11 @@ export function SpotSelector({
 
   return (
     <View style={styles.container}>
-      {!truckLength || truckLength <= 0 ? null : isLoading ? (
+      {!truckLength || truckLength <= 0 ? (
+        <ThemedText style={[styles.placeholder, { color: colors.mutedForeground }]}>
+          Preencha o layout do caminhão para selecionar o local
+        </ThemedText>
+      ) : isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
           <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
@@ -291,36 +295,42 @@ export function SpotSelector({
           </ThemedText>
         </View>
       ) : (
-        <View style={styles.selectorsContainer}>
+        <View style={styles.selectorsRow}>
           {/* Garage selector */}
-          <Combobox
-            value={selectedGarage ?? undefined}
-            onValueChange={handleGarageChange}
-            options={garageOptions}
-            placeholder="Selecione o barracao"
-            disabled={isDisabled}
-            searchable={false}
-          />
+          <View style={styles.selectorCell}>
+            <Combobox
+              value={selectedGarage ?? undefined}
+              onValueChange={handleGarageChange}
+              options={garageOptions}
+              placeholder="Barracão"
+              disabled={isDisabled}
+              searchable={false}
+            />
+          </View>
 
           {/* Lane selector */}
-          <Combobox
-            value={selectedLane ?? undefined}
-            onValueChange={handleLaneChange}
-            options={laneOptions}
-            placeholder="Selecione a faixa"
-            disabled={isDisabled || !selectedGarage || selectedGarage === 'PATIO'}
-            searchable={false}
-          />
+          <View style={styles.selectorCell}>
+            <Combobox
+              value={selectedLane ?? undefined}
+              onValueChange={handleLaneChange}
+              options={laneOptions}
+              placeholder="Faixa"
+              disabled={isDisabled || !selectedGarage || selectedGarage === 'PATIO'}
+              searchable={false}
+            />
+          </View>
 
           {/* Spot selector */}
-          <Combobox
-            value={selectedSpotNumber ? String(selectedSpotNumber) : undefined}
-            onValueChange={handleSpotChange}
-            options={spotOptions}
-            placeholder="Selecione a vaga"
-            disabled={isDisabled || !selectedLane}
-            searchable={false}
-          />
+          <View style={styles.selectorCell}>
+            <Combobox
+              value={selectedSpotNumber ? String(selectedSpotNumber) : undefined}
+              onValueChange={handleSpotChange}
+              options={spotOptions}
+              placeholder="Vaga"
+              disabled={isDisabled || !selectedLane}
+              searchable={false}
+            />
+          </View>
         </View>
       )}
 
@@ -351,8 +361,12 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: fontSize.sm,
   },
-  selectorsContainer: {
+  selectorsRow: {
+    flexDirection: 'row',
     gap: spacing.sm,
+  },
+  selectorCell: {
+    flex: 1,
   },
   currentSpot: {
     fontSize: fontSize.xs,

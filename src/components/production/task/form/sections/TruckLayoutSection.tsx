@@ -1,11 +1,14 @@
 /**
  * Truck Layout Section Component
  * Handles truck layout configuration for each side (driver, passenger, back)
+ *
+ * Layout changes are tracked OUTSIDE react-hook-form's dirty system (matching web).
+ * The parent (TaskForm) passes onLayoutChange callback to collect modified layout data.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Controller, useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { ThemedText } from '@/components/ui/themed-text';
 import { LayoutForm } from '@/components/production/layout/layout-form';
@@ -17,17 +20,22 @@ interface TruckLayoutSectionProps {
   isSubmitting?: boolean;
   errors?: any;
   existingLayouts?: any;
+  onLayoutChange?: (side: string, data: any) => void;
 }
 
 export default function TruckLayoutSection({
   isSubmitting = false,
   errors = {},
-  existingLayouts
+  existingLayouts,
+  onLayoutChange,
 }: TruckLayoutSectionProps) {
   const { control } = useFormContext();
   const { user } = useAuth();
   const { colors } = useTheme();
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
+
+  // Track initial state emissions to distinguish from real user changes (matching web pattern)
+  const initialStateEmittedRef = useRef<Record<string, boolean>>({});
 
   // Watch nested truck object to determine if a truck is associated
   const truck = useWatch({ control, name: 'truck' });
@@ -40,6 +48,21 @@ export default function TruckLayoutSection({
   const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.managedSector;
 
   const canViewSection = isAdminUser || isLogisticUser || isProductionLeader;
+
+  // Handle layout changes - filter out initial state emissions
+  const handleLayoutChange = useCallback((side: string, data: any) => {
+    const hasSavedLayout = existingLayouts?.[side]?.layoutSections?.length > 0;
+    const isFirstEmit = !initialStateEmittedRef.current[side];
+
+    // If no saved layout and this is the first emit, it's just initial state - don't mark as modified
+    if (!hasSavedLayout && isFirstEmit) {
+      initialStateEmittedRef.current[side] = true;
+      return;
+    }
+
+    initialStateEmittedRef.current[side] = true;
+    onLayoutChange?.(side, data);
+  }, [existingLayouts, onLayoutChange]);
 
   if (!canViewSection || !hasTruck) {
     return null;
@@ -75,52 +98,17 @@ export default function TruckLayoutSection({
         ))}
       </View>
 
-      {/* Layout Form for Selected Side */}
-      <Controller
-        control={control}
-        name="layouts"
-        render={({ field: { onChange, value } }) => (
-          <LayoutForm
-            layouts={value || {}}
-            selectedSide={selectedSide}
-            onChange={(side, data) => {
-              onChange({
-                ...value,
-                [side]: data,
-              });
-            }}
-            disabled={isSubmitting}
-            embedded={true}
-          />
-        )}
+      {/* Layout Form for Selected Side — uses existingLayouts directly, not form state */}
+      <LayoutForm
+        layouts={existingLayouts || {}}
+        selectedSide={selectedSide}
+        onChange={handleLayoutChange}
+        disabled={isSubmitting}
+        embedded={true}
       />
 
-      {/* Total Length Display */}
-      <View style={[styles.totalLength, { borderTopColor: colors.border }]}>
-        <ThemedText style={[styles.totalLengthLabel, { color: colors.mutedForeground }]}>Comprimento Total:</ThemedText>
-        <ThemedText style={styles.totalLengthValue}>
-          {(calculateTotalLength(useWatch({ control, name: 'layouts' })) * 100).toFixed(0)} cm
-        </ThemedText>
-      </View>
     </FormCard>
   );
-}
-
-function calculateTotalLength(layouts: any): number {
-  if (!layouts) return 0;
-
-  let maxLength = 0;
-  ['left', 'right', 'back'].forEach((side) => {
-    const layout = layouts[side];
-    if (layout?.layoutSections) {
-      const sideLength = layout.layoutSections.reduce((sum: number, section: any) => {
-        return sum + (section.width || 0);
-      }, 0);
-      maxLength = Math.max(maxLength, sideLength);
-    }
-  });
-
-  return maxLength;
 }
 
 const styles = StyleSheet.create({
@@ -145,20 +133,5 @@ const styles = StyleSheet.create({
   },
   sideSelectorLabel: {
     fontSize: 14,
-  },
-  totalLength: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-  },
-  totalLengthLabel: {
-    fontSize: 14,
-  },
-  totalLengthValue: {
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

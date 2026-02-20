@@ -73,15 +73,6 @@ function getCurrentBonusPeriod(referenceDate?: Date): {
   };
 }
 
-/**
- * Create a live bonus ID for fetching current period bonus.
- * Format: live-{userId}-{year}-{month}
- * The backend's findByIdOrLive will parse this and calculate the live bonus.
- */
-function createLiveBonusId(userId: string, year: number, month: number): string {
-  return `live-${userId}-${year}-${month}`;
-}
-
 // Format date as dd/mm/yy
 function formatShortDate(date: Date): string {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
@@ -131,49 +122,27 @@ export default function CurrentBonusScreen() {
   // Get current bonus period
   const currentPeriod = useMemo(() => getCurrentBonusPeriod(), []);
 
-  // Create live bonus ID for fetching
-  const liveBonusId = useMemo(() => {
-    if (!currentUser?.id) return null;
-    return createLiveBonusId(currentUser.id, currentPeriod.year, currentPeriod.month);
-  }, [currentUser?.id, currentPeriod.year, currentPeriod.month]);
-
-  // Fetch bonus using getById - backend handles both saved and live bonuses transparently
+  // Fetch bonus using the dedicated personal live bonus endpoint
+  // This uses the authenticated user's JWT token - no userId in the URL needed
   const {
     data: bonusResponse,
     isLoading: bonusLoading,
     error: bonusError,
     refetch: refetchBonus,
   } = useQuery({
-    queryKey: [...bonusKeys.all, 'current-bonus', liveBonusId],
+    queryKey: [...bonusKeys.all, 'current-bonus', currentPeriod.year, currentPeriod.month],
     queryFn: async () => {
-      if (!liveBonusId) throw new Error('No bonus ID');
-
-      // Use personal endpoint - no admin privileges required
-      const response = await bonusService.getMyBonusDetail(liveBonusId, {
-        include: {
-          user: {
-            include: {
-              position: true,
-              sector: true,
-            },
-          },
-          position: true,
-          tasks: {
-            include: {
-              customer: true,
-              sector: true,
-            },
-          },
-          bonusDiscounts: true, bonusExtras: true,
-          users: true,
-        },
+      // Use personal live bonus endpoint - backend uses authenticated userId from JWT
+      const response = await bonusService.getMyLiveBonus({
+        year: currentPeriod.year.toString(),
+        month: currentPeriod.month.toString(),
       });
 
       return response.data;
     },
     staleTime: 1000 * 30, // 30 seconds - fresh calculation data
     refetchInterval: 60000, // Refresh every minute for live data
-    enabled: !!liveBonusId,
+    enabled: !!currentUser?.id,
     retry: false, // Don't retry on error (user may not be eligible)
   });
 
@@ -181,13 +150,13 @@ export default function CurrentBonusScreen() {
   const bonus = useMemo((): (Bonus & { tasks?: any[]; baseBonus?: number; bonusDiscounts?: any[]; position?: any; user?: any }) | null => {
     if (!bonusResponse) return null;
 
-    // Handle wrapped response { success, data, message } or direct bonus object
+    // Handle wrapped response { success, data, message }
     const response = bonusResponse as any;
-    if ('data' in response && response.data) {
+    if (response?.data) {
       return response.data;
     }
-    // Direct bonus object
-    if ('id' in response) {
+    // Direct bonus object fallback
+    if (response && 'id' in response) {
       return response;
     }
     return null;

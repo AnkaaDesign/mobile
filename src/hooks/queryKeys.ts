@@ -42,7 +42,7 @@ import type {
   SeenNotificationGetManyFormData,
   AirbrushingGetManyFormData,
   CutGetManyFormData,
-  RepresentativeGetManyFormData,
+  ResponsibleGetManyFormData,
 } from '@/schemas';
 import type { SectorGetManyFormData } from '@/types';
 
@@ -195,16 +195,16 @@ export const customerKeys = {
 };
 
 // =====================================================
-// Representative Query Keys
+// Responsible Query Keys
 // =====================================================
 
-export const representativeKeys = {
-  all: ["representatives"] as const,
-  lists: () => ["representatives", "list"] as const,
-  list: (filters?: Partial<RepresentativeGetManyFormData>) => (filters ? (["representatives", "list", filters] as const) : (["representatives", "list"] as const)),
-  details: () => ["representatives", "detail"] as const,
-  detail: (id: string) => (["representatives", "detail", id] as const),
-  byIds: (ids: string[]) => ["representatives", "byIds", ids] as const,
+export const responsibleKeys = {
+  all: ["responsibles"] as const,
+  lists: () => ["responsibles", "list"] as const,
+  list: (filters?: Partial<ResponsibleGetManyFormData>) => (filters ? (["responsibles", "list", filters] as const) : (["responsibles", "list"] as const)),
+  details: () => ["responsibles", "detail"] as const,
+  detail: (id: string) => (["responsibles", "detail", id] as const),
+  byIds: (ids: string[]) => ["responsibles", "byIds", ids] as const,
 };
 
 // =====================================================

@@ -46,7 +46,7 @@ interface BudgetPreviewProps {
       corporateName?: string;
       fantasyName?: string;
     };
-    representatives?: { id: string; name?: string }[];
+    responsibles?: { id: string; name?: string; role?: string }[];
   };
 }
 
@@ -57,7 +57,12 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     task?.customer?.corporateName ||
     task?.customer?.fantasyName ||
     "Cliente";
-  const contactName = task?.representatives?.[0]?.name || "";
+  // Prefer the explicitly selected budget responsible from pricing
+  const commercialRep = task?.responsibles?.find((r: any) => r.role === "COMMERCIAL");
+  const contactName = (pricing as any)?.responsible?.name
+    || commercialRep?.name
+    || task?.responsibles?.[0]?.name
+    || "";
   const budgetNumber = pricing.budgetNumber
     ? String(pricing.budgetNumber).padStart(4, "0")
     : task?.serialNumber || "0000";

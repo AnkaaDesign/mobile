@@ -105,7 +105,7 @@ export {
   type PhysicalPersonWhere,
 } from "./physical-person";
 export * from "./position";
-export * from "./representative";
+export * from "./responsible";
 export * from "./preferences";
 export * from "./secullum";
 export * from "./warning";

@@ -82,18 +82,16 @@ export default function RequestPPEScreen() {
     hasSizesConfiguredRef.current = hasSizesConfigured;
   }, [hasSizesConfigured]);
 
-  // Async query function for PPE items with CLIENT-SIDE size filtering
+  // Async query for PPE items + client-side size filtering.
+  // Fetches all PPE items at once (catalogs are small) to avoid
+  // infinite pagination when client-side filtering removes items.
   // IMPORTANT: No setState calls inside — only refs. This prevents re-render loops.
   const searchPpeItems = useCallback(async (
     search: string,
-    page: number = 1
   ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    const pageSize = 50;
-
     try {
       const response = await getItems({
-        take: pageSize,
-        skip: (page - 1) * pageSize,
+        take: 500,
         where: {
           isActive: true,
           category: {
@@ -151,16 +149,12 @@ export default function RequestPPEScreen() {
         return itemSize === userSize;
       });
 
-      const total = response.meta?.totalRecords || items.length;
-      const hasMore = response.meta?.hasNextPage || false;
-
       // Cache loaded items in ref (no re-render!)
       items.forEach(item => loadedItemsRef.current.set(item.id, item));
 
       return {
         data: items,
-        hasMore,
-        total,
+        hasMore: false,
       };
     } catch (_error) {
       return { data: [], hasMore: false };

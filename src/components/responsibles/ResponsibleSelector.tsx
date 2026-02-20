@@ -10,82 +10,82 @@ import {
   Alert,
 } from 'react-native';
 import { IconChevronDown, IconX, IconUsers, IconCheck } from '@tabler/icons-react-native';
-import { representativeService } from '@/services/representativeService';
+import { responsibleService } from '@/services/responsibleService';
 import {
-  Representative,
-  RepresentativeRole,
-  REPRESENTATIVE_ROLE_LABELS,
-  REPRESENTATIVE_ROLE_COLORS,
-} from '@/types/representative';
+  Responsible,
+  ResponsibleRole,
+  RESPONSIBLE_ROLE_LABELS,
+  RESPONSIBLE_ROLE_COLORS,
+} from '@/types/responsible';
 import { useTheme } from '@/lib/theme';
 
-interface RepresentativeSelectorProps {
-  customerId: string;
-  value: string[]; // Array of representative IDs
-  onChange: (representativeIds: string[]) => void;
+interface ResponsibleSelectorProps {
+  companyId: string;
+  value: string[]; // Array of responsible IDs
+  onChange: (responsibleIds: string[]) => void;
   error?: string;
   disabled?: boolean;
   label?: string;
   required?: boolean;
   multiple?: boolean;
-  allowedRoles?: RepresentativeRole[];
+  allowedRoles?: ResponsibleRole[];
 }
 
-export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
-  customerId,
+export const ResponsibleSelector: React.FC<ResponsibleSelectorProps> = ({
+  companyId,
   value = [],
   onChange,
   error,
   disabled,
-  label = 'Representantes',
+  label = 'Responsáveis',
   required = false,
   multiple = true,
   allowedRoles,
 }) => {
   const { colors } = useTheme();
-  const [representatives, setRepresentatives] = useState<Representative[]>([]);
+  const [responsibles, setResponsibles] = useState<Responsible[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>(value);
 
   useEffect(() => {
-    if (customerId) {
-      loadRepresentatives();
+    if (companyId) {
+      loadResponsibles();
     }
-  }, [customerId]);
+  }, [companyId]);
 
   useEffect(() => {
     setSelectedIds(value);
   }, [value]);
 
-  const loadRepresentatives = async () => {
+  const loadResponsibles = async () => {
     setLoading(true);
     try {
-      const reps = await representativeService.getByCustomer(customerId);
+      const resps = await responsibleService.getByCompany(companyId);
 
       // Filter by allowed roles if specified
-      const filteredReps = allowedRoles
-        ? reps.filter(r => allowedRoles.includes(r.role))
-        : reps;
+      const filteredResps = allowedRoles
+        ? resps.filter(r => allowedRoles.includes(r.role))
+        : resps;
 
-      setRepresentatives(filteredReps);
+      setResponsibles(filteredResps);
     } catch (error: any) {
-      Alert.alert('Erro', 'Erro ao carregar representantes');
+      Alert.alert('Erro', 'Erro ao carregar responsáveis');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelect = (representativeId: string) => {
+  const handleSelect = (responsibleId: string) => {
     if (multiple) {
-      const newSelection = selectedIds.includes(representativeId)
-        ? selectedIds.filter(id => id !== representativeId)
-        : [...selectedIds, representativeId];
+      const newSelection = selectedIds.includes(responsibleId)
+        ? selectedIds.filter(id => id !== responsibleId)
+        : [...selectedIds, responsibleId];
       setSelectedIds(newSelection);
     } else {
-      setSelectedIds([representativeId]);
+      setSelectedIds([responsibleId]);
       setModalVisible(false);
-      onChange([representativeId]);
+      onChange([responsibleId]);
     }
   };
 
@@ -99,17 +99,17 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
     setModalVisible(false);
   };
 
-  const getSelectedRepresentatives = () => {
-    return representatives.filter(r => value.includes(r.id));
+  const getSelectedResponsibles = () => {
+    return responsibles.filter(r => value.includes(r.id));
   };
 
-  const groupedRepresentatives = representatives.reduce((acc, rep) => {
-    if (!acc[rep.role]) {
-      acc[rep.role] = [];
+  const groupedResponsibles = responsibles.reduce((acc, resp) => {
+    if (!acc[resp.role]) {
+      acc[resp.role] = [];
     }
-    acc[rep.role].push(rep);
+    acc[resp.role].push(resp);
     return acc;
-  }, {} as Record<RepresentativeRole, Representative[]>);
+  }, {} as Record<ResponsibleRole, Responsible[]>);
 
   const styles = StyleSheet.create({
     container: {
@@ -200,23 +200,23 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
       marginBottom: 8,
       paddingHorizontal: 16,
     },
-    representativeItem: {
+    responsibleItem: {
       flexDirection: 'row',
       alignItems: 'center',
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    representativeInfo: {
+    responsibleInfo: {
       flex: 1,
       marginLeft: 12,
     },
-    representativeName: {
+    responsibleName: {
       fontSize: 14,
       fontWeight: '500',
       color: colors.text,
     },
-    representativePhone: {
+    responsiblePhone: {
       fontSize: 12,
       color: colors.textSecondary,
       marginTop: 2,
@@ -291,13 +291,13 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
       >
         <View style={styles.selectorContent}>
           {value.length === 0 ? (
-            <Text style={styles.placeholder}>Selecione representantes...</Text>
+            <Text style={styles.placeholder}>Selecione responsáveis...</Text>
           ) : (
             <View style={styles.selectedContainer}>
-              {getSelectedRepresentatives().map((rep) => (
-                <View key={rep.id} style={styles.chip}>
+              {getSelectedResponsibles().map((resp) => (
+                <View key={resp.id} style={styles.chip}>
                   <Text style={styles.chipText}>
-                    {rep.name} ({REPRESENTATIVE_ROLE_LABELS[rep.role]})
+                    {resp.name} ({RESPONSIBLE_ROLE_LABELS[resp.role]})
                   </Text>
                 </View>
               ))}
@@ -335,43 +335,43 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
                 <View style={styles.emptyState}>
                   <ActivityIndicator size="large" color={colors.primary} />
                 </View>
-              ) : representatives.length === 0 ? (
+              ) : responsibles.length === 0 ? (
                 <View style={styles.emptyState}>
                   <IconUsers
                     size={48}
                     color={colors.textSecondary}
                   />
                   <Text style={styles.emptyText}>
-                    Nenhum representante cadastrado{'\n'}para este cliente
+                    Nenhum responsável cadastrado{'\n'}para esta empresa
                   </Text>
                 </View>
               ) : (
-                Object.entries(groupedRepresentatives).map(([role, reps]) => (
+                Object.entries(groupedResponsibles).map(([role, resps]) => (
                   <View key={role}>
                     <Text style={styles.roleHeader}>
-                      {REPRESENTATIVE_ROLE_LABELS[role as RepresentativeRole]}
+                      {RESPONSIBLE_ROLE_LABELS[role as ResponsibleRole]}
                     </Text>
-                    {reps.map((rep) => (
+                    {resps.map((resp) => (
                       <TouchableOpacity
-                        key={rep.id}
-                        style={styles.representativeItem}
-                        onPress={() => handleSelect(rep.id)}
+                        key={resp.id}
+                        style={styles.responsibleItem}
+                        onPress={() => handleSelect(resp.id)}
                       >
                         <View
                           style={[
                             styles.checkbox,
-                            selectedIds.includes(rep.id) && styles.checkboxChecked,
+                            selectedIds.includes(resp.id) && styles.checkboxChecked,
                           ]}
                         >
-                          {selectedIds.includes(rep.id) && (
+                          {selectedIds.includes(resp.id) && (
                             <IconCheck size={16} color="#FFFFFF" />
                           )}
                         </View>
-                        <View style={styles.representativeInfo}>
-                          <Text style={styles.representativeName}>{rep.name}</Text>
-                          <Text style={styles.representativePhone}>
-                            {rep.phone}
-                            {rep.email && ` • ${rep.email}`}
+                        <View style={styles.responsibleInfo}>
+                          <Text style={styles.responsibleName}>{resp.name}</Text>
+                          <Text style={styles.responsiblePhone}>
+                            {resp.phone}
+                            {resp.email && ` • ${resp.email}`}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -381,7 +381,7 @@ export const RepresentativeSelector: React.FC<RepresentativeSelectorProps> = ({
               )}
             </ScrollView>
 
-            {multiple && representatives.length > 0 && (
+            {multiple && responsibles.length > 0 && (
               <View style={styles.modalFooter}>
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton]}

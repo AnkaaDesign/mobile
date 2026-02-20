@@ -2234,7 +2234,7 @@ export function GarageView({ trucks, onTruckMove, onSaveChanges, onRefresh, isRe
               onPress={handleRestoreChanges}
               disabled={!hasChanges || isSaving}
             >
-              <IconReload size={18} color={colors.mutedForeground} />
+              <IconReload size={18} color={hasChanges && !isSaving ? colors.foreground : colors.mutedForeground} />
               <Text style={[styles.actionButtonText, { color: colors.foreground }]}>Desfazer</Text>
             </Button>
           </View>

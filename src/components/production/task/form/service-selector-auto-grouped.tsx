@@ -328,12 +328,17 @@ export function ServiceSelectorAutoGrouped({
     <View style={styles.container}>
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <Button variant="outline" size="sm" onPress={handleAddService} disabled={disabled} style={styles.addButton}>
+        <TouchableOpacity
+          style={[styles.addButton, { borderColor: colors.border }]}
+          onPress={handleAddService}
+          disabled={disabled}
+          activeOpacity={0.7}
+        >
           <IconPlus size={16} color={colors.foreground} />
           <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>
             Adicionar Serviço
           </ThemedText>
-        </Button>
+        </TouchableOpacity>
         <Button
           variant="outline"
           size="sm"
@@ -342,9 +347,6 @@ export function ServiceSelectorAutoGrouped({
           style={styles.organizeButton}
         >
           <IconArrowsSort size={16} color={pendingKeys.size === 0 ? colors.mutedForeground : colors.foreground} />
-          <ThemedText style={{ marginLeft: 4, fontSize: 14, color: pendingKeys.size === 0 ? colors.mutedForeground : colors.foreground }}>
-            Organizar
-          </ThemedText>
         </Button>
       </View>
 
@@ -583,119 +585,124 @@ function ServiceRow({
 
   return (
     <View style={[styles.serviceRow, isBeingDragged && { backgroundColor: colors.accent, borderRadius: 8 }]}>
-      {/* Drag handle row */}
-      {showDragHandle && (
-        <View style={styles.dragHandleRow}>
+      <View style={styles.serviceRowInner}>
+        {/* Drag handle on the left */}
+        {showDragHandle && (
           <View style={styles.dragHandle} onTouchStart={onDrag}>
             <IconGripVertical size={20} color={colors.mutedForeground} />
           </View>
-        </View>
-      )}
+        )}
 
-      {/* Row 1: Type (if not grouped) */}
-      {!isGrouped && (
-        <View style={styles.typeRow}>
-          <Combobox
-            value={service.type || SERVICE_ORDER_TYPE.PRODUCTION}
-            onValueChange={(value) => onTypeChange(index, value as string)}
-            disabled={disabled}
-            options={allowedServiceOrderTypes.map((t) => ({
-              value: t,
-              label: SERVICE_ORDER_TYPE_LABELS[t as keyof typeof SERVICE_ORDER_TYPE_LABELS],
-            }))}
-            placeholder="Tipo"
-            searchable={false}
-            clearable={false}
-          />
-        </View>
-      )}
-
-      {/* Row 2: Description (full width) */}
-      <View style={styles.descriptionRow}>
-        <Combobox
-          value={service.description}
-          onValueChange={(newValue) => {
-            onDescriptionChange(index, newValue as string | undefined);
-          }}
-          placeholder="Selecione o serviço..."
-          emptyText="Nenhum serviço encontrado"
-          searchPlaceholder="Pesquisar serviços..."
-          disabled={disabled}
-          options={descriptionOptions}
-          searchable={true}
-          clearable={false}
-        />
-      </View>
-
-      {/* Row 3: Responsible + Status + Observation + Trash */}
-      <View style={styles.controlsRow}>
-        {/* Responsible */}
-        <View style={styles.responsibleContainer}>
-          <Combobox
-            value={service.assignedToId || ""}
-            onValueChange={(value) => onAssignedToChange(index, value ? (value as string) : null)}
-            placeholder="Resp."
-            emptyText="Nenhum usuário encontrado"
-            searchPlaceholder="Buscar usuário..."
-            disabled={disabled}
-            async={true}
-            queryKey={["users", "service-order", includeSectorPrivileges?.join(",") ?? ""]}
-            queryFn={searchUsers}
-            initialOptions={getUserInitialOptions}
-            minSearchLength={0}
-            pageSize={50}
-            debounceMs={300}
-            clearable={true}
-            searchable={true}
-            size="sm"
-          />
-        </View>
-
-        {/* Status */}
-        <View style={styles.statusContainer}>
-          <Combobox
-            value={service.status || SERVICE_ORDER_STATUS.PENDING}
-            onValueChange={(value) => onStatusChange(index, value as string)}
-            disabled={disabled}
-            options={getAvailableStatuses.map((status) => ({
-              value: status,
-              label: SERVICE_ORDER_STATUS_LABELS[status as keyof typeof SERVICE_ORDER_STATUS_LABELS],
-            }))}
-            placeholder="Status"
-            searchable={false}
-            clearable={false}
-            size="sm"
-          />
-        </View>
-
-        {/* Observation Button */}
-        <TouchableOpacity
-          style={[
-            styles.observationButton,
-            {
-              borderColor: hasObservation ? colors.primary : colors.border,
-              backgroundColor: hasObservation ? colors.primary + '15' : colors.card
-            }
-          ]}
-          onPress={() => setObservationModal({ visible: true, text: service.observation || '' })}
-          disabled={disabled}
-        >
-          <IconNote size={18} color={hasObservation ? colors.primary : colors.mutedForeground} />
-          {hasObservation && (
-            <View style={styles.observationIndicator}>
-              <RNText style={styles.observationIndicatorText}>!</RNText>
+        {/* Content area */}
+        <View style={styles.serviceContent}>
+          {/* Row 1: Type (if not grouped) */}
+          {!isGrouped && (
+            <View style={styles.typeRow}>
+              <Combobox
+                value={service.type || SERVICE_ORDER_TYPE.PRODUCTION}
+                onValueChange={(value) => onTypeChange(index, value as string)}
+                disabled={disabled}
+                options={allowedServiceOrderTypes.map((t) => ({
+                  value: t,
+                  label: SERVICE_ORDER_TYPE_LABELS[t as keyof typeof SERVICE_ORDER_TYPE_LABELS],
+                }))}
+                placeholder="Tipo"
+                searchable={false}
+                clearable={false}
+              />
             </View>
           )}
-        </TouchableOpacity>
 
-        {/* Remove Button */}
-        <TouchableOpacity
-          style={[styles.removeButton, { borderColor: colors.border }]}
-          onPress={onRemove}
-          disabled={disabled}
-        >
-          <IconTrash size={18} color={colors.destructive} />
-        </TouchableOpacity>
+          {/* Row 2: Description + Observation + Trash */}
+          <View style={styles.descriptionRow}>
+            <View style={styles.descriptionCombobox}>
+              <Combobox
+                value={service.description}
+                onValueChange={(newValue) => {
+                  onDescriptionChange(index, newValue as string | undefined);
+                }}
+                placeholder="Selecione o serviço..."
+                emptyText="Nenhum serviço encontrado"
+                searchPlaceholder="Pesquisar serviços..."
+                disabled={disabled}
+                options={descriptionOptions}
+                searchable={true}
+                clearable={false}
+              />
+            </View>
+
+            {/* Observation Button */}
+            <TouchableOpacity
+              style={[
+                styles.observationButton,
+                {
+                  borderColor: hasObservation ? colors.primary : colors.border,
+                  backgroundColor: hasObservation ? colors.primary + '15' : colors.card
+                }
+              ]}
+              onPress={() => setObservationModal({ visible: true, text: service.observation || '' })}
+              disabled={disabled}
+            >
+              <IconNote size={18} color={hasObservation ? colors.primary : colors.mutedForeground} />
+              {hasObservation && (
+                <View style={styles.observationIndicator}>
+                  <RNText style={styles.observationIndicatorText}>!</RNText>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Remove Button */}
+            <TouchableOpacity
+              style={[styles.removeButton, { borderColor: colors.border }]}
+              onPress={onRemove}
+              disabled={disabled}
+            >
+              <IconTrash size={18} color={colors.destructive} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Row 3: Responsible + Status */}
+          <View style={styles.controlsRow}>
+            {/* Responsible */}
+            <View style={styles.responsibleContainer}>
+              <Combobox
+                value={service.assignedToId || ""}
+                onValueChange={(value) => onAssignedToChange(index, value ? (value as string) : null)}
+                placeholder="Resp."
+                emptyText="Nenhum usuário encontrado"
+                searchPlaceholder="Buscar usuário..."
+                disabled={disabled}
+                async={true}
+                queryKey={["users", "service-order", includeSectorPrivileges?.join(",") ?? ""]}
+                queryFn={searchUsers}
+                initialOptions={getUserInitialOptions}
+                minSearchLength={0}
+                pageSize={50}
+                debounceMs={300}
+                clearable={true}
+                searchable={true}
+                size="sm"
+              />
+            </View>
+
+            {/* Status */}
+            <View style={styles.statusContainer}>
+              <Combobox
+                value={service.status || SERVICE_ORDER_STATUS.PENDING}
+                onValueChange={(value) => onStatusChange(index, value as string)}
+                disabled={disabled}
+                options={getAvailableStatuses.map((status) => ({
+                  value: status,
+                  label: SERVICE_ORDER_STATUS_LABELS[status as keyof typeof SERVICE_ORDER_STATUS_LABELS],
+                }))}
+                placeholder="Status"
+                searchable={false}
+                clearable={false}
+                size="sm"
+              />
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Observation Modal */}
@@ -787,20 +794,31 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   serviceRow: {
-    gap: spacing.xs,
     padding: spacing.xs,
   },
-  dragHandleRow: {
-    alignItems: "center",
+  serviceRowInner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
   },
   dragHandle: {
-    padding: spacing.xs,
+    paddingTop: spacing.sm,
+    paddingRight: spacing.xs,
+  },
+  serviceContent: {
+    flex: 1,
+    gap: spacing.xs,
   },
   typeRow: {
     marginBottom: spacing.xs,
   },
   descriptionRow: {
-    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  descriptionCombobox: {
+    flex: 1,
   },
   controlsRow: {
     flexDirection: "row",
@@ -858,12 +876,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    height: 36,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   organizeButton: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
+    flexShrink: 0,
+    height: 36,
   },
   error: {
     fontSize: fontSize.xs,

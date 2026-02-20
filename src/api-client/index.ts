@@ -130,5 +130,5 @@ export {
 // export * from "./services/statistics"; // Disabled - file doesn't exist
 export * from "./services/deployment";
 export * from "./platform-utils";
-export * from "./representative";
+export * from "./responsible";
 export * from "./push-notifications";

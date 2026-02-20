@@ -806,14 +806,14 @@ export function canBatchOperateCustomers(user: User | null): boolean {
 }
 
 // =====================
-// REPRESENTATIVE PERMISSIONS
+// RESPONSIBLE PERMISSIONS
 // =====================
 
 /**
- * Can user edit/delete representatives?
- * ADMIN and COMMERCIAL manage representatives
+ * Can user edit/delete responsibles?
+ * ADMIN and COMMERCIAL manage responsibles
  */
-export function canEditRepresentatives(user: User | null): boolean {
+export function canEditResponsibles(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
@@ -821,8 +821,8 @@ export function canEditRepresentatives(user: User | null): boolean {
   ]);
 }
 
-export function canDeleteRepresentatives(user: User | null): boolean {
-  return canEditRepresentatives(user);
+export function canDeleteResponsibles(user: User | null): boolean {
+  return canEditResponsibles(user);
 }
 
 // =====================

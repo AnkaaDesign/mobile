@@ -51,11 +51,11 @@ const ALL_ROUTES = [
   { name: "administracao/clientes/listar", title: "Clientes" },
   { name: "administracao/clientes/detalhes/[id]", title: "Detalhes do Cliente" },
   { name: "administracao/clientes/editar/[id]", title: "Editar Cliente" },
-  { name: "administracao/representantes/index", title: "Representantes" },
-  { name: "administracao/representantes/listar", title: "Representantes" },
-  { name: "administracao/representantes/cadastrar", title: "Cadastrar Representante" },
-  { name: "administracao/representantes/detalhes/[id]", title: "Detalhes do Representante" },
-  { name: "administracao/representantes/editar/[id]", title: "Editar Representante" },
+  { name: "administracao/responsaveis/index", title: "Responsáveis" },
+  { name: "administracao/responsaveis/listar", title: "Responsáveis" },
+  { name: "administracao/responsaveis/cadastrar", title: "Cadastrar Responsável" },
+  { name: "administracao/responsaveis/detalhes/[id]", title: "Detalhes do Responsável" },
+  { name: "administracao/responsaveis/editar/[id]", title: "Editar Responsável" },
   { name: "administracao/colaboradores/index", title: "Colaboradores" },
   { name: "administracao/colaboradores/cadastrar", title: "Cadastrar Colaborador" },
   { name: "administracao/colaboradores/editar-em-lote", title: "Editar Colaboradores em Lote" },
@@ -506,9 +506,9 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
-    // COMMERCIAL users can access representative routes and customer routes
+    // COMMERCIAL users can access responsible routes and customer routes
     if (userPrivileges.includes(SECTOR_PRIVILEGES.COMMERCIAL) && (
-      path.startsWith('administracao/representantes/') ||
+      path.startsWith('administracao/responsaveis/') ||
       path.startsWith('administracao/clientes/')
     )) {
       return true;

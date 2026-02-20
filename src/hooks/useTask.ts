@@ -238,16 +238,32 @@ export function useTaskMutations() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: TaskUpdateFormData }) => updateTask(id, data),
     onSuccess: (response, variables) => {
-      invalidateTasks();
+      // Invalidate task LIST queries only (not detail queries — those are handled below).
+      // Using taskKeys.lists() prefix instead of taskKeys.all avoids invalidating detail
+      // queries, which would cause duplicate fetches when the detail screen mounts.
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.statistics() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.active() });
+
+      // Invalidate all detail queries for this specific task.
+      // The detail screen uses two-phase loading (minimal + full includes), both will
+      // refetch when the user navigates to the detail page. Using refetchType: 'none'
+      // marks them stale without triggering immediate refetches — the detail screen
+      // will refetch on mount.
       queryClient.invalidateQueries({
         queryKey: taskKeys.detail(variables.id),
+        refetchType: 'none',
       });
+
+      // Invalidate related entity queries
+      queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all });
+      queryClient.invalidateQueries({ queryKey: truckKeys.all });
+      queryClient.invalidateQueries({ queryKey: changeLogKeys.all });
 
       // Invalidate layout queries if truck exists (layouts are saved with task)
       if (response.data?.truck?.id) {
-        const truckId = response.data.truck?.id;
         queryClient.invalidateQueries({
-          queryKey: layoutQueryKeys.byTruck(truckId),
+          queryKey: layoutQueryKeys.byTruck(response.data.truck.id),
         });
       }
 
@@ -256,28 +272,12 @@ export function useTaskMutations() {
         queryClient.invalidateQueries({
           queryKey: taskKeys.byCustomer(response.data.customerId),
         });
-        queryClient.invalidateQueries({
-          queryKey: customerKeys.detail(response.data.customerId),
-        });
       }
 
       // Invalidate sector-specific queries
       if (response.data?.sectorId) {
         queryClient.invalidateQueries({
           queryKey: taskKeys.bySector(response.data.sectorId),
-        });
-        queryClient.invalidateQueries({
-          queryKey: sectorKeys.detail(response.data.sectorId),
-        });
-      }
-
-      // Invalidate user-specific queries if task has createdBy
-      if (response.data?.createdBy?.id) {
-        queryClient.invalidateQueries({
-          queryKey: taskKeys.byUser(response.data.createdBy.id),
-        });
-        queryClient.invalidateQueries({
-          queryKey: userKeys.detail(response.data.createdBy.id),
         });
       }
 

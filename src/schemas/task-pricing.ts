@@ -145,6 +145,8 @@ export const taskPricingCreateNestedSchema = z
       z.number().int().min(1).max(100).optional().nullable()
     ),
     discountReference: z.string().max(500).optional().nullable(),
+    // Budget responsible
+    responsibleId: z.string().uuid().optional().nullable(),
   })
   .optional()
   .superRefine((data, ctx) => {
@@ -243,6 +245,8 @@ export const taskPricingSchema = z.object({
   // NEW FIELDS: Advanced pricing features
   simultaneousTasks: z.number().int().min(1).max(100).optional().nullable(),
   discountReference: z.string().max(500).optional().nullable(),
+  // Budget responsible
+  responsibleId: z.string().uuid().optional().nullable(),
 }).superRefine((data, ctx) => {
   // Validate discount fields
   if (data.discountType !== 'NONE') {

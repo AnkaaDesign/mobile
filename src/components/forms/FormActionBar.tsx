@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, ActivityIndicator, Platform, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconX } from "@tabler/icons-react-native";
@@ -55,6 +55,8 @@ export function FormActionBar({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  // DEBUG ref must be before any early returns (React hooks rule)
+  const prevButtonStateRef = useRef<string>('');
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -84,6 +86,13 @@ export function FormActionBar({
   const showSubmit = isLastStep && (onSubmit || onSave);
   const showCancelButton = showCancel && onCancel && (isFirstStep || !isMultiStep);
   const submitHandler = onSave || onSubmit;
+
+  // DEBUG: Log button state only when it changes
+  const buttonStateKey = `${canSubmit}|${isDisabled}|${isSaveDisabled}`;
+  if (buttonStateKey !== prevButtonStateRef.current) {
+    prevButtonStateRef.current = buttonStateKey;
+    console.log('[FormActionBar DEBUG] canSubmit:', canSubmit, '| isDisabled:', isDisabled, '| isSaveDisabled:', isSaveDisabled, '| button disabled:', !canSubmit || isDisabled || isSaveDisabled);
+  }
 
   return (
     <View
@@ -122,7 +131,10 @@ export function FormActionBar({
             <IconArrowRight size={18} color={colors.primaryForeground} />
           </Button>
         ) : showSubmit ? (
-          <Button variant="default" onPress={submitHandler} disabled={!canSubmit || isDisabled || isSaveDisabled}>
+          <Button variant="default" onPress={() => {
+            console.log('[FormActionBar DEBUG] Submit button PRESSED. canSubmit:', canSubmit, '| isDisabled:', isDisabled);
+            submitHandler?.();
+          }} disabled={!canSubmit || isDisabled || isSaveDisabled}>
             {isDisabled ? (
               <ActivityIndicator size="small" color={colors.primaryForeground} />
             ) : (

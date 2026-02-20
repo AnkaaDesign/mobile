@@ -261,6 +261,9 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
     back: false,
   });
 
+  // Measured container width for accurate door button overlay positioning
+  const [svgContainerWidth, setSvgContainerWidth] = useState(0);
+
   // Store photo state SEPARATELY from layout state (like web implementation)
   // This prevents sync issues when layout state updates
   const [photoState, setPhotoState] = useState<PhotoState>({});
@@ -964,10 +967,18 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
   }, [currentState, segments, svgColors, selectedSide]);
 
   // Scale for positioning overlay remove buttons on top of SVG
+  // Must account for preserveAspectRatio="xMidYMid meet" which scales to fit
+  // the smaller dimension and centers the content
   const SVG_DISPLAY_HEIGHT = 200;
+  const svgNativeWidth = currentState ? currentState.totalWidth + 120 : 600; // totalWidth + margin*2
   const svgNativeHeight = currentState ? currentState.height + 160 : 400; // height + margin*2 + extraSpace
-  const svgRenderScale = SVG_DISPLAY_HEIGHT / svgNativeHeight;
-  const svgMarginScaled = 60 * svgRenderScale;
+  const svgDisplayWidth = svgContainerWidth > 0 ? svgContainerWidth - 2 * spacing.sm : 0; // subtract zoomableContent padding
+  const scaleX = svgDisplayWidth > 0 ? svgDisplayWidth / svgNativeWidth : 0;
+  const scaleY = SVG_DISPLAY_HEIGHT / svgNativeHeight;
+  const svgActualScale = Math.min(scaleX, scaleY);
+  // Centering offsets from "xMidYMid meet"
+  const svgOffsetX = svgDisplayWidth > 0 ? (svgDisplayWidth - svgNativeWidth * svgActualScale) / 2 : 0;
+  const svgOffsetY = (SVG_DISPLAY_HEIGHT - svgNativeHeight * svgActualScale) / 2;
 
   // Copy from another side
   const copyFromSide = useCallback((fromSide: 'left' | 'right' | 'back') => {
@@ -1047,50 +1058,56 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
           </Button>
         </View>
 
-        <GestureHandlerRootView style={styles.gestureContainer}>
+        <GestureHandlerRootView style={styles.gestureContainer} onLayout={(e) => setSvgContainerWidth(e.nativeEvent.layout.width)}>
           <GestureDetector gesture={composedGesture}>
             <Animated.View style={[styles.zoomableContent, animatedZoomStyle]}>
-              {previewSvgContent && (
-                <SvgXml
-                  xml={previewSvgContent}
-                  width="100%"
-                  height={SVG_DISPLAY_HEIGHT}
-                  preserveAspectRatio="xMidYMid meet"
-                />
-              )}
+              <View style={styles.svgWithButtonsContainer}>
+                {previewSvgContent && (
+                  <SvgXml
+                    xml={previewSvgContent}
+                    width="100%"
+                    height={SVG_DISPLAY_HEIGHT}
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                )}
+                {/* Door remove buttons overlaid on SVG, inside Animated.View so they zoom/pan together */}
+                {selectedSide !== 'back' && currentState.doors.length > 0 && svgActualScale > 0 && (
+                  <View style={styles.doorButtonsOverlay} pointerEvents="box-none">
+                    {currentState.doors.map(door => {
+                      // Door center in SVG native coordinates (matching the SVG viewBox)
+                      const doorSvgCenterX = 60 + door.position + door.width / 2;
+                      const doorTopPosition = currentState.height - door.doorHeight;
+                      const clampedTopPosition = Math.max(0, doorTopPosition);
+                      const doorSvgCenterY = 60 + clampedTopPosition + door.doorHeight / 2;
+
+                      // Map to screen pixels relative to the SVG element
+                      const buttonLeft = svgOffsetX + doorSvgCenterX * svgActualScale;
+                      const buttonTop = svgOffsetY + doorSvgCenterY * svgActualScale;
+
+                      return (
+                        <TouchableOpacity
+                          key={door.id}
+                          style={[
+                            styles.removeDoorButton,
+                            {
+                              left: buttonLeft - 12,
+                              top: buttonTop - 12,
+                              backgroundColor: colors.destructive,
+                            }
+                          ]}
+                          onPress={() => removeDoor(door.id)}
+                          disabled={disabled}
+                        >
+                          <Icon name="x" size={16} color={colors.destructiveForeground} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
             </Animated.View>
           </GestureDetector>
         </GestureHandlerRootView>
-
-        {/* Overlay: Door remove buttons (positioned on top of SVG area) */}
-        {selectedSide !== 'back' && currentState.doors.length > 0 && (
-          <View style={styles.doorButtonsOverlay} pointerEvents="box-none">
-            {currentState.doors.map(door => {
-              const doorCenterX = svgMarginScaled + (door.position + door.width / 2) * svgRenderScale;
-              const doorTopPosition = currentState.height - door.doorHeight;
-              const clampedTopPosition = Math.max(0, doorTopPosition);
-              const doorVisualCenterY = svgMarginScaled + (clampedTopPosition + (door.doorHeight / 2)) * svgRenderScale;
-
-              return (
-                <TouchableOpacity
-                  key={door.id}
-                  style={[
-                    styles.removeDoorButton,
-                    {
-                      left: doorCenterX - 12,
-                      top: doorVisualCenterY - 12,
-                      backgroundColor: colors.destructive,
-                    }
-                  ]}
-                  onPress={() => removeDoor(door.id)}
-                  disabled={disabled}
-                >
-                  <Icon name="x" size={16} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
       </View>
 
       {/* Copy and Mirror Buttons (only for left/right sides) */}
@@ -1316,6 +1333,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 200,
+  },
+  svgWithButtonsContainer: {
+    width: '100%',
+    position: 'relative',
   },
   doorButtonsOverlay: {
     position: 'absolute',
