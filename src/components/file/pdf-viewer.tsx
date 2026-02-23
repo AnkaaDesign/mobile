@@ -14,6 +14,7 @@ import {
   StatusBar,
   Alert,
   TouchableWithoutFeedback,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconX, IconChevronLeft, IconChevronRight, IconDownload, IconShare } from '@tabler/icons-react-native';
@@ -268,7 +269,9 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                   console.log('[PDF Viewer] Link pressed:', uri);
                 }}
                 style={styles.pdf}
-                enablePaging={true}
+                // enablePaging causes low-res bitmap rendering on Android (blur issue)
+                // Only enable on iOS where it renders at native resolution
+                enablePaging={Platform.OS !== 'android'}
                 horizontal={false}
                 spacing={10}
                 // Zoom configuration - allow much greater zoom for detailed viewing
@@ -278,7 +281,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
                 scale={1.0}
                 // Android rendering quality improvements
                 enableAntialiasing={true}
-                // Fit width for better initial display and to fix Android blur
+                // Fit width for better initial display
                 fitPolicy={0}
                 // Enable double-tap zoom gesture
                 enableDoubleTapZoom={true}

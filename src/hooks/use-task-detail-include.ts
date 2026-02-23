@@ -150,7 +150,13 @@ export function useTaskDetailFullInclude(user: any) {
     }),
     ...(canViewArtworks && {
       artworks: {
-        select: { id: true, file: { select: { id: true, filename: true } } },
+        select: {
+          id: true,
+          status: true,
+          file: {
+            select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true },
+          },
+        },
         take: 20,
       },
     }),

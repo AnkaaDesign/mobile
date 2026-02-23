@@ -40,14 +40,18 @@ export const useLayoutsByTruck = (
   truckId: string,
   options?: {
     include?: any;
+    includePhoto?: boolean;
     enabled?: boolean;
   }
 ) => {
+  const includePhoto = options?.includePhoto ?? false;
+
   return useQuery({
-    queryKey: layoutQueryKeys.byTruck(truckId),
+    queryKey: [...layoutQueryKeys.byTruck(truckId), { includePhoto }],
     queryFn: async () => {
       const response = await layoutService.getByTruckId(truckId, {
         include: options?.include,
+        includePhoto: includePhoto ? 'true' : undefined,
       });
       return response.data;
     },

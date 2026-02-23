@@ -608,6 +608,9 @@ export default function ScheduleDetailsScreen() {
 
             if (filteredArtworks.length === 0) return null;
 
+            // Extract file objects from artworks - file data is nested in .file
+            const artworkFiles = filteredArtworks.map((artwork: any) => artwork.file || artwork).filter((f: any) => f && f.id);
+
             return (
               <Card style={styles.sectionCard}>
                 <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
@@ -621,18 +624,18 @@ export default function ScheduleDetailsScreen() {
                 </View>
                 <View style={styles.sectionContent}>
                   <View style={styles.viewModeControls}>
-                    {filteredArtworks.length > 1 && (
+                    {artworkFiles.length > 1 && (
                       <TouchableOpacity
                         style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
                         onPress={async () => {
-                          for (const file of filteredArtworks) {
+                          for (const file of artworkFiles) {
                             try {
                               await fileViewer.actions.downloadFile(file);
                             } catch (_error) {
-                              console.error("Error downloading file:", error);
+                              console.error("Error downloading file:", _error);
                             }
                           }
-                          Alert.alert("Sucesso", `${filteredArtworks.length} arquivos baixados`);
+                          Alert.alert("Sucesso", `${artworkFiles.length} arquivos baixados`);
                         }}
                         activeOpacity={0.7}
                       >
@@ -666,27 +669,30 @@ export default function ScheduleDetailsScreen() {
                     </View>
                   </View>
                   <View style={artworksViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                    {filteredArtworks.map((artwork: any, index: number) => (
-                      <View key={artwork.id} style={styles.artworkItemContainer}>
-                        <FileItem
-                          file={artwork}
-                          viewMode={artworksViewMode}
-                          baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                          onPress={() => {
-                            fileViewer.actions.viewFiles(filteredArtworks, index);
-                          }}
-                        />
-                        {canViewArtworkBadges && artwork.status && (
-                          <View style={[styles.artworkBadgeContainer, { backgroundColor: colors.card }]}>
-                            <Badge
-                              variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REPROVED' ? 'destructive' : 'secondary'}
-                            >
-                              {artwork.status === 'APPROVED' ? 'Aprovado' : artwork.status === 'REPROVED' ? 'Reprovado' : 'Rascunho'}
-                            </Badge>
-                          </View>
-                        )}
-                      </View>
-                    ))}
+                    {filteredArtworks.map((artwork: any, index: number) => {
+                      const fileData = artwork.file || artwork;
+                      return (
+                        <View key={artwork.id} style={styles.artworkItemContainer}>
+                          <FileItem
+                            file={fileData}
+                            viewMode={artworksViewMode}
+                            baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                            onPress={() => {
+                              fileViewer.actions.viewFiles(artworkFiles, index);
+                            }}
+                          />
+                          {canViewArtworkBadges && artwork.status && (
+                            <View style={[styles.artworkBadgeContainer, { backgroundColor: colors.card }]}>
+                              <Badge
+                                variant={artwork.status === 'APPROVED' ? 'success' : artwork.status === 'REPROVED' ? 'destructive' : 'secondary'}
+                              >
+                                {artwork.status === 'APPROVED' ? 'Aprovado' : artwork.status === 'REPROVED' ? 'Reprovado' : 'Rascunho'}
+                              </Badge>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
                   </View>
                 </View>
               </Card>

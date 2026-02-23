@@ -124,7 +124,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#000000",
+          "color": "#15803d",
           "mode": "production"
         }
       ],

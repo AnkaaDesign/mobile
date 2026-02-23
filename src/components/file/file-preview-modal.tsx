@@ -12,9 +12,10 @@ import {
   ScrollView,
   Alert,
   Pressable,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { GestureDetector, Gesture, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -403,6 +404,14 @@ export function FilePreviewModal({
   // Refs
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Android tap detection refs (manual double-tap detection because RNGH's
+  // Exclusive(doubleTap, singleTap) fails on Android — the single tap gesture
+  // can't retroactively recognize a touch that already ended while it was
+  // waiting for the double-tap gesture to fail)
+  const lastTapTimeRef = useRef(0);
+  const lastTapPositionRef = useRef({ x: 0, y: 0 });
+  const pendingTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Enable orientation change when file viewer is open
   useFileViewerOrientation({ isOpen: visible });
 
@@ -435,6 +444,11 @@ export function FilePreviewModal({
     _setRotation(0);
     setImageLoading(true);
     setImageError(false);
+    // Clear any pending Android tap timer
+    if (pendingTapTimerRef.current) {
+      clearTimeout(pendingTapTimerRef.current);
+      pendingTapTimerRef.current = null;
+    }
   }, [currentIndex]);
 
   // Initialize current index
@@ -619,9 +633,9 @@ export function FilePreviewModal({
 
       // Reset to 1x if zoomed out too much
       if (scale.value < 1) {
-        scale.value = withSpring(1, { damping: 20, stiffness: 150 });
-        translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-        translateY.value = withSpring(0, { damping: 20, stiffness: 150 });
+        scale.value = withSpring(1, { damping: 30, stiffness: 120 });
+        translateX.value = withSpring(0, { damping: 30, stiffness: 120 });
+        translateY.value = withSpring(0, { damping: 30, stiffness: 120 });
         savedScale.value = 1;
         savedTranslateX.value = 0;
         savedTranslateY.value = 0;
@@ -634,8 +648,8 @@ export function FilePreviewModal({
         const clampedY = clamp(translateY.value, -maxTranslateY, maxTranslateY);
 
         if (clampedX !== translateX.value || clampedY !== translateY.value) {
-          translateX.value = withSpring(clampedX, { damping: 20, stiffness: 150 });
-          translateY.value = withSpring(clampedY, { damping: 20, stiffness: 150 });
+          translateX.value = withSpring(clampedX, { damping: 30, stiffness: 120 });
+          translateY.value = withSpring(clampedY, { damping: 30, stiffness: 120 });
           savedTranslateX.value = clampedX;
           savedTranslateY.value = clampedY;
         }
@@ -643,10 +657,10 @@ export function FilePreviewModal({
     });
 
   // Pan gesture - Smooth panning when zoomed, swipe navigation when not
-  // minDistance(10) prevents pan from stealing tap events on Android
-  // (without it, sub-pixel finger movement activates pan before tap can recognize)
+  // Higher minDistance on Android prevents pan from stealing tap events
+  // (Android touch screens have more jitter, sub-pixel movement activates pan before tap)
   const panGesture = Gesture.Pan()
-    .minDistance(10)
+    .minDistance(Platform.OS === 'android' ? 20 : 10)
     .onStart(() => {
       'worklet';
       // Save current position at start of gesture to prevent teleporting
@@ -708,12 +722,85 @@ export function FilePreviewModal({
         }
 
         // Reset swipe state
-        swipeTranslateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-        opacity.value = withSpring(1, { damping: 20, stiffness: 150 });
+        swipeTranslateX.value = withSpring(0, { damping: 30, stiffness: 120 });
+        opacity.value = withSpring(1, { damping: 30, stiffness: 120 });
       }
     });
 
-  // Single tap to toggle controls
+  // === Android: Manual double-tap detection ===
+  // RNGH's Exclusive(Tap(2), Tap(1)) doesn't work on Android because when the
+  // double-tap gesture fails (no second tap within timeout), the single-tap
+  // gesture can't retroactively recognize a touch that already ended while it
+  // was in a "waiting" state. Instead, we use a single Tap(1) gesture that
+  // fires on every tap, then distinguish single vs double tap in JS with a timer.
+
+  const handleDoubleTapZoom = useCallback((x: number, y: number) => {
+    showControls();
+
+    if (scale.value > 1) {
+      scale.value = withSpring(1, { damping: 30, stiffness: 120 });
+      translateX.value = withSpring(0, { damping: 30, stiffness: 120 });
+      translateY.value = withSpring(0, { damping: 30, stiffness: 120 });
+      savedScale.value = 1;
+      savedTranslateX.value = 0;
+      savedTranslateY.value = 0;
+    } else {
+      const targetScale = 2.5;
+      const tapX = x - SCREEN_WIDTH / 2;
+      const tapY = y - SCREEN_HEIGHT / 2;
+
+      scale.value = withSpring(targetScale, { damping: 30, stiffness: 120 });
+      translateX.value = withSpring(-tapX * (targetScale - 1), { damping: 30, stiffness: 120 });
+      translateY.value = withSpring(-tapY * (targetScale - 1), { damping: 30, stiffness: 120 });
+      savedScale.value = targetScale;
+      savedTranslateX.value = -tapX * (targetScale - 1);
+      savedTranslateY.value = -tapY * (targetScale - 1);
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, [showControls]);
+
+  const handleAndroidTap = useCallback((x: number, y: number) => {
+    const now = Date.now();
+    const elapsed = now - lastTapTimeRef.current;
+    const lastPos = lastTapPositionRef.current;
+    const distance = Math.sqrt((x - lastPos.x) ** 2 + (y - lastPos.y) ** 2);
+
+    lastTapTimeRef.current = now;
+    lastTapPositionRef.current = { x, y };
+
+    if (elapsed < 300 && distance < 50) {
+      // Double tap — cancel pending single-tap action and zoom
+      if (pendingTapTimerRef.current) {
+        clearTimeout(pendingTapTimerRef.current);
+        pendingTapTimerRef.current = null;
+      }
+      handleDoubleTapZoom(x, y);
+    } else {
+      // Possible single tap — delay to see if a second tap follows
+      if (pendingTapTimerRef.current) {
+        clearTimeout(pendingTapTimerRef.current);
+      }
+      pendingTapTimerRef.current = setTimeout(() => {
+        toggleControls();
+        pendingTapTimerRef.current = null;
+      }, 300);
+    }
+  }, [toggleControls, handleDoubleTapZoom]);
+
+  // Android: single Tap(1) gesture — fires immediately, double-tap detected in JS
+  const androidTapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .maxDistance(25)
+    .onEnd((event) => {
+      'worklet';
+      runOnJS(handleAndroidTap)(event.x, event.y);
+    });
+
+  // === iOS: Native RNGH double-tap / single-tap coordination ===
+  // Exclusive(doubleTap, singleTap) works correctly on iOS — the gesture system
+  // properly replays the ended touch to singleTap after doubleTap fails.
+
   const singleTapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .onEnd(() => {
@@ -721,7 +808,6 @@ export function FilePreviewModal({
       runOnJS(toggleControls)();
     });
 
-  // Double tap to zoom
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd((event) => {
@@ -729,22 +815,20 @@ export function FilePreviewModal({
       runOnJS(showControls)();
 
       if (scale.value > 1) {
-        // Zoom out to 1x
-        scale.value = withSpring(1, { damping: 20, stiffness: 150 });
-        translateX.value = withSpring(0, { damping: 20, stiffness: 150 });
-        translateY.value = withSpring(0, { damping: 20, stiffness: 150 });
+        scale.value = withSpring(1, { damping: 30, stiffness: 120 });
+        translateX.value = withSpring(0, { damping: 30, stiffness: 120 });
+        translateY.value = withSpring(0, { damping: 30, stiffness: 120 });
         savedScale.value = 1;
         savedTranslateX.value = 0;
         savedTranslateY.value = 0;
       } else {
-        // Zoom in to 2.5x at tap location
         const targetScale = 2.5;
         const tapX = event.x - SCREEN_WIDTH / 2;
         const tapY = event.y - SCREEN_HEIGHT / 2;
 
-        scale.value = withSpring(targetScale, { damping: 20, stiffness: 150 });
-        translateX.value = withSpring(-tapX * (targetScale - 1), { damping: 20, stiffness: 150 });
-        translateY.value = withSpring(-tapY * (targetScale - 1), { damping: 20, stiffness: 150 });
+        scale.value = withSpring(targetScale, { damping: 30, stiffness: 120 });
+        translateX.value = withSpring(-tapX * (targetScale - 1), { damping: 30, stiffness: 120 });
+        translateY.value = withSpring(-tapY * (targetScale - 1), { damping: 30, stiffness: 120 });
         savedScale.value = targetScale;
         savedTranslateX.value = -tapX * (targetScale - 1);
         savedTranslateY.value = -tapY * (targetScale - 1);
@@ -753,13 +837,16 @@ export function FilePreviewModal({
       }
     });
 
-  // Tap gestures: double-tap has priority, then single-tap
-  const tapGestures = Gesture.Exclusive(doubleTapGesture, singleTapGesture);
-
-  // Compose all gestures
+  // === Gesture composition ===
+  // Android: Race(Tap(1), Pan) — tap fires immediately on finger lift,
+  //   pan fires if finger moves > 20px. No Exclusive needed since there's
+  //   only one tap gesture (double-tap detected manually in JS).
+  // iOS: Race(Exclusive(doubleTap, singleTap), Pan) — original composition.
   const composedGesture = Gesture.Simultaneous(
     pinchGesture,
-    Gesture.Race(tapGestures, panGesture)
+    Platform.OS === 'android'
+      ? Gesture.Race(androidTapGesture, panGesture)
+      : Gesture.Race(Gesture.Exclusive(doubleTapGesture, singleTapGesture), panGesture)
   );
 
   // Animated styles (pinch/pan zoom only, no rotation)
@@ -879,6 +966,11 @@ export function FilePreviewModal({
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+      {/* GestureHandlerRootView is required inside Modal on Android because Modal
+          creates a new native Dialog with its own view hierarchy, outside the app's
+          root GestureHandlerRootView. Without this, all RNGH gestures (tap, pinch,
+          pan) are silently ignored on Android. */}
+      <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={isDark ? '#1a1a1a' : '#e5e5e5'} translucent />
 
       <View style={[styles.container, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}>
@@ -963,7 +1055,9 @@ export function FilePreviewModal({
                             toggleControls();
                           }}
                           style={styles.pdfViewer}
-                          enablePaging={true}
+                          // enablePaging causes low-res bitmap rendering on Android (blur issue)
+                          // Only enable on iOS where it renders at native resolution
+                          enablePaging={Platform.OS !== 'android'}
                           horizontal={false}
                           spacing={10}
                           // Zoom configuration - allow much greater zoom for detailed viewing
@@ -973,7 +1067,7 @@ export function FilePreviewModal({
                           scale={1.0}
                           // Android rendering quality improvements - fixes blur issue
                           enableAntialiasing={true}
-                          // Fit width for better initial display and to fix Android blur
+                          // Fit width for better initial display
                           fitPolicy={0}
                           // Enable double-tap zoom gesture
                           enableDoubleTapZoom={true}
@@ -1198,6 +1292,7 @@ export function FilePreviewModal({
           )}
         </View>
       </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

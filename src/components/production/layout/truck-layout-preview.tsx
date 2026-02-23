@@ -18,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { useLayoutsByTruck } from "@/hooks";
-import { IconZoomIn, IconZoomOut, IconZoomReset } from "@tabler/icons-react-native";
+import { IconZoomIn, IconZoomOut, IconZoomReset, IconDownload, IconPhoto } from "@tabler/icons-react-native";
+import { getCurrentApiUrl } from "@/api-client";
 
 interface TruckLayoutPreviewProps {
   truckId: string;
@@ -29,6 +30,7 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
   const { colors, isDark } = useTheme();
   const { data: layouts } = useLayoutsByTruck(truckId, {
     include: { layoutSections: true },
+    includePhoto: true,
     enabled: !!truckId,
   });
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | 'back'>('left');
@@ -298,6 +300,52 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
     }
   };
 
+  // Download backside photo
+  const downloadPhoto = async () => {
+    const photo = (currentLayout as any)?.photo;
+    if (!photo?.id) return;
+
+    try {
+      const apiUrl = getCurrentApiUrl();
+      const downloadUrl = `${apiUrl}/files/${photo.id}/download`;
+      const extension = photo.mimetype?.split('/')[1] || photo.mimeType?.split('/')[1] || 'jpg';
+      const taskPrefix = taskName ? `${taskName}-` : '';
+      const filename = `${taskPrefix}layout-traseira-foto.${extension}`;
+
+      const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+      const downloadResult = await FileSystem.downloadAsync(downloadUrl, fileUri);
+
+      if (downloadResult.status === 200) {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri);
+        } else {
+          Alert.alert("Sucesso", "Foto baixada com sucesso!");
+        }
+      } else {
+        throw new Error('Download falhou');
+      }
+    } catch (error) {
+      console.error("Error downloading photo:", error);
+      Alert.alert("Erro", "Erro ao baixar a foto");
+    }
+  };
+
+  // Download all (SVG + photo if exists)
+  const downloadAll = async () => {
+    try {
+      await downloadSVG();
+      const photo = (layouts?.backSideLayout as any)?.photo;
+      if (photo?.id) {
+        await downloadPhoto();
+      }
+    } catch (error) {
+      console.error("Error downloading all:", error);
+    }
+  };
+
+  // Check if current layout has a photo
+  const hasPhoto = !!(currentLayout as any)?.photo?.id;
+
   // Get side label
   const getSideLabel = (side: 'left' | 'right' | 'back') => {
     switch (side) {
@@ -352,14 +400,53 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
           disabled={!layouts.backSideLayout}
           style={{ flex: 1 }}
         >
-          <ThemedText style={{
-            fontSize: fontSize.sm,
-            color: selectedSide === 'back' ? colors.primaryForeground : colors.foreground
-          }}>
-            {getSideLabel('back')}
-          </ThemedText>
+          <View style={styles.buttonContent}>
+            <ThemedText style={{
+              fontSize: fontSize.sm,
+              color: selectedSide === 'back' ? colors.primaryForeground : colors.foreground
+            }}>
+              {getSideLabel('back')}
+            </ThemedText>
+            {!!(layouts.backSideLayout as any)?.photo && (
+              <IconPhoto size={14} color={selectedSide === 'back' ? colors.primaryForeground : colors.foreground} />
+            )}
+          </View>
         </Button>
       </View>
+
+      {/* Download buttons */}
+      {svgContent && (
+        <View style={styles.downloadButtons}>
+          <Button
+            variant="default"
+            size="sm"
+            onPress={downloadAll}
+            style={{ flex: 1 }}
+          >
+            <View style={styles.buttonContent}>
+              <IconDownload size={16} color={colors.primaryForeground} />
+              <ThemedText style={{ fontSize: fontSize.sm, color: colors.primaryForeground }}>
+                Baixar Tudo
+              </ThemedText>
+            </View>
+          </Button>
+          {hasPhoto && (
+            <Button
+              variant="outline"
+              size="sm"
+              onPress={downloadPhoto}
+              style={{ flex: 1 }}
+            >
+              <View style={styles.buttonContent}>
+                <IconDownload size={16} color={colors.foreground} />
+                <ThemedText style={{ fontSize: fontSize.sm, color: colors.foreground }}>
+                  Baixar Foto
+                </ThemedText>
+              </View>
+            </Button>
+          )}
+        </View>
+      )}
 
       {/* SVG Preview with Zoom */}
       {svgContent && (
@@ -418,6 +505,15 @@ const styles = StyleSheet.create({
   },
   sideSelector: {
     flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  downloadButtons: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   downloadButton: {
