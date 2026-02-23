@@ -114,3 +114,6 @@ export type CustomerMergeResponse = BaseMergeResponse<Customer>;
 export type CustomerBatchCreateResponse = BaseBatchResponse<Customer, unknown>;
 export type CustomerBatchUpdateResponse = BaseBatchResponse<Customer, unknown>;
 export type CustomerBatchDeleteResponse = BaseBatchResponse<{ id: string; deleted: boolean }, { id: string }>;
+
+// Alias used by responsible.ts (company relation on a responsible)
+export type Company = Customer;

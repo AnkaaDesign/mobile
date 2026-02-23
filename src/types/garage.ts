@@ -207,6 +207,8 @@ export function calculateLayoutSectionsSum(
 // =====================
 
 export const SPOT_LABELS: Record<TRUCK_SPOT, string> = {
+  [TRUCK_SPOT.YARD_WAIT]: 'Pátio de Espera',
+  [TRUCK_SPOT.YARD_EXIT]: 'Pátio de Saída',
   [TRUCK_SPOT.B1_F1_V1]: 'Barracão 1 - Faixa 1 - Vaga 1',
   [TRUCK_SPOT.B1_F1_V2]: 'Barracão 1 - Faixa 1 - Vaga 2',
   [TRUCK_SPOT.B1_F1_V3]: 'Barracão 1 - Faixa 1 - Vaga 3',

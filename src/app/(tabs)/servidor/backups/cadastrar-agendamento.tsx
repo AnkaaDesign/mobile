@@ -247,7 +247,7 @@ export default function CreateBackupScheduleScreen() {
                   borderColor: "#f59e0b30",
                 }}>
                   <View style={{ flexDirection: "row", gap: 6 }}>
-                    <Icon name="alert-triangle" size={14} color="#f59e0b" style={{ marginTop: 1 }} />
+                    <View style={{ marginTop: 1 }}><Icon name="alert-triangle" size={14} color="#f59e0b" /></View>
                     <Text style={{ fontSize: 12, color: "#f59e0b", flex: 1 }}>
                       Cada backup será excluído automaticamente em{" "}
                       {RETENTION_OPTIONS.find((o) => o.value === form.autoDelete.retention)?.label || "?"}{" "}

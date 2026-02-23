@@ -4,6 +4,7 @@ import { useTheme } from '@/lib/theme';
 import { useTasks, useScreenReady } from '@/hooks';
 import { usePrivileges } from '@/hooks/usePrivileges';
 import { GarageView } from '@/components/production/garage/garage-view';
+import { TruckDetailModal } from '@/components/production/garage/truck-detail-modal';
 import { SkeletonCard } from '@/components/ui/skeleton-card';
 import { Card } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
@@ -20,6 +21,7 @@ export default function GaragesScreen() {
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   // Check privileges - only ADMIN, LOGISTIC, or team leaders can edit positions
   const { isAdmin, user, canAccess } = usePrivileges();
@@ -38,7 +40,7 @@ export default function GaragesScreen() {
   // Aligned with web query for consistent data
   const { data: tasksResponse, isLoading, error, refetch } = useTasks({
     page: 1,
-    limit: 50,
+    limit: 200,
     where: {
       truck: { isNot: null },
       OR: [
@@ -89,6 +91,12 @@ export default function GaragesScreen() {
           },
         },
       },
+      sector: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       generalPainting: {
         select: {
           hex: true,
@@ -120,29 +128,38 @@ export default function GaragesScreen() {
       [TASK_STATUS.CANCELLED]: 5,
     };
 
+    const isGarageSpot = (spot: string | null) =>
+      !!spot && /^B\d_F\d_V\d$/.test(spot);
+
     const filtered = tasksResponse.data.filter((task) => {
       // Must have a truck
       if (!task.truck) return false;
 
       const truck = task.truck as any;
+      const spot = truck?.spot as string | null;
 
-      // If truck has a spot assigned in a garage, always include it
+      // If truck has a garage spot (B1_F1_V1, etc.), always include it
       // (even if completed or without layout — use default length)
-      if (truck?.spot) {
+      if (isGarageSpot(spot)) {
         return true;
       }
 
-      // For patio/unassigned trucks: must have a layout defined (for dimensions)
+      // If truck already has a yard spot assigned, include it
+      // (trucks without layout can still appear in yard with default length)
+      if (spot === 'YARD_WAIT' || spot === 'YARD_EXIT') {
+        // Still need date/status check below
+      }
+
       const layout = truck?.leftSideLayout || truck?.rightSideLayout;
       const layoutSections = layout?.layoutSections || [];
-      if (layoutSections.length === 0) return false;
+      // Trucks without layout can still appear in yard with default length
 
-      // For patio: only include if forecastDate <= today OR entryDate <= today, AND status is not COMPLETED
+      // Yard trucks: only include if forecastDate <= today OR entryDate <= today, AND status is not COMPLETED
       const forecastDate = (task as any).forecastDate;
       const entryDate = (task as any).entryDate;
       if (!forecastDate && !entryDate) return false;
 
-      // Must not have COMPLETED status for patio display
+      // Must not have COMPLETED status for yard display
       if (task.status === TASK_STATUS.COMPLETED) return false;
 
       // Show if truck already arrived (entryDate) or is expected (forecastDate)
@@ -169,7 +186,8 @@ export default function GaragesScreen() {
     for (const task of filtered) {
       const truck = task.truck as any;
       const spot = truck?.spot;
-      if (!spot) continue;
+      // Skip deduplication for null spots and yard spots (multiple trucks allowed)
+      if (!spot || spot === 'YARD_WAIT' || spot === 'YARD_EXIT') continue;
 
       const existing = spotOwners.get(spot);
       if (!existing) {
@@ -218,13 +236,15 @@ export default function GaragesScreen() {
         }
       }
 
-      // Demoted trucks (duplicates at same spot) lose their spot
+      // Demoted trucks (duplicates at same spot) go to yard wait
       const isDemoted = demotedTaskIds.has(task.id);
+      // Trucks without a spot default to YARD_WAIT (arriving trucks)
+      const dbSpot = truck?.spot || 'YARD_WAIT';
 
       return {
         id: task.id,
         truckId: truck?.id,
-        spot: isDemoted ? null : (truck?.spot || null),
+        spot: isDemoted ? 'YARD_WAIT' : dbSpot,
         taskName: task.name,
         serialNumber: (task as any).serialNumber || null,
         paintHex: (task.generalPainting as any)?.hex || null,
@@ -234,13 +254,15 @@ export default function GaragesScreen() {
         term: (task as any).term || null,
         forecastDate: (task as any).forecastDate || null,
         finishedAt: (task as any).finishedAt || null,
+        sectorId: (task as any).sector?.id || null,
+        sectorName: (task as any).sector?.name || null,
       };
     });
   }, [tasksResponse]);
 
   // Handle batch save of all spot changes using single API call
   const handleSaveChanges = useCallback(
-    async (changes: Array<{ truckId: string; newSpot: TRUCK_SPOT | null }>) => {
+    async (changes: Array<{ truckId: string; newSpot: string | null }>) => {
       // Convert task IDs to truck IDs for the API
       const updates = changes
         .map((change) => {
@@ -252,7 +274,7 @@ export default function GaragesScreen() {
             spot: change.newSpot,
           };
         })
-        .filter((u): u is { truckId: string; spot: TRUCK_SPOT | null } => u !== null);
+        .filter((u): u is { truckId: string; spot: string | null } => u !== null);
 
       if (updates.length === 0) return;
 
@@ -295,7 +317,7 @@ export default function GaragesScreen() {
 
             {/* Dots skeleton */}
             <View style={styles.skeletonDots}>
-              {[0, 1, 2, 3].map((i) => (
+              {[0, 1, 2, 3, 4].map((i) => (
                 <SkeletonCard key={i} height={10} width={10} borderRadius={5} />
               ))}
             </View>
@@ -372,10 +394,16 @@ export default function GaragesScreen() {
       <GarageView
         trucks={garageTrucks}
         onSaveChanges={canEditGaragePositions ? handleSaveChanges : undefined}
+        onTruckSelect={setSelectedTaskId}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
         isSaving={isUpdating}
         readOnly={!canEditGaragePositions}
+      />
+      <TruckDetailModal
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
       />
     </View>
   );

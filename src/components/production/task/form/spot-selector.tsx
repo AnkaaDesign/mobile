@@ -80,8 +80,9 @@ export function SpotSelector({
   // Parse current spot to initialize state
   const parsedSpot = useMemo(() => parseSpot(currentSpot), [currentSpot]);
 
-  const [selectedGarage, setSelectedGarage] = useState<GarageId | 'PATIO' | null>(
-    parsedSpot.garage
+  const isYardSpot = currentSpot === TRUCK_SPOT.YARD_WAIT || currentSpot === TRUCK_SPOT.YARD_EXIT;
+  const [selectedGarage, setSelectedGarage] = useState<GarageId | 'YARD_WAIT' | 'YARD_EXIT' | null>(
+    isYardSpot ? (currentSpot as 'YARD_WAIT' | 'YARD_EXIT') : parsedSpot.garage
   );
   const [selectedLane, setSelectedLane] = useState<LaneId | null>(parsedSpot.lane);
   const [selectedSpotNumber, setSelectedSpotNumber] = useState<SpotNumber | null>(parsedSpot.spotNumber);
@@ -98,7 +99,7 @@ export function SpotSelector({
 
   // Find selected garage data
   const selectedGarageData = useMemo(() => {
-    if (!selectedGarage || selectedGarage === 'PATIO') return null;
+    if (!selectedGarage || selectedGarage === 'YARD_WAIT' || selectedGarage === 'YARD_EXIT') return null;
     const garageToFind = selectedGarage as GarageId;
     return garages.find((g) => g.garageId === garageToFind) ?? null;
   }, [garages, selectedGarage]);
@@ -113,8 +114,13 @@ export function SpotSelector({
   const garageOptions = useMemo(() => {
     const options = [
       {
-        value: 'PATIO',
-        label: 'Patio (sem vaga)',
+        value: 'YARD_WAIT',
+        label: 'Pátio de Espera',
+        disabled: false,
+      },
+      {
+        value: 'YARD_EXIT',
+        label: 'Pátio de Saída',
         disabled: false,
       },
     ];
@@ -163,7 +169,7 @@ export function SpotSelector({
   // Spot options for selected lane
   // Show V3 when: current task is at V3, OR (V1 and V2 are occupied AND at least 6m available)
   const spotOptions = useMemo(() => {
-    if (!selectedLaneData || !selectedGarage || selectedGarage === 'PATIO') return [];
+    if (!selectedLaneData || !selectedGarage || selectedGarage === 'YARD_WAIT' || selectedGarage === 'YARD_EXIT') return [];
 
     const spots: { value: string; label: string; disabled: boolean }[] = [];
     const maxSpots = 2; // Only show V1 and V2 by default
@@ -228,11 +234,11 @@ export function SpotSelector({
   // Handle garage change
   const handleGarageChange = useCallback((value: string | string[] | null | undefined) => {
     const stringValue = Array.isArray(value) ? value[0] : value;
-    if (stringValue === 'PATIO') {
-      setSelectedGarage('PATIO');
+    if (stringValue === 'YARD_WAIT' || stringValue === 'YARD_EXIT') {
+      setSelectedGarage(stringValue);
       setSelectedLane(null);
       setSelectedSpotNumber(null);
-      onSpotChange(null); // Clear spot when Patio is selected
+      onSpotChange(stringValue as TRUCK_SPOT); // Set yard spot value
     } else if (stringValue) {
       setSelectedGarage(stringValue as GarageId);
       setSelectedLane(null);
@@ -259,7 +265,7 @@ export function SpotSelector({
   // Handle spot change
   const handleSpotChange = useCallback((value: string | string[] | null | undefined) => {
     const stringValue = Array.isArray(value) ? value[0] : value;
-    if (stringValue && selectedGarage && selectedGarage !== 'PATIO' && selectedLane) {
+    if (stringValue && selectedGarage && selectedGarage !== 'YARD_WAIT' && selectedGarage !== 'YARD_EXIT' && selectedLane) {
       const spotNum = parseInt(stringValue, 10) as SpotNumber;
       setSelectedSpotNumber(spotNum);
       const newSpot = buildSpot(selectedGarage, selectedLane, spotNum);
@@ -271,11 +277,17 @@ export function SpotSelector({
 
   // Sync state when currentSpot changes externally
   useEffect(() => {
-    const parsed = parseSpot(currentSpot);
-    if (parsed.garage) {
-      setSelectedGarage(parsed.garage);
-      setSelectedLane(parsed.lane);
-      setSelectedSpotNumber(parsed.spotNumber);
+    if (currentSpot === TRUCK_SPOT.YARD_WAIT || currentSpot === TRUCK_SPOT.YARD_EXIT) {
+      setSelectedGarage(currentSpot as 'YARD_WAIT' | 'YARD_EXIT');
+      setSelectedLane(null);
+      setSelectedSpotNumber(null);
+    } else {
+      const parsed = parseSpot(currentSpot);
+      if (parsed.garage) {
+        setSelectedGarage(parsed.garage);
+        setSelectedLane(parsed.lane);
+        setSelectedSpotNumber(parsed.spotNumber);
+      }
     }
   }, [currentSpot]);
 
@@ -315,7 +327,7 @@ export function SpotSelector({
               onValueChange={handleLaneChange}
               options={laneOptions}
               placeholder="Faixa"
-              disabled={isDisabled || !selectedGarage || selectedGarage === 'PATIO'}
+              disabled={isDisabled || !selectedGarage || selectedGarage === 'YARD_WAIT' || selectedGarage === 'YARD_EXIT'}
               searchable={false}
             />
           </View>

@@ -57,7 +57,6 @@ const Sheet: React.FC<SheetProps> = ({
   style,
 }) => {
   const { colors } = useTheme();
-  const translateY = useSharedValue(SCREEN_HEIGHT);
   const opacity = useSharedValue(0);
   const [currentSnapIndex, setCurrentSnapIndex] = React.useState(initialSnapIndex);
 
@@ -66,6 +65,10 @@ const Sheet: React.FC<SheetProps> = ({
     () => snapPoints.map((point) => SCREEN_HEIGHT * (point / 100)),
     [snapPoints]
   );
+
+  // Max snap height is used as the sheet's fixed height
+  const maxSnapHeight = snapHeights[snapHeights.length - 1];
+  const translateY = useSharedValue(maxSnapHeight);
 
   // Handle Android back button
   React.useEffect(() => {
@@ -84,20 +87,20 @@ const Sheet: React.FC<SheetProps> = ({
     if (open) {
       opacity.value = withTiming(1, { duration: transitions.fast });
       translateY.value = withSpring(
-        SCREEN_HEIGHT - snapHeights[currentSnapIndex],
+        maxSnapHeight - snapHeights[currentSnapIndex],
         {
-          damping: 20,
+          damping: 28,
           stiffness: 200,
         }
       );
     } else {
       opacity.value = withTiming(0, { duration: transitions.fast });
-      translateY.value = withSpring(SCREEN_HEIGHT, {
-        damping: 20,
+      translateY.value = withSpring(maxSnapHeight, {
+        damping: 28,
         stiffness: 200,
       });
     }
-  }, [open, currentSnapIndex, snapHeights, opacity, translateY]);
+  }, [open, currentSnapIndex, snapHeights, maxSnapHeight, opacity, translateY]);
 
   const close = React.useCallback(() => {
     onOpenChange(false);
@@ -109,14 +112,14 @@ const Sheet: React.FC<SheetProps> = ({
 
       setCurrentSnapIndex(index);
       translateY.value = withSpring(
-        SCREEN_HEIGHT - snapHeights[index],
+        maxSnapHeight - snapHeights[index],
         {
-          damping: 20,
+          damping: 28,
           stiffness: 200,
         }
       );
     },
-    [snapHeights, translateY]
+    [snapHeights, maxSnapHeight, translateY]
   );
 
   const startY = useSharedValue(0);
@@ -126,9 +129,9 @@ const Sheet: React.FC<SheetProps> = ({
       startY.value = translateY.value;
     })
     .onUpdate((event) => {
-      const newY = SCREEN_HEIGHT - snapHeights[currentSnapIndex] + event.translationY;
-      const minY = SCREEN_HEIGHT - snapHeights[snapHeights.length - 1];
-      const maxY = SCREEN_HEIGHT;
+      const newY = maxSnapHeight - snapHeights[currentSnapIndex] + event.translationY;
+      const minY = 0; // Fully expanded (max snap)
+      const maxY = maxSnapHeight; // Fully hidden
 
       translateY.value = Math.min(Math.max(newY, minY), maxY);
     })
@@ -138,10 +141,10 @@ const Sheet: React.FC<SheetProps> = ({
 
       // Find closest snap point
       let closestIndex = 0;
-      let closestDistance = Math.abs(currentY - (SCREEN_HEIGHT - snapHeights[0]));
+      let closestDistance = Math.abs(currentY - (maxSnapHeight - snapHeights[0]));
 
       for (let i = 1; i < snapHeights.length; i++) {
-        const distance = Math.abs(currentY - (SCREEN_HEIGHT - snapHeights[i]));
+        const distance = Math.abs(currentY - (maxSnapHeight - snapHeights[i]));
         if (distance < closestDistance) {
           closestDistance = distance;
           closestIndex = i;
@@ -163,7 +166,7 @@ const Sheet: React.FC<SheetProps> = ({
       }
 
       // If dragged past close threshold, close the sheet
-      if (currentY > SCREEN_HEIGHT - snapHeights[0] * 0.5) {
+      if (currentY > maxSnapHeight - snapHeights[0] * 0.5) {
         runOnJS(close)();
         return;
       }
@@ -184,14 +187,14 @@ const Sheet: React.FC<SheetProps> = ({
     bottom: 0,
     left: 0,
     right: 0,
+    height: maxSnapHeight,
     backgroundColor: colors.card,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    minHeight: snapHeights[0],
-    maxHeight: snapHeights[snapHeights.length - 1],
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.border,
+    overflow: "hidden",
     ...shadow.lg,
     ...style,
   };
@@ -235,7 +238,7 @@ const Sheet: React.FC<SheetProps> = ({
 
           {/* Sheet Content */}
           <GestureDetector gesture={panGesture}>
-            <Animated.View style={StyleSheet.flatten([sheetContentStyle, sheetStyle])}>
+            <Animated.View style={[sheetContentStyle, sheetStyle]}>
               {dragIndicator && <View style={dragIndicatorStyle} />}
               {children}
             </Animated.View>

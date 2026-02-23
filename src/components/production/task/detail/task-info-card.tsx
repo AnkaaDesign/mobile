@@ -51,7 +51,7 @@ interface TaskInfoCardProps {
     truck?: Truck;
     customer?: {
       fantasyName: string;
-      corporateName?: string;
+      corporateName?: string | null;
     };
     negotiatingWith?: {
       name: string;

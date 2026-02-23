@@ -105,7 +105,7 @@ export * from "./use-entity-details";
 // Other Module Hooks
 // =====================================================
 export * from "./useCustomer";
-// export * from "./useResponsible"; // Removed - migrated to use-responsibles-infinite-mobile
+export * from "./useResponsible";
 // export * from "./useTruck"; // Disabled - file removed
 export * from "./useLayout";
 

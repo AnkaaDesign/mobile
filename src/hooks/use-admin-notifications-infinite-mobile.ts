@@ -31,11 +31,11 @@ export function useAdminNotificationsInfiniteMobile(
       // The generic useSort hook produces orderBy as an object (e.g., { sentAt: 'desc' }),
       // but the API expects flat params: orderBy=sentAt&order=desc
       let flatOrderBy: string | undefined;
-      let flatOrder: string | undefined;
+      let flatOrder: "asc" | "desc" | undefined;
       if (orderBy && typeof orderBy === 'object') {
         const key = Object.keys(orderBy)[0];
         flatOrderBy = key;
-        flatOrder = (orderBy as Record<string, string>)[key];
+        flatOrder = (orderBy as Record<string, string>)[key] as "asc" | "desc";
       } else if (typeof orderBy === 'string') {
         flatOrderBy = orderBy;
       }

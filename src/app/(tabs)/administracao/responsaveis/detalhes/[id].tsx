@@ -20,10 +20,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const ROLE_BADGE_VARIANTS: Record<ResponsibleRole, BadgeVariant> = {
   [ResponsibleRole.COMMERCIAL]: 'blue',
+  [ResponsibleRole.OWNER]: 'destructive',
+  [ResponsibleRole.SELLER]: 'cyan',
+  [ResponsibleRole.REPRESENTATIVE]: 'secondary',
   [ResponsibleRole.MARKETING]: 'purple',
   [ResponsibleRole.COORDINATOR]: 'green',
   [ResponsibleRole.FINANCIAL]: 'orange',
   [ResponsibleRole.FLEET_MANAGER]: 'gray',
+  [ResponsibleRole.DRIVER]: 'outline',
 };
 
 export default function ResponsibleDetailScreen() {
@@ -294,7 +298,7 @@ export default function ResponsibleDetailScreen() {
           </View>
           <View style={styles.content}>
             <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.RESPONSIBLE}
+              entityType={CHANGE_LOG_ENTITY_TYPE.REPRESENTATIVE}
               entityId={rep.id}
               entityName={rep.name}
               entityCreatedAt={rep.createdAt}
