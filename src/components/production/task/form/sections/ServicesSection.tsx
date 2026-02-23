@@ -8,8 +8,6 @@ import { View, StyleSheet } from 'react-native';
 import { Controller, useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { FormFieldGroup } from '@/components/ui';
-import { Textarea } from '@/components/ui/textarea';
-import { SimpleFormField } from '@/components/ui';
 import { ServiceSelectorAutoGrouped } from '../service-selector-auto-grouped';
 import { GeneralPaintingSelector, LogoPaintsSelector } from '../paint-selector';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,7 +30,8 @@ export default function ServicesSection({
   const { user } = useAuth();
 
   // Check user sector
-  const isCommercialSector = user?.sector?.privileges === 'COMMERCIAL';
+  const userPrivilege = user?.sector?.privileges;
+  const isCommercialSector = userPrivilege === 'COMMERCIAL';
 
   // Reorder synced pricing items to match PRODUCTION service order reorder
   const handleProductionReorder = useCallback((descriptions: string[]) => {
@@ -86,28 +85,12 @@ export default function ServicesSection({
                 disabled={isSubmitting}
                 error={error?.message}
                 onProductionReorder={handleProductionReorder}
+                userPrivilege={userPrivilege}
               />
             )}
           />
         </FormFieldGroup>
 
-        {/* Details */}
-        <SimpleFormField label="Detalhes" error={errors.details}>
-          <Controller
-            control={control}
-            name="details"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Textarea
-                value={value || ""}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                placeholder="Detalhes adicionais sobre a tarefa..."
-                numberOfLines={4}
-                error={!!errors.details}
-              />
-            )}
-          />
-        </SimpleFormField>
       </FormCard>
 
       {/* Paints */}

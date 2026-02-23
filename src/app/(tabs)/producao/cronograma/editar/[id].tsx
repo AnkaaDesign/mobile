@@ -706,6 +706,7 @@ export default function EditScheduleScreen() {
       budgetIds: 'budgets',
       invoiceIds: 'invoices',
       receiptIds: 'receipts',
+      bankSlipIds: 'bankSlips',
     };
     for (const [field, origRelation] of Object.entries(fileIdFieldMap)) {
       if (formData[field] !== undefined) {
@@ -855,6 +856,11 @@ export default function EditScheduleScreen() {
           // Include base files for edit mode
           baseFiles: (task as any).baseFiles || [],
           baseFileIds: (task as any).baseFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
+          // Include financial file IDs for edit mode (matches processFormDataForSubmission expectations)
+          budgetIds: ((task as any).budgets || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
+          invoiceIds: ((task as any).invoices || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
+          receiptIds: ((task as any).receipts || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
+          bankSlipIds: ((task as any).bankSlips || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           // Include pricing for edit mode (with default empty item row, matches web)
           pricing: (task as any).pricing ? {
             id: (task as any).pricing.id,

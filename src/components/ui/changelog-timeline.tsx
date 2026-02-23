@@ -438,6 +438,7 @@ const renderPaintsCards = (paints: any[], colors: any) => {
                 {paint.paintType?.name && <Badge colors={colors}>{paint.paintType.name}</Badge>}
                 {paint.finish && <Badge colors={colors}>{PAINT_FINISH_LABELS[paint.finish as keyof typeof PAINT_FINISH_LABELS] || paint.finish}</Badge>}
                 {paint.paintBrand?.name && <Badge colors={colors}>{paint.paintBrand.name}</Badge>}
+                {paint.manufacturer && <Badge colors={colors}>{TRUCK_MANUFACTURER_LABELS[paint.manufacturer as keyof typeof TRUCK_MANUFACTURER_LABELS] || paint.manufacturer}</Badge>}
               </View>
             </View>
           </View>
@@ -602,7 +603,7 @@ export function ChangelogTimeline({ entityType, entityId, entityName, entityCrea
       } else if (changelog.field === "paintId") {
         if (changelog.oldValue && typeof changelog.oldValue === "string") paintIds.add(changelog.oldValue);
         if (changelog.newValue && typeof changelog.newValue === "string") paintIds.add(changelog.newValue);
-      } else if (changelog.field === "logoPaints" || changelog.field === "paints" || changelog.field === "groundPaints" || changelog.field === "paintGrounds") {
+      } else if (changelog.field === "logoPaints" || changelog.field === "logoPaintIds" || changelog.field === "paints" || changelog.field === "groundPaints" || changelog.field === "paintGrounds") {
         // Extract paint IDs from arrays
         const extractPaintIds = (val: any) => {
           if (!val) return;

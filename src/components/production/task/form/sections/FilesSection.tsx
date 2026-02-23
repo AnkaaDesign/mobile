@@ -1,32 +1,38 @@
 /**
  * Files Section Component
  * Handles base files and artwork uploads
+ *
+ * File changes are synced to react-hook-form via setValue on baseFileIds/artworkIds,
+ * matching the web pattern where file ID arrays are tracked for dirty detection.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FormCard } from '@/components/ui/form-section';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
 import { ArtworkFileUploadField, type ArtworkFileItem } from '../artwork-file-upload-field';
 import { useAuth } from '@/hooks/useAuth';
+import { useFormContext } from 'react-hook-form';
 
 interface FilesSectionProps {
   isSubmitting?: boolean;
   initialBaseFiles?: FilePickerItem[];
   initialArtworkFiles?: ArtworkFileItem[];
-  onBaseFilesChange?: (files: FilePickerItem[]) => void;
-  onArtworkFilesChange?: (files: ArtworkFileItem[]) => void;
-  onArtworkStatusChange?: (fileId: string, status: string) => void;
+}
+
+/** Extract IDs from file picker items */
+function extractFileIds(files: Array<{ id?: string; fileId?: string; file?: { id?: string } }>): string[] {
+  return files
+    .map((f: any) => f.fileId || f.file?.id || f.id)
+    .filter(Boolean);
 }
 
 export default function FilesSection({
   isSubmitting = false,
   initialBaseFiles = [],
   initialArtworkFiles = [],
-  onBaseFilesChange,
-  onArtworkFilesChange,
-  onArtworkStatusChange
 }: FilesSectionProps) {
   const { user } = useAuth();
+  const { setValue } = useFormContext();
   const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>(initialBaseFiles);
   const [artworkFiles, setArtworkFiles] = useState<ArtworkFileItem[]>(initialArtworkFiles);
 
@@ -42,21 +48,17 @@ export default function FilesSection({
     return null;
   }
 
-  const handleBaseFilesChange = (files: FilePickerItem[]) => {
+  const handleBaseFilesChange = useCallback((files: FilePickerItem[]) => {
     setBaseFiles(files);
-    onBaseFilesChange?.(files);
-  };
+    // Sync IDs to react-hook-form for dirty detection and submission
+    setValue('baseFileIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
 
-  const handleArtworkFilesChange = (files: ArtworkFileItem[]) => {
-    console.log('[FilesSection] 🎨 Artworks changed:', files.length);
+  const handleArtworkFilesChange = useCallback((files: ArtworkFileItem[]) => {
     setArtworkFiles(files);
-    onArtworkFilesChange?.(files);
-  };
-
-  const handleArtworkStatusChange = (fileId: string, status: string) => {
-    console.log('[FilesSection] 🎨 Artwork status changed:', { fileId, status });
-    onArtworkStatusChange?.(fileId, status);
-  };
+    // Sync IDs to react-hook-form for dirty detection and submission
+    setValue('artworkIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
 
   return (
     <>
@@ -80,7 +82,6 @@ export default function FilesSection({
       <FormCard title="Artes" icon="IconPhotoPlus">
         <ArtworkFileUploadField
           onFilesChange={handleArtworkFilesChange}
-          onStatusChange={handleArtworkStatusChange}
           maxFiles={10}
           disabled={isSubmitting}
           showPreview={true}

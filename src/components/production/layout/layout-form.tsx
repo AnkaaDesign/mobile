@@ -51,8 +51,9 @@ const MeasurementInput = React.memo(({
     const parsed = parseFloat(normalized);
     if (isNaN(parsed)) return 0;
 
-    // If value looks like whole number > 10, treat as cm
-    if (!val.includes(",") && !val.includes(".") && parsed > 10) {
+    // If value looks like it was typed without decimal (e.g., 840 for 8.40m)
+    // Use threshold > 100 so that "11" is treated as 11m (1100cm), not 11cm
+    if (!val.includes(",") && !val.includes(".") && parsed > 100) {
       return parsed;
     }
 

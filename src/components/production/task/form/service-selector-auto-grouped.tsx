@@ -90,6 +90,22 @@ export function ServiceSelectorAutoGrouped({
     return { groupedServices: groups, ungroupedIndices: ungrouped };
   }, [services, pendingKeys]);
 
+  // Get default type based on user sector (matching web pattern)
+  const getDefaultTypeForSector = useCallback(() => {
+    switch (userPrivilege) {
+      case SECTOR_PRIVILEGES.COMMERCIAL:
+        return SERVICE_ORDER_TYPE.COMMERCIAL;
+      case SECTOR_PRIVILEGES.DESIGNER:
+        return SERVICE_ORDER_TYPE.ARTWORK;
+      case SECTOR_PRIVILEGES.FINANCIAL:
+        return SERVICE_ORDER_TYPE.FINANCIAL;
+      case SECTOR_PRIVILEGES.LOGISTIC:
+        return SERVICE_ORDER_TYPE.LOGISTIC;
+      default:
+        return SERVICE_ORDER_TYPE.PRODUCTION;
+    }
+  }, [userPrivilege]);
+
   // Handle adding a new service
   const handleAddService = useCallback(() => {
     const newKey = `svc-${nextKeyRef.current++}`;
@@ -105,11 +121,11 @@ export function ServiceSelectorAutoGrouped({
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         description: "",
-        type: SERVICE_ORDER_TYPE.PRODUCTION,
+        type: getDefaultTypeForSector(),
         assignedToId: null,
       },
     ]);
-  }, [services, onChange]);
+  }, [services, onChange, getDefaultTypeForSector]);
 
   // Handle manual organize — clear all pending keys
   const handleOrganize = useCallback(() => {
@@ -331,7 +347,7 @@ export function ServiceSelectorAutoGrouped({
         <TouchableOpacity
           style={[styles.addButton, { borderColor: colors.border }]}
           onPress={handleAddService}
-          disabled={disabled}
+          disabled={disabled || userPrivilege === SECTOR_PRIVILEGES.DESIGNER}
           activeOpacity={0.7}
         >
           <IconPlus size={16} color={colors.foreground} />
@@ -377,7 +393,13 @@ export function ServiceSelectorAutoGrouped({
 
       {/* Grouped services by type */}
       <View style={styles.groupedSection}>
-        {Object.values(SERVICE_ORDER_TYPE).map((type) => renderServiceGroup(type))}
+        {[
+          SERVICE_ORDER_TYPE.COMMERCIAL,
+          SERVICE_ORDER_TYPE.ARTWORK,
+          SERVICE_ORDER_TYPE.PRODUCTION,
+          SERVICE_ORDER_TYPE.FINANCIAL,
+          SERVICE_ORDER_TYPE.LOGISTIC,
+        ].map((type) => renderServiceGroup(type))}
       </View>
 
       {error && (

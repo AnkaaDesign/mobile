@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -21,6 +21,10 @@ import {
 } from '@/types/responsible';
 
 const CREATE_NEW_OPTION = '__CREATE_NEW__';
+
+// Module-level shared cache so all ResponsibleRow instances can look up responsibles
+// regardless of which instance's queryFn was called by React Query (query deduplication)
+const responsibleCache = new Map<string, Responsible>();
 
 interface ResponsibleRowProps {
   row: ResponsibleRowData;
@@ -58,9 +62,6 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
     }));
   }, []);
 
-  // Cache fetched responsibles for lookup on selection
-  const fetchedResponsiblesRef = useRef<Map<string, Responsible>>(new Map());
-
   // Async query function for the Combobox
   const queryFn = useCallback(async (searchTerm: string, page?: number) => {
     const response = await responsibleService.getAll({
@@ -69,8 +70,8 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
       page: page || 1,
       pageSize: 20,
     });
-    // Cache fetched responsibles for lookup on selection
-    response.data.forEach(resp => fetchedResponsiblesRef.current.set(resp.id, resp));
+    // Cache fetched responsibles in shared module-level cache
+    response.data.forEach(resp => responsibleCache.set(resp.id, resp));
     return {
       data: response.data,
       hasMore: response.meta.page < response.meta.pageCount,
@@ -84,7 +85,7 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
   const initialOptions = useMemo(() => {
     if (row.id && !row.id.startsWith('temp-') && row.name) {
       const resp = { id: row.id, name: row.name, phone: row.phone || '', email: row.email || '', role: row.role, isActive: true } as Responsible;
-      fetchedResponsiblesRef.current.set(resp.id, resp);
+      responsibleCache.set(resp.id, resp);
       return [resp];
     }
     return [];
@@ -139,14 +140,14 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
         });
       } else {
         // Find selected responsible from cache
-        const selectedResp = fetchedResponsiblesRef.current.get(selectedValue);
+        const selectedResp = responsibleCache.get(selectedValue);
         if (selectedResp) {
           onUpdate({
             id: selectedResp.id,
             name: selectedResp.name,
             phone: selectedResp.phone,
             email: selectedResp.email || null,
-            role: selectedResp.role,
+            // Keep user's role selection instead of overwriting with DB role
             isActive: selectedResp.isActive,
             isNew: false,
             isEditing: false,
@@ -222,34 +223,33 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Row 1: Role Selector with Remove Button */}
-      <View style={styles.roleRow}>
-        <View style={styles.roleSelector}>
-          <Combobox
-            value={row.role}
-            onValueChange={handleRoleChange}
-            options={roleOptions}
-            placeholder="Selecione a função"
-            disabled={isDisabled}
-            searchable={false}
-            clearable={false}
-          />
-        </View>
-        {!readOnly && !disabled && (
-          <TouchableOpacity
-            style={[styles.removeButton, { backgroundColor: colors.destructive + '15' }]}
-            onPress={onRemove}
-            disabled={isDisabled}
-          >
-            <IconTrash size={18} color={colors.destructive} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Row 2: Responsible Selection OR Create Mode Inputs */}
       {showCreateInputs ? (
-        /* Inline Create Responsible Inputs */
+        /* Inline Create Mode: Role + Name + Phone + Company */
         <>
+          {/* Role Selector with Remove Button - only in create mode */}
+          <View style={styles.roleRow}>
+            <View style={styles.roleSelector}>
+              <Combobox
+                value={row.role}
+                onValueChange={handleRoleChange}
+                options={roleOptions}
+                placeholder="Selecione a função"
+                disabled={isDisabled}
+                searchable={false}
+                clearable={false}
+              />
+            </View>
+            {!readOnly && !disabled && (
+              <TouchableOpacity
+                style={[styles.removeButton, { backgroundColor: colors.destructive + '15' }]}
+                onPress={onRemove}
+                disabled={isDisabled}
+              >
+                <IconTrash size={18} color={colors.destructive} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <View style={styles.createInputsRow}>
             <View style={styles.nameInput}>
               <Input
@@ -272,7 +272,7 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
             </View>
           </View>
 
-          {/* Customer Combobox for company selection - same row style */}
+          {/* Customer Combobox for company selection */}
           <View style={styles.companyInput}>
             <CustomerCombobox
               value={row.companyId || null}
@@ -283,24 +283,37 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
           </View>
         </>
       ) : (
-        /* Responsible Selection */
-        <Combobox<Responsible>
-          value={currentResponsibleValue}
-          onValueChange={handleResponsibleChange}
-          async
-          queryKey={queryKey}
-          queryFn={queryFn}
-          initialOptions={initialOptions}
-          minSearchLength={0}
-          getOptionValue={getOptionValue}
-          getOptionLabel={getOptionLabel}
-          getOptionDescription={getOptionDescription}
-          placeholder="Selecione ou cadastre novo"
-          disabled={isDisabled}
-          searchable={true}
-          clearable={false}
-          fixedTopContent={fixedTopContent}
-        />
+        /* Selection Mode: Just the Responsible combobox + remove button */
+        <View style={styles.roleRow}>
+          <View style={styles.roleSelector}>
+            <Combobox<Responsible>
+              value={currentResponsibleValue}
+              onValueChange={handleResponsibleChange}
+              async
+              queryKey={queryKey}
+              queryFn={queryFn}
+              initialOptions={initialOptions}
+              minSearchLength={0}
+              getOptionValue={getOptionValue}
+              getOptionLabel={getOptionLabel}
+              getOptionDescription={getOptionDescription}
+              placeholder="Selecione ou cadastre novo"
+              disabled={isDisabled}
+              searchable={true}
+              clearable={false}
+              fixedTopContent={fixedTopContent}
+            />
+          </View>
+          {!readOnly && !disabled && (
+            <TouchableOpacity
+              style={[styles.removeButton, { backgroundColor: colors.destructive + '15' }]}
+              onPress={onRemove}
+              disabled={isDisabled}
+            >
+              <IconTrash size={18} color={colors.destructive} />
+            </TouchableOpacity>
+          )}
+        </View>
       )}
 
       {/* Error Display */}

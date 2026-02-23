@@ -24,7 +24,8 @@ import {
   TRUCK_CATEGORY,
   IMPLEMENT_TYPE,
   COMMISSION_STATUS,
-  TASK_STATUS
+  TASK_STATUS,
+  SECTOR_PRIVILEGES,
 } from '@/constants/enums';
 import {
   TRUCK_CATEGORY_LABELS,
@@ -80,6 +81,7 @@ export default function BasicInfoSection({
   const canViewCommissionField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
+    privilege: SECTOR_PRIVILEGES.PRODUCTION,
     orderBy: { name: "asc" },
   });
 
@@ -328,7 +330,7 @@ export default function BasicInfoSection({
                 onValueChange={onChange}
                 options={statusOptions}
                 placeholder="Selecione o status"
-                disabled={isSubmitting || isFinancialSector}
+                disabled={isSubmitting || isFinancialSector || isWarehouseSector || isDesignerSector || isCommercialSector}
                 error={errors.status?.message}
               />
             )}
@@ -348,7 +350,7 @@ export default function BasicInfoSection({
                 onValueChange={onChange}
                 options={commissionOptions}
                 placeholder="Selecione o status da comissão"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isFinancialSector || isDesignerSector || isLogisticSector || isWarehouseSector}
                 error={errors.commission?.message}
               />
             )}
@@ -370,7 +372,7 @@ export default function BasicInfoSection({
               numberOfLines={4}
               maxLength={500}
               error={!!errors.details}
-              editable={!isSubmitting}
+              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
             />
           )}
         />

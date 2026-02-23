@@ -374,11 +374,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
   },
   selectorsRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: spacing.sm,
   },
   selectorCell: {
-    flex: 1,
   },
   currentSpot: {
     fontSize: fontSize.xs,

@@ -76,6 +76,7 @@ export default function DatesSection({
             name="entryDate"
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
+                type="datetime"
                 value={value ? new Date(value) : undefined}
                 onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a data de entrada"
@@ -93,6 +94,7 @@ export default function DatesSection({
           name="term"
           render={({ field: { onChange, value } }) => (
             <DateTimePicker
+              type="datetime"
               value={value ? new Date(value) : undefined}
               onChange={(date: Date | undefined) => onChange(date?.toISOString())}
               placeholder="Selecione o prazo"
@@ -111,6 +113,7 @@ export default function DatesSection({
             name="startedAt"
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
+                type="datetime"
                 value={value ? new Date(value) : undefined}
                 onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a data de início"
@@ -129,6 +132,7 @@ export default function DatesSection({
             name="finishedAt"
             render={({ field: { onChange, value } }) => (
               <DateTimePicker
+                type="datetime"
                 value={value ? new Date(value) : undefined}
                 onChange={(date: Date | undefined) => onChange(date?.toISOString())}
                 placeholder="Selecione a data de conclusão"

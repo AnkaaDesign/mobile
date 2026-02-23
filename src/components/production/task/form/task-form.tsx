@@ -79,6 +79,14 @@ export function TaskForm({
   // LayoutForm initial emissions are filtered by TruckLayoutSection, so
   // only real user modifications reach here.
   const [hasLayoutChanges, setHasLayoutChanges] = useState(false);
+  // Track canSubmit in state to avoid accessing formState proxy during render.
+  // Accessing form.formState.dirtyFields or form.formState.isValid during render
+  // subscribes TaskForm to proxy changes and causes "Cannot update a component
+  // while rendering a different component" when children trigger validation.
+  const [canSubmitForm, setCanSubmitForm] = useState(false);
+  // Cache errors in state to avoid accessing formState.errors proxy during render.
+  // This prevents "Cannot update a component while rendering a different component".
+  const [formErrors, setFormErrors] = useState<any>({});
   const modifiedLayoutStatesRef = useRef<Record<string, any>>({});
   const modifiedLayoutSidesRef = useRef<Set<string>>(new Set());
 
@@ -112,9 +120,7 @@ export function TaskForm({
   const canViewTruckSpot = isAdminUser || isLogisticUser;
   const canViewFinancialInfo = isAdminUser || isFinancialUser;
   const canViewFiles = !isWarehouseUser && !isFinancialUser;
-  const taskStatus = task?.status;
-  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isCommercialUser && !isLogisticUser
-    && taskStatus === 'COMPLETED';
+  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
   // Watch truck data for spot selector
   const truckData = useWatch({ control: form.control, name: 'truck' });
@@ -167,13 +173,18 @@ export function TaskForm({
       });
 
   // === DEBUG: Log form state to diagnose submit button not enabling ===
-  const { isDirty, dirtyFields, isValid, isValidating, errors } = form.formState;
-  const dirtyFieldKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
-  const errorKeys = Object.keys(errors);
+  // IMPORTANT: Access formState properties inside useEffect only (not during render)
+  // to avoid "Cannot update a component while rendering a different component" error.
+  // Accessing form.formState.dirtyFields etc. during render subscribes TaskForm to
+  // proxy changes, and when child components trigger validation (mode: 'onChange'),
+  // it causes TaskForm to re-render mid-render of the child.
   const prevDebugRef = useRef<string>('');
 
   useEffect(() => {
     if (mode !== 'edit') return;
+    const { dirtyFields, isValid, isValidating, errors } = form.formState;
+    const dirtyFieldKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
+    const errorKeys = Object.keys(errors);
     const debugKey = JSON.stringify({ dirtyCount: dirtyFieldKeys.length, hasLayoutChanges, isValid, isValidating, errorCount: errorKeys.length });
     if (debugKey !== prevDebugRef.current) {
       prevDebugRef.current = debugKey;
@@ -191,8 +202,75 @@ export function TaskForm({
       console.log('[TaskForm DEBUG] canSubmit would be:', dirtyFieldKeys.length > 0 || hasLayoutChanges);
       console.log('[TaskForm DEBUG] ===============================');
     }
-  }, [mode, dirtyFieldKeys.length, hasLayoutChanges, isValid, isValidating, errorKeys.length]);
+  });
   // === END DEBUG ===
+
+  // Watch form values for validation checks (matching web's hasIncompletePricing, etc.)
+  const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
+  const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
+  const watchedObservation = useWatch({ control: form.control, name: 'observation' });
+
+  // Compute canSubmit and cache errors in an effect to avoid reading formState proxy during render.
+  // This prevents "Cannot update a component while rendering a different component".
+  useEffect(() => {
+    const { dirtyFields, isValid, errors } = form.formState;
+
+    if (mode === 'edit') {
+      const dirtyKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
+      const hasChanges = dirtyKeys.length > 0 || hasLayoutChanges;
+
+      // Validation checks matching web (only check when relevant fields are dirty)
+      let validationBlocks = false;
+
+      // hasIncompleteServices: service orders with descriptions shorter than 3 chars
+      if (dirtyFields.serviceOrders && Array.isArray(watchedServiceOrders)) {
+        const hasIncomplete = watchedServiceOrders.some(
+          (so: any) => so?.description && so.description.trim().length > 0 && so.description.trim().length < 3
+        );
+        if (hasIncomplete) validationBlocks = true;
+      }
+
+      // hasIncompletePricing: pricing items with amounts but no descriptions
+      if (dirtyFields.pricing && watchedPricing?.items) {
+        const items = Array.isArray(watchedPricing.items) ? watchedPricing.items : [];
+        const hasIncomplete = items.some(
+          (item: any) => {
+            const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
+            const hasDescription = item?.description && item.description.trim().length >= 3;
+            return hasAmount && !hasDescription;
+          }
+        );
+        if (hasIncomplete) validationBlocks = true;
+      }
+
+      // hasIncompleteObservation: observation with description but no files, or vice versa
+      if (watchedObservation) {
+        const hasDescription = !!(watchedObservation.description && watchedObservation.description.trim());
+        const hasFiles = Array.isArray(watchedObservation.fileIds) && watchedObservation.fileIds.length > 0;
+        if ((hasDescription && !hasFiles) || (!hasDescription && hasFiles)) {
+          validationBlocks = true;
+        }
+      }
+
+      // layoutWidthError: left/right layout width difference > 2cm (matching web)
+      if (hasLayoutChanges) {
+        const leftState = modifiedLayoutStatesRef.current['left'] || existingLayouts?.left;
+        const rightState = modifiedLayoutStatesRef.current['right'] || existingLayouts?.right;
+        if (leftState && rightState) {
+          const leftWidth = leftState.totalWidth || leftState.layoutSections?.reduce((s: number, sec: any) => s + (sec.width || 0), 0) || 0;
+          const rightWidth = rightState.totalWidth || rightState.layoutSections?.reduce((s: number, sec: any) => s + (sec.width || 0), 0) || 0;
+          if (leftWidth > 0 && rightWidth > 0 && Math.abs(leftWidth - rightWidth) > 0.02) {
+            validationBlocks = true;
+          }
+        }
+      }
+
+      setCanSubmitForm(hasChanges && !validationBlocks);
+    } else {
+      setCanSubmitForm(isValid);
+    }
+    setFormErrors(errors);
+  });
 
   if (!isReady) {
     return (
@@ -216,13 +294,13 @@ export function TaskForm({
         mode={mode}
         initialCustomer={task?.customer}
         task={task}
-        errors={form.formState.errors}
+        errors={formErrors}
       />
 
       {/* 2. Responsibles */}
       <ResponsiblesSection
         isSubmitting={isSubmitting}
-        errors={form.formState.errors}
+        errors={formErrors}
         initialResponsibles={task?.responsibles}
         task={task}
       />
@@ -230,14 +308,14 @@ export function TaskForm({
       {/* 3. Dates */}
       <DatesSection
         isSubmitting={isSubmitting}
-        errors={form.formState.errors}
+        errors={formErrors}
         mode={mode}
       />
 
       {/* 4. Services */}
       <ServicesSection
         isSubmitting={isSubmitting}
-        errors={form.formState.errors}
+        errors={formErrors}
         initialGeneralPaint={task?.generalPainting}
         initialLogoPaints={task?.logoPaints}
       />
@@ -247,7 +325,7 @@ export function TaskForm({
         {canViewTruckLayout && (
           <TruckLayoutSection
             isSubmitting={isSubmitting}
-            errors={form.formState.errors}
+            errors={formErrors}
             existingLayouts={existingLayouts}
             onLayoutChange={handleLayoutChange}
           />
@@ -298,7 +376,7 @@ export function TaskForm({
           {canViewFinancialInfo && (
             <FinancialInfoSection
               isSubmitting={isSubmitting}
-              errors={form.formState.errors}
+              errors={formErrors}
               initialPricingFiles={task?.pricingFiles}
               initialInvoiceFiles={task?.invoiceFiles}
               initialReceiptFiles={task?.receiptFiles}
@@ -313,7 +391,7 @@ export function TaskForm({
         {canViewObservation && (
           <ObservationSection
             isSubmitting={isSubmitting}
-            errors={form.formState.errors}
+            errors={formErrors}
             initialFiles={task?.observation?.files}
           />
         )}
@@ -328,14 +406,7 @@ export function TaskForm({
         onCancel={onCancel}
         onSubmit={handleFormSubmit}
         isSubmitting={isSubmitting}
-        canSubmit={mode === 'edit'
-          ? (() => {
-              // Exclude 'layouts' from dirty check — layouts are tracked separately via hasLayoutChanges
-              const dirtyKeys = Object.keys(form.formState.dirtyFields).filter(k => k !== 'layouts');
-              return dirtyKeys.length > 0 || hasLayoutChanges;
-            })()
-          : form.formState.isValid
-        }
+        canSubmit={canSubmitForm}
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />

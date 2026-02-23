@@ -43,7 +43,7 @@ export interface ArtworkFileItem {
 
 export interface ArtworkFileUploadFieldProps {
   onFilesChange: (files: ArtworkFileItem[]) => void;
-  onStatusChange: (fileId: string, status: "DRAFT" | "APPROVED" | "REPROVED") => void;
+  onStatusChange?: (fileId: string, status: "DRAFT" | "APPROVED" | "REPROVED") => void;
   maxFiles?: number;
   existingFiles?: ArtworkFileItem[];
   disabled?: boolean;
@@ -274,7 +274,7 @@ export function ArtworkFileUploadField({
     // Use uploadedFileId for existing files, or id for new uploads
     const file = files.find((f) => f.id === fileId);
     const idToUse = file?.uploadedFileId || fileId;
-    onStatusChange(idToUse, newStatus);
+    onStatusChange?.(idToUse, newStatus);
   }, [disabled, canApprove, files, onStatusChange]);
 
   // Show options alert

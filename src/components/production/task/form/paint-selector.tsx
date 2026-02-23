@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Combobox } from "@/components/ui/combobox";
 import { getPaints } from "@/api-client";
@@ -196,7 +196,18 @@ export function GeneralPaintingSelector({
   required = false,
   initialPaint,
 }: GeneralPaintingSelectorProps) {
+  const { colors } = useTheme();
   const renderOption = usePaintRenderOption();
+
+  // Track selected paint object for chip display (matching web pattern)
+  const [selectedPaint, setSelectedPaint] = useState<Paint | null>(initialPaint || null);
+
+  // Sync from initialPaint when it changes (edit mode)
+  useEffect(() => {
+    if (initialPaint) {
+      setSelectedPaint(initialPaint);
+    }
+  }, [initialPaint?.id]);
 
   // Memoize initialOptions to prevent infinite loop
   const initialOptions = useMemo(() => initialPaint ? [initialPaint] : [], [initialPaint?.id]);
@@ -206,7 +217,7 @@ export function GeneralPaintingSelector({
   const getOptionValue = useCallback((paint: Paint) => paint?.id || "", []);
 
   // Search function for Combobox
-  const searchPaints = async (
+  const searchPaints = useCallback(async (
     search: string,
     page: number = 1,
   ): Promise<{
@@ -216,9 +227,7 @@ export function GeneralPaintingSelector({
     const params: any = {
       orderBy: { name: "asc" },
       page: page,
-      take: 20, // OPTIMIZED: Reduced from 50 to 20
-      // Use select instead of include for 90% data reduction
-      // NEVER include formulas in dropdowns - only count them
+      take: 20,
       select: {
         id: true,
         name: true,
@@ -227,7 +236,7 @@ export function GeneralPaintingSelector({
         hexColor: true,
         finish: true,
         colorPreview: true,
-        manufacturer: true, // Added for truck manufacturer display
+        manufacturer: true,
         paintType: {
           select: {
             id: true,
@@ -240,7 +249,6 @@ export function GeneralPaintingSelector({
             name: true,
           },
         },
-        // Only count formulas, don't fetch them! 90% reduction
         _count: {
           select: {
             formulas: true,
@@ -249,49 +257,104 @@ export function GeneralPaintingSelector({
       },
     };
 
-    // Only add search filter if there's a search term
     if (search && search.trim()) {
       params.searchingFor = search.trim();
     }
 
     try {
       const response = await getPaints(params);
+      const paints = (response.data || []).filter(paint => paint && paint.id && paint.name);
+
+      // Cache paint objects for chip display
+      paintsCache.current = new Map(paints.map(p => [p.id, p]));
 
       return {
-        data: (response.data || []).filter(paint => paint && paint.id && paint.name),
+        data: paints,
         hasMore: response.meta?.hasNextPage || false,
       };
-    } catch (error) {
-      console.error('[GeneralPaintingSelector] Error fetching paints:', error);
+    } catch (err) {
+      console.error('[GeneralPaintingSelector] Error fetching paints:', err);
       return { data: [], hasMore: false };
     }
-  };
+  }, []);
+
+  // Cache fetched paints to resolve selected paint object
+  const paintsCache = useRef<Map<string, Paint>>(new Map());
+
+  // Handle value change and track selected paint
+  const handleValueChange = useCallback((newValue: string | string[] | null | undefined) => {
+    const stringValue = Array.isArray(newValue) ? newValue[0] : newValue;
+    onValueChange?.(stringValue || undefined);
+
+    if (stringValue) {
+      // Try to find paint from cache or initialPaint
+      const cached = paintsCache.current.get(stringValue);
+      if (cached) {
+        setSelectedPaint(cached);
+      } else if (initialPaint?.id === stringValue) {
+        setSelectedPaint(initialPaint);
+      }
+    } else {
+      setSelectedPaint(null);
+    }
+  }, [onValueChange, initialPaint]);
+
+  // Clear selected paint when value is externally cleared
+  useEffect(() => {
+    if (!value) {
+      setSelectedPaint(null);
+    }
+  }, [value]);
 
   return (
-    <Combobox<Paint>
-      value={value || ""}
-      onValueChange={(newValue) => {
-        onValueChange?.(newValue as string | undefined);
-      }}
-      placeholder={placeholder}
-      label={required ? `${label} *` : label}
-      searchPlaceholder="Buscar tinta..."
-      emptyText="Nenhuma tinta encontrada"
-      disabled={disabled}
-      error={error}
-      async={true}
-      queryKey={["paints", "search"]}
-      queryFn={searchPaints}
-      initialOptions={initialOptions}
-      getOptionLabel={getOptionLabel}
-      getOptionValue={getOptionValue}
-      renderOption={renderOption}
-      clearable={!required}
-      minSearchLength={0}
-      pageSize={20}
-      debounceMs={300}
-      loadOnMount={false}
-    />
+    <View>
+      <Combobox<Paint>
+        value={value || ""}
+        onValueChange={handleValueChange}
+        placeholder={placeholder}
+        label={required ? `${label} *` : label}
+        searchPlaceholder="Buscar tinta..."
+        emptyText="Nenhuma tinta encontrada"
+        disabled={disabled}
+        error={error}
+        async={true}
+        queryKey={["paints", "search"]}
+        queryFn={searchPaints}
+        initialOptions={initialOptions}
+        getOptionLabel={getOptionLabel}
+        getOptionValue={getOptionValue}
+        renderOption={renderOption}
+        clearable={!required}
+        minSearchLength={0}
+        pageSize={20}
+        debounceMs={300}
+        loadOnMount={false}
+      />
+
+      {/* Selected paint chip (matching web badge display) */}
+      {selectedPaint && value && (
+        <View style={chipStyles.chipsContainer}>
+          <Pressable
+            style={[chipStyles.chip, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            onPress={disabled ? undefined : () => handleValueChange(null)}
+            disabled={disabled}
+          >
+            <PaintColorPreview paint={selectedPaint} size={16} />
+            <Text style={[chipStyles.chipName, { color: colors.foreground }]} numberOfLines={1}>
+              {selectedPaint.name}
+            </Text>
+            {selectedPaint.paintType?.name && (
+              <Text style={[chipStyles.chipType, { color: colors.mutedForeground }]}>
+                ({selectedPaint.paintType.name})
+              </Text>
+            )}
+            {!disabled && (
+              <IconX size={12} color={colors.mutedForeground} />
+            )}
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -442,6 +505,7 @@ export function LogoPaintsSelector({
         debounceMs={300}
         showCount={true}
         loadOnMount={false}
+        hideDefaultBadges={true}
       />
 
       {/* Selected paint chips row (matching web badge display) */}
@@ -524,7 +588,7 @@ const chipStyles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 4,
     borderWidth: 1,
   },
   chipName: {

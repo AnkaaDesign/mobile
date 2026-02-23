@@ -10,6 +10,12 @@ import {
   MASK_SIZE_LABELS,
   GLOVES_SIZE_LABELS,
   RAIN_BOOTS_SIZE_LABELS,
+  TASK_PRICING_STATUS_LABELS,
+  TASK_PRICING_STATUS,
+  DISCOUNT_TYPE_LABELS,
+  DISCOUNT_TYPE,
+  PAYMENT_CONDITION_LABELS,
+  PAYMENT_CONDITION,
 } from '../constants';
 import { formatDateTime, formatDate } from "./date";
 import { formatCurrency } from "./number";
@@ -964,7 +970,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       "icms", "ipi", "margin", "minimumMargin", "monthlyConsumptionTrendPercent", "ratio",
       "quantity", "maxQuantity", "boxQuantity", "reorderPoint", "reorderQuantity",
       "orderedQuantity", "receivedQuantity", "withdrawedQuantity", "returnedQuantity",
-      "viscosity", "weight", "volume", "volumeLiters", "timeTaken"
+      "viscosity", "weight", "volume", "volumeLiters", "timeTaken",
+      "subtotal", "total", "discountValue", "guaranteeYears", "customForecastDays", "simultaneousTasks"
     ];
 
     if (numericFields.includes(field)) {
@@ -1886,6 +1893,31 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     }
   }
 
+  // Handle task pricing fields
+  if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING) {
+    if ((field === "status" || field === "status_transition") && typeof value === "string") {
+      return TASK_PRICING_STATUS_LABELS[value as TASK_PRICING_STATUS] || value;
+    }
+    if (field === "discountType" && typeof value === "string") {
+      return DISCOUNT_TYPE_LABELS[value as DISCOUNT_TYPE] || value;
+    }
+    if (field === "paymentCondition" && typeof value === "string") {
+      return PAYMENT_CONDITION_LABELS[value as PAYMENT_CONDITION] || value;
+    }
+    if ((field === "subtotal" || field === "total" || field === "discountValue") && typeof value === "number") {
+      return formatCurrency(value);
+    }
+    if (field === "guaranteeYears" && typeof value === "number") {
+      return `${value} ${value === 1 ? "ano" : "anos"}`;
+    }
+    if (field === "customForecastDays" && typeof value === "number") {
+      return `${value} ${value === 1 ? "dia" : "dias"}`;
+    }
+    if (field === "simultaneousTasks" && typeof value === "number") {
+      return `${value} ${value === 1 ? "tarefa" : "tarefas"}`;
+    }
+  }
+
   // Handle number formatting
   if (typeof value === "number") {
     // Currency fields
@@ -2225,6 +2257,27 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       const h = Math.round((layout.height || 0) * 100);
       const d = layout.doorCount || 0;
       return `${w}cm × ${h}cm — ${d} porta${d !== 1 ? "s" : ""}`;
+    }
+
+    // Handle layouts object (truck vehicle layouts) - format as readable summary
+    if (field === "layouts" && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+      const layoutSides = [
+        { key: "leftSideLayoutId", label: "Lado Motorista" },
+        { key: "rightSideLayoutId", label: "Lado Sapo" },
+        { key: "backSideLayoutId", label: "Traseira" },
+      ];
+      const layoutData = value as any;
+      const parts: string[] = [];
+      for (const { key, label } of layoutSides) {
+        const layout = layoutData[key];
+        if (layout) {
+          const w = Math.round((layout.totalWidth || 0) * 100);
+          const h = Math.round((layout.height || 0) * 100);
+          const d = layout.doorCount || 0;
+          parts.push(`${label}: ${w}cm × ${h}cm — ${d} porta${d !== 1 ? "s" : ""}`);
+        }
+      }
+      return parts.length > 0 ? parts.join("\n") : "Nenhum layout";
     }
 
     return JSON.stringify(value, null, 2);

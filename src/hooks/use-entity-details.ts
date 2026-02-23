@@ -235,6 +235,7 @@ export function useEntityDetails(entityIds: {
                   code: true,
                   hexColor: true,
                   finish: true,
+                  manufacturer: true,
                   paintBrand: { select: { id: true, name: true } },
                   paintType: { select: { id: true, name: true } },
                 },

@@ -1,11 +1,15 @@
 /**
  * Financial Information Section Component
  * Handles financial documents upload (pricing, invoice, receipts)
+ *
+ * File changes are tracked via react-hook-form ID array fields (budgetIds, invoiceIds,
+ * receiptIds, bankSlipIds) matching the web pattern. The FilePicker stores full file
+ * objects locally, while IDs are extracted and written to the form for submission.
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Controller, useFormContext } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField } from '@/components/ui';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
@@ -21,6 +25,13 @@ interface FinancialInfoSectionProps {
   initialBankSlipFiles?: FilePickerItem[];
 }
 
+/** Extract IDs from file picker items */
+function extractFileIds(files: FilePickerItem[]): string[] {
+  return files
+    .map((f: any) => f.fileId || f.file?.id || f.id)
+    .filter(Boolean);
+}
+
 export default function FinancialInfoSection({
   isSubmitting = false,
   errors = {},
@@ -29,13 +40,40 @@ export default function FinancialInfoSection({
   initialReceiptFiles = [],
   initialBankSlipFiles = [],
 }: FinancialInfoSectionProps) {
-  const { control } = useFormContext();
+  const { setValue } = useFormContext();
   const { user } = useAuth();
 
   // Only show for Admin and Financial users
   const userPrivilege = user?.sector?.privileges;
   const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+
+  // Local state for FilePicker display
+  const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>(initialPricingFiles);
+  const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>(initialInvoiceFiles);
+  const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>(initialReceiptFiles);
+  const [bankSlipFiles, setBankSlipFiles] = useState<FilePickerItem[]>(initialBankSlipFiles);
+
+  // Handlers that sync file IDs to react-hook-form
+  const handleBudgetFilesChange = useCallback((files: FilePickerItem[]) => {
+    setBudgetFiles(files);
+    setValue('budgetIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
+
+  const handleInvoiceFilesChange = useCallback((files: FilePickerItem[]) => {
+    setInvoiceFiles(files);
+    setValue('invoiceIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
+
+  const handleReceiptFilesChange = useCallback((files: FilePickerItem[]) => {
+    setReceiptFiles(files);
+    setValue('receiptIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
+
+  const handleBankSlipFilesChange = useCallback((files: FilePickerItem[]) => {
+    setBankSlipFiles(files);
+    setValue('bankSlipIds', extractFileIds(files), { shouldDirty: true });
+  }, [setValue]);
 
   if (!isAdminUser && !isFinancialUser) {
     return null;
@@ -47,21 +85,15 @@ export default function FinancialInfoSection({
       <SimpleFormField
         label="Arquivos de Orçamento"
         helperText="Upload de arquivos de orçamento"
-        error={errors.pricingFiles}
+        error={errors.budgetIds}
       >
-        <Controller
-          control={control}
-          name="pricingFiles"
-          render={({ field: { onChange, value } }) => (
-            <FilePicker
-              value={value || initialPricingFiles}
-              onChange={onChange}
-              acceptedFileTypes={["application/pdf", "image/*", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]}
-              maxFiles={10}
-              disabled={isSubmitting}
-              error={errors.pricingFiles?.message}
-            />
-          )}
+        <FilePicker
+          value={budgetFiles}
+          onChange={handleBudgetFilesChange}
+          acceptedFileTypes={["application/pdf", "image/*", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]}
+          maxFiles={10}
+          disabled={isSubmitting}
+          error={errors.budgetIds?.message}
         />
       </SimpleFormField>
 
@@ -69,21 +101,15 @@ export default function FinancialInfoSection({
       <SimpleFormField
         label="Notas Fiscais"
         helperText="Upload de notas fiscais eletrônicas (NFe)"
-        error={errors.invoiceFiles}
+        error={errors.invoiceIds}
       >
-        <Controller
-          control={control}
-          name="invoiceFiles"
-          render={({ field: { onChange, value } }) => (
-            <FilePicker
-              value={value || initialInvoiceFiles}
-              onChange={onChange}
-              acceptedFileTypes={["application/pdf", "text/xml", "application/xml"]}
-              maxFiles={10}
-              disabled={isSubmitting}
-              error={errors.invoiceFiles?.message}
-            />
-          )}
+        <FilePicker
+          value={invoiceFiles}
+          onChange={handleInvoiceFilesChange}
+          acceptedFileTypes={["application/pdf", "text/xml", "application/xml"]}
+          maxFiles={10}
+          disabled={isSubmitting}
+          error={errors.invoiceIds?.message}
         />
       </SimpleFormField>
 
@@ -93,19 +119,13 @@ export default function FinancialInfoSection({
         helperText="Upload de recibos e comprovantes"
         error={errors.receiptFiles}
       >
-        <Controller
-          control={control}
-          name="receiptFiles"
-          render={({ field: { onChange, value } }) => (
-            <FilePicker
-              value={value || initialReceiptFiles}
-              onChange={onChange}
-              acceptedFileTypes={["application/pdf", "image/*"]}
-              maxFiles={10}
-              disabled={isSubmitting}
-              error={errors.receiptFiles?.message}
-            />
-          )}
+        <FilePicker
+          value={receiptFiles}
+          onChange={handleReceiptFilesChange}
+          acceptedFileTypes={["application/pdf", "image/*"]}
+          maxFiles={10}
+          disabled={isSubmitting}
+          error={errors.receiptFiles?.message}
         />
       </SimpleFormField>
 
@@ -113,21 +133,15 @@ export default function FinancialInfoSection({
       <SimpleFormField
         label="Boletos"
         helperText="Upload de boletos bancários"
-        error={errors.bankSlipFiles}
+        error={errors.bankSlipIds}
       >
-        <Controller
-          control={control}
-          name="bankSlipFiles"
-          render={({ field: { onChange, value } }) => (
-            <FilePicker
-              value={value || initialBankSlipFiles}
-              onChange={onChange}
-              acceptedFileTypes={["application/pdf", "image/*"]}
-              maxFiles={10}
-              disabled={isSubmitting}
-              error={errors.bankSlipFiles?.message}
-            />
-          )}
+        <FilePicker
+          value={bankSlipFiles}
+          onChange={handleBankSlipFilesChange}
+          acceptedFileTypes={["application/pdf", "image/*"]}
+          maxFiles={10}
+          disabled={isSubmitting}
+          error={errors.bankSlipIds?.message}
         />
       </SimpleFormField>
     </FormCard>

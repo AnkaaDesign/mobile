@@ -132,7 +132,7 @@ export const ResponsibleManager: React.FC<ResponsibleManagerProps> = ({
         <View style={styles.rowsContainer}>
           {value.map((row, index) => (
             <ResponsibleRow
-              key={row.id}
+              key={index}
               row={row}
               index={index}
               companyId={companyId || ''}

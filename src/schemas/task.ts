@@ -1103,7 +1103,7 @@ const taskServiceOrderCreateSchema = z.object({
     })
     .default(SERVICE_ORDER_STATUS.PENDING),
   statusOrder: z.number().int().min(1).max(5).default(1).optional(),
-  description: z.string().min(3, { message: "Mínimo de 3 caracteres" }).max(400, { message: "Máximo de 40 caracteres atingido" }),
+  description: z.string().min(3, { message: "Mínimo de 3 caracteres" }).max(400, { message: "Máximo de 400 caracteres atingido" }),
   // CRITICAL FIX: Added type field (REQUIRED in Prisma model, was missing in mobile schema)
   type: z
     .enum(Object.values(SERVICE_ORDER_TYPE) as [string, ...string[]], {
@@ -1219,7 +1219,16 @@ export const taskCreateSchema = z
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     observation: taskObservationCreateSchema.nullable().optional(),
-    serviceOrders: z.array(taskServiceOrderCreateSchema).optional(),
+    // Match web: preprocess to filter empty service orders before validation
+    serviceOrders: z.preprocess(
+      (val) => {
+        if (Array.isArray(val)) {
+          return val.filter((item: any) => item && item.description && item.description.trim() !== '');
+        }
+        return val;
+      },
+      z.array(taskServiceOrderCreateSchema).optional()
+    ),
     truck: taskTruckCreateSchema.nullable().optional(),
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
@@ -1263,7 +1272,8 @@ export const taskCreateSchema = z
 export const taskUpdateSchema = z
   .object({
     // Basic fields
-    name: createNameSchema(3, 200, "nome da tarefa").optional(),
+    // Match web: no min length for updates, just max 200
+    name: z.string().max(200, "Nome muito longo (máximo 200 caracteres)").nullable().optional(),
     status: z
       .enum(Object.values(TASK_STATUS) as [string, ...string[]], {
         errorMap: () => ({ message: "status inválido" }),
@@ -1278,7 +1288,8 @@ export const taskUpdateSchema = z
         message: "Número de série deve conter apenas letras maiúsculas, números e hífens",
       }),
     // Note: chassisNumber and plate removed from task update - these are now handled via truck relation
-    details: createDescriptionSchema(1, 1000, false).nullable().optional(),
+    // Match web: simple string with max length, no min length for updates
+    details: z.string().max(1000, "Detalhes muito longos (máximo 1000 caracteres)").nullable().optional(),
     entryDate: nullableDate.optional(),
     term: nullableDate.optional(),
     startedAt: nullableDate.optional(),
@@ -1303,7 +1314,16 @@ export const taskUpdateSchema = z
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     observation: taskObservationCreateSchema.nullable().optional(),
-    serviceOrders: z.array(taskServiceOrderCreateSchema).optional(),
+    // Match web: preprocess to filter empty service orders before validation
+    serviceOrders: z.preprocess(
+      (val) => {
+        if (Array.isArray(val)) {
+          return val.filter((item: any) => item && item.description && item.description.trim() !== '');
+        }
+        return val;
+      },
+      z.array(taskServiceOrderCreateSchema).optional()
+    ),
     truck: taskTruckCreateSchema.nullable().optional(),
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
