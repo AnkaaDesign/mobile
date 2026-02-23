@@ -270,6 +270,40 @@ export default function EditScheduleScreen() {
     return obj;
   };
 
+  // Sector-based field restrictions: strip fields the user's sector shouldn't modify
+  // This is a defense-in-depth measure (backend also validates via validateProductionSectorAccess)
+  const stripRestrictedFields = (payload: any): any => {
+    const privilege = user?.sector?.privileges;
+    if (!privilege) return payload;
+
+    // Fields restricted by sector (matches API validateProductionSectorAccess / validateFinancialSectorAccess)
+    const restrictedFieldsBySector: Record<string, string[]> = {
+      [SECTOR_PRIVILEGES.PRODUCTION]: [
+        'baseFileIds', 'budgetIds', 'invoiceIds', 'receiptIds', 'bankSlipIds',
+        'customerId', 'serialNumber', 'name', 'pricing', 'serviceOrders',
+        'artworkIds', 'artworkStatuses', 'truck', 'paintIds', 'paintId',
+        'reimbursementIds', 'reimbursementInvoiceIds',
+      ],
+      [SECTOR_PRIVILEGES.FINANCIAL]: [
+        'baseFileIds', 'artworkIds', 'artworkStatuses', 'paintIds', 'paintId',
+        'truck', 'cuts', 'status', 'startedAt', 'finishedAt',
+        'entryDate', 'term', 'forecastDate', 'sectorId',
+      ],
+    };
+
+    const restricted = restrictedFieldsBySector[privilege];
+    if (!restricted) return payload;
+
+    const filtered = { ...payload };
+    for (const field of restricted) {
+      if (field in filtered) {
+        console.log(`[EditSchedule] Stripping restricted field '${field}' for ${privilege} sector`);
+        delete filtered[field];
+      }
+    }
+    return filtered;
+  };
+
   const handleSubmit = async (data: any) => {
     if (!id) return;
 
@@ -281,15 +315,18 @@ export default function EditScheduleScreen() {
       // Safety net for react-hook-form field arrays that lose their Array prototype
       const sanitizedData = deepSanitizeForApi(processedData);
 
-      console.log('[EditSchedule] Changed fields:', Object.keys(sanitizedData));
+      // Strip fields the user's sector shouldn't modify (defense-in-depth)
+      const safeData = stripRestrictedFields(sanitizedData);
+
+      console.log('[EditSchedule] Changed fields:', Object.keys(safeData));
 
       // Check if there are any actual changes
-      if (Object.keys(sanitizedData).length === 0) {
+      if (Object.keys(safeData).length === 0) {
         Alert.alert("Nenhuma alteração", "Nenhuma alteração foi detectada.");
         return;
       }
 
-      const result = await updateAsync({ id, data: sanitizedData });
+      const result = await updateAsync({ id, data: safeData });
 
       if (result.success) {
         handleNavigateBack();
