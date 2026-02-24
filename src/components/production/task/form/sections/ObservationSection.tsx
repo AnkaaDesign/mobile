@@ -4,12 +4,13 @@
  */
 
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, LayoutChangeEvent } from 'react-native';
 import { Controller, useFormContext } from 'react-hook-form';
 import { FormCard } from '@/components/ui/form-section';
 import { SimpleFormField } from '@/components/ui';
 import { Textarea } from '@/components/ui/textarea';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
+import { useKeyboardAwareForm } from '@/contexts/KeyboardAwareFormContext';
 
 interface ObservationSectionProps {
   isSubmitting?: boolean;
@@ -24,26 +25,30 @@ export default function ObservationSection({
 }: ObservationSectionProps) {
   const { control } = useFormContext();
   const [observationFiles, setObservationFiles] = useState<FilePickerItem[]>(initialFiles);
+  const keyboardContext = useKeyboardAwareForm();
 
   return (
     <FormCard title="Observações" icon="note">
       {/* Observation Description */}
       <SimpleFormField label="Descrição da Observação" error={errors.observation?.description}>
-        <Controller
-          control={control}
-          name="observation.description"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <Textarea
-              value={value || ""}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              placeholder="Adicione observações importantes sobre a tarefa..."
-              numberOfLines={4}
-              error={!!errors.observation?.description}
-              editable={!isSubmitting}
-            />
-          )}
-        />
+        <View onLayout={keyboardContext ? (e: LayoutChangeEvent) => keyboardContext.onFieldLayout('observation.description', e) : undefined}>
+          <Controller
+            control={control}
+            name="observation.description"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Textarea
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                onFocus={() => keyboardContext?.onFieldFocus('observation.description')}
+                placeholder="Adicione observações importantes sobre a tarefa..."
+                numberOfLines={4}
+                error={!!errors.observation?.description}
+                editable={!isSubmitting}
+              />
+            )}
+          />
+        </View>
       </SimpleFormField>
 
       {/* Observation Files */}

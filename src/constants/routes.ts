@@ -489,7 +489,7 @@ export const routes = {
     metrics: "/servidor/metricas",
     root: "/servidor",
     services: "/servidor/services",
-    sharedFolders: "/servidor/shared-folders",
+    fileManager: "/servidor/file-manager",
     users: {
       create: "/servidor/usuarios/cadastrar",
       root: "/servidor/usuarios",

@@ -210,7 +210,7 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
         </View>
 
         {/* Payment Information Section */}
-        {order.paymentMethod && (
+        {(order.paymentMethod || order.paymentResponsible) && (
           <>
             {/* Separator */}
             <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -220,18 +220,29 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
                 Pagamento
               </ThemedText>
 
+              {/* Payment Responsible */}
+              {order.paymentResponsible && (
+                <DetailField
+                  label="Responsável pelo Pagamento"
+                  value={order.paymentResponsible.name}
+                  icon="user"
+                />
+              )}
+
               {/* Payment Method */}
-              <DetailField
-                label="Método de Pagamento"
-                icon="receipt"
-                value={
-                  <Badge variant="outline" size="sm">
-                    <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
-                      {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
-                    </ThemedText>
-                  </Badge>
-                }
-              />
+              {order.paymentMethod && (
+                <DetailField
+                  label="Método de Pagamento"
+                  icon="receipt"
+                  value={
+                    <Badge variant="outline" size="sm">
+                      <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
+                        {PAYMENT_METHOD_LABELS[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS]}
+                      </ThemedText>
+                    </Badge>
+                  }
+                />
+              )}
 
               {/* PIX Key (only when payment method is PIX) */}
               {order.paymentMethod === "PIX" && order.paymentPix && (
@@ -248,6 +259,15 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
                   label="Prazo de Vencimento"
                   value={`${order.paymentDueDays} dias`}
                   icon="calendar"
+                />
+              )}
+
+              {/* Payment Assigned By */}
+              {order.paymentAssignedBy && (
+                <DetailField
+                  label="Atribuído por"
+                  value={order.paymentAssignedBy.name}
+                  icon="user"
                 />
               )}
             </View>

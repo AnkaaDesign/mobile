@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense, lazy } from 'react';
-import { View, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { View, ScrollView, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { useFormContext, useWatch, useFormState } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -14,6 +14,8 @@ import { FormCard } from '@/components/ui/form-section';
 import { spacing } from '@/constants/design-system';
 import { SECTOR_PRIVILEGES } from '@/constants';
 import { TRUCK_SPOT } from '@/constants';
+import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from '@/contexts/KeyboardAwareFormContext';
 
 // Import essential sections immediately
 import BasicInfoSection from './sections/BasicInfoSection';
@@ -75,18 +77,19 @@ export function TaskForm({
     setIsReady(true);
   }, []);
 
+  // Keyboard-aware scroll handling (matches FormContainer / simple-task-create-form pattern)
+  const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
+    onFieldLayout: handlers.handleFieldLayout,
+    onFieldFocus: handlers.handleFieldFocus,
+    onComboboxOpen: handlers.handleComboboxOpen,
+    onComboboxClose: handlers.handleComboboxClose,
+  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
+
   // Track layout changes OUTSIDE react-hook-form (matching web pattern).
   // LayoutForm initial emissions are filtered by TruckLayoutSection, so
   // only real user modifications reach here.
   const [hasLayoutChanges, setHasLayoutChanges] = useState(false);
-  // Track canSubmit in state to avoid accessing formState proxy during render.
-  // Accessing form.formState.dirtyFields or form.formState.isValid during render
-  // subscribes TaskForm to proxy changes and causes "Cannot update a component
-  // while rendering a different component" when children trigger validation.
-  const [canSubmitForm, setCanSubmitForm] = useState(false);
-  // Cache errors in state to avoid accessing formState.errors proxy during render.
-  // This prevents "Cannot update a component while rendering a different component".
-  const [formErrors, setFormErrors] = useState<any>({});
   const modifiedLayoutStatesRef = useRef<Record<string, any>>({});
   const modifiedLayoutSidesRef = useRef<Set<string>>(new Set());
 
@@ -172,49 +175,17 @@ export function TaskForm({
         await onSubmit(data);
       });
 
-  // === DEBUG: Log form state to diagnose submit button not enabling ===
-  // IMPORTANT: Access formState properties inside useEffect only (not during render)
-  // to avoid "Cannot update a component while rendering a different component" error.
-  // Accessing form.formState.dirtyFields etc. during render subscribes TaskForm to
-  // proxy changes, and when child components trigger validation (mode: 'onChange'),
-  // it causes TaskForm to re-render mid-render of the child.
-  const prevDebugRef = useRef<string>('');
-
-  useEffect(() => {
-    if (mode !== 'edit') return;
-    const { dirtyFields, isValid, isValidating, errors } = form.formState;
-    const dirtyFieldKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
-    const errorKeys = Object.keys(errors);
-    const debugKey = JSON.stringify({ dirtyCount: dirtyFieldKeys.length, hasLayoutChanges, isValid, isValidating, errorCount: errorKeys.length });
-    if (debugKey !== prevDebugRef.current) {
-      prevDebugRef.current = debugKey;
-      console.log('[TaskForm DEBUG] ===== Form State Changed =====');
-      console.log('[TaskForm DEBUG] dirtyFields (excl. layouts):', dirtyFieldKeys.length > 0 ? dirtyFieldKeys : '(none)');
-      console.log('[TaskForm DEBUG] hasLayoutChanges:', hasLayoutChanges);
-      console.log('[TaskForm DEBUG] isValid:', isValid, '| isValidating:', isValidating);
-      console.log('[TaskForm DEBUG] errors:', errorKeys.length > 0 ? errorKeys : '(none)');
-      if (errorKeys.length > 0) {
-        errorKeys.forEach(key => {
-          const err = (errors as any)[key];
-          console.log(`[TaskForm DEBUG]   error[${key}]:`, err?.message || err?.type || JSON.stringify(err));
-        });
-      }
-      console.log('[TaskForm DEBUG] canSubmit would be:', dirtyFieldKeys.length > 0 || hasLayoutChanges);
-      console.log('[TaskForm DEBUG] ===============================');
-    }
-  });
-  // === END DEBUG ===
+  // Subscribe to form state via useFormState (safe subscription that doesn't cause
+  // "Cannot update a component while rendering a different component").
+  // Unlike form.formState proxy (which creates synchronous subscriptions that fire
+  // during other components' renders), useFormState batches updates properly.
+  const { dirtyFields, isValid, errors: formErrors } = useFormState({ control: form.control });
 
   // Watch form values for validation checks (matching web's hasIncompletePricing, etc.)
   const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
   const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
-  const watchedObservation = useWatch({ control: form.control, name: 'observation' });
-
-  // Compute canSubmit and cache errors in an effect to avoid reading formState proxy during render.
-  // This prevents "Cannot update a component while rendering a different component".
-  useEffect(() => {
-    const { dirtyFields, isValid, errors } = form.formState;
-
+  // Derive canSubmit from subscribed values (pure computation, no setState during render).
+  const canSubmitForm = useMemo(() => {
     if (mode === 'edit') {
       const dirtyKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
       const hasChanges = dirtyKeys.length > 0 || hasLayoutChanges;
@@ -243,15 +214,6 @@ export function TaskForm({
         if (hasIncomplete) validationBlocks = true;
       }
 
-      // hasIncompleteObservation: observation with description but no files, or vice versa
-      if (watchedObservation) {
-        const hasDescription = !!(watchedObservation.description && watchedObservation.description.trim());
-        const hasFiles = Array.isArray(watchedObservation.fileIds) && watchedObservation.fileIds.length > 0;
-        if ((hasDescription && !hasFiles) || (!hasDescription && hasFiles)) {
-          validationBlocks = true;
-        }
-      }
-
       // layoutWidthError: left/right layout width difference > 2cm (matching web)
       if (hasLayoutChanges) {
         const leftState = modifiedLayoutStatesRef.current['left'] || existingLayouts?.left;
@@ -265,12 +227,10 @@ export function TaskForm({
         }
       }
 
-      setCanSubmitForm(hasChanges && !validationBlocks);
-    } else {
-      setCanSubmitForm(isValid);
+      return hasChanges && !validationBlocks;
     }
-    setFormErrors(errors);
-  });
+    return isValid;
+  }, [dirtyFields, isValid, hasLayoutChanges, watchedServiceOrders, watchedPricing, existingLayouts, mode]);
 
   if (!isReady) {
     return (
@@ -283,11 +243,22 @@ export function TaskForm({
 
   return (
     <View style={[styles.wrapper, { backgroundColor: colors.background }]}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
+      <ScrollView
+        ref={refs.scrollViewRef}
+        style={styles.container}
+        contentContainerStyle={[styles.contentContainer, { paddingBottom: getContentPadding(spacing.lg) }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        onLayout={handlers.handleScrollViewLayout}
+        onScroll={handlers.handleScroll}
+        scrollEventThrottle={16}
+      >
+      <KeyboardAwareFormProvider value={keyboardContextValue}>
       {/* 1. Basic Information */}
       <BasicInfoSection
         isSubmitting={isSubmitting}
@@ -397,6 +368,7 @@ export function TaskForm({
         )}
       </Suspense>
 
+      </KeyboardAwareFormProvider>
       </ScrollView>
 
       {/* Form Action Bar */}
@@ -410,6 +382,7 @@ export function TaskForm({
         submitLabel={mode === 'create' ? 'Criar' : 'Salvar'}
         cancelLabel="Cancelar"
       />
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -423,7 +396,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
+    paddingTop: spacing.lg,
+    // paddingBottom is now dynamic via getContentPadding for keyboard handling
   },
   loadingContainer: {
     flex: 1,

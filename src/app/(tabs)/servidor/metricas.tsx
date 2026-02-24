@@ -460,8 +460,7 @@ export default function ServerMetricsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       >
         {/* Header Actions */}
-        <ThemedView className="flex-row justify-between items-center mb-4">
-          <ThemedText className="text-2xl font-bold">Métricas do Sistema</ThemedText>
+        <ThemedView className="flex-row justify-end items-center mb-4">
           <Button
             onPress={handleExport}
             variant="outline"

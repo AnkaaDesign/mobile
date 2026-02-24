@@ -89,15 +89,6 @@ import { useScreenReady } from "@/hooks/use-screen-ready";export default functio
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView className="flex-1">
-        {/* Header */}
-        <ThemedView className="p-4 border-b border-border">
-          <Text className="text-2xl font-bold mb-2">Usuários do Sistema</Text>
-          <Text className="text-sm text-muted-foreground">
-            Gerenciar usuários do sistema operacional
-          </Text>
-        </ThemedView>
-
-        {/* Content */}
         {isLoading ? (
           <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
         <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />

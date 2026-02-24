@@ -58,6 +58,8 @@ export default function OrderDetailScreen() {
       receipts: true,
       reimbursements: true,
       invoiceReimbursements: true,
+      paymentResponsible: true,
+      paymentAssignedBy: true,
     },
     enabled: !!id && id !== "",
   });

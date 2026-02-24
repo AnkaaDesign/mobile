@@ -77,7 +77,7 @@ export function PaintForm(props: PaintFormProps) {
   const { colors } = useTheme();
 
   // Keyboard-aware scrolling
-  const { handlers, refs } = useKeyboardAwareScroll();
+  const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
 
   // Step management
   const [currentStep, setCurrentStep] = useState(props.currentStep || 1);
@@ -272,7 +272,7 @@ export function PaintForm(props: PaintFormProps) {
           <ScrollView
             ref={refs.scrollViewRef}
             style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: getContentPadding(spacing.lg) }]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             onLayout={handlers.handleScrollViewLayout}

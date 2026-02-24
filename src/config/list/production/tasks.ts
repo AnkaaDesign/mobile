@@ -528,7 +528,11 @@ export const tasksListConfig: ListConfig<Task> = {
         variant: 'default',
         // ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can copy from another task
         canPerform: canAccessAdvancedTaskMenu,
-        // Action is handled by TaskScheduleLayout - opens modal
+        onPress: (task, router, context) => {
+          const currentPath = context?.route || '/(tabs)/producao/agenda'
+          navigationTracker.setSource(currentPath)
+          router.push(`/producao/agenda/copiar-de/${task.id}`)
+        },
       },
       {
         key: 'change-sector',

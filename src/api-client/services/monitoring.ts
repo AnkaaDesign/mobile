@@ -211,7 +211,7 @@ export class ServerMonitoringService {
   }
 
   // =====================
-  // Shared Folders
+  // File Manager (shared folders API)
   // =====================
 
   async getSharedFolders(): Promise<SharedFoldersResponse> {

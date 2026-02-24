@@ -12,7 +12,7 @@ import { FilePicker, FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
-import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { KeyboardAwareFormProvider, KeyboardAwareFormContextType, useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import type { LayoutCreateFormData } from "@/schemas";
 // import { showToast } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/utils/file";
@@ -25,6 +25,7 @@ const MeasurementInput = React.memo(({
   disabled = false,
   min,
   max,
+  fieldKey,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -32,8 +33,10 @@ const MeasurementInput = React.memo(({
   disabled?: boolean;
   min?: number;
   max?: number;
+  fieldKey?: string;
 }) => {
   const { colors } = useTheme();
+  const keyboardContext = useKeyboardAwareForm();
   const [localValue, setLocalValue] = useState<string>("");
   const [isFocused, setIsFocused] = useState(false);
 
@@ -97,26 +100,31 @@ const MeasurementInput = React.memo(({
 
   const handleFocus = () => {
     setIsFocused(true);
+    if (fieldKey && keyboardContext) {
+      keyboardContext.onFieldFocus(fieldKey);
+    }
   };
 
   return (
-    <TextInput
-      value={localValue}
-      onChangeText={handleChange}
-      onBlur={handleBlur}
-      onFocus={handleFocus}
-      placeholder={placeholder}
-      keyboardType="decimal-pad"
-      editable={!disabled}
-      style={[
-        styles.rowInput,
-        {
-          color: colors.foreground,
-          borderColor: colors.border,
-          backgroundColor: disabled ? colors.muted : colors.background,
-        }
-      ]}
-    />
+    <View onLayout={fieldKey && keyboardContext ? (e) => keyboardContext.onFieldLayout(fieldKey, e) : undefined}>
+      <TextInput
+        value={localValue}
+        onChangeText={handleChange}
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+        placeholder={placeholder}
+        keyboardType="decimal-pad"
+        editable={!disabled}
+        style={[
+          styles.rowInput,
+          {
+            color: colors.foreground,
+            borderColor: colors.border,
+            backgroundColor: disabled ? colors.muted : colors.background,
+          }
+        ]}
+      />
+    </View>
   );
 });
 
@@ -1150,6 +1158,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
             disabled={disabled}
             min={100}
             max={400}
+            fieldKey="layout-height"
           />
         </View>
       </Card>
@@ -1174,6 +1183,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     placeholder="1,00"
                     disabled={disabled}
                     min={0}
+                    fieldKey={`door-${index}-width`}
                   />
                 </View>
               </Card>
@@ -1192,6 +1202,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
                     placeholder="1,00"
                     disabled={disabled}
                     min={0}
+                    fieldKey={`segment-${index}-width`}
                   />
                 </View>
               </Card>
@@ -1214,6 +1225,7 @@ export function LayoutForm({ selectedSide, layouts, onChange, disabled = false, 
               disabled={disabled}
               min={50}
               max={currentState.height}
+              fieldKey={`door-${index}-height`}
             />
           </View>
         </Card>
@@ -1364,8 +1376,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   inputCard: {
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.xs,
     elevation: 0,
     shadowOpacity: 0,
     shadowRadius: 0,
@@ -1375,7 +1388,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   fieldLabel: {
     fontSize: fontSize.sm,

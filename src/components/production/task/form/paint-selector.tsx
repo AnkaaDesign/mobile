@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
+import { useQuery } from "@tanstack/react-query";
 import { Combobox } from "@/components/ui/combobox";
 import { getPaints } from "@/api-client";
 import { useTheme } from "@/lib/theme";
@@ -59,12 +60,14 @@ function PaintColorPreview({ paint, size = 24 }: PaintColorPreviewProps) {
         />
       ) : paint.finish ? (
         // Render finish effect if paint has a finish type
+        // borderRadius={0} via style — parent View handles clipping (same as PaintPreview above)
         <PaintFinishPreview
           baseColor={hexColor}
           finish={paint.finish as PAINT_FINISH}
           width={size}
           height={size}
           disableAnimations={true}
+          style={{ borderRadius: 0 }}
         />
       ) : (
         // Fallback to solid hex color
@@ -265,8 +268,10 @@ export function GeneralPaintingSelector({
       const response = await getPaints(params);
       const paints = (response.data || []).filter(paint => paint && paint.id && paint.name);
 
-      // Cache paint objects for chip display
-      paintsCache.current = new Map(paints.map(p => [p.id, p]));
+      // Merge into cache (not replace) so previously fetched paints remain available
+      for (const paint of paints) {
+        if (paint?.id) paintsCache.current.set(paint.id, paint);
+      }
 
       return {
         data: paints,
@@ -278,8 +283,15 @@ export function GeneralPaintingSelector({
     }
   }, []);
 
-  // Cache fetched paints to resolve selected paint object
+  // Cache fetched paints to resolve selected paint object (ref for synchronous access)
   const paintsCache = useRef<Map<string, Paint>>(new Map());
+
+  // Seed cache with initialPaint so it's always available
+  useEffect(() => {
+    if (initialPaint?.id) {
+      paintsCache.current.set(initialPaint.id, initialPaint);
+    }
+  }, [initialPaint?.id]);
 
   // Handle value change and track selected paint
   const handleValueChange = useCallback((newValue: string | string[] | null | undefined) => {
@@ -287,17 +299,15 @@ export function GeneralPaintingSelector({
     onValueChange?.(stringValue || undefined);
 
     if (stringValue) {
-      // Try to find paint from cache or initialPaint
+      // Try to find paint from cache (includes initialPaint + all search results)
       const cached = paintsCache.current.get(stringValue);
       if (cached) {
         setSelectedPaint(cached);
-      } else if (initialPaint?.id === stringValue) {
-        setSelectedPaint(initialPaint);
       }
     } else {
       setSelectedPaint(null);
     }
-  }, [onValueChange, initialPaint]);
+  }, [onValueChange]);
 
   // Clear selected paint when value is externally cleared
   useEffect(() => {
@@ -318,7 +328,7 @@ export function GeneralPaintingSelector({
         disabled={disabled}
         error={error}
         async={true}
-        queryKey={["paints", "search"]}
+        queryKey={["paints", "general-search"]}
         queryFn={searchPaints}
         initialOptions={initialOptions}
         getOptionLabel={getOptionLabel}
@@ -371,21 +381,61 @@ export function LogoPaintsSelector({
   const { colors } = useTheme();
   const renderOption = usePaintRenderOption();
 
-  // Track selected paint objects for chip display
-  const [selectedPaintsMap, setSelectedPaintsMap] = useState<Map<string, Paint>>(new Map());
+  // Ref-based cache for paint lookup from search results
+  const paintsCacheRef = useRef<Map<string, Paint>>(new Map());
 
-  // Initialize from initialPaints
+  // Initialize cache from initialPaints
   useEffect(() => {
     if (initialPaints.length > 0) {
-      setSelectedPaintsMap(prev => {
-        const next = new Map(prev);
-        for (const paint of initialPaints) {
-          if (paint?.id) next.set(paint.id, paint);
-        }
-        return next;
-      });
+      for (const paint of initialPaints) {
+        if (paint?.id) paintsCacheRef.current.set(paint.id, paint);
+      }
     }
   }, [initialPaints?.map(p => p.id).join(',')]);
+
+  // Stable key for selected IDs (drives the details query)
+  const selectedIdsKey = useMemo(
+    () => [...selectedValues].sort().join(','),
+    [selectedValues]
+  );
+
+  // Fetch full paint objects for selected IDs (matching web pattern).
+  // This ensures chips always display, regardless of search cache state.
+  const { data: fetchedPaintDetails } = useQuery({
+    queryKey: ["paints", "selected-logo-details", selectedIdsKey],
+    queryFn: async () => {
+      if (selectedValues.length === 0) return [];
+      const response = await getPaints({
+        where: { id: { in: selectedValues } },
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          hex: true,
+          hexColor: true,
+          finish: true,
+          colorPreview: true,
+          manufacturer: true,
+          paintType: { select: { id: true, name: true } },
+          paintBrand: { select: { id: true, name: true } },
+          _count: { select: { formulas: true } },
+        },
+        take: selectedValues.length,
+      } as any);
+      return (response.data || []) as Paint[];
+    },
+    enabled: selectedValues.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Update cache with fetched details
+  useEffect(() => {
+    if (fetchedPaintDetails && fetchedPaintDetails.length > 0) {
+      for (const paint of fetchedPaintDetails) {
+        if (paint?.id) paintsCacheRef.current.set(paint.id, paint);
+      }
+    }
+  }, [fetchedPaintDetails]);
 
   // Memoize initialOptions to prevent infinite loop
   const initialOptions = useMemo(() => initialPaints || [], [initialPaints?.map(p => p.id).join(',')]);
@@ -443,14 +493,10 @@ export function LogoPaintsSelector({
       const response = await getPaints(params);
       const paints = (response.data || []).filter((paint: Paint) => paint && paint.id && paint.name);
 
-      // Cache paint objects for chip display
-      setSelectedPaintsMap(prev => {
-        const next = new Map(prev);
-        for (const paint of paints) {
-          if (paint?.id) next.set(paint.id, paint);
-        }
-        return next;
-      });
+      // Merge into ref cache for supplementary lookup
+      for (const paint of paints) {
+        if (paint?.id) paintsCacheRef.current.set(paint.id, paint);
+      }
 
       return {
         data: paints,
@@ -473,12 +519,32 @@ export function LogoPaintsSelector({
     onValueChange?.(newValues);
   }, [selectedValues, onValueChange]);
 
-  // Get selected paint objects for chip display
+  // Build selected paint list from multiple sources (matching web pattern):
+  // Priority: fetchedDetails > searchCache > initialPaints
   const selectedPaintsList = useMemo(() => {
+    const paintsMap = new Map<string, Paint>();
+
+    // Priority 1: fetched details (most up-to-date, fetched by ID)
+    if (fetchedPaintDetails) {
+      for (const paint of fetchedPaintDetails) {
+        if (paint?.id) paintsMap.set(paint.id, paint);
+      }
+    }
+
+    // Priority 2: search cache (from Combobox searches)
+    for (const [id, paint] of paintsCacheRef.current) {
+      if (!paintsMap.has(id)) paintsMap.set(id, paint);
+    }
+
+    // Priority 3: initialPaints (props)
+    for (const paint of initialPaints) {
+      if (paint?.id && !paintsMap.has(paint.id)) paintsMap.set(paint.id, paint);
+    }
+
     return selectedValues
-      .map(id => selectedPaintsMap.get(id))
+      .map(id => paintsMap.get(id))
       .filter((p): p is Paint => !!p);
-  }, [selectedValues, selectedPaintsMap]);
+  }, [selectedValues, fetchedPaintDetails, initialPaints]);
 
   return (
     <View>
@@ -493,7 +559,7 @@ export function LogoPaintsSelector({
         disabled={disabled}
         error={error}
         async={true}
-        queryKey={["paints", "search"]}
+        queryKey={["paints", "logo-search"]}
         queryFn={searchPaints}
         initialOptions={initialOptions}
         getOptionLabel={getOptionLabel}

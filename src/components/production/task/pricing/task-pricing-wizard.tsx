@@ -35,6 +35,7 @@ import { SERVICE_ORDER_TYPE } from "@/constants/enums";
 import { RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { formatCurrency } from "@/utils";
+import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import type { FormStep } from "@/components/ui/form-steps";
 
 // Wizard form schema wrapping the nested pricing schema
@@ -247,7 +248,10 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
 
 
   // Build preview pricing object
-  const previewPricing = useMemo(() => {
+  // NOTE: Cannot useMemo with pricingData — react-hook-form's watch() returns the same
+  // object reference even when nested properties (items array) change, which causes
+  // useMemo to return stale data and miss newly added/removed items.
+  const previewPricing = (() => {
     if (!pricingData) return null;
 
     // Determine layout file for preview
@@ -268,11 +272,12 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
 
     return {
       ...pricingData,
+      items: pricingData.items ? [...pricingData.items] : [],
       budgetNumber: existingPricing?.budgetNumber,
       createdAt: existingPricing?.createdAt || new Date(),
       layoutFile: layoutFileForPreview,
     };
-  }, [pricingData, existingPricing, layoutFiles]);
+  })();
 
   // Validation for step navigation
   const canProceedToStep2 = useMemo(() => {
@@ -281,7 +286,12 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
 
   const canProceedToStep3 = useMemo(() => {
     // Use formValues.pricing.items to ensure we get updates when items change
-    const items = formValues?.pricing?.items || [];
+    const allItems = formValues?.pricing?.items || [];
+
+    // Filter out empty placeholder items (matching schema preprocessing behavior)
+    const items = allItems.filter(
+      (item: any) => item && item.description && item.description.trim() !== ''
+    );
 
     if (items.length === 0) {
       return false;
@@ -290,15 +300,12 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     const validationResults = items.map((item: any) => {
       const hasDescription = !!(item.description?.trim());
 
-      // Check amount is a valid number
-      // Convert to number first to handle string numbers from form
+      // Amount can be null/undefined (defaults to 0 for courtesy items)
+      // Only reject if it's explicitly a negative number
       const numAmount = typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount;
-
-      // Valid if it's a number >= 0 (including 0 for free items)
       const hasValidAmount =
-        typeof numAmount === 'number' &&
-        !isNaN(numAmount) &&
-        numAmount >= 0;
+        numAmount == null ||
+        (typeof numAmount === 'number' && !isNaN(numAmount) && numAmount >= 0);
 
       return hasDescription && hasValidAmount;
     });
@@ -317,7 +324,9 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
       return;
     }
     if (currentStep === 2 && !canProceedToStep3) {
-      const items = pricingData?.items || [];
+      const items = (pricingData?.items || []).filter(
+        (item: any) => item && item.description && item.description.trim() !== ''
+      );
       if (items.length === 0) {
         Alert.alert("Orçamento vazio", "Adicione pelo menos um serviço antes de continuar.");
       } else {
@@ -519,6 +528,7 @@ interface Step1Props {
 function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange, taskResponsibles }: Step1Props) {
   const { colors } = useTheme();
   const { setValue, getValues } = useFormContext();
+  const keyboardContext = useKeyboardAwareForm();
   const [validityPeriod, setValidityPeriod] = useState<string>("");
   const [showCustomPayment, setShowCustomPayment] = useState(false);
   const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
@@ -691,42 +701,43 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       {discountType !== "NONE" && (
         <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
-          <TextInput
-            value={discountReference || ""}
-            onChangeText={(t) => setValue("pricing.discountReference", t || null)}
-            placeholder="Justificativa ou referência para o desconto aplicado..."
-            placeholderTextColor={colors.mutedForeground}
-            maxLength={500}
-            style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground, minHeight: 42 }]}
-          />
+          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-discount-reference', e) : undefined}>
+            <TextInput
+              value={discountReference || ""}
+              onChangeText={(t) => setValue("pricing.discountReference", t || null)}
+              placeholder="Justificativa ou referência para o desconto aplicado..."
+              placeholderTextColor={colors.mutedForeground}
+              maxLength={500}
+              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground, minHeight: 42 }]}
+              onFocus={() => keyboardContext?.onFieldFocus('pricing-discount-reference')}
+            />
+          </View>
         </View>
       )}
 
       {/* Payment Condition & Down Payment Date */}
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
-        <View style={styles.row}>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
-            <Combobox
-              value={currentPaymentCondition}
-              onValueChange={handlePaymentChange}
-              options={PAYMENT_CONDITIONS.map((o) => ({ value: o.value, label: o.label }))}
-              placeholder="Selecione"
-              searchable={false}
-              avoidKeyboard={false}
-              onOpen={() => {}}
-              onClose={() => {}}
-            />
-          </View>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
-            <DatePicker
-              value={downPaymentDate ? new Date(downPaymentDate) : undefined}
-              onChange={(date) => setValue("pricing.downPaymentDate", date || null)}
-              mode="date"
-              placeholder="Selecione"
-            />
-          </View>
+        <View>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
+          <Combobox
+            value={currentPaymentCondition}
+            onValueChange={handlePaymentChange}
+            options={PAYMENT_CONDITIONS.map((o) => ({ value: o.value, label: o.label }))}
+            placeholder="Selecione"
+            searchable={false}
+            avoidKeyboard={false}
+            onOpen={() => {}}
+            onClose={() => {}}
+          />
+        </View>
+        <View style={{ marginTop: spacing.sm }}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
+          <DatePicker
+            value={downPaymentDate ? new Date(downPaymentDate) : undefined}
+            onChange={(date) => setValue("pricing.downPaymentDate", date || null)}
+            mode="date"
+            placeholder="Selecione"
+          />
         </View>
       </View>
 
@@ -734,15 +745,18 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       {showCustomPayment && (
         <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
-          <TextInput
-            value={customPaymentText || ""}
-            onChangeText={(t) => setValue("pricing.customPaymentText", t || null)}
-            placeholder="Descreva as condições de pagamento..."
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={3}
-            style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-          />
+          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-payment', e) : undefined}>
+            <TextInput
+              value={customPaymentText || ""}
+              onChangeText={(t) => setValue("pricing.customPaymentText", t || null)}
+              placeholder="Descreva as condições de pagamento..."
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              numberOfLines={3}
+              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+              onFocus={() => keyboardContext?.onFieldFocus('pricing-custom-payment')}
+            />
+          </View>
         </View>
       )}
 
@@ -765,15 +779,18 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       {showCustomGuarantee && (
         <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Garantia</ThemedText>
-          <TextInput
-            value={customGuaranteeText || ""}
-            onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
-            placeholder="Descreva as condições de garantia..."
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={3}
-            style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-          />
+          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-guarantee', e) : undefined}>
+            <TextInput
+              value={customGuaranteeText || ""}
+              onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
+              placeholder="Descreva as condições de garantia..."
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              numberOfLines={3}
+              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+              onFocus={() => keyboardContext?.onFieldFocus('pricing-custom-guarantee')}
+            />
+          </View>
         </View>
       )}
 
@@ -1049,9 +1066,6 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
           placeholder="Selecione o serviço..."
           searchable
           clearable={false}
-          avoidKeyboard={false}
-          onOpen={() => {}}
-          onClose={() => {}}
         />
       </View>
       <View style={styles.amountRow}>
@@ -1061,6 +1075,7 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
             value={amount ?? ""}
             onChange={(v) => setValue(`pricing.items.${index}.amount`, v)}
             placeholder="R$ 0,00"
+            fieldKey={`pricing-item-${index}-amount`}
           />
         </View>
         <TouchableOpacity

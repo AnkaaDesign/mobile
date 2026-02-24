@@ -527,7 +527,9 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   systemLogs: IconFileText, // camelCase version
   services: IconSettings, // Alias
   systemUsers: IconUserCog, // camelCase version
-  sharedFolders: IconFolderShare, // camelCase version
+  sharedFolders: IconFolderShare, // camelCase version (legacy alias)
+  fileManager: IconFolderShare, // camelCase version
+  "file-manager": IconFolderShare, // kebab-case version
   databaseImport: IconDatabaseImport, // camelCase version
   clipboardList: IconClipboardList, // camelCase version
 

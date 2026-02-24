@@ -1,7 +1,8 @@
 import { View, ScrollView, RefreshControl, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { Text } from "@/components/ui/text";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemedView } from "@/components/ui/themed-view";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -167,183 +168,185 @@ export default function RateLimitingScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+      <ThemedView className="flex-1">
       <ScrollView
-        className="flex-1 bg-background"
+        contentContainerStyle={{ padding: 16 }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
-        <View className="p-4 gap-4">
-          {/* Header */}
-          <View>
-            <Text className="text-2xl font-bold mb-2">Rate Limiting</Text>
-            <Text className="text-sm text-muted-foreground">
-              Monitoramento de limites de taxa de requisições
-            </Text>
-          </View>
-
-          {/* Stats Overview */}
-          <View className="gap-3">
-            <Card>
-              <CardContent className="py-4">
-                <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text className="text-sm text-muted-foreground mb-1">
-                      Total de Chaves
-                    </Text>
-                    <Text className="text-3xl font-bold">
-                      {stats?.totalKeys ?? 0}
-                    </Text>
-                  </View>
-                  <Icon name="key" className="w-8 h-8 text-muted-foreground" />
+        {/* Stats Overview - 3 column row */}
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+          <Card style={{ flex: 1 }}>
+            <CardContent style={{ padding: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <View style={{ padding: 6, backgroundColor: colors.muted, borderRadius: 6 }}>
+                  <Icon name="key" size={14} color={colors.mutedForeground} />
                 </View>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="py-4">
-                <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text className="text-sm text-muted-foreground mb-1">
-                      Chaves Ativas
-                    </Text>
-                    <Text className="text-3xl font-bold" style={{ color: colors.success }}>
-                      {stats?.activeKeys ?? 0}
-                    </Text>
-                  </View>
-                  <Icon name="check-circle" size={32} color={colors.success} />
-                </View>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="py-4">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Text className="text-sm text-muted-foreground mb-1">
-                      Chaves Bloqueadas
-                    </Text>
-                    <Text className="text-3xl font-bold" style={{ color: colors.destructive }}>
-                      {stats?.blockedKeys ?? 0}
-                    </Text>
-                  </View>
-                  <Icon name="alert-triangle" size={32} color={colors.destructive} />
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-
-          {/* Blocked Keys List */}
-          {blockedKeys.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex-row items-center gap-2">
-                  <Icon name="alert-triangle" size={20} color={colors.destructive} />
-                  Chaves Bloqueadas ({blockedKeys.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="gap-3">
-                {blockedKeys.slice(0, 5).map((item, index) => (
-                  <View key={index}>
-                    {index > 0 && <Separator className="mb-3" />}
-                    <View className="gap-2">
-                      <View className="flex-row items-start justify-between">
-                        <View className="flex-1">
-                          <Text className="text-sm font-medium">
-                            {item.controller}
-                          </Text>
-                          <Badge variant="destructive" className="mt-1 self-start">
-                            {item.method}
-                          </Badge>
-                        </View>
-                        <Badge variant="outline">
-                          {item.identifierType}
-                        </Badge>
-                      </View>
-
-                      <View className="gap-1">
-                        <View className="flex-row items-center gap-2">
-                          <Icon name="user" className="w-3 h-3 text-muted-foreground" />
-                          <Text className="text-xs text-muted-foreground font-mono flex-1" numberOfLines={1}>
-                            {item.identifier}
-                          </Text>
-                        </View>
-
-                        <View className="flex-row items-center gap-2">
-                          <Icon name="clock" className="w-3 h-3 text-muted-foreground" />
-                          <Text className="text-xs text-muted-foreground">
-                            Expira em: {item.expiresIn}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                ))}
-
-                {blockedKeys.length > 5 && (
-                  <Text className="text-sm text-muted-foreground text-center mt-2">
-                    E mais {blockedKeys.length - 5} chave(s) bloqueada(s)...
-                  </Text>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ações</CardTitle>
-            </CardHeader>
-            <CardContent className="gap-3">
-              <Button
-                variant="destructive"
-                onPress={handleClearBlocked}
-                disabled={isClearing || (stats?.blockedKeys ?? 0) === 0}
-              >
-                <Icon name="unlock" className="w-4 h-4 mr-2" />
-                <Text className="text-destructive-foreground">
-                  Desbloquear Todas
-                </Text>
-              </Button>
-
-              <Button
-                variant="outline"
-                onPress={handleClearAll}
-                disabled={isClearing || (stats?.totalKeys ?? 0) === 0}
-              >
-                <Icon name="trash" className="w-4 h-4 mr-2" />
-                <Text>Limpar Todas as Chaves</Text>
-              </Button>
-
-              <Text className="text-xs text-muted-foreground text-center">
-                As chaves são atualizadas automaticamente a cada 10 segundos
+              </View>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>
+                {stats?.totalKeys ?? 0}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.mutedForeground, marginTop: 2 }}>
+                Total
               </Text>
             </CardContent>
           </Card>
 
-          {/* Keys by Controller */}
-          {stats?.keysByController && Object.keys(stats.keysByController).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Chaves por Controller</CardTitle>
-              </CardHeader>
-              <CardContent className="gap-2">
-                {Object.entries(stats.keysByController).map(([controller, count], index) => (
-                  <View key={controller}>
-                    {index > 0 && <Separator className="my-2" />}
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-sm flex-1" numberOfLines={1}>
-                        {controller}
+          <Card style={{ flex: 1 }}>
+            <CardContent style={{ padding: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <View style={{ padding: 6, backgroundColor: "#16a34a15", borderRadius: 6 }}>
+                  <Icon name="check-circle" size={14} color="#16a34a" />
+                </View>
+              </View>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: "#16a34a" }}>
+                {stats?.activeKeys ?? 0}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.mutedForeground, marginTop: 2 }}>
+                Ativas
+              </Text>
+            </CardContent>
+          </Card>
+
+          <Card style={{ flex: 1 }}>
+            <CardContent style={{ padding: 12 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <View style={{ padding: 6, backgroundColor: colors.destructive + "15", borderRadius: 6 }}>
+                  <Icon name="alert-triangle" size={14} color={colors.destructive} />
+                </View>
+              </View>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: colors.destructive }}>
+                {stats?.blockedKeys ?? 0}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.mutedForeground, marginTop: 2 }}>
+                Bloqueadas
+              </Text>
+            </CardContent>
+          </Card>
+        </View>
+
+        {/* Quick Actions Row */}
+        <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+          <Button
+            variant="outline"
+            onPress={handleClearBlocked}
+            disabled={isClearing || (stats?.blockedKeys ?? 0) === 0}
+            style={{ flex: 1 }}
+            size="sm"
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Icon name="unlock" size={14} color={(stats?.blockedKeys ?? 0) === 0 ? colors.mutedForeground : colors.destructive} />
+              <Text style={{ fontSize: 12, color: (stats?.blockedKeys ?? 0) === 0 ? colors.mutedForeground : colors.foreground }}>
+                Desbloquear
+              </Text>
+            </View>
+          </Button>
+
+          <Button
+            variant="outline"
+            onPress={handleClearAll}
+            disabled={isClearing || (stats?.totalKeys ?? 0) === 0}
+            style={{ flex: 1 }}
+            size="sm"
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Icon name="trash" size={14} color={(stats?.totalKeys ?? 0) === 0 ? colors.mutedForeground : colors.foreground} />
+              <Text style={{ fontSize: 12, color: (stats?.totalKeys ?? 0) === 0 ? colors.mutedForeground : colors.foreground }}>
+                Limpar Todas
+              </Text>
+            </View>
+          </Button>
+        </View>
+
+        {/* Blocked Keys List */}
+        {blockedKeys.length > 0 && (
+          <Card style={{ marginBottom: 16 }}>
+            <View style={{ padding: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <Icon name="alert-triangle" size={16} color={colors.destructive} />
+                <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, flex: 1 }}>
+                  Chaves Bloqueadas
+                </Text>
+                <Badge variant="destructive">
+                  <Text style={{ fontSize: 11 }}>{blockedKeys.length}</Text>
+                </Badge>
+              </View>
+
+              {blockedKeys.slice(0, 5).map((item, index) => (
+                <View key={index}>
+                  {index > 0 && <Separator className="my-3" />}
+                  <View style={{ gap: 6 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <Text style={{ fontSize: 13, fontWeight: "500", color: colors.foreground, flex: 1 }} numberOfLines={1}>
+                        {item.controller}
                       </Text>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Badge variant="outline">
+                        <Text style={{ fontSize: 10 }}>{item.identifierType}</Text>
+                      </Badge>
+                    </View>
+
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Badge variant="destructive">
+                        <Text style={{ fontSize: 10 }}>{item.method}</Text>
+                      </Badge>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flex: 1 }}>
+                        <Icon name="user" size={11} color={colors.mutedForeground} />
+                        <Text style={{ fontSize: 11, color: colors.mutedForeground, flex: 1 }} numberOfLines={1}>
+                          {item.identifier}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Icon name="clock" size={11} color={colors.mutedForeground} />
+                      <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+                        Expira em: {item.expiresIn}
+                      </Text>
                     </View>
                   </View>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </View>
+                </View>
+              ))}
+
+              {blockedKeys.length > 5 && (
+                <Text style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center", marginTop: 12 }}>
+                  E mais {blockedKeys.length - 5} chave(s) bloqueada(s)...
+                </Text>
+              )}
+            </View>
+          </Card>
+        )}
+
+        {/* Keys by Controller */}
+        {stats?.keysByController && Object.keys(stats.keysByController).length > 0 && (
+          <Card style={{ marginBottom: 16 }}>
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
+                Chaves por Controller
+              </Text>
+              {Object.entries(stats.keysByController).map(([controller, count], index) => (
+                <View key={controller}>
+                  {index > 0 && <Separator className="my-2" />}
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Text style={{ fontSize: 13, color: colors.foreground, flex: 1 }} numberOfLines={1}>
+                      {controller}
+                    </Text>
+                    <Badge variant="secondary">
+                      <Text style={{ fontSize: 11 }}>{count}</Text>
+                    </Badge>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </Card>
+        )}
+
+        {/* Auto-refresh note */}
+        <Text style={{ fontSize: 11, color: colors.mutedForeground, textAlign: "center", marginBottom: 16 }}>
+          Atualização automática a cada 10 segundos
+        </Text>
       </ScrollView>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

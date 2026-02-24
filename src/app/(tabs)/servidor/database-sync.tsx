@@ -1,6 +1,7 @@
 import { View, ScrollView, RefreshControl, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
@@ -109,21 +110,14 @@ export default function DatabaseSyncScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+      <ThemedView className="flex-1">
       <ScrollView
-        className="flex-1 bg-background"
+        style={{ flex: 1 }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       >
         <View className="p-4 gap-4">
-          {/* Header */}
-          <View>
-            <Text className="text-2xl font-bold mb-2">Sincronização de BD</Text>
-            <Text className="text-sm text-muted-foreground">
-              Sincronização unidirecional: Produção → Teste
-            </Text>
-          </View>
-
           {/* Overview Card */}
           <Card>
             <CardHeader>
@@ -294,6 +288,7 @@ export default function DatabaseSyncScreen() {
           )}
         </View>
       </ScrollView>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

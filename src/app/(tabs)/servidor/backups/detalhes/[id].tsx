@@ -2,6 +2,7 @@ import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-nativ
 import { useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,8 +121,9 @@ export default function BackupDetailsScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+      <ThemedView className="flex-1">
       <ScrollView
-        className="flex-1 bg-background"
+        style={{ flex: 1 }}
         refreshControl={
           <RefreshControl refreshing={isFetching} onRefresh={refetch} />
         }
@@ -260,6 +262,7 @@ export default function BackupDetailsScreen() {
           </View>
         </View>
       </ScrollView>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

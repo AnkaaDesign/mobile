@@ -122,7 +122,7 @@ export class ServerService {
   }
 
   // =====================
-  // Shared Folders Operations
+  // File Manager Operations (shared folders API)
   // =====================
 
   async getSharedFolders(): Promise<SharedFoldersResponse> {
@@ -145,7 +145,16 @@ export class ServerService {
         permissions: string;
         owner: string;
         group: string;
+        remoteUrl?: string;
         webdavUrl?: string;
+        fileCount?: number;
+        folderCount?: number;
+        // Database file fields (when matched)
+        dbFileId?: string;
+        dbFilePath?: string;
+        dbThumbnailUrl?: string | null;
+        dbMimeType?: string;
+        dbFileSize?: number;
       }>;
       totalFiles: number;
       totalSize: string;
@@ -191,6 +200,6 @@ export const createSystemUser = (data: CreateUserFormData) => serverService.crea
 export const deleteSystemUser = (username: string) => serverService.deleteUser(username);
 export const setSystemUserPassword = (username: string, data: SetUserPasswordFormData) => serverService.setUserPassword(username, data);
 
-// Shared Folders
+// File Manager (shared folders API)
 export const getSharedFolders = () => serverService.getSharedFolders();
 export const getSharedFolderContents = (folderName: string, subPath?: string) => serverService.getSharedFolderContents(folderName, subPath);

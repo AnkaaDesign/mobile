@@ -330,7 +330,7 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/servidor/rate-limiting': 'ADMIN',
   '/(tabs)/servidor/usuarios': 'ADMIN',
   '/(tabs)/servidor/services': 'ADMIN',
-  '/(tabs)/servidor/shared-folders': 'ADMIN',
+  '/(tabs)/servidor/file-manager': ['ADMIN', 'COMMERCIAL'],
   
   // =====================
   // INTEGRACOES (INTEGRATIONS)

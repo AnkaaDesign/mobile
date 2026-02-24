@@ -17,6 +17,7 @@ import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations } from "@/hooks";
+import { getUsers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
 import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from "@/constants";
 import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
@@ -46,6 +47,7 @@ const orderCreateFormSchema = z.object({
   paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
   paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
   paymentDueDays: z.number().int().positive().optional().nullable(),
+  paymentResponsibleId: z.string().uuid("Selecione um responsável válido").optional().nullable(),
 });
 
 type OrderCreateFormData = z.infer<typeof orderCreateFormSchema>;
@@ -103,6 +105,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
       paymentMethod: null,
       paymentPix: null,
       paymentDueDays: null,
+      paymentResponsibleId: null,
     },
     defaultQuantity: 1,
     defaultPrice: 0,
@@ -315,6 +318,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         paymentMethod: multiStepForm.formData.paymentMethod || undefined,
         paymentPix: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX ? multiStepForm.formData.paymentPix || undefined : undefined,
         paymentDueDays: multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? multiStepForm.formData.paymentDueDays || undefined : undefined,
+        paymentResponsibleId: multiStepForm.formData.paymentResponsibleId || undefined,
       };
 
       // Check if there are files to upload
@@ -583,117 +587,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     </View>
                   )}
                 />
-              </CardContent>
-            </Card>
-
-            {/* Payment Section */}
-            <Card style={styles.card}>
-              <CardHeader>
-                <CardTitle>Pagamento (Opcional)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Payment Method */}
-                <Controller
-                  control={form.control}
-                  name="paymentMethod"
-                  render={({ field: { value } }) => (
-                    <View style={styles.fieldGroup}>
-                      <Label>Método de Pagamento</Label>
-                      <Combobox
-                        value={value || ""}
-                        onValueChange={(val) => {
-                          const paymentMethodValue = val ? (val as PAYMENT_METHOD) : null;
-                          handleFormChange("paymentMethod", paymentMethodValue);
-                          // Auto-fill PIX from supplier when selecting PIX
-                          if (val === PAYMENT_METHOD.PIX && multiStepForm.formData.supplierId) {
-                            const selectedSupplier = suppliers?.data?.find(
-                              (s) => s.id === multiStepForm.formData.supplierId
-                            );
-                            if (selectedSupplier?.pix) {
-                              handleFormChange("paymentPix", selectedSupplier.pix);
-                            }
-                          }
-                          // Clear conditional fields when changing method
-                          if (val !== PAYMENT_METHOD.PIX) {
-                            handleFormChange("paymentPix", null);
-                          }
-                          if (val !== PAYMENT_METHOD.BANK_SLIP) {
-                            handleFormChange("paymentDueDays", null);
-                          }
-                        }}
-                        options={[
-                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
-                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
-                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
-                        ]}
-                        placeholder="Selecione o método de pagamento"
-                        disabled={isSubmitting}
-                        clearable
-                      />
-                    </View>
-                  )}
-                />
-
-                {/* PIX Key (shown when PIX is selected) */}
-                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX && (
-                  <Controller
-                    control={form.control}
-                    name="paymentPix"
-                    render={({ field: { value }, fieldState: { error } }) => (
-                      <View style={styles.fieldGroup}>
-                        <Label>Chave Pix</Label>
-                        <Input
-                          value={value || ""}
-                          onChangeText={(val) => handleFormChange("paymentPix", val)}
-                          onBlur={() => {
-                            const currentValue = form.getValues("paymentPix");
-                            if (currentValue) {
-                              const formatted = formatPixKey(currentValue);
-                              form.setValue("paymentPix", formatted);
-                              handleFormChange("paymentPix", formatted);
-                            }
-                          }}
-                          placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
-                          editable={!isSubmitting}
-                          autoCapitalize="none"
-                        />
-                        {error && (
-                          <ThemedText style={styles.errorText}>{error.message}</ThemedText>
-                        )}
-                        <ThemedText style={styles.helpText}>
-                          Chave Pix para pagamento do pedido
-                        </ThemedText>
-                      </View>
-                    )}
-                  />
-                )}
-
-                {/* Due Days (shown when BANK_SLIP is selected) */}
-                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP && (
-                  <Controller
-                    control={form.control}
-                    name="paymentDueDays"
-                    render={({ field: { value } }) => (
-                      <View style={styles.fieldGroup}>
-                        <Label>Prazo de Vencimento</Label>
-                        <Combobox
-                          value={value?.toString() || ""}
-                          onValueChange={(val) => handleFormChange("paymentDueDays", val ? Number(val) : null)}
-                          options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
-                            label: `${days} dias`,
-                            value: days.toString(),
-                          }))}
-                          placeholder="Selecione o prazo"
-                          disabled={isSubmitting}
-                          clearable
-                        />
-                        <ThemedText style={styles.helpText}>
-                          Prazo para vencimento do boleto
-                        </ThemedText>
-                      </View>
-                    )}
-                  />
-                )}
               </CardContent>
             </Card>
 
@@ -983,6 +876,179 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     <ThemedText>{isInventoryMode ? "Estoque" : "Temporário"}</ThemedText>
                   </Badge>
                 </View>
+              </CardContent>
+            </Card>
+
+            {/* Payment Section */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Pagamento (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Payment Responsible */}
+                <Controller
+                  control={form.control}
+                  name="paymentResponsibleId"
+                  render={({ field }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Responsável pelo Pagamento</Label>
+                      <Combobox
+                        async
+                        queryKey={["users", "payment-responsible-selector"]}
+                        queryFn={async (searchTerm: string, page: number = 1) => {
+                          const pageSize = 20;
+                          const response = await getUsers({
+                            take: pageSize,
+                            skip: (page - 1) * pageSize,
+                            where: {
+                              isActive: true,
+                              ...(searchTerm ? {
+                                OR: [
+                                  { name: { contains: searchTerm, mode: "insensitive" } },
+                                  { email: { contains: searchTerm, mode: "insensitive" } },
+                                ],
+                              } : {}),
+                            },
+                            orderBy: { name: "asc" },
+                            select: {
+                              id: true,
+                              name: true,
+                              email: true,
+                            },
+                          });
+                          const users = response.data || [];
+                          return {
+                            data: users.map((user) => ({
+                              value: user.id,
+                              label: user.name,
+                              description: user.email || undefined,
+                            })),
+                            hasMore: response.meta?.hasNextPage || false,
+                          };
+                        }}
+                        minSearchLength={0}
+                        pageSize={20}
+                        debounceMs={500}
+                        loadOnMount={false}
+                        value={field.value || ""}
+                        onValueChange={(val) => {
+                          const value = Array.isArray(val) ? val[0] : val;
+                          field.onChange(value ?? null);
+                          handleFormChange("paymentResponsibleId", value ?? null);
+                        }}
+                        placeholder="Selecione o responsável"
+                        emptyText="Nenhum usuário encontrado"
+                        searchPlaceholder="Buscar por nome ou e-mail..."
+                        disabled={isSubmitting}
+                        searchable
+                        clearable
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* Payment Method */}
+                <Controller
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field: { value } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Método de Pagamento</Label>
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => {
+                          const paymentMethodValue = val ? (val as PAYMENT_METHOD) : null;
+                          handleFormChange("paymentMethod", paymentMethodValue);
+                          // Auto-fill PIX from supplier when selecting PIX
+                          if (val === PAYMENT_METHOD.PIX && multiStepForm.formData.supplierId) {
+                            const selectedSupplier = suppliers?.data?.find(
+                              (s) => s.id === multiStepForm.formData.supplierId
+                            );
+                            if (selectedSupplier?.pix) {
+                              handleFormChange("paymentPix", selectedSupplier.pix);
+                            }
+                          }
+                          // Clear conditional fields when changing method
+                          if (val !== PAYMENT_METHOD.PIX) {
+                            handleFormChange("paymentPix", null);
+                          }
+                          if (val !== PAYMENT_METHOD.BANK_SLIP) {
+                            handleFormChange("paymentDueDays", null);
+                          }
+                        }}
+                        options={[
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
+                        ]}
+                        placeholder="Selecione o método de pagamento"
+                        disabled={isSubmitting}
+                        clearable
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* PIX Key (shown when PIX is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX && (
+                  <Controller
+                    control={form.control}
+                    name="paymentPix"
+                    render={({ field: { value }, fieldState: { error } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Chave Pix</Label>
+                        <Input
+                          value={value || ""}
+                          onChangeText={(val) => handleFormChange("paymentPix", val)}
+                          onBlur={() => {
+                            const currentValue = form.getValues("paymentPix");
+                            if (currentValue) {
+                              const formatted = formatPixKey(currentValue);
+                              form.setValue("paymentPix", formatted);
+                              handleFormChange("paymentPix", formatted);
+                            }
+                          }}
+                          placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                          editable={!isSubmitting}
+                          autoCapitalize="none"
+                        />
+                        {error && (
+                          <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                        )}
+                        <ThemedText style={styles.helpText}>
+                          Chave Pix para pagamento do pedido
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Due Days (shown when BANK_SLIP is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP && (
+                  <Controller
+                    control={form.control}
+                    name="paymentDueDays"
+                    render={({ field: { value } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Prazo de Vencimento</Label>
+                        <Combobox
+                          value={value?.toString() || ""}
+                          onValueChange={(val) => handleFormChange("paymentDueDays", val ? Number(val) : null)}
+                          options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
+                            label: `${days} dias`,
+                            value: days.toString(),
+                          }))}
+                          placeholder="Selecione o prazo"
+                          disabled={isSubmitting}
+                          clearable
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Prazo para vencimento do boleto
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
               </CardContent>
             </Card>
 

@@ -385,6 +385,9 @@ export function getTaskRowColor(task: Task, isDark: boolean = false): string {
 export function formatTruckSpotShort(spot: string | null | undefined): string | null {
   if (!spot) return null;
 
+  if (spot === 'YARD_WAIT') return 'Pátio de Espera';
+  if (spot === 'YARD_EXIT') return 'Pátio de Saída';
+
   // Convert B1_F1_V1 to B1-F1-V1
   const formatted = spot.replace(/_/g, '-');
   return formatted;

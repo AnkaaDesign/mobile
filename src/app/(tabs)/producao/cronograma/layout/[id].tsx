@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { View, StyleSheet, ScrollView, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SimpleFormField } from "@/components/ui/simple-form-field";
-import { FormActionBar } from "@/components/forms";
+import { MultiStepFormContainer } from "@/components/forms";
 import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady} from '@/hooks';
@@ -19,8 +19,22 @@ import { routes, TRUCK_MANUFACTURER } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { canEditLayouts, canEditLayoutsOnly, canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
 import type { LayoutCreateFormData, TruckCreateFormData } from "@/schemas";
+import type { FormStep } from "@/components/ui/form-steps";
 import { Icon } from "@/components/ui/icon";
 import { truckService } from "@/api-client";
+
+const WIZARD_STEPS: FormStep[] = [
+  { id: 1, name: "Motorista", description: "Lado esquerdo" },
+  { id: 2, name: "Sapo", description: "Lado direito" },
+  { id: 3, name: "Traseira", description: "Parte traseira" },
+  { id: 4, name: "Resumo", description: "Revisar e salvar" },
+];
+
+const SIDE_FOR_STEP: Record<number, "left" | "right" | "back"> = {
+  1: "left",
+  2: "right",
+  3: "back",
+};
 
 export default function LayoutOnlyEditScreen() {
   const router = useRouter();
@@ -88,7 +102,8 @@ export default function LayoutOnlyEditScreen() {
 
   // Layout state - Include photoUri for new photos that need to be uploaded
   type LayoutWithPhoto = LayoutCreateFormData & { photoUri?: string };
-  const [selectedLayoutSide, setSelectedLayoutSide] = useState<"left" | "right" | "back">("left");
+  const [currentStep, setCurrentStep] = useState(1);
+  const selectedLayoutSide = SIDE_FOR_STEP[currentStep] || "left";
   const [layouts, setLayouts] = useState<{
     left?: LayoutWithPhoto;
     right?: LayoutWithPhoto;
@@ -201,6 +216,30 @@ export default function LayoutOnlyEditScreen() {
       setModifiedLayoutSides(new Set(['left', 'right', 'back']));
     }
   }, [hasExistingLayout, modifiedLayoutSides.size]);
+
+  const goNext = useCallback(() => {
+    // On step 2→3, warn about width balance if there's an error
+    if (currentStep === 2 && layoutWidthError) {
+      Alert.alert(
+        "Aviso de Largura",
+        layoutWidthError,
+        [
+          { text: "Corrigir", style: "cancel" },
+          { text: "Continuar mesmo assim", onPress: () => setCurrentStep((s) => s + 1) },
+        ]
+      );
+      return false;
+    }
+    if (currentStep < WIZARD_STEPS.length) {
+      setCurrentStep((s) => s + 1);
+    }
+  }, [currentStep, layoutWidthError]);
+
+  const goPrev = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep((s) => s - 1);
+    }
+  }, [currentStep]);
 
   const handleSubmit = async () => {
     if (modifiedLayoutSides.size === 0) {
@@ -417,26 +456,74 @@ export default function LayoutOnlyEditScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      <MultiStepFormContainer
+        steps={WIZARD_STEPS}
+        currentStep={currentStep}
+        onPrevStep={goPrev}
+        onNextStep={goNext}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting || isSavingTruckLayout}
+        canProceed={true}
+        canSubmit={modifiedLayoutSides.size > 0 && !layoutWidthError}
+        submitLabel={hasExistingLayout ? "Salvar Alteracoes" : "Cadastrar Layout"}
+        scrollable={true}
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
-        >
+        {/* Steps 1-3: Layout Form for each side */}
+        {currentStep <= 3 && (
           <View style={styles.content}>
-            {/* Task Identification Card - Read-only fields for confirmation */}
+            {/* Current side label */}
+            <ThemedText style={styles.sideHeaderTitle}>
+              {WIZARD_STEPS[currentStep - 1].name}
+            </ThemedText>
+
+            <LayoutForm
+              selectedSide={selectedLayoutSide}
+              layouts={layouts}
+              onChange={(side, layoutData) => {
+                console.log('[LayoutOnlyEdit] 📥 Received onChange:', {
+                  side,
+                  hasPhotoUri: !!(layoutData as any).photoUri,
+                  photoUri: (layoutData as any).photoUri,
+                  hasPhotoId: !!layoutData.photoId,
+                  photoId: layoutData.photoId,
+                });
+                setModifiedLayoutSides((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.add(side);
+                  return newSet;
+                });
+                setLayouts((prev) => ({
+                  ...prev,
+                  [side]: layoutData,
+                }));
+              }}
+              disabled={isSubmitting}
+              embedded={true}
+            />
+
+            {/* Layout Width Validation Error */}
+            {layoutWidthError && (
+              <View style={[styles.layoutValidationError, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive }]}>
+                <Icon name="alert-triangle" size={18} color={colors.destructive} />
+                <ThemedText style={[styles.layoutValidationErrorText, { color: colors.destructive }]}>
+                  {layoutWidthError}
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Step 4: Review Summary */}
+        {currentStep === 4 && (
+          <View style={styles.content}>
+            {/* Task Identification Card */}
             <Card style={styles.infoCard}>
               <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
                 <Icon name="file-text" size={20} color={colors.primary} />
                 <ThemedText style={styles.cardTitle}>Identificacao da Tarefa</ThemedText>
               </View>
               <View style={styles.cardContent}>
-                {/* Task Name - Disabled */}
                 <SimpleFormField label="Logomarca">
                   <Input
                     value={task.name}
@@ -444,8 +531,6 @@ export default function LayoutOnlyEditScreen() {
                     style={[styles.disabledInput, { backgroundColor: colors.muted }]}
                   />
                 </SimpleFormField>
-
-                {/* Serial Number - Disabled */}
                 <SimpleFormField label="Numero de Serie">
                   <Input
                     value={task.serialNumber || task.truck?.plate || "Nao informado"}
@@ -453,8 +538,6 @@ export default function LayoutOnlyEditScreen() {
                     style={[styles.disabledInput, { backgroundColor: colors.muted }]}
                   />
                 </SimpleFormField>
-
-                {/* Customer - Disabled */}
                 {task.customer && (
                   <SimpleFormField label="Razão Social">
                     <Input
@@ -467,118 +550,71 @@ export default function LayoutOnlyEditScreen() {
               </View>
             </Card>
 
-            {/* Layout Section */}
-            {(
-              <Card style={styles.layoutCard}>
-                <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-                  <Icon name="ruler" size={20} color={colors.primary} />
-                  <ThemedText style={styles.cardTitle}>Layout do Caminhao</ThemedText>
-                  {hasExistingLayout && (
-                    <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
-                      <ThemedText style={[styles.badgeText, { color: colors.primary }]}>
-                        Existente
-                      </ThemedText>
-                    </View>
-                  )}
-                </View>
+            {/* Per-side Summary Cards */}
+            {(["left", "right", "back"] as const).map((side) => {
+              const layout = layouts[side];
+              const sideLabel = side === "left" ? "Motorista" : side === "right" ? "Sapo" : "Traseira";
+              const sections = layout?.layoutSections || [];
+              const totalWidth = sections.reduce((sum, s) => sum + (s.width || 0), 0);
+              const doorCount = sections.filter((s) => s.isDoor).length;
+              const isModified = modifiedLayoutSides.has(side);
 
-                <View style={styles.cardContent}>
-                  {/* Side Selector */}
-                  <View style={styles.layoutSideSelector}>
-                    <Button
-                      variant={selectedLayoutSide === "left" ? "default" : "outline"}
-                      size="sm"
-                      onPress={() => setSelectedLayoutSide("left")}
-                      disabled={isSubmitting}
-                      style={{ flex: 1 }}
-                    >
-                      <ThemedText style={{
-                        fontSize: fontSize.sm,
-                        color: selectedLayoutSide === "left" ? colors.primaryForeground : colors.foreground
-                      }}>
-                        Motorista
-                      </ThemedText>
-                    </Button>
-                    <Button
-                      variant={selectedLayoutSide === "right" ? "default" : "outline"}
-                      size="sm"
-                      onPress={() => setSelectedLayoutSide("right")}
-                      disabled={isSubmitting}
-                      style={{ flex: 1 }}
-                    >
-                      <ThemedText style={{
-                        fontSize: fontSize.sm,
-                        color: selectedLayoutSide === "right" ? colors.primaryForeground : colors.foreground
-                      }}>
-                        Sapo
-                      </ThemedText>
-                    </Button>
-                    <Button
-                      variant={selectedLayoutSide === "back" ? "default" : "outline"}
-                      size="sm"
-                      onPress={() => setSelectedLayoutSide("back")}
-                      disabled={isSubmitting}
-                      style={{ flex: 1 }}
-                    >
-                      <ThemedText style={{
-                        fontSize: fontSize.sm,
-                        color: selectedLayoutSide === "back" ? colors.primaryForeground : colors.foreground
-                      }}>
-                        Traseira
-                      </ThemedText>
-                    </Button>
+              return (
+                <Card key={side} style={styles.reviewCard}>
+                  <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
+                    <ThemedText style={styles.cardTitle}>{sideLabel}</ThemedText>
+                    {isModified && (
+                      <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
+                        <ThemedText style={[styles.badgeText, { color: colors.primary }]}>
+                          Modificado
+                        </ThemedText>
+                      </View>
+                    )}
                   </View>
-
-                  {/* Layout Form */}
-                  <LayoutForm
-                    selectedSide={selectedLayoutSide}
-                    layouts={layouts}
-                    onChange={(side, layoutData) => {
-                      console.log('[LayoutOnlyEdit] 📥 Received onChange:', {
-                        side,
-                        hasPhotoUri: !!(layoutData as any).photoUri,
-                        photoUri: (layoutData as any).photoUri,
-                        hasPhotoId: !!layoutData.photoId,
-                        photoId: layoutData.photoId,
-                      });
-                      setModifiedLayoutSides((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.add(side);
-                        return newSet;
-                      });
-                      setLayouts((prev) => ({
-                        ...prev,
-                        [side]: layoutData,
-                      }));
-                    }}
-                    disabled={isSubmitting}
-                    embedded={true}
-                  />
-
-                  {/* Layout Width Validation Error */}
-                  {layoutWidthError && (
-                    <View style={[styles.layoutValidationError, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive }]}>
-                      <Icon name="alert-triangle" size={18} color={colors.destructive} />
-                      <ThemedText style={[styles.layoutValidationErrorText, { color: colors.destructive }]}>
-                        {layoutWidthError}
-                      </ThemedText>
+                  <View style={styles.reviewCardContent}>
+                    <View style={styles.reviewRow}>
+                      <ThemedText style={[styles.reviewLabel, { color: colors.mutedForeground }]}>Altura</ThemedText>
+                      <ThemedText style={styles.reviewValue}>{layout?.height ? `${(layout.height * 100).toFixed(0)}cm` : "-"}</ThemedText>
                     </View>
-                  )}
-                </View>
-              </Card>
+                    <View style={styles.reviewRow}>
+                      <ThemedText style={[styles.reviewLabel, { color: colors.mutedForeground }]}>Largura total</ThemedText>
+                      <ThemedText style={styles.reviewValue}>{totalWidth ? `${(totalWidth * 100).toFixed(0)}cm` : "-"}</ThemedText>
+                    </View>
+                    {side !== "back" && (
+                      <View style={styles.reviewRow}>
+                        <ThemedText style={[styles.reviewLabel, { color: colors.mutedForeground }]}>Portas</ThemedText>
+                        <ThemedText style={styles.reviewValue}>{doorCount}</ThemedText>
+                      </View>
+                    )}
+                  </View>
+                </Card>
+              );
+            })}
+
+            {/* Width Balance Error */}
+            {layoutWidthError && (
+              <View style={[styles.layoutValidationError, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive }]}>
+                <Icon name="alert-triangle" size={18} color={colors.destructive} />
+                <ThemedText style={[styles.layoutValidationErrorText, { color: colors.destructive }]}>
+                  {layoutWidthError}
+                </ThemedText>
+              </View>
+            )}
+
+            {/* Modified sides info */}
+            {modifiedLayoutSides.size > 0 && (
+              <View style={[styles.modifiedInfo, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+                <Icon name="info" size={18} color={colors.primary} />
+                <ThemedText style={[styles.modifiedInfoText, { color: colors.primary }]}>
+                  {modifiedLayoutSides.size === 3
+                    ? "Todos os lados serão salvos"
+                    : `${modifiedLayoutSides.size} lado(s) modificado(s) será(ão) salvo(s)`}
+                </ThemedText>
+              </View>
             )}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* Action Buttons */}
-      <FormActionBar
-        onCancel={handleCancel}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting || isSavingTruckLayout}
-        submitLabel={hasExistingLayout ? "Salvar Alteracoes" : "Cadastrar Layout"}
-        canSubmit={modifiedLayoutSides.size > 0 && !layoutWidthError}
-      />
+        )}
+      </MultiStepFormContainer>
     </ThemedView>
   );
 }
@@ -728,5 +764,40 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.sm,
     lineHeight: fontSize.sm * 1.5,
+  },
+  sideHeaderTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  reviewCard: {
+    overflow: "hidden",
+  },
+  reviewCardContent: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  reviewRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  reviewLabel: {
+    fontSize: fontSize.sm,
+  },
+  reviewValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+  },
+  modifiedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  modifiedInfoText: {
+    flex: 1,
+    fontSize: fontSize.sm,
   },
 });

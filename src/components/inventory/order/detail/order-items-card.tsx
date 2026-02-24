@@ -203,8 +203,15 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
               <View style={styles.itemHeader}>
                 <View style={styles.itemInfo}>
                   <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={2}>
-                    {orderItem.temporaryItemDescription || item?.name || "Item desconhecido"}
+                    {!orderItem.itemId
+                      ? (orderItem.temporaryItemDescription || order.description || "Item temporário")
+                      : (item?.name || "Item desconhecido")}
                   </ThemedText>
+                  {!orderItem.itemId && (
+                    <Badge variant="outline" size="sm">
+                      <ThemedText style={{ fontSize: fontSize.xs }}>Temporário</ThemedText>
+                    </Badge>
+                  )}
                   {item?.uniCode && (
                     <ThemedText style={[styles.itemCode, { color: colors.mutedForeground }]}>
                       Código: {item.uniCode}

@@ -642,9 +642,9 @@ export const NAVIGATION_MENU: MenuItem[] = [
           { id: "servidor-implantacoes-detalhes", title: "Detalhes", icon: "eye", path: "/servidor/implantacoes/detalhes/:id", isDynamic: true },
         ],
       },
+      { id: "servidor-gerenciador-de-arquivos", title: "Gerenciador de Arquivos", icon: "sharedFolders", path: "/servidor/file-manager" },
       { id: "servidor-logs", title: "Logs do Sistema", icon: "systemLogs", path: "/servidor/logs" },
       { id: "servidor-metricas", title: "Metricas do Sistema", icon: "systemMetrics", path: "/servidor/metricas" },
-      { id: "servidor-pastas-compartilhadas", title: "Pastas Compartilhadas", icon: "sharedFolders", path: "/servidor/shared-folders" },
       { id: "servidor-rate-limiting", title: "Rate Limiting", icon: "shield", path: "/servidor/rate-limiting" },
       {
         id: "registros-de-alteracoes",
@@ -748,6 +748,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
     icon: "clipboard-list",
     path: "/producao/agenda",
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL],
+  },
+
+  // Gerenciador de Arquivos - Direct access for COMMERCIAL (ADMIN accesses via Servidor)
+  {
+    id: "gerenciador-de-arquivos",
+    title: "Gerenciador de Arquivos",
+    icon: "sharedFolders",
+    path: "/servidor/file-manager",
+    requiredPrivilege: SECTOR_PRIVILEGES.COMMERCIAL,
   },
 
   // Historico - Direct access for DESIGNER, FINANCIAL, LOGISTIC, COMMERCIAL, PLOTTING

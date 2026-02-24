@@ -1313,7 +1313,22 @@ export const taskUpdateSchema = z
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(), // Maps to artworks
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
-    observation: taskObservationCreateSchema.nullable().optional(),
+    // Preprocess observation: coerce effectively-empty observation objects to null
+    // so the inner schema (which requires description.min(1)) doesn't reject them.
+    // This handles: (1) tasks loaded with empty observation descriptions from the API,
+    // (2) users clearing the description field during editing.
+    observation: z.preprocess(
+      (val) => {
+        if (val && typeof val === 'object' && val !== null) {
+          const obs = val as Record<string, unknown>;
+          const desc = typeof obs.description === 'string' ? obs.description.trim() : '';
+          const hasFiles = Array.isArray(obs.fileIds) && obs.fileIds.length > 0;
+          if (!desc && !hasFiles) return null;
+        }
+        return val;
+      },
+      taskObservationCreateSchema.nullable().optional()
+    ),
     // Match web: preprocess to filter empty service orders before validation
     serviceOrders: z.preprocess(
       (val) => {

@@ -191,7 +191,7 @@ export function useSetSystemUserPassword() {
 }
 
 // =====================================================
-// Shared Folders Hooks
+// File Manager Hooks (shared folders API)
 // =====================================================
 
 export function useSharedFolders() {

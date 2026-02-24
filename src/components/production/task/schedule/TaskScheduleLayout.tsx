@@ -31,7 +31,7 @@ import { BulkActions } from '@/components/list/BulkActions'
 import { ColumnVisibilityButton, ColumnVisibilityPanel } from '@/components/list/ColumnVisibility'
 import { Header as TableHeader, Row as TableRow, Empty, Loading } from '@/components/list/Table'
 import { SectorSelectModal } from '@/components/production/task/modals'
-import { CopyFromTaskModal } from './copy-from-task-modal'
+// CopyFromTaskModal removed - copy from task now uses page navigation
 import { AddArtworksModal } from './add-artworks-modal'
 import { useTable } from '@/hooks/list/useTable'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
@@ -111,7 +111,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   // Modal state for admin actions
   const [sectorModalTask, setSectorModalTask] = useState<Task | null>(null)
-  const [copyFromTaskModalTask, setCopyFromTaskModalTask] = useState<Task | null>(null)
+  // copyFromTaskModalTask removed - now uses page navigation
   const [addArtworksModalTask, setAddArtworksModalTask] = useState<Task | null>(null)
 
   // Check if user is a team leader (should see filtered view by default)
@@ -683,14 +683,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           },
         }
       }
-      if (action.key === 'copyFromTask') {
-        return {
-          ...action,
-          onPress: (task: Task) => {
-            setCopyFromTaskModalTask(task)
-          },
-        }
-      }
+      // copyFromTask now navigates to a page via config onPress
       if (action.key === 'addArtworks') {
         return {
           ...action,
@@ -1051,19 +1044,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         }}
       />
 
-      {/* Copy From Task Modal */}
-      {copyFromTaskModalTask && (
-        <CopyFromTaskModal
-          open={!!copyFromTaskModalTask}
-          onOpenChange={(open) => !open && setCopyFromTaskModalTask(null)}
-          targetTask={copyFromTaskModalTask}
-          userPrivilege={user?.sector?.privileges}
-          onSuccess={() => {
-            setCopyFromTaskModalTask(null)
-            handleRefresh()
-          }}
-        />
-      )}
+      {/* Copy From Task - now uses page navigation */}
 
       {/* Add Artworks Modal */}
       {addArtworksModalTask && (

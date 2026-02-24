@@ -333,7 +333,7 @@ const ALL_ROUTES = [
   { name: "servidor/rate-limiting", title: "Rate Limiting" },
   { name: "servidor/resources", title: "Recursos" },
   { name: "servidor/services", title: "Serviços" },
-  { name: "servidor/shared-folders", title: "Pastas Compartilhadas" },
+  { name: "servidor/file-manager", title: "Gerenciador de Arquivos" },
   { name: "servidor/status", title: "Status" },
   { name: "servidor/system-users", title: "Usuários do Sistema" },
   { name: "servidor/backups/cadastrar", title: "Criar Backup" },

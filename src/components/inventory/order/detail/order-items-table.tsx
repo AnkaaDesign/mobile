@@ -170,10 +170,13 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
               const received = orderItem.receivedQuantity || 0;
               const ordered = orderItem.orderedQuantity || 0;
 
-              // Format item display: uniCode - name (or just name if no code)
-              const itemDisplay = item?.uniCode
-                ? `${item.uniCode} - ${orderItem.temporaryItemDescription || item?.name || "Item desconhecido"}`
-                : orderItem.temporaryItemDescription || item?.name || "Item desconhecido";
+              // Format item display: use !itemId as definitive temp item check
+              const isTemporaryItem = !orderItem.itemId;
+              const itemDisplay = isTemporaryItem
+                ? (orderItem.temporaryItemDescription || order.description || "Item temporário")
+                : item?.uniCode
+                  ? `${item.uniCode} - ${item?.name || "Item desconhecido"}`
+                  : (item?.name || "Item desconhecido");
 
               return (
                 <Pressable
@@ -194,7 +197,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
 
                   {/* Stock Column */}
                   <View style={[styles.cell, styles.stockColumn]}>
-                    {item ? (
+                    {!isTemporaryItem && item ? (
                       <View style={styles.stockCell}>
                         <StockStatusIndicator item={item as Item} />
                         <ThemedText style={styles.stockText}>
@@ -203,7 +206,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
                       </View>
                     ) : (
                       <ThemedText style={[styles.cellText, { color: colors.mutedForeground }]}>
-                        -
+                        {isTemporaryItem ? "N/A" : "-"}
                       </ThemedText>
                     )}
                   </View>

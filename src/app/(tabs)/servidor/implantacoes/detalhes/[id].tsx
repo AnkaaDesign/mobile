@@ -1,6 +1,7 @@
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PrivilegeGuard } from "@/components/privilege-guard";
@@ -64,8 +65,9 @@ export default function DeploymentDetailsScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+      <ThemedView className="flex-1">
       <ScrollView
-        className="flex-1 bg-background"
+        style={{ flex: 1 }}
         refreshControl={
           <RefreshControl refreshing={isFetching} onRefresh={refetch} />
         }
@@ -193,6 +195,7 @@ export default function DeploymentDetailsScreen() {
           )}
         </View>
       </ScrollView>
+      </ThemedView>
     </PrivilegeGuard>
   );
 }

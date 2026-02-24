@@ -18,7 +18,7 @@ import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
 import { FormActionBar } from '@/components/forms';
 import { useTheme } from '@/lib/theme';
 import { fontSize, fontWeight, borderRadius } from '@/constants/design-system';
-import { getSuppliers } from '@/api-client';
+import { getSuppliers, getUsers } from '@/api-client';
 import type { Supplier } from '@/types';
 import { createOrderFormData } from '@/utils/order-form-utils';
 import { formSpacing } from '@/constants/form-styles';
@@ -45,6 +45,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
       receipts: true,
       reimbursements: true,
       invoiceReimbursements: true,
+      paymentResponsible: true,
     },
   });
   const order = orderResponse?.data;
@@ -119,6 +120,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         paymentMethod: order.paymentMethod || undefined,
         paymentPix: order.paymentPix || undefined,
         paymentDueDays: order.paymentDueDays || undefined,
+        paymentResponsibleId: order.paymentResponsibleId || undefined,
       });
 
       // Load existing file IDs
@@ -167,6 +169,9 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         }
         if (data.paymentDueDays !== order?.paymentDueDays) {
           changedData.paymentDueDays = data.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? data.paymentDueDays : undefined;
+        }
+        if ((data as any).paymentResponsibleId !== order?.paymentResponsibleId) {
+          (changedData as any).paymentResponsibleId = (data as any).paymentResponsibleId || null;
         }
 
         // Check if there are new files to upload
@@ -510,6 +515,69 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
               />
               </View>
             )}
+            {/* Payment Responsible */}
+            <View style={styles.field}>
+              <Label>Responsável pelo Pagamento</Label>
+              <Controller
+                control={form.control}
+                name="paymentResponsibleId"
+                render={({ field }) => (
+                  <Combobox
+                    async
+                    queryKey={["users", "payment-responsible-edit"]}
+                    queryFn={async (searchTerm: string, page: number = 1) => {
+                      const pageSize = 20;
+                      const response = await getUsers({
+                        take: pageSize,
+                        skip: (page - 1) * pageSize,
+                        where: {
+                          isActive: true,
+                          ...(searchTerm ? {
+                            OR: [
+                              { name: { contains: searchTerm, mode: "insensitive" } },
+                              { email: { contains: searchTerm, mode: "insensitive" } },
+                            ],
+                          } : {}),
+                        },
+                        orderBy: { name: "asc" },
+                        select: {
+                          id: true,
+                          name: true,
+                          email: true,
+                        },
+                      });
+                      const users = response.data || [];
+                      return {
+                        data: users.map((user) => ({
+                          value: user.id,
+                          label: user.name,
+                          description: user.email || undefined,
+                        })),
+                        hasMore: response.meta?.hasNextPage || false,
+                      };
+                    }}
+                    initialOptions={order?.paymentResponsible ? [{
+                      value: order.paymentResponsible.id,
+                      label: order.paymentResponsible.name,
+                    }] : []}
+                    minSearchLength={0}
+                    pageSize={20}
+                    debounceMs={500}
+                    loadOnMount={false}
+                    value={field.value || ''}
+                    onValueChange={(val) => {
+                      const value = Array.isArray(val) ? val[0] : val;
+                      field.onChange(value ?? undefined);
+                    }}
+                    placeholder="Selecione o responsável"
+                    emptyText="Nenhum usuário encontrado"
+                    searchPlaceholder="Buscar por nome ou e-mail..."
+                    searchable
+                    clearable
+                  />
+                )}
+              />
+            </View>
           </CardContent>
         </Card>
 
