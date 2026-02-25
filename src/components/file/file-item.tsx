@@ -14,12 +14,14 @@ export interface FileItemProps {
   file: AnkaaFile;
   viewMode?: FileViewMode;
   onPress?: (file: AnkaaFile) => void;
+  onLongPress?: (file: AnkaaFile) => void;
   onDownload?: (file: AnkaaFile) => void;
   onDelete?: (file: AnkaaFile) => void;
   showFilename?: boolean;
   showFileSize?: boolean;
   showRelativeTime?: boolean;
   baseUrl?: string;
+  containerStyle?: import("react-native").ViewStyle;
 }
 
 const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
@@ -70,9 +72,11 @@ const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "
 const FileItemGrid: React.FC<FileItemProps> = ({
   file,
   onPress,
+  onLongPress,
   showFilename = true,
   showFileSize = true,
   baseUrl,
+  containerStyle,
 }) => {
   const { colors } = useTheme();
   const [thumbnailError, setThumbnailError] = useState(false);
@@ -86,36 +90,28 @@ const FileItemGrid: React.FC<FileItemProps> = ({
     }
   };
 
+  const handleLongPress = () => {
+    if (onLongPress) {
+      onLongPress(file);
+    }
+  };
+
   const thumbnailUrl = getThumbnailUrl(file, "medium", baseUrl);
 
   const handleThumbnailLoad = () => {
-    console.log('✅ [FileItemGrid] Thumbnail loaded:', file.filename);
     setThumbnailLoading(false);
   };
 
   const handleThumbnailError = (error: NativeSyntheticEvent<ImageErrorEventData>) => {
-    console.error('❌ [FileItemGrid] Thumbnail failed:', {
-      filename: file.filename,
-      url: thumbnailUrl,
-      error: error.nativeEvent
-    });
     setThumbnailError(true);
     setThumbnailLoading(false);
   };
 
-  // Debug: Log render state
-  console.log('🔍 [FileItemGrid] Render state:', {
-    filename: file.filename,
-    hasThumbnail,
-    thumbnailUrl,
-    thumbnailError,
-    thumbnailLoading,
-  });
-
   return (
     <TouchableOpacity
-      style={[styles.gridContainer, { borderColor: colors.border, backgroundColor: colors.card }]}
+      style={[styles.gridContainer, { borderColor: colors.border, backgroundColor: colors.card }, containerStyle]}
       onPress={handlePress}
+      onLongPress={onLongPress ? handleLongPress : undefined}
       activeOpacity={0.7}
     >
       {/* Thumbnail/Icon Area */}
@@ -175,10 +171,12 @@ const FileItemGrid: React.FC<FileItemProps> = ({
 const FileItemList: React.FC<FileItemProps> = ({
   file,
   onPress,
+  onLongPress,
   showFilename = true,
   showFileSize = true,
   showRelativeTime = true,
   baseUrl,
+  containerStyle,
 }) => {
   const { colors } = useTheme();
   const [thumbnailError, setThumbnailError] = useState(false);
@@ -192,36 +190,28 @@ const FileItemList: React.FC<FileItemProps> = ({
     }
   };
 
+  const handleLongPress = () => {
+    if (onLongPress) {
+      onLongPress(file);
+    }
+  };
+
   const thumbnailUrl = getThumbnailUrl(file, "small", baseUrl);
 
   const handleThumbnailLoad = () => {
-    console.log('✅ [FileItemList] Thumbnail loaded:', file.filename);
     setThumbnailLoading(false);
   };
 
   const handleThumbnailError = (error: NativeSyntheticEvent<ImageErrorEventData>) => {
-    console.error('❌ [FileItemList] Thumbnail failed:', {
-      filename: file.filename,
-      url: thumbnailUrl,
-      error: error.nativeEvent
-    });
     setThumbnailError(true);
     setThumbnailLoading(false);
   };
 
-  // Debug: Log render state
-  console.log('🔍 [FileItemList] Render state:', {
-    filename: file.filename,
-    hasThumbnail,
-    thumbnailUrl,
-    thumbnailError,
-    thumbnailLoading,
-  });
-
   return (
     <TouchableOpacity
-      style={[styles.listContainer, { borderColor: colors.border, backgroundColor: colors.card }]}
+      style={[styles.listContainer, { borderColor: colors.border, backgroundColor: colors.card }, containerStyle]}
       onPress={handlePress}
+      onLongPress={onLongPress ? handleLongPress : undefined}
       activeOpacity={0.7}
     >
       {/* Thumbnail/Icon */}
@@ -288,12 +278,12 @@ const FileItemList: React.FC<FileItemProps> = ({
   );
 };
 
-export const FileItem: React.FC<FileItemProps> = ({ viewMode = "grid", ...props }) => {
+export const FileItem: React.FC<FileItemProps> = ({ viewMode = "grid", containerStyle, ...props }) => {
   if (viewMode === "list") {
-    return <FileItemList {...props} />;
+    return <FileItemList containerStyle={containerStyle} {...props} />;
   }
 
-  return <FileItemGrid {...props} />;
+  return <FileItemGrid containerStyle={containerStyle} {...props} />;
 };
 
 const styles = StyleSheet.create({

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { View, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions, Image, Alert } from "react-native";
+import { View, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from "react-native";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useTheme } from "@/lib/theme";
 import { FileViewerProvider, useFileViewer } from "@/components/file/file-viewer";
+import { FileItem } from "@/components/file/file-item";
 import { IconList, IconLayoutGrid } from "@tabler/icons-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { File as AnkaaFile } from "@/types";
@@ -144,34 +145,6 @@ function convertRemoteItemToAnkaaFile(
   } as AnkaaFile;
 }
 
-// Get file icon name based on extension
-function getFileIcon(filename: string): string {
-  const ext = filename.split(".").pop()?.toLowerCase() || "";
-  if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext)) return "image";
-  if (["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(ext)) return "video";
-  if (["mp3", "wav", "flac", "aac", "m4a"].includes(ext)) return "music";
-  if (ext === "pdf") return "file-text";
-  if (["doc", "docx", "txt", "rtf"].includes(ext)) return "file-text";
-  if (["xls", "xlsx", "csv"].includes(ext)) return "table";
-  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return "archive";
-  if (["eps", "ai", "psd"].includes(ext)) return "palette";
-  return "file";
-}
-
-// Get file icon color based on extension
-function getFileIconColor(filename: string): string {
-  const ext = filename.split(".").pop()?.toLowerCase() || "";
-  if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext)) return "#ec4899";
-  if (["mp4", "webm", "ogg", "mov", "avi", "mkv"].includes(ext)) return "#8b5cf6";
-  if (["mp3", "wav", "flac", "aac", "m4a"].includes(ext)) return "#f97316";
-  if (ext === "pdf") return "#ef4444";
-  if (["doc", "docx", "txt", "rtf"].includes(ext)) return "#3b82f6";
-  if (["xls", "xlsx", "csv"].includes(ext)) return "#22c55e";
-  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return "#f59e0b";
-  if (["eps", "ai", "psd"].includes(ext)) return "#a855f7";
-  return "#6b7280";
-}
-
 // Check if a file can be previewed in-app (images, PDFs, videos)
 function isPreviewableFile(filename: string): boolean {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
@@ -179,11 +152,6 @@ function isPreviewableFile(filename: string): boolean {
   if (["mp4", "webm", "mov", "avi", "mkv"].includes(ext)) return true;
   if (ext === "pdf") return true;
   return false;
-}
-
-// Get the action icon for a file (eye for previewable, download for others)
-function getFileActionIcon(filename: string): string {
-  return isPreviewableFile(filename) ? "eye" : "download";
 }
 
 // Derive folder type from folder name (matching web implementation)
@@ -524,97 +492,6 @@ function DirectoryGridItem({
 }
 
 // ============================================================
-// Grid File Item Component (inside file browser)
-// ============================================================
-
-function FileGridItem({
-  item,
-  onPress,
-  onLongPress,
-}: {
-  item: any;
-  onPress: () => void;
-  onLongPress?: () => void;
-}) {
-  const { colors } = useTheme();
-  const iconName = getFileIcon(item.name);
-  const iconColor = getFileIconColor(item.name);
-  const actionIcon = getFileActionIcon(item.name);
-  const extension = item.name.split(".").pop()?.toLowerCase() || "";
-  const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension);
-  const thumbnailUrl = item.dbThumbnailUrl || (isImage ? (item.remoteUrl || item.webdavUrl || "") : "");
-  const [thumbnailError, setThumbnailError] = useState(false);
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={0.7}
-      style={{
-        width: GRID_ITEM_WIDTH,
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.card,
-        overflow: "hidden",
-      }}
-    >
-      <View
-        style={{
-          height: 100,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: colors.muted + "30",
-        }}
-      >
-        {thumbnailUrl && !thumbnailError ? (
-          <Image
-            source={{ uri: thumbnailUrl }}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
-            onError={() => setThumbnailError(true)}
-          />
-        ) : (
-          <View style={{ backgroundColor: iconColor + "15", borderRadius: 12, padding: 14 }}>
-            <Icon name={iconName} size={30} color={iconColor} />
-          </View>
-        )}
-        {/* Action icon overlay */}
-        <View
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            borderRadius: 10,
-            padding: 4,
-          }}
-        >
-          <Icon name={actionIcon} size={12} color="#fff" />
-        </View>
-      </View>
-      <View
-        style={{
-          padding: 8,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-        }}
-      >
-        <Text
-          style={{ fontSize: 12, fontWeight: "500", color: colors.foreground }}
-          numberOfLines={2}
-        >
-          {item.name}
-        </Text>
-        <Text style={{ fontSize: 10, color: colors.mutedForeground, marginTop: 2 }}>
-          {item.size}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-// ============================================================
 // File Browser Component (browse mode)
 // ============================================================
 
@@ -651,25 +528,23 @@ function FileBrowser({
   const handleFilePress = useCallback((item: any) => {
     const ankaaFile = convertRemoteItemToAnkaaFile(item, `${folderName}/${subPath || ""}`);
 
-    // For images, gather all image files for gallery navigation
-    const extension = item.name.split(".").pop()?.toLowerCase() || "";
-    const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension);
-
-    if (isImage && contents?.data?.files) {
-      const allImages = contents.data.files
+    // Gather all previewable files for unified gallery navigation (matching task detail behavior)
+    if (contents?.data?.files) {
+      const allPreviewable = contents.data.files
         .filter((f: any) => {
-          const ext = f.name.split(".").pop()?.toLowerCase() || "";
-          return f.type !== "directory" && ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext);
+          if (f.type === "directory") return false;
+          return isPreviewableFile(f.name);
         })
         .map((f: any) => convertRemoteItemToAnkaaFile(f, `${folderName}/${subPath || ""}`));
 
-      const imageIndex = allImages.findIndex((f: AnkaaFile) => f.id === ankaaFile.id);
-      if (imageIndex !== -1) {
-        fileViewer.viewFiles(allImages, imageIndex);
+      const fileIndex = allPreviewable.findIndex((f: AnkaaFile) => f.id === ankaaFile.id);
+      if (fileIndex !== -1) {
+        fileViewer.viewFiles(allPreviewable, fileIndex);
         return;
       }
     }
 
+    // Non-previewable files fall back to share/download
     fileViewer.viewFile(ankaaFile);
   }, [folderName, subPath, contents, fileViewer]);
 
@@ -742,9 +617,9 @@ function FileBrowser({
     ];
   }, [filteredDirectories, filteredFiles]);
 
-  // Toolbar: search + view toggle + stats
-  const renderToolbar = () => (
-    <View style={{ marginBottom: 12 }}>
+  // Toolbar rendered outside FlatList so SearchBar stays mounted and keeps focus
+  const toolbar = (
+    <View style={{ padding: 16, paddingBottom: 0 }}>
       {/* Breadcrumb navigation */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4, marginBottom: 12 }}>
         <TouchableOpacity onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -783,7 +658,7 @@ function FileBrowser({
       />
 
       {/* Stats bar + view toggle */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <View style={{ flexDirection: "row", gap: 8, flexShrink: 1, flexWrap: "wrap" }}>
           {contents?.data && (
             <>
@@ -807,47 +682,26 @@ function FileBrowser({
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 40 }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 12, color: colors.mutedForeground, fontSize: 14 }}>
-          Carregando arquivos...
-        </Text>
+      <View style={{ flex: 1 }}>
+        {toolbar}
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 40 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ marginTop: 12, color: colors.mutedForeground, fontSize: 14 }}>
+            Carregando arquivos...
+          </Text>
+        </View>
       </View>
     );
   }
 
-  if (!contents?.data?.files || contents.data.files.length === 0) {
+  // Empty folder or no search results
+  const hasNoContent = !contents?.data?.files || contents.data.files.length === 0;
+  const hasNoSearchResults = filteredDirectories.length === 0 && filteredFiles.length === 0 && searchQuery;
+
+  if (hasNoContent) {
     return (
       <View style={{ flex: 1 }}>
-        <View style={{ padding: 16 }}>
-          {/* Breadcrumb even for empty folders */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
-            <TouchableOpacity onPress={onBack} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Icon name="home" size={16} color={colors.primary} />
-              <Text style={{ fontSize: 13, color: colors.primary }}>Início</Text>
-            </TouchableOpacity>
-            {breadcrumbs.map((segment, index) => (
-              <View key={index} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Icon name="chevron-right" size={14} color={colors.mutedForeground} />
-                <TouchableOpacity
-                  onPress={() => handleBreadcrumbPress(index)}
-                  disabled={index === breadcrumbs.length - 1}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      color: index === breadcrumbs.length - 1 ? colors.foreground : colors.primary,
-                      fontWeight: index === breadcrumbs.length - 1 ? "600" : "400",
-                    }}
-                    numberOfLines={1}
-                  >
-                    {segment}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </View>
+        {toolbar}
         <EmptyState
           icon="folder-open"
           title="Pasta vazia"
@@ -857,13 +711,10 @@ function FileBrowser({
     );
   }
 
-  // No search results
-  if (filteredDirectories.length === 0 && filteredFiles.length === 0 && searchQuery) {
+  if (hasNoSearchResults) {
     return (
       <View style={{ flex: 1 }}>
-        <View style={{ padding: 16 }}>
-          {renderToolbar()}
-        </View>
+        {toolbar}
         <EmptyState
           icon="search"
           title="Nenhum resultado"
@@ -876,51 +727,53 @@ function FileBrowser({
   // ---- GRID VIEW ----
   if (viewMode === "grid") {
     return (
-      <FlatList
-        key="browser-grid"
-        data={combinedGridData}
-        keyExtractor={(item: any) => `${item._itemType}-${item.name}`}
-        numColumns={GRID_NUM_COLUMNS}
-        contentContainerStyle={{ padding: GRID_PADDING }}
-        columnWrapperStyle={{ gap: GRID_GAP, marginBottom: GRID_GAP }}
-        refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-        }
-        ListHeaderComponent={renderToolbar}
-        renderItem={({ item }) => {
-          if (item._itemType === "directory") {
+      <View style={{ flex: 1 }}>
+        {toolbar}
+        <FlatList
+          key="browser-grid"
+          data={combinedGridData}
+          keyExtractor={(item: any) => `${item._itemType}-${item.name}`}
+          numColumns={GRID_NUM_COLUMNS}
+          contentContainerStyle={{ paddingHorizontal: GRID_PADDING, paddingBottom: GRID_PADDING }}
+          columnWrapperStyle={{ gap: GRID_GAP, marginBottom: GRID_GAP }}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+          }
+          renderItem={({ item }) => {
+            if (item._itemType === "directory") {
+              return (
+                <DirectoryGridItem
+                  dir={item}
+                  onPress={() => handleDirectoryPress(item.name)}
+                />
+              );
+            }
+            const ankaaFile = convertRemoteItemToAnkaaFile(item, `${folderName}/${subPath || ""}`);
             return (
-              <DirectoryGridItem
-                dir={item}
-                onPress={() => handleDirectoryPress(item.name)}
+              <FileItem
+                file={ankaaFile}
+                viewMode="grid"
+                onPress={() => handleFilePress(item)}
+                onLongPress={() => handleFileLongPress(item)}
+                containerStyle={{ width: GRID_ITEM_WIDTH }}
               />
             );
-          }
-          return (
-            <FileGridItem
-              item={item}
-              onPress={() => handleFilePress(item)}
-              onLongPress={() => handleFileLongPress(item)}
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              icon="file"
+              title="Nenhum arquivo"
+              description="Nao ha arquivos nesta pasta"
             />
-          );
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            icon="file"
-            title="Nenhum arquivo"
-            description="Nao ha arquivos nesta pasta"
-          />
-        }
-      />
+          }
+        />
+      </View>
     );
   }
 
   // ---- LIST VIEW ----
-  // Combine directories header + file list into a single FlatList
   const renderListHeader = () => (
     <View>
-      {renderToolbar()}
-
       {/* Directories section */}
       {filteredDirectories.length > 0 && (
         <View style={{ marginBottom: 8 }}>
@@ -973,59 +826,38 @@ function FileBrowser({
   );
 
   return (
-    <FlatList
-      key="browser-list"
-      data={filteredFiles}
-      keyExtractor={(item: any) => item.name}
-      contentContainerStyle={{ padding: 16 }}
-      refreshControl={
-        <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-      }
-      ListHeaderComponent={renderListHeader}
-      renderItem={({ item }) => {
-        const iconName = getFileIcon(item.name);
-        const iconColor = getFileIconColor(item.name);
-        const actionIcon = getFileActionIcon(item.name);
-
-        return (
-          <TouchableOpacity
-            onPress={() => handleFilePress(item)}
-            onLongPress={() => handleFileLongPress(item)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: colors.card,
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 6,
-              borderWidth: 1,
-              borderColor: colors.border,
-              gap: 12,
-            }}
-          >
-            <View style={{ backgroundColor: iconColor + "20", borderRadius: 8, padding: 8 }}>
-              <Icon name={iconName} size={20} color={iconColor} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 14, fontWeight: "500", color: colors.foreground }} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 2 }}>
-                {item.size} {item.lastModified ? ` · ${new Date(item.lastModified).toLocaleDateString("pt-BR")}` : ""}
-              </Text>
-            </View>
-            <Icon name={actionIcon} size={16} color={colors.mutedForeground} />
-          </TouchableOpacity>
-        );
-      }}
-      ListEmptyComponent={
-        <EmptyState
-          icon="file"
-          title="Nenhum arquivo"
-          description="Nao ha arquivos nesta pasta"
-        />
-      }
-    />
+    <View style={{ flex: 1 }}>
+      {toolbar}
+      <FlatList
+        key="browser-list"
+        data={filteredFiles}
+        keyExtractor={(item: any) => item.name}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+        refreshControl={
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+        }
+        ListHeaderComponent={renderListHeader}
+        renderItem={({ item }) => {
+          const ankaaFile = convertRemoteItemToAnkaaFile(item, `${folderName}/${subPath || ""}`);
+          return (
+            <FileItem
+              file={ankaaFile}
+              viewMode="list"
+              onPress={() => handleFilePress(item)}
+              onLongPress={() => handleFileLongPress(item)}
+              containerStyle={{ marginBottom: 6 }}
+            />
+          );
+        }}
+        ListEmptyComponent={
+          <EmptyState
+            icon="file"
+            title="Nenhum arquivo"
+            description="Nao ha arquivos nesta pasta"
+          />
+        }
+      />
+    </View>
   );
 }
 
@@ -1070,8 +902,9 @@ function FolderList({
   }
 
   // Toolbar: search + stats + view toggle
-  const renderToolbar = () => (
-    <View style={{ marginBottom: 12 }}>
+  // Toolbar rendered outside FlatList so SearchBar stays mounted and keeps focus
+  const toolbar = (
+    <View style={{ padding: 16, paddingBottom: 0 }}>
       {/* Search bar */}
       <SearchBar
         value={searchQuery}
@@ -1082,7 +915,7 @@ function FolderList({
       />
 
       {/* Stats + view toggle */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <Badge variant="secondary">
           <Text style={{ fontSize: 11, color: colors.secondaryForeground }}>
             {filteredFolders.length} {filteredFolders.length === 1 ? "pasta" : "pastas"}
@@ -1096,8 +929,8 @@ function FolderList({
   // No search results
   if (filteredFolders.length === 0 && searchQuery) {
     return (
-      <View style={{ flex: 1, padding: 16 }}>
-        {renderToolbar()}
+      <View style={{ flex: 1 }}>
+        {toolbar}
         <EmptyState
           icon="search"
           title="Nenhum resultado"
@@ -1110,46 +943,50 @@ function FolderList({
   // ---- GRID VIEW ----
   if (viewMode === "grid") {
     return (
-      <FlatList
-        key="folder-grid"
-        data={filteredFolders}
-        keyExtractor={(item: any) => item.name}
-        numColumns={GRID_NUM_COLUMNS}
-        contentContainerStyle={{ padding: GRID_PADDING }}
-        columnWrapperStyle={{ gap: GRID_GAP, marginBottom: GRID_GAP }}
-        refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-        }
-        ListHeaderComponent={renderToolbar}
-        renderItem={({ item }) => (
-          <FolderGridItem
-            folder={item}
-            onPress={() => onBrowseFolder(item.name)}
-          />
-        )}
-      />
+      <View style={{ flex: 1 }}>
+        {toolbar}
+        <FlatList
+          key="folder-grid"
+          data={filteredFolders}
+          keyExtractor={(item: any) => item.name}
+          numColumns={GRID_NUM_COLUMNS}
+          contentContainerStyle={{ paddingHorizontal: GRID_PADDING, paddingBottom: GRID_PADDING }}
+          columnWrapperStyle={{ gap: GRID_GAP, marginBottom: GRID_GAP }}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+          }
+          renderItem={({ item }) => (
+            <FolderGridItem
+              folder={item}
+              onPress={() => onBrowseFolder(item.name)}
+            />
+          )}
+        />
+      </View>
     );
   }
 
   // ---- LIST VIEW ----
   return (
-    <FlatList
-      key="folder-list"
-      data={filteredFolders}
-      keyExtractor={(item: any) => item.name}
-      contentContainerStyle={{ padding: 16 }}
-      refreshControl={
-        <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-      }
-      ListHeaderComponent={renderToolbar}
-      ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-      renderItem={({ item }) => (
-        <FolderListItem
-          folder={item}
-          onPress={() => onBrowseFolder(item.name)}
-        />
-      )}
-    />
+    <View style={{ flex: 1 }}>
+      {toolbar}
+      <FlatList
+        key="folder-list"
+        data={filteredFolders}
+        keyExtractor={(item: any) => item.name}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+        refreshControl={
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+        }
+        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+        renderItem={({ item }) => (
+          <FolderListItem
+            folder={item}
+            onPress={() => onBrowseFolder(item.name)}
+          />
+        )}
+      />
+    </View>
   );
 }
 
