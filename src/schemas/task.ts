@@ -48,6 +48,9 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
       reimbursements: z.boolean().optional(), // Many-to-many relation with File
       // FIXED: Field name to match Prisma schema and web (was invoiceReimbursements)
       reimbursementInvoices: z.boolean().optional(), // Many-to-many relation with File
+      projectFiles: z.boolean().optional(), // Many-to-many relation with File
+      checkinFiles: z.boolean().optional(), // Many-to-many relation with File
+      checkoutFiles: z.boolean().optional(), // Many-to-many relation with File
       // Legacy field names for backwards compatibility (mapped in repository)
       budget: z.boolean().optional(), // @deprecated Use budgets instead
       nfe: z.boolean().optional(), // @deprecated Use nfes instead
@@ -1217,6 +1220,9 @@ export const taskCreateSchema = z
     reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(), // Maps to artworks
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
+    projectFileIds: z.array(z.string().uuid()).optional(),
+    checkinFileIds: z.array(z.string().uuid()).optional(),
+    checkoutFileIds: z.array(z.string().uuid()).optional(),
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     observation: taskObservationCreateSchema.nullable().optional(),
     // Match web: preprocess to filter empty service orders before validation
@@ -1312,6 +1318,9 @@ export const taskUpdateSchema = z
     reimbursementInvoiceIds: z.array(z.string().uuid("Invoice reimbursement inválida")).optional(),
     artworkIds: z.array(z.string().uuid("Arquivo inválido")).optional(), // Maps to artworks
     baseFileIds: z.array(z.string().uuid("Arquivo base inválido")).optional(), // Maps to baseFiles
+    projectFileIds: z.array(z.string().uuid()).optional(),
+    checkinFileIds: z.array(z.string().uuid()).optional(),
+    checkoutFileIds: z.array(z.string().uuid()).optional(),
     paintIds: z.array(z.string().uuid("Paint inválida")).optional(), // Maps to logoPaints
     // Preprocess observation: coerce effectively-empty observation objects to null
     // so the inner schema (which requires description.min(1)) doesn't reject them.
@@ -1492,6 +1501,9 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   reimbursementInvoiceIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
   artworkIds: task.artworks?.map((artwork) => artwork.id),
   baseFileIds: task.baseFiles?.map((baseFile) => baseFile.id),
+  projectFileIds: task.projectFiles?.map((f: any) => f.id),
+  checkinFileIds: task.checkinFiles?.map((f: any) => f.id),
+  checkoutFileIds: task.checkoutFiles?.map((f: any) => f.id),
   paintIds: task.logoPaints?.map((paint) => paint.id),
   // Complex relations need to be handled separately
 }));

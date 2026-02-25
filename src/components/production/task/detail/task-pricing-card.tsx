@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, StyleSheet, TouchableOpacity, Image, Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { Card } from "@/components/ui/card";
@@ -8,13 +8,12 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useFileViewer } from "@/components/file";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { formatCurrency, formatDate, exportBudgetPdf } from "@/utils";
+import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
 import type { TaskPricing } from "@/types/task-pricing";
 import { WEB_BASE_URL } from "@/config/urls";
 import {
   IconFileInvoice,
-  IconDownload,
   IconExternalLink,
   IconReceipt,
   IconCalendar,
@@ -50,8 +49,6 @@ const STATUS_CONFIG: Record<PricingStatus, { label: string; variant: "secondary"
 export function TaskPricingCard({ pricing, customerId, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: TaskPricingCardProps) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
-  const [isExporting, setIsExporting] = useState(false);
-
   if (!pricing || !pricing.items || pricing.items.length === 0) {
     return null;
   }
@@ -59,29 +56,6 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
   const statusConfig = STATUS_CONFIG[pricing.status as PricingStatus] || STATUS_CONFIG.DRAFT;
   const paymentText = generatePaymentText(pricing);
   const guaranteeText = generateGuaranteeText(pricing);
-
-  const handleExportPdf = async () => {
-    setIsExporting(true);
-    try {
-      await exportBudgetPdf({
-        pricing,
-        customerName,
-        contactName,
-        termDate,
-        serialNumber,
-        plate,
-        chassisNumber,
-      });
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-      Alert.alert(
-        "Erro",
-        error instanceof Error ? error.message : "Não foi possível exportar o PDF"
-      );
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   const handleViewBudget = async () => {
     // Use customer id if available, otherwise fallback to 'c' (matching web behavior)
@@ -140,18 +114,6 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           <ThemedText style={styles.headerTitle}>Precificação Detalhada</ThemedText>
         </View>
         <View style={styles.headerRight}>
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={handleExportPdf}
-            disabled={isExporting}
-            style={styles.headerButton}
-          >
-            <IconDownload size={14} color={colors.foreground} />
-            <ThemedText style={[styles.headerButtonText, { color: colors.foreground }]}>
-              {isExporting ? "..." : "PDF"}
-            </ThemedText>
-          </Button>
           <Button
             variant="outline"
             size="sm"

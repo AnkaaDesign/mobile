@@ -134,6 +134,8 @@ export const Table = memo(function Table<T extends { id: string }>({
                 />
               ) : undefined
             }
+            // Prevent keyboard dismiss when FlatList data changes during search
+            keyboardShouldPersistTaps="handled"
             // Performance optimizations
             removeClippedSubviews
             maxToRenderPerBatch={12}

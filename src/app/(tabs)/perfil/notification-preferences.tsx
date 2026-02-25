@@ -6,6 +6,7 @@ import {
   Alert,
   RefreshControl,
   Text,
+  TextInput,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
@@ -267,6 +268,7 @@ export default function NotificationPreferencesScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
 
   // =====================
   // Load Configurations
@@ -451,17 +453,39 @@ export default function NotificationPreferencesScreen() {
   const groupedSections = useMemo(() => {
     if (!configurations || !Array.isArray(configurations)) return [];
 
+    const normalizedSearch = searchQuery.toLowerCase().trim();
+
     // API returns array: [{ notificationType, configurations: [...] }, ...]
     return configurations
       .filter((group) => group?.configurations && Array.isArray(group.configurations) && group.configurations.length > 0)
-      .map((group) => ({
-        type: group.notificationType,
-        title: TYPE_LABELS[group.notificationType]?.title || group.notificationType,
-        icon: TYPE_LABELS[group.notificationType]?.icon || "bell",
-        configs: group.configurations,
-      }))
+      .map((group) => {
+        // Sort configs alphabetically by name within each group
+        const sortedConfigs = [...group.configurations].sort((a, b) => {
+          const nameA = (a.name || a.configKey).toLowerCase();
+          const nameB = (b.name || b.configKey).toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+
+        // Filter by search query if present
+        const filteredConfigs = normalizedSearch
+          ? sortedConfigs.filter((config) => {
+              const name = (config.name || config.configKey).toLowerCase();
+              const description = (config.description || "").toLowerCase();
+              return name.includes(normalizedSearch) || description.includes(normalizedSearch);
+            })
+          : sortedConfigs;
+
+        return {
+          type: group.notificationType,
+          title: TYPE_LABELS[group.notificationType]?.title || group.notificationType,
+          icon: TYPE_LABELS[group.notificationType]?.icon || "bell",
+          configs: filteredConfigs,
+        };
+      })
+      // Hide groups with no matching configs when searching
+      .filter((section) => section.configs.length > 0)
       .sort((a, b) => a.title.localeCompare(b.title));
-  }, [configurations]);
+  }, [configurations, searchQuery]);
 
   // =====================
   // Render
@@ -549,6 +573,25 @@ export default function NotificationPreferencesScreen() {
             </View>
           </View>
 
+          {/* Search Input */}
+          <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Icon name="search" size={18} color={colors.mutedForeground} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Buscar notificação..."
+              placeholderTextColor={colors.mutedForeground}
+              style={[styles.searchInput, { color: colors.foreground }]}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={8}>
+                <Icon name="x" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* Notification Sections */}
           <Accordion type="multiple" collapsible className="w-full">
             {groupedSections.map((section) => (
@@ -589,6 +632,16 @@ export default function NotificationPreferencesScreen() {
               </Card>
             ))}
           </Accordion>
+
+          {/* Empty search results */}
+          {searchQuery.trim() !== "" && groupedSections.length === 0 && (
+            <View style={styles.emptySearch}>
+              <Icon name="search" size={40} color={colors.mutedForeground} />
+              <ThemedText style={[styles.emptySearchText, { color: colors.mutedForeground }]}>
+                Nenhuma notificação encontrada para "{searchQuery}"
+              </ThemedText>
+            </View>
+          )}
 
           {/* Info Card */}
           <Card style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -731,6 +784,30 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    height: 44,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  emptySearch: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xl * 2,
+    gap: spacing.sm,
+  },
+  emptySearchText: {
+    fontSize: 14,
+    textAlign: "center",
   },
   infoCard: {
     padding: spacing.md,

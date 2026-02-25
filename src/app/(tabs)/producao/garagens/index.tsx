@@ -144,11 +144,13 @@ export default function GaragesScreen() {
         return true;
       }
 
-      // If truck already has a yard spot assigned, include it
-      // (trucks without layout can still appear in yard with default length)
-      if (spot === 'YARD_WAIT' || spot === 'YARD_EXIT') {
-        // Still need date/status check below
+      // YARD_EXIT trucks are physically in the exit yard — always include
+      // (show regardless of status or dates, until physically removed)
+      if (spot === 'YARD_EXIT') {
+        return true;
       }
+
+      // YARD_WAIT trucks still need date/status checks below
 
       const layout = truck?.leftSideLayout || truck?.rightSideLayout;
       const layoutSections = layout?.layoutSections || [];

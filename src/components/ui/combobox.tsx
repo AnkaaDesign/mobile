@@ -112,6 +112,10 @@ interface ComboboxProps<TData = ComboboxOption> {
   onOpen?: (measurements: { inputY: number; inputHeight: number; requiredHeight: number }) => boolean | void;
   // Callback when combobox closes
   onClose?: () => void;
+
+  // Callback with the full selected item (not just the value string).
+  // Useful when the parent needs the full item data without maintaining a separate cache.
+  onSelect?: (item: TData | null) => void;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -170,6 +174,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   triggerStyle,
   onOpen,
   onClose: onCloseProp,
+  onSelect,
 }: ComboboxProps<TData>) {
   const { colors } = useTheme();
   const keyboardContext = useKeyboardAwareForm();
@@ -537,11 +542,18 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
       } else {
         // Only toggle off if clearable is true, otherwise just select
         const newValue = clearable && value === optionValue ? undefined : optionValue;
+        // Pass the full item via onSelect so the parent doesn't need a separate cache
+        if (onSelect) {
+          const item = newValue
+            ? (allItemsCacheRef.current.get(optionValue) || null)
+            : null;
+          onSelect(item);
+        }
         onValueChange?.(newValue);
         handleClose();
       }
     },
-    [isMultiple, selectedValues, value, onValueChange, handleClose, clearable],
+    [isMultiple, selectedValues, value, onValueChange, handleClose, clearable, onSelect],
   );
 
   const handleCreate = useCallback(async () => {

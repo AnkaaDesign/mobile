@@ -1163,8 +1163,8 @@ const TruckElement = memo(function TruckElement({
             rx={3}
           />
           <G clipPath={`url(#truck-clip-${truck.id})`}>
-            {/* Corner flag: primary if entryDate exists, destructive if not — only for patio trucks */}
-            {!truck.spot && (
+            {/* Corner flag: primary if entryDate exists, destructive if not — only for yard wait trucks */}
+            {truck.spot === 'YARD_WAIT' && (
               <Polygon
                 points={`${svgWidth - strokePadding - 10},${strokePadding} ${svgWidth - strokePadding},${strokePadding} ${svgWidth - strokePadding},${strokePadding + 10}`}
                 fill={truck.entryDate ? colors.primary : colors.destructive}

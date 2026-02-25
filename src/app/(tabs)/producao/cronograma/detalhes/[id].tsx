@@ -54,9 +54,9 @@ export default function ScheduleDetailsScreen() {
   const { user } = useAuth();
   const { delete: deleteAsync } = useTaskMutations();
   const [refreshing, setRefreshing] = useState(false);
-  const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("list");
-  const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("list");
-  const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("list");
+  const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("grid");
+  const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("grid");
+  const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("grid");
   const [showBelowFold, setShowBelowFold] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
 

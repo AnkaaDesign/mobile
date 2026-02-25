@@ -115,7 +115,8 @@ export const Layout = memo(function Layout({
     : true // Default to true if no permission check is provided
 
   // Show skeleton loader on initial load instead of spinner
-  if (list.isLoading && list.items.length === 0) {
+  // Skip skeleton when search is active to avoid unmounting Search (which loses TextInput focus)
+  if (list.isLoading && list.items.length === 0 && !list.search.displayText) {
     return (
       <ThemedView style={styles.container}>
         {/* Search bar skeleton — mirrors Search component structure */}
@@ -175,7 +176,8 @@ export const Layout = memo(function Layout({
   }
 
   // Show error if initial load failed
-  if (list.error && list.items.length === 0) {
+  // Also skip error screen when search is active to preserve TextInput focus
+  if (list.error && list.items.length === 0 && !list.search.displayText) {
     return (
       <ThemedView style={styles.container}>
         <ErrorScreen

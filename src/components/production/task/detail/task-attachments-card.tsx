@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity, Linking } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
@@ -20,11 +20,29 @@ const formatBytes = (bytes: number) => {
 import type { File } from '../../../../types';
 import { IconPaperclip, IconDownload } from "@tabler/icons-react-native";
 
-interface TaskAttachmentsCardProps {
+interface FileSection {
+  label: string;
   files: File[];
 }
 
-export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({ files }) => {
+interface TaskAttachmentsCardProps {
+  /** @deprecated Use named file props instead */
+  files?: File[];
+  baseFiles?: File[];
+  artworks?: File[];
+  projectFiles?: File[];
+  checkinFiles?: File[];
+  checkoutFiles?: File[];
+}
+
+export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
+  files,
+  baseFiles,
+  artworks,
+  projectFiles,
+  checkinFiles,
+  checkoutFiles,
+}) => {
   const { colors } = useTheme();
   const { openFile } = useFileViewer();
 
@@ -62,53 +80,97 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({ files 
     openFile(file);
   };
 
+  // Build sections from named props, filtering out empty ones
+  const sections: FileSection[] = [];
+
+  if (baseFiles && baseFiles.length > 0) {
+    sections.push({ label: "Arquivos do Cliente", files: baseFiles });
+  }
+  if (artworks && artworks.length > 0) {
+    sections.push({ label: "Layouts", files: artworks });
+  }
+  if (projectFiles && projectFiles.length > 0) {
+    sections.push({ label: "Projetos", files: projectFiles });
+  }
+  if (checkinFiles && checkinFiles.length > 0) {
+    sections.push({ label: "Check-in", files: checkinFiles });
+  }
+  if (checkoutFiles && checkoutFiles.length > 0) {
+    sections.push({ label: "Check-out", files: checkoutFiles });
+  }
+
+  // Fallback: if only the legacy `files` prop is provided with no named sections
+  if (sections.length === 0 && files && files.length > 0) {
+    sections.push({ label: "Anexos", files });
+  }
+
+  // Total file count across all sections
+  const totalFiles = sections.reduce((sum, section) => sum + section.files.length, 0);
+
+  if (totalFiles === 0) return null;
+
+  const renderFileList = (sectionFiles: File[]) => (
+    <View style={styles.fileList}>
+      {sectionFiles.map((file, index) => (
+        <TouchableOpacity
+          key={file.id}
+          style={[
+            styles.fileItem,
+            index < sectionFiles.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+          onPress={() => handleOpenFile(file)}
+          activeOpacity={0.7}
+        >
+          <Icon
+            name={getFileIcon(file.filename)}
+            size={20}
+            color={colors.primary}
+          />
+          <View style={styles.fileInfo}>
+            <ThemedText style={styles.fileName} numberOfLines={1}>
+              {file.filename}
+            </ThemedText>
+            <View style={styles.fileMeta}>
+              <ThemedText style={styles.fileSize}>
+                {formatBytes(file.size)}
+              </ThemedText>
+              {file.createdAt && (
+                <>
+                  <ThemedText style={styles.separator}>•</ThemedText>
+                  <ThemedText style={styles.fileDate}>
+                    {formatDateTime(file.createdAt)}
+                  </ThemedText>
+                </>
+              )}
+            </View>
+          </View>
+          <IconDownload size={16} color={colors.primary} />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <Card style={styles.card}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <IconPaperclip size={20} color={colors.primary} />
         <ThemedText style={styles.title}>Anexos</ThemedText>
         <Badge variant="secondary" style={styles.countBadge}>
-          {files.length}
+          {totalFiles}
         </Badge>
       </View>
 
       <View style={styles.content}>
-        {files.map((file, index) => (
-          <TouchableOpacity
-            key={file.id}
-            style={[
-              styles.fileItem,
-              index < files.length - 1 && styles.fileItemBorder,
-            ]}
-            onPress={() => handleOpenFile(file)}
-            activeOpacity={0.7}
-          >
-            <Icon
-              name={getFileIcon(file.filename)}
-              size={20}
-              color={colors.primary}
-             
-            />
-            <View style={styles.fileInfo}>
-              <ThemedText style={styles.fileName} numberOfLines={1}>
-                {file.filename}
-              </ThemedText>
-              <View style={styles.fileMeta}>
-                <ThemedText style={styles.fileSize}>
-                  {formatBytes(file.size)}
-                </ThemedText>
-                {file.createdAt && (
-                  <>
-                    <ThemedText style={styles.separator}>•</ThemedText>
-                    <ThemedText style={styles.fileDate}>
-                      {formatDateTime(file.createdAt)}
-                    </ThemedText>
-                  </>
-                )}
-              </View>
+        {sections.map((section, sectionIndex) => (
+          <View key={section.label} style={sectionIndex > 0 ? styles.sectionSpacing : undefined}>
+            <View style={styles.sectionHeader}>
+              <ThemedText style={styles.sectionLabel}>{section.label}</ThemedText>
+              <Badge variant="secondary" style={styles.sectionCountBadge}>
+                {section.files.length}
+              </Badge>
             </View>
-            <IconDownload size={16} color={colors.primary} />
-          </TouchableOpacity>
+            {renderFileList(section.files)}
+          </View>
         ))}
       </View>
     </Card>
@@ -137,6 +199,27 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   content: {
+    gap: spacing.xs,
+  },
+  sectionSpacing: {
+    marginTop: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  sectionLabel: {
+    fontSize: fontSize.md,
+    fontWeight: "600",
+    opacity: 0.8,
+  },
+  sectionCountBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  fileList: {
     gap: spacing.xs,
   },
   fileItem: {

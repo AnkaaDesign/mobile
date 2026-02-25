@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { View, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from "react-native";
+import { View, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Dimensions, Alert, Image } from "react-native";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Badge } from "@/components/ui/badge";
@@ -466,7 +466,11 @@ function DirectoryGridItem({
           backgroundColor: colors.muted + "30",
         }}
       >
-        <Icon name="folder" size={36} color="#3b82f6" />
+        {dir.logoUrl ? (
+          <Image source={{ uri: dir.logoUrl }} style={{ width: 48, height: 48, borderRadius: 8 }} resizeMode="cover" />
+        ) : (
+          <Icon name="folder" size={36} color="#3b82f6" />
+        )}
       </View>
       <View
         style={{
@@ -797,7 +801,11 @@ function FileBrowser({
                 }}
               >
                 <View style={{ backgroundColor: "#3b82f620", borderRadius: 8, padding: 8 }}>
-                  <Icon name="folder" size={20} color="#3b82f6" />
+                  {dir.logoUrl ? (
+                    <Image source={{ uri: dir.logoUrl }} style={{ width: 20, height: 20, borderRadius: 4 }} resizeMode="cover" />
+                  ) : (
+                    <Icon name="folder" size={20} color="#3b82f6" />
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 14, fontWeight: "500", color: colors.foreground }} numberOfLines={1}>

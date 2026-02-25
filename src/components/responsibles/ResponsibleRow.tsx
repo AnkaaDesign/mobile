@@ -110,7 +110,7 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
     [onUpdate]
   );
 
-  // Handle responsible selection (matches web workflow)
+  // Handle responsible selection for non-item cases (clear, create new)
   const handleResponsibleChange = useCallback(
     (value: string | string[] | null | undefined) => {
       const selectedValue = Array.isArray(value) ? value[0] : value;
@@ -138,22 +138,30 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
           isNew: true,
           isEditing: true, // This will trigger showCreateInputs
         });
-      } else {
-        // Find selected responsible from cache
-        const selectedResp = responsibleCache.get(selectedValue);
-        if (selectedResp) {
-          onUpdate({
-            id: selectedResp.id,
-            name: selectedResp.name,
-            phone: selectedResp.phone,
-            email: selectedResp.email || null,
-            // Keep user's role selection instead of overwriting with DB role
-            isActive: selectedResp.isActive,
-            isNew: false,
-            isEditing: false,
-          });
-        }
       }
+      // Regular selection is handled by handleResponsibleSelect (onSelect callback)
+    },
+    [onUpdate]
+  );
+
+  // Handle responsible selection with full item data from Combobox's onSelect.
+  // This bypasses the module-level cache, which can miss when React Query
+  // serves stale data without re-running the queryFn.
+  const handleResponsibleSelect = useCallback(
+    (item: Responsible | null) => {
+      if (!item) return; // Clearing is handled by handleResponsibleChange
+      // Also populate the cache for consistency (e.g., fixedTopContent re-selection)
+      responsibleCache.set(item.id, item);
+      onUpdate({
+        id: item.id,
+        name: item.name,
+        phone: item.phone,
+        email: item.email || null,
+        // Keep user's role selection instead of overwriting with DB role
+        isActive: item.isActive,
+        isNew: false,
+        isEditing: false,
+      });
     },
     [onUpdate]
   );
@@ -289,6 +297,7 @@ export const ResponsibleRow: React.FC<ResponsibleRowProps> = ({
             <Combobox<Responsible>
               value={currentResponsibleValue}
               onValueChange={handleResponsibleChange}
+              onSelect={handleResponsibleSelect}
               async
               queryKey={queryKey}
               queryFn={queryFn}

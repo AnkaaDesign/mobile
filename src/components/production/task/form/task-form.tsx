@@ -27,7 +27,6 @@ import ServicesSection from './sections/ServicesSection';
 const PricingSection = lazy(() => import('./sections/PricingSection'));
 const TruckLayoutSection = lazy(() => import('./sections/TruckLayoutSection'));
 const SpotSelector = lazy(() => import('./spot-selector'));
-const FinancialInfoSection = lazy(() => import('./sections/FinancialInfoSection'));
 const FilesSection = lazy(() => import('./sections/FilesSection'));
 const ObservationSection = lazy(() => import('./sections/ObservationSection'));
 
@@ -121,8 +120,7 @@ export function TaskForm({
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
   const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.managedSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser;
-  const canViewFinancialInfo = isAdminUser || isFinancialUser;
-  const canViewFiles = !isWarehouseUser && !isFinancialUser;
+  const canViewFiles = !isWarehouseUser;
   const canViewObservation = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
   // Watch truck data for spot selector
@@ -337,25 +335,12 @@ export function TaskForm({
             isSubmitting={isSubmitting}
             initialBaseFiles={task?.baseFiles}
             initialArtworkFiles={task?.artworks}
+            initialProjectFiles={task?.projectFiles}
+            initialCheckinFiles={task?.checkinFiles}
+            initialCheckoutFiles={task?.checkoutFiles}
           />
         )}
       </Suspense>
-
-      {/* 9. Financial Information - Only in edit mode */}
-      {mode === 'edit' && (
-        <Suspense fallback={<SectionPlaceholder title="Carregando informações financeiras..." />}>
-          {canViewFinancialInfo && (
-            <FinancialInfoSection
-              isSubmitting={isSubmitting}
-              errors={formErrors}
-              initialPricingFiles={task?.pricingFiles}
-              initialInvoiceFiles={task?.invoiceFiles}
-              initialReceiptFiles={task?.receiptFiles}
-              initialBankSlipFiles={task?.bankSlipFiles}
-            />
-          )}
-        </Suspense>
-      )}
 
       {/* 11. Observation - Last section */}
       <Suspense fallback={<SectionPlaceholder title="Carregando observações..." />}>
