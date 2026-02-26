@@ -14,6 +14,7 @@ import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useBackupMutations, useBackupUtils } from "@/hooks/useBackup";
 import { useTheme } from "@/lib/theme";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { spacing } from "@/constants/design-system";
 
 type RetentionPeriod = '1_day' | '3_days' | '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months' | '1_year';
@@ -92,6 +93,7 @@ export default function CreateBackupScheduleScreen() {
   const { generateCronExpression } = useBackupUtils();
 
   useScreenReady(true);
+  const formKey = useFormScreenKey();
 
   const handleCreate = useCallback(async () => {
     if (!form.name.trim()) {
@@ -125,7 +127,7 @@ export default function CreateBackupScheduleScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-      <ThemedView className="flex-1">
+      <ThemedView key={formKey} className="flex-1">
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>
             Novo Agendamento

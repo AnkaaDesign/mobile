@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
-import { useItemCategoryMutations, useScreenReady } from "@/hooks";
+import { useItemCategoryMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { itemCategoryCreateSchema, type ItemCategoryCreateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
@@ -14,6 +14,7 @@ export default function CategoryCreateScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemCategoryCreateFormData) => {
     try {
@@ -36,5 +37,5 @@ export default function CategoryCreateScreen() {
     goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.categories.root) });
   };
 
-  return <ItemCategoryForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
+  return <ItemCategoryForm key={formKey} mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
 }

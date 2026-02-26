@@ -3,6 +3,7 @@ import { Stack, router } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useAirbrushingMutations, useScreenReady} from '@/hooks';
 import { useTasks } from "@/hooks";
 import { airbrushingCreateSchema, type AirbrushingCreateFormData } from '../../../../schemas';
@@ -29,6 +30,11 @@ import { routes } from "@/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AirbrushingCreateScreen() {
+  const formKey = useFormScreenKey();
+  return <AirbrushingCreateScreenInner key={formKey} />;
+}
+
+function AirbrushingCreateScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);

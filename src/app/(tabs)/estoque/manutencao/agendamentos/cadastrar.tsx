@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
@@ -34,7 +35,12 @@ interface MaintenanceScheduleCreateScreenProps {
   onCancel?: () => void;
 }
 
-export default function MaintenanceScheduleCreateScreen({
+export default function MaintenanceScheduleCreateScreen(props: MaintenanceScheduleCreateScreenProps) {
+  const formKey = useFormScreenKey();
+  return <MaintenanceScheduleCreateScreenInner key={formKey} {...props} />;
+}
+
+function MaintenanceScheduleCreateScreenInner({
   onSuccess,
   onCancel,
 }: MaintenanceScheduleCreateScreenProps) {

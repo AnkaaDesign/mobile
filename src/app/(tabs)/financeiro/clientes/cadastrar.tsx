@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useCustomerMutations, useKeyboardAwareScroll, useScreenReady} from '@/hooks';
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
@@ -29,6 +30,11 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 
 export default function FinancialCustomerCreateScreen() {
+  const formKey = useFormScreenKey();
+  return <FinancialCustomerCreateScreenInner key={formKey} />;
+}
+
+function FinancialCustomerCreateScreenInner() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();

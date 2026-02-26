@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useScreenReady } from "@/hooks";
+import { useScreenReady, useFormScreenKey } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -21,6 +21,7 @@ export default function CreateFormulaScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   // Check user permissions
   const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
@@ -57,6 +58,7 @@ export default function CreateFormulaScreen() {
         }}
       />
       <ScrollView
+        key={formKey}
         style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
         contentContainerStyle={styles.scrollContent}
       >

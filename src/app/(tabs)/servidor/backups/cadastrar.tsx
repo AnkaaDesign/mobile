@@ -15,6 +15,7 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 type RetentionPeriod = "1_day" | "3_days" | "1_week" | "2_weeks" | "1_month" | "3_months" | "6_months" | "1_year";
 
@@ -78,6 +79,7 @@ const INITIAL_FORM: CreateBackupForm = {
 
 export default function CreateBackupScreen() {
   useScreenReady();
+  const formKey = useFormScreenKey();
   const router = useRouter();
   const { colors } = useTheme();
   const { create } = useBackupMutations();
@@ -113,7 +115,7 @@ export default function CreateBackupScreen() {
 
   return (
     <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-      <ThemedView className="flex-1">
+      <ThemedView key={formKey} className="flex-1">
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
           {/* Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>

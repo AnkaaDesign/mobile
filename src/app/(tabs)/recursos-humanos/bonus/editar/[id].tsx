@@ -32,7 +32,7 @@ export default function BonusEditScreen() {
           headerShown: true,
         }}
       />
-      <BonusForm mode="update" bonus={bonus} />
+      <BonusForm key={id} mode="update" bonus={bonus} />
     </View>
   );
 }

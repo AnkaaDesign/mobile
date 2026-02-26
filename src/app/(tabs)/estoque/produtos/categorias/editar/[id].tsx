@@ -106,6 +106,7 @@ function CategoryEditScreen() {
 
   return (
     <ItemCategoryForm
+      key={id}
       mode="update"
       defaultValues={{
         name: category.name,

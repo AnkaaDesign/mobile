@@ -18,6 +18,11 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 
 export default function EditObservationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditObservationScreenInner key={id} />;
+}
+
+function EditObservationScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { goBack, getBackPath } = useNavigationHistory();

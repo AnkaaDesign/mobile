@@ -2,9 +2,11 @@ import { View, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { VacationForm } from "@/components/human-resources/vacation/form";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 export default function CreateVacationScreen() {
   useScreenReady();
+  const formKey = useFormScreenKey();
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -13,7 +15,7 @@ export default function CreateVacationScreen() {
           headerShown: true,
         }}
       />
-      <VacationForm mode="create" />
+      <VacationForm key={formKey} mode="create" />
     </View>
   );
 }

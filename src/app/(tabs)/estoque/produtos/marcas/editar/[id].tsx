@@ -105,6 +105,7 @@ function BrandEditScreen() {
 
   return (
     <ItemBrandForm
+      key={id}
       mode="update"
       defaultValues={{
         name: brand.name,

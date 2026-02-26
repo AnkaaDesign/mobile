@@ -24,6 +24,11 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditPPEDeliveryScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditPPEDeliveryScreenInner key={id} />;
+}
+
+function EditPPEDeliveryScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();

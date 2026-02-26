@@ -3,6 +3,7 @@ import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} f
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,11 @@ import {
 } from "@tabler/icons-react-native";
 
 export default function CreateComponentScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateComponentScreenInner key={formKey} />;
+}
+
+function CreateComponentScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { formulaId } = useLocalSearchParams<{ formulaId: string }>();

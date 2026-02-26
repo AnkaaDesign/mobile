@@ -33,7 +33,7 @@ export default function PositionEditScreen() {
           headerShown: true,
         }}
       />
-      <PositionForm mode="update" position={position} />
+      <PositionForm key={id} mode="update" position={position} />
     </View>
   );
 }

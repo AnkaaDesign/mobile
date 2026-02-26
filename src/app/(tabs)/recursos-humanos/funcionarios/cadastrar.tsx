@@ -10,9 +10,11 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 export default function EmployeesCreateScreen() {
   useScreenReady();
+  const formKey = useFormScreenKey();
   const { colors } = useTheme();
   const [formData, setFormData] = useState({
     name: "",
@@ -45,7 +47,7 @@ export default function EmployeesCreateScreen() {
   };
 
   return (
-    <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+    <ScrollView key={formKey} style={[styles.scrollView, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <View style={styles.container}>
         {/* Header Card */}
         <Card style={styles.card}>

@@ -53,7 +53,7 @@ export default function EditNotificationScreen() {
     );
   }
 
-  return <NotificationForm mode="update" notification={notification?.data} />;
+  return <NotificationForm key={id} mode="update" notification={notification?.data} />;
 }
 
 const styles = StyleSheet.create({

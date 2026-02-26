@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { TaskFormWithProvider } from "@/components/production/task/form/task-form-with-provider";
-import { useTaskMutations, useScreenReady} from '@/hooks';
+import { useTaskMutations, useScreenReady, useFormScreenKey } from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
@@ -16,6 +16,7 @@ export default function CreateAgendaTaskScreen() {
   const { createAsync, isLoading } = useTaskMutations();
 
   useScreenReady(!isLoading);
+  const formKey = useFormScreenKey();
   const [checkingPermission, setCheckingPermission] = useState(true);
 
   // Check permissions - ADMIN, COMMERCIAL, and LOGISTIC can create tasks
@@ -81,6 +82,7 @@ export default function CreateAgendaTaskScreen() {
 
   return (
     <TaskFormWithProvider
+      key={formKey}
       mode="create"
       onSubmit={handleSubmit}
       onCancel={handleCancel}

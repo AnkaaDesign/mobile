@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ItemForm } from "@/components/inventory/item/form/item-form";
-import { useItemMutations, useScreenReady } from "@/hooks";
+import { useItemMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { itemCreateSchema, type ItemCreateFormData } from '../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
@@ -14,6 +14,7 @@ export default function ItemCreateScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemCreateFormData) => {
     try {
@@ -38,6 +39,7 @@ export default function ItemCreateScreen() {
 
   return (
     <ItemForm
+      key={formKey}
       mode="create"
       onSubmit={handleSubmit}
       onCancel={handleCancel}

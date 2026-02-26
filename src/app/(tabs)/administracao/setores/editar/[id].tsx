@@ -44,7 +44,7 @@ export default function EditSectorScreen() {
     );
   }
 
-  return <SectorForm mode="update" sector={sector?.data} />;
+  return <SectorForm key={id} mode="update" sector={sector?.data} />;
 }
 
 const styles = StyleSheet.create({

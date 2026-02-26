@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useCreateSupplier, useKeyboardAwareScroll, useCepLookup, useScreenReady} from '@/hooks';
 import { supplierCreateSchema, type SupplierCreateFormData } from "@/schemas";
 import { Input, Combobox } from "@/components/ui";
@@ -20,6 +21,11 @@ import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { formSpacing } from "@/constants/form-styles";
 
 export default function SupplierCreateScreen() {
+  const formKey = useFormScreenKey();
+  return <SupplierCreateScreenInner key={formKey} />;
+}
+
+function SupplierCreateScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);

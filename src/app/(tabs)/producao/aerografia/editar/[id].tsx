@@ -30,6 +30,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AirbrushingEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <AirbrushingEditScreenInner key={id} />;
+}
+
+function AirbrushingEditScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);

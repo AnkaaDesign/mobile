@@ -4,6 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
@@ -23,6 +24,11 @@ import { getItemPpeSize } from "@/utils/ppe-size-mapping";
 import type { Item, User } from "@/types";
 
 export default function CreateHRPPEDeliveryScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateHRPPEDeliveryScreenInner key={formKey} />;
+}
+
+function CreateHRPPEDeliveryScreenInner() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();

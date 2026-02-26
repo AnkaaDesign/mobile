@@ -32,6 +32,11 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 export default function CustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <CustomerEditScreenInner key={id} />;
+}
+
+function CustomerEditScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);

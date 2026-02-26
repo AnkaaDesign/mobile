@@ -3,6 +3,7 @@ import { router, Stack } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useCutMutations, useScreenReady} from '@/hooks';
 import { cutCreateSchema, type CutCreateFormData } from "@/schemas";
 import {
@@ -30,6 +31,11 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
 
 export default function CreateCuttingScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateCuttingScreenInner key={formKey} />;
+}
+
+function CreateCuttingScreenInner() {
   useScreenReady();
   const { colors } = useTheme();
   const { user } = useAuth();

@@ -24,6 +24,11 @@ import { routeToMobilePath } from "@/utils/route-mapper";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditHRPPEDeliveryScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditHRPPEDeliveryScreenInner key={id} />;
+}
+
+function EditHRPPEDeliveryScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();

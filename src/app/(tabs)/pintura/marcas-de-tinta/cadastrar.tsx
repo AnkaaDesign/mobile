@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Alert } from "react-native";
 import { Stack, router } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,11 @@ import {
 } from "@tabler/icons-react-native";
 
 export default function CreatePaintBrandScreen() {
+  const formKey = useFormScreenKey();
+  return <CreatePaintBrandScreenInner key={formKey} />;
+}
+
+function CreatePaintBrandScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { create } = usePaintBrandMutations();

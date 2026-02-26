@@ -3,6 +3,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useObservationMutations, useTasks, useScreenReady} from '@/hooks';
 import { observationCreateSchema, type ObservationCreateFormData } from "@/schemas";
 import { ErrorScreen, ThemedText, Card, Button, Input, Combobox, SimpleFormField } from "@/components/ui";
@@ -19,6 +20,11 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CreateObservationScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateObservationScreenInner key={formKey} />;
+}
+
+function CreateObservationScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { goBack, getBackPath } = useNavigationHistory();

@@ -50,7 +50,7 @@ export default function EditMaintenanceScreen() {
     );
   }
 
-  return <MaintenanceForm mode="update" maintenance={maintenance} />;
+  return <MaintenanceForm key={id} mode="update" maintenance={maintenance} />;
 }
 
 const styles = StyleSheet.create({

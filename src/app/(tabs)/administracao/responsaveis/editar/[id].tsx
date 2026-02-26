@@ -28,6 +28,11 @@ const roleOptions = Object.values(ResponsibleRole).map((role) => ({
 }));
 
 export default function EditResponsibleScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditResponsibleScreenInner key={id} />;
+}
+
+function EditResponsibleScreenInner() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();

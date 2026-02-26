@@ -127,6 +127,7 @@ function BorrowEditScreen() {
   return (
     <ThemedView className="flex-1">
       <BorrowReturnForm
+        key={id}
         borrow={borrow}
         onReturn={handleReturn}
         onMarkAsLost={handleMarkAsLost}

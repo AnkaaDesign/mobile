@@ -35,7 +35,7 @@ export default function WarningEditScreen() {
           headerShown: true,
         }}
       />
-      <WarningForm mode="update" warning={warning} />
+      <WarningForm key={id} mode="update" warning={warning} />
     </View>
   );
 }

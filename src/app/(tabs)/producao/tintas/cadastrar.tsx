@@ -3,7 +3,7 @@ import { Stack, useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
+import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 
@@ -15,6 +15,7 @@ export default function CreatePaintScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady(!isPaintLoading);
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);
@@ -83,6 +84,7 @@ export default function CreatePaintScreen() {
       />
       <ThemedView className="flex-1">
         <PaintForm
+          key={formKey}
           mode="create"
           onSubmit={handleSubmit}
           onCancel={handleCancel}

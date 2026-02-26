@@ -193,6 +193,7 @@ export default function EditServiceOrderScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <TaskForm
+        key={id}
         mode="edit"
         initialData={initialData}
         initialCustomer={task.data.customer}

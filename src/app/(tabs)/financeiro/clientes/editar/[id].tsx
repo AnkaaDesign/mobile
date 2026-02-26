@@ -37,6 +37,11 @@ import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
  */
 export default function FinancialCustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <FinancialCustomerEditScreenInner key={id} />;
+}
+
+function FinancialCustomerEditScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();

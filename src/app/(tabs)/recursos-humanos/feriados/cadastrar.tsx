@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconCalendar } from "@tabler/icons-react-native";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 export default function HolidaysCreateScreen() {
   useScreenReady();
+  const formKey = useFormScreenKey();
   const { colors } = useTheme();
   const [loading, setLoading] = useState(false);
 
@@ -25,6 +27,7 @@ export default function HolidaysCreateScreen() {
 
   return (
     <ScrollView
+      key={formKey}
       style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
       showsVerticalScrollIndicator={false}
     >

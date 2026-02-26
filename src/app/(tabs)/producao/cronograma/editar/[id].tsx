@@ -966,6 +966,7 @@ export default function EditScheduleScreen() {
   return (
     <ThemedView className="flex-1">
       <TaskForm
+        key={id}
         mode="edit"
         task={task}
         initialData={{

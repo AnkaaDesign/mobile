@@ -97,7 +97,7 @@ export default function EditCollaboratorScreen() {
     );
   }
 
-  return <CollaboratorForm mode="update" user={user?.data} />;
+  return <CollaboratorForm key={id} mode="update" user={user?.data} />;
 }
 
 const styles = StyleSheet.create({

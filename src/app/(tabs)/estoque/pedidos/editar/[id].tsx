@@ -18,7 +18,7 @@ export default function EstoquePedidosEditarScreen() {
           headerShown: true,
         }}
       />
-      <OrderEditForm orderId={id} />
+      <OrderEditForm key={id} orderId={id} />
     </>
   );
 }

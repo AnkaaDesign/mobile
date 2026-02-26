@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TaskForm } from "@/components/production/task/form";
-import { useTaskMutations, useScreenReady} from '@/hooks';
+import { useTaskMutations, useScreenReady, useFormScreenKey } from '@/hooks';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
@@ -18,6 +18,7 @@ export default function CreateServiceOrderScreen() {
   const { createAsync, isLoading: isCreating } = useTaskMutations();
 
   useScreenReady(!isCreating);
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: TaskCreateFormData) => {
     try {
@@ -75,6 +76,7 @@ export default function CreateServiceOrderScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <TaskForm
+        key={formKey}
         mode="create"
         onSubmit={handleSubmit}
         onCancel={handleCancel}

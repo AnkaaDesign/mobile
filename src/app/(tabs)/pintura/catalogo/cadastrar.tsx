@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
+import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import type { PaintFormula } from "@/types";
@@ -17,6 +17,7 @@ export default function CreateCatalogScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);
@@ -104,6 +105,7 @@ export default function CreateCatalogScreen() {
       />
       <ThemedView className="flex-1">
         <PaintForm
+          key={formKey}
           mode="create"
           onSubmit={handleSubmit}
           onCancel={handleCancel}

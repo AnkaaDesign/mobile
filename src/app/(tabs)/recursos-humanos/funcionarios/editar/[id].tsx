@@ -13,6 +13,11 @@ import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 
 export default function EmployeeEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EmployeeEditScreenInner key={id} />;
+}
+
+function EmployeeEditScreenInner() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [formData, setFormData] = useState({

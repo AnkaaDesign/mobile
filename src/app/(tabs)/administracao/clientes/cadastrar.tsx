@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useCustomerMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useCnpjLookup } from "@/hooks/use-cnpj-lookup";
 import { useCepLookup } from "@/hooks/use-cep-lookup";
@@ -30,6 +31,11 @@ import { formSpacing } from "@/constants/form-styles";
 import { IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 
 export default function CreateCustomerScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateCustomerScreenInner key={formKey} />;
+}
+
+function CreateCustomerScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);

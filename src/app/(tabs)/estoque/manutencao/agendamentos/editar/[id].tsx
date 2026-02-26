@@ -35,6 +35,11 @@ type MaintenanceScheduleUpdateFormData = z.infer<typeof maintenanceScheduleUpdat
 
 export default function MaintenanceScheduleEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <MaintenanceScheduleEditScreenInner key={id} />;
+}
+
+function MaintenanceScheduleEditScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
 

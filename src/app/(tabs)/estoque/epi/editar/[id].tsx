@@ -49,7 +49,7 @@ export default function EditPPEScreen() {
     );
   }
 
-  return <PPEForm mode="update" item={item?.data} />;
+  return <PPEForm key={id} mode="update" item={item?.data} />;
 }
 
 const styles = StyleSheet.create({

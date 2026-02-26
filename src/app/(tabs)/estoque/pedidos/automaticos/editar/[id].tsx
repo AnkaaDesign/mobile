@@ -32,6 +32,11 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditAutomaticOrderScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditAutomaticOrderScreenInner key={id} />;
+}
+
+function EditAutomaticOrderScreenInner() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();

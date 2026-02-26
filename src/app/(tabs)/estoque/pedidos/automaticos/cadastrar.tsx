@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useOrderScheduleMutations, useScreenReady} from '@/hooks';
 import { orderScheduleCreateSchema} from '../../../../../schemas';
 import type { OrderScheduleCreateFormData } from '../../../../../schemas';
@@ -35,6 +36,11 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CreateAutomaticOrderScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateAutomaticOrderScreenInner key={formKey} />;
+}
+
+function CreateAutomaticOrderScreenInner() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();

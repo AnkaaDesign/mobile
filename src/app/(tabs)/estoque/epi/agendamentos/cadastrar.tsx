@@ -2,6 +2,7 @@ import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } f
 import { useForm, Controller } from "react-hook-form";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
@@ -17,6 +18,11 @@ import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } fr
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function CreatePPEScheduleScreen() {
+  const formKey = useFormScreenKey();
+  return <CreatePPEScheduleScreenInner key={formKey} />;
+}
+
+function CreatePPEScheduleScreenInner() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();

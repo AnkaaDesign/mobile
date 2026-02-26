@@ -22,6 +22,11 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditOrderItemScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditOrderItemScreenInner key={id} />;
+}
+
+function EditOrderItemScreenInner() {
   const router = useRouter();
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();

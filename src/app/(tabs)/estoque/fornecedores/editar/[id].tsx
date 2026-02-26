@@ -26,6 +26,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SupplierEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  return <SupplierEditScreenInner key={id} />;
+}
+
+function SupplierEditScreenInner() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);

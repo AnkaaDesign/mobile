@@ -25,6 +25,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditPaintBrandScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditPaintBrandScreenInner key={id} />;
+}
+
+function EditPaintBrandScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();

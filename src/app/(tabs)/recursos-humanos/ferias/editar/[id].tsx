@@ -33,7 +33,7 @@ export default function VacationEditScreen() {
           headerShown: true,
         }}
       />
-      <VacationForm mode="update" vacation={vacation} />
+      <VacationForm key={id} mode="update" vacation={vacation} />
     </View>
   );
 }

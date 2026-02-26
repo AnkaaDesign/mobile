@@ -18,6 +18,11 @@ import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } fr
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function EditPPEScheduleScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditPPEScheduleScreenInner key={id} />;
+}
+
+function EditPPEScheduleScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -13,6 +13,11 @@ import { useHoliday } from "@/hooks/useHoliday";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function HolidayEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <HolidayEditScreenInner key={id} />;
+}
+
+function HolidayEditScreenInner() {
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ id: string }>();
   const id = params?.id || "";

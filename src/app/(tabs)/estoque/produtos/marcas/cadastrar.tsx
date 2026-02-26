@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
-import { useItemBrandMutations, useScreenReady } from "@/hooks";
+import { useItemBrandMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { itemBrandCreateSchema, type ItemBrandCreateFormData } from '../../../../../schemas';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
@@ -14,6 +14,7 @@ export default function BrandCreateScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemBrandCreateFormData) => {
     try {
@@ -36,5 +37,5 @@ export default function BrandCreateScreen() {
     goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.brands.root) });
   };
 
-  return <ItemBrandForm mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
+  return <ItemBrandForm key={formKey} mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
 }

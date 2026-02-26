@@ -31,6 +31,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditComponentScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <EditComponentScreenInner key={id} />;
+}
+
+function EditComponentScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();

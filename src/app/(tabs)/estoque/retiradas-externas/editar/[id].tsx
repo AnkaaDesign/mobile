@@ -73,7 +73,7 @@ export default function EditExternalWithdrawalScreen() {
     );
   }
 
-  return <ExternalWithdrawalEditForm withdrawal={withdrawal} />;
+  return <ExternalWithdrawalEditForm key={id} withdrawal={withdrawal} />;
 }
 
 const styles = StyleSheet.create({

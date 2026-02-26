@@ -189,6 +189,7 @@ export default function EditCatalogScreen() {
       />
       <ThemedView className="flex-1">
         <PaintForm
+          key={id}
           mode="update"
           paintId={id!}
           defaultValues={{

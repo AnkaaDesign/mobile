@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ActivityBatchCreateForm } from "@/components/inventory/activity/form";
-import { useActivityBatchMutations, useScreenReady } from "@/hooks";
+import { useActivityBatchMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, ACTIVITY_OPERATION } from "@/constants";
 
@@ -11,6 +11,7 @@ export default function InventoryMovementsCreateScreen() {
 
   // End navigation loading overlay when screen mounts
   useScreenReady();
+  const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: {
     operation: typeof ACTIVITY_OPERATION.INBOUND | typeof ACTIVITY_OPERATION.OUTBOUND;
@@ -44,6 +45,7 @@ export default function InventoryMovementsCreateScreen() {
   return (
     <ThemedView style={{ flex: 1 }}>
       <ActivityBatchCreateForm
+        key={formKey}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isBatchCreating}

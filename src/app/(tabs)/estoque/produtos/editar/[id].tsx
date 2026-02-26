@@ -152,7 +152,7 @@ function ItemEditScreen() {
     );
   }
 
-  return <ItemEditForm item={item} onSubmit={handleFormSubmit} onCancel={handleCancel} isSubmitting={false} />;
+  return <ItemEditForm key={id} item={item} onSubmit={handleFormSubmit} onCancel={handleCancel} isSubmitting={false} />;
 }
 
 const styles = StyleSheet.create({

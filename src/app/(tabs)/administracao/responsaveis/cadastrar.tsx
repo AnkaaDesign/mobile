@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useResponsibleMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { getCustomers } from "@/api-client";
 import { responsibleCreateSchema } from "@/schemas/responsible";
@@ -29,6 +30,11 @@ const roleOptions = Object.values(ResponsibleRole).map((role) => ({
 }));
 
 export default function CreateResponsibleScreen() {
+  const formKey = useFormScreenKey();
+  return <CreateResponsibleScreenInner key={formKey} />;
+}
+
+function CreateResponsibleScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
