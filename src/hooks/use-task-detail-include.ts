@@ -21,6 +21,8 @@ function useTaskPermissions(user: any) {
     canViewRestrictedFields: isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser,
     canViewObservation: !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser,
     canViewBaseFiles: isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser,
+    canViewProjectFiles: isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser,
+    canViewCheckinCheckout: isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser,
     canViewArtworks: !isWarehouseUser && !isFinancialUser && !isLogisticUser,
     canViewPricingSection: isAdminUser || isFinancialUser || isCommercialUser,
     canViewPaintSections: !isWarehouseUser && !isFinancialUser && !isLogisticUser,
@@ -91,6 +93,8 @@ export function useTaskDetailFullInclude(user: any) {
     canViewRestrictedFields,
     canViewObservation,
     canViewBaseFiles,
+    canViewProjectFiles,
+    canViewCheckinCheckout,
     canViewArtworks,
     canViewPricingSection,
     canViewPaintSections,
@@ -144,6 +148,22 @@ export function useTaskDetailFullInclude(user: any) {
     }),
     ...(canViewBaseFiles && {
       baseFiles: {
+        select: { id: true, filename: true, size: true, mimetype: true },
+        take: 20,
+      },
+    }),
+    ...(canViewProjectFiles && {
+      projectFiles: {
+        select: { id: true, filename: true, size: true, mimetype: true },
+        take: 20,
+      },
+    }),
+    ...(canViewCheckinCheckout && {
+      checkinFiles: {
+        select: { id: true, filename: true, size: true, mimetype: true },
+        take: 20,
+      },
+      checkoutFiles: {
         select: { id: true, filename: true, size: true, mimetype: true },
         take: 20,
       },

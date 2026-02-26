@@ -46,6 +46,9 @@ import {
   IconFile,
   IconAlertCircle,
   IconDownload,
+  IconFolderOpen,
+  IconCamera,
+  IconPhotoCheck,
 } from "@tabler/icons-react-native";
 
 export default function ScheduleDetailsScreen() {
@@ -57,6 +60,9 @@ export default function ScheduleDetailsScreen() {
   const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("grid");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("grid");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("grid");
+  const [projectFilesViewMode, setProjectFilesViewMode] = useState<FileViewMode>("grid");
+  const [checkinFilesViewMode, setCheckinFilesViewMode] = useState<FileViewMode>("grid");
+  const [checkoutFilesViewMode, setCheckoutFilesViewMode] = useState<FileViewMode>("grid");
   const [showBelowFold, setShowBelowFold] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
 
@@ -96,6 +102,12 @@ export default function ScheduleDetailsScreen() {
 
   // Check if user can view base files (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER only) - matches web
   const canViewBaseFiles = isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser;
+
+  // Check if user can view project files (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER only) - matches web
+  const canViewProjectFiles = isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser;
+
+  // Check if user can view checkin/checkout files (ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC only) - matches web
+  const canViewCheckinCheckout = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser;
 
   // Check if user can view artwork badges and non-approved artworks (admin/commercial/financial/logistic/designer only)
   const canViewArtworkBadges = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isDesignerUser;
@@ -699,8 +711,235 @@ export default function ScheduleDetailsScreen() {
             );
           })()}
 
-          {/* Documents Section - Only for Admin and Financial */}
-          {canViewDocuments && ((task as any)?.budgets || (task as any)?.invoices || (task as any)?.receipts) && (
+          {/* Project Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
+          {canViewProjectFiles && (task as any)?.projectFiles && (task as any).projectFiles.length > 0 && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconFolderOpen size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Projetos</ThemedText>
+                  <Badge variant="secondary">
+                    {(task as any).projectFiles.length}
+                  </Badge>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  {(task as any).projectFiles.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        for (const file of (task as any).projectFiles) {
+                          try {
+                            await fileViewer.actions.downloadFile(file);
+                          } catch (_error) {
+                            console.error("Error downloading file:", _error);
+                          }
+                        }
+                        Alert.alert("Sucesso", `${(task as any).projectFiles.length} arquivos baixados`);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={16} color={colors.primaryForeground} />
+                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                        Baixar Todos
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: projectFilesViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setProjectFilesViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={projectFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: projectFilesViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setProjectFilesViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={projectFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={projectFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                  {(task as any).projectFiles.map((file: any, index: number) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode={projectFilesViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        fileViewer.actions.viewFiles((task as any).projectFiles, index);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* Check-in Files Section - Only for ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC */}
+          {canViewCheckinCheckout && (task as any)?.checkinFiles && (task as any).checkinFiles.length > 0 && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconCamera size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Check-in</ThemedText>
+                  <Badge variant="secondary">
+                    {(task as any).checkinFiles.length}
+                  </Badge>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  {(task as any).checkinFiles.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        for (const file of (task as any).checkinFiles) {
+                          try {
+                            await fileViewer.actions.downloadFile(file);
+                          } catch (_error) {
+                            console.error("Error downloading file:", _error);
+                          }
+                        }
+                        Alert.alert("Sucesso", `${(task as any).checkinFiles.length} arquivos baixados`);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={16} color={colors.primaryForeground} />
+                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                        Baixar Todos
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: checkinFilesViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setCheckinFilesViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={checkinFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: checkinFilesViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setCheckinFilesViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={checkinFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={checkinFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                  {(task as any).checkinFiles.map((file: any, index: number) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode={checkinFilesViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        fileViewer.actions.viewFiles((task as any).checkinFiles, index);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* Check-out Files Section - Only for ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC */}
+          {canViewCheckinCheckout && (task as any)?.checkoutFiles && (task as any).checkoutFiles.length > 0 && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconPhotoCheck size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Check-out</ThemedText>
+                  <Badge variant="secondary">
+                    {(task as any).checkoutFiles.length}
+                  </Badge>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                <View style={styles.viewModeControls}>
+                  {(task as any).checkoutFiles.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
+                      onPress={async () => {
+                        for (const file of (task as any).checkoutFiles) {
+                          try {
+                            await fileViewer.actions.downloadFile(file);
+                          } catch (_error) {
+                            console.error("Error downloading file:", _error);
+                          }
+                        }
+                        Alert.alert("Sucesso", `${(task as any).checkoutFiles.length} arquivos baixados`);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <IconDownload size={16} color={colors.primaryForeground} />
+                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
+                        Baixar Todos
+                      </ThemedText>
+                    </TouchableOpacity>
+                  )}
+                  <View style={styles.viewModeButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: checkoutFilesViewMode === "list" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setCheckoutFilesViewMode("list")}
+                      activeOpacity={0.7}
+                    >
+                      <IconList size={16} color={checkoutFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.viewModeButton,
+                        { backgroundColor: checkoutFilesViewMode === "grid" ? colors.primary : colors.muted }
+                      ]}
+                      onPress={() => setCheckoutFilesViewMode("grid")}
+                      activeOpacity={0.7}
+                    >
+                      <IconLayoutGrid size={16} color={checkoutFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={checkoutFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                  {(task as any).checkoutFiles.map((file: any, index: number) => (
+                    <FileItem
+                      key={file.id}
+                      file={file}
+                      viewMode={checkoutFilesViewMode}
+                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                      onPress={() => {
+                        fileViewer.actions.viewFiles((task as any).checkoutFiles, index);
+                      }}
+                    />
+                  ))}
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* Documents Section - Only for Admin and Financial, hidden when no documents */}
+          {canViewDocuments && (
+            ((task as any)?.budgets?.length > 0 || (task as any)?.invoices?.length > 0 || (task as any)?.receipts?.length > 0)
+          ) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>

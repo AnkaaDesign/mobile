@@ -170,6 +170,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     };
   }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include])
 
+  // For agenda view, search is handled client-side only (the view fetches all tasks).
+  // Using searchText in queryParams would change the query key, triggering a full reload
+  // that unmounts the Search input and loses focus.
+  const apiSearchText = shouldGroupByStatus ? '' : searchText
+
   // Optimized: Single API call for both agenda and standard views
   const queryParams = useMemo(() => {
     // For agenda view, use multi-column sorting like the web: forecastDate ASC, then name ASC, then serialNumber ASC
@@ -184,7 +189,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
     const params: any = {
       orderBy,
-      ...(searchText ? { searchingFor: searchText } : {}),
+      ...(apiSearchText ? { searchingFor: apiSearchText } : {}),
       include: config.query.include,
       limit: shouldGroupByStatus ? 1000 : 100, // Match web's limit of 1000 per status table
     };
@@ -201,7 +206,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
 
     return params;
-  }, [shouldGroupByStatus, sortConfig, searchText, filterValues, config.query.include]);
+  }, [shouldGroupByStatus, sortConfig, apiSearchText, filterValues, config.query.include]);
 
   // Single API call for all tasks
   const {

@@ -177,22 +177,124 @@ export function TaskForm({
   // "Cannot update a component while rendering a different component").
   // Unlike form.formState proxy (which creates synchronous subscriptions that fire
   // during other components' renders), useFormState batches updates properly.
-  const { dirtyFields, isValid, errors: formErrors } = useFormState({ control: form.control });
+  const { isValid, errors: formErrors } = useFormState({ control: form.control });
+
+  // Watch ALL form values — useWatch returns a new reference on every change,
+  // which is essential for triggering useMemo recalculation.
+  const allFormValues = useWatch({ control: form.control });
 
   // Watch form values for validation checks (matching web's hasIncompletePricing, etc.)
   const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
   const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
+
   // Derive canSubmit from subscribed values (pure computation, no setState during render).
+  // NOTE: We do NOT rely on RHF's dirtyFields for edit mode because:
+  // 1. dirtyFields is a Proxy whose reference never changes (breaks useMemo)
+  // 2. Suspense-loaded lazy sections re-register fields on mount, resetting dirty state
+  // Instead, we manually compare current form values against the captured defaultValues.
   const canSubmitForm = useMemo(() => {
     if (mode === 'edit') {
-      const dirtyKeys = Object.keys(dirtyFields).filter(k => k !== 'layouts');
-      const hasChanges = dirtyKeys.length > 0 || hasLayoutChanges;
+      const defaults = form.formState.defaultValues || {};
+      const current = allFormValues || {};
+
+      // Compare key fields to detect changes (manual dirty detection)
+      // This is robust against RHF's dirtyFields being cleared by lazy section mounts
+      const changedKeys: string[] = [];
+      const fieldsToCompare = [
+        'name', 'customerId', 'sectorId', 'serialNumber', 'status',
+        'details', 'entryDate', 'term', 'forecastDate', 'startedAt', 'finishedAt',
+        'paintId', 'commission',
+      ];
+
+      for (const key of fieldsToCompare) {
+        const defaultVal = (defaults as any)[key] ?? null;
+        const currentVal = (current as any)[key] ?? null;
+        // Compare dates by timestamp, primitives by value
+        const dStr = defaultVal instanceof Date ? defaultVal.getTime() : defaultVal;
+        const cStr = currentVal instanceof Date ? currentVal.getTime() : currentVal;
+        if (dStr !== cStr) {
+          changedKeys.push(key);
+        }
+      }
+
+      // Compare truck object (nested)
+      const defaultTruck = (defaults as any).truck || {};
+      const currentTruck = (current as any).truck || {};
+      const truckFields = ['plate', 'chassisNumber', 'category', 'implementType', 'spot'];
+      for (const key of truckFields) {
+        if ((defaultTruck[key] ?? null) !== (currentTruck[key] ?? null)) {
+          changedKeys.push(`truck.${key}`);
+        }
+      }
+
+      // Check for new files (photos taken via camera, stored as raw file objects)
+      // These have URIs but no IDs yet — they'll be uploaded at submission time
+      const rawFileFields = ['_checkinFiles', '_checkoutFiles', '_projectFiles'];
+      for (const key of rawFileFields) {
+        const rawFiles = (current as any)[key];
+        if (Array.isArray(rawFiles)) {
+          const newFiles = rawFiles.filter((f: any) => !f.id && !f.fileId && !f.file?.id && f.uri);
+          if (newFiles.length > 0) {
+            changedKeys.push(key);
+          }
+        }
+      }
+
+      // Compare array fields (file IDs, paint IDs) by JSON
+      const arrayFields = [
+        'paintIds', 'baseFileIds', 'artworkIds', 'projectFileIds',
+        'checkinFileIds', 'checkoutFileIds', 'budgetIds', 'invoiceIds',
+        'receiptIds', 'bankSlipIds',
+      ];
+      for (const key of arrayFields) {
+        const d = JSON.stringify((defaults as any)[key] || []);
+        const c = JSON.stringify((current as any)[key] || []);
+        if (d !== c) {
+          changedKeys.push(key);
+        }
+      }
+
+      // Compare service orders by JSON
+      const defaultSO = JSON.stringify((defaults as any).serviceOrders || []);
+      const currentSO = JSON.stringify((current as any).serviceOrders || []);
+      if (defaultSO !== currentSO) {
+        changedKeys.push('serviceOrders');
+      }
+
+      // Compare pricing by key fields
+      const defaultPricing = (defaults as any).pricing || {};
+      const currentPricing = (current as any).pricing || {};
+      const pricingFields = [
+        'status', 'subtotal', 'discountType', 'discountValue', 'total',
+        'paymentCondition', 'customPaymentText', 'guaranteeYears',
+        'customGuaranteeText', 'layoutFileId', 'customForecastDays',
+      ];
+      for (const key of pricingFields) {
+        if ((defaultPricing[key] ?? null) !== (currentPricing[key] ?? null)) {
+          changedKeys.push(`pricing.${key}`);
+        }
+      }
+      // Compare pricing items by JSON
+      const defaultItems = JSON.stringify(defaultPricing.items || []);
+      const currentItems = JSON.stringify(currentPricing.items || []);
+      if (defaultItems !== currentItems) {
+        changedKeys.push('pricing.items');
+      }
+
+      // Compare observation
+      const defaultObs = JSON.stringify((defaults as any).observation || null);
+      const currentObs = JSON.stringify((current as any).observation || null);
+      if (defaultObs !== currentObs) {
+        changedKeys.push('observation');
+      }
+
+      const hasChanges = changedKeys.length > 0 || hasLayoutChanges;
 
       // Validation checks matching web (only check when relevant fields are dirty)
       let validationBlocks = false;
 
       // hasIncompleteServices: service orders with descriptions shorter than 3 chars
-      if (dirtyFields.serviceOrders && Array.isArray(watchedServiceOrders)) {
+      if (changedKeys.includes('serviceOrders') && Array.isArray(watchedServiceOrders)) {
         const hasIncomplete = watchedServiceOrders.some(
           (so: any) => so?.description && so.description.trim().length > 0 && so.description.trim().length < 3
         );
@@ -200,7 +302,7 @@ export function TaskForm({
       }
 
       // hasIncompletePricing: pricing items with amounts but no descriptions
-      if (dirtyFields.pricing && watchedPricing?.items) {
+      if (changedKeys.some(k => k.startsWith('pricing')) && watchedPricing?.items) {
         const items = Array.isArray(watchedPricing.items) ? watchedPricing.items : [];
         const hasIncomplete = items.some(
           (item: any) => {
@@ -225,10 +327,12 @@ export function TaskForm({
         }
       }
 
-      return hasChanges && !validationBlocks;
+      const result = hasChanges && !validationBlocks;
+      console.log('[TaskForm:canSubmit] changedKeys:', changedKeys, '| hasLayoutChanges:', hasLayoutChanges, '| validationBlocks:', validationBlocks, '| RESULT:', result);
+      return result;
     }
     return isValid;
-  }, [dirtyFields, isValid, hasLayoutChanges, watchedServiceOrders, watchedPricing, existingLayouts, mode]);
+  }, [allFormValues, isValid, hasLayoutChanges, watchedServiceOrders, watchedPricing, existingLayouts, mode, form.formState.defaultValues]);
 
   if (!isReady) {
     return (

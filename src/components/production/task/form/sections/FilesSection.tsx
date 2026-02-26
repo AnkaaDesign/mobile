@@ -89,16 +89,20 @@ export default function FilesSection({
   const handleProjectFilesChange = useCallback((files: FilePickerItem[]) => {
     setProjectFiles(files);
     setValue('projectFileIds', extractFileIds(files), { shouldDirty: true });
+    setValue('_projectFiles', files);
   }, [setValue]);
 
   const handleCheckinFilesChange = useCallback((files: FilePickerItem[]) => {
     setCheckinFiles(files);
     setValue('checkinFileIds', extractFileIds(files), { shouldDirty: true });
+    // Store raw file objects for new file upload at submission time
+    setValue('_checkinFiles', files);
   }, [setValue]);
 
   const handleCheckoutFilesChange = useCallback((files: FilePickerItem[]) => {
     setCheckoutFiles(files);
     setValue('checkoutFileIds', extractFileIds(files), { shouldDirty: true });
+    setValue('_checkoutFiles', files);
   }, [setValue]);
 
   return (
@@ -137,7 +141,7 @@ export default function FilesSection({
 
       {/* Project Files */}
       {canViewProjectFiles && (
-        <FormCard title="Projetos" icon="IconFolderOpen">
+        <FormCard title="Projetos" icon="IconFolderShare">
           <FilePicker
             value={projectFiles}
             onChange={handleProjectFilesChange}
@@ -155,7 +159,7 @@ export default function FilesSection({
 
       {/* Check-in */}
       {canViewCheckinCheckout && (
-        <FormCard title="Check-in" icon="IconCameraCheck">
+        <FormCard title="Check-in" icon="IconCamera">
           <FilePicker
             value={checkinFiles}
             onChange={handleCheckinFilesChange}
@@ -173,7 +177,7 @@ export default function FilesSection({
 
       {/* Check-out */}
       {canViewCheckinCheckout && (
-        <FormCard title="Check-out" icon="IconCameraOff">
+        <FormCard title="Check-out" icon="IconPhotoPlus">
           <FilePicker
             value={checkoutFiles}
             onChange={handleCheckoutFilesChange}

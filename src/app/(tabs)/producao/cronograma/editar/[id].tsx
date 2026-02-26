@@ -14,6 +14,7 @@ import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
+import type { FilePickerItem } from "@/components/ui/file-picker";
 
 export default function EditScheduleScreen() {
   const router = useRouter();
@@ -166,6 +167,39 @@ export default function EditScheduleScreen() {
           },
         }
       },
+      // File relations for edit form
+      baseFiles: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
+      projectFiles: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
+      checkinFiles: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
+      checkoutFiles: {
+        select: {
+          id: true,
+          filename: true,
+          mimetype: true,
+          size: true,
+        }
+      },
     }
   });
 
@@ -304,29 +338,128 @@ export default function EditScheduleScreen() {
     return filtered;
   };
 
+  /**
+   * Build a FormData payload with task data + new files in a single request,
+   * matching the web's createFormDataWithContext pattern.
+   * The backend handles file upload + task update atomically.
+   */
+  const buildFormDataPayload = (
+    taskData: Record<string, any>,
+    newFiles: Record<string, FilePickerItem[]>,
+  ): FormData => {
+    const formData = new FormData();
+
+    // Add context metadata (matches web's _context field for file organization)
+    formData.append('_context', JSON.stringify({
+      entityType: 'task',
+      entityId: id,
+      customerName: task?.customer?.fantasyName || '',
+    }));
+
+    // Add task data fields
+    for (const [key, value] of Object.entries(taskData)) {
+      if (value === null) {
+        formData.append(key, '');
+      } else if (value === undefined) {
+        continue;
+      } else if (value instanceof Date) {
+        formData.append(key, value.toISOString());
+      } else if (Array.isArray(value)) {
+        if (value.length === 0) {
+          formData.append(`${key}_empty`, 'true');
+        } else {
+          value.forEach((item, index) => {
+            if (item !== null && item !== undefined) {
+              if (typeof item === 'object') {
+                formData.append(`${key}[${index}]`, JSON.stringify(item));
+              } else {
+                formData.append(`${key}[${index}]`, String(item));
+              }
+            }
+          });
+        }
+      } else if (typeof value === 'object') {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+
+    // Add new files (React Native FormData accepts {uri, name, type} objects)
+    for (const [fieldName, files] of Object.entries(newFiles)) {
+      files.forEach((file) => {
+        formData.append(fieldName, {
+          uri: file.uri,
+          name: file.name || `file_${Date.now()}.jpg`,
+          type: file.type || file.mimeType || 'image/jpeg',
+        } as any);
+      });
+    }
+
+    return formData;
+  };
+
   const handleSubmit = async (data: any) => {
     if (!id) return;
 
     try {
+      // Extract new file objects (photos taken via camera, stored by FilesSection)
+      // These have URIs but no server IDs — they'll be uploaded with the task update
+      const fileFieldMapping = [
+        { rawKey: '_checkinFiles', idKey: 'checkinFileIds', uploadKey: 'checkinFiles' },
+        { rawKey: '_checkoutFiles', idKey: 'checkoutFileIds', uploadKey: 'checkoutFiles' },
+        { rawKey: '_projectFiles', idKey: 'projectFileIds', uploadKey: 'projectFiles' },
+      ];
+
+      const newFilesForUpload: Record<string, FilePickerItem[]> = {};
+      let hasNewFiles = false;
+
+      for (const { rawKey, idKey, uploadKey } of fileFieldMapping) {
+        const rawFiles: FilePickerItem[] = data[rawKey] || [];
+        const newFiles = rawFiles.filter((f: any) => !f.id && !f.fileId && !f.file?.id && f.uri);
+        const existingIds = rawFiles
+          .map((f: any) => f.fileId || f.file?.id || f.id)
+          .filter(Boolean);
+
+        if (newFiles.length > 0) {
+          newFilesForUpload[uploadKey] = newFiles;
+          hasNewFiles = true;
+        }
+        // Set the IDs of existing files (new ones will be handled by backend via FormData)
+        data[idKey] = existingIds;
+
+        // Remove raw file objects from data
+        delete data[rawKey];
+      }
+
       // Process form data: filter empty items and prepare for API
       const processedData = processFormDataForSubmission(data, task);
 
       // Deep sanitize: convert any remaining object-with-numeric-keys back to arrays
-      // Safety net for react-hook-form field arrays that lose their Array prototype
       const sanitizedData = deepSanitizeForApi(processedData);
 
       // Strip fields the user's sector shouldn't modify (defense-in-depth)
       const safeData = stripRestrictedFields(sanitizedData);
 
       console.log('[EditSchedule] Changed fields:', Object.keys(safeData));
+      console.log('[EditSchedule] Has new files:', hasNewFiles, Object.keys(newFilesForUpload));
 
-      // Check if there are any actual changes
-      if (Object.keys(safeData).length === 0) {
+      // Check if there are any actual changes (data changes or new files)
+      if (Object.keys(safeData).length === 0 && !hasNewFiles) {
         Alert.alert("Nenhuma alteração", "Nenhuma alteração foi detectada.");
         return;
       }
 
-      const result = await updateAsync({ id, data: safeData });
+      let result;
+
+      if (hasNewFiles) {
+        // Send as FormData (task data + files in a single request, matching web pattern)
+        const formData = buildFormDataPayload(safeData, newFilesForUpload);
+        result = await updateAsync({ id, data: formData as any });
+      } else {
+        // No new files — send as plain JSON (more efficient)
+        result = await updateAsync({ id, data: safeData });
+      }
 
       if (result.success) {
         handleNavigateBack();
@@ -740,6 +873,9 @@ export default function EditScheduleScreen() {
     const fileIdFieldMap: Record<string, string> = {
       artworkIds: 'artworks',
       baseFileIds: 'baseFiles',
+      projectFileIds: 'projectFiles',
+      checkinFileIds: 'checkinFiles',
+      checkoutFileIds: 'checkoutFiles',
       budgetIds: 'budgets',
       invoiceIds: 'invoices',
       receiptIds: 'receipts',
@@ -893,6 +1029,14 @@ export default function EditScheduleScreen() {
           // Include base files for edit mode
           baseFiles: (task as any).baseFiles || [],
           baseFileIds: (task as any).baseFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
+          // Include project files for edit mode
+          projectFiles: (task as any).projectFiles || [],
+          projectFileIds: (task as any).projectFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
+          // Include checkin/checkout files for edit mode
+          checkinFiles: (task as any).checkinFiles || [],
+          checkinFileIds: (task as any).checkinFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
+          checkoutFiles: (task as any).checkoutFiles || [],
+          checkoutFileIds: (task as any).checkoutFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
           // Include financial file IDs for edit mode (matches processFormDataForSubmission expectations)
           budgetIds: ((task as any).budgets || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           invoiceIds: ((task as any).invoices || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),

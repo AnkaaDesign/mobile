@@ -9,7 +9,6 @@ import { useMemo, useCallback } from "react";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
-import { hasPrivilege } from "@/utils/user";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useQueryClient } from "@tanstack/react-query";
@@ -34,21 +33,19 @@ export default function ProductionPreparationScreen() {
   };
 
   // Determine user privileges for agenda filtering
-  // Use hasPrivilege to match web behavior - ADMIN users have all privileges
-  const isFinancialUser = hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL);
-  const isLogisticUser = hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
+  // Use EXACT privilege match (===) to match web behavior (task-preparation-view.tsx:419-452)
+  // hasPrivilege() returns true for ADMIN on any check, which would skip exclusion flags incorrectly
+  const isFinancialUser = user?.sector?.privileges === SECTOR_PRIVILEGES.FINANCIAL;
   const isDesignerUser = user?.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER;
 
   // Create a config specifically for the agenda page
   // Role-based agenda display logic (matching web behavior):
-  // - ADMIN users: See ALL tasks (no exclusions - hasPrivilege returns true for all privileges)
-  // - FINANCIAL users: Need PRODUCTION, COMMERCIAL, ARTWORK, FINANCIAL (exclude LOGISTIC)
-  // - LOGISTIC users: Need PRODUCTION, COMMERCIAL, ARTWORK, LOGISTIC (exclude FINANCIAL)
-  // - DESIGNER users: Only see tasks with incomplete ARTWORK SOs or no ARTWORK SOs
-  // - All other users: Only need PRODUCTION, COMMERCIAL, ARTWORK (exclude both FINANCIAL and LOGISTIC)
+  // - FINANCIAL users: Require FINANCIAL SOs, exclude LOGISTIC → see PROD, COM, ART, FIN
+  // - DESIGNER users: Special logic — only tasks with incomplete/missing ARTWORK SOs
+  // - Everyone else (ADMIN, LOGISTIC, PRODUCTION, etc.): Exclude FINANCIAL, require LOGISTIC → see PROD, COM, ART, LOG
   const agendaConfig: ListConfig<Task> = useMemo(() => {
     // Build filter values with preparation display logic
-    // IMPORTANT: Do NOT include status filter - the web deletes it (line 381 of task-history-list.tsx)
+    // IMPORTANT: Do NOT include status filter - the web deletes it (task-preparation-view.tsx:454)
     // and lets shouldDisplayInPreparation handle the filtering. Status grouping happens client-side.
     const defaultFilters: any = {};
 
@@ -59,12 +56,12 @@ export default function ProductionPreparationScreen() {
       // Non-designer users use the standard preparation display logic
       defaultFilters.shouldDisplayInPreparation = true;
 
-      // Only FINANCIAL users see FINANCIAL service order requirements
+      // Everyone except FINANCIAL users excludes FINANCIAL SOs from the completion check
       if (!isFinancialUser) {
         defaultFilters.preparationExcludeFinancial = true;
       }
-      // Only LOGISTIC users see LOGISTIC service order requirements
-      if (!isLogisticUser) {
+      // Only FINANCIAL users exclude LOGISTIC SOs from the completion check
+      if (isFinancialUser) {
         defaultFilters.preparationExcludeLogistic = true;
       }
     }
@@ -121,7 +118,7 @@ export default function ProductionPreparationScreen() {
       },
     },
   };
-  }, [isFinancialUser, isLogisticUser, isDesignerUser, queryClient, taskInclude]);
+  }, [isFinancialUser, isDesignerUser, queryClient, taskInclude]);
 
   return (
     <>

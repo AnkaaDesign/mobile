@@ -104,21 +104,31 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
   // - Edit mode: taskUpdateSchema (all optional + auto-fill startedAt/finishedAt on status change)
   const schema = mode === 'edit' ? taskUpdateSchema : taskCreateSchema;
 
-  const defaultValues = useMemo(() => {
-    if (initialData) return initialData;
-    if (mode === 'create') return getCreateDefaultValues();
-    return {
-      name: '',
-      customerId: '',
-      sectorId: undefined,
-      serviceOrders: [],
-      pricing: { items: [] },
-    };
-  }, [initialData, mode]);
+  // IMPORTANT: Use a ref to capture the initial defaultValues ONCE.
+  // Previously, this useMemo depended on [initialData], but since initialData is
+  // an inline object literal from the parent, its reference changes on every parent
+  // re-render. This caused useMemo to recompute → new defaultValues reference →
+  // RHF auto-reset the form (clearing dirty state and user changes).
+  const defaultValuesRef = React.useRef<any>(null);
+  if (defaultValuesRef.current === null) {
+    if (initialData) {
+      defaultValuesRef.current = initialData;
+    } else if (mode === 'create') {
+      defaultValuesRef.current = getCreateDefaultValues();
+    } else {
+      defaultValuesRef.current = {
+        name: '',
+        customerId: '',
+        sectorId: undefined,
+        serviceOrders: [],
+        pricing: { items: [] },
+      };
+    }
+  }
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: defaultValuesRef.current,
     mode: 'onChange',
   });
 
