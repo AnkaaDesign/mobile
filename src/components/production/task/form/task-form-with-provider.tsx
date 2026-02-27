@@ -3,7 +3,7 @@
  * Provides form context for all child components
  */
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskForm } from './task-form';
@@ -131,6 +131,13 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
     defaultValues: defaultValuesRef.current,
     mode: 'onChange',
   });
+
+  // Reset form when data changes (e.g., navigating between different tasks)
+  useEffect(() => {
+    if (mode === 'edit' && defaultValues) {
+      form.reset(defaultValues);
+    }
+  }, [defaultValues]);
 
   return (
     <FormProvider {...form}>

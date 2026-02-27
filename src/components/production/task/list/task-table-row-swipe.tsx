@@ -102,7 +102,7 @@ const TaskTableRowSwipeComponent = ({
     // Layout option - ADMIN, LOGISTIC, or Team Leaders
     if (onEditLayout && userCanViewLayout) {
       options.push({
-        label: hasLayout ? "Editar Layout" : "Adicionar Layout",
+        label: hasLayout ? "Editar Medidas" : "Adicionar Medidas",
         action: () => onEditLayout(taskId),
       });
     }
@@ -110,7 +110,7 @@ const TaskTableRowSwipeComponent = ({
     // Artworks option - ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC
     if (onAddArtworks && userCanAccessAdvanced) {
       options.push({
-        label: "Adicionar Artes",
+        label: "Adicionar Layouts",
         action: () => onAddArtworks(taskId),
       });
     }

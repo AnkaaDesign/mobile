@@ -352,8 +352,8 @@ export const MultiAirbrushingSelector = forwardRef<MultiAirbrushingSelectorRef, 
                             value={airbrushing.artworkFiles}
                             onChange={(files) => updateAirbrushing(airbrushing.id, { artworkFiles: files })}
                             maxFiles={20}
-                            label="Artes"
-                            placeholder="Adicionar artes"
+                            label="Layouts"
+                            placeholder="Adicionar layouts"
                             helperText="Selecione até 20 imagens de arte"
                             disabled={disabled || airbrushing.uploading}
                             showCamera={false}

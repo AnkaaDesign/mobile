@@ -3,7 +3,7 @@
  * Defines all supported block types and their properties
  */
 
-export type InlineStyle = "bold" | "italic" | "code";
+export type InlineStyle = "bold" | "italic" | "code" | "underline";
 
 export interface InlineText {
   text: string;

@@ -202,8 +202,10 @@ const Input = React.forwardRef<TextInput, InputProps>(
             if (inputType === "natural" && intVal < 0) return "0";
             return String(intVal);
           }
-          case "plate":
-            return strValue.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 8);
+          case "plate": {
+            const cleanPlate = strValue.replace(/[^A-Z0-9]/gi, "").toUpperCase().slice(0, 7);
+            return cleanPlate.length <= 3 ? cleanPlate : cleanPlate.slice(0, 3) + '-' + cleanPlate.slice(3);
+          }
           case "chassis":
             return formatChassis(strValue);
           case "rg":
@@ -263,7 +265,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
             return isNaN(natVal) || natVal < 0 ? null : natVal;
           }
           case "plate":
-            return val.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+            return val.replace(/[^A-Z0-9]/gi, "").toUpperCase().slice(0, 7);
           case "chassis":
             return cleanChassis(val);
           case "rg":
@@ -555,11 +557,12 @@ const Input = React.forwardRef<TextInput, InputProps>(
         return;
       }
 
-      // For plate
+      // For plate - auto-format with hyphen (ABC-1234 / ABC-1D23 Mercosul)
       if (type === "plate") {
-        const processed = text.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 8);
-        setInternalValue(processed);
-        handleValueChange?.(processed || null);
+        const clean = text.replace(/[^A-Z0-9]/gi, "").toUpperCase().slice(0, 7);
+        const display = clean.length <= 3 ? clean : clean.slice(0, 3) + '-' + clean.slice(3);
+        setInternalValue(display);
+        handleValueChange?.(clean || null);
         return;
       }
 
@@ -567,7 +570,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
       if (type === "chassis") {
         const processed = text.toUpperCase().replace(/[^A-Z0-9 ]/g, "").slice(0, 20);
         setInternalValue(processed);
-        handleValueChange?.(cleanNumeric(processed.replace(/\s/g, "")) || null);
+        handleValueChange?.(cleanChassis(processed) || null);
         return;
       }
 

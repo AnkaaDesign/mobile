@@ -10,7 +10,6 @@ import type { OrderItemCreateFormData } from '../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
-import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
@@ -82,7 +81,6 @@ export default function AddOrderItemScreen() {
       price: 0,
       icms: 0,
       ipi: 0,
-      isCritical: false,
     },
     mode: "onChange",
   });
@@ -396,21 +394,6 @@ export default function AddOrderItemScreen() {
               </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Controller
-                control={control}
-                name="isCritical"
-                  render={({ field: { value, onChange } }) => (
-                    <View style={styles.switchContainer}>
-                      <ThemedText style={styles.switchLabel}>Item Crítico</ThemedText>
-                      <Switch
-                        checked={value}
-                        onCheckedChange={onChange}
-                      />
-                    </View>
-                  )}
-                />
-              </View>
           </Card>
         </ScrollView>
 
@@ -614,15 +597,5 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 2,
-  },
-  switchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  switchLabel: {
-    fontSize: 16,
-    fontWeight: "500",
   },
 });

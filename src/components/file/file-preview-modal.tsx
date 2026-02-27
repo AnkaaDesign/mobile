@@ -38,7 +38,9 @@ import {
   IconVolume,
   IconVolumeOff,
   IconMaximize,
+  IconDeviceMobileRotated,
 } from "@tabler/icons-react-native";
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { SvgUri } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
 
@@ -387,6 +389,7 @@ export function FilePreviewModal({
   const [imageError, setImageError] = useState(false);
   const [_rotation, _setRotation] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
+  const [isForcedLandscape, setIsForcedLandscape] = useState(false);
 
   // Animated values for gestures
   const scale = useSharedValue(1);
@@ -442,6 +445,7 @@ export function FilePreviewModal({
     swipeTranslateX.value = 0;
     isPinching.value = false;
     _setRotation(0);
+    setIsForcedLandscape(false);
     setImageLoading(true);
     setImageError(false);
     // Clear any pending Android tap timer
@@ -565,6 +569,27 @@ export function FilePreviewModal({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     showControls();
   }, [showControls]);
+
+  // Force orientation toggle (YouTube-style) — works even with device rotation lock
+  const handleToggleOrientation = useCallback(async () => {
+    try {
+      if (isForcedLandscape) {
+        // Back to allowing all orientations (respects device rotation again)
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.ALL);
+        setIsForcedLandscape(false);
+      } else {
+        // Force landscape regardless of device rotation lock
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+        setIsForcedLandscape(true);
+      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      showControls();
+    } catch (error) {
+      if (__DEV__) {
+        console.warn('[FilePreviewModal] Failed to toggle orientation:', error);
+      }
+    }
+  }, [isForcedLandscape, showControls]);
 
   // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
@@ -1003,7 +1028,14 @@ export function FilePreviewModal({
             </View>
 
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.headerButton} onPress={handleShare} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={[styles.headerButton, isForcedLandscape && styles.headerButtonActive]}
+                onPress={handleToggleOrientation}
+                activeOpacity={0.7}
+              >
+                <IconDeviceMobileRotated size={20} color="#ffffff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleShare} activeOpacity={0.7}>
                 <IconExternalLink size={22} color="#ffffff" />
               </TouchableOpacity>
               <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={onClose} activeOpacity={0.7}>
@@ -1366,6 +1398,10 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: "#444444", // neutral-650
+  },
+  headerButtonActive: {
+    backgroundColor: "#15803d", // green-700 (primary) - indicates forced landscape
+    borderColor: "#16a34a", // green-600
   },
   imageContainer: {
     flex: 1,

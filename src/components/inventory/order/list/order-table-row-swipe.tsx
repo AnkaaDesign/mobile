@@ -1,6 +1,6 @@
 import React from "react";
 import { ViewStyle, StyleProp } from "react-native";
-import { IconEdit, IconTrash, IconCopy } from "@tabler/icons-react-native";
+import { IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { Icon } from "@/components/ui/icon";
 import { TableRowSwipe, SwipeAction } from "@/components/common/table-row-swipe";
 import { useAuth } from "@/contexts/auth-context";
@@ -20,7 +20,6 @@ interface OrderTableRowSwipeProps {
   orderName: string;
   onEdit?: (orderId: string) => void;
   onDelete?: (orderId: string) => void;
-  onDuplicate?: (orderId: string) => void;
   customActions?: CustomSwipeAction[];
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
@@ -32,7 +31,6 @@ const OrderTableRowSwipeComponent = ({
   orderName,
   onEdit,
   onDelete,
-  onDuplicate,
   customActions = [],
   style,
   disabled = false,
@@ -41,9 +39,8 @@ const OrderTableRowSwipeComponent = ({
   const canEdit = canEditOrders(user);
   const canDelete = canDeleteOrders(user);
 
-  // Build actions array with colors matching order status
+  // Build actions array
   // Edit button uses blue (#007AFF)
-  // Duplicate button uses orange (#FF9500)
   // Delete button uses red (#FF3B30)
   const actions: SwipeAction[] = [
     ...(onEdit && canEdit
@@ -54,18 +51,6 @@ const OrderTableRowSwipeComponent = ({
             icon: <IconEdit size={20} color="white" />,
             backgroundColor: "#007AFF", // blue
             onPress: () => onEdit(orderId),
-            closeOnPress: true,
-          },
-        ]
-      : []),
-    ...(onDuplicate && canEdit
-      ? [
-          {
-            key: "duplicate",
-            label: "Duplicar",
-            icon: <IconCopy size={20} color="white" />,
-            backgroundColor: "#FF9500", // orange
-            onPress: () => onDuplicate(orderId),
             closeOnPress: true,
           },
         ]

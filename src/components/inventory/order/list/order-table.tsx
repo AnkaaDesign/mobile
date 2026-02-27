@@ -455,7 +455,7 @@ export const OrderTable = React.memo<OrderTableProps>(
 
         if (enableSwipeActions && (onOrderEdit || onOrderDelete)) {
           return (
-            <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} onDuplicate={onOrderDuplicate} disabled={showSelection}>
+            <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} disabled={showSelection}>
               {() => (
                 <ScrollView
                   horizontal

@@ -133,7 +133,7 @@ export function AddArtworksModal({
             <View style={styles.headerLeft}>
               <IconPhoto size={20} color={colors.foreground} />
               <ThemedText style={[styles.headerTitle, { color: colors.foreground }]}>
-                Adicionar Artes
+                Adicionar Layouts
               </ThemedText>
             </View>
             <TouchableOpacity onPress={handleCancel}>
@@ -163,8 +163,8 @@ export function AddArtworksModal({
               existingFiles={files}
               disabled={isUploading}
               showPreview={true}
-              placeholder="Selecionar artes"
-              label="Artes"
+              placeholder="Selecionar layouts"
+              label="Layouts"
             />
           </ScrollView>
 

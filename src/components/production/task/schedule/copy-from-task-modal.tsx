@@ -284,7 +284,7 @@ export function CopyFromTaskModal({
     "Informacoes Gerais",
     "Datas",
     "Comercial",
-    "Pintura e Artes",
+    "Pintura e Layouts",
     "Producao",
     "Veiculo",
   ];

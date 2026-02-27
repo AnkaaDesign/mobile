@@ -121,7 +121,7 @@ export const airbrushingListConfig: ListConfig<Airbrushing> = {
       },
       {
         key: 'artworksCount',
-        label: 'ARTES',
+        label: 'LAYOUTS',
         sortable: false,
         width: 0.8,
         align: 'left',

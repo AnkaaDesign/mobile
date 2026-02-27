@@ -44,7 +44,7 @@ const CATEGORY_ORDER = [
   "Informacoes Gerais",
   "Datas",
   "Comercial",
-  "Pintura e Artes",
+  "Pintura e Layouts",
   "Producao",
   "Veiculo",
 ];

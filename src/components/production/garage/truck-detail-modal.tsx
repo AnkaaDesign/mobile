@@ -10,7 +10,9 @@ import { formatDateTime } from '@/utils/date';
 import {
   IconHash,
   IconCar,
+  IconBarcode,
   IconBuilding,
+  IconBuildingFactory2,
   IconCalendarTime,
   IconCalendarDue,
   IconLogin,
@@ -32,7 +34,11 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
   const { data: taskResponse, isLoading } = useTaskDetail(taskId ?? '', {
     enabled: open && !!taskId,
     include: {
-      customer: true,
+      customer: {
+        include: {
+          logo: true,
+        },
+      },
       truck: {
         include: {
           leftSideLayout: {
@@ -43,6 +49,7 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
           },
         },
       },
+      sector: true,
       serviceOrders: true,
     },
   });
@@ -181,6 +188,41 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
                   ]}
                 >
                   {(task.truck as any).plate}
+                </Text>
+              </View>
+            )}
+
+            {/* Chassis Number */}
+            {(task.truck as any)?.chassisNumber && (
+              <View style={[styles.row, { backgroundColor: colors.muted }]}>
+                <View style={styles.rowLabel}>
+                  <IconBarcode size={16} color={colors.mutedForeground} />
+                  <Text style={[styles.labelText, { color: colors.mutedForeground }]}>
+                    Chassi
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.valueText,
+                    { color: colors.foreground, textTransform: 'uppercase' },
+                  ]}
+                >
+                  {(task.truck as any).chassisNumber.slice(-5)}
+                </Text>
+              </View>
+            )}
+
+            {/* Sector */}
+            {(task as any).sector?.name && (
+              <View style={[styles.row, { backgroundColor: colors.muted }]}>
+                <View style={styles.rowLabel}>
+                  <IconBuildingFactory2 size={16} color={colors.mutedForeground} />
+                  <Text style={[styles.labelText, { color: colors.mutedForeground }]}>
+                    Setor
+                  </Text>
+                </View>
+                <Text style={[styles.valueText, { color: colors.foreground }]}>
+                  {(task as any).sector.name}
                 </Text>
               </View>
             )}

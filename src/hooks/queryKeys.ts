@@ -342,6 +342,8 @@ export const fileKeys = {
   // Specialized queries
   orphaned: (filters?: Partial<FileGetManyFormData>) => (filters ? (["files", "orphaned", filters] as const) : (["files", "orphaned"] as const)),
   byEntity: (entityType: string, entityId: string) => ["files", "byEntity", entityType, entityId] as const,
+  suggestions: (customerId: string, fileContext: string, excludeIds?: string[]) =>
+    ["files", "suggestions", customerId, fileContext, excludeIds] as const,
 };
 
 // Alias for artworks (task files are now called artworks)
@@ -756,6 +758,19 @@ export const vacationKeys = {
   // Status queries
   active: (filters?: Partial<VacationGetManyFormData>) => (filters ? (["vacations", "active", filters] as const) : (["vacations", "active"] as const)),
   upcoming: (filters?: Partial<VacationGetManyFormData>) => (filters ? (["vacations", "upcoming", filters] as const) : (["vacations", "upcoming"] as const)),
+};
+
+// =====================================================
+// Message Query Keys
+// =====================================================
+
+export const messageKeys = {
+  all: ["messages"] as const,
+  lists: () => ["messages", "list"] as const,
+  list: (filters?: any) => (filters ? (["messages", "list", filters] as const) : (["messages", "list"] as const)),
+  details: () => ["messages", "detail"] as const,
+  detail: (id: string, include?: any) => (include ? (["messages", "detail", id, include] as const) : (["messages", "detail", id] as const)),
+  stats: (id: string) => ["messages", "detail", id, "stats"] as const,
 };
 
 // =====================================================

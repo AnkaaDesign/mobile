@@ -12,7 +12,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { FormActionBar } from '@/components/forms';
 import { FormCard } from '@/components/ui/form-section';
 import { spacing } from '@/constants/design-system';
-import { SECTOR_PRIVILEGES } from '@/constants';
+import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
 import { TRUCK_SPOT } from '@/constants';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from '@/contexts/KeyboardAwareFormContext';
@@ -121,7 +121,8 @@ export function TaskForm({
   const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.managedSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser;
   const canViewFiles = !isWarehouseUser;
-  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
+  // Observation: only in edit mode for completed tasks (same restriction as checkout)
+  const canViewObservation = mode === 'edit' && task?.status === TASK_STATUS.COMPLETED && !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
 
   // Watch truck data for spot selector
   const truckData = useWatch({ control: form.control, name: 'truck' });
@@ -186,13 +187,11 @@ export function TaskForm({
   // Watch form values for validation checks (matching web's hasIncompletePricing, etc.)
   const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
   const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
-
-  // Derive canSubmit from subscribed values (pure computation, no setState during render).
-  // NOTE: We do NOT rely on RHF's dirtyFields for edit mode because:
-  // 1. dirtyFields is a Proxy whose reference never changes (breaks useMemo)
-  // 2. Suspense-loaded lazy sections re-register fields on mount, resetting dirty state
-  // Instead, we manually compare current form values against the captured defaultValues.
-  const canSubmitForm = useMemo(() => {
+  // Derive canSubmit from subscribed values (pure computation during render).
+  // NOTE: NOT memoized because dirtyFields is a Proxy whose reference never changes —
+  // useMemo would never recompute when fields become dirty. useFormState already gates
+  // re-renders to only fire when subscribed state changes, so this is efficient.
+  const canSubmitForm = (() => {
     if (mode === 'edit') {
       const defaults = form.formState.defaultValues || {};
       const current = allFormValues || {};
@@ -332,7 +331,7 @@ export function TaskForm({
       return result;
     }
     return isValid;
-  }, [allFormValues, isValid, hasLayoutChanges, watchedServiceOrders, watchedPricing, existingLayouts, mode, form.formState.defaultValues]);
+  })();
 
   if (!isReady) {
     return (
@@ -393,8 +392,31 @@ export function TaskForm({
         initialLogoPaints={task?.logoPaints}
       />
 
-      {/* 5. Truck Layout */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando layout..." />}>
+      {/* Pricing */}
+      <Suspense fallback={<SectionPlaceholder title="Carregando preços..." />}>
+        {canViewPricing && (
+          <PricingSection
+            isSubmitting={isSubmitting}
+            initialInvoiceToCustomers={initialInvoiceToCustomers}
+            artworks={(task?.artworks || []).map((artwork: any) => {
+              const file = artwork.file || artwork;
+              return {
+                id: file.id,
+                artworkId: artwork.artworkId || artwork.id,
+                filename: file.filename,
+                originalName: file.originalName,
+                thumbnailUrl: file.thumbnailUrl,
+                status: artwork.status,
+                mimetype: file.mimetype,
+                size: file.size,
+              };
+            })}
+          />
+        )}
+      </Suspense>
+
+      {/* Truck Layout (Medidas do Caminhão) */}
+      <Suspense fallback={<SectionPlaceholder title="Carregando medidas..." />}>
         {canViewTruckLayout && (
           <TruckLayoutSection
             isSubmitting={isSubmitting}
@@ -405,7 +427,7 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 6. Truck Spot */}
+      {/* Truck Spot */}
       <Suspense fallback={<SectionPlaceholder title="Carregando local..." />}>
         {canViewTruckSpot && truckId && (
           <FormCard title="Local do Caminhão" icon="IconMapPin">
@@ -422,21 +444,14 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 7. Pricing */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando preços..." />}>
-        {canViewPricing && (
-          <PricingSection
-            isSubmitting={isSubmitting}
-            initialInvoiceToCustomers={initialInvoiceToCustomers}
-          />
-        )}
-      </Suspense>
-
-      {/* 8. Base Files & Artworks */}
+      {/* Base Files, Artworks, Project Files, Check-in/out */}
       <Suspense fallback={<SectionPlaceholder title="Carregando arquivos..." />}>
         {canViewFiles && (
           <FilesSection
             isSubmitting={isSubmitting}
+            mode={mode}
+            taskStatus={task?.status}
+            customerId={task?.customer?.id}
             initialBaseFiles={task?.baseFiles}
             initialArtworkFiles={task?.artworks}
             initialProjectFiles={task?.projectFiles}
@@ -446,7 +461,7 @@ export function TaskForm({
         )}
       </Suspense>
 
-      {/* 11. Observation - Last section */}
+      {/* Observation - always last section */}
       <Suspense fallback={<SectionPlaceholder title="Carregando observações..." />}>
         {canViewObservation && (
           <ObservationSection

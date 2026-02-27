@@ -15,18 +15,37 @@
 import React, { useState, useCallback } from 'react';
 import { FormCard } from '@/components/ui/form-section';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
+import { FileSuggestions } from '@/components/ui/file-suggestions';
 import { ArtworkFileUploadField, type ArtworkFileItem } from '../artwork-file-upload-field';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormContext } from 'react-hook-form';
-import { SECTOR_PRIVILEGES } from '@/constants';
+import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
+import type { File as AnkaaFile } from '@/types';
 
 interface FilesSectionProps {
   isSubmitting?: boolean;
+  mode?: 'create' | 'edit';
+  taskStatus?: string;
+  customerId?: string;
   initialBaseFiles?: FilePickerItem[];
   initialArtworkFiles?: ArtworkFileItem[];
   initialProjectFiles?: FilePickerItem[];
   initialCheckinFiles?: FilePickerItem[];
   initialCheckoutFiles?: FilePickerItem[];
+}
+
+/** Convert a File entity to a FilePickerItem */
+function fileToPickerItem(file: AnkaaFile): FilePickerItem {
+  return {
+    uri: (file as any).url || '',
+    name: file.filename || file.originalName || 'file',
+    type: file.mimetype || 'application/octet-stream',
+    size: file.size,
+    mimeType: file.mimetype,
+    id: file.id,
+    uploaded: true,
+    thumbnailUrl: file.thumbnailUrl || undefined,
+  };
 }
 
 /** Extract IDs from file picker items */
@@ -38,6 +57,9 @@ function extractFileIds(files: Array<{ id?: string; fileId?: string; file?: { id
 
 export default function FilesSection({
   isSubmitting = false,
+  mode = 'edit',
+  taskStatus,
+  customerId,
   initialBaseFiles = [],
   initialArtworkFiles = [],
   initialProjectFiles = [],
@@ -68,7 +90,10 @@ export default function FilesSection({
   const canEditProjectFiles = isAdmin || isCommercial || isLogistic;
 
   // Check-in/Check-out: visible to ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC; editable by ADMIN, LOGISTIC
-  const canViewCheckinCheckout = isAdmin || isCommercial || isFinancial || isLogistic;
+  // Not available in create mode; checkout only available for completed tasks
+  const isEditMode = mode === 'edit';
+  const canViewCheckinCheckout = isEditMode && (isAdmin || isCommercial || isFinancial || isLogistic);
+  const canViewCheckout = canViewCheckinCheckout && taskStatus === TASK_STATUS.COMPLETED;
   const canEditCheckinCheckout = isAdmin || isLogistic;
 
   // If the user cannot see any section, hide the entire component
@@ -107,19 +132,31 @@ export default function FilesSection({
 
   return (
     <>
-      {/* Client Files (formerly "Arquivos Base") */}
+      {/* Base Files */}
       {canViewClientAndLayouts && (
-        <FormCard title="Arquivos do Cliente" icon="IconFile">
+        <FormCard title="Arquivos Base" icon="IconFile">
           <FilePicker
             value={baseFiles}
             onChange={handleBaseFilesChange}
             maxFiles={30}
-            placeholder="Adicionar arquivos do cliente"
-            helperText="Arquivos do cliente para criação dos layouts (vídeos, imagens, PDFs)"
+            placeholder="Adicionar arquivos base"
+            helperText="Arquivos base para criação dos layouts (vídeos, imagens, PDFs)"
             showCamera={false}
             showVideoCamera={true}
             showGallery={true}
             showFilePicker={true}
+            disabled={isSubmitting}
+          />
+          <FileSuggestions
+            customerId={customerId}
+            fileContext="taskBaseFiles"
+            excludeFileIds={extractFileIds(baseFiles)}
+            onSelect={(newFile) => {
+              const item = fileToPickerItem(newFile);
+              const updated = [...baseFiles, item];
+              setBaseFiles(updated);
+              setValue('baseFileIds', extractFileIds(updated), { shouldDirty: true });
+            }}
             disabled={isSubmitting}
           />
         </FormCard>
@@ -135,6 +172,29 @@ export default function FilesSection({
             showPreview={true}
             existingFiles={artworkFiles}
             placeholder="Adicione layouts relacionados à tarefa"
+          />
+          <FileSuggestions
+            customerId={customerId}
+            fileContext="tasksArtworks"
+            excludeFileIds={extractFileIds(artworkFiles)}
+            onSelect={(newFile) => {
+              const item: ArtworkFileItem = {
+                id: newFile.id,
+                uri: (newFile as any).url || '',
+                name: newFile.filename || newFile.originalName || 'artwork',
+                type: newFile.mimetype || 'application/octet-stream',
+                size: newFile.size,
+                mimeType: newFile.mimetype,
+                uploaded: true,
+                uploadedFileId: newFile.id,
+                thumbnailUrl: newFile.thumbnailUrl || undefined,
+                status: 'DRAFT',
+              };
+              const updated = [...artworkFiles, item];
+              setArtworkFiles(updated);
+              setValue('artworkIds', extractFileIds(updated), { shouldDirty: true });
+            }}
+            disabled={isSubmitting}
           />
         </FormCard>
       )}
@@ -152,6 +212,18 @@ export default function FilesSection({
             showVideoCamera={false}
             showGallery={true}
             showFilePicker={true}
+            disabled={isSubmitting || !canEditProjectFiles}
+          />
+          <FileSuggestions
+            customerId={customerId}
+            fileContext="taskProjectFiles"
+            excludeFileIds={extractFileIds(projectFiles)}
+            onSelect={(newFile) => {
+              const item = fileToPickerItem(newFile);
+              const updated = [...projectFiles, item];
+              setProjectFiles(updated);
+              setValue('projectFileIds', extractFileIds(updated), { shouldDirty: true });
+            }}
             disabled={isSubmitting || !canEditProjectFiles}
           />
         </FormCard>
@@ -175,9 +247,9 @@ export default function FilesSection({
         </FormCard>
       )}
 
-      {/* Check-out */}
-      {canViewCheckinCheckout && (
-        <FormCard title="Check-out" icon="IconPhotoPlus">
+      {/* Check-out - only available for completed tasks */}
+      {canViewCheckout && (
+        <FormCard title="Check-out" icon="IconCameraOff">
           <FilePicker
             value={checkoutFiles}
             onChange={handleCheckoutFilesChange}

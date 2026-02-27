@@ -365,6 +365,9 @@ export const TABLER_ICONS = {
   timeTracking: "IconClockPlay",
   clockIn: "IconPlayerPlay",
   clockOut: "IconPlayerPause",
+  cameraCheck: "IconCameraCheck",
+  cameraOff: "IconCameraOff",
+  folderOpen: "IconFolderOpen",
 
   // ==================== MOBILE SPECIFIC ====================
   // Mobile Navigation

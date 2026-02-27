@@ -71,6 +71,8 @@ export default function GaragesScreen() {
         select: {
           id: true,
           spot: true,
+          plate: true,
+          chassisNumber: true,
           leftSideLayout: {
             select: {
               layoutSections: {
@@ -249,6 +251,8 @@ export default function GaragesScreen() {
         spot: isDemoted ? 'YARD_WAIT' : dbSpot,
         taskName: task.name,
         serialNumber: (task as any).serialNumber || null,
+        plate: truck?.plate || null,
+        chassisNumber: truck?.chassisNumber || null,
         paintHex: (task.generalPainting as any)?.hex || null,
         length: truckLength,
         originalLength: sectionsSum > 0 ? sectionsSum : undefined,

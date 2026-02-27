@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice } from "@tabler/icons-react-native";
+import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice, IconFileSearch, IconUpload, IconArrowLeft, IconX } from "@tabler/icons-react-native";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -35,8 +35,22 @@ import { SERVICE_ORDER_TYPE } from "@/constants/enums";
 import { RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { formatCurrency } from "@/utils";
+import { ONLINE_API_URL } from "@/constants/api";
+import { Image } from "expo-image";
+import { useFileViewer } from "@/components/file";
 import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import type { FormStep } from "@/components/ui/form-steps";
+
+interface ArtworkOption {
+  id: string;
+  artworkId?: string;
+  filename?: string;
+  originalName?: string;
+  thumbnailUrl?: string | null;
+  status?: string;
+  mimetype?: string;
+  size?: number;
+}
 
 // Wizard form schema wrapping the nested pricing schema
 const wizardSchema = z.object({
@@ -134,6 +148,11 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         },
       },
       responsibles: true,
+      artworks: {
+        include: {
+          file: true,
+        },
+      },
     },
   });
   const task = taskResponse?.data;
@@ -460,6 +479,19 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
                   layoutFiles={layoutFiles}
                   onLayoutFilesChange={setLayoutFiles}
                   taskResponsibles={task?.responsibles}
+                  artworks={(task?.artworks || []).map((artwork: any) => {
+                    const file = artwork.file || artwork;
+                    return {
+                      id: file.id,
+                      artworkId: artwork.artworkId || artwork.id,
+                      filename: file.filename,
+                      originalName: file.originalName,
+                      thumbnailUrl: file.thumbnailUrl,
+                      status: artwork.status,
+                      mimetype: file.mimetype,
+                      size: file.size,
+                    };
+                  })}
                 />
               </CardContent>
             </Card>
@@ -523,15 +555,18 @@ interface Step1Props {
   layoutFiles: FilePickerItem[];
   onLayoutFilesChange: (files: FilePickerItem[]) => void;
   taskResponsibles?: Array<{ id: string; name: string; role: string }>;
+  artworks?: ArtworkOption[];
 }
 
-function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange, taskResponsibles }: Step1Props) {
+function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange, taskResponsibles, artworks }: Step1Props) {
   const { colors } = useTheme();
+  const fileViewer = useFileViewer();
   const { setValue, getValues } = useFormContext();
   const keyboardContext = useKeyboardAwareForm();
   const [validityPeriod, setValidityPeriod] = useState<string>("");
   const [showCustomPayment, setShowCustomPayment] = useState(false);
   const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
+  const [showLayoutUploadMode, setShowLayoutUploadMode] = useState(false);
 
   const pricingStatus = useWatch({ control, name: "pricing.status" }) || "DRAFT";
   const discountType = useWatch({ control, name: "pricing.discountType" }) || "NONE";
@@ -618,6 +653,111 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       setValue("pricing.layoutFileId", null);
     }
   }, [setValue, onLayoutFilesChange]);
+
+  // Handle artwork selection as layout file
+  const UPLOAD_NEW_SENTINEL = "__UPLOAD_NEW__";
+  const handleArtworkSelect = useCallback((value: string | string[] | null | undefined) => {
+    const fileId = typeof value === "string" ? value : null;
+    if (fileId === "__UPLOAD_NEW__") {
+      setShowLayoutUploadMode(true);
+      return;
+    }
+    if (fileId) {
+      const artwork = artworks?.find(a => a.id === fileId);
+      if (artwork) {
+        const fileItem: FilePickerItem = {
+          id: artwork.id,
+          name: artwork.originalName || artwork.filename || "artwork",
+          size: artwork.size || 0,
+          type: artwork.mimetype || "image/png",
+          uploaded: true,
+          uri: `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`,
+        };
+        onLayoutFilesChange([fileItem]);
+        setValue("pricing.layoutFileId", artwork.id);
+        setShowLayoutUploadMode(false);
+      }
+    } else {
+      onLayoutFilesChange([]);
+      setValue("pricing.layoutFileId", null);
+    }
+  }, [artworks, setValue, onLayoutFilesChange]);
+
+  // Artwork options (image artworks + "upload new" action)
+  const artworkOptions = useMemo(() => {
+    if (!artworks || artworks.length === 0) return [];
+    const imageArtworks = artworks.filter(a => {
+      const mime = a.mimetype || "";
+      return mime.startsWith("image/");
+    });
+    if (imageArtworks.length === 0) return [];
+    return [
+      ...imageArtworks,
+      { id: UPLOAD_NEW_SENTINEL, filename: "Enviar novo arquivo" } as ArtworkOption,
+    ];
+  }, [artworks]);
+
+  // Render artwork option with thumbnail (or upload action for sentinel)
+  const renderArtworkOption = useCallback((artwork: ArtworkOption) => {
+    if (artwork.id === UPLOAD_NEW_SENTINEL) {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
+          <View style={{
+            width: 48,
+            height: 48,
+            borderRadius: 8,
+            overflow: "hidden",
+            backgroundColor: colors.muted + "50",
+            borderWidth: 1,
+            borderStyle: "dashed",
+            borderColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <IconUpload size={20} color={colors.mutedForeground} />
+          </View>
+          <ThemedText style={{ fontSize: 13, color: colors.mutedForeground }}>
+            Enviar novo arquivo
+          </ThemedText>
+        </View>
+      );
+    }
+    const thumbnailSrc = artwork.thumbnailUrl
+      ? artwork.thumbnailUrl
+      : `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`;
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
+        <View style={{
+          width: 48,
+          height: 48,
+          borderRadius: 8,
+          overflow: "hidden",
+          backgroundColor: colors.muted,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}>
+          <Image
+            source={{ uri: thumbnailSrc }}
+            style={{ width: 48, height: 48 }}
+            contentFit="cover"
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <ThemedText style={{ fontSize: 13 }} numberOfLines={1} ellipsizeMode="tail">
+            {artwork.originalName || artwork.filename || "Arquivo"}
+          </ThemedText>
+          {artwork.status && (
+            <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>
+              {artwork.status === "APPROVED" ? "Aprovado" : artwork.status === "REPROVED" ? "Reprovado" : "Rascunho"}
+            </ThemedText>
+          )}
+        </View>
+      </View>
+    );
+  }, [colors]);
+
+  // Current layoutFileId
+  const currentLayoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
 
   return (
     <View style={styles.fieldSection}>
@@ -855,17 +995,97 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
             Layout Aprovado
           </ThemedText>
         </View>
-        <FilePicker
-          value={layoutFiles}
-          onChange={handleLayoutChange}
-          maxFiles={1}
-          placeholder="Selecione o layout aprovado"
-          helperText="Arraste ou clique para selecionar"
-          showCamera={true}
-          showGallery={true}
-          showFilePicker={false}
-          acceptedFileTypes={["image/jpeg", "image/png", "image/gif", "image/webp"]}
-        />
+
+        {/* Artwork selector mode */}
+        {artworkOptions.length > 0 && !showLayoutUploadMode && (
+          <>
+            <Combobox<ArtworkOption>
+              value={currentLayoutFileId || ""}
+              onValueChange={handleArtworkSelect}
+              options={artworkOptions}
+              getOptionValue={(a) => a.id}
+              getOptionLabel={(a) => a.originalName || a.filename || "Arquivo"}
+              renderOption={renderArtworkOption}
+              placeholder="Selecionar uma arte existente..."
+              emptyText="Nenhuma arte de imagem encontrada"
+              clearable
+              searchable
+            />
+
+            {/* Selected artwork full image preview */}
+            {currentLayoutFileId && artworkOptions.some(a => a.id === currentLayoutFileId) && (
+              <View style={{
+                backgroundColor: colors.muted + "30",
+                borderRadius: borderRadius.md,
+                padding: spacing.md,
+                marginTop: spacing.sm,
+              }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm }}>
+                  <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, flex: 1 }} numberOfLines={1}>
+                    {artworkOptions.find(a => a.id === currentLayoutFileId)?.originalName
+                      || artworkOptions.find(a => a.id === currentLayoutFileId)?.filename
+                      || "Layout selecionado"}
+                  </ThemedText>
+                  <TouchableOpacity
+                    onPress={() => handleArtworkSelect(null)}
+                    style={{ padding: 4 }}
+                  >
+                    <IconX size={16} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    const selectedArtwork = artworkOptions.find(a => a.id === currentLayoutFileId);
+                    if (selectedArtwork) {
+                      fileViewer.actions.viewFile({
+                        id: selectedArtwork.id,
+                        filename: selectedArtwork.filename,
+                        originalName: selectedArtwork.originalName,
+                        mimetype: selectedArtwork.mimetype || "image/png",
+                        size: selectedArtwork.size,
+                      } as any);
+                    }
+                  }}
+                >
+                  <Image
+                    source={{ uri: `${ONLINE_API_URL}/files/thumbnail/${currentLayoutFileId}` }}
+                    style={{ height: 192, width: "100%", borderRadius: borderRadius.md }}
+                    contentFit="contain"
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* File upload mode */}
+        {(artworkOptions.length === 0 || showLayoutUploadMode) && (
+          <>
+            {artworkOptions.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setShowLayoutUploadMode(false)}
+                style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}
+              >
+                <IconArrowLeft size={13} color={colors.mutedForeground} />
+                <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                  Voltar para seleção de artes
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+            <FilePicker
+              value={layoutFiles}
+              onChange={handleLayoutChange}
+              maxFiles={1}
+              placeholder="Selecione o layout aprovado"
+              helperText="Arraste ou clique para selecionar"
+              showCamera={true}
+              showGallery={true}
+              showFilePicker={false}
+              acceptedFileTypes={["image/jpeg", "image/png", "image/gif", "image/webp"]}
+            />
+          </>
+        )}
       </View>
     </View>
   );

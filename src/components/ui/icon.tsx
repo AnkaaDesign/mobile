@@ -178,6 +178,8 @@ import {
   IconBrandWhatsapp,
   IconRotateClockwise,
   IconCamera,
+  IconCameraCheck,
+  IconCameraOff,
   IconMessageCircle,
   IconCertificate,
   IconBarcode,
@@ -195,6 +197,7 @@ import {
   IconHandGrab,
   IconCreditCard,
   IconScale,
+  IconFolderOpen,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -222,6 +225,7 @@ const tablerIcons = [
   IconDeviceIpadDollar, IconFingerprint, IconColorPicker, IconPaint, IconCoins, IconRepeat, IconHourglass,
   IconFileInvoice, IconBuildingSkyscraper, IconTag, IconShoppingCart, IconServer2, IconCpu,
   IconBellRinging2, IconDeviceMobile, IconBrandWhatsapp, IconRotateClockwise, IconCamera,
+  IconCameraCheck, IconCameraOff, IconFolderOpen,
   IconMessageCircle, IconCertificate, IconBarcode, IconCategory, IconCake, IconBuildingCommunity,
   IconMailbox, IconShieldOff, IconArrowBarToUp, IconHanger, IconShirt, IconShoe, IconUmbrella,
   IconMask, IconHandGrab, IconCreditCard, IconScale
@@ -496,6 +500,12 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   image: IconPhotoPlus, // Alias
   camera: IconCamera,
   "camera-plus": IconCamera, // Alias
+  "camera-check": IconCameraCheck,
+  cameraCheck: IconCameraCheck, // camelCase version
+  "camera-off": IconCameraOff,
+  cameraOff: IconCameraOff, // camelCase version
+  "folder-open": IconFolderOpen,
+  folderOpen: IconFolderOpen, // camelCase version
   "flip-horizontal": IconFlipHorizontal,
   mirror: IconFlipHorizontal, // Alias
 

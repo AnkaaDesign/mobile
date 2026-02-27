@@ -85,6 +85,24 @@ export const NAVIGATION_MENU: MenuItem[] = [
         ],
       },
       {
+        id: "mensagens-admin",
+        title: "Mensagens",
+        icon: "message",
+        path: "/administracao/mensagens",
+        children: [
+          { id: "mensagens-admin-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/mensagens/cadastrar" },
+          { id: "mensagens-admin-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/mensagens/detalhes/:id", isDynamic: true },
+          { id: "mensagens-admin-editar", title: "Editar", icon: "edit", path: "/administracao/mensagens/editar/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "minhas-mensagens-admin",
+        title: "Minhas Mensagens",
+        icon: "message",
+        path: "/pessoal/minhas-mensagens",
+        requiredPrivilege: SECTOR_PRIVILEGES.ADMIN,
+      },
+      {
         id: "setores",
         title: "Setores",
         icon: "building",
@@ -670,14 +688,15 @@ export const NAVIGATION_MENU: MenuItem[] = [
 
   // ============================================================
   // MINHAS MENSAGENS - Direct access for roles without "Pessoal" group
-  // (ADMIN, FINANCIAL, LOGISTIC, COMMERCIAL, MAINTENANCE, HUMAN_RESOURCES)
+  // (FINANCIAL, LOGISTIC, COMMERCIAL, MAINTENANCE, HUMAN_RESOURCES)
+  // Note: ADMIN gets "Minhas Mensagens" inside the Administração menu (like web)
   // ============================================================
   {
     id: "minhas-mensagens-direct",
     title: "Minhas Mensagens",
     icon: "message",
     path: "/pessoal/minhas-mensagens",
-    requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.MAINTENANCE, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.MAINTENANCE, SECTOR_PRIVILEGES.HUMAN_RESOURCES],
   },
 
   // ============================================================

@@ -478,6 +478,12 @@ export default function CurrentBonusScreen() {
               <ThemedText style={styles.detailValue}>Nível {bonus.performanceLevel || "-"}</ThemedText>
             </View>
             <View style={styles.detailRow}>
+              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Total de Tarefas:</ThemedText>
+              <ThemedText style={styles.detailValue}>
+                {commissionStats.hasDetails ? commissionStats.total : (bonus.tasks?.length || '-')}
+              </ThemedText>
+            </View>
+            <View style={styles.detailRow}>
               <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas Ponderadas:</ThemedText>
               <ThemedText style={styles.detailValue}>{formatDecimal(bonus.weightedTasks)}</ThemedText>
             </View>

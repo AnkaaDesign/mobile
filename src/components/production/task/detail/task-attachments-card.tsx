@@ -84,7 +84,7 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
   const sections: FileSection[] = [];
 
   if (baseFiles && baseFiles.length > 0) {
-    sections.push({ label: "Arquivos do Cliente", files: baseFiles });
+    sections.push({ label: "Arquivos Base", files: baseFiles });
   }
   if (artworks && artworks.length > 0) {
     sections.push({ label: "Layouts", files: artworks });

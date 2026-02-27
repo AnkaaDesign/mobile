@@ -711,84 +711,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   return (
     <ThemedView style={styles.container}>
-      {isInitialLoading ? (
-        <>
-          {/* Search bar skeleton — mirrors Search component structure */}
-          <View style={styles.header}>
-            <View style={styles.searchContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, gap: 8 }}>
-                <Skeleton style={{ width: 20, height: 20, borderRadius: 10 }} />
-                <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
-              </View>
-            </View>
-            <View style={styles.actions}>
-              {[1, 2, 3].map((i) => (
-                <View key={i} style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
-                  <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-                </View>
-              ))}
-            </View>
-          </View>
-          {/* Section skeleton — 3 sections matching the real layout */}
-          <View style={{ padding: 8, gap: 16 }}>
-            {[1, 2, 3].map((section) => (
-              <View key={section} style={{ gap: 0 }}>
-                {/* Section header with status indicator */}
-                <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Skeleton style={{ width: 4, height: 20, borderRadius: 2 }} />
-                    <Skeleton style={{ height: 16, width: section === 1 ? 120 : section === 2 ? 110 : 80, borderRadius: 4 }} />
-                  </View>
-                  <Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
-                </View>
-                {/* Table card */}
-                <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  {/* Table header — mirrors Header component: minHeight 40, paddingHorizontal 12 */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                    <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
-                      <Skeleton style={{ height: 8, width: 65, borderRadius: 2 }} />
-                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
-                    </View>
-                    <View style={{ flex: 1.3, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
-                      <Skeleton style={{ height: 8, width: 40, borderRadius: 2 }} />
-                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
-                    </View>
-                    <View style={{ flex: 1.1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
-                      <Skeleton style={{ height: 8, width: 55, borderRadius: 2 }} />
-                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
-                    </View>
-                  </View>
-                  {/* Table data rows — mirrors Row: minHeight 48, alternating bg, paddingHorizontal 12 */}
-                  {[1, 2, 3, 4, 5].map((row) => (
-                    <View key={row} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, backgroundColor: row % 2 === 0 ? colors.card : colors.background, borderBottomWidth: row < 5 ? 1 : 0, borderBottomColor: colors.border }}>
-                      <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }}>
-                        <Skeleton style={{ width: 18, height: 18, borderRadius: 4 }} />
-                        <Skeleton style={{ height: 12, width: row % 3 === 0 ? '45%' : row % 3 === 1 ? '60%' : '52%', borderRadius: 4 }} />
-                      </View>
-                      <View style={{ flex: 1.3, paddingHorizontal: 12 }}>
-                        <Skeleton style={{ height: 12, width: row <= 1 ? '60%' : '20%', borderRadius: 4 }} />
-                      </View>
-                      <View style={{ flex: 1.1, paddingHorizontal: 12 }}>
-                        <Skeleton style={{ height: 12, width: row <= 1 ? '75%' : '20%', borderRadius: 4 }} />
-                      </View>
-                    </View>
-                  ))}
-                </View>
-                {/* Table card bottom border (matches sectionFooter) */}
-                <View style={[styles.sectionFooter, { backgroundColor: colors.card, borderColor: colors.border }]} />
-              </View>
-            ))}
-          </View>
-        </>
-      ) : isInitialError ? (
-        <ErrorScreen
-          message="Erro ao carregar cronograma"
-          detail={(tasksError as Error)?.message || 'Erro desconhecido'}
-          onRetry={handleRefresh}
-        />
-      ) : (
-        <>
-      {/* Header with Search and Actions */}
+      {/* Header with Search and Actions — always rendered to preserve focus */}
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Search
@@ -852,6 +775,67 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
         </View>
       </View>
 
+      {isInitialLoading ? (
+        <>
+          {/* Section skeleton — 3 sections matching the real layout */}
+          <View style={{ padding: 8, gap: 16 }}>
+            {[1, 2, 3].map((section) => (
+              <View key={section} style={{ gap: 0 }}>
+                {/* Section header with status indicator */}
+                <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Skeleton style={{ width: 4, height: 20, borderRadius: 2 }} />
+                    <Skeleton style={{ height: 16, width: section === 1 ? 120 : section === 2 ? 110 : 80, borderRadius: 4 }} />
+                  </View>
+                  <Skeleton style={{ height: 12, width: 60, borderRadius: 4 }} />
+                </View>
+                {/* Table card */}
+                <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {/* Table header — mirrors Header component: minHeight 40, paddingHorizontal 12 */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 65, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
+                    <View style={{ flex: 1.3, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 40, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
+                    <View style={{ flex: 1.1, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12 }}>
+                      <Skeleton style={{ height: 8, width: 55, borderRadius: 2 }} />
+                      <Skeleton style={{ width: 12, height: 12, borderRadius: 2 }} />
+                    </View>
+                  </View>
+                  {/* Table data rows — mirrors Row: minHeight 48, alternating bg, paddingHorizontal 12 */}
+                  {[1, 2, 3, 4, 5].map((row) => (
+                    <View key={row} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, backgroundColor: row % 2 === 0 ? colors.card : colors.background, borderBottomWidth: row < 5 ? 1 : 0, borderBottomColor: colors.border }}>
+                      <View style={{ flex: 1.8, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ width: 18, height: 18, borderRadius: 4 }} />
+                        <Skeleton style={{ height: 12, width: row % 3 === 0 ? '45%' : row % 3 === 1 ? '60%' : '52%', borderRadius: 4 }} />
+                      </View>
+                      <View style={{ flex: 1.3, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ height: 12, width: row <= 1 ? '60%' : '20%', borderRadius: 4 }} />
+                      </View>
+                      <View style={{ flex: 1.1, paddingHorizontal: 12 }}>
+                        <Skeleton style={{ height: 12, width: row <= 1 ? '75%' : '20%', borderRadius: 4 }} />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+                {/* Table card bottom border (matches sectionFooter) */}
+                <View style={[styles.sectionFooter, { backgroundColor: colors.card, borderColor: colors.border }]} />
+              </View>
+            ))}
+          </View>
+        </>
+      ) : isInitialError ? (
+        <ErrorScreen
+          message="Erro ao carregar cronograma"
+          detail={(tasksError as Error)?.message || 'Erro desconhecido'}
+          onRetry={handleRefresh}
+        />
+      ) : (
+        <>
       {/* Bulk Actions Bar */}
       {selectionEnabled && selectedIds.size > 0 && config.actions?.bulk && (
         <BulkActions

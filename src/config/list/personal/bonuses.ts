@@ -93,7 +93,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
       },
       {
         key: 'weightedTasks',
-        label: 'TAREFAS',
+        label: 'TAREFAS POND.',
         sortable: true,
         width: 1.0,
         align: 'center',
@@ -160,7 +160,7 @@ export const personalBonusesListConfig: ListConfig<Bonus> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['period', 'baseBonus', 'weightedTasks'],
+    defaultVisible: ['period', 'netBonus', 'weightedTasks'],
     rowHeight: 72,
     actions: [
       {

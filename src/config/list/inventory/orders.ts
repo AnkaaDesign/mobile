@@ -149,18 +149,6 @@ export const ordersListConfig: ListConfig<Order> = {
         },
       },
       {
-        key: 'duplicate',
-        label: 'Duplicar',
-        icon: 'copy',
-        variant: 'default',
-        onPress: (order, router) => {
-          router.push({
-            pathname: `/estoque/pedidos/cadastrar`,
-            params: { duplicateFrom: order.id },
-          })
-        },
-      },
-      {
         key: 'delete',
         label: 'Excluir',
         icon: 'trash',

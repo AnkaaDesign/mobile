@@ -41,6 +41,12 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/administracao/colaboradores/detalhes/[id]': 'HUMAN_RESOURCES',
   '/(tabs)/administracao/colaboradores/editar/[id]': 'HUMAN_RESOURCES',
   
+  '/(tabs)/administracao/mensagens': 'ADMIN',
+  '/(tabs)/administracao/mensagens/listar': 'ADMIN',
+  '/(tabs)/administracao/mensagens/cadastrar': 'ADMIN',
+  '/(tabs)/administracao/mensagens/detalhes/[id]': 'ADMIN',
+  '/(tabs)/administracao/mensagens/editar/[id]': 'ADMIN',
+
   '/(tabs)/administracao/setores': 'ADMIN',
   '/(tabs)/administracao/notificacoes': 'ADMIN',
   '/(tabs)/administracao/registros-de-alteracoes': 'ADMIN',

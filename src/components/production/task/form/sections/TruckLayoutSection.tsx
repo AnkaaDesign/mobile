@@ -75,7 +75,7 @@ export default function TruckLayoutSection({
   };
 
   return (
-    <FormCard title="Layout do Caminhão" icon="IconTruck">
+    <FormCard title="Medidas do Caminhão" icon="IconTruck">
       {/* Side Selector */}
       <View style={[styles.sideSelector, { backgroundColor: colors.muted }]}>
         {(['left', 'right', 'back'] as const).map((side) => (

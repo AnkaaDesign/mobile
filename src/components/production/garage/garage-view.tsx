@@ -130,6 +130,8 @@ export interface GarageTruck {
   spot: TRUCK_SPOT | string | null;
   taskName?: string;
   serialNumber?: string | null;
+  plate?: string | null;
+  chassisNumber?: string | null;
   paintHex?: string | null;
   length: number;
   originalLength?: number;
@@ -834,6 +836,12 @@ const TruckElement = memo(function TruckElement({
   const metaFontSize = height < 35 ? 4 : height < 55 ? 5 : 6;
 
   const displayLength = truck.originalLength ?? truck.length;
+
+  // Bottom label: serialNumber → plate → last 5 chars of chassisNumber
+  const truckBottomLabel = truck.serialNumber
+    || truck.plate
+    || (truck.chassisNumber ? truck.chassisNumber.slice(-5) : null);
+
   const charSize = nameFontSize * 0.65;
   const maxChars = Math.max(Math.floor(height / charSize), 5);
   const displayName = truck.taskName
@@ -1187,11 +1195,18 @@ const TruckElement = memo(function TruckElement({
           <SvgText x={svgWidth / 2} y={strokePadding + metaFontSize + 3} textAnchor="middle" fill={textColor} fontSize={metaFontSize}>
             {`${displayLength.toFixed(1).replace('.', ',')}m`}
           </SvgText>
-          {truck.serialNumber && height > 30 && (
-            <SvgText x={svgWidth / 2} y={svgHeight - strokePadding - 2} textAnchor="middle" fill={textColor} fontSize={metaFontSize}>
-              {truck.serialNumber}
-            </SvgText>
-          )}
+          {truckBottomLabel && height > 30 && (() => {
+            const labelLen = truckBottomLabel.length;
+            const charW = metaFontSize * 0.62;
+            const availW = width - 4;
+            const fitsDefault = labelLen * charW <= availW;
+            const labelFontSize = fitsDefault ? metaFontSize : Math.max(3, availW / (labelLen * 0.62));
+            return (
+              <SvgText x={svgWidth / 2} y={svgHeight - strokePadding - 2} textAnchor="middle" fill={textColor} fontSize={labelFontSize}>
+                {truckBottomLabel}
+              </SvgText>
+            );
+          })()}
         </Svg>
       </Animated.View>
     </GestureDetector>

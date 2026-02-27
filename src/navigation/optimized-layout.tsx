@@ -70,6 +70,7 @@ const ROUTE_MODULES = {
     { name: "administracao/colaboradores/index", title: "Colaboradores" },
     { name: "administracao/clientes/index", title: "Clientes" },
     { name: "administracao/notificacoes/index", title: "Notificações" },
+    { name: "administracao/mensagens/index", title: "Mensagens" },
     { name: "administracao/setores/index", title: "Setores" },
   ],
 

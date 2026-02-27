@@ -59,7 +59,7 @@ export function ArtworkFileUploadField({
   existingFiles = [],
   disabled = false,
   showPreview = true,
-  placeholder = "Adicionar artes",
+  placeholder = "Adicionar layouts",
   label,
 }: ArtworkFileUploadFieldProps) {
   const { colors } = useTheme();

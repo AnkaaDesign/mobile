@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,7 +19,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { useSuppliers, useItems, useOrderMutations } from "@/hooks";
 import { getUsers } from "@/api-client";
 import { useMultiStepForm } from "@/hooks";
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from "@/constants";
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -28,6 +28,10 @@ import {
   MultiStepFormContainer,
   ItemSelectorTable,
 } from "@/components/forms";
+import {
+  ReanimatedSwipeableRow,
+  type SwipeAction,
+} from "@/components/ui/reanimated-swipeable-row";
 import {
   IconBox,
   IconCalendar,
@@ -236,7 +240,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   // Temporary item handlers
   const handleAddTemporaryItem = useCallback(() => {
     setTemporaryItems((prev) => [
-      ...prev,
       {
         id: `temp-${Date.now()}`,
         description: "",
@@ -245,6 +248,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
         icms: 0,
         ipi: 0,
       },
+      ...prev,
     ]);
   }, []);
 
@@ -284,7 +288,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           price: item.price || 0,
           icms: 0,
           ipi: 0,
-          isCritical: false,
         }));
       } else {
         // Temporary items validation
@@ -303,7 +306,6 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           price: item.price,
           icms: item.icms,
           ipi: item.ipi,
-          isCritical: false,
         }));
       }
 
@@ -476,7 +478,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                     <View style={styles.fieldGroup}>
                       <View style={styles.labelRow}>
                         <Label style={{ marginBottom: 0 }}>Descrição</Label>
-                        <ThemedText style={styles.requiredAsterisk}> *</ThemedText>
+                        <Text style={styles.requiredAsterisk}> *</Text>
                       </View>
                       <Input
                         value={value || ""}
@@ -683,111 +685,107 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
             ) : (
               <View style={styles.temporaryItemsContainer}>
                 <Card style={styles.card}>
-                  <CardHeader style={styles.temporaryItemsHeader}>
+                  <CardHeader>
                     <CardTitle>Itens Temporários</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onPress={handleAddTemporaryItem}
-                      disabled={isSubmitting}
-                    >
-                      <IconPlus size={16} color={colors.foreground} />
-                      <ThemedText style={styles.addButtonText}>Adicionar</ThemedText>
-                    </Button>
                   </CardHeader>
                   <CardContent>
+                    <Button
+                      variant="outline"
+                      onPress={handleAddTemporaryItem}
+                      disabled={isSubmitting}
+                      style={styles.addItemButton}
+                    >
+                      <IconPlus size={16} color={colors.foreground} />
+                      <ThemedText style={styles.addButtonText}>Adicionar Item</ThemedText>
+                    </Button>
+
                     {temporaryItems.length === 0 ? (
                       <View style={styles.emptyState}>
                         <IconBox size={48} color={colors.mutedForeground} />
                         <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
                           Nenhum item adicionado
                         </ThemedText>
-                        <Button
-                          variant="default"
-                          onPress={handleAddTemporaryItem}
-                          disabled={isSubmitting}
-                        >
-                          <IconPlus size={16} color={colors.primaryForeground} />
-                          <ThemedText style={{ color: colors.primaryForeground, marginLeft: spacing.xs }}>
-                            Adicionar Item
-                          </ThemedText>
-                        </Button>
                       </View>
                     ) : (
                       temporaryItems.map((item, index) => (
-                        <Card
-                          key={item.id}
-                          style={[
-                            styles.temporaryItemCard,
-                            index < temporaryItems.length - 1 && styles.temporaryItemCardSpaced,
-                          ]}
-                        >
-                          <View style={styles.temporaryItemHeader}>
-                            <ThemedText style={styles.temporaryItemTitle}>
-                              Item #{index + 1}
-                            </ThemedText>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onPress={() => handleRemoveTemporaryItem(item.id)}
-                              disabled={isSubmitting}
-                            >
-                              <IconTrash size={16} color={colors.destructive} />
-                            </Button>
-                          </View>
+                        <React.Fragment key={item.id}>
+                          {index > 0 && (
+                            <View style={[styles.itemSeparator, { backgroundColor: colors.border }]} />
+                          )}
+                          <ReanimatedSwipeableRow
+                            rightActions={[
+                              {
+                                key: "delete",
+                                label: "Excluir",
+                                icon: <IconTrash size={18} color="white" />,
+                                backgroundColor: "#9b2c2c",
+                                onPress: () => handleRemoveTemporaryItem(item.id),
+                                closeOnPress: true,
+                              },
+                            ]}
+                            enabled={!isSubmitting}
+                          >
+                            <View style={styles.temporaryItemRow}>
+                              <View style={styles.fieldGroup}>
+                                <View style={styles.labelRow}>
+                                  <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                                  <Text style={styles.requiredAsterisk}> *</Text>
+                                </View>
+                                <Input
+                                  value={item.description}
+                                  onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
+                                  placeholder="Descrição do item"
+                                  editable={!isSubmitting}
+                                />
+                              </View>
 
-                          <View style={styles.fieldGroup}>
-                            <Label>Descrição *</Label>
-                            <Input
-                              value={item.description}
-                              onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
-                              placeholder="Descrição do item"
-                              editable={!isSubmitting}
-                            />
-                          </View>
-
-                          <View style={styles.rowFields}>
-                            <View style={styles.halfField}>
-                              <Label>Quantidade *</Label>
-                              <Input
-                                value={String(item.quantity)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
-                                keyboardType="numeric"
-                                editable={!isSubmitting}
-                              />
+                              <View style={styles.rowFields}>
+                                <View style={styles.smallField}>
+                                  <View style={styles.labelRow}>
+                                    <Label style={{ marginBottom: 0 }}>Qtd</Label>
+                                    <Text style={styles.requiredAsterisk}> *</Text>
+                                  </View>
+                                  <Input
+                                    value={String(item.quantity)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.priceField}>
+                                  <View style={styles.labelRow}>
+                                    <Label style={{ marginBottom: 0 }}>Preço</Label>
+                                    <Text style={styles.requiredAsterisk}> *</Text>
+                                  </View>
+                                  <Input
+                                    type="currency"
+                                    value={item.price}
+                                    onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>ICMS %</Label>
+                                  <Input
+                                    value={String(item.icms)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>IPI %</Label>
+                                  <Input
+                                    value={String(item.ipi)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                              </View>
                             </View>
-                            <View style={styles.halfField}>
-                              <Label>Preço Unitário *</Label>
-                              <Input
-                                value={String(item.price)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "price", Number(val) || 0)}
-                                keyboardType="decimal-pad"
-                                editable={!isSubmitting}
-                              />
-                            </View>
-                          </View>
-
-                          <View style={styles.rowFields}>
-                            <View style={styles.halfField}>
-                              <Label>ICMS (%)</Label>
-                              <Input
-                                value={String(item.icms)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
-                                keyboardType="numeric"
-                                editable={!isSubmitting}
-                              />
-                            </View>
-                            <View style={styles.halfField}>
-                              <Label>IPI (%)</Label>
-                              <Input
-                                value={String(item.ipi)}
-                                onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
-                                keyboardType="numeric"
-                                editable={!isSubmitting}
-                              />
-                            </View>
-                          </View>
-                        </Card>
+                          </ReanimatedSwipeableRow>
+                        </React.Fragment>
                       ))
                     )}
                   </CardContent>
@@ -900,6 +898,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
                           const response = await getUsers({
                             take: pageSize,
                             skip: (page - 1) * pageSize,
+                            includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
                             where: {
                               isActive: true,
                               ...(searchTerm ? {
@@ -1236,10 +1235,8 @@ const styles = StyleSheet.create({
   temporaryItemsContainer: {
     flex: 1,
   },
-  temporaryItemsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  addItemButton: {
+    marginBottom: spacing.md,
   },
   addButtonText: {
     marginLeft: spacing.xs,
@@ -1253,21 +1250,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     textAlign: "center",
   },
-  temporaryItemCard: {
-    padding: spacing.md,
+  itemSeparator: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
   },
-  temporaryItemCardSpaced: {
-    marginBottom: spacing.md,
-  },
-  temporaryItemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-  temporaryItemTitle: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
+  temporaryItemRow: {
+    paddingVertical: spacing.sm,
   },
   rowFields: {
     flexDirection: "row",
@@ -1276,6 +1264,12 @@ const styles = StyleSheet.create({
   halfField: {
     flex: 1,
     marginBottom: spacing.md,
+  },
+  smallField: {
+    flex: 1,
+  },
+  priceField: {
+    flex: 1.5,
   },
   errorContainer: {
     padding: spacing.md,

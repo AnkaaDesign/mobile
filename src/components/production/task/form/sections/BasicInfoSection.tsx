@@ -14,7 +14,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { CustomerSelector } from '../customer-selector';
 import { PlateTagsInput } from '../plate-tags-input';
 import { SerialNumberRangeInput } from '../serial-number-range-input';
-import { toTitleCase } from '@/utils/formatters';
+import { toTitleCase } from '@/utils';
 import { useTheme } from '@/lib/theme';
 import { ThemedText } from '@/components/ui/themed-text';
 import { IconCopy } from '@tabler/icons-react-native';
@@ -220,11 +220,11 @@ export default function BasicInfoSection({
             name="truck.plate"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
+                type="plate"
                 value={value || ''}
-                onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
+                onChangeText={onChange}
                 onBlur={onBlur}
                 placeholder="Ex: ABC-1234"
-                maxLength={10}
                 autoCapitalize="characters"
                 error={!!errors.truck?.plate}
                 editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}
@@ -242,11 +242,11 @@ export default function BasicInfoSection({
             name="truck.chassisNumber"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
+                type="chassis"
                 value={value || ''}
-                onChangeText={(text) => onChange(String(text ?? '').toUpperCase())}
+                onChangeText={onChange}
                 onBlur={onBlur}
-                placeholder="Ex: 9BWZZZ377VT004251"
-                maxLength={17}
+                placeholder="Ex: 9BW ZZZ37 7V T004251"
                 autoCapitalize="characters"
                 error={!!errors.truck?.chassisNumber}
                 editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector}

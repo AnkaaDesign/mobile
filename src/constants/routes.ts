@@ -31,6 +31,13 @@ export const routes = {
       list: "/administracao/notificacoes/listar",
       root: "/administracao/notificacoes",
     },
+    messages: {
+      root: "/administracao/mensagens",
+      list: "/administracao/mensagens/listar",
+      create: "/administracao/mensagens/cadastrar",
+      details: (id: string) => `/administracao/mensagens/detalhes/${id}`,
+      edit: (id: string) => `/administracao/mensagens/editar/${id}`,
+    },
     root: "/administracao",
     sectors: {
       create: "/administracao/setores/cadastrar",

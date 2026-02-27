@@ -66,6 +66,7 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
     { name: "administracao/clientes/index", title: "Clientes", module: "admin" },
     { name: "administracao/setores/index", title: "Setores", module: "admin" },
     { name: "administracao/notificacoes/index", title: "Notificações", module: "admin" },
+    { name: "administracao/mensagens/index", title: "Mensagens", module: "admin" },
     { name: "servidor/index", title: "Servidor", module: "server" },
     { name: "servidor/backups/listar", title: "Backups", module: "server" },
     { name: "servidor/logs", title: "Logs", module: "server" },

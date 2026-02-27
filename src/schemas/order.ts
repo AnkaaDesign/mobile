@@ -52,7 +52,7 @@ export const orderIncludeSchema = z
       .optional(),
     paymentResponsible: z.boolean().optional(),
     paymentAssignedBy: z.boolean().optional(),
-    epiSchedule: z.boolean().optional(),
+    ppeSchedule: z.boolean().optional(),
     items: z
       .union([
         z.boolean(),
@@ -274,7 +274,7 @@ export const orderItemOrderBySchema = z.union([
       price: orderByDirectionSchema.optional(),
       icms: orderByDirectionSchema.optional(),
       ipi: orderByDirectionSchema.optional(),
-      isCritical: orderByDirectionSchema.optional(),
+      fulfilledAt: orderByDirectionSchema.optional(),
       receivedAt: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
@@ -289,6 +289,10 @@ export const orderItemOrderBySchema = z.union([
         orderedQuantity: orderByDirectionSchema.optional(),
         receivedQuantity: orderByDirectionSchema.optional(),
         price: orderByDirectionSchema.optional(),
+        icms: orderByDirectionSchema.optional(),
+        ipi: orderByDirectionSchema.optional(),
+        fulfilledAt: orderByDirectionSchema.optional(),
+        receivedAt: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       })
@@ -544,17 +548,6 @@ export const orderItemWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
-      // Boolean fields
-      isCritical: z
-        .union([
-          z.boolean(),
-          z.object({
-            equals: z.boolean().optional(),
-            not: z.boolean().optional(),
-          }),
-        ])
-        .optional(),
-
       // Number fields
       orderedQuantity: z
         .union([
@@ -745,7 +738,26 @@ const orderFilters = {
     )
     .optional(),
   supplierIds: z.array(z.string()).optional(),
+  itemIds: z.array(z.string()).optional(),
   forecastRange: z
+    .object({
+      gte: z.coerce.date().optional(),
+      lte: z.coerce.date().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.gte && data.lte) {
+          return data.lte >= data.gte;
+        }
+        return true;
+      },
+      {
+        message: "Data final deve ser posterior ou igual à data inicial",
+        path: ["lte"],
+      },
+    )
+    .optional(),
+  updatedAtRange: z
     .object({
       gte: z.coerce.date().optional(),
       lte: z.coerce.date().optional(),
@@ -770,7 +782,6 @@ const orderItemFilters = {
   orderIds: z.array(z.string()).optional(),
   itemIds: z.array(z.string()).optional(),
   isReceived: z.boolean().optional(),
-  isCritical: z.boolean().optional(),
   quantityRange: z
     .object({
       min: z.number().optional(),
@@ -835,12 +846,28 @@ const orderTransform = (data: any) => {
 
   const andConditions: any[] = [];
 
-  // Handle searchingFor
+  // Handle searchingFor - comprehensive search across order and related entities
   if (data.searchingFor && typeof data.searchingFor === "string" && data.searchingFor.trim()) {
+    const searchTerm = data.searchingFor.trim();
+
     andConditions.push({
       OR: [
-        { description: { contains: data.searchingFor.trim(), mode: "insensitive" } },
-        { supplier: { fantasyName: { contains: data.searchingFor.trim(), mode: "insensitive" } } },
+        // Direct order fields
+        { description: { contains: searchTerm, mode: "insensitive" } },
+        { notes: { contains: searchTerm, mode: "insensitive" } },
+
+        // Supplier search
+        { supplier: { fantasyName: { contains: searchTerm, mode: "insensitive" } } },
+        { supplier: { corporateName: { contains: searchTerm, mode: "insensitive" } } },
+
+        // Search by item name through order items
+        { items: { some: { item: { name: { contains: searchTerm, mode: "insensitive" } } } } },
+
+        // Search by item brand through order items
+        { items: { some: { item: { brand: { name: { contains: searchTerm, mode: "insensitive" } } } } } },
+
+        // Search by item category through order items
+        { items: { some: { item: { category: { name: { contains: searchTerm, mode: "insensitive" } } } } } },
       ],
     });
     delete data.searchingFor;
@@ -878,6 +905,12 @@ const orderTransform = (data: any) => {
     delete data.supplierIds;
   }
 
+  // Handle itemIds filter - search for orders containing specific items
+  if (data.itemIds && Array.isArray(data.itemIds) && data.itemIds.length > 0) {
+    andConditions.push({ items: { some: { itemId: { in: data.itemIds } } } });
+    delete data.itemIds;
+  }
+
   // Handle forecastRange filter
   if (data.forecastRange && typeof data.forecastRange === "object") {
     const forecastCondition: any = {};
@@ -912,6 +945,31 @@ const orderTransform = (data: any) => {
   if (data.updatedAt) {
     andConditions.push({ updatedAt: data.updatedAt });
     delete data.updatedAt;
+  }
+
+  // Handle updatedAtRange filter
+  if (data.updatedAtRange && typeof data.updatedAtRange === "object") {
+    const updatedAtCondition: any = {};
+    if (data.updatedAtRange.gte) {
+      const fromDate = data.updatedAtRange.gte instanceof Date
+        ? data.updatedAtRange.gte
+        : new Date(data.updatedAtRange.gte);
+      // Set to start of day (00:00:00)
+      fromDate.setHours(0, 0, 0, 0);
+      updatedAtCondition.gte = fromDate;
+    }
+    if (data.updatedAtRange.lte) {
+      const toDate = data.updatedAtRange.lte instanceof Date
+        ? data.updatedAtRange.lte
+        : new Date(data.updatedAtRange.lte);
+      // Set to end of day (23:59:59.999)
+      toDate.setHours(23, 59, 59, 999);
+      updatedAtCondition.lte = toDate;
+    }
+    if (Object.keys(updatedAtCondition).length > 0) {
+      andConditions.push({ updatedAt: updatedAtCondition });
+    }
+    delete data.updatedAtRange;
   }
 
   // Merge with existing where conditions
@@ -972,12 +1030,6 @@ const orderItemTransform = (data: any) => {
       andConditions.push({ receivedAt: null });
     }
     delete data.isReceived;
-  }
-
-  // Handle isCritical filter
-  if (typeof data.isCritical === "boolean") {
-    andConditions.push({ isCritical: data.isCritical });
-    delete data.isCritical;
   }
 
   // Handle quantityRange filter
@@ -1311,7 +1363,6 @@ export const orderCreateSchema = z
             .max(100, "IPI deve ser menor ou igual a 100")
             .transform((val) => Math.round(val * 100) / 100)
             .default(0),
-          isCritical: z.boolean().default(false),
         })
         .superRefine((data, ctx) => {
           // Either itemId or temporaryItemDescription must be provided, but not both
@@ -1380,6 +1431,68 @@ export const orderUpdateSchema = z
     receiptIds: z.array(z.string().uuid("Recibo inválido")).optional(),
     reimbursementIds: z.array(z.string().uuid("Reimbursement inválido")).optional(),
     reimbursementInvoiceIds: z.array(z.string().uuid("NFe de reimbursement inválida")).optional(),
+    // Items array for updating order items
+    items: z
+      .array(
+        z.object({
+          itemId: z.string().uuid({ message: "Item inválido" }).optional(),
+          temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
+          orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
+          price: moneySchema,
+          icms: z
+            .number()
+            .min(0, "ICMS deve ser maior ou igual a 0")
+            .max(100, "ICMS deve ser menor ou igual a 100")
+            .transform((val) => Math.round(val * 100) / 100)
+            .default(0),
+          ipi: z
+            .number()
+            .min(0, "IPI deve ser maior ou igual a 0")
+            .max(100, "IPI deve ser menor ou igual a 100")
+            .transform((val) => Math.round(val * 100) / 100)
+            .default(0),
+        })
+        .superRefine((data, ctx) => {
+          // Either itemId or temporaryItemDescription must be provided, but not both
+          if (!data.itemId && !data.temporaryItemDescription) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Item de estoque ou descrição de item temporário deve ser fornecido",
+              path: ['itemId'],
+            });
+          }
+          if (data.itemId && data.temporaryItemDescription) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Não é possível fornecer item de estoque e descrição de item temporário ao mesmo tempo",
+              path: ['itemId'],
+            });
+          }
+        }),
+      )
+      .refine(
+        (items) => {
+          // Check for duplicate inventory items (ignore temporary items)
+          const itemIds = items.filter(item => item.itemId).map((item) => item.itemId);
+          return new Set(itemIds).size === itemIds.length;
+        },
+        {
+          message: "Lista não pode conter itens de estoque duplicados",
+        },
+      )
+      .optional(),
+    // Temporary items for the form's useFieldArray (client-side only, not sent to API)
+    temporaryItems: z
+      .array(
+        z.object({
+          temporaryItemDescription: z.string().optional(),
+          orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
+          price: z.number().min(0, "Preço deve ser maior ou igual a 0").optional(),
+          icms: z.number().min(0).max(100).optional().default(0),
+          ipi: z.number().min(0).max(100).optional().default(0),
+        }),
+      )
+      .optional(),
   })
   .transform(toFormData);
 
@@ -1390,43 +1503,60 @@ export const orderUpdateSchema = z
 export const orderItemCreateSchema = z
   .object({
     orderId: z.string().uuid({ message: "Pedido inválido" }),
-    itemId: z.string().uuid({ message: "Item inválido" }),
+    itemId: z.string().uuid({ message: "Item inválido" }).optional(),
+    temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva"),
     price: moneySchema,
     icms: z
       .number()
-      .min(0, "ICMS deve ser entre 0 e 100%")
-      .max(100, "ICMS deve ser entre 0 e 100%")
-      .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+      .min(0, "ICMS deve ser maior ou igual a 0")
+      .max(100, "ICMS deve ser menor ou igual a 100")
+      .transform((val) => Math.round(val * 100) / 100)
       .default(0),
     ipi: z
       .number()
-      .min(0, "IPI deve ser entre 0 e 100%")
-      .max(100, "IPI deve ser entre 0 e 100%")
-      .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
+      .min(0, "IPI deve ser maior ou igual a 0")
+      .max(100, "IPI deve ser menor ou igual a 100")
+      .transform((val) => Math.round(val * 100) / 100)
       .default(0),
-    isCritical: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    // Either itemId or temporaryItemDescription must be provided, but not both
+    if (!data.itemId && !data.temporaryItemDescription) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Item de estoque ou descrição de item temporário deve ser fornecido",
+        path: ['itemId'],
+      });
+    }
+    if (data.itemId && data.temporaryItemDescription) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Não é possível fornecer item de estoque e descrição de item temporário ao mesmo tempo",
+        path: ['itemId'],
+      });
+    }
   })
   .transform(toFormData);
 
 export const orderItemUpdateSchema = z
   .object({
+    temporaryItemDescription: z.string().min(1, "Descrição do item temporário é obrigatória").max(500, "Descrição muito longa").optional(),
     orderedQuantity: z.number().positive("Quantidade deve ser positiva").optional(),
     receivedQuantity: z.number().min(0, "Quantidade recebida deve ser não negativa").optional(),
     price: moneySchema.optional(),
     icms: z
       .number()
-      .min(0, "ICMS deve ser entre 0 e 100%")
-      .max(100, "ICMS deve ser entre 0 e 100%")
-      .multipleOf(0.01, "ICMS deve ter no máximo 2 casas decimais")
+      .min(0, "ICMS deve ser maior ou igual a 0")
+      .max(100, "ICMS deve ser menor ou igual a 100")
+      .transform((val) => Math.round(val * 100) / 100)
       .optional(),
     ipi: z
       .number()
-      .min(0, "IPI deve ser entre 0 e 100%")
-      .max(100, "IPI deve ser entre 0 e 100%")
-      .multipleOf(0.01, "IPI deve ter no máximo 2 casas decimais")
+      .min(0, "IPI deve ser maior ou igual a 0")
+      .max(100, "IPI deve ser menor ou igual a 100")
+      .transform((val) => Math.round(val * 100) / 100)
       .optional(),
-    isCritical: z.boolean().optional(),
     receivedAt: z.coerce.date().optional(),
     fulfilledAt: z.coerce.date().optional(),
   })
@@ -1763,10 +1893,15 @@ export const mapOrderToFormData = createMapToFormDataHelper<Order, OrderUpdateFo
   status: order.status as ORDER_STATUS,
   supplierId: order.supplierId || undefined,
   orderScheduleId: order.orderScheduleId || undefined,
-  budgetIds: order.budgetIds || undefined,
-  nfeId: ((order as any).nfeId) || undefined,
-  receiptIds: order.receiptIds || undefined,
+  budgetIds: order.budgets?.map((budget: any) => budget.id),
+  invoiceIds: order.invoices?.map((invoice: any) => invoice.id),
+  receiptIds: order.receipts?.map((receipt: any) => receipt.id),
+  reimbursementIds: order.reimbursements?.map((reimbursement: any) => reimbursement.id),
+  reimbursementInvoiceIds: order.invoiceReimbursements?.map((reimbursementInvoice: any) => reimbursementInvoice.id),
   notes: order.notes || undefined,
+  paymentMethod: order.paymentMethod || undefined,
+  paymentPix: order.paymentPix || undefined,
+  paymentDueDays: order.paymentDueDays || undefined,
   paymentResponsibleId: order.paymentResponsibleId || undefined,
 }));
 
@@ -1776,7 +1911,6 @@ export const mapOrderItemToFormData = createMapToFormDataHelper<OrderItem, Order
   price: orderItem.price,
   icms: orderItem.icms,
   ipi: orderItem.ipi,
-  isCritical: ((orderItem as any).isCritical),
   receivedAt: orderItem.receivedAt || undefined,
 }));
 

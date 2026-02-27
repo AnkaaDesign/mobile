@@ -490,14 +490,14 @@ export const tasksListConfig: ListConfig<Task> = {
           }
         },
       },
-      // Order from left to right: Layout, Adicionar Artes, Copiar de Outra, Definir Setor, Editar, Deletar
+      // Order from left to right: Medidas, Adicionar Layouts, Copiar de Outra, Definir Setor, Editar, Deletar
       {
         key: 'layout',
         label: (task: Task) => {
           const hasLayout = task.truck?.leftSideLayoutId ||
                            task.truck?.rightSideLayoutId ||
                            task.truck?.backSideLayoutId
-          return hasLayout ? 'Editar Layout' : 'Adicionar Layout'
+          return hasLayout ? 'Editar Medidas' : 'Adicionar Medidas'
         },
         icon: 'truck',
         variant: 'default',
@@ -514,7 +514,7 @@ export const tasksListConfig: ListConfig<Task> = {
       },
       {
         key: 'addArtworks',
-        label: 'Adicionar Artes',
+        label: 'Adicionar Layouts',
         icon: 'photo',
         variant: 'default',
         // ADMIN, COMMERCIAL, FINANCIAL can add artworks (LOGISTIC excluded)

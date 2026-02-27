@@ -18,20 +18,21 @@ export function useMyBonusesInfiniteMobile(
 ) {
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
-  // Get current payroll period (26th to 25th cycle)
+  // Get current bonus period using the 5th day rule:
+  // - Days 1-5: still in PREVIOUS month's period (payment happens on the 5th)
+  // - Days 6-31: current month's period
   const currentDate = new Date();
   const currentDay = currentDate.getDate();
 
-  // If we're before the 26th, the current period is the current month
-  // If we're on or after the 26th, the current period is the next month
   let currentYear = currentDate.getFullYear();
   let currentMonth = currentDate.getMonth() + 1; // JS months are 0-indexed
 
-  if (currentDay >= 26) {
-    currentMonth += 1;
-    if (currentMonth > 12) {
-      currentMonth = 1;
-      currentYear += 1;
+  if (currentDay <= 5) {
+    if (currentMonth === 1) {
+      currentYear -= 1;
+      currentMonth = 12;
+    } else {
+      currentMonth -= 1;
     }
   }
 

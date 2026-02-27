@@ -250,6 +250,8 @@ export function createOrderFormData(
     budgets?: { uri: string; name: string; type: string }[];
     receipts?: { uri: string; name: string; type: string }[];
     invoices?: { uri: string; name: string; type: string }[];
+    reimbursements?: { uri: string; name: string; type: string }[];
+    reimbursementInvoices?: { uri: string; name: string; type: string }[];
   },
   supplier?: { id: string; name?: string; fantasyName?: string },
   user?: { name: string }
@@ -305,6 +307,26 @@ export function createOrderFormData(
   if (files.invoices && files.invoices.length > 0) {
     files.invoices.forEach((file) => {
       formData.append("invoices", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+    });
+  }
+
+  if (files.reimbursements && files.reimbursements.length > 0) {
+    files.reimbursements.forEach((file) => {
+      formData.append("reimbursements", {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      } as any);
+    });
+  }
+
+  if (files.reimbursementInvoices && files.reimbursementInvoices.length > 0) {
+    files.reimbursementInvoices.forEach((file) => {
+      formData.append("reimbursementInvoices", {
         uri: file.uri,
         name: file.name,
         type: file.type,

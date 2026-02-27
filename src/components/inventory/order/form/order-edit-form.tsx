@@ -1,39 +1,95 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from '@/constants';
-import { orderUpdateSchema } from '@/schemas';
-import type { OrderUpdateFormData } from '@/schemas';
-import { useOrderMutations, useOrder } from '@/hooks';
-import { ThemedText } from '@/components/ui/themed-text';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Combobox } from '@/components/ui/combobox';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
-import { FormActionBar } from '@/components/forms';
-import { useTheme } from '@/lib/theme';
-import { fontSize, fontWeight, borderRadius } from '@/constants/design-system';
-import { getSuppliers, getUsers } from '@/api-client';
-import type { Supplier } from '@/types';
-import { createOrderFormData } from '@/utils/order-form-utils';
-import { formSpacing } from '@/constants/form-styles';
-import { PAYMENT_METHOD, PAYMENT_METHOD_LABELS, BANK_SLIP_DUE_DAYS_OPTIONS } from '@/constants';
-import { formatPixKey } from '@/utils';
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { useForm, Controller, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "expo-router";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
+import { useTheme } from "@/lib/theme";
+import { spacing, fontSize } from "@/constants/design-system";
+import { useSuppliers, useItems, useOrderMutations, useOrder } from "@/hooks";
+import { getUsers, getSuppliers } from "@/api-client";
+import { useMultiStepForm } from "@/hooks";
+import {
+  PAYMENT_METHOD,
+  PAYMENT_METHOD_LABELS,
+  BANK_SLIP_DUE_DAYS_OPTIONS,
+  SECTOR_PRIVILEGES,
+} from "@/constants";
+import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
+import { createOrderFormData } from "@/utils/order-form-utils";
+import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes } from "@/constants";
+import type { FormStep } from "@/components/ui/form-steps";
+import type { OrderUpdateFormData } from "@/schemas";
+import {
+  MultiStepFormContainer,
+  ItemSelectorTable,
+} from "@/components/forms";
+import {
+  ReanimatedSwipeableRow,
+  type SwipeAction,
+} from "@/components/ui/reanimated-swipeable-row";
+import {
+  IconBox,
+  IconCalendar,
+  IconPackage,
+  IconPlus,
+  IconTrash,
+  IconTruck,
+} from "@tabler/icons-react-native";
+
+// Form schema for edit form fields (used by react-hook-form for field-level validation)
+const orderEditFormSchema = z.object({
+  description: z.string().min(1, "Descrição é obrigatória"),
+  supplierId: z.string().uuid("Selecione um fornecedor válido").optional().nullable(),
+  forecast: z.date().optional().nullable(),
+  notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  itemMode: z.enum(["inventory", "temporary"]).default("inventory"),
+  paymentMethod: z.enum([PAYMENT_METHOD.PIX, PAYMENT_METHOD.BANK_SLIP, PAYMENT_METHOD.CREDIT_CARD]).optional().nullable(),
+  paymentPix: z.string().max(500, "Chave Pix deve ter no máximo 500 caracteres").optional().nullable(),
+  paymentDueDays: z.number().int().positive().optional().nullable(),
+  paymentResponsibleId: z.string().uuid("Selecione um responsável válido").optional().nullable(),
+});
+
+type OrderEditFormData = z.infer<typeof orderEditFormSchema>;
 
 interface OrderEditFormProps {
   orderId: string;
   onSuccess?: () => void;
 }
 
+// Temporary item interface
+interface TemporaryItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  icms: number;
+  ipi: number;
+}
+
+// Steps configuration
+const STEPS: FormStep[] = [
+  { id: 1, name: "Informações", description: "Dados do pedido" },
+  { id: 2, name: "Itens", description: "Itens do pedido" },
+  { id: 3, name: "Revisão", description: "Confirme os dados" },
+];
+
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
 
+  // Fetch order data
   const { data: orderResponse, isLoading: isLoadingOrder } = useOrder(orderId, {
     include: {
       supplier: true,
@@ -50,15 +106,13 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   });
   const order = orderResponse?.data;
 
-  const form = useForm<OrderUpdateFormData>({
-    resolver: zodResolver(orderUpdateSchema),
-    mode: 'onTouched',
-  });
+  // Local state for date (since it's a Date object)
+  const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
 
-  const { updateAsync, isLoading } = useOrderMutations();
+  // Temporary items state (for temporary item mode)
+  const [temporaryItems, setTemporaryItems] = useState<TemporaryItem[]>([]);
 
-
-  // File upload state for all 5 types
+  // File upload states
   const [budgetFiles, setBudgetFiles] = useState<FilePickerItem[]>([]);
   const [invoiceFiles, setInvoiceFiles] = useState<FilePickerItem[]>([]);
   const [receiptFiles, setReceiptFiles] = useState<FilePickerItem[]>([]);
@@ -73,250 +127,441 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
   const [existingReimbursementIds, setExistingReimbursementIds] = useState<string[]>([]);
   const [existingReimbursementInvoiceIds, setExistingReimbursementInvoiceIds] = useState<string[]>([]);
 
-  // Memoize initial supplier options for async combobox
-  const initialSupplierOptions = useMemo(
-    () => order?.supplier ? [order.supplier] : [],
-    [order?.supplier?.id]
-  );
+  // Track whether we've initialized from order data
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Async search function for suppliers
-  const searchSuppliers = useCallback(async (
-    search: string,
-    page: number = 1
-  ): Promise<{
-    data: Supplier[];
-    hasMore: boolean;
-  }> => {
-    const params: any = {
-      orderBy: { fantasyName: "asc" },
-      page: page,
-      take: 50,
-    };
+  // Detect item mode from existing order items
+  const detectedItemMode = useMemo(() => {
+    if (!order?.items || order.items.length === 0) return "inventory";
+    return order.items.some((i: any) => !i.itemId) ? "temporary" : "inventory";
+  }, [order?.items]);
 
-    if (search && search.trim()) {
-      params.searchingFor = search.trim();
-    }
+  // Mutations
+  const { updateAsync, isLoading: isMutating } = useOrderMutations();
 
-    try {
-      const response = await getSuppliers(params);
-      return {
-        data: response.data || [],
-        hasMore: response.meta?.hasNextPage || false,
-      };
-    } catch (error) {
-      console.error('[OrderEditForm] Error fetching suppliers:', error);
-      return { data: [], hasMore: false };
-    }
-  }, []);
-
-  // Load order data into form
-  useEffect(() => {
-    if (order) {
-      form.reset({
-        description: order.description,
-        supplierId: order.supplierId || undefined,
-        forecast: order.forecast ? new Date(order.forecast) : undefined,
-        notes: order.notes || '',
-        paymentMethod: order.paymentMethod || undefined,
-        paymentPix: order.paymentPix || undefined,
-        paymentDueDays: order.paymentDueDays || undefined,
-        paymentResponsibleId: order.paymentResponsibleId || undefined,
-      });
-
-      // Load existing file IDs
-      if (order.budgets) {
-        setExistingBudgetIds(order.budgets.map((f: any) => f.id));
+  // Multi-step form state management
+  const multiStepForm = useMultiStepForm<OrderEditFormData>({
+    storageKey: `@order_edit_form_${orderId}`,
+    totalSteps: 3,
+    autoSave: false,
+    defaultFormData: {
+      description: "",
+      supplierId: null,
+      forecast: null,
+      notes: "",
+      itemMode: "inventory",
+      paymentMethod: null,
+      paymentPix: null,
+      paymentDueDays: null,
+      paymentResponsibleId: null,
+    },
+    defaultQuantity: 1,
+    defaultPrice: 0,
+    validateOnStepChange: true,
+    validateStep: (step, state) => {
+      if (step === 1) {
+        return !!state.formData.description?.trim();
       }
-      if (order.invoices) {
-        setExistingInvoiceIds(order.invoices.map((f: any) => f.id));
+      if (step === 2) {
+        if (state.formData.itemMode === "inventory") {
+          return state.selectedItems.length > 0;
+        } else {
+          return temporaryItems.length > 0 && temporaryItems.every(
+            item => item.description.trim() && item.quantity > 0 && item.price >= 0
+          );
+        }
       }
-      if (order.receipts) {
-        setExistingReceiptIds(order.receipts.map((f: any) => f.id));
+      return true;
+    },
+    getStepErrors: (step, state) => {
+      const errors: Record<string, string> = {};
+      if (step === 1) {
+        if (!state.formData.description?.trim()) {
+          errors.description = "Descrição é obrigatória";
+        }
       }
-      if (order.reimbursements) {
-        setExistingReimbursementIds(order.reimbursements.map((f: any) => f.id));
+      if (step === 2) {
+        if (state.formData.itemMode === "inventory" && state.selectedItems.length === 0) {
+          errors.items = "Selecione pelo menos um item";
+        }
+        if (state.formData.itemMode === "temporary" && temporaryItems.length === 0) {
+          errors.items = "Adicione pelo menos um item temporário";
+        }
       }
-      if (order.invoiceReimbursements) {
-        setExistingReimbursementInvoiceIds(order.invoiceReimbursements.map((f: any) => f.id));
-      }
-    }
-  }, [order, form]);
-
-
-  const handleSubmit = useCallback(
-    async (data: OrderUpdateFormData) => {
-      try {
-        // Only send changed fields
-        const changedData: Partial<OrderUpdateFormData> = {};
-
-        if (data.description !== order?.description) {
-          changedData.description = data.description;
-        }
-        if (data.supplierId !== order?.supplierId) {
-          changedData.supplierId = data.supplierId;
-        }
-        if (data.forecast?.getTime() !== order?.forecast?.getTime()) {
-          changedData.forecast = data.forecast;
-        }
-        if (data.notes !== order?.notes) {
-          changedData.notes = data.notes;
-        }
-        if (data.paymentMethod !== order?.paymentMethod) {
-          changedData.paymentMethod = data.paymentMethod;
-        }
-        if (data.paymentPix !== order?.paymentPix) {
-          changedData.paymentPix = data.paymentMethod === PAYMENT_METHOD.PIX ? data.paymentPix : undefined;
-        }
-        if (data.paymentDueDays !== order?.paymentDueDays) {
-          changedData.paymentDueDays = data.paymentMethod === PAYMENT_METHOD.BANK_SLIP ? data.paymentDueDays : undefined;
-        }
-        if ((data as any).paymentResponsibleId !== order?.paymentResponsibleId) {
-          (changedData as any).paymentResponsibleId = (data as any).paymentResponsibleId || null;
-        }
-
-        // Check if there are new files to upload
-        const hasNewFiles =
-          budgetFiles.length > 0 ||
-          invoiceFiles.length > 0 ||
-          receiptFiles.length > 0 ||
-          reimbursementFiles.length > 0 ||
-          reimbursementInvoiceFiles.length > 0;
-
-        setIsUploadingFiles(hasNewFiles);
-
-        // Include existing file IDs in changedData (will be preserved on backend)
-        if (existingBudgetIds.length > 0) {
-          changedData.budgetIds = existingBudgetIds;
-        }
-        if (existingInvoiceIds.length > 0) {
-          changedData.invoiceIds = existingInvoiceIds;
-        }
-        if (existingReceiptIds.length > 0) {
-          changedData.receiptIds = existingReceiptIds;
-        }
-        if (existingReimbursementIds.length > 0) {
-          changedData.reimbursementIds = existingReimbursementIds;
-        }
-        if (existingReimbursementInvoiceIds.length > 0) {
-          changedData.reimbursementInvoiceIds = existingReimbursementInvoiceIds;
-        }
-
-        if (Object.keys(changedData).length === 0 && !hasNewFiles) {
-          Alert.alert('Aviso', 'Nenhuma alteração foi feita');
-          return;
-        }
-
-        let result;
-        try {
-          if (hasNewFiles) {
-            // ATOMIC SUBMISSION: Use FormData when there are new files
-            // This prevents race conditions by submitting files + data in single request
-            const supplier = data.supplierId
-              ? await getSuppliers({ where: { id: data.supplierId } }).then((res) => res.data?.[0])
-              : order?.supplier;
-
-            const formDataWithFiles = createOrderFormData(
-              { ...changedData, id: orderId },
-              {
-                budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
-                receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
-                invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
-              },
-              supplier
-                ? {
-                    id: supplier.id,
-                    fantasyName: supplier.fantasyName,
-                  }
-                : undefined
-            );
-
-            result = await updateAsync({ id: orderId, data: formDataWithFiles as any });
-          } else {
-            // Use regular JSON payload when no new files
-            result = await updateAsync({ id: orderId, data: changedData });
-          }
-        } finally {
-          setIsUploadingFiles(false);
-        }
-
-        if (result.success) {
-          // API client already shows success alert
-
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            router.replace(routeToMobilePath(routes.inventory.orders.details(orderId)) as any);
-          }
-        }
-      } catch (error) {
-        console.error('Error updating order:', error);
-        Alert.alert('Erro', 'Falha ao atualizar pedido');
-      }
-    },
-    [
-      orderId,
-      order,
-      budgetFiles,
-      invoiceFiles,
-      receiptFiles,
-      reimbursementFiles,
-      reimbursementInvoiceFiles,
-      existingBudgetIds,
-      existingInvoiceIds,
-      existingReceiptIds,
-      existingReimbursementIds,
-      existingReimbursementInvoiceIds,
-      updateAsync,
-      onSuccess,
-      router,
-    ]
-  );
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    scrollView: {
-      flex: 1,
-    },
-    content: {
-      paddingHorizontal: formSpacing.containerPaddingHorizontal,
-      paddingTop: formSpacing.containerPaddingVertical,
-      paddingBottom: 0,
-    },
-    section: {
-      marginBottom: spacing.lg,
-    },
-    labelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: spacing.xs,
-    },
-    field: {
-      marginBottom: spacing.lg,
-    },
-    label: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium as any,
-      marginBottom: spacing.xs,
-      color: colors.textSecondary,
-    },
-    required: {
-      color: "#ef4444",
-      fontSize: fontSize.sm,
-      fontWeight: "500",
-    },
-    itemsNote: {
-      padding: spacing.md,
-      backgroundColor: colors.muted,
-      borderRadius: borderRadius.md,
-      marginTop: spacing.md,
+      return errors;
     },
   });
 
-  if (isLoadingOrder) {
+  // React Hook Form for form fields
+  const form = useForm<OrderEditFormData>({
+    resolver: zodResolver(orderEditFormSchema),
+    defaultValues: multiStepForm.formData,
+    mode: "onChange",
+  });
+
+  // Sync form data to multi-step state
+  const handleFormChange = useCallback(
+    <K extends keyof OrderEditFormData>(field: K, value: OrderEditFormData[K]) => {
+      form.setValue(field, value as any);
+      multiStepForm.updateFormData({ [field]: value } as Partial<OrderEditFormData>);
+    },
+    [form, multiStepForm],
+  );
+
+  // Pre-populate form from order data
+  useEffect(() => {
+    if (!order || isInitialized) return;
+
+    const formData: OrderEditFormData = {
+      description: order.description || "",
+      supplierId: order.supplierId || null,
+      forecast: order.forecast ? new Date(order.forecast) : null,
+      notes: order.notes || "",
+      itemMode: detectedItemMode,
+      paymentMethod: (order.paymentMethod as any) || null,
+      paymentPix: order.paymentPix || null,
+      paymentDueDays: order.paymentDueDays || null,
+      paymentResponsibleId: order.paymentResponsibleId || null,
+    };
+
+    // Update multi-step form state
+    multiStepForm.updateFormData(formData);
+
+    // Update react-hook-form
+    form.reset(formData);
+
+    // Set forecast date
+    if (order.forecast) {
+      setForecastDate(new Date(order.forecast));
+    }
+
+    // Pre-populate items
+    if (order.items && order.items.length > 0) {
+      if (detectedItemMode === "inventory") {
+        const itemIds: string[] = [];
+        const quantities: Record<string, number> = {};
+        const prices: Record<string, number> = {};
+
+        order.items.forEach((item: any) => {
+          if (item.itemId) {
+            itemIds.push(item.itemId);
+            quantities[item.itemId] = item.orderedQuantity || 1;
+            prices[item.itemId] = item.price || 0;
+          }
+        });
+
+        multiStepForm.updateState({
+          selectedItems: itemIds,
+          quantities,
+          prices,
+        });
+      } else {
+        // Temporary items
+        const tempItems: TemporaryItem[] = order.items.map((item: any) => ({
+          id: `temp-${item.id || Date.now()}-${Math.random().toString(36).slice(2)}`,
+          description: item.temporaryItemDescription || "",
+          quantity: item.orderedQuantity || 1,
+          price: item.price || 0,
+          icms: item.icms || 0,
+          ipi: item.ipi || 0,
+        }));
+        setTemporaryItems(tempItems);
+      }
+    }
+
+    // Load existing file IDs
+    if (order.budgets) setExistingBudgetIds(order.budgets.map((f: any) => f.id));
+    if (order.invoices) setExistingInvoiceIds(order.invoices.map((f: any) => f.id));
+    if (order.receipts) setExistingReceiptIds(order.receipts.map((f: any) => f.id));
+    if (order.reimbursements) setExistingReimbursementIds(order.reimbursements.map((f: any) => f.id));
+    if (order.invoiceReimbursements) setExistingReimbursementInvoiceIds(order.invoiceReimbursements.map((f: any) => f.id));
+
+    setIsInitialized(true);
+  }, [order, isInitialized, detectedItemMode]);
+
+  // Fetch suppliers for selection
+  const { data: suppliers, isLoading: isLoadingSuppliers } = useSuppliers({
+    where: { isActive: true },
+    orderBy: { fantasyName: "asc" },
+    take: 100,
+  });
+
+  const supplierOptions = useMemo(
+    () =>
+      suppliers?.data?.map((supplier) => ({
+        value: supplier.id,
+        label: supplier.fantasyName || supplier.corporateName || supplier.id,
+      })) || [],
+    [suppliers],
+  );
+
+  // Get selected supplier name for review
+  const selectedSupplierName = useMemo(() => {
+    // First check fetched suppliers list
+    const supplier = suppliers?.data?.find((s) => s.id === multiStepForm.formData.supplierId);
+    if (supplier) return supplier.fantasyName || supplier.corporateName || "Fornecedor";
+    // Fallback to order's supplier
+    if (order?.supplier && order.supplier.id === multiStepForm.formData.supplierId) {
+      return order.supplier.fantasyName || order.supplier.corporateName || "Fornecedor";
+    }
+    return "Não selecionado";
+  }, [suppliers, multiStepForm.formData.supplierId, order?.supplier]);
+
+  // Fetch selected items for review step (only when on step 3)
+  const selectedItemIds = useMemo(
+    () => Array.from(multiStepForm.selectedItems),
+    [multiStepForm.selectedItems],
+  );
+
+  const { data: selectedItemsData } = useItems(
+    {
+      where: { id: { in: selectedItemIds } },
+      include: { brand: true, category: true },
+    },
+    { enabled: multiStepForm.currentStep === 3 && selectedItemIds.length > 0 },
+  );
+
+  // Map items with their names for review
+  const selectedItemsWithNames = useMemo(() => {
+    const itemsMap = new Map(
+      selectedItemsData?.data?.map((item) => [item.id, item]) || [],
+    );
+    return multiStepForm.getSelectedItemsWithData().map((item) => ({
+      ...item,
+      name: itemsMap.get(item.id)?.name || `Item ${item.id.slice(0, 8)}`,
+      brand: itemsMap.get(item.id)?.brand?.name,
+      uniCode: itemsMap.get(item.id)?.uniCode,
+    }));
+  }, [selectedItemsData, multiStepForm]);
+
+  // Calculate totals for review
+  const totals = useMemo(() => {
+    if (multiStepForm.formData.itemMode === "inventory") {
+      const items = multiStepForm.getSelectedItemsWithData();
+      const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+      const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+      return { itemCount: items.length, totalQuantity, subtotal };
+    } else {
+      const subtotal = temporaryItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const totalQuantity = temporaryItems.reduce((sum, item) => sum + item.quantity, 0);
+      return { itemCount: temporaryItems.length, totalQuantity, subtotal };
+    }
+  }, [multiStepForm, temporaryItems]);
+
+  // Temporary item handlers
+  const handleAddTemporaryItem = useCallback(() => {
+    setTemporaryItems((prev) => [
+      {
+        id: `temp-${Date.now()}`,
+        description: "",
+        quantity: 1,
+        price: 0,
+        icms: 0,
+        ipi: 0,
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  const handleRemoveTemporaryItem = useCallback((id: string) => {
+    setTemporaryItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const handleUpdateTemporaryItem = useCallback(
+    (id: string, field: keyof TemporaryItem, value: string | number) => {
+      setTemporaryItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        ),
+      );
+    },
+    [],
+  );
+
+  // Handle form submission
+  const handleFormSubmit = useCallback(async () => {
+    try {
+      // Build items array
+      let itemsData: OrderUpdateFormData["items"] = [];
+
+      if (multiStepForm.formData.itemMode === "inventory") {
+        const items = multiStepForm.getSelectedItemsWithData();
+        const invalidItems = items.filter((item) => item.quantity <= 0 || (item.price || 0) < 0);
+
+        if (invalidItems.length > 0) {
+          Alert.alert("Erro", "Todos os itens devem ter quantidade maior que zero");
+          return;
+        }
+
+        itemsData = items.map((item) => ({
+          itemId: item.id,
+          orderedQuantity: item.quantity,
+          price: item.price || 0,
+          icms: 0,
+          ipi: 0,
+        }));
+      } else {
+        const invalidTempItems = temporaryItems.filter(
+          (item) => !item.description.trim() || item.quantity <= 0 || item.price < 0
+        );
+
+        if (invalidTempItems.length > 0) {
+          Alert.alert("Erro", "Todos os itens temporários devem ter descrição, quantidade e preço válidos");
+          return;
+        }
+
+        itemsData = temporaryItems.map((item) => ({
+          temporaryItemDescription: item.description,
+          orderedQuantity: item.quantity,
+          price: item.price,
+          icms: item.icms,
+          ipi: item.ipi,
+        }));
+      }
+
+      // Build update payload - only send changed fields
+      const changedData: Partial<OrderUpdateFormData> = {};
+
+      if (multiStepForm.formData.description !== order?.description) {
+        changedData.description = multiStepForm.formData.description;
+      }
+      if (multiStepForm.formData.supplierId !== order?.supplierId) {
+        changedData.supplierId = multiStepForm.formData.supplierId || undefined;
+      }
+      if (forecastDate?.getTime() !== (order?.forecast ? new Date(order.forecast).getTime() : undefined)) {
+        changedData.forecast = forecastDate ?? null;
+      }
+      if (multiStepForm.formData.notes !== (order?.notes || "")) {
+        changedData.notes = multiStepForm.formData.notes || undefined;
+      }
+      if (multiStepForm.formData.paymentMethod !== order?.paymentMethod) {
+        changedData.paymentMethod = multiStepForm.formData.paymentMethod || undefined;
+      }
+      if (multiStepForm.formData.paymentPix !== order?.paymentPix) {
+        changedData.paymentPix = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX
+          ? multiStepForm.formData.paymentPix || undefined
+          : undefined;
+      }
+      if (multiStepForm.formData.paymentDueDays !== order?.paymentDueDays) {
+        changedData.paymentDueDays = multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP
+          ? multiStepForm.formData.paymentDueDays || undefined
+          : undefined;
+      }
+      if (multiStepForm.formData.paymentResponsibleId !== order?.paymentResponsibleId) {
+        changedData.paymentResponsibleId = multiStepForm.formData.paymentResponsibleId || null;
+      }
+
+      // Always include items (they may have changed)
+      changedData.items = itemsData;
+
+      // Include existing file IDs
+      if (existingBudgetIds.length > 0) changedData.budgetIds = existingBudgetIds;
+      if (existingInvoiceIds.length > 0) changedData.invoiceIds = existingInvoiceIds;
+      if (existingReceiptIds.length > 0) changedData.receiptIds = existingReceiptIds;
+      if (existingReimbursementIds.length > 0) changedData.reimbursementIds = existingReimbursementIds;
+      if (existingReimbursementInvoiceIds.length > 0) changedData.reimbursementInvoiceIds = existingReimbursementInvoiceIds;
+
+      // Check if there are new files to upload
+      const hasNewFiles =
+        budgetFiles.length > 0 ||
+        invoiceFiles.length > 0 ||
+        receiptFiles.length > 0 ||
+        reimbursementFiles.length > 0 ||
+        reimbursementInvoiceFiles.length > 0;
+
+      setIsUploadingFiles(hasNewFiles);
+
+      let result;
+      try {
+        if (hasNewFiles) {
+          const supplier = multiStepForm.formData.supplierId
+            ? suppliers?.data?.find((s) => s.id === multiStepForm.formData.supplierId) ||
+              (await getSuppliers({ where: { id: multiStepForm.formData.supplierId } }).then((res) => res.data?.[0]))
+            : order?.supplier;
+
+          const formDataWithFiles = createOrderFormData(
+            { ...changedData, id: orderId },
+            {
+              budgets: budgetFiles.length > 0 ? budgetFiles : undefined,
+              receipts: receiptFiles.length > 0 ? receiptFiles : undefined,
+              invoices: invoiceFiles.length > 0 ? invoiceFiles : undefined,
+              reimbursements: reimbursementFiles.length > 0 ? reimbursementFiles : undefined,
+              reimbursementInvoices: reimbursementInvoiceFiles.length > 0 ? reimbursementInvoiceFiles : undefined,
+            },
+            supplier
+              ? {
+                  id: supplier.id,
+                  fantasyName: supplier.fantasyName ?? undefined,
+                }
+              : undefined
+          );
+
+          result = await updateAsync({ id: orderId, data: formDataWithFiles as any });
+        } else {
+          result = await updateAsync({ id: orderId, data: changedData });
+        }
+      } finally {
+        setIsUploadingFiles(false);
+      }
+
+      if (result.success) {
+        await multiStepForm.resetForm();
+
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.replace(routeToMobilePath(routes.inventory.orders.details(orderId)) as any);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating order:", error);
+      Alert.alert("Erro", "Falha ao atualizar pedido");
+    }
+  }, [
+    orderId,
+    order,
+    multiStepForm,
+    temporaryItems,
+    forecastDate,
+    budgetFiles,
+    invoiceFiles,
+    receiptFiles,
+    reimbursementFiles,
+    reimbursementInvoiceFiles,
+    existingBudgetIds,
+    existingInvoiceIds,
+    existingReceiptIds,
+    existingReimbursementIds,
+    existingReimbursementInvoiceIds,
+    suppliers,
+    updateAsync,
+    onSuccess,
+    router,
+  ]);
+
+  // Handle cancel with confirmation if form has data
+  const handleCancel = useCallback(() => {
+    Alert.alert(
+      "Descartar alterações?",
+      "Você tem alterações não salvas. Deseja descartá-las?",
+      [
+        { text: "Continuar editando", style: "cancel" },
+        {
+          text: "Descartar",
+          style: "destructive",
+          onPress: async () => {
+            await multiStepForm.resetForm();
+            router.back();
+          },
+        },
+      ],
+    );
+  }, [multiStepForm, router]);
+
+  // Loading state
+  if (isLoadingOrder || multiStepForm.isLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ThemedText>Carregando...</ThemedText>
       </View>
     );
@@ -324,364 +569,1077 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
 
   if (!order) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ThemedText>Pedido não encontrado</ThemedText>
       </View>
     );
   }
 
+  const isSubmitting = isMutating || isUploadingFiles;
+  const isInventoryMode = multiStepForm.formData.itemMode === "inventory";
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <FormProvider {...form}>
+      <MultiStepFormContainer
+        steps={STEPS}
+        currentStep={multiStepForm.currentStep}
+        onPrevStep={multiStepForm.goToPrevStep}
+        onNextStep={multiStepForm.goToNextStep}
+        onSubmit={handleFormSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+        canProceed={multiStepForm.validation.canProceedToNext}
+        canSubmit={multiStepForm.validation.canSubmit}
+        submitLabel={isUploadingFiles ? "Enviando arquivos..." : "Salvar"}
+        cancelLabel="Cancelar"
+        scrollable={multiStepForm.currentStep !== 2 || !isInventoryMode}
       >
-        <Card style={styles.section}>
-          <CardHeader>
-            <CardTitle>Informações do Pedido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View style={styles.field}>
-              <View style={styles.labelRow}>
-                <Label style={{ marginBottom: 0 }}>Descrição</Label>
-                <ThemedText style={styles.required}> *</ThemedText>
-              </View>
-              <Controller
-                control={form.control}
-                name="description"
-                render={({ field, fieldState }) => (
-                  <Input
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    placeholder="Ex: Pedido de materiais de escritório"
-                    error={!!fieldState.error}
-                  />
-                )}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Label>Fornecedor</Label>
-            <Controller
-              control={form.control}
-              name="supplierId"
-              render={({ field }) => (
-                <Combobox<Supplier>
-                  value={field.value || ""}
-                  onValueChange={field.onChange}
-                  async={true}
-                  queryKey={["suppliers", "order-edit"]}
-                  queryFn={searchSuppliers}
-                  initialOptions={initialSupplierOptions}
-                  getOptionLabel={(supplier) => supplier.fantasyName}
-                  getOptionValue={(supplier) => supplier.id}
-                  placeholder="Selecione um fornecedor (opcional)"
-                  searchPlaceholder="Buscar fornecedor..."
-                  emptyText="Nenhum fornecedor encontrado"
-                  minSearchLength={0}
-                  pageSize={50}
-                  debounceMs={300}
-                  clearable={true}
+        {/* Step 1: Order Information */}
+        {multiStepForm.currentStep === 1 && (
+          <View style={styles.step1Container}>
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Informações do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Description */}
+                <Controller
+                  control={form.control}
+                  name="description"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.fieldGroup}>
+                      <View style={styles.labelRow}>
+                        <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                        <Text style={styles.requiredAsterisk}> *</Text>
+                      </View>
+                      <Input
+                        value={value || ""}
+                        onChangeText={(val) => handleFormChange("description", val)}
+                        placeholder="Ex: Pedido de materiais de escritório"
+                        editable={!isSubmitting}
+                      />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
+                      {multiStepForm.formTouched && multiStepForm.validation.errors.description && (
+                        <ThemedText style={styles.errorText}>
+                          {multiStepForm.validation.errors.description}
+                        </ThemedText>
+                      )}
+                    </View>
+                  )}
                 />
-              )}
-            />
-          </View>
 
-            <View style={styles.field}>
-              <Label>Previsão de Entrega</Label>
-              <Controller
-                control={form.control}
-                name="forecast"
-                render={({ field }) => (
+                {/* Supplier Selection */}
+                <Controller
+                  control={form.control}
+                  name="supplierId"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Fornecedor</Label>
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => handleFormChange("supplierId", (val || null) as string | null)}
+                        options={supplierOptions}
+                        placeholder="Selecione o fornecedor (opcional)"
+                        searchPlaceholder="Buscar fornecedor..."
+                        emptyText="Nenhum fornecedor encontrado"
+                        disabled={isSubmitting || isLoadingSuppliers}
+                        loading={isLoadingSuppliers}
+                        clearable
+                        searchable
+                      />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
+                    </View>
+                  )}
+                />
+
+                {/* Item Mode Selection */}
+                <Controller
+                  control={form.control}
+                  name="itemMode"
+                  render={({ field: { value } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Tipo de Itens</Label>
+                      <Combobox
+                        value={value || "inventory"}
+                        onValueChange={(val) => handleFormChange("itemMode", (val || "inventory") as "inventory" | "temporary")}
+                        options={[
+                          { label: "Itens do Estoque", value: "inventory" },
+                          { label: "Itens Temporários", value: "temporary" },
+                        ]}
+                        placeholder="Selecione o tipo de itens"
+                        disabled={isSubmitting}
+                        clearable={false}
+                      />
+                      <ThemedText style={styles.helpText}>
+                        {isInventoryMode
+                          ? "Selecione itens cadastrados no estoque"
+                          : "Adicione itens avulsos que não estão no estoque"}
+                      </ThemedText>
+                    </View>
+                  )}
+                />
+
+                {/* Delivery Date */}
+                <View style={styles.fieldGroup}>
+                  <Label>Previsão de Entrega</Label>
                   <DateTimePicker
-                    value={field.value ?? undefined}
-                    onChange={field.onChange}
-                    type="date"
-                    placeholder="Selecione uma data"
+                    value={forecastDate}
+                    onChange={setForecastDate}
+                    mode="date"
+                    placeholder="Selecione a data"
+                    disabled={isSubmitting}
                   />
+                  <ThemedText style={styles.helpText}>
+                    Data prevista para entrega do pedido
+                  </ThemedText>
+                </View>
+
+                {/* Notes */}
+                <Controller
+                  control={form.control}
+                  name="notes"
+                  render={({ field: { value }, fieldState: { error } }) => (
+                    <View style={styles.lastFieldGroup}>
+                      <Label>Observações</Label>
+                      <Input
+                        value={value || ""}
+                        onChangeText={(val) => handleFormChange("notes", val)}
+                        placeholder="Observações sobre o pedido (opcional)"
+                        editable={!isSubmitting}
+                        multiline
+                        numberOfLines={3}
+                        style={{ height: 80 }}
+                      />
+                      {error && (
+                        <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                      )}
+                    </View>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Documents Section */}
+            <Card style={styles.lastCard}>
+              <CardHeader>
+                <CardTitle>Documentos (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(existingBudgetIds.length > 0 || existingInvoiceIds.length > 0 || existingReceiptIds.length > 0 || existingReimbursementIds.length > 0 || existingReimbursementInvoiceIds.length > 0) && (
+                  <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md }}>
+                    {existingBudgetIds.length > 0 && `${existingBudgetIds.length} orçamento(s) existente(s). `}
+                    {existingInvoiceIds.length > 0 && `${existingInvoiceIds.length} nota(s) fiscal(is) existente(s). `}
+                    {existingReceiptIds.length > 0 && `${existingReceiptIds.length} recibo(s) existente(s). `}
+                    {existingReimbursementIds.length > 0 && `${existingReimbursementIds.length} reembolso(s) existente(s). `}
+                    {existingReimbursementInvoiceIds.length > 0 && `${existingReimbursementInvoiceIds.length} NF(s) de reembolso existente(s). `}
+                  </ThemedText>
                 )}
-              />
-            </View>
 
-            <View style={styles.field}>
-              <Label>Observações</Label>
-              <Controller
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <Input
-                  value={field.value || ''}
-                  onChangeText={field.onChange}
-                  placeholder="Observações sobre o pedido (opcional)"
-                  multiline
-                  numberOfLines={4}
+                <FilePicker
+                  value={budgetFiles}
+                  onChange={setBudgetFiles}
+                  maxFiles={10}
+                  label="Adicionar Orçamentos"
+                  placeholder="Adicionar orçamentos"
+                  helperText="Selecione até 10 arquivos de orçamento"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
-              )}
-            />
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Payment Section */}
-        <Card style={styles.section}>
-          <CardHeader>
-            <CardTitle>Pagamento (Opcional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <View style={styles.field}>
-              <Label>Método de Pagamento</Label>
-            <Controller
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <Combobox
-                  value={field.value || ''}
-                  onValueChange={(val) => {
-                    field.onChange(val || undefined);
-                    // Auto-fill PIX from supplier when selecting PIX
-                    if (val === PAYMENT_METHOD.PIX && order?.supplier?.pix) {
-                      form.setValue('paymentPix', order.supplier.pix);
-                    }
-                    // Clear conditional fields when changing method
-                    if (val !== PAYMENT_METHOD.PIX) {
-                      form.setValue('paymentPix', undefined);
-                    }
-                    if (val !== PAYMENT_METHOD.BANK_SLIP) {
-                      form.setValue('paymentDueDays', undefined);
-                    }
-                  }}
-                  options={[
-                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
-                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
-                    { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
-                  ]}
-                  placeholder="Selecione o método de pagamento"
-                  clearable
+                <View style={styles.fieldSpacer} />
+                <FilePicker
+                  value={invoiceFiles}
+                  onChange={setInvoiceFiles}
+                  maxFiles={10}
+                  label="Adicionar Notas Fiscais"
+                  placeholder="Adicionar notas fiscais"
+                  helperText="Selecione até 10 notas fiscais"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
                 />
-              )}
-            />
+                <View style={styles.fieldSpacer} />
+                <FilePicker
+                  value={receiptFiles}
+                  onChange={setReceiptFiles}
+                  maxFiles={10}
+                  label="Adicionar Recibos"
+                  placeholder="Adicionar recibos"
+                  helperText="Selecione até 10 recibos"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
+                />
+                <View style={styles.fieldSpacer} />
+                <FilePicker
+                  value={reimbursementFiles}
+                  onChange={setReimbursementFiles}
+                  maxFiles={10}
+                  label="Adicionar Reembolsos"
+                  placeholder="Adicionar reembolsos"
+                  helperText="Selecione até 10 arquivos de reembolso"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
+                />
+                <View style={styles.fieldSpacer} />
+                <FilePicker
+                  value={reimbursementInvoiceFiles}
+                  onChange={setReimbursementInvoiceFiles}
+                  maxFiles={10}
+                  label="Adicionar Notas Fiscais de Reembolso"
+                  placeholder="Adicionar notas de reembolso"
+                  helperText="Selecione até 10 notas de reembolso"
+                  disabled={isSubmitting}
+                  showCamera={true}
+                  showGallery={true}
+                  showFilePicker={true}
+                />
+              </CardContent>
+            </Card>
           </View>
+        )}
 
-            {/* PIX Key (shown when PIX is selected) */}
-            {form.watch('paymentMethod') === PAYMENT_METHOD.PIX && (
-              <View style={styles.field}>
-                <Label>Chave Pix</Label>
-              <Controller
-                control={form.control}
-                name="paymentPix"
-                render={({ field }) => (
-                  <Input
-                    value={field.value || ''}
-                    onChangeText={field.onChange}
-                    onBlur={() => {
-                      const currentValue = form.getValues('paymentPix');
-                      if (currentValue) {
-                        const formatted = formatPixKey(currentValue);
-                        form.setValue('paymentPix', formatted);
-                      }
-                    }}
-                    placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
-                    autoCapitalize="none"
-                  />
-                )}
+        {/* Step 2: Item Selection */}
+        {multiStepForm.currentStep === 2 && (
+          <View style={styles.itemSelectorContainer}>
+            {isInventoryMode ? (
+              <ItemSelectorTable
+                selectedItems={multiStepForm.selectedItems}
+                quantities={multiStepForm.quantities}
+                prices={multiStepForm.prices}
+                onSelectItem={(itemId, item) => {
+                  let defaultPrice = 0;
+                  if (item?.prices?.length > 0) {
+                    const sortedPrices = [...item.prices].sort((a: any, b: any) =>
+                      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    );
+                    defaultPrice = sortedPrices[0].value || 0;
+                  } else if (item?.price != null) {
+                    defaultPrice = item.price;
+                  }
+                  multiStepForm.toggleItemSelection(itemId, undefined, defaultPrice);
+                }}
+                onQuantityChange={multiStepForm.setItemQuantity}
+                onPriceChange={multiStepForm.setItemPrice}
+                showQuantityInput
+                showPriceInput
+                minQuantity={1}
+                showSelectedOnly={multiStepForm.showSelectedOnly}
+                searchTerm={multiStepForm.searchTerm}
+                showInactive={multiStepForm.showInactive}
+                categoryIds={multiStepForm.categoryIds}
+                brandIds={multiStepForm.brandIds}
+                supplierIds={multiStepForm.supplierIds}
+                onShowSelectedOnlyChange={multiStepForm.setShowSelectedOnly}
+                onSearchTermChange={multiStepForm.setSearchTerm}
+                onShowInactiveChange={multiStepForm.setShowInactive}
+                onCategoryIdsChange={multiStepForm.setCategoryIds}
+                onBrandIdsChange={multiStepForm.setBrandIds}
+                onSupplierIdsChange={multiStepForm.setSupplierIds}
+                allowZeroStock
+                emptyMessage="Nenhum item encontrado"
               />
-            </View>
-            )}
+            ) : (
+              <View style={styles.temporaryItemsContainer}>
+                <Card style={styles.card}>
+                  <CardHeader>
+                    <CardTitle>Itens Temporários</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      variant="outline"
+                      onPress={handleAddTemporaryItem}
+                      disabled={isSubmitting}
+                      style={styles.addItemButton}
+                    >
+                      <IconPlus size={16} color={colors.foreground} />
+                      <ThemedText style={styles.addButtonText}>Adicionar Item</ThemedText>
+                    </Button>
 
-            {/* Due Days (shown when BANK_SLIP is selected) */}
-            {form.watch('paymentMethod') === PAYMENT_METHOD.BANK_SLIP && (
-              <View style={styles.field}>
-                <Label>Prazo de Vencimento</Label>
-              <Controller
-                control={form.control}
-                name="paymentDueDays"
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value?.toString() || ''}
-                    onValueChange={(val) => field.onChange(val ? Number(val) : undefined)}
-                    options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
-                      label: `${days} dias`,
-                      value: days.toString(),
-                    }))}
-                    placeholder="Selecione o prazo"
-                    clearable
-                  />
+                    {temporaryItems.length === 0 ? (
+                      <View style={styles.emptyState}>
+                        <IconBox size={48} color={colors.mutedForeground} />
+                        <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                          Nenhum item adicionado
+                        </ThemedText>
+                      </View>
+                    ) : (
+                      temporaryItems.map((item, index) => (
+                        <React.Fragment key={item.id}>
+                          {index > 0 && (
+                            <View style={[styles.itemSeparator, { backgroundColor: colors.border }]} />
+                          )}
+                          <ReanimatedSwipeableRow
+                            rightActions={[
+                              {
+                                key: "delete",
+                                label: "Excluir",
+                                icon: <IconTrash size={18} color="white" />,
+                                backgroundColor: "#9b2c2c",
+                                onPress: () => handleRemoveTemporaryItem(item.id),
+                                closeOnPress: true,
+                              },
+                            ]}
+                            enabled={!isSubmitting}
+                          >
+                            <View style={styles.temporaryItemRow}>
+                              <View style={styles.fieldGroup}>
+                                <View style={styles.labelRow}>
+                                  <Label style={{ marginBottom: 0 }}>Descrição</Label>
+                                  <Text style={styles.requiredAsterisk}> *</Text>
+                                </View>
+                                <Input
+                                  value={item.description}
+                                  onChangeText={(val) => handleUpdateTemporaryItem(item.id, "description", val)}
+                                  placeholder="Descrição do item"
+                                  editable={!isSubmitting}
+                                />
+                              </View>
+
+                              <View style={styles.rowFields}>
+                                <View style={styles.smallField}>
+                                  <View style={styles.labelRow}>
+                                    <Label style={{ marginBottom: 0 }}>Qtd</Label>
+                                    <Text style={styles.requiredAsterisk}> *</Text>
+                                  </View>
+                                  <Input
+                                    value={String(item.quantity)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "quantity", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.priceField}>
+                                  <View style={styles.labelRow}>
+                                    <Label style={{ marginBottom: 0 }}>Preço</Label>
+                                    <Text style={styles.requiredAsterisk}> *</Text>
+                                  </View>
+                                  <Input
+                                    type="currency"
+                                    value={item.price}
+                                    onChange={(val) => handleUpdateTemporaryItem(item.id, "price", typeof val === "number" ? val : 0)}
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>ICMS %</Label>
+                                  <Input
+                                    value={String(item.icms)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "icms", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                                <View style={styles.smallField}>
+                                  <Label>IPI %</Label>
+                                  <Input
+                                    value={String(item.ipi)}
+                                    onChangeText={(val) => handleUpdateTemporaryItem(item.id, "ipi", Number(val) || 0)}
+                                    keyboardType="numeric"
+                                    editable={!isSubmitting}
+                                  />
+                                </View>
+                              </View>
+                            </View>
+                          </ReanimatedSwipeableRow>
+                        </React.Fragment>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                {multiStepForm.formTouched && multiStepForm.validation.errors.items && (
+                  <View style={styles.errorContainer}>
+                    <ThemedText style={styles.errorText}>
+                      {multiStepForm.validation.errors.items}
+                    </ThemedText>
+                  </View>
                 )}
-              />
               </View>
             )}
-            {/* Payment Responsible */}
-            <View style={styles.field}>
-              <Label>Responsável pelo Pagamento</Label>
-              <Controller
-                control={form.control}
-                name="paymentResponsibleId"
-                render={({ field }) => (
-                  <Combobox
-                    async
-                    queryKey={["users", "payment-responsible-edit"]}
-                    queryFn={async (searchTerm: string, page: number = 1) => {
-                      const pageSize = 20;
-                      const response = await getUsers({
-                        take: pageSize,
-                        skip: (page - 1) * pageSize,
-                        where: {
-                          isActive: true,
-                          ...(searchTerm ? {
-                            OR: [
-                              { name: { contains: searchTerm, mode: "insensitive" } },
-                              { email: { contains: searchTerm, mode: "insensitive" } },
-                            ],
-                          } : {}),
-                        },
-                        orderBy: { name: "asc" },
-                        select: {
-                          id: true,
-                          name: true,
-                          email: true,
-                        },
-                      });
-                      const users = response.data || [];
-                      return {
-                        data: users.map((user) => ({
-                          value: user.id,
-                          label: user.name,
-                          description: user.email || undefined,
-                        })),
-                        hasMore: response.meta?.hasNextPage || false,
-                      };
-                    }}
-                    initialOptions={order?.paymentResponsible ? [{
-                      value: order.paymentResponsible.id,
-                      label: order.paymentResponsible.name,
-                    }] : []}
-                    minSearchLength={0}
-                    pageSize={20}
-                    debounceMs={500}
-                    loadOnMount={false}
-                    value={field.value || ''}
-                    onValueChange={(val) => {
-                      const value = Array.isArray(val) ? val[0] : val;
-                      field.onChange(value ?? undefined);
-                    }}
-                    placeholder="Selecione o responsável"
-                    emptyText="Nenhum usuário encontrado"
-                    searchPlaceholder="Buscar por nome ou e-mail..."
-                    searchable
-                    clearable
+          </View>
+        )}
+
+        {/* Step 3: Review */}
+        {multiStepForm.currentStep === 3 && (
+          <View style={styles.reviewContainer}>
+            {/* Summary Metrics */}
+            <Card style={styles.card}>
+              <CardContent style={styles.metricsContent}>
+                <View style={styles.metricsRow}>
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconTruck size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        FORNECEDOR
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]} numberOfLines={1}>
+                      {multiStepForm.formData.supplierId ? selectedSupplierName : "Não definido"}
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconPackage size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        ITENS
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValueLarge, { color: colors.foreground }]}>
+                      {totals.itemCount}
+                    </ThemedText>
+                  </View>
+
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricHeader}>
+                      <IconCalendar size={16} color={colors.mutedForeground} />
+                      <ThemedText style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+                        ENTREGA
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={[styles.metricValue, { color: colors.foreground }]} numberOfLines={1}>
+                      {forecastDate ? forecastDate.toLocaleDateString("pt-BR") : "Não definida"}
+                    </ThemedText>
+                  </View>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Order Details */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Detalhes do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <View style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Descrição</ThemedText>
+                  <ThemedText style={styles.detailValue}>{multiStepForm.formData.description}</ThemedText>
+                </View>
+                {multiStepForm.formData.notes && (
+                  <View style={styles.detailRow}>
+                    <ThemedText style={styles.detailLabel}>Observações</ThemedText>
+                    <ThemedText style={styles.detailValue}>{multiStepForm.formData.notes}</ThemedText>
+                  </View>
+                )}
+                <View style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Tipo</ThemedText>
+                  <Badge variant={isInventoryMode ? "default" : "secondary"}>
+                    <ThemedText>{isInventoryMode ? "Estoque" : "Temporário"}</ThemedText>
+                  </Badge>
+                </View>
+              </CardContent>
+            </Card>
+
+            {/* Payment Section */}
+            <Card style={styles.card}>
+              <CardHeader>
+                <CardTitle>Pagamento (Opcional)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Payment Responsible */}
+                <Controller
+                  control={form.control}
+                  name="paymentResponsibleId"
+                  render={({ field }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Responsável pelo Pagamento</Label>
+                      <Combobox
+                        async
+                        queryKey={["users", "payment-responsible-edit"]}
+                        queryFn={async (searchTerm: string, page: number = 1) => {
+                          const pageSize = 20;
+                          const response = await getUsers({
+                            take: pageSize,
+                            skip: (page - 1) * pageSize,
+                            includeSectorPrivileges: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN],
+                            where: {
+                              isActive: true,
+                              ...(searchTerm ? {
+                                OR: [
+                                  { name: { contains: searchTerm, mode: "insensitive" } },
+                                  { email: { contains: searchTerm, mode: "insensitive" } },
+                                ],
+                              } : {}),
+                            },
+                            orderBy: { name: "asc" },
+                            select: {
+                              id: true,
+                              name: true,
+                              email: true,
+                            },
+                          });
+                          const users = response.data || [];
+                          return {
+                            data: users.map((user) => ({
+                              value: user.id,
+                              label: user.name,
+                              description: user.email || undefined,
+                            })),
+                            hasMore: response.meta?.hasNextPage || false,
+                          };
+                        }}
+                        initialOptions={order?.paymentResponsible ? [{
+                          value: order.paymentResponsible.id,
+                          label: order.paymentResponsible.name,
+                          description: order.paymentResponsible.email || undefined,
+                        }] : []}
+                        minSearchLength={0}
+                        pageSize={20}
+                        debounceMs={500}
+                        loadOnMount={false}
+                        value={field.value || ""}
+                        onValueChange={(val) => {
+                          const value = Array.isArray(val) ? val[0] : val;
+                          field.onChange(value ?? null);
+                          handleFormChange("paymentResponsibleId", value ?? null);
+                        }}
+                        placeholder="Selecione o responsável"
+                        emptyText="Nenhum usuário encontrado"
+                        searchPlaceholder="Buscar por nome ou e-mail..."
+                        disabled={isSubmitting}
+                        searchable
+                        clearable
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* Payment Method */}
+                <Controller
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field: { value } }) => (
+                    <View style={styles.fieldGroup}>
+                      <Label>Método de Pagamento</Label>
+                      <Combobox
+                        value={value || ""}
+                        onValueChange={(val) => {
+                          const paymentMethodValue = val ? (val as PAYMENT_METHOD) : null;
+                          handleFormChange("paymentMethod", paymentMethodValue);
+                          // Auto-fill PIX from supplier when selecting PIX
+                          if (val === PAYMENT_METHOD.PIX) {
+                            const selectedSupplier = suppliers?.data?.find(
+                              (s) => s.id === multiStepForm.formData.supplierId
+                            ) || order?.supplier;
+                            if (selectedSupplier?.pix) {
+                              handleFormChange("paymentPix", selectedSupplier.pix);
+                            }
+                          }
+                          // Clear conditional fields when changing method
+                          if (val !== PAYMENT_METHOD.PIX) {
+                            handleFormChange("paymentPix", null);
+                          }
+                          if (val !== PAYMENT_METHOD.BANK_SLIP) {
+                            handleFormChange("paymentDueDays", null);
+                          }
+                        }}
+                        options={[
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.PIX], value: PAYMENT_METHOD.PIX },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.BANK_SLIP], value: PAYMENT_METHOD.BANK_SLIP },
+                          { label: PAYMENT_METHOD_LABELS[PAYMENT_METHOD.CREDIT_CARD], value: PAYMENT_METHOD.CREDIT_CARD },
+                        ]}
+                        placeholder="Selecione o método de pagamento"
+                        disabled={isSubmitting}
+                        clearable
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* PIX Key (shown when PIX is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.PIX && (
+                  <Controller
+                    control={form.control}
+                    name="paymentPix"
+                    render={({ field: { value }, fieldState: { error } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Chave Pix</Label>
+                        <Input
+                          value={value || ""}
+                          onChangeText={(val) => handleFormChange("paymentPix", val)}
+                          onBlur={() => {
+                            const currentValue = form.getValues("paymentPix");
+                            if (currentValue) {
+                              const formatted = formatPixKey(currentValue);
+                              form.setValue("paymentPix", formatted);
+                              handleFormChange("paymentPix", formatted);
+                            }
+                          }}
+                          placeholder="CPF, CNPJ, E-mail, Telefone ou Chave Aleatória"
+                          editable={!isSubmitting}
+                          autoCapitalize="none"
+                        />
+                        {error && (
+                          <ThemedText style={styles.errorText}>{error.message}</ThemedText>
+                        )}
+                        <ThemedText style={styles.helpText}>
+                          Chave Pix para pagamento do pedido
+                        </ThemedText>
+                      </View>
+                    )}
                   />
                 )}
-              />
-            </View>
-          </CardContent>
-        </Card>
 
-        {/* Documents Section */}
-        <Card style={styles.section}>
-          <CardHeader>
-            <CardTitle>Documentos (Opcional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-          <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.md }}>
-            {existingBudgetIds.length > 0 && `${existingBudgetIds.length} orçamento(s) existente(s). `}
-            {existingInvoiceIds.length > 0 && `${existingInvoiceIds.length} nota(s) fiscal(is) existente(s). `}
-            {existingReceiptIds.length > 0 && `${existingReceiptIds.length} recibo(s) existente(s). `}
-            {existingReimbursementIds.length > 0 && `${existingReimbursementIds.length} reembolso(s) existente(s). `}
-            {existingReimbursementInvoiceIds.length > 0 && `${existingReimbursementInvoiceIds.length} NF(s) de reembolso existente(s). `}
-          </ThemedText>
+                {/* Due Days (shown when BANK_SLIP is selected) */}
+                {multiStepForm.formData.paymentMethod === PAYMENT_METHOD.BANK_SLIP && (
+                  <Controller
+                    control={form.control}
+                    name="paymentDueDays"
+                    render={({ field: { value } }) => (
+                      <View style={styles.fieldGroup}>
+                        <Label>Prazo de Vencimento</Label>
+                        <Combobox
+                          value={value?.toString() || ""}
+                          onValueChange={(val) => handleFormChange("paymentDueDays", val ? Number(val) : null)}
+                          options={BANK_SLIP_DUE_DAYS_OPTIONS.map((days) => ({
+                            label: `${days} dias`,
+                            value: days.toString(),
+                          }))}
+                          placeholder="Selecione o prazo"
+                          disabled={isSubmitting}
+                          clearable
+                        />
+                        <ThemedText style={styles.helpText}>
+                          Prazo para vencimento do boleto
+                        </ThemedText>
+                      </View>
+                    )}
+                  />
+                )}
+              </CardContent>
+            </Card>
 
-          <FilePicker
-            value={budgetFiles}
-            onChange={setBudgetFiles}
-            maxFiles={10}
-            label="Adicionar Orçamentos"
-            placeholder="Adicionar orçamentos"
-            helperText="Selecione até 10 arquivos de orçamento"
-            disabled={isLoading || isUploadingFiles}
-            showCamera={true}
-            showGallery={true}
-            showFilePicker={true}
-          />
+            {/* Items Table */}
+            <Card style={[styles.card, styles.itemsCard]}>
+              <CardHeader style={styles.itemsHeader}>
+                <CardTitle>Itens do Pedido</CardTitle>
+              </CardHeader>
+              <CardContent style={styles.itemsContent}>
+                {/* Table Header */}
+                <View style={[styles.tableHeaderRow, { borderBottomColor: colors.border }]}>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, flex: 3 }]}>
+                    ITEM
+                  </ThemedText>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 50, textAlign: "center" }]}>
+                    QTD
+                  </ThemedText>
+                  <ThemedText style={[styles.tableHeaderText, { color: colors.mutedForeground, width: 80, textAlign: "right" }]}>
+                    PREÇO
+                  </ThemedText>
+                </View>
 
-          <FilePicker
-            value={invoiceFiles}
-            onChange={setInvoiceFiles}
-            maxFiles={10}
-            label="Adicionar Notas Fiscais"
-            placeholder="Adicionar notas fiscais"
-            helperText="Selecione até 10 notas fiscais"
-            disabled={isLoading || isUploadingFiles}
-            showCamera={true}
-            showGallery={true}
-            showFilePicker={true}
-          />
+                {/* Table Body */}
+                {isInventoryMode ? (
+                  selectedItemsWithNames.map((item, index) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.tableRow,
+                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
+                        index === selectedItemsWithNames.length - 1 && styles.tableRowLast,
+                      ]}
+                    >
+                      <View style={styles.itemInfo}>
+                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                          {item.uniCode ? `${item.name} - ${item.uniCode}` : item.name}
+                        </ThemedText>
+                        {item.brand && (
+                          <ThemedText style={[styles.itemBrand, { color: colors.mutedForeground }]}>
+                            {item.brand}
+                          </ThemedText>
+                        )}
+                      </View>
+                      <View style={styles.itemQuantity}>
+                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                          {formatQuantity(item.quantity)}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemPrice}>
+                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                          {formatCurrency(item.price || 0)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  temporaryItems.map((item, index) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.tableRow,
+                        { backgroundColor: index % 2 === 0 ? colors.background : colors.card },
+                        index === temporaryItems.length - 1 && styles.tableRowLast,
+                      ]}
+                    >
+                      <View style={styles.itemInfo}>
+                        <ThemedText style={[styles.itemName, { color: colors.foreground }]} numberOfLines={1}>
+                          {item.description || "Sem descrição"}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemQuantity}>
+                        <ThemedText style={[styles.quantityText, { color: colors.foreground }]}>
+                          {formatQuantity(item.quantity)}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.itemPrice}>
+                        <ThemedText style={[styles.priceText, { color: colors.foreground }]}>
+                          {formatCurrency(item.price)}
+                        </ThemedText>
+                      </View>
+                    </View>
+                  ))
+                )}
 
-          <FilePicker
-            value={receiptFiles}
-            onChange={setReceiptFiles}
-            maxFiles={10}
-            label="Adicionar Recibos"
-            placeholder="Adicionar recibos"
-            helperText="Selecione até 10 recibos"
-            disabled={isLoading || isUploadingFiles}
-            showCamera={true}
-            showGallery={true}
-            showFilePicker={true}
-          />
+                {/* Table Footer */}
+                <View style={[styles.tableFooterRow, { borderTopColor: colors.border, backgroundColor: colors.muted }]}>
+                  <ThemedText style={[styles.tableFooterText, { color: colors.foreground }]}>
+                    Total ({totals.totalQuantity} unidades)
+                  </ThemedText>
+                  <ThemedText style={[styles.tableFooterValue, { color: colors.primary }]}>
+                    {formatCurrency(totals.subtotal)}
+                  </ThemedText>
+                </View>
+              </CardContent>
+            </Card>
 
-          <FilePicker
-            value={reimbursementFiles}
-            onChange={setReimbursementFiles}
-            maxFiles={10}
-            label="Adicionar Reembolsos"
-            placeholder="Adicionar reembolsos"
-            helperText="Selecione até 10 arquivos de reembolso"
-            disabled={isLoading || isUploadingFiles}
-            showCamera={true}
-            showGallery={true}
-            showFilePicker={true}
-          />
-
-          <FilePicker
-            value={reimbursementInvoiceFiles}
-            onChange={setReimbursementInvoiceFiles}
-            maxFiles={10}
-            label="Adicionar Notas Fiscais de Reembolso"
-            placeholder="Adicionar notas de reembolso"
-            helperText="Selecione até 10 notas de reembolso"
-            disabled={isLoading || isUploadingFiles}
-            showCamera={true}
-            showGallery={true}
-            showFilePicker={true}
-          />
-          </CardContent>
-        </Card>
-
-        {/* Items Note */}
-        <Card style={styles.section}>
-          <CardContent>
-          <View style={styles.itemsNote}>
-            <ThemedText style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
-              Nota: Para editar itens, quantidades ou preços, acesse a página de detalhes do pedido.
-            </ThemedText>
+            {/* Documents Summary */}
+            {(budgetFiles.length > 0 || invoiceFiles.length > 0 || receiptFiles.length > 0 ||
+              reimbursementFiles.length > 0 || reimbursementInvoiceFiles.length > 0 ||
+              existingBudgetIds.length > 0 || existingInvoiceIds.length > 0 || existingReceiptIds.length > 0 ||
+              existingReimbursementIds.length > 0 || existingReimbursementInvoiceIds.length > 0) && (
+              <Card style={styles.card}>
+                <CardHeader>
+                  <CardTitle>Documentos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {existingBudgetIds.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Orçamentos (existentes)</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{existingBudgetIds.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {existingInvoiceIds.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Notas Fiscais (existentes)</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{existingInvoiceIds.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {existingReceiptIds.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Recibos (existentes)</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{existingReceiptIds.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {existingReimbursementIds.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Reembolsos (existentes)</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{existingReimbursementIds.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {existingReimbursementInvoiceIds.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>NF Reembolso (existentes)</ThemedText>
+                      <Badge variant="secondary">
+                        <ThemedText>{existingReimbursementInvoiceIds.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {budgetFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Orçamentos (novos)</ThemedText>
+                      <Badge variant="default">
+                        <ThemedText>{budgetFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {invoiceFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Notas Fiscais (novas)</ThemedText>
+                      <Badge variant="default">
+                        <ThemedText>{invoiceFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {receiptFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Recibos (novos)</ThemedText>
+                      <Badge variant="default">
+                        <ThemedText>{receiptFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {reimbursementFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>Reembolsos (novos)</ThemedText>
+                      <Badge variant="default">
+                        <ThemedText>{reimbursementFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                  {reimbursementInvoiceFiles.length > 0 && (
+                    <View style={styles.docSummaryRow}>
+                      <ThemedText style={styles.docLabel}>NF Reembolso (novos)</ThemedText>
+                      <Badge variant="default">
+                        <ThemedText>{reimbursementInvoiceFiles.length} arquivo(s)</ThemedText>
+                      </Badge>
+                    </View>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </View>
-          </CardContent>
-        </Card>
-      </ScrollView>
-
-      <FormActionBar
-        onCancel={() => router.back()}
-        onSubmit={form.handleSubmit(handleSubmit)}
-        isSubmitting={isLoading || isUploadingFiles}
-        canSubmit={form.formState.isValid}
-        submitLabel="Salvar"
-        submittingLabel={isUploadingFiles ? 'Enviando arquivos...' : 'Salvando...'}
-      />
-    </KeyboardAvoidingView>
+        )}
+      </MultiStepFormContainer>
+    </FormProvider>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  step1Container: {
+    flex: 1,
+  },
+  card: {
+    marginBottom: spacing.md,
+  },
+  lastCard: {
+    marginBottom: 0,
+  },
+  fieldGroup: {
+    marginBottom: spacing.lg,
+  },
+  lastFieldGroup: {
+    marginBottom: spacing.xs,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  requiredAsterisk: {
+    color: "#ef4444",
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  fieldSpacer: {
+    height: spacing.md,
+  },
+  errorText: {
+    fontSize: fontSize.xs,
+    color: "#ef4444",
+    marginTop: spacing.xs,
+  },
+  helpText: {
+    fontSize: fontSize.xs,
+    color: "#6b7280",
+    marginTop: spacing.xs,
+  },
+  itemSelectorContainer: {
+    flex: 1,
+  },
+  temporaryItemsContainer: {
+    flex: 1,
+  },
+  addItemButton: {
+    marginBottom: spacing.md,
+  },
+  addButtonText: {
+    marginLeft: spacing.xs,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  emptyText: {
+    fontSize: fontSize.md,
+    textAlign: "center",
+  },
+  itemSeparator: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
+  },
+  temporaryItemRow: {
+    paddingVertical: spacing.sm,
+  },
+  rowFields: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  halfField: {
+    flex: 1,
+    marginBottom: spacing.md,
+  },
+  smallField: {
+    flex: 1,
+  },
+  priceField: {
+    flex: 1.5,
+  },
+  errorContainer: {
+    padding: spacing.md,
+  },
+  reviewContainer: {
+    flex: 1,
+  },
+  metricsContent: {
+    paddingVertical: spacing.md,
+  },
+  metricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  metricItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  metricValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  metricValueLarge: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e5e7eb",
+  },
+  detailLabel: {
+    fontSize: fontSize.sm,
+    color: "#6b7280",
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    flex: 1,
+    textAlign: "right",
+    marginLeft: spacing.md,
+  },
+  itemsCard: {
+    flex: 1,
+  },
+  itemsHeader: {
+    paddingBottom: spacing.xs,
+  },
+  itemsContent: {
+    flex: 1,
+    paddingTop: 0,
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderBottomWidth: 1,
+  },
+  tableHeaderText: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    minHeight: 44,
+  },
+  tableRowLast: {
+    borderBottomWidth: 0,
+  },
+  itemInfo: {
+    flex: 3,
+  },
+  itemName: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  itemBrand: {
+    fontSize: fontSize.xs,
+    marginTop: 1,
+  },
+  itemQuantity: {
+    width: 50,
+    alignItems: "center",
+  },
+  quantityText: {
+    fontSize: fontSize.md,
+    fontWeight: "600",
+  },
+  itemPrice: {
+    width: 80,
+    alignItems: "flex-end",
+  },
+  priceText: {
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+  },
+  tableFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderTopWidth: 1,
+    marginTop: spacing.xs,
+  },
+  tableFooterText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+  },
+  tableFooterValue: {
+    fontSize: fontSize.lg,
+    fontWeight: "700",
+  },
+  docSummaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
+  },
+  docLabel: {
+    fontSize: fontSize.sm,
+  },
+});
+
+export default OrderEditForm;

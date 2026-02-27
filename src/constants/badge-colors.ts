@@ -541,6 +541,15 @@ export const ENTITY_BADGE_CONFIG = {
     [PERFORMANCE_LEVEL.POOR]: "warning" as BadgeVariant,
   },
 
+  // Message Status (Prisma enum: DRAFT, SCHEDULED, ACTIVE, EXPIRED, ARCHIVED)
+  MESSAGE: {
+    DRAFT: "secondary" as BadgeVariant,
+    SCHEDULED: "pending" as BadgeVariant,
+    ACTIVE: "active" as BadgeVariant,
+    EXPIRED: "expired" as BadgeVariant,
+    ARCHIVED: "muted" as BadgeVariant,
+  },
+
   // Notification Importance
   NOTIFICATION: {
     [NOTIFICATION_IMPORTANCE.LOW]: "muted" as BadgeVariant,

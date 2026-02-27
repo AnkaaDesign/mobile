@@ -210,7 +210,7 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
         </View>
 
         {/* Payment Information Section */}
-        {(order.paymentMethod || order.paymentResponsible) && (
+        {(order.paymentMethod || order.paymentResponsible || order.paymentResponsibleId) && (
           <>
             {/* Separator */}
             <View style={[styles.separator, { backgroundColor: colors.border }]} />
@@ -221,10 +221,10 @@ export const OrderInfoCard: React.FC<OrderInfoCardProps> = ({ order }) => {
               </ThemedText>
 
               {/* Payment Responsible */}
-              {order.paymentResponsible && (
+              {(order.paymentResponsible || order.paymentResponsibleId) && (
                 <DetailField
                   label="Responsável pelo Pagamento"
-                  value={order.paymentResponsible.name}
+                  value={order.paymentResponsible?.name || "Responsável definido"}
                   icon="user"
                 />
               )}
