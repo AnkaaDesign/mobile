@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useScreenReady, useFormScreenKey } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -17,6 +18,7 @@ import {
 
 export default function CreateFormulaScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
 
   // End navigation loading overlay when screen mounts
@@ -33,7 +35,7 @@ export default function CreateFormulaScreen() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canCreate) {

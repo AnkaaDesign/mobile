@@ -16,6 +16,7 @@ import { Text } from "@/components/ui/text";
 
 import { usePpeDeliveryMutations, usePpeDelivery, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
@@ -31,6 +32,7 @@ export default function EditHRPPEDeliveryScreen() {
 function EditHRPPEDeliveryScreenInner() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   const { updateAsync, updateMutation } = usePpeDeliveryMutations();
@@ -101,7 +103,7 @@ function EditHRPPEDeliveryScreenInner() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (isDeliveryLoading) {

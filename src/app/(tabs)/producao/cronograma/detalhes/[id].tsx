@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { FileViewMode } from "@/components/file";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, InteractionManager, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, router, usePathname } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ErrorScreen } from "@/components/ui/error-screen";
@@ -17,6 +17,7 @@ import { perfLog } from "@/utils/performance-logger";
 import { useScreenPerformance } from "@/utils/screen-performance-monitor";
 import { apiPerformanceLogger } from "@/utils/api-performance-logger";
 // import { showToast } from "@/components/ui/toast";
+import { navigationTracker } from "@/utils/navigation-tracker";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
@@ -56,6 +57,15 @@ export default function ScheduleDetailsScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteAsync } = useTaskMutations();
+  const pathname = usePathname();
+
+  // Detect navigation context from pathname (Expo Router returns actual URL for re-exported screens)
+  const context = useMemo(() => {
+    if (pathname.includes('/agenda')) return 'agenda';
+    if (pathname.includes('/historico')) return 'historico';
+    if (pathname.includes('/tarefa')) return 'tarefa';
+    return 'cronograma';
+  }, [pathname]);
   const [refreshing, setRefreshing] = useState(false);
   const [baseFilesViewMode, setBaseFilesViewMode] = useState<FileViewMode>("grid");
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("grid");
@@ -244,6 +254,14 @@ export default function ScheduleDetailsScreen() {
       Alert.alert("Erro", "Você não tem permissão para editar");
       return;
     }
+    // Set source so edit screen knows where to return
+    const sourceMap: Record<string, string> = {
+      agenda: '/(tabs)/producao/agenda',
+      historico: '/(tabs)/producao/historico',
+      tarefa: '/(tabs)/producao/cronograma',
+      cronograma: '/(tabs)/producao/cronograma',
+    };
+    navigationTracker.setSource(sourceMap[context]);
     router.push(`/producao/cronograma/editar/${id}`);
   };
 
@@ -265,8 +283,14 @@ export default function ScheduleDetailsScreen() {
           onPress: async () => {
             try {
               await deleteAsync(id as string);
-              // API client already shows success alert
-              router.back();
+              // Navigate to the correct list based on context
+              const listRouteMap: Record<string, string> = {
+                agenda: '/(tabs)/producao/agenda',
+                historico: '/(tabs)/producao/historico',
+                tarefa: '/(tabs)/producao/cronograma',
+                cronograma: '/(tabs)/producao/cronograma',
+              };
+              router.replace(listRouteMap[context] as any);
             } catch (_error) {
               // API client already shows error alert
             }
@@ -403,8 +427,6 @@ export default function ScheduleDetailsScreen() {
           {/* Dates Card - Datas */}
           <TaskDatesCard task={{
             ...task,
-            entryDate: task.entryDate ?? new Date(),
-            term: task.term ?? new Date(),
             createdBy: task.createdBy,
           }} canViewRestrictedFields={canViewRestrictedFields} />
 

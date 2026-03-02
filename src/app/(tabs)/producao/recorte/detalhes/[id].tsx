@@ -6,6 +6,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useCut, useCutMutations, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
@@ -52,6 +53,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CuttingDetailsScreen() {
   const { id } = useLocalSearchParams();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { update, delete: deleteAsync } = useCutMutations();
@@ -137,7 +139,7 @@ export default function CuttingDetailsScreen() {
             try {
               await deleteAsync(id as string);
               Alert.alert("Sucesso", "Recorte excluído com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

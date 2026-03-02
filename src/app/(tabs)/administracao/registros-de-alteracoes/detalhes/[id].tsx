@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useChangeLog, useScreenReady} from '@/hooks';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -24,6 +25,7 @@ import { ChangeLogDetailSkeleton } from "@/components/administration/change-log/
 export default function ChangeLogDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -58,7 +60,7 @@ export default function ChangeLogDetailsScreen() {
         <Header
           title="Detalhes do Registro"
           showBackButton={true}
-          onBackPress={() => router.back()}
+          onBackPress={() => goBack()}
         />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <ChangeLogDetailSkeleton />
@@ -73,7 +75,7 @@ export default function ChangeLogDetailsScreen() {
         <Header
           title="Detalhes do Registro"
           showBackButton={true}
-          onBackPress={() => router.back()}
+          onBackPress={() => goBack()}
         />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.container}>
@@ -88,7 +90,7 @@ export default function ChangeLogDetailsScreen() {
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                   O registro de alteração solicitado não foi encontrado ou pode ter sido removido.
                 </ThemedText>
-                <Button onPress={() => router.back()}>
+                <Button onPress={() => goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </CardContent>
@@ -105,7 +107,7 @@ export default function ChangeLogDetailsScreen() {
       <Header
         title="Detalhes do Registro"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <TouchableOpacity
             onPress={handleRefresh}

@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { hasPrivilege } from "@/utils";
@@ -28,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CatalogDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deletePaint } = usePaintMutations();
@@ -184,7 +186,7 @@ export default function CatalogDetailsScreen() {
             try {
               await deletePaint(id as string);
               RNAlert.alert("Sucesso", "Tinta excluída com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

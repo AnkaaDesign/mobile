@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCustomer, useScreenReady } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function CustomerDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
@@ -133,7 +135,7 @@ export default function CustomerDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O cliente solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

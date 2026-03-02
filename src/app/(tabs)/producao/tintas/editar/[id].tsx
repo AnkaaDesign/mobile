@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
@@ -15,6 +16,7 @@ import type { PaintFormula } from "@/types";
 export default function EditPaintScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
   const { updateAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +95,7 @@ export default function EditPaintScreen() {
       }
 
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (error) {
       console.error("Error updating paint:", error);
       // API client already shows error alert
@@ -103,7 +105,7 @@ export default function EditPaintScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (isLoadingPaint) {

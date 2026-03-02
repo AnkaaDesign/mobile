@@ -23,10 +23,12 @@ import { DeliveriesTable, SchedulesTable } from "@/components/human-resources/pp
 // Import skeleton
 import { PpeDetailSkeleton } from "@/components/human-resources/ppe/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -156,7 +158,7 @@ export default function PPEDetailsScreen() {
         <Header
           title="EPI não encontrado"
           showBackButton={true}
-          onBackPress={() => router.back()}
+          onBackPress={() => goBack()}
         />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.container}>
@@ -188,7 +190,7 @@ export default function PPEDetailsScreen() {
       <Header
         title={item.name}
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

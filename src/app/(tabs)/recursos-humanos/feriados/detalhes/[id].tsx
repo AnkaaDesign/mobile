@@ -18,10 +18,12 @@ import { HolidayCard } from "@/components/human-resources/holiday/detail";
 import { HolidayDetailSkeleton } from "@/components/human-resources/holiday/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function HolidayDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -80,7 +82,7 @@ export default function HolidayDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O feriado solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

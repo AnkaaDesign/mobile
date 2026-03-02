@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { paintBrandCreateSchema } from '../../../../schemas';
 import type { PaintBrandCreateFormData } from '../../../../schemas';
@@ -30,6 +31,7 @@ export default function CreatePaintBrandScreen() {
 function CreatePaintBrandScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { create } = usePaintBrandMutations();
 
   // End navigation loading overlay when screen mounts
@@ -74,7 +76,7 @@ function CreatePaintBrandScreenInner() {
       if (newId) {
         router.replace(routeToMobilePath(routes.painting.paintBrands.details(newId)) as any);
       } else {
-        router.back();
+        goBack();
       }
     } catch (_error) {
       // API client already shows error alert
@@ -85,7 +87,7 @@ function CreatePaintBrandScreenInner() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canCreate) {

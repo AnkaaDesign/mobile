@@ -15,6 +15,7 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { TagManager } from "@/components/inventory/supplier/form";
 import { PhoneArrayInput } from "@/components/ui";
@@ -32,6 +33,7 @@ export default function SupplierEditScreen() {
 function SupplierEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
@@ -236,10 +238,10 @@ function SupplierEditScreenInner() {
     if (form.formState.isDirty || logoFiles.length > 0) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.back() },
+        { text: "Descartar", style: "destructive", onPress: () => goBack() },
       ]);
     } else {
-      router.back();
+      goBack();
     }
   };
 

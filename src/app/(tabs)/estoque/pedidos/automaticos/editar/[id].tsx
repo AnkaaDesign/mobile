@@ -26,6 +26,7 @@ import { ItemMultiSelector } from "@/components/inventory/item/item-multi-select
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routeToMobilePath } from '@/utils/route-mapper';
 
 
@@ -40,6 +41,7 @@ function EditAutomaticOrderScreenInner() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,10 +144,10 @@ function EditAutomaticOrderScreenInner() {
     if (isDirty) {
       Alert.alert("Cancelar", "Tem certeza que deseja cancelar? As alterações serão perdidas.", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Cancelar", style: "destructive", onPress: () => router.back() },
+        { text: "Cancelar", style: "destructive", onPress: () => goBack() },
       ]);
     } else {
-      router.back();
+      goBack();
     }
   }, [router, isDirty]);
 
@@ -154,14 +156,14 @@ function EditAutomaticOrderScreenInner() {
       <ThemedView style={styles.container}>
         <FormHeader
           title="Editar Agendamento"
-          onCancel={() => router.back()}
+          onCancel={() => goBack()}
           showActions={false}
         />
         <View style={styles.permissionContainer}>
           <ThemedText style={styles.permissionText}>
             Você não tem permissão para editar agendamentos automáticos
           </ThemedText>
-          <Button variant="outline" onPress={() => router.back()}>
+          <Button variant="outline" onPress={() => goBack()}>
             <ThemedText>Voltar</ThemedText>
           </Button>
         </View>
@@ -202,7 +204,7 @@ function EditAutomaticOrderScreenInner() {
         <ErrorScreen
           message="Agendamento não encontrado"
           detail="O agendamento automático solicitado não foi encontrado"
-          onRetry={() => router.back()}
+          onRetry={() => goBack()}
         />
       </ThemedView>
     );

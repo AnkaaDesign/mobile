@@ -15,6 +15,7 @@ import { IconClock, IconUser, IconCalendar, IconMapPin, IconCamera, IconPhone, I
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 
 import { Skeleton } from "@/components/ui/skeleton";const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -62,6 +63,7 @@ interface TimeEntryDetail {
 
 export default function TimeEntryDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -247,7 +249,7 @@ export default function TimeEntryDetailsScreen() {
       <ErrorScreen
         title="Erro ao carregar registro"
         message="Não foi possível carregar os detalhes do registro de ponto."
-        onRetry={() => router.back()}
+        onRetry={() => goBack()}
       />
     );
   }
@@ -257,7 +259,7 @@ export default function TimeEntryDetailsScreen() {
       <ErrorScreen
         title="Registro não encontrado"
         message="O registro de ponto solicitado não foi encontrado."
-        onRetry={() => router.back()}
+        onRetry={() => goBack()}
       />
     );
   }
@@ -270,7 +272,7 @@ export default function TimeEntryDetailsScreen() {
         title="Registro de Ponto"
         subtitle={formatDateDisplay(timeEntry.date)}
         showBackButton
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <Button variant="ghost" size="sm" onPress={handleEditPress}>
             <IconEdit size={20} color="#3B82F6" />

@@ -19,6 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { routes, ORDER_STATUS, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege, formatCurrency } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -27,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -198,7 +200,7 @@ export default function OrderDetailScreen() {
               <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
                 O pedido solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

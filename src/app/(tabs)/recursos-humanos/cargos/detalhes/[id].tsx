@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -24,6 +25,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 import { Skeleton } from "@/components/ui/skeleton";export default function PositionDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const { delete: deleteAsync } = usePositionMutations();
   const [refreshing, setRefreshing] = useState(false);
@@ -110,7 +112,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Posi
             try {
               await deleteAsync(id as string);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

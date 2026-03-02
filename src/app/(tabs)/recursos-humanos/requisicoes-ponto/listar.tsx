@@ -16,6 +16,7 @@ import { IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX } fro
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
@@ -35,6 +36,7 @@ interface TimeAdjustmentRequest {
 
 export default function TimeAdjustmentRequestsListScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
@@ -318,7 +320,7 @@ export default function TimeAdjustmentRequestsListScreen() {
         title="Ajustes de Ponto"
         subtitle="Aprovar ou rejeitar requisições de ajuste"
         showBackButton
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
       />
 
       <View style={styles.filtersContainer}>

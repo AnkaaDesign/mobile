@@ -17,7 +17,7 @@ import { formatCurrency, formatDate } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
-
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,6 +28,7 @@ export default function EditOrderItemScreen() {
 
 function EditOrderItemScreenInner() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -109,7 +110,7 @@ function EditOrderItemScreenInner() {
   // Mutations
   const { update, isLoading: isUpdating } = useOrderItemMutations({
     onUpdateSuccess: () => {
-      router.back();
+      goBack();
     },
   });
 
@@ -129,11 +130,11 @@ function EditOrderItemScreenInner() {
         "Tem certeza que deseja cancelar? As alterações não salvas serão perdidas.",
         [
           { text: "Continuar editando", style: "cancel" },
-          { text: "Descartar", style: "destructive", onPress: () => router.back() },
+          { text: "Descartar", style: "destructive", onPress: () => goBack() },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 

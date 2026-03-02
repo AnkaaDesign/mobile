@@ -121,7 +121,16 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       if (!pathname.startsWith("/(autenticacao)") && pathname !== "/") {
         const prev = historyRef.current;
         if (prev.length === 0 || prev[prev.length - 1] !== pathname) {
-          historyRef.current = [...prev, pathname].slice(-10);
+          // Detect redirect: if the new path is a sub-route of the last entry
+          // (e.g., /producao/observacoes → /producao/observacoes/listar),
+          // this is an index.tsx redirect — replace the entry instead of pushing
+          // to prevent back-navigation loops through redirect pages.
+          const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
+          if (lastEntry && pathname.startsWith(lastEntry + '/')) {
+            historyRef.current = [...prev.slice(0, -1), pathname].slice(-10);
+          } else {
+            historyRef.current = [...prev, pathname].slice(-10);
+          }
           logNavigationStack(historyRef.current, pathname);
         }
       }
@@ -136,12 +145,15 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       const previousPath = currentHistory[currentHistory.length - 2];
       // Remove current from history
       historyRef.current = currentHistory.slice(0, -1);
-      r.replace(previousPath as any);
+      // Use navigate() instead of replace() — navigate() properly switches
+      // the active screen in Drawer/Tab navigators (replace only swaps the
+      // current stack entry but doesn't change which Drawer screen is active)
+      r.navigate(previousPath as any);
     } else {
       // Compute parent route from current pathname
       const current = currentPathnameRef.current;
       const parentRoute = computeParentRoute(current);
-      r.replace(parentRoute as any);
+      r.navigate(parentRoute as any);
     }
   }, []);
 
@@ -165,7 +177,13 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     if (!path.startsWith("/(autenticacao)") && path !== "/") {
       const prev = historyRef.current;
       if (prev.length === 0 || prev[prev.length - 1] !== path) {
-        historyRef.current = [...prev, path].slice(-10);
+        // Detect redirect (sub-route of last entry) — replace instead of push
+        const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
+        if (lastEntry && path.startsWith(lastEntry + '/')) {
+          historyRef.current = [...prev.slice(0, -1), path].slice(-10);
+        } else {
+          historyRef.current = [...prev, path].slice(-10);
+        }
       }
     }
   }, []);

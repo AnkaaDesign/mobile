@@ -16,6 +16,7 @@ import { spacing } from "@/constants/design-system";
 
 import { usePpeDeliveryMutations, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { getItems, getUsers } from "@/api-client";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, ITEM_CATEGORY_TYPE, PPE_TYPE, routes } from "@/constants";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
@@ -32,6 +33,7 @@ function CreateHRPPEDeliveryScreenInner() {
   useScreenReady();
   const router = useRouter();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user: currentUser } = useAuth();
   const { createAsync, createMutation } = usePpeDeliveryMutations();
 
@@ -174,7 +176,7 @@ function CreateHRPPEDeliveryScreenInner() {
       if (newId) {
         router.replace(routeToMobilePath(routes.humanResources.ppe.deliveries.details(newId)) as any);
       } else {
-        router.back();
+        goBack();
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao criar a entrega de EPI");
@@ -182,7 +184,7 @@ function CreateHRPPEDeliveryScreenInner() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   return (

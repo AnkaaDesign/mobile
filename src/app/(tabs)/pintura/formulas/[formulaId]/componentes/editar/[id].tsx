@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useItems } from "@/hooks";
 import { paintFormulaComponentUpdateSchema } from '../../../../../../../schemas';
@@ -38,6 +39,7 @@ export default function EditComponentScreen() {
 function EditComponentScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { update: updateComponent, isLoading: isUpdating } = usePaintFormulaComponentMutations();
 
@@ -136,7 +138,7 @@ function EditComponentScreenInner() {
     try {
       await updateComponent({ id: id!, data });
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (error: any) {
       // API client already shows error alert
     }
@@ -153,12 +155,12 @@ function EditComponentScreenInner() {
           {
             text: "Descartar",
             style: "destructive",
-            onPress: () => router.back(),
+            onPress: () => goBack(),
           },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 
@@ -169,7 +171,7 @@ function EditComponentScreenInner() {
         <ThemedText style={styles.permissionText}>
           Você não tem permissão para editar componentes
         </ThemedText>
-        <Button variant="outline" onPress={() => router.back()}>
+        <Button variant="outline" onPress={() => goBack()}>
           Voltar
         </Button>
       </View>
@@ -224,7 +226,7 @@ function EditComponentScreenInner() {
     return (
       <View style={styles.centerContainer}>
         <ThemedText style={styles.errorText}>Erro ao carregar componente</ThemedText>
-        <Button variant="outline" onPress={() => router.back()}>
+        <Button variant="outline" onPress={() => goBack()}>
           Voltar
         </Button>
       </View>

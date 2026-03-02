@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconEdit, IconTrash, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -29,6 +30,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 export default function WarningDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const { delete: deleteAsync } = useWarningMutations();
   const [refreshing, setRefreshing] = useState(false);
@@ -113,7 +115,7 @@ export default function WarningDetailScreen() {
             try {
               await deleteAsync(id as string);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }
@@ -148,7 +150,7 @@ export default function WarningDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 A advertência solicitada não foi encontrada ou pode ter sido removida.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

@@ -21,6 +21,7 @@ import {
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
@@ -44,6 +45,7 @@ function FinancialCustomerEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
@@ -277,10 +279,10 @@ function FinancialCustomerEditScreenInner() {
     if (isDirty || logoFiles.length > 0) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.back() },
+        { text: "Descartar", style: "destructive", onPress: () => goBack() },
       ]);
     } else {
-      router.back();
+      goBack();
     }
   };
 

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -27,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ComponentDetailsScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const { formulaId, id } = useLocalSearchParams<{ formulaId: string; id: string }>();
   const { delete: deleteComponent } = usePaintFormulaComponentMutations();
@@ -98,7 +100,7 @@ export default function ComponentDetailsScreen() {
             try {
               await deleteComponent(id!);
               Alert.alert("Sucesso", "Componente removido com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

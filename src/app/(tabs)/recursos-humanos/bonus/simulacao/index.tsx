@@ -58,7 +58,7 @@ export default function BonusSimulationScreen() {
 
   // Fetch period task stats from lightweight endpoint (no Secullum)
   const [taskStatsLoading, setTaskStatsLoading] = useState(true);
-  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number } | null>(null);
+  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number; eligibleUsers: number } | null>(null);
 
   const fetchPeriodStats = useCallback(async () => {
     setTaskStatsLoading(true);
@@ -69,6 +69,7 @@ export default function BonusSimulationScreen() {
         rawCount: Number(data.totalRawTaskCount) || 0,
         weightedCount: Number(data.totalWeightedTasks) || 0,
         suspendedCount: Number(data.totalSuspendedTasks) || 0,
+        eligibleUsers: Number(data.eligibleUsers) || 0,
       });
     } catch (err) {
       console.error('[BonusSimulation] Failed to fetch period task stats:', err);
@@ -111,6 +112,12 @@ export default function BonusSimulationScreen() {
     );
   }, [usersData]);
 
+  // Use backend eligible count (accurate, queries all users without limit)
+  // Falls back to client-side filtered count while backend response loads
+  const eligibleUserCount = periodTaskStats?.eligibleUsers && periodTaskStats.eligibleUsers > 0
+    ? periodTaskStats.eligibleUsers
+    : eligibleUsers.length;
+
   // Initialize simulated users from eligible users
   useEffect(() => {
     if (eligibleUsers.length > 0 && simulatedUsers.length === 0) {
@@ -132,14 +139,13 @@ export default function BonusSimulationScreen() {
   useEffect(() => {
     if (simulatedUsers.length === 0) return;
 
-    const eligibleCount = simulatedUsers.length;
-    const averagePerUser = eligibleCount > 0 ? taskQuantity / eligibleCount : 0;
+    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
 
     setSimulatedUsers(prev => prev.map(user => ({
       ...user,
       bonusAmount: calculateBonusForPosition(user.position, user.performanceLevel, averagePerUser),
     })));
-  }, [taskQuantity, simulatedUsers.length]);
+  }, [taskQuantity, eligibleUserCount, simulatedUsers.length]);
 
   // Handle task input change (Brazilian format with comma)
   const handleTaskInputChange = useCallback((value: string | number | null) => {
@@ -176,8 +182,7 @@ export default function BonusSimulationScreen() {
 
   // Handle position change for a user
   const handlePositionChange = useCallback((userId: string, newPosition: string) => {
-    const eligibleCount = simulatedUsers.length;
-    const averagePerUser = eligibleCount > 0 ? taskQuantity / eligibleCount : 0;
+    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
 
     setSimulatedUsers(prev => prev.map(user => {
       if (user.id !== userId) return user;
@@ -187,12 +192,11 @@ export default function BonusSimulationScreen() {
         bonusAmount: calculateBonusForPosition(newPosition, user.performanceLevel, averagePerUser),
       };
     }));
-  }, [taskQuantity, simulatedUsers.length]);
+  }, [taskQuantity, eligibleUserCount]);
 
   // Handle performance level change for a user
   const handlePerformanceLevelChange = useCallback((userId: string, delta: number) => {
-    const eligibleCount = simulatedUsers.length;
-    const averagePerUser = eligibleCount > 0 ? taskQuantity / eligibleCount : 0;
+    const averagePerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
 
     setSimulatedUsers(prev => prev.map(user => {
       if (user.id !== userId) return user;
@@ -203,7 +207,7 @@ export default function BonusSimulationScreen() {
         bonusAmount: calculateBonusForPosition(user.position, newLevel, averagePerUser),
       };
     }));
-  }, [taskQuantity, simulatedUsers.length]);
+  }, [taskQuantity, eligibleUserCount]);
 
   // Restore original task quantity
   const handleRestoreTaskQuantity = useCallback(() => {
@@ -214,7 +218,6 @@ export default function BonusSimulationScreen() {
 
   // Calculate totals
   const totalBonusAmount = useMemo(() => simulatedUsers.reduce((sum, user) => sum + user.bonusAmount, 0), [simulatedUsers]);
-  const eligibleUserCount = simulatedUsers.length;
   const averageTasksPerUser = eligibleUserCount > 0 ? taskQuantity / eligibleUserCount : 0;
   const isTaskQuantityModified = taskQuantity !== originalTaskQuantity && originalTaskQuantity > 0;
 

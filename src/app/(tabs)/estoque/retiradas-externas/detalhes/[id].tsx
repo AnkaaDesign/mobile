@@ -15,6 +15,7 @@ import { useTheme } from "@/lib/theme";
 import { EXTERNAL_WITHDRAWAL_STATUS, EXTERNAL_WITHDRAWAL_TYPE, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -22,6 +23,7 @@ import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-
 import { Skeleton } from "@/components/ui/skeleton";export default function ExternalWithdrawalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -65,7 +67,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Exte
   };
 
   const handleGoBack = () => {
-    router.back();
+    goBack();
   };
 
   const handleEdit = () => {
@@ -93,7 +95,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Exte
           onPress: async () => {
             try {
               await deleteWithdrawal(id!);
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a retirada externa");
             }

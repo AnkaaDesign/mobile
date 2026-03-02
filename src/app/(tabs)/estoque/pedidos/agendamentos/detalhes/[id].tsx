@@ -33,6 +33,7 @@ import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
@@ -42,6 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderScheduleDetailsScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -93,7 +95,7 @@ export default function OrderScheduleDetailsScreen() {
     },
     onDeleteSuccess: () => {
       Alert.alert("Sucesso", "Agendamento excluído com sucesso");
-      router.back();
+      goBack();
     },
   });
 
@@ -251,7 +253,7 @@ export default function OrderScheduleDetailsScreen() {
         <ErrorScreen
           message="Agendamento não encontrado"
           detail="O agendamento solicitado não foi encontrado"
-          onRetry={() => router.back()}
+          onRetry={() => goBack()}
         />
       </ThemedView>
     );

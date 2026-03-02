@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useUser, useScreenReady } from '@/hooks';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFileUrl } from "@/utils/file-utils";
 import { Card } from "@/components/ui/card";
@@ -81,6 +82,7 @@ const getEmploymentDuration = (exp1StartAt: Date | string | null, dismissedAt?: 
 export default function EmployeeDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -209,7 +211,7 @@ export default function EmployeeDetailScreen() {
             <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
               O funcionário solicitado não foi encontrado ou pode ter sido removido.
             </ThemedText>
-            <Button onPress={() => router.back()}>
+            <Button onPress={() => goBack()}>
               <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
             </Button>
           </Card>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { TextArea } from "@/components/ui/text-area";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
 import { getItems } from '@/api-client';
 import { ppeRequestSchema } from '@/schemas/ppe-request';
@@ -24,6 +25,7 @@ import { useTheme } from "@/lib/theme";
 
 export default function RequestPPEScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -214,7 +216,7 @@ export default function RequestPPEScreen() {
     try {
       await requestMutation.mutateAsync(requestData);
       form.reset();
-      router.back();
+      goBack();
     } catch (error: any) {
       // API client handles error alerts
     }
@@ -396,7 +398,7 @@ export default function RequestPPEScreen() {
         </Button>
         <Button
           variant="outline"
-          onPress={() => router.back()}
+          onPress={() => goBack()}
           disabled={isLoading}
         >
           <ThemedText>Cancelar</ThemedText>

@@ -19,10 +19,12 @@ import { SizeCard, EmployeeCard, MeasurementsCard, DeliveryCompatibilityCard } f
 import { PpeSizeDetailSkeleton } from "@/components/human-resources/ppe/size/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function PPESizeDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -100,7 +102,7 @@ export default function PPESizeDetailsScreen() {
       <Header
         title={ppeSize.user?.name || "Tamanhos de EPI"}
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

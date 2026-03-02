@@ -31,7 +31,7 @@ export default function BonusSimulationScreen() {
   const { year: periodYear, month: periodMonth } = getCurrentPayrollPeriod();
   // Fetch period task stats from lightweight endpoint (no Secullum)
   const [taskStatsLoading, setTaskStatsLoading] = useState(false);
-  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number } | null>(null);
+  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number; eligibleUsers: number } | null>(null);
 
   const fetchPeriodStats = useCallback(async () => {
     setTaskStatsLoading(true);
@@ -42,6 +42,7 @@ export default function BonusSimulationScreen() {
         rawCount: Number(data.totalRawTaskCount) || 0,
         weightedCount: Number(data.totalWeightedTasks) || 0,
         suspendedCount: Number(data.totalSuspendedTasks) || 0,
+        eligibleUsers: Number(data.eligibleUsers) || 0,
       });
     } catch (err) {
       console.error('[BonusSimulation] Failed to fetch period task stats:', err);
@@ -86,10 +87,14 @@ export default function BonusSimulationScreen() {
   // Use weighted task count from period stats
   const totalWeightedTasks = periodTaskStats?.weightedCount || 0;
 
-  // Calculate eligible users count
+  // Use backend eligible count (accurate, queries all users without limit)
+  // Falls back to client-side filtered count while backend response loads
   const eligibleUsersCount = useMemo(() => {
+    if (periodTaskStats?.eligibleUsers && periodTaskStats.eligibleUsers > 0) {
+      return periodTaskStats.eligibleUsers;
+    }
     return eligibleUsersData?.data?.length || 0;
-  }, [eligibleUsersData]);
+  }, [periodTaskStats, eligibleUsersData]);
 
   // Calculate maximum allowed task quantity (average must be below 6)
   const maxTaskQuantity = useMemo(() => {

@@ -18,10 +18,12 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { DeliveryCard, EmployeeCard, ItemDetailsCard } from "@/components/human-resources/ppe/delivery/detail";
 import { PpeDeliveryDetailSkeleton } from "@/components/human-resources/ppe/delivery/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function HRPPEDeliveryDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -78,7 +80,7 @@ export default function HRPPEDeliveryDetailsScreen() {
   if (isLoading) {
     return (
       <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header title="Detalhes da Entrega" showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Detalhes da Entrega" showBackButton={true} onBackPress={() => goBack()} />
         <PpeDeliveryDetailSkeleton />
       </View>
     );
@@ -87,7 +89,7 @@ export default function HRPPEDeliveryDetailsScreen() {
   if (error || !delivery || !id || id === "") {
     return (
       <View style={StyleSheet.flatten([styles.screenContainer, { backgroundColor: colors.background }])}>
-        <Header title="Detalhes da Entrega" showBackButton={true} onBackPress={() => router.back()} />
+        <Header title="Detalhes da Entrega" showBackButton={true} onBackPress={() => goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.container}>
             <Card>
@@ -99,7 +101,7 @@ export default function HRPPEDeliveryDetailsScreen() {
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                   A entrega de EPI solicitada não foi encontrada ou pode ter sido removida.
                 </ThemedText>
-                <Button onPress={() => router.back()}>
+                <Button onPress={() => goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </CardContent>
@@ -118,7 +120,7 @@ export default function HRPPEDeliveryDetailsScreen() {
       <Header
         title="Detalhes da Entrega"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

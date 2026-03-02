@@ -21,6 +21,7 @@ import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
 import { hasPrivilege } from "@/utils";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditPPEDeliveryScreen() {
@@ -30,6 +31,7 @@ export default function EditPPEDeliveryScreen() {
 
 function EditPPEDeliveryScreenInner() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
@@ -101,7 +103,7 @@ function EditPPEDeliveryScreenInner() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (isDeliveryLoading) {

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 
 import {
@@ -38,6 +39,7 @@ import { UserDetailSkeleton } from "@/components/administration/user/skeleton/us
 export default function UserDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { pushWithLoading } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -166,7 +168,7 @@ export default function UserDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O usuário solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

@@ -16,6 +16,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 type RetentionPeriod = "1_day" | "3_days" | "1_week" | "2_weeks" | "1_month" | "3_months" | "6_months" | "1_year";
 
@@ -81,6 +82,7 @@ export default function CreateBackupScreen() {
   useScreenReady();
   const formKey = useFormScreenKey();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { create } = useBackupMutations();
 
@@ -105,7 +107,7 @@ export default function CreateBackupScreen() {
         autoDelete: form.autoDelete.enabled ? form.autoDelete : undefined,
       });
       Alert.alert("Sucesso", "Backup criado com sucesso");
-      router.back();
+      goBack();
     } catch {
       Alert.alert("Erro", "Falha ao criar backup");
     } finally {
@@ -120,7 +122,7 @@ export default function CreateBackupScreen() {
           {/* Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>Criar Novo Backup</Text>
-            <Button variant="ghost" size="sm" onPress={() => router.back()}>
+            <Button variant="ghost" size="sm" onPress={() => goBack()}>
               <Icon name="x" size={20} color={colors.mutedForeground} />
             </Button>
           </View>
@@ -258,7 +260,7 @@ export default function CreateBackupScreen() {
               <Icon name="database" size={16} color="#fff" />
               <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Backup"}</Text>
             </Button>
-            <Button variant="outline" onPress={() => router.back()} disabled={isSubmitting}>
+            <Button variant="outline" onPress={() => goBack()} disabled={isSubmitting}>
               <Text style={{ color: colors.foreground }}>Cancelar</Text>
             </Button>
           </View>

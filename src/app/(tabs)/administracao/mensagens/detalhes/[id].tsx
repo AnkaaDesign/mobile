@@ -3,6 +3,7 @@ import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from "
 import { useLocalSearchParams, router } from "expo-router";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useMessage, useMessageStats } from '@/hooks/use-admin-messages-infinite-mobile';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routes } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default function MessageDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -94,7 +96,7 @@ export default function MessageDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 A mensagem solicitada não foi encontrada ou pode ter sido removida.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

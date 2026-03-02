@@ -22,12 +22,14 @@ import {
   IconTrash,
 } from "@tabler/icons-react-native";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PPEScheduleDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
@@ -64,7 +66,7 @@ export default function PPEScheduleDetailsScreen() {
           style: "destructive",
           onPress: async () => {
             // TODO: Implement delete
-            router.back();
+            goBack();
           },
         },
       ]

@@ -3,6 +3,7 @@ import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-nativ
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
@@ -21,6 +22,7 @@ import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detai
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -111,7 +113,7 @@ export default function PPEDetailsScreen() {
           onPress: async () => {
             try {
               await deleteMutation.mutateAsync(params.id!);
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a entrega de EPI");
             }

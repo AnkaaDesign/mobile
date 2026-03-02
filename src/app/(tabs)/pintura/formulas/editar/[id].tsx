@@ -4,6 +4,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintFormula, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -16,6 +17,7 @@ export default function EditFormulaScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { goBack } = useNavigationHistory();
 
   // End navigation loading overlay when screen mounts
 
@@ -36,7 +38,7 @@ export default function EditFormulaScreen() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canEdit) {

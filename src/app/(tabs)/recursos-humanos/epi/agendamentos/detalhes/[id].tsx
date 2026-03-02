@@ -20,10 +20,12 @@ import { ScheduleCard, EmployeeCard, PpeItemsCard, DeliveryHistoryCard, Timeline
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { PpeScheduleDetailSkeleton } from "@/components/human-resources/ppe/schedule/skeleton/ppe-schedule-detail-skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function PPEScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -126,7 +128,7 @@ export default function PPEScheduleDetailsScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O cronograma solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </CardContent>
@@ -142,7 +144,7 @@ export default function PPEScheduleDetailsScreen() {
       <Header
         title="Cronograma EPI"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

@@ -13,6 +13,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintTypeMutations } from "@/hooks/paintType";
 import { useItems } from "@/hooks/useItem";
 import { useScreenReady } from "@/hooks";
@@ -37,6 +38,7 @@ export default function CreatePaintTypeScreen() {
 function CreatePaintTypeScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { create } = usePaintTypeMutations();
 
   // End navigation loading overlay when screen mounts
@@ -99,7 +101,7 @@ function CreatePaintTypeScreenInner() {
       if (newId) {
         router.replace(routeToMobilePath(routes.painting.paintTypes.details(newId)) as any);
       } else {
-        router.back();
+        goBack();
       }
     } catch (_error) {
       // API client already shows error alert
@@ -110,7 +112,7 @@ function CreatePaintTypeScreenInner() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canCreate) {

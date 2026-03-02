@@ -101,7 +101,7 @@ function CreateObservationScreenInner() {
               if (result?.data?.id) {
                 router.replace(routeToMobilePath(routes.production.observations.details(result.data.id)) as any);
               } else {
-                router.back();
+                goBack();
               }
             },
           },

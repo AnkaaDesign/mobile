@@ -9,6 +9,7 @@ import {
 } from '@/constants'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { navigationTracker } from '@/utils/navigation-tracker'
 
 export const historyCancelledListConfig: ListConfig<Task> = {
   key: 'production-history-cancelled',
@@ -218,6 +219,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
@@ -228,6 +230,7 @@ export const historyCancelledListConfig: ListConfig<Task> = {
         variant: 'default',
         canPerform: canEditTasks,
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
       },

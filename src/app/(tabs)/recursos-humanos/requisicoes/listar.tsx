@@ -32,6 +32,7 @@ import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 
 import { Skeleton } from "@/components/ui/skeleton";interface TimeAdjustmentRequest {
@@ -155,6 +156,7 @@ const getDeviceInfo = (type?: string) => {
 
 export default function RequisitionsListScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
@@ -612,7 +614,7 @@ export default function RequisitionsListScreen() {
           title="Requisições de Ponto"
           subtitle="Aprovar ou rejeitar requisições"
           showBackButton
-          onBackPress={() => router.back()}
+          onBackPress={() => goBack()}
         />
 
         <View style={styles.tabletContainer}>
@@ -752,7 +754,7 @@ export default function RequisitionsListScreen() {
             title="Requisições de Ponto"
             subtitle="Aprovar ou rejeitar requisições"
             showBackButton
-            onBackPress={() => router.back()}
+            onBackPress={() => goBack()}
           />
 
           <View style={[styles.filtersContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>

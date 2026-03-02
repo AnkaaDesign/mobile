@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { IconArrowLeft, IconTrash, IconBellOff, IconBell } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNotification, useNotificationMutations, useAuth, useScreenReady} from '@/hooks';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { ThemedView, ThemedText, ErrorScreen, Card } from "@/components/ui";
 import { NotificationCard } from "@/components/personal/notification/detail/notification-card";
 import { useTheme } from "@/lib/theme";
@@ -13,6 +14,7 @@ import { seenNotificationService } from "@/api-client/notification";
 
 import { Skeleton } from "@/components/ui/skeleton";export default function MyNotificationDetailsScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,7 +65,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function MyNo
   }, [refetch]);
 
   const handleBack = useCallback(() => {
-    router.back();
+    goBack();
   }, [router]);
 
   const handleDelete = useCallback(async () => {
@@ -80,7 +82,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function MyNo
         onPress: async () => {
           try {
             await deleteNotification(notification.id);
-            router.back();
+            goBack();
           } catch (err) {
             console.error("Failed to delete notification:", err);
             Alert.alert("Erro", "Não foi possível excluir a notificação");

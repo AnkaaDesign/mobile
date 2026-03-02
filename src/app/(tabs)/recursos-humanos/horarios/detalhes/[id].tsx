@@ -12,10 +12,12 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconClock, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
 import { TouchableOpacity } from "react-native";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function ScheduleDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -110,7 +112,7 @@ export default function ScheduleDetailScreen() {
                 <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
                   O horário solicitado não foi encontrado ou pode ter sido removido.
                 </ThemedText>
-                <Button onPress={() => router.back()}>
+                <Button onPress={() => goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </View>

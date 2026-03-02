@@ -40,7 +40,7 @@ import {
 } from '@/constants'
 import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
-import { taskKeys } from '@/hooks/queryKeys'
+import { taskKeys, serviceOrderKeys, changeLogKeys, truckKeys } from '@/hooks/queryKeys'
 import { ServiceOrderProgressBar } from '@/components/production/task/service-order-progress-bar'
 import { ForecastDateCell } from '@/components/production/task/forecast-date-cell'
 
@@ -449,6 +449,9 @@ export const tasksListConfig: ListConfig<Task> = {
 
             await updateTask(task.id, updateData)
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
+            queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all })
+            queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
+            queryClient.invalidateQueries({ queryKey: truckKeys.all })
 
             // API client already shows success alert
           } catch (_error) {
@@ -483,6 +486,9 @@ export const tasksListConfig: ListConfig<Task> = {
             })
 
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
+            queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all })
+            queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
+            queryClient.invalidateQueries({ queryKey: truckKeys.all })
 
             // API client already shows success alert
           } catch (_error) {
@@ -591,6 +597,9 @@ export const tasksListConfig: ListConfig<Task> = {
               status: TASK_STATUS.CANCELLED,
             })
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
+            queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all })
+            queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
+            queryClient.invalidateQueries({ queryKey: truckKeys.all })
             // API client already shows success/error alerts
           } catch (_error) {
             // API client already shows error alert

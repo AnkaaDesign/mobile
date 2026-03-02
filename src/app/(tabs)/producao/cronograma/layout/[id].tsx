@@ -13,6 +13,8 @@ import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { navigationTracker } from "@/utils/navigation-tracker";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, TRUCK_MANUFACTURER } from "@/constants";
@@ -41,6 +43,7 @@ export default function LayoutOnlyEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { createOrUpdateTruckLayout, isSavingTruckLayout } = useLayoutMutations();
   const [checkingPermission, setCheckingPermission] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -297,8 +300,10 @@ export default function LayoutOnlyEditScreen() {
       await Promise.all(savePromises);
 
       // API client already shows success alert
-
-      router.replace(routeToMobilePath(routes.production.schedule.root) as any);
+      // Navigate back to the correct list based on navigation source
+      const source = navigationTracker.getSource();
+      const fallbackRoute = routeToMobilePath(routes.production.schedule.root);
+      router.replace((source || fallbackRoute) as any);
     } catch (error: any) {
       console.error("[LayoutOnlyEdit] Error saving layout:", error);
       // API client already shows error alert
@@ -308,7 +313,7 @@ export default function LayoutOnlyEditScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   // Check if user can edit this specific task's layout (managed sector check)
@@ -345,7 +350,8 @@ export default function LayoutOnlyEditScreen() {
       if (!canEditLayout) {
         console.log('[Layout Page] No basic layout permission');
         Alert.alert("Acesso negado", "Voce nao tem permissao para editar layouts");
-        router.replace("/(tabs)/producao/cronograma");
+        const source = navigationTracker.getSource();
+        router.replace((source || "/(tabs)/producao/cronograma") as any);
         return;
       }
 
@@ -353,7 +359,8 @@ export default function LayoutOnlyEditScreen() {
       if (!canEditThisTaskLayout) {
         console.log('[Layout Page] Cannot edit this task layout');
         Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor gerenciado ou tarefas sem setor definido");
-        router.replace("/(tabs)/producao/cronograma");
+        const source = navigationTracker.getSource();
+        router.replace((source || "/(tabs)/producao/cronograma") as any);
       }
     }
   }, [user, task, isLoadingTask, canEditLayout, canEditThisTaskLayout, router]);

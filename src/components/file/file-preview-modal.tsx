@@ -38,6 +38,7 @@ import {
   IconVolume,
   IconVolumeOff,
   IconMaximize,
+  IconDeviceMobile,
   IconDeviceMobileRotated,
 } from "@tabler/icons-react-native";
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -69,7 +70,7 @@ import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
 import { getApiBaseUrl } from '../../utils/file-viewer-utils';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { useFileViewerOrientation } from '@/hooks/use-file-viewer-orientation';
+
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
@@ -389,7 +390,11 @@ export function FilePreviewModal({
   const [imageError, setImageError] = useState(false);
   const [_rotation, _setRotation] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
-  const [isForcedLandscape, setIsForcedLandscape] = useState(false);
+  const [isOrientationLocked, setIsOrientationLocked] = useState(false);
+  const isOrientationLockedRef = useRef(false);
+  const [currentOrientation, setCurrentOrientation] = useState<ScreenOrientation.Orientation>(
+    ScreenOrientation.Orientation.PORTRAIT_UP
+  );
 
   // Animated values for gestures
   const scale = useSharedValue(1);
@@ -415,8 +420,37 @@ export function FilePreviewModal({
   const lastTapPositionRef = useRef({ x: 0, y: 0 });
   const pendingTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Enable orientation change when file viewer is open
-  useFileViewerOrientation({ isOpen: visible });
+  // Manage orientation + tracking in a single consolidated effect
+  useEffect(() => {
+    if (!visible) {
+      // Reset lock state and restore portrait when modal closes
+      isOrientationLockedRef.current = false;
+      setIsOrientationLocked(false);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT).catch(() => {});
+      return;
+    }
+
+    // Unlock orientation when modal opens
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.ALL).catch(() => {});
+
+    // Track orientation changes for icon display
+    ScreenOrientation.getOrientationAsync()
+      .then((current) => setCurrentOrientation(current))
+      .catch(() => {});
+    const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
+      setCurrentOrientation(event.orientationInfo.orientation);
+    });
+
+    return () => {
+      subscription.remove();
+      // Restore portrait on cleanup/unmount
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT).catch(() => {});
+    };
+  }, [visible]);
+
+  const isLandscapeOrientation =
+    currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
+    currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
 
   // Filter previewable files
   const previewableFiles = React.useMemo(() => files.map((file, index) => ({ file, originalIndex: index })).filter(({ file }) => isPreviewableFile(file)), [files]);
@@ -445,7 +479,8 @@ export function FilePreviewModal({
     swipeTranslateX.value = 0;
     isPinching.value = false;
     _setRotation(0);
-    setIsForcedLandscape(false);
+    isOrientationLockedRef.current = false;
+    setIsOrientationLocked(false);
     setImageLoading(true);
     setImageError(false);
     // Clear any pending Android tap timer
@@ -570,26 +605,24 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // Force orientation toggle (YouTube-style) — works even with device rotation lock
-  const handleToggleOrientation = useCallback(async () => {
-    try {
-      if (isForcedLandscape) {
-        // Back to allowing all orientations (respects device rotation again)
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.ALL);
-        setIsForcedLandscape(false);
-      } else {
-        // Force landscape regardless of device rotation lock
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        setIsForcedLandscape(true);
-      }
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      showControls();
-    } catch (error) {
-      if (__DEV__) {
-        console.warn('[FilePreviewModal] Failed to toggle orientation:', error);
-      }
-    }
-  }, [isForcedLandscape, showControls]);
+  // Lock/unlock orientation toggle — locks to current orientation or releases
+  const handleToggleOrientation = useCallback(() => {
+    const willLock = !isOrientationLockedRef.current;
+
+    // Update ref + state immediately (responsive UI, prevents stale closure)
+    isOrientationLockedRef.current = willLock;
+    setIsOrientationLocked(willLock);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    showControls();
+
+    // Fire-and-forget the native call — UI state is already set
+    const lock = willLock
+      ? (isLandscapeOrientation
+          ? ScreenOrientation.OrientationLock.LANDSCAPE
+          : ScreenOrientation.OrientationLock.PORTRAIT)
+      : ScreenOrientation.OrientationLock.ALL;
+    ScreenOrientation.lockAsync(lock).catch(() => {});
+  }, [showControls, isLandscapeOrientation]);
 
   // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
@@ -1029,11 +1062,15 @@ export function FilePreviewModal({
 
             <View style={styles.headerRight}>
               <TouchableOpacity
-                style={[styles.headerButton, isForcedLandscape && styles.headerButtonActive]}
+                style={[styles.headerButton, isOrientationLocked && styles.headerButtonActive]}
                 onPress={handleToggleOrientation}
                 activeOpacity={0.7}
               >
-                <IconDeviceMobileRotated size={20} color="#ffffff" />
+                {isLandscapeOrientation ? (
+                  <IconDeviceMobileRotated size={20} color="#ffffff" />
+                ) : (
+                  <IconDeviceMobile size={20} color="#ffffff" />
+                )}
               </TouchableOpacity>
               <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleShare} activeOpacity={0.7}>
                 <IconExternalLink size={22} color="#ffffff" />
@@ -1400,7 +1437,7 @@ const styles = StyleSheet.create({
     borderColor: "#444444", // neutral-650
   },
   headerButtonActive: {
-    backgroundColor: "#15803d", // green-700 (primary) - indicates forced landscape
+    backgroundColor: "#15803d", // green-700 (primary) - indicates locked orientation
     borderColor: "#16a34a", // green-600
   },
   imageContainer: {

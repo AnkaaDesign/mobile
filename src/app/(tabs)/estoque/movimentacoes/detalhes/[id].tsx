@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -20,6 +21,7 @@ import { ActivityDetailSkeleton } from "@/components/inventory/activity/skeleton
 export default function ActivityDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
   const { deleteAsync } = useActivityMutations();
@@ -155,7 +157,7 @@ export default function ActivityDetailScreen() {
           onPress: async () => {
             try {
               await deleteAsync(params.id!);
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Não foi possível excluir a movimentação");
             }

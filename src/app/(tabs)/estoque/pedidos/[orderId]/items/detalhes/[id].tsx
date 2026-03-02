@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatDate, formatQuantity } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function OrderItemDetailScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -95,7 +97,7 @@ export default function OrderItemDetailScreen() {
           onPress: async () => {
             try {
               await deleteOrderItem(id!);
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Não foi possível remover o item. Tente novamente.");
             }

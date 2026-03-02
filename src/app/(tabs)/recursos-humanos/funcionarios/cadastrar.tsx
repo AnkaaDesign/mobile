@@ -11,11 +11,13 @@ import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function EmployeesCreateScreen() {
   useScreenReady();
   const formKey = useFormScreenKey();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [formData, setFormData] = useState({
     name: "",
     cpf: "",
@@ -38,7 +40,7 @@ export default function EmployeesCreateScreen() {
     try {
       // TODO: Implement employee creation API call
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (_error) {
       // API client already shows error alert
     } finally {
@@ -133,7 +135,7 @@ export default function EmployeesCreateScreen() {
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
-          <Button onPress={() => router.back()} variant="outline" style={{ flex: 1 }}>
+          <Button onPress={() => goBack()} variant="outline" style={{ flex: 1 }}>
             <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
           </Button>
           <Button onPress={handleSubmit} style={{ flex: 1 }} disabled={isLoading}>

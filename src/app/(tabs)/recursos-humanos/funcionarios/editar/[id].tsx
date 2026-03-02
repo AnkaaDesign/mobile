@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/lib/theme";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
@@ -20,6 +21,7 @@ export default function EmployeeEditScreen() {
 function EmployeeEditScreenInner() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [formData, setFormData] = useState({
     name: "",
     cpf: "",
@@ -113,7 +115,7 @@ function EmployeeEditScreenInner() {
     try {
       // TODO: Implement employee update API call
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (_error) {
       // API client already shows error alert
     } finally {
@@ -152,7 +154,7 @@ function EmployeeEditScreenInner() {
           <ThemedText style={[styles.title, { color: colors.foreground }]}>
             Funcionário não encontrado
           </ThemedText>
-          <Button onPress={() => router.back()} style={{ marginTop: spacing.lg }}>
+          <Button onPress={() => goBack()} style={{ marginTop: spacing.lg }}>
             <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
           </Button>
         </Card>
@@ -247,7 +249,7 @@ function EmployeeEditScreenInner() {
 
         {/* Action Buttons */}
         <View style={styles.buttonContainer}>
-          <Button onPress={() => router.back()} variant="outline" style={{ flex: 1 }}>
+          <Button onPress={() => goBack()} variant="outline" style={{ flex: 1 }}>
             <ThemedText style={{ color: colors.foreground }}>Cancelar</ThemedText>
           </Button>
           <Button onPress={handleSubmit} style={{ flex: 1 }} disabled={isLoading}>

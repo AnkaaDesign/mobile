@@ -10,6 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShieldCheck } from "@tabler/icons-react-native";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
 import { isTeamLeader } from "@/utils/user";
 
@@ -25,6 +26,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function TeamPpeDeliveryDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user: currentUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -149,7 +151,7 @@ export default function TeamPpeDeliveryDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 A entrega solicitada não foi encontrada ou pode ter sido removida.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>
@@ -175,7 +177,7 @@ export default function TeamPpeDeliveryDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 Você não tem permissão para visualizar esta entrega.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

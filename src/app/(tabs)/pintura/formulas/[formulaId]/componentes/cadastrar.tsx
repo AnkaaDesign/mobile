@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintFormulaComponentMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
 import { useItems } from "@/hooks";
 import { paintFormulaComponentCreateSchema } from '../../../../../../schemas';
@@ -36,6 +37,7 @@ export default function CreateComponentScreen() {
 function CreateComponentScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { formulaId } = useLocalSearchParams<{ formulaId: string }>();
   const { create: createComponent, isLoading } = usePaintFormulaComponentMutations();
 
@@ -109,7 +111,7 @@ function CreateComponentScreenInner() {
     try {
       await createComponent(data);
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (error: any) {
       // API client already shows error alert
     }
@@ -129,12 +131,12 @@ function CreateComponentScreenInner() {
           {
             text: "Descartar",
             style: "destructive",
-            onPress: () => router.back(),
+            onPress: () => goBack(),
           },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 
@@ -145,7 +147,7 @@ function CreateComponentScreenInner() {
         <ThemedText style={styles.permissionText}>
           Você não tem permissão para adicionar componentes
         </ThemedText>
-        <Button variant="outline" onPress={() => router.back()}>
+        <Button variant="outline" onPress={() => goBack()}>
           Voltar
         </Button>
       </View>

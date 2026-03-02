@@ -6,6 +6,7 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useObservationDetail, useObservationMutations, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -23,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ObservationDetailsScreen() {
   const { id } = useLocalSearchParams();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteAsync } = useObservationMutations();
@@ -113,7 +115,7 @@ export default function ObservationDetailsScreen() {
             try {
               await deleteAsync(id as string);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

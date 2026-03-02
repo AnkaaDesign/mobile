@@ -31,7 +31,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
-
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,6 +43,7 @@ export default function CreateAutomaticOrderScreen() {
 function CreateAutomaticOrderScreenInner() {
   useScreenReady();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -106,7 +107,7 @@ function CreateAutomaticOrderScreenInner() {
   const handleCancel = useCallback(() => {
     Alert.alert("Cancelar", "Tem certeza que deseja cancelar? As alterações serão perdidas.", [
       { text: "Continuar Editando", style: "cancel" },
-      { text: "Cancelar", style: "destructive", onPress: () => router.back() },
+      { text: "Cancelar", style: "destructive", onPress: () => goBack() },
     ]);
   }, [router]);
 
@@ -122,7 +123,7 @@ function CreateAutomaticOrderScreenInner() {
           <ThemedText style={styles.permissionText}>
             Você não tem permissão para criar agendamentos automáticos
           </ThemedText>
-          <Button variant="outline" onPress={() => router.back()}>
+          <Button variant="outline" onPress={() => goBack()}>
             <ThemedText>Voltar</ThemedText>
           </Button>
         </View>

@@ -315,7 +315,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       const normalizedItem = normalizePath(item.path);
 
       if (item.path === "/" || normalizedItem === "") {
-        return normalizedCurrent === "home" || normalizedCurrent === "";
+        return normalizedCurrent === "home" || normalizedCurrent === "inicio" || normalizedCurrent === "";
       }
 
       if (normalizedCurrent === normalizedItem) {

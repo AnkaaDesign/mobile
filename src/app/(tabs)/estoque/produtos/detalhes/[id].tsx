@@ -9,6 +9,7 @@ import { SkeletonCard } from "@/components/ui/loading";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPackage, IconEdit, IconHistory } from "@tabler/icons-react-native";
 import { routeToMobilePath } from "@/utils/route-mapper";
@@ -30,6 +31,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 export default function ItemDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { pushWithLoading } = useNavigationLoading();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -232,7 +234,7 @@ export default function ItemDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O produto solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

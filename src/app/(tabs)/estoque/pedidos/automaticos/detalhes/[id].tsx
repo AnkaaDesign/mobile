@@ -34,6 +34,7 @@ import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
@@ -42,6 +43,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AutomaticOrderDetailScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -91,7 +93,7 @@ export default function AutomaticOrderDetailScreen() {
     },
     onDeleteSuccess: () => {
       Alert.alert("Sucesso", "Agendamento excluído com sucesso");
-      router.back();
+      goBack();
     },
   });
 
@@ -237,7 +239,7 @@ export default function AutomaticOrderDetailScreen() {
         <ErrorScreen
           message="Agendamento não encontrado"
           detail="O agendamento automático solicitado não foi encontrado"
-          onRetry={() => router.back()}
+          onRetry={() => goBack()}
         />
       </ThemedView>
     );
@@ -280,7 +282,7 @@ export default function AutomaticOrderDetailScreen() {
       <Header
         title="Agendamento Automático"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           (canEdit || canDelete) ? (
             <View style={{ flexDirection: "row", gap: 8 }}>

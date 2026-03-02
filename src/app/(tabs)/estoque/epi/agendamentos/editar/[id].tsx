@@ -16,6 +16,7 @@ import { Text } from "@/components/ui/text";
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants/enum-labels";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function EditPPEScheduleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +25,7 @@ export default function EditPPEScheduleScreen() {
 
 function EditPPEScheduleScreenInner() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -81,14 +83,14 @@ function EditPPEScheduleScreenInner() {
         return;
       }
       // TODO: Implement API call
-      router.back();
+      goBack();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao atualizar o agendamento");
     }
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (isLoading) {

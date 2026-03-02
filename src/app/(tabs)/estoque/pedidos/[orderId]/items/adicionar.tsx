@@ -15,6 +15,7 @@ import type { ComboboxOption } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatQuantity } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
@@ -24,6 +25,7 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function AddOrderItemScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -96,7 +98,7 @@ export default function AddOrderItemScreen() {
   // Mutations
   const { create, isLoading: isCreating } = useOrderItemMutations({
     onCreateSuccess: () => {
-      router.back();
+      goBack();
     },
   });
 
@@ -135,11 +137,11 @@ export default function AddOrderItemScreen() {
         "Tem certeza que deseja cancelar? As alterações não salvas serão perdidas.",
         [
           { text: "Continuar editando", style: "cancel" },
-          { text: "Descartar", style: "destructive", onPress: () => router.back() },
+          { text: "Descartar", style: "destructive", onPress: () => goBack() },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintBrand, usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { paintBrandUpdateSchema } from '../../../../../schemas';
 import type { PaintBrandUpdateFormData } from '../../../../../schemas';
@@ -32,6 +33,7 @@ export default function EditPaintBrandScreen() {
 function EditPaintBrandScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintBrandMutations();
 
@@ -99,7 +101,7 @@ function EditPaintBrandScreenInner() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canEdit) {

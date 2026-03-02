@@ -4,6 +4,7 @@ import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import type { PaintFormula } from "@/types";
@@ -11,6 +12,7 @@ import type { PaintCreateFormData, PaintFormulaCreateFormData } from "@/schemas"
 
 export default function CreateCatalogScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { createAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,7 +91,7 @@ export default function CreateCatalogScreen() {
 
   const handleCancel = () => {
     if (router.canGoBack()) {
-      router.back();
+      goBack();
     } else {
       router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
     }

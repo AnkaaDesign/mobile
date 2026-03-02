@@ -19,6 +19,7 @@ import { useItems } from "@/hooks/useItem";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 // Schedule form schema
 const maintenanceScheduleCreateSchema = z.object({
@@ -46,6 +47,7 @@ function MaintenanceScheduleCreateScreenInner({
 }: MaintenanceScheduleCreateScreenProps) {
   useScreenReady();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
 
   const { data: items } = useItems({
@@ -70,7 +72,7 @@ function MaintenanceScheduleCreateScreenInner({
       // TODO: Implement API call to create schedule
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
       onSuccess?.();
-      router.back();
+      goBack();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o agendamento");
     }
@@ -80,7 +82,7 @@ function MaintenanceScheduleCreateScreenInner({
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

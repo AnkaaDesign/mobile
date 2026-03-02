@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useResponsible, useScreenReady } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { ResponsibleRole, RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import type { BadgeVariant } from "@/constants/badge-colors";
@@ -33,6 +34,7 @@ const ROLE_BADGE_VARIANTS: Record<ResponsibleRole, BadgeVariant> = {
 export default function ResponsibleDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -180,7 +182,7 @@ export default function ResponsibleDetailScreen() {
               <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
                 O responsável solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

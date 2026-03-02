@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useTaskDetail, useScreenReady } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { TASK_STATUS_LABELS, TASK_STATUS } from "@/constants";
 import { Skeleton } from "@/components/ui/skeleton";export default function MovementDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   // End navigation loading overlay when screen mounts
@@ -133,7 +135,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Move
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 A movimentação solicitada não foi encontrada ou pode ter sido removida.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

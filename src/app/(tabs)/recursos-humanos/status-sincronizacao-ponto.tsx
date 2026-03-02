@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconRefresh, IconCloudCheck, IconDatabase, IconClock, IconAlertTriangle, IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconHistory, IconSettings } from "@tabler/icons-react-native";
 import { differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
@@ -59,6 +60,7 @@ interface SystemHealth {
 
 export default function SyncStatusScreen() {
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [metrics, setMetrics] = useState<SyncMetrics | null>(null);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
@@ -362,7 +364,7 @@ export default function SyncStatusScreen() {
         title="Status de Sincronização"
         subtitle="Monitore a integração com Secullum"
         showBackButton
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <Button variant="ghost" size="sm" onPress={onRefresh} disabled={refreshing}>
             <IconRefresh size={20} color="#3B82F6" />

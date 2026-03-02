@@ -15,6 +15,7 @@ import { useBackupMutations, useBackupUtils } from "@/hooks/useBackup";
 import { useTheme } from "@/lib/theme";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing } from "@/constants/design-system";
 
 type RetentionPeriod = '1_day' | '3_days' | '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months' | '1_year';
@@ -85,6 +86,7 @@ const INITIAL_FORM: ScheduleForm = {
 
 export default function CreateBackupScheduleScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const [form, setForm] = useState<ScheduleForm>({ ...INITIAL_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,7 +119,7 @@ export default function CreateBackupScheduleScreen() {
       });
 
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
-      router.back();
+      goBack();
     } catch {
       Alert.alert("Erro", "Falha ao criar agendamento");
     } finally {
@@ -267,7 +269,7 @@ export default function CreateBackupScheduleScreen() {
               <Icon name="clock" size={16} color="#fff" />
               <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Agendamento"}</Text>
             </Button>
-            <Button variant="outline" onPress={() => router.back()} disabled={isSubmitting}>
+            <Button variant="outline" onPress={() => goBack()} disabled={isSubmitting}>
               <Text style={{ color: colors.foreground }}>Cancelar</Text>
             </Button>
           </View>

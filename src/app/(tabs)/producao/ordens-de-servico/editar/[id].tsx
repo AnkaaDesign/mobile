@@ -125,13 +125,7 @@ export default function EditServiceOrderScreen() {
           style: "destructive",
           onPress: () => {
             console.log('[EditServiceOrder] User confirmed discard, going back');
-            // Use router.back() for proper stack navigation
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              // Fallback to detail page if can't go back
-              router.replace(routeToMobilePath(routes.production.serviceOrders.details(id!)) as any);
-            }
+            goBackHistory();
           }
         },
       ]

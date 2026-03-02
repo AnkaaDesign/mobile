@@ -4,11 +4,13 @@ import { Stack, useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 
 export default function CreatePaintScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { createAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +63,7 @@ export default function CreatePaintScreen() {
       }
 
       // API client already shows success alert
-      router.back();
+      goBack();
     } catch (error) {
       console.error("Error creating paint:", error);
       // API client already shows error alert
@@ -71,7 +73,7 @@ export default function CreatePaintScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   return (

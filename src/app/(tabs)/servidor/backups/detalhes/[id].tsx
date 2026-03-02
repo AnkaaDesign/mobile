@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 
 import { Skeleton } from "@/components/ui/skeleton";const styles = StyleSheet.create({
@@ -47,6 +48,7 @@ import { Skeleton } from "@/components/ui/skeleton";const styles = StyleSheet.cr
 export default function BackupDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const [isRestoring, setIsRestoring] = useState(false);
   const { colors } = useTheme();
 
@@ -69,7 +71,7 @@ export default function BackupDetailsScreen() {
               setIsRestoring(true);
               await restore.mutateAsync({ id: id! });
               Alert.alert("Sucesso", "Backup restaurado com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Falha ao restaurar backup");
             } finally {
@@ -94,7 +96,7 @@ export default function BackupDetailsScreen() {
             try {
               await deleteBackup.mutateAsync(id!);
               Alert.alert("Sucesso", "Backup excluído com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               Alert.alert("Erro", "Falha ao excluir backup");
             }

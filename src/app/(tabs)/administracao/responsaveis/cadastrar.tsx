@@ -17,6 +17,7 @@ import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/conte
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -36,6 +37,7 @@ export default function CreateResponsibleScreen() {
 
 function CreateResponsibleScreenInner() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSystemAccess, setHasSystemAccess] = useState(false);
@@ -105,11 +107,7 @@ function CreateResponsibleScreenInner() {
           text: "Descartar",
           style: "destructive",
           onPress: () => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace(routeToMobilePath(routes.administration.responsibles.list) as any);
-            }
+            goBack();
           },
         },
       ],

@@ -11,6 +11,7 @@ import {
 import type { Customer, Sector, User } from '@/types'
 import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
+import { navigationTracker } from '@/utils/navigation-tracker'
 
 export const historyCompletedListConfig: ListConfig<Task> = {
   key: 'production-history-completed',
@@ -241,6 +242,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/historico/detalhes/${task.id}`)
         },
       },
@@ -251,6 +253,7 @@ export const historyCompletedListConfig: ListConfig<Task> = {
         variant: 'default',
         canPerform: canEditTasks,
         onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/cronograma/editar/${task.id}`)
         },
       },

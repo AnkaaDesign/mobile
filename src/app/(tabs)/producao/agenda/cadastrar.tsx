@@ -48,11 +48,7 @@ export default function CreateAgendaTaskScreen() {
   }
 
   const handleNavigateBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.push("/(tabs)/producao/agenda" as any);
-    }
+    goBack();
   };
 
   const handleSubmit = async (data: any) => {

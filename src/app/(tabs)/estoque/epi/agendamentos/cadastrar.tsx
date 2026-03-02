@@ -16,6 +16,7 @@ import { spacing } from "@/constants/design-system";
 import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants/enum-labels";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function CreatePPEScheduleScreen() {
   const formKey = useFormScreenKey();
@@ -25,6 +26,7 @@ export default function CreatePPEScheduleScreen() {
 function CreatePPEScheduleScreenInner() {
   useScreenReady();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
 
   const form = useForm({
@@ -64,14 +66,14 @@ function CreatePPEScheduleScreenInner() {
   const handleSubmit = async () => {
     try {
       // TODO: Implement API call
-      router.back();
+      goBack();
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao criar o agendamento");
     }
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   return (

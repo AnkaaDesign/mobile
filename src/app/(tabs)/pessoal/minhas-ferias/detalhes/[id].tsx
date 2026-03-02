@@ -11,6 +11,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconBeach, IconTrash, IconX } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { canCancelVacation } from "@/utils";
 
 // Import modular components
@@ -25,6 +26,7 @@ import { VacationDetailSkeleton } from "@/components/personal/vacation/skeleton/
 export default function MyVacationDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -106,7 +108,7 @@ export default function MyVacationDetailScreen() {
 
               // API client already shows success alert
 
-              router.back();
+              goBack();
             } catch (error: any) {
               // API client already shows error alert
             }
@@ -141,7 +143,7 @@ export default function MyVacationDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 As férias solicitadas não foram encontradas ou podem ter sido removidas.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

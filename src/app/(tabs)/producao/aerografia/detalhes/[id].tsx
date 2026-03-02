@@ -10,6 +10,7 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconEdit, IconTrash, IconTag } from "@tabler/icons-react-native";
 // import { showToast } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatDate } from "@/utils";
@@ -27,6 +28,7 @@ import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 export default function AirbrushingDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const { deleteAsync } = useAirbrushingMutations();
   const [refreshing, setRefreshing] = useState(false);
@@ -92,7 +94,7 @@ export default function AirbrushingDetailScreen() {
             try {
               await deleteAsync(id as string);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }
@@ -132,7 +134,7 @@ export default function AirbrushingDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 O airbrushing solicitado não foi encontrado ou pode ter sido removido.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </View>

@@ -26,6 +26,7 @@ import { IconScissors, IconDeviceFloppy, IconX } from "@tabler/icons-react-nativ
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
@@ -39,6 +40,7 @@ function CreateCuttingScreenInner() {
   useScreenReady();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useCutMutations();
 
@@ -86,7 +88,7 @@ function CreateCuttingScreenInner() {
       if (newId) {
         router.replace(routeToMobilePath(routes.production.cutting.details(newId)) as any);
       } else {
-        router.back();
+        goBack();
       }
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Não foi possível criar o recorte. Tente novamente.");
@@ -101,7 +103,7 @@ function CreateCuttingScreenInner() {
       {
         text: "Cancelar",
         style: "destructive",
-        onPress: () => router.back(),
+        onPress: () => goBack(),
       },
     ]);
   };

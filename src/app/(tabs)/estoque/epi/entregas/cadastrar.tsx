@@ -20,6 +20,7 @@ import { getItems, getUsers } from "@/api-client";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, ITEM_CATEGORY_TYPE, PPE_TYPE, routes } from "@/constants";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
 import { routeToMobilePath } from "@/utils/route-mapper";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
 import type { Item, User } from "@/types";
 
@@ -31,6 +32,7 @@ export default function CreatePPEDeliveryScreen() {
 function CreatePPEDeliveryScreenInner() {
   useScreenReady();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user: currentUser } = useAuth();
   const { createAsync, createMutation } = usePpeDeliveryMutations();
@@ -176,7 +178,7 @@ function CreatePPEDeliveryScreenInner() {
       if (newId) {
         router.replace(routeToMobilePath(routes.inventory.ppe.deliveries.details(newId)) as any);
       } else {
-        router.back();
+        goBack();
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao criar a entrega de EPI");
@@ -184,7 +186,7 @@ function CreatePPEDeliveryScreenInner() {
   };
 
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   return (

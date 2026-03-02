@@ -5,7 +5,8 @@ import { tasksListAgendaConfig } from "@/config/list/production/tasks-agenda";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { FAB } from "@/components/ui/fab";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
 import { routes } from "@/constants/routes";
@@ -21,6 +22,18 @@ export default function ProductionPreparationScreen() {
   const { pushWithLoading } = useNavigationLoading();
   const queryClient = useQueryClient();
   const taskInclude = useTaskDetailMinimalInclude(user);
+
+  // Refetch task lists when screen regains focus (e.g., returning from detail page)
+  const isFirstMount = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstMount.current) {
+        isFirstMount.current = false;
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    }, [])
+  );
 
   // ADMIN, COMMERCIAL, and LOGISTIC can create tasks
   const canCreateTasks =

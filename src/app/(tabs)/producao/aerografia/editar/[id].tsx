@@ -19,6 +19,7 @@ import { IconBrush, IconDeviceFloppy, IconX, IconClock, IconTag, IconFileText } 
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
@@ -37,6 +38,7 @@ function AirbrushingEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useAirbrushingMutations();
 
@@ -175,12 +177,12 @@ function AirbrushingEditScreenInner() {
           {
             text: "Cancelar",
             style: "destructive",
-            onPress: () => router.back(),
+            onPress: () => goBack(),
           },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 

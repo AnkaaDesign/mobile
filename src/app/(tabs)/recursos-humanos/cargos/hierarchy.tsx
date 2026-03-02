@@ -10,6 +10,7 @@ import { ThemedView, ThemedText, Button, ErrorScreen } from "@/components/ui";
 import { usePositions, usePositionBatchMutations } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,6 +23,7 @@ interface Position {
 
 export default function PositionHierarchyScreen() {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -69,7 +71,7 @@ export default function PositionHierarchyScreen() {
         [
           {
             text: "OK",
-            onPress: () => router.back()
+            onPress: () => goBack()
           }
         ]
       );
@@ -90,11 +92,11 @@ export default function PositionHierarchyScreen() {
         "Você tem alterações não salvas. Deseja realmente cancelar?",
         [
           { text: "Não", style: "cancel" },
-          { text: "Sim", onPress: () => router.back(), style: "destructive" },
+          { text: "Sim", onPress: () => goBack(), style: "destructive" },
         ]
       );
     } else {
-      router.back();
+      goBack();
     }
   };
 

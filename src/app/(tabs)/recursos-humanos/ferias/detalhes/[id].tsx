@@ -19,10 +19,12 @@ import { SpecificationsCard } from "@/components/human-resources/vacation/detail
 import { VacationDetailSkeleton } from "@/components/human-resources/vacation/skeleton/vacation-detail-skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function VacationDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -90,7 +92,7 @@ export default function VacationDetailScreen() {
               <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                 As férias solicitadas não foram encontradas ou podem ter sido removidas.
               </ThemedText>
-              <Button onPress={() => router.back()}>
+              <Button onPress={() => goBack()}>
                 <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
               </Button>
             </CardContent>
@@ -111,7 +113,7 @@ export default function VacationDetailScreen() {
       <Header
         title={`Férias de ${vacation.data?.user?.name || "Colaborador"}`}
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

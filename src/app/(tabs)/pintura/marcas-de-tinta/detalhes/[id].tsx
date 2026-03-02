@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintBrand, usePaintBrandMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
@@ -30,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PaintBrandDetailsScreen() {
   const { id } = useLocalSearchParams();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { delete: deleteAsync } = usePaintBrandMutations();
@@ -108,7 +110,7 @@ export default function PaintBrandDetailsScreen() {
             try {
               await deleteAsync(id as string);
               Alert.alert("Sucesso", "Marca de tinta excluída com sucesso");
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

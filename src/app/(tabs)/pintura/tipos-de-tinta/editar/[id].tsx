@@ -12,6 +12,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintType, usePaintTypeMutations, useScreenReady } from "@/hooks";
 import { useItems } from "@/hooks/useItem";
 import { paintTypeUpdateSchema } from '../../../../../schemas';
@@ -38,6 +39,7 @@ export default function EditPaintTypeScreen() {
 function EditPaintTypeScreenInner() {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { goBack } = useNavigationHistory();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { update } = usePaintTypeMutations();
 
@@ -133,7 +135,7 @@ function EditPaintTypeScreenInner() {
 
   // Handle cancel
   const handleCancel = () => {
-    router.back();
+    goBack();
   };
 
   if (!canEdit) {

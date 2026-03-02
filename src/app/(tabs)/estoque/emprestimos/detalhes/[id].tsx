@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useBorrow, useBorrowMutations, useScreenReady } from "@/hooks";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { BORROW_STATUS, SECTOR_PRIVILEGES, routes } from "@/constants";
@@ -26,6 +27,7 @@ import {
 
 import { Skeleton } from "@/components/ui/skeleton";export default function BorrowDetailsScreen() {
   const { id } = useLocalSearchParams();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { pushWithLoading } = useNavigationLoading();
@@ -128,7 +130,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Borr
             try {
               await deleteAsync(id as string);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }

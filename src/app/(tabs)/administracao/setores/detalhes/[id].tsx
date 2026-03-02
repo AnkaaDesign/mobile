@@ -20,6 +20,7 @@ import { TouchableOpacity } from "react-native";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { hasPrivilege } from "@/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 // Import modular components
 import { SpecificationsCard, UsersTable, TasksTable } from "@/components/administration/sector/detail";
@@ -29,6 +30,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { Skeleton } from "@/components/ui/skeleton";export default function SectorDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const { delete: deleteAsync } = useSectorMutations();
   const [refreshing, setRefreshing] = useState(false);
@@ -113,7 +115,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Sect
             try {
               await deleteAsync(id);
               // API client already shows success alert
-              router.back();
+              goBack();
             } catch (_error) {
               // API client already shows error alert
             }
