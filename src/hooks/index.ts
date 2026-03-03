@@ -79,6 +79,7 @@ export * from "./useVacation";
 export * from "./useWarning";
 export * from "./useBorrow";
 export * from "./usePpe";
+export * from "./usePpeSignature";
 
 // =====================================================
 // Stock Module Hooks

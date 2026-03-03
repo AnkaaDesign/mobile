@@ -336,6 +336,39 @@ export class PpeDeliveryService {
     return response.data;
   }
 
+  // =====================
+  // In-App Signature Operations
+  // =====================
+
+  static async signDeliveryInApp(
+    deliveryId: string,
+    evidence: Record<string, any>,
+  ): Promise<{ success: boolean; signatureId: string; hmac: string }> {
+    const response = await apiClient.post<{ success: boolean; signatureId: string; hmac: string }>(
+      `/ppe/deliveries/${deliveryId}/sign`,
+      evidence,
+    );
+    return response.data;
+  }
+
+  static async getSignatureDetails(
+    deliveryId: string,
+  ): Promise<{ success: boolean; data: any }> {
+    const response = await apiClient.get<{ success: boolean; data: any }>(
+      `/ppe/deliveries/${deliveryId}/signature`,
+    );
+    return response.data;
+  }
+
+  static async verifySignature(
+    deliveryId: string,
+  ): Promise<{ success: boolean; valid: boolean; details?: string }> {
+    const response = await apiClient.post<{ success: boolean; valid: boolean; details?: string }>(
+      `/ppe/deliveries/${deliveryId}/verify-signature`,
+    );
+    return response.data;
+  }
+
 }
 
 // =====================

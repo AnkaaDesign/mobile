@@ -421,6 +421,9 @@ const ALL_ROUTES = [
   { name: "servidor/registros-de-alteracoes/detalhes/[id]", title: "Detalhes do Registro" },
   { name: "servidor/registros-de-alteracoes/entidade/[entityType]/[entityId]", title: "Registros por Entidade" },
   { name: "servidor/usuarios/index", title: "Usuários" },
+
+  // Assinatura Digital Gov.br (Teste)
+  { name: "assinatura-govbr", title: "Assinatura Digital Gov.br" },
 ];
 
 // Pre-computed route lookup map for O(1) title lookups instead of O(n) array.find()

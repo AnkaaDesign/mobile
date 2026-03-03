@@ -25,7 +25,9 @@
       ],
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "fetch"],
-        "LSApplicationQueriesSchemes": ["whatsapp"]
+        "LSApplicationQueriesSchemes": ["whatsapp"],
+        "NSFaceIDUsageDescription": "Necessário para autenticação biométrica na confirmação de entrega de EPI",
+        "NSLocationWhenInUseUsageDescription": "Necessário para registrar a localização no momento da assinatura de entrega de EPI"
       }
     },
     "android": {
@@ -135,7 +137,19 @@
         }
       ],
       "expo-background-fetch",
-      "expo-task-manager"
+      "expo-task-manager",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Necessário para autenticação biométrica na confirmação de entrega de EPI"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Necessário para registrar a localização no momento da assinatura de entrega de EPI"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

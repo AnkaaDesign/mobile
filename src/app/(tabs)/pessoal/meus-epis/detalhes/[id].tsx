@@ -14,6 +14,8 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 
 // Import detail card components
 import { PpeDeliveryCard, PpeItemCard, CertificateCard } from "@/components/personal/ppe-delivery/detail";
+import { SignDeliveryButton, SignatureEvidenceCard } from "@/components/human-resources/ppe/delivery/detail";
+import { PPE_DELIVERY_STATUS } from "@/constants";
 
 
 import { Skeleton } from "@/components/ui/skeleton";export default function PpeDeliveryDetailScreen() {
@@ -38,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PpeD
         },
       },
       ppeSchedule: true,
+      signature: true,
     },
     enabled: !!id,
   });
@@ -145,6 +148,15 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PpeD
 
         {/* Certificate Card */}
         <CertificateCard item={delivery.item} />
+
+        {/* In-App Signature — Sign or show evidence */}
+        {(delivery.status === PPE_DELIVERY_STATUS.DELIVERED ||
+          delivery.status === PPE_DELIVERY_STATUS.WAITING_SIGNATURE) && (
+          <SignDeliveryButton delivery={delivery} />
+        )}
+        {delivery.status === PPE_DELIVERY_STATUS.COMPLETED && (
+          <SignatureEvidenceCard deliveryId={delivery.id} signature={delivery.signature} />
+        )}
 
         {/* Schedule Information */}
         {delivery.ppeSchedule && (

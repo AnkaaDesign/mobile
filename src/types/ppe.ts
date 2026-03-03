@@ -77,6 +77,43 @@ export interface PpeDelivery extends BaseEntity {
     path: string;
     size: number;
   };
+  signature?: PpeDeliverySignature | null;
+}
+
+// =====================
+// In-App Signature Types
+// =====================
+
+export type BiometricMethod = 'FINGERPRINT' | 'FACE_ID' | 'IRIS' | 'DEVICE_PIN' | 'NONE';
+export type NetworkType = 'WIFI' | 'CELLULAR' | 'ETHERNET' | 'UNKNOWN';
+
+export interface PpeDeliverySignature extends BaseEntity {
+  deliveryId: string;
+  signedByUserId: string;
+  signedByCpf: string;
+  biometricMethod: BiometricMethod;
+  biometricSuccess: boolean;
+  deviceBrand: string | null;
+  deviceModel: string | null;
+  deviceOs: string | null;
+  deviceOsVersion: string | null;
+  appVersion: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  locationAccuracy: number | null;
+  networkType: NetworkType;
+  ipAddress: string | null;
+  clientTimestamp: Date;
+  serverTimestamp: Date;
+  evidenceHash: string;
+  hmacSignature: string;
+  signedDocumentId: string | null;
+  evidenceJson: Record<string, any>;
+  legalBasis: string;
+  consentGiven: boolean;
+
+  // Relations
+  signedByUser?: User;
 }
 
 // PPE configuration is now stored directly on the Item model
