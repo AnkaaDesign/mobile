@@ -28,6 +28,8 @@ import {
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   SERVICE_ORDER_TYPE,
   SECTOR_PRIVILEGES,
+  TASK_PRICING_STATUS,
+  PAYMENT_CONDITION,
 } from "@/constants";
 import {
   CUT_TYPE_LABELS,
@@ -39,6 +41,7 @@ import {
   SERVICE_ORDER_TYPE_LABELS,
   TASK_STATUS_LABELS,
   TASK_PRICING_STATUS_LABELS,
+  PAYMENT_CONDITION_LABELS,
   TRUCK_MANUFACTURER_LABELS,
 } from "@/constants/enum-labels";
 import { formatRelativeTime, getFieldLabel, formatFieldValue, getActionLabel } from "@/utils";
@@ -664,6 +667,122 @@ const TimelineItem = React.memo(({
       );
     }
 
+    // Special handling for TASK_PRICING CREATE - show budget details (matching web)
+    if (
+      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING &&
+      firstLog.action === CHANGE_LOG_ACTION.CREATE
+    ) {
+      let createdEntityData: any = null;
+      try {
+        if (firstLog.newValue) {
+          createdEntityData =
+            typeof firstLog.newValue === "string"
+              ? JSON.parse(firstLog.newValue)
+              : firstLog.newValue;
+        }
+      } catch (e) {
+        createdEntityData = firstLog.metadata as any;
+      }
+      if (!createdEntityData) {
+        createdEntityData = firstLog.metadata as any;
+      }
+
+      if (createdEntityData) {
+        return (
+          <View>
+            <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
+              {entityLabel} {actionLabel}
+            </ThemedText>
+            {createdEntityData.budgetNumber && (
+              <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]}>
+                Orçamento: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>#{createdEntityData.budgetNumber}</ThemedText>
+              </ThemedText>
+            )}
+            {createdEntityData.status && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Status: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{TASK_PRICING_STATUS_LABELS[createdEntityData.status as TASK_PRICING_STATUS] || createdEntityData.status}</ThemedText>
+              </ThemedText>
+            )}
+            {(createdEntityData.total !== null && createdEntityData.total !== undefined) && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Total: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{formatCurrency(Number(createdEntityData.total))}</ThemedText>
+              </ThemedText>
+            )}
+            {createdEntityData.paymentCondition && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Condição de Pagamento: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{PAYMENT_CONDITION_LABELS[createdEntityData.paymentCondition as PAYMENT_CONDITION] || createdEntityData.paymentCondition}</ThemedText>
+              </ThemedText>
+            )}
+            {Array.isArray(createdEntityData.items) && createdEntityData.items.length > 0 && (
+              <View style={[styles.pricingItems, { borderTopColor: colors.border }]}>
+                <ThemedText style={[styles.pricingItemsLabel, { color: colors.mutedForeground }]}>
+                  Itens:
+                </ThemedText>
+                {createdEntityData.items.map((item: any, idx: number) => (
+                  <View key={idx} style={styles.pricingItemRow}>
+                    <ThemedText style={[styles.pricingItemDesc, { color: colors.foreground }]} numberOfLines={1}>
+                      {item.description}
+                    </ThemedText>
+                    {item.amount !== null && item.amount !== undefined && (
+                      <ThemedText style={[styles.pricingItemAmount, { color: colors.mutedForeground }]}>
+                        {formatCurrency(Number(item.amount))}
+                      </ThemedText>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        );
+      }
+    }
+
+    // Special handling for TASK_PRICING_ITEM CREATE - show item details (matching web)
+    if (
+      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING_ITEM &&
+      firstLog.action === CHANGE_LOG_ACTION.CREATE
+    ) {
+      let createdEntityData: any = null;
+      try {
+        if (firstLog.newValue) {
+          createdEntityData =
+            typeof firstLog.newValue === "string"
+              ? JSON.parse(firstLog.newValue)
+              : firstLog.newValue;
+        }
+      } catch (e) {
+        createdEntityData = firstLog.metadata as any;
+      }
+      if (!createdEntityData) {
+        createdEntityData = firstLog.metadata as any;
+      }
+
+      if (createdEntityData) {
+        return (
+          <View>
+            <ThemedText style={[styles.itemTitle, { color: colors.foreground }]}>
+              {entityLabel} {actionLabel}
+            </ThemedText>
+            {createdEntityData.description && (
+              <ThemedText style={[styles.itemDescription, { color: colors.mutedForeground }]}>
+                Item: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{createdEntityData.description}</ThemedText>
+              </ThemedText>
+            )}
+            {(createdEntityData.amount !== null && createdEntityData.amount !== undefined) && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Valor: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{formatCurrency(Number(createdEntityData.amount))}</ThemedText>
+              </ThemedText>
+            )}
+            {createdEntityData.observation && (
+              <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
+                Observação: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{createdEntityData.observation}</ThemedText>
+              </ThemedText>
+            )}
+          </View>
+        );
+      }
+    }
+
     // Copy operation detection (matching web)
     const isCopyOperation = firstLog.reason && firstLog.reason.includes("Campos copiados");
     const displayTitle = isCopyOperation ? firstLog.reason : `${entityLabel} ${actionLabel}`;
@@ -1147,7 +1266,67 @@ export function TaskWithServiceOrdersChangelog({
       return visibleServiceOrderTypes.includes(serviceOrderType as SERVICE_ORDER_TYPE);
     });
 
-    const logs = [...nonServiceLogs, ...filteredServiceLogs];
+    const allLogs2 = [...nonServiceLogs, ...filteredServiceLogs];
+
+    // Deduplicate: Remove LAYOUT CREATE entries when a TASK UPDATE on "layouts" field
+    // exists within 2 seconds (they show the same dimension info redundantly) - matching web
+    const taskLayoutUpdates = allLogs2.filter(
+      (log) =>
+        log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK &&
+        log.action === CHANGE_LOG_ACTION.UPDATE &&
+        log.field === "layouts",
+    );
+    const dedupLayoutLogs = allLogs2.filter((log) => {
+      if (
+        log.entityType === CHANGE_LOG_ENTITY_TYPE.LAYOUT &&
+        log.action === CHANGE_LOG_ACTION.CREATE
+      ) {
+        const logTime = new Date(log.createdAt).getTime();
+        // If there's a TASK UPDATE on "layouts" within 2 seconds, skip this LAYOUT CREATE
+        return !taskLayoutUpdates.some(
+          (taskUpdate) =>
+            Math.abs(new Date(taskUpdate.createdAt).getTime() - logTime) < 2000,
+        );
+      }
+      return true;
+    });
+
+    // Filter out no-op UPDATE entries where old and new values are effectively identical
+    // (e.g., artwork/file arrays that didn't actually change) - matching web
+    const logs = dedupLayoutLogs.filter((log) => {
+      if (log.action !== CHANGE_LOG_ACTION.UPDATE) return true;
+      if (log.oldValue === undefined || log.newValue === undefined) return true;
+      if (log.oldValue === null || log.newValue === null) return true;
+
+      // For array fields (artworks, layouts as files, etc.), compare serialized values
+      const arrayFields = [
+        "artworks", "artworkIds", "baseFileIds", "baseFiles",
+        "budgets", "invoices", "receipts",
+      ];
+      if (log.field && arrayFields.includes(log.field)) {
+        try {
+          const parseVal = (v: any) => {
+            if (Array.isArray(v)) return v;
+            if (typeof v === "string") return JSON.parse(v);
+            return v;
+          };
+          const oldArr = parseVal(log.oldValue);
+          const newArr = parseVal(log.newValue);
+          if (Array.isArray(oldArr) && Array.isArray(newArr)) {
+            // Compare by extracting IDs (handles different object shapes)
+            const getId = (item: any) =>
+              typeof item === "string" ? item : item?.id || item?.fileId || JSON.stringify(item);
+            const oldIds = oldArr.map(getId).sort().join(",");
+            const newIds = newArr.map(getId).sort().join(",");
+            if (oldIds === newIds) return false;
+          }
+        } catch {
+          // If parsing fails, keep the entry
+        }
+      }
+
+      return true;
+    });
 
     // Sort by createdAt descending
     logs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

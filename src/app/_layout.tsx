@@ -24,6 +24,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
 import { PushNotificationsProvider } from "@/contexts/push-notifications-context-wrapper";
 import { useEffect, useState } from "react";
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { View, Text, ActivityIndicator, LogBox } from "react-native";
 import { AppStatusBar } from "@/components/app-status-bar";
 import { DeepLinkHandler } from "@/components/deep-link-handler";
@@ -260,6 +261,12 @@ function AppContent() {
 }
 
 export default function RootLayout() {
+  // Lock the entire app to portrait by default.
+  // The file viewer unlocks orientation when opened.
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+  }, []);
+
   // Handle connectivity changes for logging
   const handleConnectivityChange = (isConnected: boolean) => {
     if (__DEV__) {

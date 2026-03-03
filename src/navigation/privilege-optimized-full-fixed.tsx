@@ -3,7 +3,7 @@
 
 import React, { useMemo, Suspense, lazy, useEffect, useRef, useCallback } from "react";
 import { Drawer } from "expo-router/drawer";
-import { DrawerActions } from "@react-navigation/native";
+import { DrawerActions, useFocusEffect } from "@react-navigation/native";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform, AppState } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -706,13 +706,40 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
 
 // Inner layout component that uses drawer mode context
 function InnerLayout() {
-  const { user, isAuthReady, isLoading } = useAuth();
+  const { user, isAuthReady, isLoading, silentRefreshUserData } = useAuth();
   const { theme, isDark } = useTheme();
   const { canGoBack, goBack } = useNavigationHistory();
   const { startNavigation, isNavigatingRef } = useNavigationLoading();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
   const { setDrawerMode } = useDrawerMode();
+  const lastSeenUserIdRef = useRef<string | null>(null);
+  const hasRefreshedOnMountRef = useRef(false);
+
+  // CRITICAL: Refresh user data when this screen gains focus.
+  // After login, state updates from login() may not propagate to this
+  // screen due to React Navigation's screen caching/restoration behavior
+  // across await boundaries. This replicates the AppState "active" →
+  // validateSession flow that makes minimize/maximize work.
+  useFocusEffect(
+    useCallback(() => {
+      const currentUserId = user?.id ?? null;
+      if (!currentUserId) return;
+
+      const isNewUser = lastSeenUserIdRef.current !== currentUserId;
+      lastSeenUserIdRef.current = currentUserId;
+
+      if (isNewUser || !hasRefreshedOnMountRef.current) {
+        // Either: first focus after mount, OR user switched accounts.
+        // Fire a silent refresh to guarantee the component tree has the
+        // very latest user data — this is the same mechanism that makes
+        // minimize/maximize fix stale data.
+        hasRefreshedOnMountRef.current = true;
+        console.log('[InnerLayout] Refreshing user data on focus (newUser:', isNewUser, ')');
+        silentRefreshUserData();
+      }
+    }, [user?.id, silentRefreshUserData])
+  );
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;
@@ -820,7 +847,14 @@ function InnerLayout() {
   }
 
   return (
+    // CRITICAL: Key the entire Drawer by user ID to force complete destruction and
+    // recreation when switching accounts. React Navigation caches drawer content
+    // internally (via the render prop and detachInactiveScreens), so keying just
+    // the child component inside drawerContent is insufficient — the render prop
+    // itself may not be re-invoked. Keying the Drawer ensures the entire navigator
+    // (all screens, drawer content, internal state) is rebuilt from scratch.
     <Drawer
+      key={`drawer-${user?.id}`}
       drawerContent={(props) => (
         <Suspense fallback={<LoadingScreen />}>
           <CombinedDrawerContent {...props} />

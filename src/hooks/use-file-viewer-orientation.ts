@@ -44,7 +44,7 @@ export function useFileViewerOrientation({
     try {
       const orientationLock = allowedOrientations === 'landscape-only'
         ? ScreenOrientation.OrientationLock.LANDSCAPE
-        : ScreenOrientation.OrientationLock.ALL;
+        : ScreenOrientation.OrientationLock.DEFAULT;
 
       await ScreenOrientation.lockAsync(orientationLock);
       hasUnlockedRef.current = true;
@@ -65,7 +65,7 @@ export function useFileViewerOrientation({
     if (!hasUnlockedRef.current) return;
 
     try {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
       hasUnlockedRef.current = false;
 
       if (__DEV__) {
@@ -90,7 +90,7 @@ export function useFileViewerOrientation({
     return () => {
       if (hasUnlockedRef.current) {
         // Use void to handle the promise without awaiting in cleanup
-        void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
+        void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
           .then(() => {
             hasUnlockedRef.current = false;
           })
@@ -118,7 +118,7 @@ export function useFileViewerOrientation({
  */
 export async function lockToPortrait(): Promise<void> {
   try {
-    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
+    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
   } catch (error) {
     if (__DEV__) {
       console.warn('[lockToPortrait] Failed:', error);
@@ -131,7 +131,7 @@ export async function lockToPortrait(): Promise<void> {
  */
 export async function unlockOrientation(): Promise<void> {
   try {
-    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.ALL);
+    await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
   } catch (error) {
     if (__DEV__) {
       console.warn('[unlockOrientation] Failed:', error);

@@ -1,12 +1,17 @@
 import { useMemo } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '@/lib/theme';
 import { Text } from '@/components/ui/text';
 import { Sheet } from '@/components/ui/sheet';
 import { Badge, getBadgeVariantFromStatus } from '@/components/ui/badge';
 import { CustomerLogoDisplay } from '@/components/ui/customer-logo-display';
+import { FilePreviewModal } from '@/components/file';
 import { useTaskDetail } from '@/hooks/useTask';
+import { useCurrentUser } from '@/hooks/useAuth';
+import { useFilePreview } from '@/hooks/use-file-preview';
 import { formatDateTime } from '@/utils/date';
+import { hasPrivilege } from '@/utils/user';
 import {
   IconHash,
   IconCar,
@@ -18,9 +23,18 @@ import {
   IconLogin,
   IconLayoutGrid,
   IconListCheck,
+  IconFiles,
+  IconFile,
 } from '@tabler/icons-react-native';
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants';
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
 import { SERVICE_ORDER_STATUS_LABELS } from '@/constants/enum-labels';
+import { API_BASE_URL } from '@/config/urls';
+
+const ARTWORK_STATUS_LABELS: Record<string, string> = {
+  APPROVED: 'Aprovado',
+  REPROVED: 'Reprovado',
+  DRAFT: 'Rascunho',
+};
 
 interface TruckDetailModalProps {
   taskId: string | null;
@@ -30,6 +44,8 @@ interface TruckDetailModalProps {
 
 export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModalProps) {
   const { colors } = useTheme();
+  const { data: currentUser } = useCurrentUser();
+  const filePreview = useFilePreview();
 
   const { data: taskResponse, isLoading } = useTaskDetail(taskId ?? '', {
     enabled: open && !!taskId,
@@ -50,11 +66,33 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
         },
       },
       sector: true,
+      artworks: {
+        include: {
+          file: true,
+        },
+      },
       serviceOrders: true,
     },
   });
 
   const task = taskResponse?.data;
+
+  // Check if user can view artwork badges (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER)
+  const canViewArtworkBadges = currentUser && (
+    hasPrivilege(currentUser, SECTOR_PRIVILEGES.ADMIN) ||
+    hasPrivilege(currentUser, SECTOR_PRIVILEGES.COMMERCIAL) ||
+    hasPrivilege(currentUser, SECTOR_PRIVILEGES.LOGISTIC) ||
+    hasPrivilege(currentUser, SECTOR_PRIVILEGES.DESIGNER)
+  );
+
+  // Filter artworks: show all if user can view badges, otherwise only approved
+  const filteredArtworks = useMemo(() => {
+    if (!task?.artworks) return [];
+    return (task.artworks as any[]).filter((artwork) => {
+      const hasFileData = artwork.file || artwork.filename || artwork.path;
+      return hasFileData && (canViewArtworkBadges || artwork.status === 'APPROVED');
+    });
+  }, [task, canViewArtworkBadges]);
 
   // Get layout dimensions
   const layoutDimensions = useMemo(() => {
@@ -69,9 +107,10 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
     return { totalLength, height: layout.height };
   }, [task]);
 
-  // Check if term is overdue
+  // Check if term is overdue (only for active tasks)
   const isOverdue = useMemo(() => {
     if (!task?.term) return false;
+    if (task.status === TASK_STATUS.COMPLETED || task.status === TASK_STATUS.CANCELLED) return false;
     return new Date(task.term) < new Date();
   }, [task]);
 
@@ -207,7 +246,7 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
                     { color: colors.foreground, textTransform: 'uppercase' },
                   ]}
                 >
-                  {(task.truck as any).chassisNumber.slice(-5)}
+                  {(task.truck as any).chassisNumber}
                 </Text>
               </View>
             )}
@@ -377,6 +416,69 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
                 ))}
               </View>
             )}
+
+            {/* Artworks / Layouts */}
+            {filteredArtworks.length > 0 && (
+              <View style={[styles.artworksContainer, { backgroundColor: colors.muted }]}>
+                <View style={styles.rowLabel}>
+                  <IconFiles size={16} color={colors.mutedForeground} />
+                  <Text style={[styles.labelText, { color: colors.mutedForeground }]}>
+                    Layouts
+                  </Text>
+                </View>
+                <View style={styles.artworksGrid}>
+                  {filteredArtworks.map((artwork: any, index: number) => {
+                    const fileData = artwork.file || artwork;
+                    const thumbnailUrl = fileData.thumbnailUrl || fileData.url;
+                    const fullUrl = thumbnailUrl?.startsWith('http')
+                      ? thumbnailUrl
+                      : thumbnailUrl
+                        ? `${API_BASE_URL}${thumbnailUrl}`
+                        : null;
+
+                    return (
+                      <TouchableOpacity
+                        key={artwork.id || artwork.artworkId || index}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          const allFiles = filteredArtworks.map((a: any) => a.file || a);
+                          filePreview.openPreview(allFiles, index);
+                        }}
+                        style={[styles.artworkItem, { backgroundColor: colors.background, borderColor: colors.border }]}
+                      >
+                        {fullUrl ? (
+                          <Image
+                            source={{ uri: fullUrl }}
+                            style={styles.artworkThumbnail}
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <View style={[styles.artworkPlaceholder, { backgroundColor: colors.muted }]}>
+                            <IconFile size={20} color={colors.mutedForeground} />
+                          </View>
+                        )}
+                        {canViewArtworkBadges && artwork.status && (
+                          <View style={styles.artworkBadgeContainer}>
+                            <Badge
+                              variant={
+                                artwork.status === 'APPROVED'
+                                  ? 'success'
+                                  : artwork.status === 'REPROVED'
+                                    ? 'destructive'
+                                    : 'secondary'
+                              }
+                              size="sm"
+                            >
+                              {ARTWORK_STATUS_LABELS[artwork.status] || artwork.status}
+                            </Badge>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
           </ScrollView>
         ) : (
           <View style={styles.emptyContainer}>
@@ -384,6 +486,14 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
           </View>
         )}
       </View>
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        files={filePreview.files}
+        initialFileIndex={filePreview.currentFileIndex}
+        visible={filePreview.isVisible}
+        onClose={filePreview.closePreview}
+      />
     </Sheet>
   );
 }
@@ -476,6 +586,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#ffffff',
+    lineHeight: 18,
+    includeFontPadding: false,
+    textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
@@ -490,6 +603,38 @@ const styles = StyleSheet.create({
   soDescription: {
     fontSize: 12,
     flex: 1,
+  },
+  artworksContainer: {
+    borderRadius: 10,
+    padding: 14,
+    gap: 10,
+  },
+  artworksGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  artworkItem: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  artworkThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  artworkPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  artworkBadgeContainer: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
   },
   emptyContainer: {
     flex: 1,

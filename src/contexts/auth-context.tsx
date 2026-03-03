@@ -65,6 +65,7 @@ interface AuthContextType {
   logout: (showAlert?: boolean, alertMessage?: string) => Promise<void>;
   accessToken: string | null;
   refreshUserData: () => Promise<User | null>;
+  silentRefreshUserData: () => Promise<User | null>;
   isAuthReady: boolean;
   register: (data: { name: string; contact: string; password: string }) => Promise<{ requiresVerification: boolean; phone?: string; email?: string; userId?: string }>;
   recoverPassword: (data: PasswordResetRequestFormData) => Promise<void>;
@@ -139,20 +140,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           removeUserData(),
         ]).catch(() => {});
 
+        // CRITICAL: Clear the ENTIRE React Query cache on auth error
+        // Stale data from previous session must not leak to next login
         if (queryClient) {
           try {
-            // Cancel only user-related queries, not all queries
-            queryClient.cancelQueries({ queryKey: USER_QUERY_KEYS.all });
-            // Remove user queries from cache
-            queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
-            // Clear auth-sensitive queries but preserve non-sensitive cached data
-            // This prevents unnecessary refetches when the user logs back in
-            queryClient.invalidateQueries({ queryKey: ['navigation'] });
-            queryClient.invalidateQueries({ queryKey: ['privileges'] });
+            queryClient.cancelQueries();
+            queryClient.clear();
           } catch {}
         }
 
-        // AsyncStorage cleanup in background
+        // Clear persisted React Query cache
         import('@react-native-async-storage/async-storage')
           .then(m => m.default.removeItem("react-query-cache"))
           .catch(() => {});
@@ -533,6 +530,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       setLoading(true);
 
+      // CRITICAL: Clear all cached data from previous user session before login
+      // This prevents stale data/permissions from leaking between accounts
+      if (queryClient) {
+        try {
+          queryClient.cancelQueries();
+          queryClient.clear();
+        } catch {}
+      }
+
       const response = await apiLogin(contact, password);
 
       const access_token = response.data.token;
@@ -652,17 +658,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('[Auth] Error clearing auth storage:', error);
     }
 
-    // React Query cleanup
+    // CRITICAL: Clear the ENTIRE React Query cache on logout
+    // When switching users, ALL cached data is invalid - API responses are filtered
+    // by user role/sector, so another user's cached data would be wrong
     if (queryClient) {
       try {
-        queryClient.cancelQueries({ queryKey: USER_QUERY_KEYS.all });
-        queryClient.removeQueries({ queryKey: USER_QUERY_KEYS.all });
-        queryClient.invalidateQueries({ queryKey: ['navigation'] });
-        queryClient.invalidateQueries({ queryKey: ['privileges'] });
+        queryClient.cancelQueries();
+        queryClient.clear();
       } catch {}
     }
 
-    // Clear React Query cache from AsyncStorage
+    // Clear React Query persisted cache from AsyncStorage
     try {
       const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
       await AsyncStorage.removeItem("react-query-cache");
@@ -694,6 +700,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return null;
   };
 
+  // Silent version of refreshUserData — no alerts, used internally
+  // (e.g., when tabs screen gains focus after login) to guarantee
+  // the component tree always has fresh user data.
+  const silentRefreshUserData = useCallback(async (): Promise<User | null> => {
+    if (accessToken) {
+      try {
+        const updatedUser = await fetchAndUpdateUserData(accessToken, true);
+        if (updatedUser && updatedUser !== 'SKIP') {
+          return updatedUser;
+        }
+      } catch (e) {
+        console.log('[Auth] Silent refresh failed:', e);
+      }
+    }
+    return null;
+  }, [accessToken, fetchAndUpdateUserData]);
+
   const recoverPassword = async (data: PasswordResetRequestFormData) => {
     await authService.requestPasswordReset(data);
   };
@@ -716,6 +739,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     logout,
     accessToken,
     refreshUserData,
+    silentRefreshUserData,
     isAuthReady,
     register,
     recoverPassword,
@@ -724,7 +748,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Offline mode support
     isOffline,
     lastValidatedAt,
-  }), [user, loading, accessToken, isAuthReady, verifyCodeMutation, resendVerificationMutation, isOffline, lastValidatedAt]);
+  }), [user, loading, accessToken, isAuthReady, silentRefreshUserData, verifyCodeMutation, resendVerificationMutation, isOffline, lastValidatedAt]);
 
   if (!isAuthReady) {
     return (

@@ -131,7 +131,7 @@
       [
         "expo-screen-orientation",
         {
-          "initialOrientation": "PORTRAIT"
+          "initialOrientation": "DEFAULT"
         }
       ],
       "expo-background-fetch",

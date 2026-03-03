@@ -45,6 +45,10 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { SvgUri } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
 
+const ALL_ORIENTATIONS: ('portrait' | 'portrait-upside-down' | 'landscape-left' | 'landscape-right')[] = [
+  'portrait', 'portrait-upside-down', 'landscape-left', 'landscape-right',
+];
+
 // Conditionally import react-native-pdf (not supported in Expo Go)
 let Pdf: any = null;
 try {
@@ -420,18 +424,20 @@ export function FilePreviewModal({
   const lastTapPositionRef = useRef({ x: 0, y: 0 });
   const pendingTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Manage orientation + tracking in a single consolidated effect
+  // Manage orientation + tracking
   useEffect(() => {
     if (!visible) {
-      // Reset lock state and restore portrait when modal closes
       isOrientationLockedRef.current = false;
       setIsOrientationLocked(false);
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT).catch(() => {});
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
       return;
     }
 
-    // Unlock orientation when modal opens
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.ALL).catch(() => {});
+    // Unlock orientation when modal opens — use unlockAsync() instead of
+    // lockAsync(ALL) because iPhones don't support upside-down portrait,
+    // so ALL fails with "device does not support the requested orientation".
+    // unlockAsync() restores the device's default supported orientations.
+    ScreenOrientation.unlockAsync().catch(() => {});
 
     // Track orientation changes for icon display
     ScreenOrientation.getOrientationAsync()
@@ -443,14 +449,17 @@ export function FilePreviewModal({
 
     return () => {
       subscription.remove();
-      // Restore portrait on cleanup/unmount
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT).catch(() => {});
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
     };
   }, [visible]);
 
   const isLandscapeOrientation =
     currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
     currentOrientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT;
+
+  // Static — always allow all orientations on the iOS Modal VC.
+  // Orientation locking is handled entirely by lockAsync.
+  const modalSupportedOrientations = ALL_ORIENTATIONS;
 
   // Filter previewable files
   const previewableFiles = React.useMemo(() => files.map((file, index) => ({ file, originalIndex: index })).filter(({ file }) => isPreviewableFile(file)), [files]);
@@ -605,24 +614,38 @@ export function FilePreviewModal({
     showControls();
   }, [showControls]);
 
-  // Lock/unlock orientation toggle — locks to current orientation or releases
+  // Lock/unlock orientation toggle
   const handleToggleOrientation = useCallback(() => {
     const willLock = !isOrientationLockedRef.current;
-
-    // Update ref + state immediately (responsive UI, prevents stale closure)
     isOrientationLockedRef.current = willLock;
     setIsOrientationLocked(willLock);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     showControls();
 
-    // Fire-and-forget the native call — UI state is already set
-    const lock = willLock
-      ? (isLandscapeOrientation
-          ? ScreenOrientation.OrientationLock.LANDSCAPE
-          : ScreenOrientation.OrientationLock.PORTRAIT)
-      : ScreenOrientation.OrientationLock.ALL;
-    ScreenOrientation.lockAsync(lock).catch(() => {});
+    if (willLock) {
+      // Lock to current orientation — use PORTRAIT_UP (not PORTRAIT) because
+      // PORTRAIT includes portrait-down which iPhones don't support, causing
+      // the lock to silently fail.
+      const lock = isLandscapeOrientation
+        ? ScreenOrientation.OrientationLock.LANDSCAPE
+        : ScreenOrientation.OrientationLock.PORTRAIT_UP;
+      ScreenOrientation.lockAsync(lock).catch(() => {});
+    } else {
+      // Unlock — use unlockAsync() instead of lockAsync(ALL) because
+      // iPhones don't support upside-down portrait, making ALL fail.
+      ScreenOrientation.unlockAsync().catch(() => {});
+    }
   }, [showControls, isLandscapeOrientation]);
+
+  // Close handler — force portrait before dismissing
+  const handleClose = useCallback(() => {
+    isOrientationLockedRef.current = false;
+    setIsOrientationLocked(false);
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    setTimeout(() => {
+      onClose();
+    }, isLandscapeOrientation ? 400 : 0);
+  }, [onClose, isLandscapeOrientation]);
 
   // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
@@ -1023,7 +1046,13 @@ export function FilePreviewModal({
   };
 
   return (
-    <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={handleClose}
+      supportedOrientations={modalSupportedOrientations}
+    >
       {/* GestureHandlerRootView is required inside Modal on Android because Modal
           creates a new native Dialog with its own view hierarchy, outside the app's
           root GestureHandlerRootView. Without this, all RNGH gestures (tap, pinch,
@@ -1075,7 +1104,7 @@ export function FilePreviewModal({
               <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleShare} activeOpacity={0.7}>
                 <IconExternalLink size={22} color="#ffffff" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={onClose} activeOpacity={0.7}>
+              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleClose} activeOpacity={0.7}>
                 <IconX size={24} color="#ffffff" />
               </TouchableOpacity>
             </View>
@@ -1377,6 +1406,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1778,10 +1811,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   thumbnailStrip: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: "#1a1a1a", // neutral-900 - darker for better dark mode
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#333333", // neutral-750
+    zIndex: 10,
   },
   thumbnailScrollContent: {
     paddingHorizontal: 16,

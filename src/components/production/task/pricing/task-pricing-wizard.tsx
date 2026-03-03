@@ -11,6 +11,7 @@ import {
   Text as RNText,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { navigationTracker } from "@/utils/navigation-tracker";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -386,6 +387,38 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
     try {
       setIsSaving(true);
 
+      // Coerce numeric fields to proper types before sending to API
+      const toNumber = (v: any): number | null => {
+        if (v === null || v === undefined || v === '') return null;
+        if (typeof v === 'number') return v;
+        const n = Number(v);
+        return isNaN(n) ? null : n;
+      };
+      const pricingPayload = { ...data.pricing };
+      pricingPayload.discountValue = toNumber(pricingPayload.discountValue);
+      pricingPayload.subtotal = toNumber(pricingPayload.subtotal) ?? 0;
+      pricingPayload.total = toNumber(pricingPayload.total) ?? 0;
+      pricingPayload.guaranteeYears = toNumber(pricingPayload.guaranteeYears);
+      pricingPayload.customForecastDays = toNumber(pricingPayload.customForecastDays);
+      pricingPayload.simultaneousTasks = toNumber(pricingPayload.simultaneousTasks);
+      if (pricingPayload.items) {
+        pricingPayload.items = (Array.isArray(pricingPayload.items)
+          ? pricingPayload.items
+          : Object.values(pricingPayload.items)
+        ).map((item: any) => ({
+          ...item,
+          amount: toNumber(item.amount) ?? 0,
+        }));
+      }
+      // Ensure invoicesToCustomerIds is a proper array
+      if (pricingPayload.invoicesToCustomerIds && !Array.isArray(pricingPayload.invoicesToCustomerIds)) {
+        pricingPayload.invoicesToCustomerIds = Object.values(pricingPayload.invoicesToCustomerIds);
+      }
+      // Strip shouldSync from items (not an API field)
+      if (pricingPayload.items) {
+        pricingPayload.items = pricingPayload.items.map(({ shouldSync: _, ...rest }: any) => rest);
+      }
+
       // Filter only NEW layout files (not already uploaded)
       const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
 
@@ -402,7 +435,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         } as any);
 
         // Add pricing data as JSON field in FormData
-        formData.append('pricing', JSON.stringify(data.pricing));
+        formData.append('pricing', JSON.stringify(pricingPayload));
 
         await updateAsync({
           id: taskId,
@@ -412,15 +445,26 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         // No new files - send JSON only
         await updateAsync({
           id: taskId,
-          data: { pricing: data.pricing } as any,
+          data: { pricing: pricingPayload } as any,
         });
       }
 
-      // Reset form state and navigate back
+      // Reset form state and navigate to task detail page
       methods.reset();
       setCurrentStep(1);
       setLayoutFiles([]);
-      router.back();
+
+      // Navigate to the correct detail page based on navigation source
+      const source = navigationTracker.getSource();
+      let detailRoute: string;
+      if (source?.includes('/agenda')) {
+        detailRoute = `/(tabs)/producao/agenda/detalhes/${taskId}`;
+      } else if (source?.includes('/historico')) {
+        detailRoute = `/(tabs)/producao/historico/detalhes/${taskId}`;
+      } else {
+        detailRoute = `/(tabs)/producao/cronograma/detalhes/${taskId}`;
+      }
+      router.replace(detailRoute as any);
     } catch (error: any) {
       console.error("[TaskPricingWizard] Save failed:", error);
       // API client already shows error toast, no need for Alert
@@ -579,6 +623,7 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
   const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
   const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
   const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
+  const responsibleId = useWatch({ control, name: "pricing.responsibleId" });
 
   // Initialize
   useEffect(() => {
@@ -970,7 +1015,7 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
         <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Responsável do Orçamento</ThemedText>
           <Combobox
-            value={getValues("pricing.responsibleId") || ""}
+            value={responsibleId || ""}
             onValueChange={(v) => setValue("pricing.responsibleId", v || null)}
             options={taskResponsibles
               .filter((r: any) => !r.id.startsWith('temp-'))
@@ -1108,15 +1153,21 @@ function Step2Services({ control }: { control: any }) {
   const discountType = useWatch({ control, name: "pricing.discountType" }) || "NONE";
   const discountValue = useWatch({ control, name: "pricing.discountValue" });
 
+  // Track manually organized items (moved from incomplete to complete via "Organizar" button)
+  const [organizedIds, setOrganizedIds] = useState<Set<string>>(new Set());
+
   // Separate incomplete items (shown at top) from complete items (shown below in order)
-  // An item is complete if it has a description with at least 3 characters
+  // An item is complete if it has description >= 3 chars AND amount > 0, or was manually organized
   const { incompleteIndices, completeIndices } = useMemo(() => {
     const incomplete: number[] = [];
     const complete: number[] = [];
 
     fields.forEach((field, index) => {
       const item = pricingItems?.[index];
-      const isComplete = item?.description && item.description.trim().length >= 3;
+      const hasDescription = item?.description && item.description.trim().length >= 3;
+      const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
+      const isOrganized = organizedIds.has(field.id);
+      const isComplete = (hasDescription && hasAmount) || isOrganized;
 
       if (isComplete) {
         complete.push(index);
@@ -1126,7 +1177,19 @@ function Step2Services({ control }: { control: any }) {
     });
 
     return { incompleteIndices: incomplete, completeIndices: complete };
-  }, [fields, pricingItems]);
+  }, [fields, pricingItems, organizedIds]);
+
+  // Handle "Organizar" - move all items with descriptions to complete section
+  const handleOrganize = useCallback(() => {
+    const newOrganized = new Set(organizedIds);
+    fields.forEach((field, index) => {
+      const item = pricingItems?.[index];
+      if (item?.description && item.description.trim().length >= 3) {
+        newOrganized.add(field.id);
+      }
+    });
+    setOrganizedIds(newOrganized);
+  }, [fields, pricingItems, organizedIds]);
 
 
   // Calculate subtotal
@@ -1180,9 +1243,19 @@ function Step2Services({ control }: { control: any }) {
             <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
               Configurando Serviço
             </ThemedText>
-            <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
-              Preencha a descrição
-            </ThemedText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+              <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
+                Preencha descrição e valor
+              </ThemedText>
+              {incompleteIndices.some((i) => {
+                const item = pricingItems?.[i];
+                return item?.description && item.description.trim().length >= 3;
+              }) && (
+                <TouchableOpacity onPress={handleOrganize} style={[styles.organizeButton, { borderColor: colors.border }]}>
+                  <ThemedText style={{ fontSize: 11, color: colors.primary }}>Organizar</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
           {incompleteIndices.map((index) => (
             <ServiceItemRow
@@ -1431,6 +1504,12 @@ const styles = StyleSheet.create({
   },
   sectionHint: {
     fontSize: fontSize.xs,
+  },
+  organizeButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
   },
   itemRow: {
     gap: spacing.xs,

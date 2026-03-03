@@ -1,5 +1,5 @@
 // Optimized navigation layout with lazy loading and performance improvements
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from "react";
 import { Drawer } from "expo-router/drawer";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -93,6 +93,13 @@ class RouteRegistry {
     });
   }
 
+  // Reset registry to initial state (called on user change to prevent stale modules)
+  reset() {
+    this.routes.clear();
+    this.loadedModules.clear();
+    this.registerCoreRoutes();
+  }
+
   async loadModule(moduleName: keyof typeof ROUTE_MODULES) {
     if (this.loadedModules.has(moduleName)) {
       return;
@@ -131,6 +138,7 @@ routeRegistry.registerCoreRoutes();
 function useOptimizedRoutes(userPrivileges?: string[]) {
   const [loadedModules, setLoadedModules] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const prevPrivilegesRef = useRef<string[] | undefined>(undefined);
 
   const loadModuleIfNeeded = useCallback(async (moduleName: keyof typeof ROUTE_MODULES) => {
     if (!routeRegistry.isModuleLoaded(moduleName)) {
@@ -140,6 +148,21 @@ function useOptimizedRoutes(userPrivileges?: string[]) {
       setIsLoading(false);
     }
   }, []);
+
+  // Reset route registry when user privileges change (user switch)
+  // This prevents modules loaded for user A from persisting for user B
+  useEffect(() => {
+    const prevPrivileges = prevPrivilegesRef.current;
+    const privilegesChanged = prevPrivileges !== undefined &&
+      JSON.stringify(prevPrivileges) !== JSON.stringify(userPrivileges);
+
+    if (privilegesChanged) {
+      routeRegistry.reset();
+      setLoadedModules(new Set());
+    }
+
+    prevPrivilegesRef.current = userPrivileges;
+  }, [userPrivileges]);
 
   // Pre-load modules based on user privileges
   useEffect(() => {

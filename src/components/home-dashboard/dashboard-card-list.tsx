@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { useRouter } from "expo-router";
+
+// Fixed height for ~7 data rows + 1 header row (header ~26px + 7 rows ~36px each = ~278px)
+const TABLE_HEIGHT = 278;
 
 interface DashboardCardListProps {
   title: string;
@@ -55,20 +58,22 @@ export function DashboardCardList({
           overflow: "hidden",
         }}
       >
-        {isEmpty ? (
-          <Text
-            style={{
-              color: colors.mutedForeground,
-              fontSize: 13,
-              paddingVertical: 20,
-              textAlign: "center",
-            }}
-          >
-            {emptyMessage}
-          </Text>
-        ) : (
-          children
-        )}
+        <ScrollView style={{ height: TABLE_HEIGHT }} nestedScrollEnabled>
+          {isEmpty ? (
+            <Text
+              style={{
+                color: colors.mutedForeground,
+                fontSize: 13,
+                paddingVertical: 20,
+                textAlign: "center",
+              }}
+            >
+              {emptyMessage}
+            </Text>
+          ) : (
+            children
+          )}
+        </ScrollView>
         {footer}
       </View>
     </View>

@@ -16,8 +16,6 @@ import {
   IconCheck,
   IconClipboardCopy,
   IconArrowDown,
-  IconInfoCircle,
-  IconCopy,
   IconX,
   IconSearch,
 } from "@tabler/icons-react-native";
@@ -146,20 +144,6 @@ function FieldSelectionItem({
           {metadata.label}
         </ThemedText>
       </View>
-      <View style={styles.fieldItemRight}>
-        {metadata.isShared && (
-          <View style={[styles.badge, { backgroundColor: "#3b82f610", borderColor: "#3b82f640" }]}>
-            <IconInfoCircle size={10} color="#3b82f6" />
-            <ThemedText style={[styles.badgeText, { color: "#3b82f6" }]}>Compart.</ThemedText>
-          </View>
-        )}
-        {metadata.createNewInstances && (
-          <View style={[styles.badge, { backgroundColor: "#22c55e10", borderColor: "#22c55e40" }]}>
-            <IconCopy size={10} color="#22c55e" />
-            <ThemedText style={[styles.badgeText, { color: "#22c55e" }]}>Nova</ThemedText>
-          </View>
-        )}
-      </View>
     </TouchableOpacity>
   );
 }
@@ -284,7 +268,8 @@ export function CopyFromTaskModal({
     "Informacoes Gerais",
     "Datas",
     "Comercial",
-    "Pintura e Layouts",
+    "Pintura",
+    "Arquivos",
     "Producao",
     "Veiculo",
   ];
@@ -763,10 +748,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     flex: 1,
   },
-  fieldItemRight: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
   checkbox: {
     width: 18,
     height: 18,
@@ -777,19 +758,6 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 9,
     fontWeight: fontWeight.medium,
   },
   selectionCounter: {

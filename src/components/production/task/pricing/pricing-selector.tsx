@@ -507,15 +507,21 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
 
     const hasPricingItems = pricingItems && pricingItems.length > 0;
 
+    // Track manually organized items (moved from incomplete to complete via "Organizar" button)
+    const [organizedIds, setOrganizedIds] = useState<Set<string>>(new Set());
+
     // Separate incomplete items (shown at top) from complete items (shown below in order)
-    // An item is complete if it has a description with at least 3 characters
+    // An item is complete if it has description >= 3 chars AND amount > 0, or was manually organized
     const { incompleteIndices, completeIndices } = useMemo(() => {
       const incomplete: number[] = [];
       const complete: number[] = [];
 
       fields.forEach((field, index) => {
         const item = pricingItems?.[index];
-        const isComplete = item?.description && item.description.trim().length >= 3;
+        const hasDescription = item?.description && item.description.trim().length >= 3;
+        const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
+        const isOrganized = organizedIds.has(field.id);
+        const isComplete = (hasDescription && hasAmount) || isOrganized;
 
         if (isComplete) {
           complete.push(index);
@@ -525,7 +531,19 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
       });
 
       return { incompleteIndices: incomplete, completeIndices: complete };
-    }, [fields, pricingItems]);
+    }, [fields, pricingItems, organizedIds]);
+
+    // Handle "Organizar" - move all items with descriptions to complete section
+    const handleOrganize = useCallback(() => {
+      const newOrganized = new Set(organizedIds);
+      fields.forEach((field, index) => {
+        const item = pricingItems?.[index];
+        if (item?.description && item.description.trim().length >= 3) {
+          newOrganized.add(field.id);
+        }
+      });
+      setOrganizedIds(newOrganized);
+    }, [fields, pricingItems, organizedIds]);
 
     return (
       <View style={styles.container}>
@@ -544,9 +562,19 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
               <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
                 Configurando Serviço
               </ThemedText>
-              <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
-                Preencha a descrição
-              </ThemedText>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
+                  Preencha descrição e valor
+                </ThemedText>
+                {incompleteIndices.some((i) => {
+                  const item = pricingItems?.[i];
+                  return item?.description && item.description.trim().length >= 3;
+                }) && (
+                  <TouchableOpacity onPress={handleOrganize} style={[styles.organizeButton, { borderColor: colors.border }]}>
+                    <ThemedText style={{ fontSize: 11, color: colors.primary }}>Organizar</ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
             {incompleteIndices.map((index) => (
               <PricingItemRow
@@ -1170,6 +1198,12 @@ const styles = StyleSheet.create({
   },
   sectionHint: {
     fontSize: fontSize.xs,
+  },
+  organizeButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
   },
   itemsConfigSpacer: {
     height: spacing.lg,

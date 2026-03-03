@@ -132,12 +132,12 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
     mode: 'onChange',
   });
 
-  // Reset form when data changes (e.g., navigating between different tasks)
+  // Reset form when initialData changes (e.g., navigating between different tasks)
   useEffect(() => {
-    if (mode === 'edit' && defaultValues) {
-      form.reset(defaultValues);
+    if (mode === 'edit' && initialData) {
+      form.reset(initialData);
     }
-  }, [defaultValues]);
+  }, [initialData]);
 
   return (
     <FormProvider {...form}>

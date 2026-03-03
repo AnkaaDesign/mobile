@@ -12,8 +12,6 @@ import { useRouter } from "expo-router";
 import {
   IconCheck,
   IconArrowDown,
-  IconInfoCircle,
-  IconCopy,
   IconSearch,
   IconX,
 } from "@tabler/icons-react-native";
@@ -24,6 +22,7 @@ import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useCopyFromTask } from "@/hooks/useTask";
 import { useTasks } from "@/hooks";
+import { getTaskById } from "@/api-client";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import type { Task } from "@/types";
 import type { FormStep } from "@/components/ui/form-steps";
@@ -40,13 +39,14 @@ const WIZARD_STEPS: FormStep[] = [
 ];
 
 const CATEGORY_ORDER = [
-  "Acoes Rapidas",
-  "Informacoes Gerais",
+  "Ações Rápidas",
+  "Informações Gerais",
   "Datas",
   "Comercial",
-  "Pintura e Layouts",
-  "Producao",
-  "Veiculo",
+  "Pintura",
+  "Arquivos",
+  "Produção",
+  "Veículo",
 ];
 
 interface CopyFromTaskWizardProps {
@@ -96,20 +96,6 @@ function FieldSelectionItem({
         <ThemedText style={[styles.fieldLabel, { color: colors.foreground }]}>
           {metadata.label}
         </ThemedText>
-      </View>
-      <View style={styles.fieldItemRight}>
-        {metadata.isShared && (
-          <View style={[styles.badge, { backgroundColor: "#3b82f610", borderColor: "#3b82f640" }]}>
-            <IconInfoCircle size={10} color="#3b82f6" />
-            <ThemedText style={[styles.badgeText, { color: "#3b82f6" }]}>Compart.</ThemedText>
-          </View>
-        )}
-        {metadata.createNewInstances && (
-          <View style={[styles.badge, { backgroundColor: "#22c55e10", borderColor: "#22c55e40" }]}>
-            <IconCopy size={10} color="#22c55e" />
-            <ThemedText style={[styles.badgeText, { color: "#22c55e" }]}>Nova</ThemedText>
-          </View>
-        )}
       </View>
     </TouchableOpacity>
   );
@@ -161,10 +147,18 @@ function TaskMiniDisplay({
         </View>
         <View style={styles.taskDisplayRow}>
           <ThemedText style={[styles.taskDisplayLabel, { color: colors.mutedForeground }]}>
-            Serie/Placa:
+            Nº Série:
           </ThemedText>
           <ThemedText style={[styles.taskDisplayValue, { color: colors.foreground }]}>
             {task.serialNumber || (task as any)?.truck?.plate || "-"}
+          </ThemedText>
+        </View>
+        <View style={styles.taskDisplayRow}>
+          <ThemedText style={[styles.taskDisplayLabel, { color: colors.mutedForeground }]}>
+            Setor:
+          </ThemedText>
+          <ThemedText style={[styles.taskDisplayValue, { color: colors.foreground }]}>
+            {(task as any)?.sector?.name || "-"}
           </ThemedText>
         </View>
       </View>
@@ -218,7 +212,10 @@ function SourceTaskTable({
           Nome
         </ThemedText>
         <ThemedText style={[styles.tableHeaderCell, styles.tableSerialCol, { color: colors.mutedForeground }]}>
-          Serie/Placa
+          Nº Série
+        </ThemedText>
+        <ThemedText style={[styles.tableHeaderCell, styles.tableSectorCol, { color: colors.mutedForeground }]}>
+          Setor
         </ThemedText>
       </View>
 
@@ -280,6 +277,14 @@ function SourceTaskTable({
                     {task.serialNumber || (task as any)?.truck?.plate || "-"}
                   </ThemedText>
                 </View>
+                <View style={[styles.tableCell, styles.tableSectorCol]}>
+                  <ThemedText
+                    style={[styles.tableCellText, { color: colors.mutedForeground }]}
+                    numberOfLines={1}
+                  >
+                    {(task as any)?.sector?.name || "-"}
+                  </ThemedText>
+                </View>
                 {isSelected && (
                   <View style={[styles.tableSelectedBadge, { backgroundColor: colors.primary }]}>
                     <IconCheck size={10} color="#fff" />
@@ -306,6 +311,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
   const [selectedFields, setSelectedFields] = useState<Set<CopyableTaskField>>(new Set());
   const [sourceTask, setSourceTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isRefetchingSource, setIsRefetchingSource] = useState(false);
 
   // Fetch target task data
   const { data: taskResponse, isLoading: taskLoading } = useTaskDetail(taskId, {
@@ -397,6 +403,44 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
     });
   }, [allIndividualSelected, individualFields]);
 
+  // Refetch source task with full includes (matching web's critical fix)
+  const handleSourceTaskSelected = useCallback(async (task: Task) => {
+    setIsRefetchingSource(true);
+    try {
+      const fullSourceTask = await getTaskById(task.id, {
+        include: {
+          artworks: { include: { file: true } },
+          budgets: true,
+          invoices: true,
+          receipts: true,
+          pricing: true,
+          logoPaints: true,
+          cuts: true,
+          serviceOrders: true,
+          sector: true,
+          truck: {
+            include: {
+              leftSideLayout: { include: { layoutSections: true, photo: true } },
+              rightSideLayout: { include: { layoutSections: true, photo: true } },
+              backSideLayout: { include: { layoutSections: true, photo: true } },
+            },
+          },
+        },
+      });
+
+      if (!fullSourceTask.success || !fullSourceTask.data) {
+        throw new Error('Failed to fetch source task details');
+      }
+
+      setSourceTask(fullSourceTask.data);
+    } catch (error) {
+      Alert.alert("Erro", "Falha ao carregar detalhes da tarefa de origem");
+      setSourceTask(null);
+    } finally {
+      setIsRefetchingSource(false);
+    }
+  }, []);
+
   // Step navigation
   const canProceed = useMemo(() => {
     if (currentStep === 1) return selectedFields.size > 0;
@@ -439,11 +483,16 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
         },
       });
 
-      Alert.alert("Sucesso", "Campos copiados com sucesso!", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      Alert.alert(
+        "Campos copiados com sucesso",
+        `${fieldsToSubmit.length} campo(s) copiado(s) de "${sourceTask.name}"`,
+        [{ text: "OK", onPress: () => router.back() }],
+      );
     } catch (error: any) {
-      Alert.alert("Erro", error.message || "Erro ao copiar campos");
+      Alert.alert(
+        "Erro ao copiar campos",
+        error.message || "Não foi possível copiar os campos. Tente novamente.",
+      );
     }
   }, [sourceTask, selectedFields, copyMutation, taskId, router]);
 
@@ -495,19 +544,6 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
               <CardTitle>Campos para Copiar</CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedFields.size > 0 && (
-                <View style={[styles.selectionCounter, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>
-                  <ThemedText style={[styles.selectionCounterText, { color: colors.foreground }]}>
-                    {allIndividualSelected
-                      ? "Todos os campos"
-                      : `${selectedFields.size} campo${selectedFields.size > 1 ? "s" : ""}`}
-                  </ThemedText>
-                  <TouchableOpacity onPress={() => setSelectedFields(new Set())}>
-                    <ThemedText style={[styles.clearButton, { color: colors.primary }]}>Limpar</ThemedText>
-                  </TouchableOpacity>
-                </View>
-              )}
-
               {CATEGORY_ORDER.map((category) => {
                 const fields = fieldsByCategory[category];
                 if (!fields || fields.length === 0) return null;
@@ -530,6 +566,19 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
                   </View>
                 );
               })}
+
+              {selectedFields.size > 0 && (
+                <View style={[styles.selectionCounter, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>
+                  <ThemedText style={[styles.selectionCounterText, { color: colors.foreground }]}>
+                    {allIndividualSelected
+                      ? "Todos os campos selecionados"
+                      : `${selectedFields.size} campo${selectedFields.size > 1 ? "s" : ""} selecionado${selectedFields.size > 1 ? "s" : ""}`}
+                  </ThemedText>
+                  <TouchableOpacity onPress={() => setSelectedFields(new Set())}>
+                    <ThemedText style={[styles.clearButton, { color: colors.primary }]}>Limpar</ThemedText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </CardContent>
           </Card>
         </View>
@@ -546,8 +595,8 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
               <SourceTaskTable
                 tasks={filteredTasks}
                 selectedTaskId={sourceTask?.id || null}
-                onSelect={setSourceTask}
-                isLoading={isLoadingTasks}
+                onSelect={handleSourceTaskSelected}
+                isLoading={isLoadingTasks || isRefetchingSource}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
               />
@@ -561,7 +610,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
         <View style={styles.stepContainer}>
           <Card style={styles.card}>
             <CardHeader>
-              <CardTitle>Revisar Copia</CardTitle>
+              <CardTitle>Revisar Cópia</CardTitle>
             </CardHeader>
             <CardContent>
               {sourceTask && (
@@ -589,7 +638,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
 
           <Card style={styles.card}>
             <CardHeader>
-              <CardTitle>Campos que serao copiados</CardTitle>
+              <CardTitle>Campos que serão copiados</CardTitle>
             </CardHeader>
             <CardContent>
               <View style={styles.confirmFieldsList}>
@@ -687,10 +736,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     flex: 1,
   },
-  fieldItemRight: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
   checkbox: {
     width: 18,
     height: 18,
@@ -703,19 +748,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: fontWeight.medium,
-  },
   selectionCounter: {
     flexDirection: "row",
     alignItems: "center",
@@ -723,7 +755,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
   selectionCounterText: {
     fontSize: fontSize.sm,
@@ -864,6 +896,10 @@ const styles = StyleSheet.create({
   },
   tableSerialCol: {
     flex: 1,
+  },
+  tableSectorCol: {
+    flex: 1,
+    paddingLeft: spacing.xs,
   },
   tableSelectedBadge: {
     width: 18,

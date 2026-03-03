@@ -13,9 +13,17 @@ import { FormActionBar } from '@/components/forms';
 import { FormCard } from '@/components/ui/form-section';
 import { spacing } from '@/constants/design-system';
 import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
+import { SERVICE_ORDER_TYPE } from '@/constants/enums';
 import { TRUCK_SPOT } from '@/constants';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from '@/contexts/KeyboardAwareFormContext';
+import {
+  getPricingItemsToAddFromServiceOrders,
+  getServiceOrdersToAddFromPricingItems,
+  normalizeDescription,
+  type SyncServiceOrder,
+  type SyncPricingItem,
+} from '@/utils/task-pricing-service-order-sync';
 
 // Import essential sections immediately
 import BasicInfoSection from './sections/BasicInfoSection';
@@ -97,6 +105,240 @@ export function TaskForm({
     modifiedLayoutSidesRef.current.add(side);
     setHasLayoutChanges(true);
   }, []);
+
+  // Watch form values for validation and sync
+  const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
+  const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
+
+  // =====================================================================
+  // PRICING ↔ SERVICE ORDER BIDIRECTIONAL SYNC (matching web pattern)
+  // =====================================================================
+  const isFormInitializedRef = useRef(false);
+  const isSyncingRef = useRef(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedServiceOrderCountRef = useRef<number>(0);
+  const lastSyncedPricingItemCountRef = useRef<number>(0);
+  const deletedServiceOrderDescriptionsRef = useRef<Set<string>>(new Set());
+  const deletedPricingItemDescriptionsRef = useRef<Set<string>>(new Set());
+  const prevSOObservationsRef = useRef<Map<string, string | null>>(new Map());
+  const prevPIObservationsRef = useRef<Map<string, string | null>>(new Map());
+
+  // Initialize sync refs once form values are loaded
+  useEffect(() => {
+    if (isFormInitializedRef.current) return;
+    const serviceOrders = (form.getValues('serviceOrders') as any[]) || [];
+    const pricing = form.getValues('pricing') as any;
+    const pricingItems = (pricing?.items as any[]) || [];
+
+    const validSOs = serviceOrders.filter(
+      (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
+    );
+    const validPIs = pricingItems.filter(
+      (item: any) => item.description?.trim().length >= 3
+    );
+
+    lastSyncedServiceOrderCountRef.current = validSOs.length;
+    lastSyncedPricingItemCountRef.current = validPIs.length;
+
+    // Initialize observation maps
+    const soMap = new Map<string, string | null>();
+    for (const so of validSOs) {
+      const nd = normalizeDescription(so.description);
+      if (nd) soMap.set(nd, so.observation || null);
+    }
+    prevSOObservationsRef.current = soMap;
+
+    const piMap = new Map<string, string | null>();
+    for (const item of validPIs) {
+      const nd = normalizeDescription(item.description);
+      if (nd) piMap.set(nd, item.observation || null);
+    }
+    prevPIObservationsRef.current = piMap;
+
+    // Delay initialization to skip initial render cycles
+    setTimeout(() => {
+      isFormInitializedRef.current = true;
+    }, 1000);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced sync effect
+  useEffect(() => {
+    if (!isFormInitializedRef.current || isSyncingRef.current) return;
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(() => {
+      const currentServiceOrders = (watchedServiceOrders as any[]) || [];
+      const currentPricingItems = ((watchedPricing as any)?.items as any[]) || [];
+
+      const validSOs = currentServiceOrders.filter(
+        (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
+      );
+      const validPIs = currentPricingItems.filter(
+        (item: any) => item.description?.trim().length >= 3
+      );
+
+      const currentSOCount = validSOs.length;
+      const currentPICount = validPIs.length;
+
+      const serviceOrdersAdded = currentSOCount > lastSyncedServiceOrderCountRef.current;
+      const pricingItemsAdded = currentPICount > lastSyncedPricingItemCountRef.current;
+
+      isSyncingRef.current = true;
+
+      try {
+        const syncSOs: SyncServiceOrder[] = validSOs.map((so: any) => ({
+          id: so.id,
+          description: so.description || '',
+          observation: so.observation || null,
+          type: so.type,
+          status: so.status,
+          statusOrder: so.statusOrder || 1,
+          shouldSync: so.shouldSync !== false,
+        }));
+
+        const syncPIs: SyncPricingItem[] = validPIs.map((item: any) => ({
+          id: item.id,
+          description: item.description || '',
+          observation: item.observation || null,
+          amount: item.amount || 0,
+          shouldSync: item.shouldSync !== false,
+        }));
+
+        // --- Observation sync with change detection ---
+        const currentSOObsMap = new Map<string, string | null>();
+        for (const so of syncSOs) {
+          const nd = normalizeDescription(so.description);
+          if (nd) currentSOObsMap.set(nd, so.observation || null);
+        }
+
+        const currentPIObsMap = new Map<string, string | null>();
+        for (const item of syncPIs) {
+          const nd = normalizeDescription(item.description);
+          if (nd) currentPIObsMap.set(nd, item.observation || null);
+        }
+
+        const soObsChanged = new Set<string>();
+        const piObsChanged = new Set<string>();
+
+        for (const [desc, obs] of currentSOObsMap) {
+          if ((prevSOObservationsRef.current.get(desc) || null) !== (obs || null)) {
+            soObsChanged.add(desc);
+          }
+        }
+        for (const [desc, obs] of currentPIObsMap) {
+          if ((prevPIObservationsRef.current.get(desc) || null) !== (obs || null)) {
+            piObsChanged.add(desc);
+          }
+        }
+
+        let pricingObsUpdated = false;
+        const pricingItemsWithSyncedObs = currentPricingItems.map((item: any) => {
+          if (!item.description || item.description.trim().length < 3) return item;
+          const nd = normalizeDescription(item.description);
+          if (soObsChanged.has(nd) && !piObsChanged.has(nd)) {
+            const soObs = currentSOObsMap.get(nd);
+            if ((item.observation || null) !== soObs) {
+              pricingObsUpdated = true;
+              return { ...item, observation: soObs };
+            }
+          }
+          return item;
+        });
+
+        let soObsUpdated = false;
+        const serviceOrdersWithSyncedObs = currentServiceOrders.map((so: any) => {
+          if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) return so;
+          if (!so.description || so.description.trim().length < 3) return so;
+          const nd = normalizeDescription(so.description);
+          if (piObsChanged.has(nd) && !soObsChanged.has(nd)) {
+            const piObs = currentPIObsMap.get(nd);
+            if ((so.observation || null) !== piObs) {
+              soObsUpdated = true;
+              return { ...so, observation: piObs };
+            }
+          }
+          return so;
+        });
+
+        // --- SYNC 1: Service Orders → Pricing Items ---
+        const filterEmptyPIs = (items: any[]) => items.filter((item: any) => {
+          const hasDesc = item.description && item.description.trim() !== '';
+          const hasAmount = item.amount !== null && item.amount !== undefined && item.amount > 0;
+          return hasDesc || hasAmount;
+        });
+
+        const pricingItemsToAddRaw = serviceOrdersAdded
+          ? getPricingItemsToAddFromServiceOrders(syncSOs, syncPIs)
+          : [];
+        const pricingItemsToAdd = pricingItemsToAddRaw.filter((item: any) => {
+          return !deletedPricingItemDescriptionsRef.current.has(normalizeDescription(item.description));
+        });
+
+        if (pricingItemsToAdd.length > 0 || pricingObsUpdated) {
+          const basePIs = pricingItemsToAdd.length > 0
+            ? filterEmptyPIs(pricingItemsWithSyncedObs)
+            : pricingItemsWithSyncedObs;
+          const finalPIs = [...basePIs, ...pricingItemsToAdd];
+          form.setValue('pricing.items', finalPIs, { shouldDirty: true });
+        }
+
+        // --- SYNC 2: Pricing Items → Service Orders ---
+        const filterEmptySOs = (orders: any[]) => orders.filter((so: any) => {
+          return so.description && so.description.trim().length >= 3;
+        });
+
+        const serviceOrdersToAddRaw = pricingItemsAdded
+          ? getServiceOrdersToAddFromPricingItems(syncPIs, syncSOs)
+          : [];
+        const serviceOrdersToAdd = serviceOrdersToAddRaw.filter((so: any) => {
+          return !deletedServiceOrderDescriptionsRef.current.has(normalizeDescription(so.description));
+        });
+
+        if (serviceOrdersToAdd.length > 0 || soObsUpdated) {
+          const baseSOs = serviceOrdersToAdd.length > 0
+            ? filterEmptySOs(serviceOrdersWithSyncedObs)
+            : serviceOrdersWithSyncedObs;
+          const finalSOs = [...serviceOrdersToAdd, ...baseSOs];
+          form.setValue('serviceOrders', finalSOs, { shouldDirty: true });
+        }
+
+        // Update prev observation refs
+        const newPrevSOMap = new Map<string, string | null>();
+        const finalSOsForPrev = soObsUpdated ? serviceOrdersWithSyncedObs : currentServiceOrders;
+        for (const so of finalSOsForPrev) {
+          if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
+          const nd = normalizeDescription(so.description);
+          if (nd) newPrevSOMap.set(nd, so.observation || null);
+        }
+        prevSOObservationsRef.current = newPrevSOMap;
+
+        const newPrevPIMap = new Map<string, string | null>();
+        const finalPIsForPrev = pricingObsUpdated ? pricingItemsWithSyncedObs : currentPricingItems;
+        for (const item of finalPIsForPrev) {
+          const nd = normalizeDescription(item.description);
+          if (nd) newPrevPIMap.set(nd, item.observation || null);
+        }
+        prevPIObservationsRef.current = newPrevPIMap;
+
+        // Update synced counts
+        lastSyncedServiceOrderCountRef.current = currentSOCount + serviceOrdersToAdd.length;
+        lastSyncedPricingItemCountRef.current = currentPICount + pricingItemsToAdd.length;
+      } finally {
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 500);
+      }
+    }, 1500);
+
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, [watchedServiceOrders, watchedPricing, form]);
 
   // Check if form context exists
   if (!form) {
@@ -184,9 +426,6 @@ export function TaskForm({
   // which is essential for triggering useMemo recalculation.
   const allFormValues = useWatch({ control: form.control });
 
-  // Watch form values for validation checks (matching web's hasIncompletePricing, etc.)
-  const watchedServiceOrders = useWatch({ control: form.control, name: 'serviceOrders' });
-  const watchedPricing = useWatch({ control: form.control, name: 'pricing' });
   // Derive canSubmit from subscribed values (pure computation during render).
   // NOTE: NOT memoized because dirtyFields is a Proxy whose reference never changes —
   // useMemo would never recompute when fields become dirty. useFormState already gates

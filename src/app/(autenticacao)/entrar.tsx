@@ -49,9 +49,7 @@ export default function LoginScreen() {
 
     try {
       await login(data.contact, data.password);
-      // Clear navigation history so back button doesn't show after login
       clearHistory();
-      // After successful login, navigate to home
       router.replace('/(tabs)/inicio' as any);
     } catch (error: any) {
       // Extract detailed error information from the enhanced error object

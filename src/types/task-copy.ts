@@ -24,6 +24,7 @@ export type CopyableTaskField =
   | 'paintId'
   | 'artworkIds'
   | 'baseFileIds'
+  | 'projectFileIds'
   | 'logoPaintIds'
   | 'cuts'
   | 'airbrushings'
@@ -37,8 +38,6 @@ export interface CopyableFieldMetadata {
   label: string;
   description: string;
   category: string;
-  isShared: boolean;
-  createNewInstances: boolean;
 }
 
 export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
@@ -55,6 +54,7 @@ export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
   'paintId',
   'artworkIds',
   'baseFileIds',
+  'projectFileIds',
   'logoPaintIds',
   'cuts',
   'airbrushings',
@@ -86,13 +86,20 @@ export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'
   // Pricing - only visible to ADMIN, FINANCIAL, COMMERCIAL (canViewPricingSections)
   pricingId: ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
 
-  // Paint/Artworks - hidden for Warehouse, Financial, Logistic (different rules)
+  // Paint - editable by most sectors except Warehouse, Financial, Logistic
   paintId: ['ADMIN', 'COMMERCIAL', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Logo paints (Cores da Logomarca) - hidden for Commercial users
+  logoPaintIds: ['ADMIN', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Artworks (Layouts files) - hidden for Warehouse, Financial, Logistic
   artworkIds: ['ADMIN', 'COMMERCIAL', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+
+  // Base files - accessible by most sectors
   baseFileIds: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-  // Logo paints - hidden for Commercial users
-  logoPaintIds: ['ADMIN', 'DESIGNER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
+  // Project files (Projetos) - editable by ADMIN, COMMERCIAL, LOGISTIC
+  projectFileIds: ['ADMIN', 'COMMERCIAL', 'LOGISTIC'],
 
   // Cuts - hidden for Financial, Logistic, Commercial
   cuts: ['ADMIN', 'DESIGNER', 'WAREHOUSE', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
@@ -107,7 +114,7 @@ export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'
   implementType: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   category: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-  // Layouts - hidden for Warehouse, Financial, Designer, Commercial
+  // Medidas do Caminhao - hidden for Warehouse, Financial, Designer, Commercial
   layouts: ['ADMIN', 'LOGISTIC', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
   // Observation - hidden for Warehouse, Financial, Designer, Logistic, Commercial
@@ -158,149 +165,112 @@ export function expandAllFieldsForUser(
 export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMetadata> = {
   all: {
     label: 'COPIAR TUDO',
-    description: 'Copia todos os campos que voce tem permissao para editar',
-    category: 'Acoes Rapidas',
-    isShared: false,
-    createNewInstances: false,
+    description: 'Copia todos os campos que você tem permissão para editar',
+    category: 'Ações Rápidas',
   },
   name: {
     label: 'Nome',
     description: 'Nome da tarefa',
-    category: 'Informacoes Gerais',
-    isShared: false,
-    createNewInstances: false,
+    category: 'Informações Gerais',
   },
   details: {
     label: 'Detalhes',
-    description: 'Descricao e detalhes da tarefa',
-    category: 'Informacoes Gerais',
-    isShared: false,
-    createNewInstances: false,
+    description: 'Descrição e detalhes da tarefa',
+    category: 'Informações Gerais',
   },
   entryDate: {
     label: 'Data de Entrada',
     description: 'Data de entrada da tarefa',
     category: 'Datas',
-    isShared: false,
-    createNewInstances: false,
   },
   term: {
     label: 'Prazo',
-    description: 'Data limite para conclusao',
+    description: 'Data limite para conclusão',
     category: 'Datas',
-    isShared: false,
-    createNewInstances: false,
   },
   forecastDate: {
-    label: 'Previsao',
-    description: 'Data prevista para conclusao',
+    label: 'Previsão',
+    description: 'Data prevista para conclusão',
     category: 'Datas',
-    isShared: false,
-    createNewInstances: false,
   },
   commission: {
-    label: 'Comissao',
-    description: 'Informacoes de comissao',
+    label: 'Comissão',
+    description: 'Informações de comissão',
     category: 'Comercial',
-    isShared: false,
-    createNewInstances: false,
   },
   responsibles: {
     label: 'Responsáveis',
-    description: 'Responsáveis associados a tarefa',
+    description: 'Responsáveis associados à tarefa',
     category: 'Comercial',
-    isShared: true,
-    createNewInstances: false,
   },
   customerId: {
     label: 'Cliente',
-    description: 'Cliente associado a tarefa',
+    description: 'Cliente associado à tarefa',
     category: 'Comercial',
-    isShared: true,
-    createNewInstances: false,
   },
   pricingId: {
-    label: 'Precificacao',
-    description: 'Copia independente da tabela de precos e itens',
+    label: 'Precificação',
+    description: 'Cópia independente da tabela de preços e itens',
     category: 'Comercial',
-    isShared: false,
-    createNewInstances: true,
   },
   paintId: {
     label: 'Pintura Geral',
-    description: 'Configuracao de pintura geral',
-    category: 'Pintura e Layouts',
-    isShared: true,
-    createNewInstances: false,
+    description: 'Configuração de pintura geral',
+    category: 'Pintura',
+  },
+  logoPaintIds: {
+    label: 'Cores da Logomarca',
+    description: 'Configurações de cores da logomarca',
+    category: 'Pintura',
   },
   artworkIds: {
     label: 'Layouts',
     description: 'Arquivos de layout',
-    category: 'Pintura e Layouts',
-    isShared: true,
-    createNewInstances: false,
+    category: 'Arquivos',
   },
   baseFileIds: {
     label: 'Arquivos Base',
-    description: 'Arquivos base para criacao de layouts',
-    category: 'Pintura e Layouts',
-    isShared: true,
-    createNewInstances: false,
+    description: 'Arquivos base para criação de layouts',
+    category: 'Arquivos',
   },
-  logoPaintIds: {
-    label: 'Pinturas de Logo',
-    description: 'Configuracoes de pintura de logos',
-    category: 'Pintura e Layouts',
-    isShared: true,
-    createNewInstances: false,
+  projectFileIds: {
+    label: 'Projetos',
+    description: 'Arquivos de projetos anexados à tarefa',
+    category: 'Arquivos',
   },
   cuts: {
     label: 'Recortes',
     description: 'Recortes de vinil/adesivo',
-    category: 'Producao',
-    isShared: false,
-    createNewInstances: true,
+    category: 'Produção',
   },
   airbrushings: {
     label: 'Aerografias',
     description: 'Trabalhos de aerografia',
-    category: 'Producao',
-    isShared: false,
-    createNewInstances: true,
+    category: 'Produção',
   },
   serviceOrders: {
-    label: 'Ordens de Servico',
-    description: 'Ordens de servico vinculadas',
-    category: 'Producao',
-    isShared: false,
-    createNewInstances: true,
+    label: 'Ordens de Serviço',
+    description: 'Ordens de serviço vinculadas',
+    category: 'Produção',
   },
   implementType: {
     label: 'Implemento',
-    description: 'Tipo de implemento do veiculo',
-    category: 'Veiculo',
-    isShared: true,
-    createNewInstances: false,
+    description: 'Tipo de implemento do veículo',
+    category: 'Veículo',
   },
   category: {
     label: 'Categoria',
-    description: 'Categoria do veiculo',
-    category: 'Veiculo',
-    isShared: true,
-    createNewInstances: false,
+    description: 'Categoria do veículo',
+    category: 'Veículo',
   },
   layouts: {
-    label: 'Layouts',
-    description: 'Layouts do veiculo (esquerdo, direito, traseiro)',
-    category: 'Veiculo',
-    isShared: true,
-    createNewInstances: false,
+    label: 'Medidas',
+    description: 'Medidas do caminhão (esquerdo, direito, traseiro)',
+    category: 'Veículo',
   },
   observation: {
-    label: 'Observacoes',
-    description: 'Observacoes e notas da tarefa',
-    category: 'Informacoes Gerais',
-    isShared: false,
-    createNewInstances: true,
+    label: 'Observações',
+    description: 'Observações e notas da tarefa',
+    category: 'Informações Gerais',
   },
 };
