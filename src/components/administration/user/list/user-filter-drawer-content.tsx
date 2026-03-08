@@ -29,9 +29,9 @@ interface FilterState {
   statuses?: string[];
   positionIds?: string[];
   sectorIds?: string[];
-  managedSectorIds?: string[];
+  ledSectorIds?: string[];
   verified?: boolean;
-  hasManagedSector?: boolean;
+  hasLedSector?: boolean;
 }
 
 export function UserFilterDrawerContent({
@@ -59,9 +59,9 @@ export function UserFilterDrawerContent({
       statuses: where.status?.in || [],
       positionIds: where.positionId?.in || [],
       sectorIds: where.sectorId?.in || [],
-      managedSectorIds: where.managedSectorId?.in || [],
+      ledSectorIds: where.ledSectorId?.in || [],
       verified: where.verified,
-      hasManagedSector: where.hasManagedSector,
+      hasLedSector: where.hasLedSector,
     };
   });
 
@@ -81,16 +81,16 @@ export function UserFilterDrawerContent({
       where.sectorId = { in: localFilters.sectorIds };
     }
 
-    if (localFilters.managedSectorIds && localFilters.managedSectorIds.length > 0) {
-      where.managedSectorId = { in: localFilters.managedSectorIds };
+    if (localFilters.ledSectorIds && localFilters.ledSectorIds.length > 0) {
+      where.ledSectorId = { in: localFilters.ledSectorIds };
     }
 
     if (localFilters.verified !== undefined) {
       where.verified = localFilters.verified;
     }
 
-    if (localFilters.hasManagedSector !== undefined) {
-      where.hasManagedSector = localFilters.hasManagedSector;
+    if (localFilters.hasLedSector !== undefined) {
+      where.hasLedSector = localFilters.hasLedSector;
     }
 
     if (Object.keys(where).length > 0) {
@@ -201,14 +201,14 @@ export function UserFilterDrawerContent({
 
         <Separator />
 
-        {/* Multi-Select: Managed Sectors */}
+        {/* Multi-Select: Led Sectors */}
         <MultiSelectFilter
-          label="Setores Gerenciados"
-          icon={getFilterIcon('managedSectorIds')}
-          value={localFilters.managedSectorIds || []}
-          onChange={(values) => setLocalFilters((prev) => ({ ...prev, managedSectorIds: values.length > 0 ? values : undefined }))}
+          label="Setores Liderados"
+          icon={getFilterIcon('ledSectorIds')}
+          value={localFilters.ledSectorIds || []}
+          onChange={(values) => setLocalFilters((prev) => ({ ...prev, ledSectorIds: values.length > 0 ? values : undefined }))}
           options={sectorOptions}
-          placeholder={sectors.length === 0 ? 'Carregando setores...' : 'Todos os setores gerenciados'}
+          placeholder={sectors.length === 0 ? 'Carregando setores...' : 'Todos os setores liderados'}
         />
 
         <Separator />
@@ -224,13 +224,13 @@ export function UserFilterDrawerContent({
 
         <Separator />
 
-        {/* Boolean: Has Managed Sector */}
+        {/* Boolean: Has Led Sector */}
         <BooleanFilter
-          label="Gerencia Setor"
-          icon={getFilterIcon('hasManagedSector')}
-          description="Filtrar por usuários que gerenciam setores"
-          value={localFilters.hasManagedSector === true}
-          onChange={(value) => setLocalFilters((prev) => ({ ...prev, hasManagedSector: value ? true : undefined }))}
+          label="Lidera Setor"
+          icon={getFilterIcon('hasLedSector')}
+          description="Filtrar por usuários que lideram setores"
+          value={localFilters.hasLedSector === true}
+          onChange={(value) => setLocalFilters((prev) => ({ ...prev, hasLedSector: value ? true : undefined }))}
         />
       </ScrollView>
 

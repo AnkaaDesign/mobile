@@ -61,7 +61,7 @@ export default function EditCollaboratorScreen() {
           name: true,
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,

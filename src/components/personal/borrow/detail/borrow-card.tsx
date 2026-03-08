@@ -1,161 +1,50 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPackage} from "@tabler/icons-react-native";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import type { Borrow } from "@/types";
-import { getBadgeVariant, getBadgeColors } from "@/constants/badge-colors";
+import { getBadgeVariant } from "@/constants/badge-colors";
 import { formatQuantity } from "@/utils";
 import { BORROW_STATUS_LABELS } from "@/constants/enum-labels";
+import { fontSize, fontWeight } from "@/constants/design-system";
 
 interface BorrowCardProps {
   borrow: Borrow;
 }
 
 export function BorrowCard({ borrow }: BorrowCardProps) {
-  const { colors } = useTheme();
-
   const statusVariant = getBadgeVariant(borrow.status, "BORROW");
-  const statusColors = getBadgeColors(statusVariant);
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconPackage size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações do Empréstimo</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Informações do Empréstimo" icon="package">
       <View style={styles.content}>
-        {/* Status Badge with Overdue Indicator */}
-        <View style={styles.statusContainer}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Status
-          </ThemedText>
-          <View style={styles.badgeRow}>
+        <DetailField
+          label="Status"
+          value={
             <Badge
               variant={statusVariant}
-              style={styles.statusBadge}
               textStyle={styles.badgeText}
             >
               {BORROW_STATUS_LABELS[borrow.status as keyof typeof BORROW_STATUS_LABELS]}
             </Badge>
-          </View>
-        </View>
+          }
+        />
 
-        {/* Quantity Information */}
-        <View style={styles.section}>
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-              Quantidade Emprestada
-            </ThemedText>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {formatQuantity(borrow.quantity)}
-            </ThemedText>
-          </View>
-        </View>
+        <DetailField
+          label="Quantidade Emprestada"
+          value={formatQuantity(borrow.quantity)}
+        />
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
-    gap: spacing.xl,
-  },
-  statusContainer: {
-    gap: spacing.sm,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
+    gap: 16,
   },
   badgeText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
-  },
-  overdueContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    backgroundColor: "#fed7aa",
-    borderRadius: borderRadius.full,
-  },
-  overdueText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: "#9a3412",
-  },
-  section: {
-    gap: spacing.md,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    textAlign: "right",
-  },
-  notesSection: {
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-  },
-  noteItem: {
-    gap: spacing.xs,
-  },
-  noteLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  noteValue: {
-    fontSize: fontSize.sm,
-    lineHeight: fontSize.sm * 1.5,
   },
 });

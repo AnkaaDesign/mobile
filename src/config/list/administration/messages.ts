@@ -100,7 +100,7 @@ export const messagesListConfig: ListConfig<any> = {
         variant: 'default',
         visible: (message) => message.status === 'ACTIVE',
         onPress: async (message, _, mutations) => {
-          await mutations?.archive?.(message.id)
+          await (mutations as any)?.archive?.(message.id)
         },
       },
       {
@@ -110,7 +110,7 @@ export const messagesListConfig: ListConfig<any> = {
         variant: 'default',
         visible: (message) => message.status === 'DRAFT' || message.status === 'ARCHIVED',
         onPress: async (message, _, mutations) => {
-          await mutations?.activate?.(message.id)
+          await (mutations as any)?.activate?.(message.id)
         },
       },
       {

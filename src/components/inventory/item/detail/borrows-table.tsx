@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconPackage, IconAlertCircle, IconList } from "@tabler/icons-react-native";
+import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Item } from '@/types';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -117,17 +117,10 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconPackage size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Empréstimos {borrows.length > 0 && `(${borrows.length}${totalCount ? `/${totalCount}` : ""})`}
-            </ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.content}>
+      <DetailCard
+        title={`Empréstimos ${borrows.length > 0 ? `(${borrows.length}${totalCount ? `/${totalCount}` : ""})` : ""}`}
+        icon="package"
+      >
           {/* Search and Column Visibility Controls */}
           <View style={styles.controlsContainer}>
             <SearchBar
@@ -185,8 +178,7 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
               />
             </View>
           )}
-        </View>
-      </Card>
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -202,29 +194,6 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",

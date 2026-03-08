@@ -56,7 +56,7 @@ export default function TeamActivitiesScreen() {
 
   // Check if user is a team leader
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
-  const managedSectorId = currentUser?.managedSector?.id;
+  const ledSectorId = currentUser?.ledSector?.id;
 
   const { sortConfigs, handleSort, buildOrderBy } = useTableSort(
     [{ columnKey: "createdAt", direction: "desc", order: 0 }],

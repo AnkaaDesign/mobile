@@ -1,9 +1,8 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconClipboardList } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import type { Sector } from '../../../../types';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -22,22 +21,17 @@ export function TasksCard({ sector }: TasksCardProps) {
   const taskCount = sector._count?.tasks || 0;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconClipboardList size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Tarefas do Setor
+    <DetailCard
+      title="Tarefas do Setor"
+      icon="clipboard-list"
+      badge={
+        <Badge variant="secondary">
+          <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
+            {taskCount}
           </ThemedText>
-          <Badge variant="secondary">
-            <ThemedText style={{ fontSize: fontSize.xs, color: colors.mutedForeground }}>
-              {taskCount}
-            </ThemedText>
-          </Badge>
-        </View>
-      </View>
+        </Badge>
+      }
+    >
       <View style={styles.content}>
         <View style={StyleSheet.flatten([styles.infoItem, { backgroundColor: colors.muted + "20" }])}>
           <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>
@@ -55,39 +49,13 @@ export function TasksCard({ sector }: TasksCardProps) {
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
   content: {
     gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   infoItem: {
     padding: spacing.md,

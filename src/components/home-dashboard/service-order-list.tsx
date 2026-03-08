@@ -87,7 +87,7 @@ export function ServiceOrderList({ orders, title = "Ordens de Serviço Abertas" 
         return (
           <Pressable
             key={order.id}
-            onPress={() => router.push("/producao/agenda" as any)}
+            onPress={() => router.push(`/(tabs)/producao/agenda/detalhes/${order.taskId}` as any)}
             style={{
               flexDirection: "row",
               alignItems: "center",

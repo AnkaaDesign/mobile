@@ -45,7 +45,7 @@ export default function TruckLayoutSection({
   const userPrivilege = user?.sector?.privileges;
   const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
-  const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.managedSector;
+  const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.ledSector;
 
   const canViewSection = isAdminUser || isLogisticUser || isProductionLeader;
 

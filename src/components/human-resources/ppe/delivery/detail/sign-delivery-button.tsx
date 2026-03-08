@@ -1,5 +1,4 @@
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { Card } from '@/components/ui/card';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/lib/theme';
@@ -10,6 +9,7 @@ import { PPE_SIGNING_STEP_LABELS } from '@/services/ppe-signing';
 import { PPE_DELIVERY_STATUS } from '@/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { PpeDelivery } from '@/types/ppe';
+import { DetailCard } from '@/components/ui/detail-page-layout';
 
 const LGPD_CONSENT_KEY = 'ppe_lgpd_consent_given';
 
@@ -79,18 +79,18 @@ export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
 
   if (state.step === 'completed') {
     return (
-      <Card style={[styles.card, { backgroundColor: '#f0fdf4', borderColor: '#22c55e' }]}>
+      <DetailCard title="Recebimento Confirmado" icon="circle-check" iconColor="#16a34a">
         <View style={styles.completedContent}>
           <IconCheck size={24} color="#16a34a" />
           <ThemedText style={styles.completedText}>Recebimento confirmado!</ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   if (state.step === 'error') {
     return (
-      <Card style={[styles.card, { borderColor: '#ef4444' }]}>
+      <DetailCard title="Erro na Assinatura" icon="alert-triangle" iconColor="#ef4444">
         <View style={styles.errorContent}>
           <IconAlertTriangle size={20} color="#ef4444" />
           <ThemedText style={[styles.errorText, { color: '#ef4444' }]}>
@@ -100,66 +100,37 @@ export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
         <Button onPress={() => { reset(); handleSign(); }} style={styles.retryButton}>
           <ThemedText style={styles.retryButtonText}>Tentar novamente</ThemedText>
         </Button>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={[styles.card, { borderColor: colors.primary }]}>
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <IconFingerprint size={24} color={colors.primary} />
-          <View style={styles.headerText}>
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Confirmar Recebimento
-            </ThemedText>
-            <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-              Assinatura eletrônica com biometria
-            </ThemedText>
-          </View>
-        </View>
+    <DetailCard title="Confirmar Recebimento" icon="fingerprint">
+      <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
+        Assinatura eletrônica com biometria
+      </ThemedText>
 
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-              {PPE_SIGNING_STEP_LABELS[state.step] || 'Processando...'}
-            </ThemedText>
-          </View>
-        ) : (
-          <Button onPress={handleSign} style={[styles.signButton, { backgroundColor: colors.primary }]}>
-            <IconFingerprint size={18} color="#ffffff" />
-            <ThemedText style={styles.signButtonText}>Confirmar Recebimento</ThemedText>
-          </Button>
-        )}
-      </View>
-    </Card>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
+            {PPE_SIGNING_STEP_LABELS[state.step] || 'Processando...'}
+          </ThemedText>
+        </View>
+      ) : (
+        <Button onPress={handleSign} style={StyleSheet.flatten([styles.signButton, { backgroundColor: colors.primary }])}>
+          <IconFingerprint size={18} color="#ffffff" />
+          <ThemedText style={styles.signButtonText}>Confirmar Recebimento</ThemedText>
+        </Button>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-    borderWidth: 1,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
   subtitle: {
     fontSize: fontSize.xs,
-    marginTop: 2,
+    marginTop: -spacing.xs,
   },
   signButton: {
     flexDirection: 'row',

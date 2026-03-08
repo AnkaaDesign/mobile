@@ -1,11 +1,11 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconHistory, IconCircleCheck, IconCircleX, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconCircleCheck, IconCircleX, IconAlertCircle } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -45,17 +45,7 @@ export function HistoryCard({ verification, isVerifying }: HistoryCardProps) {
   const status = getVerificationStatus();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconHistory size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Verificação de Integridade
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Verificação de Integridade" icon="history">
       <View style={styles.content}>
         {isVerifying && !verification ? (
           <View style={styles.loadingContainer}>
@@ -188,39 +178,13 @@ export function HistoryCard({ verification, isVerifying }: HistoryCardProps) {
           </>
         ) : null}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
   content: {
     gap: spacing.md,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   loadingContainer: {
     paddingVertical: spacing.xl,

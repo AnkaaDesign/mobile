@@ -9,7 +9,7 @@ export const teamStaffUsersKeys = {
 
 /**
  * Hook to fetch team staff users
- * Automatically filters users by the current user's managed sector on the backend
+ * Automatically filters users by the current user's led sector on the backend
  * Requires team leader privileges
  */
 export function useTeamStaffUsers(params?: any, options?: { enabled?: boolean }) {

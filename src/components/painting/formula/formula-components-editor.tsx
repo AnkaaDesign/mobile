@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useRef, useCallback } from "react";
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions, TextInput } from "react-native";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { IconTrash, IconPlus } from "@tabler/icons-react-native";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,15 @@ import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row
 import type { SwipeAction } from "@/components/ui/reanimated-swipeable-row";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
-import { paintFormulaComponentService } from "@/api-client/paint";
 import { canBeUsedInPaintFormula } from "@/utils/measure";
 import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
 import type { Item } from "../../../types";
 
 interface FormulaComponentsEditorProps {
   availableItems?: Item[];
-  formulaPaintId?: string;
 }
 
-export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }: FormulaComponentsEditorProps) {
+export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponentsEditorProps) {
   const { colors } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
   const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
@@ -82,6 +80,17 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     });
   };
 
+  // Refs for weight inputs to auto-focus after component selection
+  const weightInputRefs = useRef<(TextInput | null)[]>([]);
+
+  const handleItemSelect = useCallback((index: number, itemId: string) => {
+    setValue(`components.${index}.itemId`, itemId || "");
+    // Auto-focus the weight input for this row
+    setTimeout(() => {
+      weightInputRefs.current[index]?.focus();
+    }, 100);
+  }, [setValue]);
+
   // Add initial empty row if no components exist
   useEffect(() => {
     if (fields.length === 0) {
@@ -120,12 +129,10 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
     }
   };
 
-  const handleAmountBlur = async (index: number) => {
+  const handleAmountBlur = (index: number) => {
     const rawInput = watch(`components.${index}.rawInput`);
-    const itemId = watch(`components.${index}.itemId`);
 
     if (rawInput && typeof rawInput === 'string') {
-      // Parse and sum all numbers separated by spaces (e.g., "40 5" = 45)
       const parts = rawInput.split(/\s+/).filter(part => part.trim() !== "");
       let total = 0;
       for (const part of parts) {
@@ -137,24 +144,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
 
       const finalWeight = Math.round(total * 100) / 100;
       setValue(`components.${index}.weightInGrams`, finalWeight);
-      // Display the summed value with comma as decimal separator
       setValue(`components.${index}.rawInput`, finalWeight.toString().replace(".", ","));
-
-      // Call API to deduct inventory if we have a valid weight and item
-      if (finalWeight > 0 && itemId) {
-        // Only pass formulaPaintId if it's a real UUID (not temp ID)
-        const isRealFormula = formulaPaintId && !formulaPaintId.startsWith('temp-');
-
-        try {
-          await paintFormulaComponentService.deductForFormulationTest({
-            itemId,
-            weight: finalWeight,
-            ...(isRealFormula && { formulaPaintId }),
-          });
-        } catch (error) {
-          console.error("Error deducting inventory:", error);
-        }
-      }
     }
   };
 
@@ -202,7 +192,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
         <Combobox
           options={getComboboxOptionsForRow(index)}
           value={watch(`components.${index}.itemId`)}
-          onValueChange={(value) => setValue(`components.${index}.itemId`, value || "")}
+          onValueChange={(value) => handleItemSelect(index, (Array.isArray(value) ? value[0] : value) || "")}
           placeholder="Selecione um componente"
           emptyText="Nenhum item disponível"
           searchPlaceholder="Buscar componente..."
@@ -222,6 +212,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
       {/* Weight Input */}
       <View style={{ width: 100, marginRight: spacing.sm }}>
         <Input
+          ref={(el) => { weightInputRefs.current[index] = el as unknown as TextInput; }}
           value={watch(`components.${index}.rawInput`) || ""}
           onChangeText={(value) => handleAmountChange(index, value)}
           onBlur={() => handleAmountBlur(index)}
@@ -254,7 +245,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
             <Combobox
               options={getComboboxOptionsForRow(index)}
               value={watch(`components.${index}.itemId`)}
-              onValueChange={(value) => setValue(`components.${index}.itemId`, value || "")}
+              onValueChange={(value) => handleItemSelect(index, (Array.isArray(value) ? value[0] : value) || "")}
               placeholder="Selecione um componente"
               emptyText="Nenhum item disponível"
               searchPlaceholder="Buscar componente..."
@@ -264,6 +255,7 @@ export function FormulaComponentsEditor({ availableItems = [], formulaPaintId }:
           {/* Weight Input */}
           <View style={styles.phoneWeightContainer}>
             <Input
+              ref={(el) => { weightInputRefs.current[index] = el as unknown as TextInput; }}
               value={watch(`components.${index}.rawInput`) || ""}
               onChangeText={(value) => handleAmountChange(index, value)}
               onBlur={() => handleAmountBlur(index)}

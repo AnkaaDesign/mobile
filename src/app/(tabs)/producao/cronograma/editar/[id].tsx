@@ -27,11 +27,12 @@ export default function EditScheduleScreen() {
 
   const [checkingPermission, setCheckingPermission] = useState(true);
 
-  // Check permissions - ADMIN, FINANCIAL, COMMERCIAL, and LOGISTIC can edit tasks
+  // Check permissions - must match useTaskPermissions().canEdit
   const userPrivilege = user?.sector?.privileges;
   const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
                   userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
                   userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
+                  userPrivilege === SECTOR_PRIVILEGES.DESIGNER ||
                   userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
 
   useEffect(() => {
@@ -100,6 +101,8 @@ export default function EditScheduleScreen() {
           startedAt: true,
           finishedAt: true,
           shouldSync: true,
+          checkinFiles: { select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true } },
+          checkoutFiles: { select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true } },
         }
       },
       sector: {
@@ -151,14 +154,8 @@ export default function EditScheduleScreen() {
           customForecastDays: true,
           simultaneousTasks: true,
           discountReference: true,
-          invoicesToCustomerIds: true,
-          invoicesToCustomers: {
-            select: {
-              id: true,
-              fantasyName: true,
-            }
-          },
-          items: {
+          customerConfigs: true,
+          services: {
             select: {
               id: true,
               description: true,
@@ -414,8 +411,6 @@ export default function EditScheduleScreen() {
       // Extract new file objects (photos taken via camera, stored by FilesSection)
       // These have URIs but no server IDs — they'll be uploaded with the task update
       const fileFieldMapping = [
-        { rawKey: '_checkinFiles', idKey: 'checkinFileIds', uploadKey: 'checkinFiles' },
-        { rawKey: '_checkoutFiles', idKey: 'checkoutFileIds', uploadKey: 'checkoutFiles' },
         { rawKey: '_projectFiles', idKey: 'projectFileIds', uploadKey: 'projectFiles' },
       ];
 
@@ -439,6 +434,49 @@ export default function EditScheduleScreen() {
         // Remove raw file objects from data
         delete data[rawKey];
       }
+
+      // Handle per-service-order checkin/checkout files
+      // New files from camera go into FormData; existing file IDs are injected into service orders
+      const checkinBySOData = data._checkinFilesByServiceOrder || {};
+      const checkoutBySOData = data._checkoutFilesByServiceOrder || {};
+      const checkinNewFiles: FilePickerItem[] = data._checkinFiles || [];
+      const checkoutNewFiles: FilePickerItem[] = data._checkoutFiles || [];
+
+      if (checkinNewFiles.length > 0) {
+        newFilesForUpload['serviceOrderCheckinFiles'] = checkinNewFiles;
+        hasNewFiles = true;
+      }
+      if (checkoutNewFiles.length > 0) {
+        newFilesForUpload['serviceOrderCheckoutFiles'] = checkoutNewFiles;
+        hasNewFiles = true;
+      }
+
+      // Inject file IDs into service orders
+      const serviceOrders = data.serviceOrders || [];
+      for (const so of serviceOrders) {
+        if (so.id) {
+          const soCheckinFiles: FilePickerItem[] = checkinBySOData[so.id] || [];
+          const soCheckoutFiles: FilePickerItem[] = checkoutBySOData[so.id] || [];
+          if (soCheckinFiles.length > 0) {
+            so.checkinFileIds = soCheckinFiles
+              .map((f: any) => f.fileId || f.file?.id || f.id)
+              .filter(Boolean);
+          }
+          if (soCheckoutFiles.length > 0) {
+            so.checkoutFileIds = soCheckoutFiles
+              .map((f: any) => f.fileId || f.file?.id || f.id)
+              .filter(Boolean);
+          }
+        }
+      }
+
+      // Clean up internal fields
+      delete data._checkinFilesByServiceOrder;
+      delete data._checkoutFilesByServiceOrder;
+      delete data._checkinFiles;
+      delete data._checkoutFiles;
+      delete data.checkinFileIds;
+      delete data.checkoutFileIds;
 
       // Process form data: filter empty items and prepare for API
       const processedData = processFormDataForSubmission(data, task);
@@ -486,7 +524,7 @@ export default function EditScheduleScreen() {
   /**
    * Process form data before submission:
    * 1. Filter empty service orders (no description)
-   * 2. Filter empty pricing items (no description)
+   * 2. Filter empty pricing services (no description)
    * 3. Filter empty airbrushings (no meaningful data)
    * 4. Compare with original task and only include changed fields
    *
@@ -575,14 +613,14 @@ export default function EditScheduleScreen() {
       });
     };
 
-    // Helper: Filter empty pricing items
-    const filterPricingItems = (items: any[]): any[] => {
-      if (!items || !Array.isArray(items)) return [];
-      return items.filter(item => {
+    // Helper: Filter empty pricing services
+    const filterPricingServices = (services: any[]): any[] => {
+      if (!services || !Array.isArray(services)) return [];
+      return services.filter(svc => {
         // Keep if it has an ID (existing record)
-        if (item.id && !item.id.startsWith('temp-')) return true;
-        // For new items, require description
-        return item.description && item.description.trim() !== '';
+        if (svc.id && !svc.id.startsWith('temp-')) return true;
+        // For new services, require description
+        return svc.description && svc.description.trim() !== '';
       });
     };
 
@@ -732,11 +770,11 @@ export default function EditScheduleScreen() {
       const currPricing = { ...formData.pricing };
       const origPricing = originalTask.pricing;
 
-      // Ensure items is a proper array and filter/coerce
-      if (currPricing.items) {
-        currPricing.items = filterPricingItems(ensureArray(currPricing.items)).map((item: any) => ({
-          ...item,
-          amount: ensureNumber(item.amount) ?? 0,
+      // Ensure services is a proper array and filter/coerce
+      if (currPricing.services) {
+        currPricing.services = filterPricingServices(ensureArray(currPricing.services)).map((svc: any) => ({
+          ...svc,
+          amount: ensureNumber(svc.amount) ?? 0,
         }));
       }
 
@@ -745,13 +783,13 @@ export default function EditScheduleScreen() {
       currPricing.subtotal = ensureNumber(currPricing.subtotal);
       currPricing.total = ensureNumber(currPricing.total);
 
-      // Ensure invoicesToCustomerIds is a proper array
-      currPricing.invoicesToCustomerIds = currPricing.invoicesToCustomerIds
-        ? ensureArray(currPricing.invoicesToCustomerIds)
+      // Ensure customerConfigs is a proper array
+      currPricing.customerConfigs = currPricing.customerConfigs
+        ? ensureArray(currPricing.customerConfigs)
         : [];
 
       // Build comparable shapes for both current and original pricing
-      // Strip non-comparable fields (id, layoutFile, invoicesToCustomers) and normalize
+      // Strip non-comparable fields (id, layoutFile, customerConfigs relation) and normalize
       const comparableFields = [
         'status', 'expiresAt', 'subtotal', 'discountType', 'discountValue', 'total',
         'paymentCondition', 'downPaymentDate', 'customPaymentText',
@@ -778,8 +816,8 @@ export default function EditScheduleScreen() {
           }
           comparable[f] = val;
         }
-        // Normalize items for comparison (only id, description, observation, amount)
-        comparable.items = (p.items || [])
+        // Normalize services for comparison (only id, description, observation, amount)
+        comparable.services = (p.services || [])
           .filter((i: any) => i.description && i.description.trim() !== '')
           .map((i: any) => ({
             id: i.id || null,
@@ -787,8 +825,8 @@ export default function EditScheduleScreen() {
             observation: i.observation || null,
             amount: typeof i.amount === 'number' ? i.amount : (ensureNumber(i.amount) ?? 0),
           }));
-        // Normalize invoicesToCustomerIds
-        comparable.invoicesToCustomerIds = [...(p.invoicesToCustomerIds || p.invoicesToCustomers?.map((c: any) => c.id) || [])].sort();
+        // Normalize customerConfigs
+        comparable.customerConfigs = [...(p.customerConfigs || []).map((c: any) => c.id || c.customerId || c)].sort();
         return comparable;
       };
 
@@ -822,8 +860,8 @@ export default function EditScheduleScreen() {
         // Guard: when original had no pricing, only send if user actually added content
         // (not just the default empty template)
         if (!origPricing) {
-          const items = ensureArray(currPricing.items);
-          const hasNonEmptyItems = items.some((item: any) => item.description && item.description.trim() !== '');
+          const services = ensureArray(currPricing.services);
+          const hasNonEmptyItems = services.some((svc: any) => svc.description && svc.description.trim() !== '');
           const hasNonDefaultValues = (ensureNumber(currPricing.subtotal) ?? 0) > 0 ||
             (ensureNumber(currPricing.total) ?? 0) > 0 ||
             currPricing.paymentCondition || currPricing.guaranteeYears ||
@@ -841,10 +879,10 @@ export default function EditScheduleScreen() {
 
         // Clean pricing payload: strip relation objects and non-API fields
         if (processed.pricing) {
-          const { id: _pricingId, layoutFile: _layoutFile, invoicesToCustomers: _invoicesToCustomers, ...cleanPricing } = processed.pricing;
-          // Clean items: strip shouldSync, clean temp IDs
-          if (cleanPricing.items) {
-            cleanPricing.items = ensureArray(cleanPricing.items).map((item: any) => {
+          const { id: _pricingId, layoutFile: _layoutFile, ...cleanPricing } = processed.pricing;
+          // Clean services: strip shouldSync, clean temp IDs
+          if (cleanPricing.services) {
+            cleanPricing.services = ensureArray(cleanPricing.services).map((item: any) => {
               const { shouldSync: _shouldSync, ...cleanItem } = item;
               if (cleanItem.id?.startsWith('temp-')) delete cleanItem.id;
               return cleanItem;
@@ -878,12 +916,11 @@ export default function EditScheduleScreen() {
 
     // Process file IDs (artworkIds, baseFileIds, etc.)
     // Only include when actually changed compared to original task
+    // Note: checkinFileIds/checkoutFileIds are now per service order, not task-level
     const fileIdFieldMap: Record<string, string> = {
       artworkIds: 'artworks',
       baseFileIds: 'baseFiles',
       projectFileIds: 'projectFiles',
-      checkinFileIds: 'checkinFiles',
-      checkoutFileIds: 'checkoutFiles',
       budgetIds: 'budgets',
       invoiceIds: 'invoices',
       receiptIds: 'receipts',
@@ -1041,11 +1078,12 @@ export default function EditScheduleScreen() {
           // Include project files for edit mode
           projectFiles: (task as any).projectFiles || [],
           projectFileIds: (task as any).projectFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
-          // Include checkin/checkout files for edit mode
-          checkinFiles: (task as any).checkinFiles || [],
-          checkinFileIds: (task as any).checkinFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
-          checkoutFiles: (task as any).checkoutFiles || [],
-          checkoutFileIds: (task as any).checkoutFiles?.map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean) || [],
+          // Checkin/checkout files are now per service order (on serviceOrders[].checkinFiles/checkoutFiles)
+          // Legacy task-level fields kept empty for backward compat
+          checkinFiles: [],
+          checkinFileIds: [],
+          checkoutFiles: [],
+          checkoutFileIds: [],
           // Include financial file IDs for edit mode (matches processFormDataForSubmission expectations)
           budgetIds: ((task as any).budgets || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           invoiceIds: ((task as any).invoices || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
@@ -1054,26 +1092,31 @@ export default function EditScheduleScreen() {
           // Include pricing for edit mode (with default empty item row, matches web)
           pricing: (task as any).pricing ? {
             id: (task as any).pricing.id,
-            status: (task as any).pricing.status || 'DRAFT',
+            status: (task as any).pricing.status || 'PENDING',
             expiresAt: (task as any).pricing.expiresAt,
             subtotal: (task as any).pricing.subtotal || 0,
-            discountType: (task as any).pricing.discountType || 'NONE',
-            discountValue: (task as any).pricing.discountValue || null,
             total: (task as any).pricing.total || 0,
-            paymentCondition: (task as any).pricing.paymentCondition || null,
-            downPaymentDate: (task as any).pricing.downPaymentDate || null,
-            customPaymentText: (task as any).pricing.customPaymentText || null,
             guaranteeYears: (task as any).pricing.guaranteeYears || null,
             customGuaranteeText: (task as any).pricing.customGuaranteeText || null,
             layoutFileId: (task as any).pricing.layoutFileId || null,
             layoutFile: (task as any).pricing.layoutFile || null,
             customForecastDays: (task as any).pricing.customForecastDays || null,
             simultaneousTasks: (task as any).pricing.simultaneousTasks || null,
-            discountReference: (task as any).pricing.discountReference || null,
-            invoicesToCustomerIds: (task as any).pricing.invoicesToCustomers?.map((c: any) => c.id) || [],
-            // Include default empty row if no items exist (matches web)
-            items: (task as any).pricing.items && (task as any).pricing.items.length > 0
-              ? (task as any).pricing.items.map((item: any) => ({
+            customerConfigs: (task as any).pricing.customerConfigs?.map((c: any) => ({
+              customerId: c.customerId || c.id || c,
+              subtotal: c.subtotal ?? 0,
+              discountType: c.discountType || 'NONE',
+              discountValue: c.discountValue ?? null,
+              total: c.total ?? 0,
+              paymentCondition: c.paymentCondition ?? null,
+              downPaymentDate: c.downPaymentDate || null,
+              customPaymentText: c.customPaymentText ?? null,
+              responsibleId: c.responsibleId ?? null,
+              discountReference: c.discountReference ?? null,
+            })) || [],
+            // Include default empty row if no services exist (matches web)
+            services: (task as any).pricing.services && (task as any).pricing.services.length > 0
+              ? (task as any).pricing.services.map((item: any) => ({
                   id: item.id,
                   description: item.description || '',
                   observation: item.observation || null,
@@ -1083,7 +1126,7 @@ export default function EditScheduleScreen() {
               : [{ description: '', amount: null, observation: null, shouldSync: true }],
           } : {
             // Default pricing structure when no pricing exists (matches web)
-            status: 'DRAFT',
+            status: 'PENDING',
             expiresAt: (() => {
               const date = new Date();
               date.setDate(date.getDate() + 30);
@@ -1091,27 +1134,21 @@ export default function EditScheduleScreen() {
               return date;
             })(),
             subtotal: 0,
-            discountType: 'NONE',
-            discountValue: null,
             total: 0,
-            paymentCondition: null,
-            downPaymentDate: null,
-            customPaymentText: null,
             guaranteeYears: null,
             customGuaranteeText: null,
             layoutFileId: null,
             layoutFile: null,
             customForecastDays: null,
             simultaneousTasks: null,
-            discountReference: null,
-            invoicesToCustomerIds: [],
-            items: [{ description: '', amount: null, observation: null, shouldSync: true }],
+            customerConfigs: [],
+            services: [{ description: '', amount: null, observation: null, shouldSync: true }],
           },
         }}
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}
         initialLogoPaints={task.logoPaints}
-        initialInvoiceToCustomers={(task as any).pricing?.invoicesToCustomers}
+        initialInvoiceToCustomers={(task as any).pricing?.customerConfigs}
         existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

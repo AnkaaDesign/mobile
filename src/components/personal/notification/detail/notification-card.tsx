@@ -1,45 +1,22 @@
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import type { Notification } from "@/types";
 import { formatDateTime } from "@/utils";
 import { NOTIFICATION_TYPE, NOTIFICATION_IMPORTANCE } from "@/constants";
 import {
   IconBell,
   IconCheck,
-  IconAlertTriangle,
-  IconInfoCircle,
   IconPackage,
-  IconCalendar,
-  IconAlertCircle,
   IconSettings,
-  IconClock,
-  IconUser,
 } from "@tabler/icons-react-native";
 
 interface NotificationCardProps {
   notification: Notification;
 }
-
-const getNotificationTypeIcon = (type: string, size: number, color: string) => {
-  switch (type) {
-    case NOTIFICATION_TYPE.SYSTEM:
-      return <IconSettings size={size} color={color} />;
-    case NOTIFICATION_TYPE.PRODUCTION:
-      return <IconCheck size={size} color={color} />;
-    case NOTIFICATION_TYPE.STOCK:
-      return <IconPackage size={size} color={color} />;
-    case NOTIFICATION_TYPE.USER:
-      return <IconSettings size={size} color={color} />;
-    case NOTIFICATION_TYPE.GENERAL:
-      return <IconBell size={size} color={color} />;
-    default:
-      return <IconBell size={size} color={color} />;
-  }
-};
 
 const getNotificationTypeLabel = (type: string): string => {
   switch (type) {
@@ -92,122 +69,80 @@ export function NotificationCard({ notification }: NotificationCardProps) {
   const { colors } = useTheme();
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          {getNotificationTypeIcon(notification.type, 20, colors.mutedForeground)}
-          <ThemedText style={styles.title}>Detalhes da Notificação</ThemedText>
-        </View>
-        <Badge variant={getImportanceBadgeVariant(notification.importance)} size="sm">
+    <DetailCard
+      title="Detalhes da Notificação"
+      icon="bell"
+      badge={
+        <Badge variant={getImportanceBadgeVariant(notification.importance) as any} size="sm">
           <ThemedText style={styles.badgeText}>{getImportanceLabel(notification.importance)}</ThemedText>
         </Badge>
-      </View>
-
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      }
+    >
+      <ScrollView showsVerticalScrollIndicator={false}>
         {/* Title Section */}
         <View style={styles.section}>
-          <ThemedText style={[styles.notificationTitle, { color: colors.foreground }]}>{notification.title}</ThemedText>
+          <ThemedText style={StyleSheet.flatten([styles.notificationTitle, { color: colors.foreground }])}>
+            {notification.title}
+          </ThemedText>
         </View>
 
         {/* Message Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <IconInfoCircle size={16} color={colors.mutedForeground} />
-            <ThemedText style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Mensagem</ThemedText>
-          </View>
-          <ThemedText style={[styles.messageText, { color: colors.foreground }]}>{notification.body}</ThemedText>
-        </View>
+        <DetailSection title="Mensagem">
+          <ThemedText style={StyleSheet.flatten([styles.messageText, { color: colors.foreground }])}>
+            {notification.body}
+          </ThemedText>
+        </DetailSection>
 
         {/* Metadata Section */}
         <View style={styles.section}>
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              {getNotificationTypeIcon(notification.type, 16, colors.mutedForeground)}
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Tipo</ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{getNotificationTypeLabel(notification.type)}</ThemedText>
-          </View>
+          <DetailField label="Tipo" value={getNotificationTypeLabel(notification.type)} />
 
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconClock size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Criado em</ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {notification.createdAt ? formatDateTime(new Date(notification.createdAt)) : "-"}
-            </ThemedText>
-          </View>
+          <DetailField
+            label="Criado em"
+            value={notification.createdAt ? formatDateTime(new Date(notification.createdAt)) : "-"}
+            icon="clock"
+          />
 
           {notification.sentAt && (
-            <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.fieldLabelWithIcon}>
-                <IconClock size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Enviado em</ThemedText>
-              </View>
-              <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{formatDateTime(new Date(notification.sentAt))}</ThemedText>
-            </View>
+            <DetailField
+              label="Enviado em"
+              value={formatDateTime(new Date(notification.sentAt))}
+              icon="clock"
+            />
           )}
 
           {notification.scheduledAt && !notification.sentAt && (
-            <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.fieldLabelWithIcon}>
-                <IconClock size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Agendado para</ThemedText>
-              </View>
-              <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{formatDateTime(new Date(notification.scheduledAt))}</ThemedText>
-            </View>
+            <DetailField
+              label="Agendado para"
+              value={formatDateTime(new Date(notification.scheduledAt))}
+              icon="clock"
+            />
           )}
 
           {notification.user && (
-            <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-              <View style={styles.fieldLabelWithIcon}>
-                <IconUser size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Remetente</ThemedText>
-              </View>
-              <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{notification.user.name || "-"}</ThemedText>
-            </View>
+            <DetailField
+              label="Remetente"
+              value={notification.user.name || "-"}
+              icon="user"
+            />
           )}
         </View>
 
-        {/* Action Section (if available) */}
+        {/* Action Section */}
         {(notification.actionType || notification.actionUrl) && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconAlertCircle size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Ação</ThemedText>
-            </View>
-
+          <DetailSection title="Ação">
             {notification.actionType && (
-              <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Tipo de Ação</ThemedText>
-                </View>
-                <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>{notification.actionType}</ThemedText>
-              </View>
+              <DetailField label="Tipo de Ação" value={notification.actionType} />
             )}
-
             {notification.actionUrl && (
-              <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>URL</ThemedText>
-                </View>
-                <ThemedText style={[styles.fieldValue, { color: colors.primary }]} numberOfLines={1}>
-                  {notification.actionUrl}
-                </ThemedText>
-              </View>
+              <DetailField label="URL" value={notification.actionUrl} />
             )}
-          </View>
+          </DetailSection>
         )}
 
         {/* Channels Section */}
         {notification.channel && notification.channel.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconBell size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Canais de Envio</ThemedText>
-            </View>
+          <DetailSection title="Canais de Envio">
             <View style={styles.channelsContainer}>
               {notification.channel.map((channel, index) => (
                 <Badge key={index} variant="secondary" size="sm">
@@ -215,84 +150,26 @@ export function NotificationCard({ notification }: NotificationCardProps) {
                 </Badge>
               ))}
             </View>
-          </View>
+          </DetailSection>
         )}
       </ScrollView>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    padding: spacing.md,
-  },
   section: {
     marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   notificationTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
     lineHeight: 28,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
   messageText: {
     fontSize: fontSize.base,
     lineHeight: 24,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    marginBottom: spacing.xs,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
   },
   channelsContainer: {
     flexDirection: "row",

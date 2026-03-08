@@ -5,9 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconBuilding } from "@tabler/icons-react-native";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { getBadgeVariant } from "@/constants/badge-colors";
 import { getUserStatusBadgeText } from "@/utils/user";
 
@@ -47,40 +47,14 @@ export function EmployeeCard({ employee }: EmployeeCardProps) {
           </View>
         </View>
 
-        {/* Quick Info Grid */}
-        <View style={styles.infoGrid}>
-          {employee.position && (
-            <View style={styles.infoItem}>
-              <View style={[styles.infoIcon, { backgroundColor: colors.primary + "10" }]}>
-                <IconBriefcase size={18} color={colors.primary} />
-              </View>
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                  Cargo
-                </ThemedText>
-                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                  {employee.position.name}
-                </ThemedText>
-              </View>
-            </View>
-          )}
+        {/* Quick Info using DetailField */}
+        {employee.position && (
+          <DetailField label="Cargo" icon="briefcase" value={employee.position.name} />
+        )}
 
-          {employee.sector && (
-            <View style={styles.infoItem}>
-              <View style={[styles.infoIcon, { backgroundColor: colors.primary + "10" }]}>
-                <IconBuilding size={18} color={colors.primary} />
-              </View>
-              <View style={styles.infoText}>
-                <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                  Setor
-                </ThemedText>
-                <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                  {employee.sector.name}
-                </ThemedText>
-              </View>
-            </View>
-          )}
-        </View>
+        {employee.sector && (
+          <DetailField label="Setor" icon="building" value={employee.sector.name} />
+        )}
       </View>
     </Card>
   );
@@ -98,10 +72,6 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     alignItems: "flex-start",
   },
-  avatar: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
   headerInfo: {
     flex: 1,
     gap: spacing.xs,
@@ -116,31 +86,5 @@ const styles = StyleSheet.create({
   statusBadge: {
     alignSelf: "flex-start",
     marginTop: spacing.xs,
-  },
-  infoGrid: {
-    gap: spacing.md,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  infoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  infoText: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: fontSize.xs,
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
   },
 });

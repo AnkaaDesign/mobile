@@ -1,10 +1,10 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPackage, IconHash, IconCurrencyReal, IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
+import { IconArrowBack, IconAlertCircle, IconCircleCheck } from "@tabler/icons-react-native";
 import type { ExternalWithdrawalItem } from "@/types";
 import { formatCurrency } from "@/utils";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_STATUS } from "@/constants";
@@ -39,34 +39,26 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
 
   if (!items || items.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconPackage size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Itens Retirados</ThemedText>
-          </View>
-          <Badge variant="secondary">0</Badge>
-        </View>
+      <DetailCard
+        title="Itens Retirados"
+        icon="package"
+        badge={<Badge variant="secondary">0</Badge>}
+      >
         <View style={styles.emptyContainer}>
           <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
             Nenhum item retirado
           </ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconPackage size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Itens Retirados</ThemedText>
-        </View>
-        <Badge variant="secondary">{items.length}</Badge>
-      </View>
-
+    <DetailCard
+      title="Itens Retirados"
+      icon="package"
+      badge={<Badge variant="secondary">{items.length}</Badge>}
+    >
       {/* Summary Section */}
       {isReturnable && items.length > 0 && (
         <View style={[styles.summarySection, { borderBottomColor: colors.border, backgroundColor: colors.muted + "20" }]}>
@@ -173,7 +165,6 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
                 {isReturnable && stillOut > 0 && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLeft}>
-                      <IconHash size={14} color={colors.warning} />
                       <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
                         Pendente
                       </ThemedText>
@@ -203,7 +194,6 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
                 {withdrawalItem.price !== null && withdrawalItem.price !== undefined && (
                   <View style={styles.detailRow}>
                     <View style={styles.detailLeft}>
-                      <IconCurrencyReal size={14} color={colors.mutedForeground} />
                       <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
                         Preço Unit.
                       </ThemedText>
@@ -246,31 +236,11 @@ export function ExternalWithdrawalItemsCard({ items, withdrawalType, withdrawalS
           );
         })}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     padding: 0,
   },

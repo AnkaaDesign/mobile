@@ -64,6 +64,12 @@ export interface Task extends BaseEntity {
   reimbursements?: File[];
   invoiceReimbursements?: File[];
   baseFiles?: File[]; // Files used as base for artwork design
+  projectFileIds?: string[];
+  checkinFileIds?: string[];
+  checkoutFileIds?: string[];
+  projectFiles?: File[]; // Project files
+  checkinFiles?: File[]; // Check-in files
+  checkoutFiles?: File[]; // Check-out files
 
   observation?: Observation;
   generalPainting?: Paint;
@@ -105,6 +111,21 @@ export interface TaskIncludes {
   receipts?: boolean;
   reimbursements?: boolean;
   invoiceReimbursements?: boolean;
+  projectFiles?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
+  checkinFiles?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
+  checkoutFiles?:
+    | boolean
+    | {
+        include?: FileIncludes;
+      };
 
   observation?:
     | boolean
@@ -145,7 +166,7 @@ export interface TaskIncludes {
     | boolean
     | {
         include?: {
-          items?: boolean;
+          services?: boolean;
           layoutFile?: boolean;
           customerSignature?: boolean;
         };

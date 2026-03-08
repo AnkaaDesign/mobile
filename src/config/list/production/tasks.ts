@@ -3,7 +3,7 @@ import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask } from '@/utils/permissions/entity-permissions'
 import { canViewPricing } from '@/utils/permissions/pricing-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
@@ -166,7 +166,7 @@ export const tasksListConfig: ListConfig<Task> = {
         select: {
           id: true,
           name: true,
-          managedSector: {
+          ledSector: {
             select: {
               id: true,
             },
@@ -443,8 +443,8 @@ export const tasksListConfig: ListConfig<Task> = {
               startedAt: new Date().toISOString(),
             }
 
-            if (!task.sectorId && user?.managedSector?.id) {
-              updateData.sectorId = user.managedSector.id
+            if (!task.sectorId && user?.ledSector?.id) {
+              updateData.sectorId = user.ledSector.id
             }
 
             await updateTask(task.id, updateData)
@@ -464,11 +464,10 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Finalizar Tarefa',
         icon: 'circle-check',
         variant: 'default',
-        canPerform: isLeader,
+        canPerform: (user: any) => canFinishTask(user),
         visible: (task: Task, user: any) => {
           if (task.status !== TASK_STATUS.IN_PRODUCTION) return false
-          if (!task.sectorId) return false
-          return canLeaderManageTask(user, task.sectorId)
+          return canFinishTask(user)
         },
         onPress: async (task: Task, router: any) => {
           try {

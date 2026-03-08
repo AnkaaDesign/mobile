@@ -33,9 +33,9 @@ export default function ServicesSection({
   const userPrivilege = user?.sector?.privileges;
   const isCommercialSector = userPrivilege === 'COMMERCIAL';
 
-  // Reorder synced pricing items to match PRODUCTION service order reorder
+  // Reorder synced pricing services to match PRODUCTION service order reorder
   const handleProductionReorder = useCallback((descriptions: string[]) => {
-    const currentPricingItems = ((getValues('pricing') as any)?.items as any[]) || [];
+    const currentPricingItems = ((getValues('pricing') as any)?.services as any[]) || [];
     if (currentPricingItems.length === 0) return;
 
     // Build a map: normalized description → target order index
@@ -44,7 +44,7 @@ export default function ServicesSection({
       orderMap.set(normalizeDescription(desc), idx);
     });
 
-    // Separate synced (matched) pricing items, keeping original indices
+    // Separate synced (matched) pricing services, keeping original indices
     const synced: { item: any; orderIdx: number; origIdx: number }[] = [];
 
     currentPricingItems.forEach((item: any, origIdx: number) => {
@@ -67,7 +67,7 @@ export default function ServicesSection({
       newItems[slot] = synced[i].item;
     });
 
-    setValue('pricing.items', newItems, { shouldDirty: true });
+    setValue('pricing.services', newItems, { shouldDirty: true });
   }, [getValues, setValue]);
 
   return (

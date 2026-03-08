@@ -37,7 +37,7 @@ export function AirbrushingFilterDrawerContent({
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   // Fetch tasks for the task selector (filtered by sector leadership)
-  // Team leaders only see tasks from their managed sector or tasks without a sector
+  // Team leaders only see tasks from their led sector or tasks without a sector
   const { data: tasksData } = useTasksForSectorLeader({
     orderBy: { name: 'asc' },
     enabled: true,

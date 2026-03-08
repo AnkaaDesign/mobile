@@ -1,11 +1,10 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconTruck, IconCalendar, IconClock, IconUser } from "@tabler/icons-react-native";
 import type { PpeDelivery } from '@/types';
 import { formatDate, formatDateTime } from '@/utils';
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 
 interface TeamPpeDeliveryCardProps {
   delivery: PpeDelivery;
@@ -15,135 +14,52 @@ export function TeamPpeDeliveryCard({ delivery }: TeamPpeDeliveryCardProps) {
   const { colors } = useTheme();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconTruck size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações de Entrega</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        {/* Scheduled Date */}
-        {delivery.scheduledDate && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Data Programada
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {formatDate(new Date(delivery.scheduledDate))}
-            </ThemedText>
-          </View>
-        )}
+    <DetailCard title="Informações de Entrega" icon="truck">
+      {delivery.scheduledDate && (
+        <DetailField
+          label="Data Programada"
+          icon="calendar"
+          value={formatDate(new Date(delivery.scheduledDate))}
+        />
+      )}
 
-        {/* Actual Delivery Date */}
-        {delivery.actualDeliveryDate && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Data de Entrega
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {formatDate(new Date(delivery.actualDeliveryDate))}
-            </ThemedText>
-          </View>
-        )}
+      {delivery.actualDeliveryDate && (
+        <DetailField
+          label="Data de Entrega"
+          icon="calendar"
+          value={formatDate(new Date(delivery.actualDeliveryDate))}
+        />
+      )}
 
-        {/* Reviewed By */}
-        {delivery.reviewedByUser && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconUser size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Aprovado Por
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-              {delivery.reviewedByUser.name}
-            </ThemedText>
-          </View>
-        )}
+      {delivery.reviewedByUser && (
+        <DetailField
+          label="Aprovado Por"
+          icon="user"
+          value={delivery.reviewedByUser.name}
+        />
+      )}
 
-        {/* Created At */}
-        <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-          <View style={styles.fieldLabelWithIcon}>
-            <IconClock size={16} color={colors.mutedForeground} />
-            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-              Cadastrado Em
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.fieldValue, { color: colors.foreground }]}>
-            {formatDateTime(new Date(delivery.createdAt))}
+      <DetailField
+        label="Cadastrado Em"
+        icon="clock"
+        value={formatDateTime(new Date(delivery.createdAt))}
+      />
+
+      {delivery.reason && (
+        <View style={[styles.notesContainer, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
+          <ThemedText style={[styles.notesLabel, { color: colors.mutedForeground }]}>
+            Motivo
+          </ThemedText>
+          <ThemedText style={[styles.notesText, { color: colors.foreground }]}>
+            {delivery.reason}
           </ThemedText>
         </View>
-
-        {/* Reason */}
-        {delivery.reason && (
-          <View style={[styles.notesContainer, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
-            <ThemedText style={[styles.notesLabel, { color: colors.mutedForeground }]}>
-              Motivo
-            </ThemedText>
-            <ThemedText style={[styles.notesText, { color: colors.foreground }]}>
-              {delivery.reason}
-            </ThemedText>
-          </View>
-        )}
-      </View>
-    </Card>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
-  },
   notesContainer: {
     padding: spacing.md,
     borderRadius: borderRadius.lg,

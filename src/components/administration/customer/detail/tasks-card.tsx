@@ -1,12 +1,13 @@
 
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconClipboardList, IconChevronRight, IconCalendar } from "@tabler/icons-react-native";
+
 import type { Customer } from '../../../../types';
 import { routes, TASK_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
@@ -47,17 +48,7 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
 
   if (totalTasks === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconClipboardList size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-              Tarefas Relacionadas
-            </ThemedText>
-          </View>
-        </View>
+      <DetailCard title="Tarefas Relacionadas" icon="clipboard-list">
         <View style={styles.content}>
           <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
             <IconClipboardList size={32} color={colors.mutedForeground} />
@@ -66,27 +57,22 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
             </ThemedText>
           </View>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconClipboardList size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Tarefas Relacionadas
+    <DetailCard
+      title="Tarefas Relacionadas"
+      icon="clipboard-list"
+      badge={
+        <Badge variant="secondary">
+          <ThemedText style={StyleSheet.flatten([styles.countText, { color: colors.foreground }])}>
+            {totalTasks}
           </ThemedText>
-          <Badge variant="secondary" style={styles.countBadge}>
-            <ThemedText style={StyleSheet.flatten([styles.countText, { color: colors.foreground }])}>
-              {totalTasks}
-            </ThemedText>
-          </Badge>
-        </View>
-      </View>
+        </Badge>
+      }
+    >
       <View style={{ paddingHorizontal: 0 }}>
         <ScrollView
           style={[styles.tasksList, maxHeight ? { maxHeight } : undefined]}
@@ -155,42 +141,13 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
           ))}
         </ScrollView>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
   content: {
     gap: spacing.md,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  countBadge: {
-    marginLeft: "auto",
   },
   countText: {
     fontSize: fontSize.sm,

@@ -1,11 +1,10 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconLayersLinked } from "@tabler/icons-react-native";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from "@/constants";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
@@ -33,17 +32,11 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconLayersLinked size={20} color={colors.primary} />
-          <ThemedText style={styles.title}>Fundos Recomendados</ThemedText>
-          <Badge variant="secondary" size="sm" style={{ marginLeft: spacing.xs }}>
-            {groundPaints.length}
-          </Badge>
-        </View>
-      </View>
-
+    <DetailCard
+      title="Fundos Recomendados"
+      icon="layers-subtract"
+      badge={<Badge variant="secondary" size="sm">{groundPaints.length}</Badge>}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -147,31 +140,11 @@ export function TaskGroundPaintsCard({ groundPaints }: TaskGroundPaintsCardProps
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   scrollContent: {
     gap: spacing.md,
     paddingRight: spacing.md,

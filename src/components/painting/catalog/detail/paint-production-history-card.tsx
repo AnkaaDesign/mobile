@@ -3,21 +3,20 @@ import {
   View,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   Pressable,
   ScrollView,
   Dimensions,
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBuildingFactory, IconAlertCircle, IconList, IconSelector } from "@tabler/icons-react-native";
+import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Paint, PaintProduction } from "@/types";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
@@ -71,7 +70,7 @@ const createProductionColumnDefinitions = (): ProductionColumn[] => [
   },
   {
     key: "formula.description",
-    header: "FÓRMULA",
+    header: "FORMULA",
     align: "left",
     width: 0,
     accessor: (production: PaintProduction) => (
@@ -88,19 +87,13 @@ export function PaintProductionHistoryCard({
 }: PaintProductionHistoryCardProps) {
   const { colors, isDark } = useTheme();
 
-  // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
-
-  // Default visible columns
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
     return ["volumeLiters", "createdAt"];
   });
-
-  // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Fetch productions for this specific paint with infinite scroll
   const {
     items: productions,
     isLoading,
@@ -122,20 +115,16 @@ export function PaintProductionHistoryCard({
     enabled: !!paint.id,
   });
 
-  // Filter productions based on search (client-side for already loaded items)
   const filteredProductions = useMemo(() => {
     if (!debouncedSearch) return productions;
-
     const searchLower = debouncedSearch.toLowerCase();
     return productions.filter((production: any) =>
       production.formula?.description?.toLowerCase().includes(searchLower)
     );
   }, [productions, debouncedSearch]);
 
-  // Get all column definitions
   const allColumns = useMemo(() => createProductionColumnDefinitions(), []);
 
-  // Build visible columns with dynamic widths
   const displayColumns = useMemo(() => {
     const columnWidthRatios: Record<string, number> = {
       volumeLiters: 1.2,
@@ -153,22 +142,18 @@ export function PaintProductionHistoryCard({
     });
   }, [allColumns, visibleColumnKeys]);
 
-  // Calculate total table width
   const tableWidth = useMemo(() => {
     return displayColumns.reduce((sum, col) => sum + col.width, 0);
   }, [displayColumns]);
 
-  // Handle columns change
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));
   }, []);
 
-  // Get default visible columns
   const getDefaultVisibleColumns = useCallback(() => {
     return ["volumeLiters", "createdAt"];
   }, []);
 
-  // Handle opening column panel
   const handleOpenColumns = useCallback(() => {
     setIsColumnPanelOpen(true);
   }, []);
@@ -181,7 +166,6 @@ export function PaintProductionHistoryCard({
     router.push(`/(tabs)/pintura/producoes/detalhes/${productionId}` as any);
   };
 
-  // Render table header
   const renderHeader = useCallback(() => (
     <ScrollView
       horizontal
@@ -216,7 +200,6 @@ export function PaintProductionHistoryCard({
     </ScrollView>
   ), [displayColumns, tableWidth, colors, isDark]);
 
-  // Render table row
   const renderRow = useCallback(({ item: production, index }: { item: PaintProduction; index: number }) => {
     const isEven = index % 2 === 0;
     const rowBgColor = isEven ? colors.background : colors.card;
@@ -257,95 +240,85 @@ export function PaintProductionHistoryCard({
     );
   }, [displayColumns, tableWidth, colors, isDark]);
 
-  // Prepare columns for slide panel (convert to expected format)
   const columnDefinitionsForPanel = useMemo(() =>
     allColumns.map(col => ({
       key: col.key,
       header: col.header,
-      accessor: () => null, // Not used by panel
+      accessor: () => null,
       width: 0,
     })),
   [allColumns]);
 
-  // Don't show if no productions and not loading
   if (!isLoading && productions.length === 0 && !searchQuery) {
     return null;
   }
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconBuildingFactory size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Histórico de Produção {productions.length > 0 && `(${productions.length}${totalCount ? `/${totalCount}` : ""})`}
+      <DetailCard
+        title={`Historico de Producao ${productions.length > 0 ? `(${productions.length}${totalCount ? `/${totalCount}` : ""})` : ""}`}
+        icon="building-factory"
+      >
+        {/* Search and Column Visibility Controls */}
+        <View style={styles.controlsContainer}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar producoes..."
+            style={styles.searchBar}
+          />
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={handleOpenColumns}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+        </View>
+
+        {/* Production Table */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <ThemedText style={styles.loadingText}>Carregando producoes...</ThemedText>
+          </View>
+        ) : error ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              Erro ao carregar producoes.
             </ThemedText>
           </View>
-        </View>
-
-        <View style={styles.content}>
-          {/* Search and Column Visibility Controls */}
-          <View style={styles.controlsContainer}>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Buscar produções..."
-              style={styles.searchBar}
-            />
-            <ListActionButton
-              icon={<IconList size={20} color={colors.foreground} />}
-              onPress={handleOpenColumns}
-              badgeCount={visibleColumnKeys.length}
-              badgeVariant="primary"
+        ) : filteredProductions.length === 0 ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              {searchQuery
+                ? `Nenhuma producao encontrada para "${searchQuery}".`
+                : "Nenhuma producao registrada."}
+            </ThemedText>
+          </View>
+        ) : (
+          <View style={[styles.tableContainer, { maxHeight, borderColor: colors.border }]}>
+            {renderHeader()}
+            <FlatList
+              data={filteredProductions}
+              renderItem={renderRow}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ flexGrow: 1 }}
+              onEndReached={() => canLoadMore && loadMore()}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                isFetchingNextPage ? (
+                  <View style={styles.footerLoader}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  </View>
+                ) : null
+              }
             />
           </View>
-
-          {/* Production Table */}
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando produções...</ThemedText>
-            </View>
-          ) : error ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                Erro ao carregar produções.
-              </ThemedText>
-            </View>
-          ) : filteredProductions.length === 0 ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                {searchQuery
-                  ? `Nenhuma produção encontrada para "${searchQuery}".`
-                  : "Nenhuma produção registrada."}
-              </ThemedText>
-            </View>
-          ) : (
-            <View style={[styles.tableContainer, { maxHeight, borderColor: colors.border }]}>
-              {renderHeader()}
-              <FlatList
-                data={filteredProductions}
-                renderItem={renderRow}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ flexGrow: 1 }}
-                onEndReached={() => canLoadMore && loadMore()}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={
-                  isFetchingNextPage ? (
-                    <View style={styles.footerLoader}>
-                      <ActivityIndicator size="small" color={colors.primary} />
-                    </View>
-                  ) : null
-                }
-              />
-            </View>
-          )}
-        </View>
-      </Card>
+        )}
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -361,29 +334,6 @@ export function PaintProductionHistoryCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",

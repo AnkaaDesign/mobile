@@ -1,12 +1,9 @@
-
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
-
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import {
-  IconClipboardList,
   IconCircleCheckFilled,
   IconClock,
   IconLoader,
@@ -58,136 +55,66 @@ export function ServiceOrderInfoCard({ serviceOrder }: ServiceOrderInfoCardProps
   const StatusIcon = config.icon;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconClipboardList size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações da Ordem</ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.content}>
-        {/* Status Badge */}
-        <View style={styles.row}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Status
-          </ThemedText>
-          <View style={styles.statusContainer}>
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor: isDark ? `${config.color}20` : config.bgColor,
-                  borderColor: config.color,
-                },
-              ]}
-            >
-              <StatusIcon size={16} color={config.color} />
-              <ThemedText
-                style={[styles.statusText, { color: config.color }]}
-              >
-                {SERVICE_ORDER_STATUS_LABELS[status as SERVICE_ORDER_STATUS]}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {/* Description */}
-        <View style={styles.row}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Descrição
-          </ThemedText>
-          <ThemedText style={[styles.value, { color: colors.foreground }]}>
-            {serviceOrder.description || "Sem descrição"}
-          </ThemedText>
-        </View>
-
-        {/* Created At */}
-        <View style={styles.row}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Data de Criação
-          </ThemedText>
-          <ThemedText style={[styles.value, { color: colors.foreground }]}>
-            {formatDateTime(serviceOrder.createdAt)}
-          </ThemedText>
-        </View>
-
-        {/* Started At */}
-        {serviceOrder.startedAt && (
-          <View style={styles.row}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-              Data de Início
-            </ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {formatDateTime(serviceOrder.startedAt)}
+    <DetailCard title="Informações da Ordem" icon="clipboard-list">
+      <DetailField
+        label="Status"
+        icon="info-circle"
+        value={
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: isDark ? `${config.color}20` : config.bgColor,
+                borderColor: config.color,
+              },
+            ]}
+          >
+            <StatusIcon size={16} color={config.color} />
+            <ThemedText style={[styles.statusText, { color: config.color }]}>
+              {SERVICE_ORDER_STATUS_LABELS[status as SERVICE_ORDER_STATUS]}
             </ThemedText>
           </View>
-        )}
+        }
+      />
 
-        {/* Finished At */}
-        {serviceOrder.finishedAt && (
-          <View style={styles.row}>
-            <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-              Data de Finalização
-            </ThemedText>
-            <ThemedText style={[styles.value, { color: colors.foreground }]}>
-              {formatDateTime(serviceOrder.finishedAt)}
-            </ThemedText>
-          </View>
-        )}
+      <DetailField
+        label="Descrição"
+        icon="file-text"
+        value={serviceOrder.description || "Sem descrição"}
+      />
 
-        {/* Last Updated */}
-        <View style={styles.row}>
-          <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-            Última Atualização
-          </ThemedText>
-          <ThemedText style={[styles.value, { color: colors.foreground }]}>
-            {formatDateTime(serviceOrder.updatedAt)}
-          </ThemedText>
-        </View>
-      </View>
-    </Card>
+      <DetailField
+        label="Data de Criação"
+        icon="calendar"
+        value={formatDateTime(serviceOrder.createdAt)}
+      />
+
+      {serviceOrder.startedAt && (
+        <DetailField
+          label="Data de Início"
+          icon="calendar"
+          value={formatDateTime(serviceOrder.startedAt)}
+        />
+      )}
+
+      {serviceOrder.finishedAt && (
+        <DetailField
+          label="Data de Finalização"
+          icon="calendar-check"
+          value={formatDateTime(serviceOrder.finishedAt)}
+        />
+      )}
+
+      <DetailField
+        label="Última Atualização"
+        icon="clock"
+        value={formatDateTime(serviceOrder.updatedAt)}
+      />
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  row: {
-    gap: spacing.xs,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.base,
-  },
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -196,6 +123,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.md,
     borderWidth: 1,
+    alignSelf: "flex-start",
   },
   statusText: {
     fontSize: fontSize.sm,

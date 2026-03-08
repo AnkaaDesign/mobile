@@ -1,12 +1,10 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
+import { DetailCard, DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPhoneCall } from "@tabler/icons-react-native";
 import type { Supplier } from "@/types";
-// import { showToast } from "@/components/ui/toast";
 
 interface ContactDetailsCardProps {
   supplier: Supplier;
@@ -32,39 +30,24 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
 
   if (!hasContactInfo) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconPhoneCall size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Informações de Contato</ThemedText>
+      <DetailCard title="Informações de Contato" icon="phone-call">
+        <View style={styles.emptyState}>
+          <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
+            <IconPhoneCall size={32} color={colors.mutedForeground} />
           </View>
+          <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
+            Nenhuma informação de contato
+          </ThemedText>
+          <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
+            Este fornecedor não possui informações de contato cadastradas.
+          </ThemedText>
         </View>
-        <View style={styles.content}>
-          <View style={styles.emptyState}>
-            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
-              <IconPhoneCall size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
-              Nenhuma informação de contato
-            </ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
-              Este fornecedor não possui informações de contato cadastradas.
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconPhoneCall size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações de Contato</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
+    <DetailCard title="Informações de Contato" icon="phone-call">
         {/* Email */}
         {supplier.email && (
           <DetailField
@@ -113,35 +96,11 @@ export function ContactDetailsCard({ supplier }: ContactDetailsCardProps) {
         {supplier.pix && (
           <DetailField label="Chave Pix" value={supplier.pix} icon="credit-card" />
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   emptyState: {
     alignItems: "center",
     paddingVertical: spacing.xxl,

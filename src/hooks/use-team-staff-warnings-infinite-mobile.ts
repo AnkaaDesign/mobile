@@ -14,7 +14,7 @@ export const teamStaffWarningsKeys = {
 
 /**
  * Hook for infinite scrolling team staff warnings
- * Automatically filters warnings by the current user's managed sector on the backend
+ * Automatically filters warnings by the current user's led sector on the backend
  * Requires team leader privileges
  */
 export function useTeamStaffWarningsInfinite(

@@ -1,14 +1,13 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatQuantity, formatTaxPercentage } from "@/utils";
 import type { Order, OrderItem } from "../../../../types";
 import {
-  IconShoppingCart,
   IconCheck,
   IconClock,
   IconAlertTriangle,
@@ -85,15 +84,7 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
 
   if (items.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-              <IconShoppingCart size={20} color={colors.primary} />
-            </View>
-            <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
-          </View>
-        </View>
+      <DetailCard title="Itens do Pedido" icon="shopping-cart">
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconContainer, { backgroundColor: colors.muted + "30" }]}>
             <IconBoxMultiple size={32} color={colors.mutedForeground} />
@@ -105,25 +96,20 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
             Este pedido não possui itens cadastrados.
           </ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.primary + "20" }]}>
-            <IconShoppingCart size={20} color={colors.primary} />
-          </View>
-          <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
-        </View>
+    <DetailCard
+      title="Itens do Pedido"
+      icon="shopping-cart"
+      badge={
         <Badge variant="secondary" size="sm">
           <ThemedText style={styles.countText}>{items.length} itens</ThemedText>
         </Badge>
-      </View>
-
+      }
+    >
       {/* Summary Statistics */}
       <View style={[styles.summaryContainer, { backgroundColor: colors.muted + "30" }]}>
         <View style={styles.summaryRow}>
@@ -295,38 +281,11 @@ export const OrderItemsCard: React.FC<OrderItemsCardProps> = ({ order }) => {
           );
         })}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-  },
   countText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
@@ -354,7 +313,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   summaryContainer: {
-    margin: spacing.md,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     gap: spacing.md,
@@ -401,9 +359,7 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 4,
   },
-  itemsList: {
-    paddingHorizontal: spacing.md,
-  },
+  itemsList: {},
   item: {
     paddingVertical: spacing.md,
   },

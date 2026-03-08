@@ -59,7 +59,7 @@ export const usersListConfig: ListConfig<User> = {
           privileges: true, // Needed for privileges display
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,
@@ -134,12 +134,12 @@ export const usersListConfig: ListConfig<User> = {
         render: (user) => user.position?.name || '-',
       },
       {
-        key: 'managedSector',
-        label: 'SETOR GERENCIADO',
+        key: 'ledSector',
+        label: 'SETOR LIDERADO',
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (user) => user.managedSector?.name || '-',
+        render: (user) => user.ledSector?.name || '-',
       },
       {
         key: 'status',
@@ -377,9 +377,9 @@ export const usersListConfig: ListConfig<User> = {
         label: 'Requer Alteração de Senha',
       },
       {
-        key: 'hasManagedSector',
+        key: 'hasLedSector',
         type: 'toggle',
-        label: 'Tem Setor Gerenciado',
+        label: 'Tem Setor Liderado',
       },
       {
         key: 'lastLoginAt',
@@ -413,7 +413,7 @@ export const usersListConfig: ListConfig<User> = {
       { key: 'sector', label: 'Setor', path: 'sector.name' },
       { key: 'privilege', label: 'Privilégio', path: 'sector.privileges', format: (value) => SECTOR_PRIVILEGES_LABELS[value as SECTOR_PRIVILEGES] || String(value) },
       { key: 'position', label: 'Cargo', path: 'position.name' },
-      { key: 'managedSector', label: 'Setor Gerenciado', path: 'managedSector.name' },
+      { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || String(value) },
       { key: 'verified', label: 'Verificado', path: 'verified', format: (value) => value ? 'Sim' : 'Não' },
       { key: 'requirePasswordChange', label: 'Requer Alt. Senha', path: 'requirePasswordChange', format: (value) => value ? 'Sim' : 'Não' },

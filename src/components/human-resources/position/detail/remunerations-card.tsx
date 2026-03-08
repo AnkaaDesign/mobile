@@ -1,9 +1,8 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconHistory, IconTrendingUp, IconTrendingDown, IconMinus, IconChevronRight } from "@tabler/icons-react-native";
+import { IconTrendingUp, IconTrendingDown, IconMinus, IconChevronRight } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { formatCurrency, formatDate } from "@/utils";
 import { routes } from "@/constants";
@@ -11,6 +10,8 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
+import { IconHistory } from "@tabler/icons-react-native";
 
 interface RemunerationsCardProps {
   position: Position;
@@ -36,146 +37,105 @@ export function RemunerationsCard({ position }: RemunerationsCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconHistory size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Histórico de Remunerações
+    <DetailCard title="Histórico de Remunerações" icon="history">
+      {!hasRemunerations ? (
+        <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
+          <IconHistory size={32} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.emptyStateText, { color: colors.mutedForeground }])}>
+            Nenhum histórico de remuneração registrado
           </ThemedText>
         </View>
-      </View>
-      <View style={styles.content}>
-        {!hasRemunerations ? (
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
-            <IconHistory size={32} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyStateText, { color: colors.mutedForeground }])}>
-              Nenhum histórico de remuneração registrado
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={styles.remunerationsContent}>
-            <View style={styles.remunerationsList}>
-              {values.slice(0, 5).map((remuneration, index) => {
-                const previousValue = index < values.length - 1 ? values[index + 1].value : null;
-                const trend = getTrend(remuneration.value, previousValue);
+      ) : (
+        <View style={styles.remunerationsContent}>
+          <View style={styles.remunerationsList}>
+            {values.slice(0, 5).map((remuneration, index) => {
+              const previousValue = index < values.length - 1 ? values[index + 1].value : null;
+              const trend = getTrend(remuneration.value, previousValue);
 
-                const getTrendColor = () => {
-                  switch (trend) {
-                    case "up":
-                      return isDark ? extendedColors.green[400] : extendedColors.green[600];
-                    case "down":
-                      return isDark ? extendedColors.red[400] : extendedColors.red[600];
-                    default:
-                      return colors.mutedForeground;
-                  }
-                };
+              const getTrendColor = () => {
+                switch (trend) {
+                  case "up":
+                    return isDark ? extendedColors.green[400] : extendedColors.green[600];
+                  case "down":
+                    return isDark ? extendedColors.red[400] : extendedColors.red[600];
+                  default:
+                    return colors.mutedForeground;
+                }
+              };
 
-                const getTrendIcon = () => {
-                  switch (trend) {
-                    case "up":
-                      return <IconTrendingUp size={16} color={getTrendColor()} />;
-                    case "down":
-                      return <IconTrendingDown size={16} color={getTrendColor()} />;
-                    default:
-                      return <IconMinus size={16} color={getTrendColor()} />;
-                  }
-                };
+              const getTrendIcon = () => {
+                switch (trend) {
+                  case "up":
+                    return <IconTrendingUp size={16} color={getTrendColor()} />;
+                  case "down":
+                    return <IconTrendingDown size={16} color={getTrendColor()} />;
+                  default:
+                    return <IconMinus size={16} color={getTrendColor()} />;
+                }
+              };
 
-                const getChangePercentage = () => {
-                  if (!previousValue || trend === "new" || trend === "same") return null;
-                  const change = ((remuneration.value - previousValue) / previousValue) * 100;
-                  return `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
-                };
+              const getChangePercentage = () => {
+                if (!previousValue || trend === "new" || trend === "same") return null;
+                const change = ((remuneration.value - previousValue) / previousValue) * 100;
+                return `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
+              };
 
-                return (
-                  <View
-                    key={remuneration.id}
-                    style={StyleSheet.flatten([
-                      styles.remunerationItem,
-                      {
-                        backgroundColor: colors.muted + "20",
-                        borderBottomWidth: index < Math.min(values.length, 5) - 1 ? 1 : 0,
-                        borderBottomColor: colors.border,
-                      },
-                    ])}
-                  >
-                    <View style={styles.remunerationContent}>
-                      <View style={styles.remunerationInfo}>
-                        <ThemedText style={StyleSheet.flatten([styles.remunerationValue, { color: colors.foreground }])}>
-                          {formatCurrency(remuneration.value)}
-                        </ThemedText>
-                        <ThemedText style={StyleSheet.flatten([styles.remunerationDate, { color: colors.mutedForeground }])}>
-                          {formatDate(new Date(remuneration.createdAt))}
-                        </ThemedText>
-                      </View>
-                      {previousValue && (
-                        <View style={styles.trendContainer}>
-                          {getTrendIcon()}
-                          {getChangePercentage() && (
-                            <ThemedText style={StyleSheet.flatten([styles.trendText, { color: getTrendColor() }])}>
-                              {getChangePercentage()}
-                            </ThemedText>
-                          )}
-                        </View>
-                      )}
+              return (
+                <View
+                  key={remuneration.id}
+                  style={StyleSheet.flatten([
+                    styles.remunerationItem,
+                    {
+                      backgroundColor: colors.muted + "20",
+                      borderBottomWidth: index < Math.min(values.length, 5) - 1 ? 1 : 0,
+                      borderBottomColor: colors.border,
+                    },
+                  ])}
+                >
+                  <View style={styles.remunerationContent}>
+                    <View style={styles.remunerationInfo}>
+                      <ThemedText style={StyleSheet.flatten([styles.remunerationValue, { color: colors.foreground }])}>
+                        {formatCurrency(remuneration.value)}
+                      </ThemedText>
+                      <ThemedText style={StyleSheet.flatten([styles.remunerationDate, { color: colors.mutedForeground }])}>
+                        {formatDate(new Date(remuneration.createdAt))}
+                      </ThemedText>
                     </View>
+                    {previousValue && (
+                      <View style={styles.trendContainer}>
+                        {getTrendIcon()}
+                        {getChangePercentage() && (
+                          <ThemedText style={StyleSheet.flatten([styles.trendText, { color: getTrendColor() }])}>
+                            {getChangePercentage()}
+                          </ThemedText>
+                        )}
+                      </View>
+                    )}
                   </View>
-                );
-              })}
-            </View>
-
-            {values.length > 5 && (
-              <TouchableOpacity
-                onPress={handleViewRemunerations}
-                style={StyleSheet.flatten([styles.viewAllButton, { backgroundColor: colors.primary + "10" }])}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
-                  Ver todos os {values.length} registros
-                </ThemedText>
-                <IconChevronRight size={18} color={colors.primary} />
-              </TouchableOpacity>
-            )}
+                </View>
+              );
+            })}
           </View>
-        )}
-      </View>
-    </Card>
+
+          {values.length > 5 && (
+            <TouchableOpacity
+              onPress={handleViewRemunerations}
+              style={StyleSheet.flatten([styles.viewAllButton, { backgroundColor: colors.primary + "10" }])}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={StyleSheet.flatten([styles.viewAllText, { color: colors.primary }])}>
+                Ver todos os {values.length} registros
+              </ThemedText>
+              <IconChevronRight size={18} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
   emptyState: {
     padding: spacing.xl,
     borderRadius: borderRadius.md,

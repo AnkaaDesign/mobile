@@ -1,7 +1,7 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -53,15 +53,7 @@ export function ChangesDiffCard({ changeLog }: ChangesDiffCardProps) {
   const showMultiline = isMultiline(changeLog.oldValue) || isMultiline(changeLog.newValue);
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconArrowRight size={20} color={colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.title, { color: colors.foreground }])}>
-            Alterações
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Alterações" icon="arrow-right">
       <View style={styles.content}>
         {showMultiline ? (
           // Vertical layout for multiline values
@@ -279,31 +271,11 @@ export function ChangesDiffCard({ changeLog }: ChangesDiffCardProps) {
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

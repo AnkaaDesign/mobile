@@ -1,12 +1,12 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
 import type { Order } from '../../../../types';
-import { IconReceipt, IconCoin } from "@tabler/icons-react-native";
+import { IconCoin } from "@tabler/icons-react-native";
 
 interface OrderSummaryCardProps {
   order: Order;
@@ -20,12 +20,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
   const total = subtotal;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconReceipt size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Resumo Financeiro</ThemedText>
-      </View>
-
+    <DetailCard title="Resumo Financeiro" icon="receipt">
       <View style={styles.content}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
@@ -56,26 +51,11 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
   content: {
     gap: spacing.sm,
   },
@@ -88,9 +68,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-  },
-  icon: {
-    opacity: 0.6,
   },
   label: {
     fontSize: fontSize.sm,

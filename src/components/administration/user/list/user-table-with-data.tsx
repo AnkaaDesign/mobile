@@ -34,7 +34,7 @@ export function UserTableWithData({
       include: {
         position: true,
         sector: true,
-        managedSector: true,
+        ledSector: true,
       },
     };
   }, [filters]);

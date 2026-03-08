@@ -17,7 +17,8 @@ export interface Sector extends BaseEntity {
   // Relations
   users?: User[];
   tasks?: Task[];
-  managedByUsers?: User[];
+  leader?: User;
+  leaderId: string | null;
 
   // Count fields (when included)
   _count?: {
@@ -42,7 +43,7 @@ export interface SectorIncludes {
     | {
         include?: TaskIncludes;
       };
-  managedByUsers?:
+  leader?:
     | boolean
     | {
         include?: UserIncludes;

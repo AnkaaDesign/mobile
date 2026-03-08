@@ -66,7 +66,7 @@ export default function TeamCalculationsScreen() {
     () => new Set(DEFAULT_VISIBLE_COLUMNS)
   );
 
-  // Fetch users for selector - automatically filtered by managed sector on backend
+  // Fetch users for selector - automatically filtered by led sector on backend
   const { data: usersData, isLoading: usersLoading } = useTeamStaffUsers({
     where: {
       status: {
@@ -111,7 +111,7 @@ export default function TeamCalculationsScreen() {
   const startDate = format(periodDates.startDate, "yyyy-MM-dd");
   const endDate = format(periodDates.endDate, "yyyy-MM-dd");
 
-  // Fetch calculations - automatically filtered by managed sector on backend
+  // Fetch calculations - automatically filtered by led sector on backend
   const {
     data: calculationsData,
     isLoading,

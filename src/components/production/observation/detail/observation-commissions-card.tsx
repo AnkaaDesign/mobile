@@ -1,11 +1,10 @@
-
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconCurrencyDollar, IconUser } from "@tabler/icons-react-native";
+import { IconUser } from "@tabler/icons-react-native";
 
 interface Commission {
   id: string;
@@ -53,67 +52,41 @@ export function ObservationCommissionsCard({ commissions }: ObservationCommissio
   }
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <IconCurrencyDollar size={20} color={colors.primary} />
-        <ThemedText style={styles.sectionTitle}>Comissões Afetadas</ThemedText>
-        <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-          {commissions.length}
-        </Badge>
-      </View>
-
-      <View style={styles.content}>
-        <View style={styles.commissionsContainer}>
-          {commissions.map((commission) => (
-            <View
-              key={commission.id}
-              style={[styles.commissionItem, { backgroundColor: colors.muted }]}
-            >
-              <View style={styles.commissionHeader}>
-                <View style={styles.userContainer}>
-                  <IconUser size={16} color={colors.mutedForeground} />
-                  <ThemedText style={[styles.userName, { color: colors.foreground }]}>
-                    {commission.user?.name || "Usuário"}
-                  </ThemedText>
-                </View>
-                <Badge variant={getCommissionStatusBadgeVariant(commission.status)}>
-                  {COMMISSION_STATUS_LABELS[commission.status] || commission.status}
-                </Badge>
-              </View>
-              {commission.reason && (
-                <ThemedText style={[styles.commissionReason, { color: colors.mutedForeground }]}>
-                  {commission.reason}
+    <DetailCard
+      title="Comissões Afetadas"
+      icon="currency-dollar"
+      badge={<Badge variant="secondary">{commissions.length}</Badge>}
+    >
+      <View style={styles.commissionsContainer}>
+        {commissions.map((commission) => (
+          <View
+            key={commission.id}
+            style={[styles.commissionItem, { backgroundColor: colors.muted }]}
+          >
+            <View style={styles.commissionHeader}>
+              <View style={styles.userContainer}>
+                <IconUser size={16} color={colors.mutedForeground} />
+                <ThemedText style={[styles.userName, { color: colors.foreground }]}>
+                  {commission.user?.name || "Usuário"}
                 </ThemedText>
-              )}
+              </View>
+              <Badge variant={getCommissionStatusBadgeVariant(commission.status)}>
+                {COMMISSION_STATUS_LABELS[commission.status] || commission.status}
+              </Badge>
             </View>
-          ))}
-        </View>
+            {commission.reason && (
+              <ThemedText style={[styles.commissionReason, { color: colors.mutedForeground }]}>
+                {commission.reason}
+              </ThemedText>
+            )}
+          </View>
+        ))}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-  },
   commissionsContainer: {
     gap: spacing.sm,
   },

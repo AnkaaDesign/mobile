@@ -1,9 +1,8 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconUsers } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import type { Sector } from '../../../../types';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
@@ -26,29 +25,26 @@ export function UsersCard({ sector }: UsersCardProps) {
 
   if (!sector.users || sector.users.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <IconUsers size={20} color={colors.primary} />
-          <ThemedText style={styles.sectionTitle}>Usuários do Setor</ThemedText>
-        </View>
+      <DetailCard title="Usuários do Setor" icon="users">
         <View style={styles.emptyState}>
           <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
             Nenhum usuário associado a este setor.
           </ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.sectionHeader}>
-        <IconUsers size={20} color={colors.primary} />
-        <ThemedText style={styles.sectionTitle}>Usuários do Setor</ThemedText>
-        <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
+    <DetailCard
+      title="Usuários do Setor"
+      icon="users"
+      badge={
+        <Badge variant="secondary">
           {sector.users.length}
         </Badge>
-      </View>
+      }
+    >
       <View style={styles.usersList}>
         {sector.users.map((user) => (
           <View key={user.id} style={StyleSheet.flatten([styles.userItem, { borderBottomColor: colors.border }])}>
@@ -70,27 +66,11 @@ export function UsersCard({ sector }: UsersCardProps) {
           </View>
         ))}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
   usersList: {
     gap: 0,
   },

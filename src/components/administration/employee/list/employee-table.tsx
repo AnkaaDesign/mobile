@@ -298,14 +298,14 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "managedSector.name",
-    header: "Setor Gerenciado",
+    key: "ledSector.name",
+    header: "Setor Liderado",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (employee: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {employee.managedSector?.name || "-"}
+        {employee.ledSector?.name || "-"}
       </ThemedText>
     ),
   },
@@ -475,7 +475,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         performanceLevel: 1.5,
         verified: 1.1,
         lastLoginAt: 1.6,
-        "managedSector.name": 1.5,
+        "ledSector.name": 1.5,
         city: 1.3,
         state: 1.0,
         zipCode: 1.1,

@@ -1,15 +1,15 @@
 import type React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconTimeline, IconCircleCheck, IconClock, IconX, IconPlayerPause } from "@tabler/icons-react-native";
+import { IconCircleCheck, IconClock, IconX, IconPlayerPause } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
 import { VACATION_STATUS, VACATION_STATUS_LABELS } from "@/constants";
 import { formatDateTime, formatRelativeTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface TimelineCardProps {
   vacation: Vacation;
@@ -113,129 +113,98 @@ export function TimelineCard({ vacation }: TimelineCardProps) {
   const timelineEvents = getTimelineEvents();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconTimeline size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Linha do Tempo</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.timelineContent}>
-          {timelineEvents.map((event, index) => {
-            const Icon = event.icon;
-            const isLast = index === timelineEvents.length - 1;
+    <DetailCard title="Linha do Tempo" icon="timeline">
+      <View style={styles.timelineContent}>
+        {timelineEvents.map((event, index) => {
+          const Icon = event.icon;
+          const isLast = index === timelineEvents.length - 1;
 
-            return (
-              <View key={event.status} style={styles.timelineItem}>
-                <View style={styles.timelineLeftColumn}>
-                  {/* Icon and Line */}
-                  <View style={styles.iconContainer}>
-                    <View
-                      style={StyleSheet.flatten([
-                        styles.iconCircle,
-                        {
-                          backgroundColor: event.isActive || event.isPast ? event.color : colors.muted,
-                          borderColor: event.isActive ? event.color : "transparent",
-                          borderWidth: event.isActive ? 2 : 0,
-                        },
-                      ])}
-                    >
-                      <Icon
-                        size={16}
-                        color={event.isActive || event.isPast ? "#FFFFFF" : colors.mutedForeground}
-                      />
-                    </View>
-                    {!isLast && (
-                      <View
-                        style={StyleSheet.flatten([
-                          styles.timelineLine,
-                          {
-                            backgroundColor: event.isPast ? event.color : colors.border,
-                          },
-                        ])}
-                      />
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.timelineRightColumn}>
-                  {/* Event Content */}
+          return (
+            <View key={event.status} style={styles.timelineItem}>
+              <View style={styles.timelineLeftColumn}>
+                {/* Icon and Line */}
+                <View style={styles.iconContainer}>
                   <View
                     style={StyleSheet.flatten([
-                      styles.eventCard,
+                      styles.iconCircle,
                       {
-                        backgroundColor: event.isActive ? event.color + "10" : colors.muted + "20",
-                        borderLeftColor: event.isActive || event.isPast ? event.color : colors.border,
+                        backgroundColor: event.isActive || event.isPast ? event.color : colors.muted,
+                        borderColor: event.isActive ? event.color : "transparent",
+                        borderWidth: event.isActive ? 2 : 0,
                       },
                     ])}
                   >
-                    <View style={styles.eventHeader}>
-                      <ThemedText
-                        style={StyleSheet.flatten([
-                          styles.eventLabel,
-                          {
-                            color: event.isActive || event.isPast ? colors.foreground : colors.mutedForeground,
-                            fontWeight: event.isActive ? fontWeight.bold : fontWeight.medium,
-                          },
-                        ])}
-                      >
-                        {event.label}
-                      </ThemedText>
-                      {event.isActive && (
-                        <Badge variant="default" style={{ backgroundColor: event.color }}>
-                          <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: "#FFFFFF" }])}>
-                            Atual
-                          </ThemedText>
-                        </Badge>
-                      )}
-                    </View>
-
-                    {event.date && (
-                      <View style={styles.eventDetails}>
-                        <ThemedText style={StyleSheet.flatten([styles.eventDate, { color: colors.foreground }])}>
-                          {formatDateTime(event.date)}
-                        </ThemedText>
-                        <ThemedText style={StyleSheet.flatten([styles.eventRelative, { color: colors.mutedForeground }])}>
-                          {formatRelativeTime(event.date)}
-                        </ThemedText>
-                      </View>
-                    )}
+                    <Icon
+                      size={16}
+                      color={event.isActive || event.isPast ? "#FFFFFF" : colors.mutedForeground}
+                    />
                   </View>
+                  {!isLast && (
+                    <View
+                      style={StyleSheet.flatten([
+                        styles.timelineLine,
+                        {
+                          backgroundColor: event.isPast ? event.color : colors.border,
+                        },
+                      ])}
+                    />
+                  )}
                 </View>
               </View>
-            );
-          })}
-        </View>
+
+              <View style={styles.timelineRightColumn}>
+                {/* Event Content */}
+                <View
+                  style={StyleSheet.flatten([
+                    styles.eventCard,
+                    {
+                      backgroundColor: event.isActive ? event.color + "10" : colors.muted + "20",
+                      borderLeftColor: event.isActive || event.isPast ? event.color : colors.border,
+                    },
+                  ])}
+                >
+                  <View style={styles.eventHeader}>
+                    <ThemedText
+                      style={StyleSheet.flatten([
+                        styles.eventLabel,
+                        {
+                          color: event.isActive || event.isPast ? colors.foreground : colors.mutedForeground,
+                          fontWeight: event.isActive ? fontWeight.bold : fontWeight.medium,
+                        },
+                      ])}
+                    >
+                      {event.label}
+                    </ThemedText>
+                    {event.isActive && (
+                      <Badge variant="default" style={{ backgroundColor: event.color }}>
+                        <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: "#FFFFFF" }])}>
+                          Atual
+                        </ThemedText>
+                      </Badge>
+                    )}
+                  </View>
+
+                  {event.date && (
+                    <View style={styles.eventDetails}>
+                      <ThemedText style={StyleSheet.flatten([styles.eventDate, { color: colors.foreground }])}>
+                        {formatDateTime(event.date)}
+                      </ThemedText>
+                      <ThemedText style={StyleSheet.flatten([styles.eventRelative, { color: colors.mutedForeground }])}>
+                        {formatRelativeTime(event.date)}
+                      </ThemedText>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+          );
+        })}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   timelineContent: {
     gap: 0,
   },

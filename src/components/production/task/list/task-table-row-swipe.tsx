@@ -83,6 +83,7 @@ const TaskTableRowSwipeComponent = ({
   const userIsTeamLeader = isTeamLeader(user);
   const canEdit = canEditTasks(user); // ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC
   const canLeaderManage = userIsTeamLeader && canLeaderManageTask(user, taskSectorId);
+  const userCanFinish = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN || user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
   const canEditLayoutOnly = canEditLayoutsOnly(user); // Team leaders, LOGISTIC only (not ADMIN)
   const userCanRelease = canRelease(user);
   const userCanAccessAdvanced = canAccessAdvancedMenu(user);
@@ -184,8 +185,8 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // 3. FINISH - For IN_PRODUCTION tasks (Team Leaders / ADMIN)
-  if (canLeaderManage && taskStatus === TASK_STATUS.IN_PRODUCTION && onFinish) {
+  // 3. FINISH - For IN_PRODUCTION tasks (LOGISTIC / ADMIN only)
+  if (userCanFinish && taskStatus === TASK_STATUS.IN_PRODUCTION && onFinish) {
     actions.push({
       key: "finish",
       label: "Finalizar",

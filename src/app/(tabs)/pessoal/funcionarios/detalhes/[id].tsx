@@ -123,7 +123,7 @@ export default function EmployeeDetailScreen() {
           name: true,
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,
@@ -350,15 +350,15 @@ export default function EmployeeDetailScreen() {
                 </View>
               </View>
             )}
-            {employee.managedSector && (
+            {employee.ledSector && (
               <View style={styles.infoRow}>
                 <IconStar size={16} color={colors.mutedForeground} />
                 <View style={styles.infoTextContainer}>
                   <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Setor Gerenciado
+                    Setor Liderado
                   </ThemedText>
                   <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.managedSector.name}
+                    {employee.ledSector.name}
                   </ThemedText>
                 </View>
               </View>

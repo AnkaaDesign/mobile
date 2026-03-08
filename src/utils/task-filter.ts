@@ -5,7 +5,7 @@
  * tasks that are filtered based on the current user's sector leadership.
  *
  * Team leaders should only see:
- * 1. Tasks from their managed sector
+ * 1. Tasks from their led sector
  * 2. Tasks without a sector assigned (sectorId = null)
  */
 
@@ -14,15 +14,15 @@ import { SECTOR_PRIVILEGES } from '@/constants';
 
 interface TaskFilterUser {
   sector?: { privileges?: string } | null;
-  managedSector?: { id?: string } | null;
+  ledSector?: { id?: string } | null;
 }
 
 /**
- * Check if user is a team leader (manages a sector)
+ * Check if user is a team leader (leads a sector)
  */
 function isTeamLeader(user: TaskFilterUser | null): boolean {
   if (!user) return false;
-  return Boolean(user.managedSector?.id);
+  return Boolean(user.ledSector?.id);
 }
 
 /**
@@ -47,10 +47,10 @@ export async function getUserAllowedSectorIds(): Promise<string[] | null> {
     // Non-team-leaders can see all tasks (permission checks happen elsewhere)
     if (!isTeamLeader(user)) return null;
 
-    // Team leaders can only see tasks from their managed sector
-    const managedSectorId = user?.managedSector?.id;
-    if (managedSectorId) {
-      return [managedSectorId];
+    // Team leaders can only see tasks from their led sector
+    const ledSectorId = user?.ledSector?.id;
+    if (ledSectorId) {
+      return [ledSectorId];
     }
 
     return null;
@@ -79,22 +79,22 @@ export async function shouldFilterTasksBySector(): Promise<boolean> {
 }
 
 /**
- * Get the current user's managed sector ID (if they are a team leader)
- * Returns null if user is admin, not a team leader, or has no managed sector
+ * Get the current user's led sector ID (if they are a team leader)
+ * Returns null if user is admin, not a team leader, or has no led sector
  */
-export async function getManagedSectorId(): Promise<string | null> {
+export async function getLedSectorId(): Promise<string | null> {
   try {
     const user = await getUserData();
 
     // Admin can see all tasks
     if (isAdmin(user)) return null;
 
-    // Non-team-leaders don't have a managed sector for filtering purposes
+    // Non-team-leaders don't have a led sector for filtering purposes
     if (!isTeamLeader(user)) return null;
 
-    return user?.managedSector?.id || null;
+    return user?.ledSector?.id || null;
   } catch (error) {
-    console.error('[task-filter] Error getting managed sector:', error);
+    console.error('[task-filter] Error getting led sector:', error);
     return null;
   }
 }
@@ -140,7 +140,7 @@ export async function fetchTasksForFilter(
     const { getTasks } = await import('@/api-client');
 
     // Check if sector filtering is needed
-    const managedSectorId = await getManagedSectorId();
+    const ledSectorId = await getLedSectorId();
 
     // Build where clause
     let whereClause: Record<string, any> = { ...where };
@@ -174,16 +174,16 @@ export async function fetchTasksForFilter(
         },
       },
       orderBy,
-      limit: managedSectorId ? pageSize * 3 : pageSize, // Fetch more if filtering
+      limit: ledSectorId ? pageSize * 3 : pageSize, // Fetch more if filtering
       page,
     });
 
     let tasks = response.data || [];
 
     // Apply sector filtering for team leaders (client-side)
-    if (managedSectorId) {
+    if (ledSectorId) {
       tasks = tasks.filter(
-        (task: any) => task.sectorId === managedSectorId || task.sectorId === null
+        (task: any) => task.sectorId === ledSectorId || task.sectorId === null
       );
       // Slice to page size after filtering
       tasks = tasks.slice(0, pageSize);

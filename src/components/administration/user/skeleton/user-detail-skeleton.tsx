@@ -114,7 +114,7 @@ export function UserDetailSkeleton() {
               </View>
             </View>
           </View>
-          {/* Info grid: position, sector, managed sector */}
+          {/* Info grid: position, sector, led sector */}
           <View style={{ gap: spacing.md }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>

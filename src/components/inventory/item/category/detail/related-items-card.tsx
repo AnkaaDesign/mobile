@@ -1,9 +1,9 @@
 
 import { View, ScrollView, Pressable, StyleSheet} from "react-native";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconPackage, IconChevronRight, IconLayoutList } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
+import { IconPackage, IconChevronRight } from "@tabler/icons-react-native";
 import type { ItemCategory } from '../../../../../types';
 import { router } from "expo-router";
 import { routes } from "@/constants";
@@ -30,19 +30,15 @@ export function RelatedItemsCard({ category }: RelatedItemsCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconLayoutList size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Produtos desta Categoria</ThemedText>
-        </View>
+    <DetailCard
+      title="Produtos desta Categoria"
+      icon="layout-list"
+      badge={
         <Badge variant="secondary" style={{ backgroundColor: colors.muted }}>
           <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.mutedForeground }])}>{items.length}</ThemedText>
         </Badge>
-      </View>
-      <View style={styles.content}>
+      }
+    >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {items.map((item) => (
             <Pressable
@@ -126,42 +122,11 @@ export function RelatedItemsCard({ category }: RelatedItemsCardProps) {
             <ThemedText style={StyleSheet.flatten([styles.scrollIndicator, { color: colors.mutedForeground }])}>Deslize para ver mais →</ThemedText>
           </View>
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   badgeText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,

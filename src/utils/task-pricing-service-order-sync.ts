@@ -2,16 +2,16 @@
  * Task Pricing and Production Service Order Bidirectional Synchronization Utilities
  *
  * This module provides synchronization logic for the mobile form between
- * TaskPricingItems and Production Service Orders. The sync happens in real-time
+ * TaskPricingServices and Production Service Orders. The sync happens in real-time
  * as the user edits the form.
  *
  * Sync Rules:
- * 1. Service Order (PRODUCTION) → Task Pricing Item:
- *    - description → pricing item description (1:1)
- *    - observation → pricing item observation (1:1)
+ * 1. Service Order (PRODUCTION) → Task Pricing Service:
+ *    - description → pricing service description (1:1)
+ *    - observation → pricing service observation (1:1)
  *    - Amount defaults to 0
  *
- * 2. Task Pricing Item → Service Order (PRODUCTION):
+ * 2. Task Pricing Service → Service Order (PRODUCTION):
  *    - description → SO description (1:1)
  *    - observation → SO observation (1:1)
  */
@@ -29,7 +29,7 @@ export interface SyncServiceOrder {
   shouldSync?: boolean;
 }
 
-export interface SyncPricingItem {
+export interface SyncPricingService {
   id?: string;
   description: string;
   observation?: string | null;
@@ -46,21 +46,21 @@ export function normalizeDescription(description: string | null | undefined): st
 }
 
 /**
- * Gets pricing items that should be added based on PRODUCTION service orders.
+ * Gets pricing services that should be added based on PRODUCTION service orders.
  */
-export function getPricingItemsToAddFromServiceOrders(
+export function getPricingServicesToAddFromServiceOrders(
   serviceOrders: SyncServiceOrder[],
-  existingPricingItems: SyncPricingItem[],
-): SyncPricingItem[] {
-  const itemsToAdd: SyncPricingItem[] = [];
+  existingPricingServices: SyncPricingService[],
+): SyncPricingService[] {
+  const servicesToAdd: SyncPricingService[] = [];
   const existingDescriptions = new Set(
-    existingPricingItems.map(item => normalizeDescription(item.description))
+    existingPricingServices.map(svc => normalizeDescription(svc.description))
   );
 
   const noSyncDescriptions = new Set(
-    existingPricingItems
-      .filter(item => item.shouldSync === false)
-      .map(item => normalizeDescription(item.description))
+    existingPricingServices
+      .filter(svc => svc.shouldSync === false)
+      .map(svc => normalizeDescription(svc.description))
   );
 
   for (const so of serviceOrders) {
@@ -71,7 +71,7 @@ export function getPricingItemsToAddFromServiceOrders(
     const normalizedDesc = normalizeDescription(so.description);
 
     if (!existingDescriptions.has(normalizedDesc) && !noSyncDescriptions.has(normalizedDesc)) {
-      itemsToAdd.push({
+      servicesToAdd.push({
         description: so.description.trim(),
         observation: so.observation || null,
         amount: 0,
@@ -80,14 +80,14 @@ export function getPricingItemsToAddFromServiceOrders(
     }
   }
 
-  return itemsToAdd;
+  return servicesToAdd;
 }
 
 /**
- * Gets service orders that should be added based on pricing items.
+ * Gets service orders that should be added based on pricing services.
  */
-export function getServiceOrdersToAddFromPricingItems(
-  pricingItems: SyncPricingItem[],
+export function getServiceOrdersToAddFromPricingServices(
+  pricingServices: SyncPricingService[],
   existingServiceOrders: SyncServiceOrder[],
 ): SyncServiceOrder[] {
   const ordersToAdd: SyncServiceOrder[] = [];
@@ -104,38 +104,38 @@ export function getServiceOrdersToAddFromPricingItems(
       .map(so => normalizeDescription(so.description))
   );
 
-  for (const item of pricingItems) {
-    if (!item.description || item.description.trim().length < 3) continue;
-    if (item.shouldSync === false) continue;
+  for (const svc of pricingServices) {
+    if (!svc.description || svc.description.trim().length < 3) continue;
+    if (svc.shouldSync === false) continue;
 
-    const normalizedItemDesc = normalizeDescription(item.description);
+    const normalizedDesc = normalizeDescription(svc.description);
 
-    if (existingDescriptions.has(normalizedItemDesc) || noSyncDescriptions.has(normalizedItemDesc)) {
+    if (existingDescriptions.has(normalizedDesc) || noSyncDescriptions.has(normalizedDesc)) {
       continue;
     }
 
     ordersToAdd.push({
-      description: item.description.trim(),
-      observation: item.observation || null,
+      description: svc.description.trim(),
+      observation: svc.observation || null,
       type: SERVICE_ORDER_TYPE.PRODUCTION,
       status: SERVICE_ORDER_STATUS.PENDING,
       statusOrder: 1,
     });
 
-    existingDescriptions.add(normalizedItemDesc);
+    existingDescriptions.add(normalizedDesc);
   }
 
   return ordersToAdd;
 }
 
 /**
- * Syncs observations from service orders to matching pricing items.
+ * Syncs observations from service orders to matching pricing services.
  * This function propagates both set and cleared observations.
  */
 export function syncObservationsFromServiceOrdersToPricing(
   serviceOrders: SyncServiceOrder[],
-  pricingItems: SyncPricingItem[],
-): SyncPricingItem[] {
+  pricingServices: SyncPricingService[],
+): SyncPricingService[] {
   const soObservationMap = new Map<string, string | null>();
   for (const so of serviceOrders) {
     if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
@@ -145,7 +145,7 @@ export function syncObservationsFromServiceOrdersToPricing(
     soObservationMap.set(normalizedDesc, observationValue);
   }
 
-  return pricingItems.map(item => {
+  return pricingServices.map(item => {
     if (!item.description || item.description.trim().length < 3) return item;
     const normalizedDesc = normalizeDescription(item.description);
     if (soObservationMap.has(normalizedDesc)) {
@@ -160,15 +160,15 @@ export function syncObservationsFromServiceOrdersToPricing(
 }
 
 /**
- * Syncs observations from pricing items to matching service orders.
+ * Syncs observations from pricing services to matching service orders.
  * This function propagates both set and cleared observations.
  */
 export function syncObservationsFromPricingToServiceOrders(
-  pricingItems: SyncPricingItem[],
+  pricingServices: SyncPricingService[],
   serviceOrders: SyncServiceOrder[],
 ): SyncServiceOrder[] {
   const pricingObservationMap = new Map<string, string | null>();
-  for (const item of pricingItems) {
+  for (const item of pricingServices) {
     if (!item.description || item.description.trim().length < 3) continue;
     const normalizedDesc = normalizeDescription(item.description);
     const observationValue = item.observation && item.observation.trim() ? item.observation : null;

@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { IconClock, IconTrendingUp, IconTrendingDown, IconCalendar, IconDots, IconUser } from "@tabler/icons-react-native";
 import type { Item, Activity } from '../../../../types';
 import { ACTIVITY_REASON, ACTIVITY_REASON_LABELS, ACTIVITY_OPERATION } from "@/constants";
@@ -152,15 +152,7 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconClock size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Histórico - {format(startOfMonth(new Date()), "MMMM 'de' yyyy", { locale: ptBR })}</ThemedText>
-        </View>
-      </View>
+    <DetailCard title={`Histórico - ${format(startOfMonth(new Date()), "MMMM 'de' yyyy", { locale: ptBR })}`} icon="clock">
       <View style={styles.content}>
         {/* Statistics Summary */}
         {statistics.totalMovements > 0 && (
@@ -353,39 +345,13 @@ export function ActivityHistoryCard({ item, maxHeight }: ActivityHistoryCardProp
           </ScrollView>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
   content: {
     gap: spacing.md,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   statisticsGrid: {
     flexDirection: "row",

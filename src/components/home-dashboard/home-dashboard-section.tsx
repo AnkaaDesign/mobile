@@ -20,8 +20,7 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
       (data.openServiceOrders && data.openServiceOrders.length > 0) ||
       (data.tasksCloseForecast && data.tasksCloseForecast.length > 0) ||
       (data.lowStockItems && data.lowStockItems.length > 0) ||
-      (data.completedTasks && data.completedTasks.length > 0) ||
-      (data.openFinancialSOs && data.openFinancialSOs.length > 0);
+      (data.completedTasks && data.completedTasks.length > 0);
 
   if (!hasContent) return null;
 
@@ -61,9 +60,6 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
         <CompletedTasksList tasks={data.completedTasks} />
       )}
 
-      {!isAdmin && data.openFinancialSOs && data.openFinancialSOs.length > 0 && (
-        <ServiceOrderList orders={data.openFinancialSOs} title="OS Financeiras Pendentes" />
-      )}
     </View>
   );
 }

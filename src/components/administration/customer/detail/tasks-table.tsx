@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -112,15 +112,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconClipboardList size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Tarefas Relacionadas {tasks.length > 0 && `(${tasks.length}${totalCount ? `/${totalCount}` : ""})`}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailCard title={`Tarefas Relacionadas ${tasks.length > 0 ? `(${tasks.length}${totalCount ? `/${totalCount}` : ""})` : ""}`} icon="clipboard-list">
 
         <View style={styles.content}>
           {/* Search and Column Visibility Controls */}
@@ -182,7 +174,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
             </View>
           )}
         </View>
-      </Card>
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -198,26 +190,6 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

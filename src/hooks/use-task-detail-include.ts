@@ -129,6 +129,11 @@ export function useTaskDetailFullInclude(user: any) {
         observation: true,
         startedAt: true,
         finishedAt: true,
+        // Include checkin/checkout files per service order when user has permission
+        ...(canViewCheckinCheckout && {
+          checkinFiles: { select: { id: true, filename: true, size: true, mimetype: true, thumbnailUrl: true } },
+          checkoutFiles: { select: { id: true, filename: true, size: true, mimetype: true, thumbnailUrl: true } },
+        }),
       },
     },
     ...(canViewRestrictedFields && {
@@ -192,7 +197,6 @@ export function useTaskDetailFullInclude(user: any) {
           discountReference: true,
           expiresAt: true,
           budgetNumber: true,
-          paymentCondition: true,
           customPaymentText: true,
           guaranteeYears: true,
           customGuaranteeText: true,
@@ -202,7 +206,7 @@ export function useTaskDetailFullInclude(user: any) {
           layoutFile: true,
           customerSignatureId: true,
           customerSignature: true,
-          items: { take: 10 },
+          services: { take: 10 },
         },
       },
     }),
@@ -216,6 +220,7 @@ export function useTaskDetailFullInclude(user: any) {
     canViewRestrictedFields,
     canViewObservation,
     canViewBaseFiles,
+    canViewCheckinCheckout,
     canViewArtworks,
     canViewPricingSection,
     canViewPaintSections,

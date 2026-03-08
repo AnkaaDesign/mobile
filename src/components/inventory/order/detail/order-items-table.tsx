@@ -4,15 +4,14 @@ import {
   StyleSheet,
   Pressable,
 } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
 import { StockStatusIndicator } from "@/components/inventory/item/list/stock-status-indicator";
 import type { Order, Item } from "@/types";
 import {
-  IconShoppingCart,
   IconBoxMultiple,
 } from "@tabler/icons-react-native";
 
@@ -51,13 +50,7 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
 
   if (items.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconShoppingCart size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
-          </View>
-        </View>
+      <DetailCard title="Itens do Pedido" icon="shopping-cart">
         <View style={styles.emptyContainer}>
           <View style={[styles.emptyIconContainer, { backgroundColor: colors.muted + "30" }]}>
             <IconBoxMultiple size={32} color={colors.mutedForeground} />
@@ -69,22 +62,15 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
             Este pedido não possui itens cadastrados.
           </ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconShoppingCart size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Itens do Pedido {items.length > 0 && `(${items.length})`}
-          </ThemedText>
-        </View>
-      </View>
-
+    <DetailCard
+      title={`Itens do Pedido ${items.length > 0 ? `(${items.length})` : ""}`}
+      icon="shopping-cart"
+    >
       {/* Summary Statistics */}
       <View style={[styles.summaryContainer, { backgroundColor: colors.muted + "30" }]}>
         <View style={styles.summaryRow}>
@@ -223,32 +209,11 @@ export function OrderItemsTable({ order, onItemPress }: OrderItemsTableProps) {
           </View>
         </View>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500" as const,
-  },
   emptyContainer: {
     alignItems: "center",
     paddingVertical: spacing.xl,
@@ -272,8 +237,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   summaryContainer: {
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
@@ -324,9 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tableWrapper: {
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: spacing.md,
   },
   tableContainer: {
     borderRadius: 8,

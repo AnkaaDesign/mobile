@@ -1,13 +1,11 @@
-import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { IconPackage, IconCalendar, IconNumber } from "@tabler/icons-react-native";
 import { formatDate, formatQuantity } from "@/utils";
 import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from "@/constants";
 import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
+import { fontSize, fontWeight, spacing } from "@/constants/design-system";
 import type { PpeDelivery } from '../../../../../types';
 
 interface DeliveryCardProps {
@@ -15,114 +13,52 @@ interface DeliveryCardProps {
 }
 
 export function DeliveryCard({ delivery }: DeliveryCardProps) {
-  const { colors } = useTheme();
-
-  // Get badge colors from centralized configuration
   const variant = ENTITY_BADGE_CONFIG.PPE_DELIVERY[delivery.status as PPE_DELIVERY_STATUS] || "gray";
   const badgeColor = BADGE_COLORS[variant];
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconPackage size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Informações da Entrega</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Status</ThemedText>
-            <Badge
-              variant="secondary"
-              style={{ backgroundColor: badgeColor.bg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}
-            >
-              <ThemedText style={[styles.badgeText, { color: badgeColor.text }]}>
-                {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
-              </ThemedText>
-            </Badge>
-          </View>
+    <DetailCard title="Informações da Entrega" icon="package">
+      <DetailField
+        label="Status"
+        icon="info-circle"
+        value={
+          <Badge
+            variant="secondary"
+            style={{ backgroundColor: badgeColor.bg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs }}
+          >
+            <ThemedText style={[styles.badgeText, { color: badgeColor.text }]}>
+              {PPE_DELIVERY_STATUS_LABELS[delivery.status as PPE_DELIVERY_STATUS] || delivery.status}
+            </ThemedText>
+          </Badge>
+        }
+      />
 
-          {delivery.scheduledDate && (
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabelContainer}>
-                <IconCalendar size={16} color={colors.mutedForeground} style={styles.infoIcon} />
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Data Agendada</ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{formatDate(new Date(delivery.scheduledDate))}</ThemedText>
-            </View>
-          )}
+      {delivery.scheduledDate && (
+        <DetailField
+          label="Data Agendada"
+          icon="calendar"
+          value={formatDate(new Date(delivery.scheduledDate))}
+        />
+      )}
 
-          {delivery.actualDeliveryDate && (
-            <View style={styles.infoRow}>
-              <View style={styles.infoLabelContainer}>
-                <IconCalendar size={16} color={colors.mutedForeground} style={styles.infoIcon} />
-                <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Data de Entrega</ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{formatDate(new Date(delivery.actualDeliveryDate))}</ThemedText>
-            </View>
-          )}
+      {delivery.actualDeliveryDate && (
+        <DetailField
+          label="Data de Entrega"
+          icon="calendar"
+          value={formatDate(new Date(delivery.actualDeliveryDate))}
+        />
+      )}
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoLabelContainer}>
-              <IconNumber size={16} color={colors.mutedForeground} style={styles.infoIcon} />
-              <ThemedText style={StyleSheet.flatten([styles.infoLabel, { color: colors.mutedForeground }])}>Quantidade</ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.infoValue, { color: colors.foreground }])}>{formatQuantity(delivery.quantity)}</ThemedText>
-          </View>
-        </View>
-      </View>
-    </Card>
+      <DetailField
+        label="Quantidade"
+        icon="hash"
+        value={formatQuantity(delivery.quantity)}
+      />
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  infoContainer: {
-    gap: spacing.md,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  infoLabelContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  infoIcon: {
-    marginRight: spacing.xs,
-  },
-  infoLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  infoValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,

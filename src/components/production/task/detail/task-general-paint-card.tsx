@@ -1,13 +1,13 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants/enum-labels';
 import { PAINT_FINISH, TRUCK_MANUFACTURER } from '@/constants/enums';
-import { IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconAlertCircle } from "@tabler/icons-react-native";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
 const BADGE_COLORS = {
@@ -46,14 +46,8 @@ export const TaskGeneralPaintCard: React.FC<TaskGeneralPaintCardProps> = ({
   const manufacturerLabel = paint.manufacturer ? TRUCK_MANUFACTURER_LABELS[paint.manufacturer as TRUCK_MANUFACTURER] || paint.manufacturer : null;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconBrush size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Pintura Geral</ThemedText>
-      </View>
-
-      <View style={styles.content}>
-        <TouchableOpacity
+    <DetailCard title="Pintura Geral" icon="brush">
+      <TouchableOpacity
           style={[styles.paintItemContainer, { backgroundColor: isDark ? colors.muted + '20' : colors.muted + '50' }]}
           onPress={() => onPaintPress?.(paint.id)}
           activeOpacity={0.7}
@@ -121,32 +115,12 @@ export const TaskGeneralPaintCard: React.FC<TaskGeneralPaintCardProps> = ({
               </ThemedText>
             </View>
           )}
-        </TouchableOpacity>
-      </View>
-    </Card>
+      </TouchableOpacity>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  content: {
-    gap: spacing.md,
-  },
   paintItemContainer: {
     borderRadius: borderRadius.lg,
     padding: spacing.md,

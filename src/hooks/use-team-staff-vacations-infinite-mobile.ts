@@ -14,7 +14,7 @@ export const teamStaffVacationsKeys = {
 
 /**
  * Hook for infinite scrolling team staff vacations
- * Automatically filters vacations by the current user's managed sector on the backend
+ * Automatically filters vacations by the current user's led sector on the backend
  * Requires team leader privileges
  */
 export function useTeamStaffVacationsInfinite(

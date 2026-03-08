@@ -395,7 +395,7 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       return true;
     }
     // Team leadership access is now checked at component level via isTeamLeader()
-    // based on user.managedSector?.id relationship, not privilege
+    // based on user.ledSector?.id relationship, not privilege
     if (userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER) && path.startsWith('pintura/')) {
       return true;
     }

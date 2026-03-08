@@ -2,12 +2,11 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
 import type { User } from '../../../../types';
 import { formatDate, getAge } from "@/utils";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DetailField } from "@/components/ui/detail-page-layout";
+import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUser, IconExternalLink } from "@tabler/icons-react-native";
+import { IconExternalLink, IconUser } from "@tabler/icons-react-native";
 
 interface AddressCardProps {
   employee: User;
@@ -79,123 +78,71 @@ export function AddressCard({ employee }: AddressCardProps) {
   const fullAddress = getFullAddress();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconUser size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Informações Pessoais
+    <DetailCard title="Informações Pessoais" icon="user">
+      {/* Dados Pessoais Section */}
+      {hasPersonalInfo && (
+        <DetailSection title="Dados Pessoais">
+          {employee.birth && (
+            <DetailField
+              label="Data de Nascimento"
+              value={`${formatDate(employee.birth)} (${getAge(employee.birth)} anos)`}
+              icon="cake"
+            />
+          )}
+
+          {employee.payrollNumber && (
+            <DetailField
+              label="Número da Folha"
+              value={employee.payrollNumber}
+              icon="hash"
+              monospace
+            />
+          )}
+        </DetailSection>
+      )}
+
+      {/* Address Section */}
+      {hasAddress ? (
+        <DetailSection title="Endereço">
+          <TouchableOpacity
+            onPress={handleOpenMaps}
+            style={[
+              styles.fullAddressBox,
+              { backgroundColor: colors.muted, borderColor: colors.border },
+            ]}
+            activeOpacity={0.7}
+          >
+            <View style={styles.addressBoxContent}>
+              <ThemedText style={[styles.addressBoxValue, { color: colors.foreground }]}>
+                {fullAddress}
+              </ThemedText>
+              <View style={styles.openMapsRow}>
+                <ThemedText style={[styles.openMapsText, { color: colors.primary }]}>
+                  Abrir no Google Maps
+                </ThemedText>
+                <IconExternalLink size={14} color={colors.primary} />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </DetailSection>
+      ) : hasPersonalInfo ? null : (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
+            <IconUser size={32} color={colors.mutedForeground} />
+          </View>
+          <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Nenhuma informação pessoal cadastrada
+          </ThemedText>
+          <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
+            Este usuário não possui informações pessoais registradas.
           </ThemedText>
         </View>
-      </View>
-      <View style={styles.content}>
-        {/* Dados Pessoais Section */}
-        {hasPersonalInfo && (
-          <>
-            <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
-              Dados Pessoais
-            </ThemedText>
-
-            {employee.birth && (
-              <DetailField
-                label="Data de Nascimento"
-                value={`${formatDate(employee.birth)} (${getAge(employee.birth)} anos)`}
-                icon="cake"
-              />
-            )}
-
-            {employee.payrollNumber && (
-              <DetailField
-                label="Número da Folha"
-                value={employee.payrollNumber}
-                icon="hash"
-                monospace
-              />
-            )}
-
-            {hasAddress && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
-          </>
-        )}
-
-        {/* Address Section */}
-        {hasAddress ? (
-          <>
-            <ThemedText style={[styles.subsectionTitle, { color: colors.foreground }]}>
-              Endereço
-            </ThemedText>
-
-            <TouchableOpacity
-              onPress={handleOpenMaps}
-              style={[
-                styles.fullAddressBox,
-                { backgroundColor: colors.muted, borderColor: colors.border },
-              ]}
-              activeOpacity={0.7}
-            >
-              <View style={styles.addressBoxContent}>
-                <ThemedText style={[styles.addressBoxValue, { color: colors.foreground }]}>
-                  {fullAddress}
-                </ThemedText>
-                <View style={styles.openMapsRow}>
-                  <ThemedText style={[styles.openMapsText, { color: colors.primary }]}>
-                    Abrir no Google Maps
-                  </ThemedText>
-                  <IconExternalLink size={14} color={colors.primary} />
-                </View>
-              </View>
-            </TouchableOpacity>
-          </>
-        ) : hasPersonalInfo ? null : (
-          <View style={styles.emptyState}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
-              <IconUser size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Nenhuma informação pessoal cadastrada
-            </ThemedText>
-            <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              Este usuário não possui informações pessoais registradas.
-            </ThemedText>
-          </View>
-        )}
-      </View>
-    </Card>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
-  subsectionTitle: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.xs,
-  },
-  separator: {
-    height: 1,
-    marginVertical: spacing.xs,
-  },
   fullAddressBox: {
     borderRadius: borderRadius.md,
     borderWidth: 1,

@@ -2,12 +2,12 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
 import { formatDateTime } from "@/utils";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconUsers, IconCircleCheck, IconClock } from "@tabler/icons-react-native";
+import { IconCircleCheck, IconClock } from "@tabler/icons-react-native";
 
 interface RecipientsCardProps {
   notification: Notification;
@@ -23,30 +23,14 @@ export function RecipientsCard({ notification, maxHeight = 300 }: RecipientsCard
 
   if (totalRecipients === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconUsers size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>Destinatários</ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>Nenhum destinatário registrado</ThemedText>
-        </View>
-      </Card>
+      <DetailCard title="Destinatários" icon="users">
+        <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>Nenhum destinatário registrado</ThemedText>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconUsers size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Destinatários ({readCount}/{totalRecipients})
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title={`Destinatários (${readCount}/${totalRecipients})`} icon="users">
       <View style={styles.content}>
         <ScrollView style={[styles.scrollContainer, { maxHeight }]} showsVerticalScrollIndicator={false}>
           <View style={styles.recipientsList}>
@@ -80,31 +64,11 @@ export function RecipientsCard({ notification, maxHeight = 300 }: RecipientsCard
           </View>
         </ScrollView>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.md,
   },

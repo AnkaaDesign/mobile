@@ -88,7 +88,7 @@ export function TimeEntriesCard() {
     endDate: dateRange.endDate,
   });
 
-  const notRegistered = data?.data?.notRegistered;
+  const notRegistered = (data?.data as any)?.notRegistered;
   const entries = useMemo(() => parseSecullumResponse(data).reverse(), [data]);
 
   if (notRegistered) {

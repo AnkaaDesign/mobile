@@ -1,5 +1,5 @@
 import { View, TouchableOpacity, StyleSheet, ScrollView, Platform, ToastAndroid, Alert } from 'react-native'
-import { Card } from '@/components/ui/card'
+import { DetailCard, DetailField } from '@/components/ui/detail-page-layout'
 import { Text } from '@/components/ui/text'
 import { Icon } from '@/components/ui/icon'
 import { Badge } from '@/components/ui/badge'
@@ -15,8 +15,8 @@ import { PaintPreview } from '@/components/painting/preview/painting-preview'
 
 // Tag badge colors - inverted (dark in light mode, light in dark mode)
 const TAG_BADGE_COLORS = {
-  light: { bg: '#404040', text: '#f5f5f5' },  // neutral-700, neutral-100
-  dark: { bg: '#d4d4d4', text: '#262626' },   // neutral-300, neutral-800
+  light: { bg: '#404040', text: '#f5f5f5' },
+  dark: { bg: '#d4d4d4', text: '#262626' },
 };
 
 interface PaintSpecificationsCardProps {
@@ -39,7 +39,6 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
   }
 
   const rgbToLab = (r: number, g: number, b: number): { l: number; a: number; b: number } => {
-    // Convert RGB to XYZ
     let varR = r / 255
     let varG = g / 255
     let varB = b / 255
@@ -83,13 +82,13 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
       if (Platform.OS === 'android') {
         ToastAndroid.show(`${label} copiado!`, ToastAndroid.SHORT)
       } else {
-        Alert.alert('Copiado', `${label} copiado para área de transferência`)
+        Alert.alert('Copiado', `${label} copiado para area de transferencia`)
       }
     } catch (error) {
       if (Platform.OS === 'android') {
         ToastAndroid.show('Erro ao copiar', ToastAndroid.SHORT)
       } else {
-        Alert.alert('Erro', 'Erro ao copiar para área de transferência')
+        Alert.alert('Erro', 'Erro ao copiar para area de transferencia')
       }
     }
   }
@@ -98,16 +97,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
   const lab = rgb ? rgbToLab(rgb.r, rgb.g, rgb.b) : null
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Icon name="info" size={20} color={colors.mutedForeground} />
-          <Text style={styles.title}>Especificações</Text>
-        </View>
-      </View>
-
-      <View style={styles.content}>
+    <DetailCard title="Especificacoes" icon="info-circle">
       {/* Color Information */}
       <View className="gap-3 mb-4">
         <View className="flex-row items-center gap-2 mb-2">
@@ -117,7 +107,7 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
 
         <View className="bg-muted/30 rounded-lg p-3">
           <View className="flex-row items-start gap-4">
-            {/* Color Preview - uses stored image if available, falls back to hex */}
+            {/* Color Preview */}
             <View
               style={[
                 styles.colorPreview,
@@ -188,97 +178,52 @@ export function PaintSpecificationsCard({ paint }: PaintSpecificationsCardProps)
       </View>
 
       {/* Basic Information */}
-      <View className="gap-2">
-        <Text className="text-sm font-semibold text-muted-foreground mb-1">
-          Informações Básicas
-        </Text>
+      {paint.code && (
+        <DetailField label="Codigo" icon="hash" value={paint.code} monospace />
+      )}
 
-        {paint.code && (
-          <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-            <Text className="text-sm text-muted-foreground">Código</Text>
-            <Text className="text-sm font-medium">{paint.code}</Text>
-          </View>
-        )}
+      <DetailField label="Marca" icon="tag" value={paint.paintBrand?.name || 'N/A'} />
 
-        <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-          <Text className="text-sm text-muted-foreground">Marca</Text>
-          <Text className="text-sm font-medium">{paint.paintBrand?.name || 'N/A'}</Text>
-        </View>
+      <DetailField label="Acabamento" icon="brush" value={PAINT_FINISH_LABELS[paint.finish]} />
 
-        <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-          <Text className="text-sm text-muted-foreground">Acabamento</Text>
-          <Text className="text-sm font-medium">{PAINT_FINISH_LABELS[paint.finish]}</Text>
-        </View>
+      {paint.manufacturer && (
+        <DetailField label="Fabricante" icon="building" value={TRUCK_MANUFACTURER_LABELS[paint.manufacturer]} />
+      )}
 
-        {paint.manufacturer && (
-          <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-            <Text className="text-sm text-muted-foreground">Fabricante</Text>
-            <Text className="text-sm font-medium">{TRUCK_MANUFACTURER_LABELS[paint.manufacturer]}</Text>
-          </View>
-        )}
+      {paint.paintType && (
+        <DetailField label="Tipo de Tinta" icon="paint" value={paint.paintType.name} />
+      )}
 
-        {paint.paintType && (
-          <View className="flex-row items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
-            <Text className="text-sm text-muted-foreground">Tipo de Tinta</Text>
-            <Text className="text-sm font-medium">{paint.paintType.name}</Text>
-          </View>
-        )}
-
-        {paint.tags && paint.tags.length > 0 && (
-          <View className="bg-muted/30 rounded-lg px-3 py-2">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm text-muted-foreground mr-3">Tags</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ maxWidth: '70%' }}
-              >
-                <View className="flex-row gap-1">
-                  {paint.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      style={{ ...styles.tagBadge, backgroundColor: tagBadgeStyle.bg }}
-                    >
-                      <Text style={[styles.tagBadgeText, { color: tagBadgeStyle.text }]}>
-                        {tag}
-                      </Text>
-                    </Badge>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          </View>
-        )}
-      </View>
-      </View>
-    </Card>
+      {paint.tags && paint.tags.length > 0 && (
+        <DetailField
+          label="Tags"
+          icon="tags"
+          value={
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              <View className="flex-row gap-1">
+                {paint.tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    style={{ ...styles.tagBadge, backgroundColor: tagBadgeStyle.bg }}
+                  >
+                    <Text style={[styles.tagBadgeText, { color: tagBadgeStyle.text }]}>
+                      {tag}
+                    </Text>
+                  </Badge>
+                ))}
+              </View>
+            </ScrollView>
+          }
+        />
+      )}
+    </DetailCard>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   colorPreview: {
     width: 96,
     height: 96,

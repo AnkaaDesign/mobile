@@ -1,13 +1,11 @@
-import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { DetailField } from "@/components/ui/detail-page-layout";
-import { IconInfoCircle } from "@tabler/icons-react-native";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import type { Item } from "../../../../types";
 import { MEASURE_UNIT_LABELS, MEASURE_TYPE_LABELS, MEASURE_TYPE } from "@/constants";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { fontSize, fontWeight } from "@/constants/design-system";
 
 interface SpecificationsCardProps {
   item: Item;
@@ -47,12 +45,10 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconInfoCircle size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Especificações Técnicas</ThemedText>
-        </View>
+    <DetailCard
+      title="Especificações Técnicas"
+      icon="info-circle"
+      badge={
         <Badge
           variant={item.isActive ? "default" : "destructive"}
         >
@@ -65,110 +61,86 @@ export function SpecificationsCard({ item }: SpecificationsCardProps) {
             {item.isActive ? "Ativo" : "Inativo"}
           </ThemedText>
         </Badge>
-      </View>
-      <View style={styles.content}>
-        {item.uniCode && (
-          <DetailField
-            label="Código Universal"
-            value={item.uniCode}
-            icon="hash"
-          />
-        )}
+      }
+    >
+      {item.uniCode && (
+        <DetailField
+          label="Código Universal"
+          value={item.uniCode}
+          icon="hash"
+        />
+      )}
 
-        {item.brand && (
-          <DetailField
-            label="Marca"
-            value={item.brand.name}
-            icon="tag"
-          />
-        )}
+      {item.brand && (
+        <DetailField
+          label="Marca"
+          value={item.brand.name}
+          icon="tag"
+        />
+      )}
 
-        {item.category && (
-          <DetailField
-            label="Categoria"
-            value={item.category.name}
-            icon="category"
-          />
-        )}
+      {item.category && (
+        <DetailField
+          label="Categoria"
+          value={item.category.name}
+          icon="category"
+        />
+      )}
 
-        {item.supplier && (
-          <DetailField
-            label="Fornecedor"
-            value={item.supplier.fantasyName}
-            icon="building"
-          />
-        )}
+      {item.supplier && (
+        <DetailField
+          label="Fornecedor"
+          value={item.supplier.fantasyName}
+          icon="building"
+        />
+      )}
 
-        {item.ppeCA && (
-          <DetailField
-            label="Certificado de Aprovação (CA)"
-            value={item.ppeCA}
-            icon="certificate"
-          />
-        )}
+      {item.ppeCA && (
+        <DetailField
+          label="Certificado de Aprovação (CA)"
+          value={item.ppeCA}
+          icon="certificate"
+        />
+      )}
 
-        {item.barcodes && item.barcodes.length > 0 && item.barcodes.map((barcode, index) => (
-          <DetailField
-            key={index}
-            label={`Código de Barras${item.barcodes!.length > 1 ? ` ${index + 1}` : ""}`}
-            value={barcode}
-            icon="barcode"
-          />
-        ))}
+      {item.barcodes && item.barcodes.length > 0 && item.barcodes.map((barcode, index) => (
+        <DetailField
+          key={index}
+          label={`Código de Barras${item.barcodes!.length > 1 ? ` ${index + 1}` : ""}`}
+          value={barcode}
+          icon="barcode"
+        />
+      ))}
 
-        {item.measures && item.measures.length > 0 && item.measures.map((measure, index) => (
-          <DetailField
-            key={`measure-${index}`}
-            label={MEASURE_TYPE_LABELS[measure.measureType]}
-            value={`${measure.value?.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} ${measure.unit ? MEASURE_UNIT_LABELS[measure.unit] : ""}`}
-            icon={getMeasureIconName(measure.measureType)}
-          />
-        ))}
+      {item.measures && item.measures.length > 0 && item.measures.map((measure, index) => (
+        <DetailField
+          key={`measure-${index}`}
+          label={MEASURE_TYPE_LABELS[measure.measureType]}
+          value={`${measure.value?.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} ${measure.unit ? MEASURE_UNIT_LABELS[measure.unit] : ""}`}
+          icon={getMeasureIconName(measure.measureType)}
+        />
+      ))}
 
-        {item.boxQuantity !== null && (
-          <DetailField
-            label="Unidades por Caixa"
-            value={String(item.boxQuantity)}
-            icon="box"
-          />
-        )}
+      {item.boxQuantity !== null && (
+        <DetailField
+          label="Unidades por Caixa"
+          value={String(item.boxQuantity)}
+          icon="box"
+        />
+      )}
 
-        {item.estimatedLeadTime !== null && (
-          <DetailField
-            label="Prazo de Entrega Estimado"
-            value={`${item.estimatedLeadTime} dias`}
-            icon="truck"
-          />
-        )}
-      </View>
-    </Card>
+      {item.estimatedLeadTime !== null && (
+        <DetailField
+          label="Prazo de Entrega Estimado"
+          value={`${item.estimatedLeadTime} dias`}
+          icon="truck"
+        />
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,

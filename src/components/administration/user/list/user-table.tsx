@@ -131,14 +131,14 @@ const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "managedSector.name",
-    header: "Setor Gerenciado",
+    key: "ledSector.name",
+    header: "Setor Liderado",
     align: "left",
     sortable: true,
     width: 0,
     accessor: (user: User) => (
       <ThemedText style={styles.cellText} numberOfLines={1}>
-        {user.managedSector?.name || "-"}
+        {user.ledSector?.name || "-"}
       </ThemedText>
     ),
   },
@@ -240,7 +240,7 @@ export const UserTable = React.memo<UserTableProps>(
         phone: 1.3,
         "position.hierarchy": 1.5,
         "sector.name": 1.3,
-        "managedSector.name": 1.5,
+        "ledSector.name": 1.5,
         status: 1.8,
         verified: 1.1,
         lastLoginAt: 1.6,

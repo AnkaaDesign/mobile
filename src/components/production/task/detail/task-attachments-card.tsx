@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
@@ -18,7 +18,7 @@ const formatBytes = (bytes: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i as keyof typeof sizes];
 };
 import type { File } from '../../../../types';
-import { IconPaperclip, IconDownload } from "@tabler/icons-react-native";
+import { IconDownload } from "@tabler/icons-react-native";
 
 interface FileSection {
   label: string;
@@ -151,15 +151,11 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
   );
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconPaperclip size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Anexos</ThemedText>
-        <Badge variant="secondary" style={styles.countBadge}>
-          {totalFiles}
-        </Badge>
-      </View>
-
+    <DetailCard
+      title="Anexos"
+      icon="paperclip"
+      badge={<Badge variant="secondary">{totalFiles}</Badge>}
+    >
       <View style={styles.content}>
         {sections.map((section, sectionIndex) => (
           <View key={section.label} style={sectionIndex > 0 ? styles.sectionSpacing : undefined}>
@@ -173,31 +169,11 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
           </View>
         ))}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   content: {
     gap: spacing.xs,
   },

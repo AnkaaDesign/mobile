@@ -1,38 +1,49 @@
 // Same as web types
-export type TASK_PRICING_STATUS = 'DRAFT' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
-export type DISCOUNT_TYPE = 'NONE' | 'PERCENTAGE' | 'FIXED_VALUE';
-export type PAYMENT_CONDITION =
-  | 'CASH'           // Single payment
-  | 'INSTALLMENTS_2' // Down payment + 1 installment (20 days)
-  | 'INSTALLMENTS_3' // Down payment + 2 installments (20/40 days)
-  | 'INSTALLMENTS_4' // Down payment + 3 installments (20/40/60 days)
-  | 'INSTALLMENTS_5' // Down payment + 4 installments (20/40/60/80 days)
-  | 'INSTALLMENTS_6' // Down payment + 5 installments (20/40/60/80/100 days)
-  | 'INSTALLMENTS_7' // Down payment + 6 installments (20/40/60/80/100/120 days)
-  | 'CUSTOM';        // Custom payment terms
+import type { File } from './file';
+import type { Installment } from './invoice';
 
-export type TaskPricingItem = {
+export type TASK_PRICING_STATUS = 'PENDING' | 'BUDGET_APPROVED' | 'VERIFIED' | 'INTERNAL_APPROVED' | 'UPCOMING' | 'PARTIAL' | 'SETTLED';
+export type DISCOUNT_TYPE = 'NONE' | 'PERCENTAGE' | 'FIXED_VALUE';
+
+export type TaskPricingService = {
   id?: string;
   description: string;
   observation?: string | null;
   amount: number;
+  shouldSync?: boolean;
   pricingId?: string;
+  invoiceToCustomerId?: string | null;
+  invoiceToCustomer?: { id: string; fantasyName: string; cnpj?: string | null };
+};
+
+export type TaskPricingCustomerConfig = {
+  id?: string;
+  pricingId?: string;
+  customerId: string;
+  subtotal: number;
+  discountType: DISCOUNT_TYPE;
+  discountValue: number | null;
+  total: number;
+  responsibleId?: string | null;
+  discountReference?: string | null;
+  paymentCondition?: string | null;
+  downPaymentDate?: Date | null;
+  customPaymentText: string | null;
+  installments?: Installment[];
+  customer?: { id: string; fantasyName: string; cnpj?: string | null };
+  responsible?: { id: string; name: string; role: string };
+  customerSignatureId?: string | null;
+  customerSignature?: File;
 };
 
 export type TaskPricing = {
   id?: string;
   budgetNumber: number; // Auto-generated sequential number for display
   subtotal: number;
-  discountType: DISCOUNT_TYPE;
-  discountValue: number | null;
   total: number;
   expiresAt: Date;
   status: TASK_PRICING_STATUS;
-
-  // Payment Terms (simplified)
-  paymentCondition: PAYMENT_CONDITION | null;
-  downPaymentDate: Date | null;
-  customPaymentText: string | null;
+  statusOrder: number;
 
   // Guarantee Terms
   guaranteeYears: number | null;
@@ -45,24 +56,12 @@ export type TaskPricing = {
   layoutFileId: string | null;
   layoutFile?: any; // File type
 
-  // Customer Signature
-  customerSignatureId: string | null;
-  customerSignature?: any; // File type
-
-  // NEW FIELDS: Multi-customer invoicing support
-  invoicesToCustomerIds: string[] | null; // Array of customer IDs to invoice
-  invoicesToCustomers?: any[]; // Customer entities for invoice recipients
-
-  // NEW FIELDS: Advanced pricing features
+  // Advanced pricing features
   simultaneousTasks: number | null; // Number of tasks being quoted together (for bulk discounts)
-  discountReference: string | null; // Reference text for discount justification (e.g., "Desconto por volume de 3 implementos")
-
-  // Budget responsible
-  responsibleId: string | null;
-  responsible?: any; // Responsible type
 
   task?: any; // One-to-one relationship with task
-  items?: TaskPricingItem[];
+  services?: TaskPricingService[];
+  customerConfigs?: TaskPricingCustomerConfig[];
   createdAt?: Date;
   updatedAt?: Date;
 };

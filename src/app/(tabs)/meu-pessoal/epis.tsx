@@ -46,7 +46,7 @@ export default function TeamEPIsScreen() {
 
   // Check if user is a team leader
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
-  const managedSectorId = currentUser?.managedSector?.id;
+  const ledSectorId = currentUser?.ledSector?.id;
 
   // Filter state
   const [filters, setFilters] = useState<{
@@ -109,7 +109,7 @@ export default function TeamEPIsScreen() {
   }, [filters]);
 
   const queryParams = useMemo(() => {
-    if (!userIsTeamLeader || !managedSectorId) return null;
+    if (!userIsTeamLeader || !ledSectorId) return null;
 
     return {
       orderBy: buildOrderBy(
@@ -137,7 +137,7 @@ export default function TeamEPIsScreen() {
         reviewedByUser: true,
       },
     };
-  }, [userIsTeamLeader, managedSectorId, searchText, buildWhereClause, buildOrderBy]);
+  }, [userIsTeamLeader, ledSectorId, searchText, buildWhereClause, buildOrderBy]);
 
   const {
     deliveries,

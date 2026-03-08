@@ -1,10 +1,10 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailSection } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconFileText, IconNotes } from "@tabler/icons-react-native";
+import { IconNotes } from "@tabler/icons-react-native";
 import type { Warning } from '../../../../types';
 import { extendedColors } from "@/lib/theme/extended-colors";
 
@@ -21,37 +21,22 @@ export function WarningDescriptionCard({ warning }: WarningDescriptionCardProps)
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFileText size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Descrição e Observações</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Descrição e Observações" icon="file-text">
       <View style={styles.content}>
         {/* Description Section */}
         {warning.description && (
-          <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-              Descrição Detalhada
-            </ThemedText>
+          <DetailSection title="Descrição Detalhada">
             <View style={StyleSheet.flatten([styles.descriptionBox, { backgroundColor: colors.muted + "30" }])}>
               <ThemedText style={StyleSheet.flatten([styles.text, { color: colors.foreground }])}>
                 {warning.description}
               </ThemedText>
             </View>
-          </View>
+          </DetailSection>
         )}
 
         {/* HR Notes Section */}
         {warning.hrNotes && (
-          <View style={StyleSheet.flatten([styles.section, warning.description && styles.hrNotesSection, warning.description && { borderTopColor: colors.border + "50" }])}>
-            <View style={styles.hrNotesHeader}>
-              <IconNotes size={16} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-                Notas do RH
-              </ThemedText>
-            </View>
+          <DetailSection title="Notas do RH">
             <View
               style={StyleSheet.flatten([
                 styles.hrNotesBox,
@@ -65,52 +50,16 @@ export function WarningDescriptionCard({ warning }: WarningDescriptionCardProps)
                 {warning.hrNotes}
               </ThemedText>
             </View>
-          </View>
+          </DetailSection>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
-    gap: spacing.sm,
-  },
-  section: {
     gap: spacing.lg,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-  hrNotesSection: {
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-  },
-  hrNotesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
   },
   descriptionBox: {
     padding: spacing.md,

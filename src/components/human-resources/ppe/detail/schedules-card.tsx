@@ -1,19 +1,19 @@
 
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconCalendarEvent, IconUser, IconPlus, IconCalendar, IconClock, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
+import { IconCalendarEvent, IconUser, IconPlus, IconClock, IconCalendar, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import type { Item, PpeDeliverySchedule } from '../../../../types';
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface SchedulesCardProps {
   item: Item;
@@ -26,164 +26,125 @@ export function SchedulesCard({ schedules = [] }: SchedulesCardProps) {
   const activeSchedules = schedules.filter((s) => s.isActive);
 
   const handleViewAllSchedules = () => {
-    // Navigate to schedules list
     router.push(routeToMobilePath(routes.humanResources.ppe.schedules.root) as any);
   };
 
   const handleAddSchedule = () => {
-    // Navigate to create schedule page
     router.push(routeToMobilePath(routes.humanResources.ppe.schedules.create) as any);
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconCalendarEvent size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Cronogramas de Entrega
-          </ThemedText>
-        </View>
+    <DetailCard
+      title="Cronogramas de Entrega"
+      icon="calendar-event"
+      badge={
         <Button size="sm" onPress={handleAddSchedule}>
           <IconPlus size={16} color={colors.primaryForeground} />
           <ThemedText style={{ color: colors.primaryForeground, fontSize: fontSize.sm, marginLeft: spacing.xs }}>
             Novo
           </ThemedText>
         </Button>
-      </View>
-      <View style={styles.content}>
-        {activeSchedules.length === 0 ? (
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
-            <IconCalendarEvent size={40} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Nenhum cronograma ativo
-            </ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.emptySubtext, { color: colors.mutedForeground }])}>
-              Configure cronogramas automáticos de entrega
-            </ThemedText>
-          </View>
-        ) : (
-          <>
-            <View style={styles.schedulesList}>
-              {activeSchedules.map((schedule) => (
-                <View
-                  key={schedule.id}
-                  style={StyleSheet.flatten([styles.scheduleItem, { backgroundColor: colors.muted + "30", borderColor: colors.border }])}
-                >
-                  <View style={styles.scheduleHeader}>
-                    <View style={styles.scheduleInfo}>
-                      {((schedule as any).user) && (
-                        <View style={styles.userRow}>
-                          <IconUser size={16} color={colors.mutedForeground} />
-                          <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>
-                            {((schedule as any).user).name}
-                          </ThemedText>
-                        </View>
-                      )}
-
-                      {schedule.assignmentType && (
-                        <Badge variant="secondary" style={styles.assignmentBadge}>
-                          <ThemedText style={{ color: colors.secondaryForeground, fontSize: fontSize.xs }}>
-                            {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS]}
-                          </ThemedText>
-                        </Badge>
-                      )}
-                    </View>
-
-                    <View style={styles.statusIcon}>
-                      {schedule.isActive ? (
-                        <IconCircleCheck size={20} color={extendedColors.green[600]} />
-                      ) : (
-                        <IconCircleX size={20} color={extendedColors.red[600]} />
-                      )}
-                    </View>
-                  </View>
-
-                  <View style={styles.scheduleDetails}>
-                    {schedule.frequency && (
-                      <View style={styles.detailRow}>
-                        <IconClock size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
-                          Frequência: {SCHEDULE_FREQUENCY_LABELS[schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
+      }
+    >
+      {activeSchedules.length === 0 ? (
+        <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
+          <IconCalendarEvent size={40} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+            Nenhum cronograma ativo
+          </ThemedText>
+          <ThemedText style={StyleSheet.flatten([styles.emptySubtext, { color: colors.mutedForeground }])}>
+            Configure cronogramas automáticos de entrega
+          </ThemedText>
+        </View>
+      ) : (
+        <>
+          <View style={styles.schedulesList}>
+            {activeSchedules.map((schedule) => (
+              <View
+                key={schedule.id}
+                style={StyleSheet.flatten([styles.scheduleItem, { backgroundColor: colors.muted + "30", borderColor: colors.border }])}
+              >
+                <View style={styles.scheduleHeader}>
+                  <View style={styles.scheduleInfo}>
+                    {((schedule as any).user) && (
+                      <View style={styles.userRow}>
+                        <IconUser size={16} color={colors.mutedForeground} />
+                        <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.foreground }])}>
+                          {((schedule as any).user).name}
                         </ThemedText>
                       </View>
                     )}
 
-                    {schedule.specificDate && (
-                      <View style={styles.detailRow}>
-                        <IconCalendar size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
-                          Data específica: {formatDate(schedule.specificDate)}
+                    {schedule.assignmentType && (
+                      <Badge variant="secondary" style={styles.assignmentBadge}>
+                        <ThemedText style={{ color: colors.secondaryForeground, fontSize: fontSize.xs }}>
+                          {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType as keyof typeof ASSIGNMENT_TYPE_LABELS]}
                         </ThemedText>
-                      </View>
-                    )}
-
-                    {((schedule as any).lastDeliveryDate) && (
-                      <View style={styles.detailRow}>
-                        <IconCalendar size={14} color={colors.mutedForeground} />
-                        <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
-                          Última entrega: {formatDate(((schedule as any).lastDeliveryDate))}
-                        </ThemedText>
-                      </View>
+                      </Badge>
                     )}
                   </View>
 
-                  {((schedule as any).notes) && (
-                    <ThemedText style={StyleSheet.flatten([styles.notes, { color: colors.mutedForeground }])}>
-                      {((schedule as any).notes)}
-                    </ThemedText>
+                  <View style={styles.statusIcon}>
+                    {schedule.isActive ? (
+                      <IconCircleCheck size={20} color={extendedColors.green[600]} />
+                    ) : (
+                      <IconCircleX size={20} color={extendedColors.red[600]} />
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.scheduleDetails}>
+                  {schedule.frequency && (
+                    <View style={styles.detailRow}>
+                      <IconClock size={14} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
+                        Frequência: {SCHEDULE_FREQUENCY_LABELS[schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS]}
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {schedule.specificDate && (
+                    <View style={styles.detailRow}>
+                      <IconCalendar size={14} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
+                        Data específica: {formatDate(schedule.specificDate)}
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {((schedule as any).lastDeliveryDate) && (
+                    <View style={styles.detailRow}>
+                      <IconCalendar size={14} color={colors.mutedForeground} />
+                      <ThemedText style={StyleSheet.flatten([styles.detailText, { color: colors.mutedForeground }])}>
+                        Última entrega: {formatDate(((schedule as any).lastDeliveryDate))}
+                      </ThemedText>
+                    </View>
                   )}
                 </View>
-              ))}
-            </View>
 
-            {schedules.length > activeSchedules.length && (
-              <Button variant="outline" onPress={handleViewAllSchedules}>
-                <ThemedText style={{ color: colors.foreground }}>
-                  Ver todos ({schedules.length} cronogramas)
-                </ThemedText>
-              </Button>
-            )}
-          </>
-        )}
-      </View>
-    </Card>
+                {((schedule as any).notes) && (
+                  <ThemedText style={StyleSheet.flatten([styles.notes, { color: colors.mutedForeground }])}>
+                    {((schedule as any).notes)}
+                  </ThemedText>
+                )}
+              </View>
+            ))}
+          </View>
+
+          {schedules.length > activeSchedules.length && (
+            <Button variant="outline" onPress={handleViewAllSchedules}>
+              <ThemedText style={{ color: colors.foreground }}>
+                Ver todos ({schedules.length} cronogramas)
+              </ThemedText>
+            </Button>
+          )}
+        </>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",

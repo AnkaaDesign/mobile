@@ -137,15 +137,15 @@ export function UserFilterTags({ filters, searchText, onFilterChange, onSearchCh
       });
     }
 
-    // Managed Sector filters
-    if (filters.where?.managedSectorId?.in) {
-      filters.where.managedSectorId.in.forEach((managedSectorId: string) => {
+    // Led Sector filters
+    if (filters.where?.ledSectorId?.in) {
+      filters.where.ledSectorId.in.forEach((ledSectorId: string) => {
         tags.push(
-          <Badge key={`managedSector-${managedSectorId}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
+          <Badge key={`ledSector-${ledSectorId}`} variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
             <View style={styles.tagContent}>
               <IconShieldCheck size={12} color={colors.mutedForeground} />
-              <ThemedText style={styles.tagText}>Gerencia: {getOptionLabel(sectors, managedSectorId)}</ThemedText>
-              <TouchableOpacity onPress={() => removeFilter(["where", "managedSectorId"], managedSectorId)} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+              <ThemedText style={styles.tagText}>Lidera: {getOptionLabel(sectors, ledSectorId)}</ThemedText>
+              <TouchableOpacity onPress={() => removeFilter(["where", "ledSectorId"], ledSectorId)} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
                 <IconX size={12} color={colors.mutedForeground} />
               </TouchableOpacity>
             </View>
@@ -169,13 +169,13 @@ export function UserFilterTags({ filters, searchText, onFilterChange, onSearchCh
       );
     }
 
-    if (filters.where?.hasManagedSector !== undefined) {
+    if (filters.where?.hasLedSector !== undefined) {
       tags.push(
-        <Badge key="hasManagedSector" variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
+        <Badge key="hasLedSector" variant="secondary" style={{ ...styles.filterTag, backgroundColor: colors.muted }}>
           <View style={styles.tagContent}>
             <IconBuilding size={12} color={colors.mutedForeground} />
-            <ThemedText style={styles.tagText}>{filters.where.hasManagedSector ? "Gerencia Setor" : "Não Gerencia"}</ThemedText>
-            <TouchableOpacity onPress={() => removeFilter(["where", "hasManagedSector"])} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+            <ThemedText style={styles.tagText}>{filters.where.hasLedSector ? "Lidera Setor" : "Não Lidera"}</ThemedText>
+            <TouchableOpacity onPress={() => removeFilter(["where", "hasLedSector"])} style={styles.removeButton} hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
               <IconX size={12} color={colors.mutedForeground} />
             </TouchableOpacity>
           </View>

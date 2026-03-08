@@ -67,7 +67,7 @@ export interface User extends BaseEntity {
   preference?: Preferences;
   position?: Position;
   sector?: Sector;
-  managedSector?: Sector;
+  ledSector?: Sector;
   activities?: Activity[];
   borrows?: Borrow[];
   notifications?: Notification[];
@@ -132,7 +132,7 @@ export interface UserIncludes {
     | {
         include?: SectorIncludes;
       };
-  managedSector?:
+  ledSector?:
     | boolean
     | {
         include?: SectorIncludes;
@@ -252,7 +252,7 @@ export interface UserOrderBy {
   updatedAt?: ORDER_BY_DIRECTION;
   position?: PositionOrderBy;
   sector?: SectorOrderBy;
-  managedSector?: SectorOrderBy;
+  ledSector?: SectorOrderBy;
 }
 
 // =====================

@@ -1,12 +1,12 @@
 import { View, StyleSheet } from "react-native";
 import type { Warning } from '../../../../types';
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconPaperclip, IconFile } from "@tabler/icons-react-native";
+import { IconFile } from "@tabler/icons-react-native";
 import { FileItem, useFileViewer } from "@/components/file";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface AttachmentsCardProps {
   warning: Warning;
@@ -18,104 +18,52 @@ export function AttachmentsCard({ warning }: AttachmentsCardProps) {
 
   if (!warning.attachments || warning.attachments.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconPaperclip size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Anexos</ThemedText>
+      <DetailCard title="Anexos" icon="paperclip">
+        <View style={styles.emptyContainer}>
+          <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted }])}>
+            <IconFile size={32} color={colors.mutedForeground} />
           </View>
+          <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+            Nenhum anexo encontrado
+          </ThemedText>
         </View>
-        <View style={styles.content}>
-          <View style={styles.emptyContainer}>
-            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted }])}>
-              <IconFile size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Nenhum anexo encontrado
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerContent}>
-          <View style={styles.titleRow}>
-            <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-              <IconPaperclip size={18} color={colors.primary} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>Anexos</ThemedText>
-          </View>
-          <Badge variant="secondary">
-            <ThemedText style={styles.badgeText}>
-              {warning.attachments.length} arquivo{warning.attachments.length !== 1 ? "s" : ""}
-            </ThemedText>
-          </Badge>
-        </View>
+    <DetailCard
+      title="Anexos"
+      icon="paperclip"
+      badge={
+        <Badge variant="secondary">
+          <ThemedText style={styles.badgeText}>
+            {warning.attachments.length} arquivo{warning.attachments.length !== 1 ? "s" : ""}
+          </ThemedText>
+        </Badge>
+      }
+    >
+      <View style={styles.filesGrid}>
+        {warning.attachments.map((file: any, index: number) => (
+          <FileItem
+            key={file.id}
+            file={file}
+            viewMode="list"
+            baseUrl={process.env.EXPO_PUBLIC_API_URL}
+            onPress={() => {
+              fileViewer.actions.viewFiles(warning.attachments || [], index);
+            }}
+          />
+        ))}
       </View>
-      <View style={styles.content}>
-        <View style={styles.filesGrid}>
-          {warning.attachments.map((file: any, index: number) => (
-            <FileItem
-              key={file.id}
-              file={file}
-              viewMode="list"
-              baseUrl={process.env.EXPO_PUBLIC_API_URL}
-              onPress={() => {
-                fileViewer.actions.viewFiles(warning.attachments || [], index);
-              }}
-            />
-          ))}
-        </View>
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    flex: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   badgeText: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
-  },
-  content: {
-    gap: spacing.md,
   },
   emptyContainer: {
     alignItems: "center",

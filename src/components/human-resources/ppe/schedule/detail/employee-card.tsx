@@ -1,14 +1,13 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconUsers, IconUser, IconUserCheck, IconUserX } from "@tabler/icons-react-native";
+import { IconUsers, IconUserCheck, IconUserX, IconUser } from "@tabler/icons-react-native";
 import { ASSIGNMENT_TYPE, ASSIGNMENT_TYPE_LABELS } from "@/constants";
 import type { PpeDeliverySchedule } from '../../../../../types';
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface EmployeeCardProps {
   schedule: PpeDeliverySchedule;
@@ -75,146 +74,111 @@ export function EmployeeCard({ schedule }: EmployeeCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconUsers size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Atribuição de Funcionários
+    <DetailCard title="Atribuição de Funcionários" icon="users">
+      {/* Assignment Type Badge */}
+      <View
+        style={StyleSheet.flatten([
+          styles.assignmentBadge,
+          { backgroundColor: assignmentColors.bg },
+        ])}
+      >
+        <View style={styles.badgeIcon}>{getAssignmentIcon()}</View>
+        <View style={styles.badgeContent}>
+          <ThemedText
+            style={StyleSheet.flatten([
+              styles.badgeLabel,
+              { color: assignmentColors.text },
+            ])}
+          >
+            Tipo de Atribuição
+          </ThemedText>
+          <ThemedText
+            style={StyleSheet.flatten([
+              styles.badgeValue,
+              { color: assignmentColors.text },
+            ])}
+          >
+            {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType]}
           </ThemedText>
         </View>
       </View>
-      <View style={styles.content}>
-        <View style={styles.content}>
-          {/* Assignment Type Badge */}
-          <View
-            style={StyleSheet.flatten([
-              styles.assignmentBadge,
-              { backgroundColor: assignmentColors.bg },
-            ])}
-          >
-            <View style={styles.badgeIcon}>{getAssignmentIcon()}</View>
-            <View style={styles.badgeContent}>
+
+      {/* Description */}
+      <View
+        style={StyleSheet.flatten([
+          styles.descriptionBox,
+          { backgroundColor: colors.muted + "30" },
+        ])}
+      >
+        <ThemedText
+          style={StyleSheet.flatten([styles.description, { color: colors.mutedForeground }])}
+        >
+          {getAssignmentDescription()}
+        </ThemedText>
+      </View>
+
+      {/* Excluded Users List */}
+      {schedule.assignmentType === ASSIGNMENT_TYPE.ALL_EXCEPT &&
+        schedule.excludedUserIds &&
+        schedule.excludedUserIds.length > 0 && (
+          <View style={styles.usersList}>
+            <ThemedText
+              style={StyleSheet.flatten([styles.usersLabel, { color: colors.foreground }])}
+            >
+              Funcionários Excluídos
+            </ThemedText>
+            <View
+              style={StyleSheet.flatten([
+                styles.usersCount,
+                { backgroundColor: colors.muted + "50" },
+              ])}
+            >
+              <IconUserX size={16} color={colors.mutedForeground} />
               <ThemedText
                 style={StyleSheet.flatten([
-                  styles.badgeLabel,
-                  { color: assignmentColors.text },
+                  styles.usersCountText,
+                  { color: colors.foreground },
                 ])}
               >
-                Tipo de Atribuição
-              </ThemedText>
-              <ThemedText
-                style={StyleSheet.flatten([
-                  styles.badgeValue,
-                  { color: assignmentColors.text },
-                ])}
-              >
-                {ASSIGNMENT_TYPE_LABELS[schedule.assignmentType]}
+                {schedule.excludedUserIds.length} funcionário(s)
               </ThemedText>
             </View>
           </View>
+        )}
 
-          {/* Description */}
-          <View
-            style={StyleSheet.flatten([
-              styles.descriptionBox,
-              { backgroundColor: colors.muted + "30" },
-            ])}
-          >
+      {/* Included Users List */}
+      {schedule.assignmentType === ASSIGNMENT_TYPE.SPECIFIC &&
+        schedule.includedUserIds &&
+        schedule.includedUserIds.length > 0 && (
+          <View style={styles.usersList}>
             <ThemedText
-              style={StyleSheet.flatten([styles.description, { color: colors.mutedForeground }])}
+              style={StyleSheet.flatten([styles.usersLabel, { color: colors.foreground }])}
             >
-              {getAssignmentDescription()}
+              Funcionários Incluídos
             </ThemedText>
+            <View
+              style={StyleSheet.flatten([
+                styles.usersCount,
+                { backgroundColor: colors.muted + "50" },
+              ])}
+            >
+              <IconUserCheck size={16} color={colors.mutedForeground} />
+              <ThemedText
+                style={StyleSheet.flatten([
+                  styles.usersCountText,
+                  { color: colors.foreground },
+                ])}
+              >
+                {schedule.includedUserIds.length} funcionário(s)
+              </ThemedText>
+            </View>
           </View>
-
-          {/* Excluded Users List */}
-          {schedule.assignmentType === ASSIGNMENT_TYPE.ALL_EXCEPT &&
-            schedule.excludedUserIds &&
-            schedule.excludedUserIds.length > 0 && (
-              <View style={styles.usersList}>
-                <ThemedText
-                  style={StyleSheet.flatten([styles.usersLabel, { color: colors.foreground }])}
-                >
-                  Funcionários Excluídos
-                </ThemedText>
-                <View
-                  style={StyleSheet.flatten([
-                    styles.usersCount,
-                    { backgroundColor: colors.muted + "50" },
-                  ])}
-                >
-                  <IconUserX size={16} color={colors.mutedForeground} />
-                  <ThemedText
-                    style={StyleSheet.flatten([
-                      styles.usersCountText,
-                      { color: colors.foreground },
-                    ])}
-                  >
-                    {schedule.excludedUserIds.length} funcionário(s)
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-
-          {/* Included Users List */}
-          {schedule.assignmentType === ASSIGNMENT_TYPE.SPECIFIC &&
-            schedule.includedUserIds &&
-            schedule.includedUserIds.length > 0 && (
-              <View style={styles.usersList}>
-                <ThemedText
-                  style={StyleSheet.flatten([styles.usersLabel, { color: colors.foreground }])}
-                >
-                  Funcionários Incluídos
-                </ThemedText>
-                <View
-                  style={StyleSheet.flatten([
-                    styles.usersCount,
-                    { backgroundColor: colors.muted + "50" },
-                  ])}
-                >
-                  <IconUserCheck size={16} color={colors.mutedForeground} />
-                  <ThemedText
-                    style={StyleSheet.flatten([
-                      styles.usersCountText,
-                      { color: colors.foreground },
-                    ])}
-                  >
-                    {schedule.includedUserIds.length} funcionário(s)
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-        </View>
-      </View>
-    </Card>
+        )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   assignmentBadge: {
     flexDirection: "row",
     padding: spacing.md,

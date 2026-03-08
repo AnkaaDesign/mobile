@@ -1,9 +1,7 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-
-import { IconClipboardList } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
 import { routes } from "@/constants";
@@ -25,12 +23,10 @@ export function SectorTasksCard({ sector }: SectorTasksCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <IconClipboardList size={20} color={colors.primary} />
-          <ThemedText style={styles.sectionTitle}>Tarefas do Setor</ThemedText>
-        </View>
+    <DetailCard
+      title="Tarefas do Setor"
+      icon="clipboard-list"
+      badge={
         <TouchableOpacity
           onPress={handleViewAllTasks}
           style={[styles.viewAllButton, { backgroundColor: colors.muted }]}
@@ -40,7 +36,8 @@ export function SectorTasksCard({ sector }: SectorTasksCardProps) {
             Ver todas as tarefas
           </ThemedText>
         </TouchableOpacity>
-      </View>
+      }
+    >
 
       <View style={styles.content}>
         <View style={[styles.statsContainer, { backgroundColor: colors.muted + "20" }]}>
@@ -71,32 +68,11 @@ export function SectorTasksCard({ sector }: SectorTasksCardProps) {
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
   viewAllButton: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,

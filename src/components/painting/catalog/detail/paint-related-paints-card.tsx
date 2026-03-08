@@ -1,19 +1,18 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconLink } from "@tabler/icons-react-native";
 import { PAINT_FINISH_LABELS } from "@/constants";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
 // Badge colors - unified neutral, more subtle
 const BADGE_COLORS = {
-  light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },  // neutral-200/70, neutral-600
-  dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },      // neutral-700/50, neutral-300
+  light: { bg: 'rgba(229, 229, 229, 0.7)', text: '#525252' },
+  dark: { bg: 'rgba(64, 64, 64, 0.5)', text: '#d4d4d4' },
 };
 
 interface PaintRelatedPaintsCardProps {
@@ -42,19 +41,11 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconLink size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Tintas Relacionadas</ThemedText>
-          <Badge variant="secondary" size="sm" style={{ marginLeft: spacing.xs }}>
-            {allRelated.length}
-          </Badge>
-        </View>
-      </View>
-
-      <View style={styles.content}>
-
+    <DetailCard
+      title="Tintas Relacionadas"
+      icon="link"
+      badge={<Badge variant="secondary" size="sm">{allRelated.length}</Badge>}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -73,7 +64,7 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
             onPress={() => handlePaintPress(relatedPaint.id)}
             activeOpacity={0.7}
           >
-            {/* Color Preview - uses stored image if available, falls back to hex */}
+            {/* Color Preview */}
             <PaintPreview
               paint={relatedPaint}
               baseColor={relatedPaint.hex}
@@ -85,7 +76,6 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
 
             {/* Paint Info */}
             <View style={styles.paintInfo}>
-              {/* Paint Name */}
               <ThemedText
                 style={[styles.paintName, { color: colors.foreground }]}
                 numberOfLines={2}
@@ -94,7 +84,6 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 {relatedPaint.name}
               </ThemedText>
 
-              {/* Hex Code */}
               {relatedPaint.hex && (
                 <ThemedText
                   style={[styles.hexCode, { color: colors.mutedForeground }]}
@@ -104,9 +93,8 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                 </ThemedText>
               )}
 
-              {/* Badges Row - unified gray/white style */}
+              {/* Badges Row */}
               <View style={styles.badgesRow}>
-                {/* Paint Brand Badge */}
                 {relatedPaint.paintBrand?.name && (
                   <Badge
                     style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}
@@ -120,7 +108,6 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
                   </Badge>
                 )}
 
-                {/* Finish Badge */}
                 {relatedPaint.finish && (
                   <Badge
                     style={{ ...styles.badge, backgroundColor: badgeStyle.bg }}
@@ -138,35 +125,11 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   scrollContent: {
     gap: spacing.md,
     paddingRight: spacing.md,

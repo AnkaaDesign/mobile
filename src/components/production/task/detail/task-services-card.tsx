@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
@@ -12,7 +12,7 @@ import { hasPrivilege, formatDateShort } from "@/utils";
 import { canLeaderUpdateServiceOrder, getVisibleServiceOrderTypes, hasDetailedServiceOrderView, canEditServiceOrderOfType, getAllowedServiceOrderStatuses } from "@/utils/permissions/entity-permissions";
 import { useServiceOrderMutations } from "@/hooks";
 import type { ServiceOrder } from '../../../../types';
-import { IconTools, IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
+import { IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
 
 // Colors matching web badge-colors.ts for consistency
 const STATUS_COLORS = {
@@ -26,7 +26,6 @@ const STATUS_COLORS = {
 // Type colors for visual distinction
 const TYPE_COLORS: Record<SERVICE_ORDER_TYPE, string> = {
   [SERVICE_ORDER_TYPE.PRODUCTION]: '#2563eb', // blue-600
-  [SERVICE_ORDER_TYPE.FINANCIAL]: '#16a34a', // green-600
   [SERVICE_ORDER_TYPE.COMMERCIAL]: '#9333ea', // purple-600
   [SERVICE_ORDER_TYPE.LOGISTIC]: '#f59e0b', // amber-500
   [SERVICE_ORDER_TYPE.ARTWORK]: '#ea580c', // orange-600
@@ -136,7 +135,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
       // ADMIN and LOGISTIC can always get options
       if (userSectorPrivilege !== SECTOR_PRIVILEGES.ADMIN &&
           userSectorPrivilege !== SECTOR_PRIVILEGES.LOGISTIC) {
-        // For team leaders, check if the task belongs to their managed sector
+        // For team leaders, check if the task belongs to their led sector
         if (!canLeaderUpdateServiceOrder(user, taskSectorId)) {
           return []; // No options if user can't edit this task's service orders
         }
@@ -161,7 +160,7 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     if (!canEditType) return false;
 
     // For PRODUCTION service orders, apply sector-based restrictions for team leaders
-    // This is the key check: a Production 1 manager should NOT be able to edit service orders
+    // This is the key check: a Production 1 leader should NOT be able to edit service orders
     // for tasks assigned to Production 2
     if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
       // ADMIN and LOGISTIC can edit any task's PRODUCTION service orders (no sector restriction)
@@ -170,12 +169,12 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
         return true;
       }
 
-      // For team leaders (sector managers), check if the task belongs to their managed sector
-      // canLeaderUpdateServiceOrder returns true only when taskSectorId matches managedSector.id
+      // For team leaders, check if the task belongs to their led sector
+      // canLeaderUpdateServiceOrder returns true only when taskSectorId matches ledSector.id
       return canLeaderUpdateServiceOrder(user, taskSectorId);
     }
 
-    // For other service order types (FINANCIAL, COMMERCIAL, LOGISTIC, ARTWORK),
+    // For other service order types (COMMERCIAL, LOGISTIC, ARTWORK),
     // the type-based permission is sufficient
     return true;
   };
@@ -345,44 +344,19 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconTools size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Serviços</ThemedText>
-        <Badge variant="secondary" style={styles.countBadge}>
-          {validServices.length}
-        </Badge>
-      </View>
-
+    <DetailCard
+      title="Serviços"
+      icon="tools"
+      badge={<Badge variant="secondary">{validServices.length}</Badge>}
+    >
       <View style={styles.content}>
         {visibleTypes.map((type) => renderTypeGroup(type))}
       </View>
-
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   content: {
     gap: spacing.lg,
   },

@@ -1,11 +1,10 @@
 import React, { useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity, Linking, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard, DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
-
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
 
 import type { Task, Truck } from '../../../../types';
 import type { Responsible } from '@/types/responsible';
@@ -18,19 +17,6 @@ import { formatChassis } from "@/utils";
 import { getSpotLabel } from "@/types/garage";
 
 import {
-  IconHash,
-  IconBuildingFactory2,
-  IconBuilding,
-  IconCar,
-  IconBarcode,
-  IconTruck,
-  IconFileText,
-  IconClipboardList,
-  IconMapPin,
-  IconUser,
-  IconCategory,
-  IconTool,
-  IconCoin,
   IconBrandWhatsapp,
 } from "@tabler/icons-react-native";
 import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
@@ -97,16 +83,12 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
   // Handle WhatsApp - opens app directly
   const handleWhatsApp = useCallback(async (phone: string) => {
     const cleaned = phone.replace(/\D/g, '');
-    // Add Brazil country code if not present
     const phoneWithCountry = cleaned.startsWith('55') ? cleaned : `55${cleaned}`;
-
-    // Try opening WhatsApp app directly first
     const whatsappUrl = `whatsapp://send?phone=${phoneWithCountry}`;
 
     try {
       await Linking.openURL(whatsappUrl);
     } catch {
-      // If direct open fails, try web fallback
       try {
         await Linking.openURL(`https://wa.me/${phoneWithCountry}`);
       } catch {
@@ -114,7 +96,6 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
       }
     }
   }, []);
-
 
   // Filter responsibles: Designers only see MARKETING responsibles (fallback to COMMERCIAL)
   const visibleResponsibles = React.useMemo(() => {
@@ -128,346 +109,136 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
   const hasResponsibles = visibleResponsibles.length > 0;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconClipboardList size={20} color={colors.primary} />
-          <ThemedText style={styles.title}>Informações Gerais</ThemedText>
-        </View>
-        <TaskStatusBadge status={task.status} size="md" />
-      </View>
+    <DetailCard
+      title="Informações Gerais"
+      icon="clipboard-list"
+      badge={<TaskStatusBadge status={task.status} size="md" />}
+    >
+      {/* Customer */}
+      {task.customer && (
+        <DetailField
+          label="Razão Social"
+          icon="building"
+          value={task.customer?.corporateName || task.customer?.fantasyName || "-"}
+        />
+      )}
 
-      <View style={styles.content}>
-        {/* Customer */}
-        {task.customer && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconBuilding size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Razão Social</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.customer?.corporateName || task.customer?.fantasyName || "-"}</ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Responsibles - Each displayed as its own field */}
+      {canViewRestrictedFields && hasResponsibles && visibleResponsibles.map((resp) => (
+        resp.phone ? (
+          <DetailPhoneField
+            key={resp.id}
+            label={`Responsável ${RESPONSIBLE_ROLE_LABELS[resp.role as ResponsibleRole]}`}
+            phone={resp.phone}
+            icon="user"
+          />
+        ) : (
+          <DetailField
+            key={resp.id}
+            label={`Responsável ${RESPONSIBLE_ROLE_LABELS[resp.role as ResponsibleRole]}`}
+            icon="user"
+            value={resp.name}
+          />
+        )
+      ))}
 
-        {/* Responsibles - Each displayed as its own field (like web) */}
-        {canViewRestrictedFields && hasResponsibles && visibleResponsibles.map((resp) => (
-          <View key={resp.id} style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconUser size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Responsável {RESPONSIBLE_ROLE_LABELS[resp.role as ResponsibleRole]}
-              </ThemedText>
-            </View>
-            <View style={[styles.infoCard, styles.responsibleRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{resp.name}</ThemedText>
-              {resp.phone && (
-                <View style={styles.responsiblePhoneActions}>
-                  <TouchableOpacity
-                    style={styles.phoneButton}
-                    onPress={() => handleCallPhone(resp.phone)}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
-                      {formatPhoneDisplay(resp.phone)}
-                    </ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.whatsappIconButton}
-                    onPress={() => handleWhatsApp(resp.phone)}
-                    activeOpacity={0.7}
-                  >
-                    <IconBrandWhatsapp size={20} color="#16a34a" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-        ))}
+      {/* Legacy Negotiating With Contact */}
+      {canViewRestrictedFields && !hasResponsibles && task.negotiatingWith && (
+        task.negotiatingWith.phone ? (
+          <DetailPhoneField
+            label="Negociando com"
+            phone={task.negotiatingWith.phone}
+            icon="user"
+          />
+        ) : (
+          <DetailField
+            label="Negociando com"
+            icon="user"
+            value={task.negotiatingWith.name}
+          />
+        )
+      )}
 
-        {/* Legacy Negotiating With Contact - Fallback for old data without responsibles */}
-        {canViewRestrictedFields && !hasResponsibles && task.negotiatingWith && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconUser size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Negociando com
-              </ThemedText>
-            </View>
-            <View style={[styles.infoCard, styles.responsibleRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground, flex: 1 }]}>{task.negotiatingWith.name}</ThemedText>
-              {task.negotiatingWith.phone && (
-                <View style={styles.responsiblePhoneActions}>
-                  <TouchableOpacity
-                    style={styles.phoneButton}
-                    onPress={() => handleCallPhone(task.negotiatingWith!.phone)}
-                    activeOpacity={0.7}
-                  >
-                    <ThemedText style={[styles.phoneText, { color: "#16a34a" }]}>
-                      {formatPhoneDisplay(task.negotiatingWith.phone)}
-                    </ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.whatsappIconButton}
-                    onPress={() => handleWhatsApp(task.negotiatingWith!.phone)}
-                    activeOpacity={0.7}
-                  >
-                    <IconBrandWhatsapp size={20} color="#16a34a" />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
+      {/* Sector */}
+      {task.sector && (
+        <DetailField label="Setor" icon="building-factory" value={task.sector.name} />
+      )}
 
-        {/* Sector */}
-        {task.sector && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconBuildingFactory2 size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Setor</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{task.sector.name}</ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Commission Status */}
+      {canViewFinancialFields && task.commission && (
+        <DetailField
+          label="Comissão"
+          icon="coin"
+          value={COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
+        />
+      )}
 
-        {/* Commission Status - Only visible to ADMIN, FINANCIAL, COMMERCIAL */}
-        {canViewFinancialFields && task.commission && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconCoin size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Comissão</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Serial Number */}
+      {task.serialNumber && (
+        <DetailField label="Número de Série" icon="hash" value={task.serialNumber} monospace />
+      )}
 
-        {/* Serial Number */}
-        {task.serialNumber && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconHash size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Número de Série</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.serialNumber}</ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Plate */}
+      {task.truck?.plate && (
+        <DetailField label="Placa" icon="car" value={task.truck.plate.toUpperCase()} monospace />
+      )}
 
-        {/* Plate */}
-        {task.truck?.plate && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconCar size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Placa</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, styles.monoValue, { color: colors.foreground }]}>{task.truck.plate.toUpperCase()}</ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Chassis Number */}
+      {canViewTruckDetails && task.truck?.chassisNumber && (
+        <DetailField label="Nº Chassi" icon="barcode" value={formatChassis(task.truck.chassisNumber)} />
+      )}
 
-        {/* Chassis Number - Hidden from PRODUCTION users except team leaders */}
-        {canViewTruckDetails && task.truck?.chassisNumber && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconBarcode size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Nº Chassi</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>{formatChassis(task.truck.chassisNumber)}</ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Truck Category */}
+      {canViewTruckDetails && task.truck?.category && (
+        <DetailField
+          label="Categoria"
+          icon="category"
+          value={TRUCK_CATEGORY_LABELS[task.truck.category as keyof typeof TRUCK_CATEGORY_LABELS]}
+        />
+      )}
 
-        {/* Truck Category - Hidden from PRODUCTION users except team leaders */}
-        {canViewTruckDetails && task.truck?.category && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconCategory size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Categoria</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {TRUCK_CATEGORY_LABELS[task.truck.category as keyof typeof TRUCK_CATEGORY_LABELS]}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Implement Type */}
+      {canViewTruckDetails && task.truck?.implementType && (
+        <DetailField
+          label="Implemento"
+          icon="tool"
+          value={IMPLEMENT_TYPE_LABELS[task.truck.implementType as keyof typeof IMPLEMENT_TYPE_LABELS]}
+        />
+      )}
 
-        {/* Implement Type - Hidden from PRODUCTION users except team leaders */}
-        {canViewTruckDetails && task.truck?.implementType && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconTool size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Implemento</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {IMPLEMENT_TYPE_LABELS[task.truck.implementType as keyof typeof IMPLEMENT_TYPE_LABELS]}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Truck Dimensions */}
+      {task.truck && truckDimensions && (
+        <DetailField
+          label="Caminhão"
+          icon="truck"
+          value={`${truckDimensions.width}cm x ${truckDimensions.height}cm`}
+        />
+      )}
 
-        {/* Truck Dimensions */}
-        {task.truck && truckDimensions && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconTruck size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Caminhão</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {truckDimensions.width}cm × {truckDimensions.height}cm
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {/* Local (Truck Spot) */}
+      {task.truck?.spot && (
+        <DetailField label="Local" icon="map-pin" value={getSpotLabel(task.truck.spot as any)} />
+      )}
 
-        {/* Local (Truck Spot) */}
-        {task.truck?.spot && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoHeader}>
-              <IconMapPin size={18} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>Local</ThemedText>
-            </View>
-            <View style={[styles.infoCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
-              <ThemedText style={[styles.value, { color: colors.foreground }]}>
-                {getSpotLabel(task.truck.spot as any)}
-              </ThemedText>
-            </View>
-          </View>
-        )}
-
-        {/* Details - at bottom with separator */}
-        {task.details && (
-          <>
-            <Separator style={styles.separator} />
-            <View>
-              <View style={styles.detailsHeader}>
-                <IconFileText size={20} color={colors.mutedForeground} />
-                <ThemedText style={[styles.detailsTitle, { color: colors.foreground }]}>Detalhes</ThemedText>
-              </View>
-              <ThemedText style={[styles.detailsText, { color: colors.mutedForeground, backgroundColor: colors.muted + '50' }]}>
-                {task.details}
-              </ThemedText>
-            </View>
-          </>
-        )}
-      </View>
-    </Card>
+      {/* Details */}
+      {task.details && (
+        <DetailField
+          label="Detalhes"
+          icon="file-text"
+          value={
+            <ThemedText style={[styles.detailsText, { color: colors.mutedForeground }]}>
+              {task.details}
+            </ThemedText>
+          }
+        />
+      )}
+    </DetailCard>
   );
 });
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-    flexShrink: 1,
-  },
-  infoSection: {
-    gap: spacing.xs,
-  },
-  infoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  infoCard: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    padding: spacing.sm,
-  },
-  infoItem: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    alignItems: "flex-start",
-  },
-  infoText: {
-    flex: 1,
-    gap: 2,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
-  monoValue: {
-    fontFamily: "monospace",
-  },
-  subtext: {
-    fontSize: fontSize.xs,
-    marginTop: 2,
-  },
-  separator: {
-    marginVertical: spacing.md,
-  },
-  detailsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  detailsTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-  },
   detailsText: {
     fontSize: fontSize.sm,
     lineHeight: 20,
-    padding: spacing.md,
-    borderRadius: 8,
-  },
-  responsibleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  responsiblePhoneActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  phoneButton: {
-    paddingVertical: 2,
-  },
-  phoneText: {
-    fontSize: fontSize.sm,
-  },
-  whatsappIconButton: {
-    padding: 4,
   },
 });

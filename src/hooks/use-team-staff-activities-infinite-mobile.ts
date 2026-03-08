@@ -39,7 +39,7 @@ export const teamStaffActivitiesKeys = {
 
 /**
  * Hook for infinite scrolling team staff activities
- * Automatically filters activities by the current user's managed sector on the backend
+ * Automatically filters activities by the current user's led sector on the backend
  * Requires team leader privileges
  * Uses select to fetch only fields displayed in TeamActivityTable
  */

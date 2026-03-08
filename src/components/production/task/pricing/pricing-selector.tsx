@@ -52,12 +52,10 @@ const VALIDITY_PERIOD_OPTIONS = [
 ];
 
 // Status options
-const STATUS_OPTIONS = [
-  { value: "DRAFT", label: "Rascunho" },
-  { value: "APPROVED", label: "Aprovado" },
-  { value: "REJECTED", label: "Rejeitado" },
-  { value: "CANCELLED", label: "Cancelado" },
-];
+const STATUS_OPTIONS = Object.values(TASK_PRICING_STATUS).map((value) => ({
+  value,
+  label: TASK_PRICING_STATUS_LABELS[value],
+}));
 
 // Forecast days options (1-30)
 const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
@@ -99,8 +97,10 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     const { colors } = useTheme();
     const fileViewer = useFileViewer();
     const [validityPeriod, setValidityPeriod] = useState<number | null>(null);
-    const [showCustomPayment, setShowCustomPayment] = useState(false);
+    const [showCustomPayment, setShowCustomPayment] = useState<Record<string, boolean>>({});
     const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
+    // Cache for customer objects (for display in per-customer sections)
+    const [selectedCustomers, setSelectedCustomers] = useState<Map<string, any>>(new Map());
     const [showLayoutUploadMode, setShowLayoutUploadMode] = useState(false);
     // Use external layout files if provided, otherwise use local state
     const [localLayoutFiles, setLocalLayoutFiles] = useState<FilePickerItem[]>([]);
@@ -111,24 +111,24 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
 
     const { fields, append, prepend, remove } = useFieldArray({
       control,
-      name: "pricing.items",
+      name: "pricing.services",
     });
 
     // Watch pricing values
-    const pricingItems = useWatch({ control, name: "pricing.items" });
-    const pricingStatus = useWatch({ control, name: "pricing.status" }) || "DRAFT";
+    const pricingItems = useWatch({ control, name: "pricing.services" });
+    const pricingStatus = useWatch({ control, name: "pricing.status" }) || "PENDING";
     const pricingExpiresAt = useWatch({ control, name: "pricing.expiresAt" });
-    const discountType = useWatch({ control, name: "pricing.discountType" }) || DISCOUNT_TYPE.NONE;
-    const discountValue = useWatch({ control, name: "pricing.discountValue" });
+    const discountType = useWatch({ control, name: "pricing.customerConfigs.0.discountType" }) || DISCOUNT_TYPE.NONE;
+    const discountValue = useWatch({ control, name: "pricing.customerConfigs.0.discountValue" });
     const paymentCondition = useWatch({ control, name: "pricing.paymentCondition" });
-    const customPaymentText = useWatch({ control, name: "pricing.customPaymentText" });
+    const customPaymentText = useWatch({ control, name: "pricing.customerConfigs.0.customPaymentText" });
     const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
     const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
     const layoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
-    const discountReference = useWatch({ control, name: "pricing.discountReference" });
+    const discountReference = useWatch({ control, name: "pricing.customerConfigs.0.discountReference" });
     const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
     const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
-    const invoicesToCustomerIds = useWatch({ control, name: "pricing.invoicesToCustomerIds" });
+    const watchedCustomerConfigs = useWatch({ control, name: "pricing.customerConfigs" });
     const downPaymentDate = useWatch({ control, name: "pricing.downPaymentDate" });
 
     // Customer search for invoice-to selector
@@ -209,15 +209,183 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
       return "";
     }, [guaranteeYears, customGuaranteeText]);
 
+    // Initialize customer cache from initial data
+    useEffect(() => {
+      if (initialInvoiceToCustomers && initialInvoiceToCustomers.length > 0) {
+        setSelectedCustomers(new Map(initialInvoiceToCustomers.map(c => [c.id, c])));
+      }
+    }, []);
+
+    // Derive customer IDs from config objects for the Combobox
+    const customerConfigIdsList = useMemo(() => {
+      const configs = watchedCustomerConfigs;
+      if (!Array.isArray(configs)) return [];
+      return configs.map((c: any) => typeof c === 'string' ? c : c?.customerId).filter(Boolean);
+    }, [watchedCustomerConfigs]);
+
+    // Handle customer config changes from Combobox
+    const handleCustomerConfigChange = useCallback((newIds: string | string[] | null | undefined) => {
+      const ids = Array.isArray(newIds) ? newIds : [];
+      const currentConfigs: any[] = Array.isArray(watchedCustomerConfigs) ? watchedCustomerConfigs : [];
+
+      // Build new configs: keep existing ones, add new ones with defaults
+      const newConfigs = ids.map((id: string) => {
+        const existing = currentConfigs.find((c: any) =>
+          (typeof c === 'string' ? c : c?.customerId) === id
+        );
+        if (existing && typeof existing === 'object') return existing;
+        return {
+          customerId: id,
+          subtotal: 0,
+          discountType: 'NONE' as const,
+          discountValue: null,
+          total: 0,
+          paymentCondition: null,
+          downPaymentDate: null,
+          customPaymentText: null,
+          responsibleId: null,
+          discountReference: null,
+        };
+      });
+      setValue("pricing.customerConfigs", newConfigs);
+
+      // Update customer cache with any newly fetched customers
+      const newSelected = new Map(selectedCustomers);
+      ids.forEach((id: string) => {
+        if (!newSelected.has(id) && initialInvoiceToCustomers) {
+          const found = initialInvoiceToCustomers.find(c => c.id === id);
+          if (found) newSelected.set(id, found);
+        }
+      });
+      // Remove deselected customers
+      Array.from(newSelected.keys()).forEach(key => {
+        if (!ids.includes(key)) newSelected.delete(key);
+      });
+      setSelectedCustomers(newSelected);
+    }, [watchedCustomerConfigs, selectedCustomers, initialInvoiceToCustomers, setValue]);
+
+    // Handle per-customer payment condition changes
+    const handleCustomerPaymentConditionChange = useCallback((value: string, configIndex: number, customerId: string) => {
+      if (value === "CUSTOM") {
+        setShowCustomPayment(prev => ({ ...prev, [customerId]: true }));
+        setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
+      } else {
+        setShowCustomPayment(prev => ({ ...prev, [customerId]: false }));
+        setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, null);
+        setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, value);
+      }
+    }, [setValue]);
+
+    // Watch service assignments and clear orphaned customer assignments
+    useEffect(() => {
+      const configs = watchedCustomerConfigs || [];
+      const currentIds = Array.isArray(configs)
+        ? configs.map((c: any) => typeof c === 'string' ? c : c?.customerId).filter(Boolean)
+        : [];
+      const items = getValues("pricing.services") || [];
+      items.forEach((item: any, index: number) => {
+        if (item.invoiceToCustomerId && !currentIds.includes(item.invoiceToCustomerId)) {
+          setValue(`pricing.services.${index}.invoiceToCustomerId`, null);
+        }
+      });
+    }, [watchedCustomerConfigs, getValues, setValue]);
+
+    // Sync root-level paymentCondition/downPaymentDate to customerConfigs[0] in single-customer mode.
+    // The API reads these from customerConfig, not from the root pricing object.
+    useEffect(() => {
+      const configs = watchedCustomerConfigs;
+      if (!Array.isArray(configs) || configs.length !== 1) return;
+
+      const rootPaymentCondition = getValues("pricing.paymentCondition");
+      const rootDownPaymentDate = getValues("pricing.downPaymentDate");
+      const rootCustomPaymentText = getValues("pricing.customerConfigs.0.customPaymentText");
+      const config = configs[0];
+      if (!config || typeof config !== 'object') return;
+
+      let needsUpdate = false;
+      const updated = { ...config };
+
+      if (rootPaymentCondition !== undefined && config.paymentCondition !== rootPaymentCondition) {
+        updated.paymentCondition = rootPaymentCondition || null;
+        needsUpdate = true;
+      }
+      if (rootDownPaymentDate !== undefined && config.downPaymentDate !== rootDownPaymentDate) {
+        updated.downPaymentDate = rootDownPaymentDate || null;
+        needsUpdate = true;
+      }
+      if (rootCustomPaymentText !== undefined && config.customPaymentText !== rootCustomPaymentText) {
+        updated.customPaymentText = rootCustomPaymentText || null;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        setValue("pricing.customerConfigs.0", updated, { shouldDirty: false });
+      }
+    }, [watchedCustomerConfigs, paymentCondition, downPaymentDate, customPaymentText, getValues, setValue]);
+
+    // Auto-calculate per-customer subtotals/totals based on service invoiceToCustomerId assignments
+    useEffect(() => {
+      const configs = watchedCustomerConfigs;
+      if (!Array.isArray(configs) || configs.length < 2 || !pricingItems) return;
+
+      const services = pricingItems || [];
+      let updated = false;
+
+      const newConfigs = configs.map((config: any) => {
+        if (!config || typeof config !== 'object') return config;
+        const customerId = config.customerId;
+        if (!customerId) return config;
+
+        const customerSubtotal = services.reduce((sum: number, svc: any) => {
+          if (svc.invoiceToCustomerId === customerId) {
+            const amount = typeof svc.amount === 'number' ? svc.amount : Number(svc.amount) || 0;
+            return sum + amount;
+          }
+          return sum;
+        }, 0);
+
+        const roundedSubtotal = Math.round(customerSubtotal * 100) / 100;
+        const configDiscountType = config.discountType || 'NONE';
+        const configDiscountValue = config.discountValue || 0;
+        let customerDiscountAmount = 0;
+        if (configDiscountType === 'PERCENTAGE' && configDiscountValue) {
+          customerDiscountAmount = Math.round((roundedSubtotal * configDiscountValue / 100) * 100) / 100;
+        } else if (configDiscountType === 'FIXED_VALUE' && configDiscountValue) {
+          customerDiscountAmount = configDiscountValue;
+        }
+        const roundedTotal = Math.max(0, Math.round((roundedSubtotal - customerDiscountAmount) * 100) / 100);
+
+        if (config.subtotal !== roundedSubtotal || config.total !== roundedTotal) {
+          updated = true;
+          return { ...config, subtotal: roundedSubtotal, total: roundedTotal };
+        }
+        return config;
+      });
+
+      if (updated) {
+        setValue("pricing.customerConfigs", newConfigs, { shouldDirty: false });
+      }
+    }, [pricingItems, watchedCustomerConfigs, setValue]);
+
     // Initialize custom states from existing data
     useEffect(() => {
-      if (customPaymentText && !showCustomPayment) {
-        setShowCustomPayment(true);
+      // Global custom payment text
+      if (customPaymentText && !showCustomPayment["__global__"]) {
+        setShowCustomPayment(prev => ({ ...prev, "__global__": true }));
+      }
+      // Per-customer custom payment text
+      const configs = getValues("pricing.customerConfigs") || [];
+      if (Array.isArray(configs)) {
+        configs.forEach((config: any) => {
+          if (config?.customPaymentText && config?.customerId && !showCustomPayment[config.customerId]) {
+            setShowCustomPayment(prev => ({ ...prev, [config.customerId]: true }));
+          }
+        });
       }
       if (customGuaranteeText && !showCustomGuarantee) {
         setShowCustomGuarantee(true);
       }
-    }, [customPaymentText, customGuaranteeText, showCustomPayment, showCustomGuarantee]);
+    }, [customPaymentText, customGuaranteeText, showCustomPayment, showCustomGuarantee, getValues]);
 
     // Calculate subtotal
     const subtotal = useMemo(() => {
@@ -249,7 +417,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
     useEffect(() => {
       if (!initialized) {
         const expiresAt = getValues("pricing.expiresAt");
-        const items = getValues("pricing.items");
+        const items = getValues("pricing.services");
         const hasItems = items && items.length > 0;
         const validOptions = [15, 30, 60, 90];
 
@@ -268,7 +436,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           // Default to 30 days
           setValidityPeriod(30);
           // If there are items but no expiresAt, set a default expiry date
-          // This fixes validation errors when editing tasks with pricing items but no expiry
+          // This fixes validation errors when editing tasks with pricing services but no expiry
           if (hasItems) {
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
@@ -311,9 +479,9 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
         expiryDate.setDate(expiryDate.getDate() + defaultPeriod);
         expiryDate.setHours(23, 59, 59, 999);
         setValue("pricing.expiresAt", expiryDate);
-        setValue("pricing.status", "DRAFT");
-        setValue("pricing.discountType", DISCOUNT_TYPE.NONE);
-        setValue("pricing.discountValue", null);
+        setValue("pricing.status", "PENDING");
+        setValue("pricing.customerConfigs.0.discountType", DISCOUNT_TYPE.NONE);
+        setValue("pricing.customerConfigs.0.discountValue", null);
         setValue("pricing.subtotal", 0);
         setValue("pricing.total", 0);
       }
@@ -329,7 +497,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
       setValue("pricing", undefined);
       clearErrors("pricing");
       setValidityPeriod(null);
-      setShowCustomPayment(false);
+      setShowCustomPayment({});
       setShowCustomGuarantee(false);
       setLayoutFiles([]);
     }, [fields.length, remove, setValue, clearErrors, setLayoutFiles]);
@@ -355,15 +523,28 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
       (value: string | string[] | null | undefined) => {
         if (!value || Array.isArray(value)) return;
         if (value === "CUSTOM") {
-          setShowCustomPayment(true);
+          setShowCustomPayment(prev => ({ ...prev, "__global__": true }));
           setValue("pricing.paymentCondition", "CUSTOM");
         } else {
-          setShowCustomPayment(false);
-          setValue("pricing.customPaymentText", null);
+          setShowCustomPayment(prev => ({ ...prev, "__global__": false }));
+          setValue("pricing.customerConfigs.0.customPaymentText", null);
           setValue("pricing.paymentCondition", value);
         }
+        // Propagate to the single customerConfig so the API receives it
+        const configs = getValues("pricing.customerConfigs");
+        if (Array.isArray(configs) && configs.length === 1) {
+          setValue("pricing.customerConfigs.0.paymentCondition", value === "CUSTOM" ? "CUSTOM" : (value || null));
+          if (value === "CUSTOM") {
+            const customText = getValues("pricing.customerConfigs.0.customPaymentText");
+            if (customText) {
+              setValue("pricing.customerConfigs.0.customPaymentText", customText);
+            }
+          } else {
+            setValue("pricing.customerConfigs.0.customPaymentText", null);
+          }
+        }
       },
-      [setValue]
+      [setValue, getValues]
     );
 
     const handleGuaranteeOptionChange = useCallback(
@@ -547,6 +728,36 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
 
     return (
       <View style={styles.container}>
+        {/* Invoice To Customers - First section */}
+        {hasPricingItems && (
+          <View style={styles.section}>
+            <View style={styles.labelWithIcon}>
+              <IconFileInvoice size={14} color={colors.mutedForeground} />
+              <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">
+                Faturar Para (Clientes)
+              </ThemedText>
+            </View>
+            <Combobox
+              value={customerConfigIdsList}
+              onValueChange={handleCustomerConfigChange}
+              mode="multiple"
+              disabled={disabled}
+              placeholder="Selecione clientes para faturamento..."
+              searchable
+              async
+              queryKey={["customers", "invoice-selector"]}
+              queryFn={searchCustomers}
+              getOptionLabel={getCustomerLabel}
+              getOptionValue={getCustomerValue}
+              renderOption={renderInvoiceCustomerOption}
+              initialOptions={(initialInvoiceToCustomers || []) as Customer[]}
+              clearable
+              minSearchLength={0}
+              searchPlaceholder="Buscar cliente..."
+            />
+          </View>
+        )}
+
         {/* Add Service Button - Full width above rows */}
         {!disabled && (
           <Button variant="outline" size="sm" onPress={handleAddItem} disabled={disabled} style={styles.addButton}>
@@ -610,8 +821,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           <View style={styles.itemsConfigSpacer} />
         )}
 
-        {/* Discount Section */}
-        {hasPricingItems && (
+        {/* Discount Section - Global (0-1 customers) */}
+        {hasPricingItems && (!watchedCustomerConfigs || !Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length < 2) && (
           <View style={styles.section}>
             <View style={styles.row}>
               <View style={styles.halfField}>
@@ -621,12 +832,12 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                   onValueChange={(value) => {
                     const safeType = value || DISCOUNT_TYPE.NONE;
                     const previousType = discountType || DISCOUNT_TYPE.NONE;
-                    setValue("pricing.discountType", safeType);
+                    setValue("pricing.customerConfigs.0.discountType", safeType);
                     if (safeType === DISCOUNT_TYPE.NONE) {
-                      setValue("pricing.discountValue", null);
-                      setValue("pricing.discountReference", null);
+                      setValue("pricing.customerConfigs.0.discountValue", null);
+                      setValue("pricing.customerConfigs.0.discountReference", null);
                     } else if (previousType !== safeType && previousType !== DISCOUNT_TYPE.NONE) {
-                      setValue("pricing.discountValue", null);
+                      setValue("pricing.customerConfigs.0.discountValue", null);
                     }
                   }}
                   disabled={disabled}
@@ -649,9 +860,9 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                   value={discountValue ?? null}
                   onChange={(value) => {
                     if (value === null || value === undefined || value === "") {
-                      setValue("pricing.discountValue", null);
+                      setValue("pricing.customerConfigs.0.discountValue", null);
                     } else {
-                      setValue("pricing.discountValue", typeof value === "number" ? value : Number(value));
+                      setValue("pricing.customerConfigs.0.discountValue", typeof value === "number" ? value : Number(value));
                     }
                   }}
                   disabled={disabled || discountType === DISCOUNT_TYPE.NONE}
@@ -662,13 +873,13 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
-        {/* Discount Reference - Only show when discount type is not NONE */}
-        {hasPricingItems && discountType !== DISCOUNT_TYPE.NONE && (
+        {/* Discount Reference - Global (0-1 customers), only when discount type is not NONE */}
+        {hasPricingItems && (!watchedCustomerConfigs || !Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length < 2) && discountType !== DISCOUNT_TYPE.NONE && (
           <View style={styles.section}>
             <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
             <TextInput
               value={discountReference || ""}
-              onChangeText={(text) => setValue("pricing.discountReference", text || null)}
+              onChangeText={(text) => setValue("pricing.customerConfigs.0.discountReference", text || null)}
               placeholder="Justificativa ou referência para o desconto aplicado..."
               placeholderTextColor={colors.mutedForeground}
               editable={!disabled}
@@ -682,36 +893,6 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                   minHeight: 42,
                 },
               ]}
-            />
-          </View>
-        )}
-
-        {/* Invoice To Customers (web: before totals) */}
-        {hasPricingItems && (
-          <View style={styles.section}>
-            <View style={styles.labelWithIcon}>
-              <IconFileInvoice size={14} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">
-                Faturar Para (Clientes)
-              </ThemedText>
-            </View>
-            <Combobox
-              value={invoicesToCustomerIds || []}
-              onValueChange={(value) => setValue("pricing.invoicesToCustomerIds", value || [])}
-              mode="multiple"
-              disabled={disabled}
-              placeholder="Selecione clientes para faturamento..."
-              searchable
-              async
-              queryKey={["customers", "invoice-selector"]}
-              queryFn={searchCustomers}
-              getOptionLabel={getCustomerLabel}
-              getOptionValue={getCustomerValue}
-              renderOption={renderInvoiceCustomerOption}
-              initialOptions={(initialInvoiceToCustomers || []) as Customer[]}
-              clearable
-              minSearchLength={0}
-              searchPlaceholder="Buscar cliente..."
             />
           </View>
         )}
@@ -754,7 +935,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                   <ThemedText style={[styles.label, { color: colors.foreground, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
                 </View>
                 <Combobox
-                  value={pricingStatus || "DRAFT"}
+                  value={pricingStatus || "PENDING"}
                   onValueChange={(value) => setValue("pricing.status", value)}
                   disabled={disabled || !canEditStatus}
                   options={STATUS_OPTIONS}
@@ -782,8 +963,8 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
-        {/* Payment Condition + Down Payment Date */}
-        {hasPricingItems && (
+        {/* Payment Condition + Down Payment Date - Global (0-1 customers) */}
+        {hasPricingItems && (!Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length < 2) && (
           <View style={styles.section}>
             <View style={styles.row}>
               <View style={styles.halfField}>
@@ -814,13 +995,13 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
           </View>
         )}
 
-        {/* Custom Payment Text */}
-        {hasPricingItems && showCustomPayment && (
+        {/* Custom Payment Text - Global (0-1 customers) */}
+        {hasPricingItems && (!Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length < 2) && showCustomPayment["__global__"] && (
           <View style={styles.section}>
             <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
             <TextInput
               value={customPaymentText || ""}
-              onChangeText={(text) => setValue("pricing.customPaymentText", text || null)}
+              onChangeText={(text) => setValue("pricing.customerConfigs.0.customPaymentText", text || null)}
               placeholder="Descreva as condições de pagamento..."
               placeholderTextColor={colors.mutedForeground}
               multiline
@@ -835,6 +1016,196 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
                 },
               ]}
             />
+          </View>
+        )}
+
+        {/* Per-Customer Configuration Sections (2+ customers) */}
+        {hasPricingItems && Array.isArray(watchedCustomerConfigs) && watchedCustomerConfigs.length >= 2 && (
+          <View style={styles.section}>
+            <ThemedText style={[styles.label, { color: colors.foreground, marginBottom: spacing.sm }]}>
+              Configurações por Cliente
+            </ThemedText>
+            {watchedCustomerConfigs.map((config: any, i: number) => {
+              const customerId = typeof config === 'string' ? config : config?.customerId;
+              if (!customerId) return null;
+              const customer = selectedCustomers.get(customerId);
+              const configPaymentCondition = config?.paymentCondition || "";
+              const configCustomPaymentText = config?.customPaymentText;
+              const currentCondition = configCustomPaymentText ? "CUSTOM" : configPaymentCondition;
+              const configSubtotal = config?.subtotal || 0;
+              const configDiscountType = config?.discountType || 'NONE';
+              const configTotal = config?.total || 0;
+
+              return (
+                <View key={customerId} style={{
+                  borderWidth: 1,
+                  borderStyle: "dashed",
+                  borderColor: colors.border,
+                  borderRadius: borderRadius.md,
+                  padding: spacing.md,
+                  marginBottom: spacing.md,
+                  gap: spacing.sm,
+                }}>
+                  {/* Customer Name Header */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.xs }}>
+                    {customer && (
+                      <CustomerLogoDisplay
+                        logo={customer.logo}
+                        customerName={customer.fantasyName || ""}
+                        size="sm"
+                        shape="rounded"
+                      />
+                    )}
+                    <ThemedText style={{ fontSize: 14, fontWeight: "600", color: colors.foreground, flex: 1 }} numberOfLines={1}>
+                      {customer?.fantasyName || customer?.corporateName || "Cliente"}
+                    </ThemedText>
+                  </View>
+
+                  {/* Payment Condition & Down Payment Date */}
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Condição Pagamento</ThemedText>
+                      <Combobox
+                        value={currentCondition}
+                        onValueChange={(value) => {
+                          if (typeof value === 'string') {
+                            handleCustomerPaymentConditionChange(value, i, customerId);
+                          }
+                        }}
+                        disabled={disabled}
+                        options={PAYMENT_CONDITIONS.map((opt) => ({
+                          value: opt.value,
+                          label: opt.label,
+                        }))}
+                        placeholder="Selecione"
+                        searchable={false}
+                      />
+                    </View>
+                    <View style={styles.halfField}>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Data Entrada</ThemedText>
+                      <DatePicker
+                        value={config?.downPaymentDate ? new Date(config.downPaymentDate) : undefined}
+                        onChange={(date) => setValue(`pricing.customerConfigs.${i}.downPaymentDate`, date || null)}
+                        mode="date"
+                        placeholder="Selecione"
+                        disabled={disabled}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Custom Payment Text */}
+                  {showCustomPayment[customerId] && (
+                    <View>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Texto Personalizado</ThemedText>
+                      <TextInput
+                        value={config?.customPaymentText || ""}
+                        onChangeText={(text) => setValue(`pricing.customerConfigs.${i}.customPaymentText`, text || null)}
+                        placeholder="Condições de pagamento personalizadas..."
+                        placeholderTextColor={colors.mutedForeground}
+                        multiline
+                        numberOfLines={2}
+                        editable={!disabled}
+                        style={[
+                          styles.textArea,
+                          {
+                            backgroundColor: colors.input,
+                            borderColor: colors.border,
+                            color: colors.foreground,
+                            minHeight: 60,
+                          },
+                        ]}
+                      />
+                    </View>
+                  )}
+
+                  {/* Discount Type & Value */}
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Desconto</ThemedText>
+                      <Combobox
+                        value={configDiscountType}
+                        onValueChange={(value) => {
+                          const safeType = value || 'NONE';
+                          setValue(`pricing.customerConfigs.${i}.discountType`, safeType);
+                          if (safeType === 'NONE') {
+                            setValue(`pricing.customerConfigs.${i}.discountValue`, null);
+                            setValue(`pricing.customerConfigs.${i}.discountReference`, null);
+                          }
+                        }}
+                        disabled={disabled}
+                        options={[DISCOUNT_TYPE.NONE, DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED_VALUE].map((type) => ({
+                          value: type,
+                          label: DISCOUNT_TYPE_LABELS[type],
+                        }))}
+                        placeholder="Selecione"
+                        searchable={false}
+                      />
+                    </View>
+                    <View style={styles.halfField}>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>
+                        Valor Desc.{" "}
+                        {configDiscountType === 'PERCENTAGE' && <ThemedText style={{ color: colors.mutedForeground }}>(%)</ThemedText>}
+                        {configDiscountType === 'FIXED_VALUE' && <ThemedText style={{ color: colors.mutedForeground }}>(R$)</ThemedText>}
+                      </ThemedText>
+                      <Input
+                        type={configDiscountType === 'FIXED_VALUE' ? "currency" : "number"}
+                        value={config?.discountValue ?? null}
+                        onChange={(value) => {
+                          setValue(`pricing.customerConfigs.${i}.discountValue`, value === null || value === undefined || value === "" ? null : typeof value === "number" ? value : Number(value));
+                        }}
+                        disabled={disabled || configDiscountType === 'NONE'}
+                        placeholder={configDiscountType === 'NONE' ? "-" : configDiscountType === 'FIXED_VALUE' ? "R$ 0,00" : "0"}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Discount Reference (per-customer) */}
+                  {configDiscountType !== 'NONE' && (
+                    <View>
+                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Ref. Desconto</ThemedText>
+                      <TextInput
+                        value={config?.discountReference || ""}
+                        onChangeText={(text) => setValue(`pricing.customerConfigs.${i}.discountReference`, text || null)}
+                        placeholder="Referência do desconto..."
+                        placeholderTextColor={colors.mutedForeground}
+                        editable={!disabled}
+                        style={[
+                          styles.textArea,
+                          {
+                            backgroundColor: colors.input,
+                            borderColor: colors.border,
+                            color: colors.foreground,
+                            minHeight: 40,
+                          },
+                        ]}
+                      />
+                    </View>
+                  )}
+
+                  {/* Subtotal & Total (auto-calculated) */}
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <View style={styles.labelWithIcon}>
+                        <IconCurrencyReal size={12} color={colors.mutedForeground} />
+                        <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, fontSize: 12 }]}>Subtotal</ThemedText>
+                      </View>
+                      <View style={[styles.readOnlyField, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                        <ThemedText style={[styles.readOnlyText, { color: colors.foreground, fontSize: 13 }]}>{formatCurrency(configSubtotal)}</ThemedText>
+                      </View>
+                    </View>
+                    <View style={styles.halfField}>
+                      <View style={styles.labelWithIcon}>
+                        <IconCurrencyReal size={12} color={colors.primary} />
+                        <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, fontSize: 12 }]}>Total</ThemedText>
+                      </View>
+                      <View style={[styles.readOnlyField, styles.totalField, { borderColor: colors.primary }]}>
+                        <ThemedText style={[styles.totalText, { color: colors.primary, fontSize: 13 }]}>{formatCurrency(configTotal)}</ThemedText>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -1040,9 +1411,9 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
   const { setValue } = useFormContext();
   const [observationModal, setObservationModal] = useState({ visible: false, text: "" });
 
-  const description = useWatch({ control, name: `pricing.items.${index}.description` });
-  const amount = useWatch({ control, name: `pricing.items.${index}.amount` });
-  const observation = useWatch({ control, name: `pricing.items.${index}.observation` });
+  const description = useWatch({ control, name: `pricing.services.${index}.description` });
+  const amount = useWatch({ control, name: `pricing.services.${index}.amount` });
+  const observation = useWatch({ control, name: `pricing.services.${index}.observation` });
 
   // Get description options from service descriptions
   const descriptionOptions = useMemo(() => {
@@ -1064,7 +1435,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
   }, [description]);
 
   const handleSaveObservation = () => {
-    setValue(`pricing.items.${index}.observation`, observationModal.text || null);
+    setValue(`pricing.services.${index}.observation`, observationModal.text || null);
     setObservationModal({ visible: false, text: observationModal.text });
   };
 
@@ -1076,7 +1447,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
       <View style={styles.descriptionField}>
         <Combobox
           value={description || ""}
-          onValueChange={(value) => setValue(`pricing.items.${index}.description`, value || "")}
+          onValueChange={(value) => setValue(`pricing.services.${index}.description`, value || "")}
           disabled={disabled}
           options={descriptionOptions}
           placeholder="Selecione o serviço..."
@@ -1091,7 +1462,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
           <Input
             type="currency"
             value={amount ?? null}
-            onChange={(value) => setValue(`pricing.items.${index}.amount`, value)}
+            onChange={(value) => setValue(`pricing.services.${index}.amount`, value)}
             disabled={disabled}
             placeholder="R$ 0,00"
           />

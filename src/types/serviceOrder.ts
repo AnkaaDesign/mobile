@@ -23,7 +23,11 @@ export interface ServiceOrder extends BaseEntity {
   startedAt: Date | null;
   approvedAt: Date | null;
   finishedAt: Date | null;
-  shouldSync: boolean; // Controls bidirectional sync with TaskPricingItem
+  shouldSync: boolean; // Controls bidirectional sync with TaskPricingService
+
+  // File relations (per service order)
+  checkinFiles?: import('./file').File[];
+  checkoutFiles?: import('./file').File[];
 
   // Relations
   task?: Task;
@@ -72,6 +76,8 @@ export interface ServiceOrderIncludes {
   startedBy?: boolean;
   approvedBy?: boolean;
   completedBy?: boolean;
+  checkinFiles?: boolean;
+  checkoutFiles?: boolean;
 }
 
 // =====================

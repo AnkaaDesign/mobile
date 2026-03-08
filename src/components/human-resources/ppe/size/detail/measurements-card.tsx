@@ -1,8 +1,7 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconRulerMeasure, IconShirt, IconHanger, IconShoe } from "@tabler/icons-react-native";
+import { IconShirt, IconHanger, IconShoe, IconRulerMeasure } from "@tabler/icons-react-native";
 import type { PpeSize } from '../../../../../types';
 import {
   SHIRT_SIZE_LABELS,
@@ -15,6 +14,7 @@ import {
 } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface MeasurementsCardProps {
   ppeSize: PpeSize;
@@ -68,63 +68,32 @@ export function MeasurementsCard({ ppeSize }: MeasurementsCardProps) {
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconRulerMeasure size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Medidas Detalhadas</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.measurementsContent}>
-          {groupsWithMeasurements.map((group, groupIndex) => (
-            <View key={group.title} style={[styles.measurementGroup, groupIndex > 0 && styles.measurementGroupBorder, { borderTopColor: colors.border + "50" }]}>
-              <View style={styles.groupHeader}>
-                <View style={[styles.groupIconContainer, { backgroundColor: colors.muted + "30" }]}>{group.icon}</View>
-                <ThemedText style={StyleSheet.flatten([styles.groupTitle, { color: colors.foreground }])}>{group.title}</ThemedText>
-              </View>
-              <View style={styles.groupItems}>
-                {group.items.map((item) => (
-                  <View key={item.label} style={[styles.measurementItem, { backgroundColor: colors.muted + "20" }]}>
-                    <ThemedText style={StyleSheet.flatten([styles.measurementLabel, { color: colors.mutedForeground }])}>{item.label}</ThemedText>
-                    <View style={[styles.measurementValueContainer, { backgroundColor: colors.primary + "10" }]}>
-                      <ThemedText style={StyleSheet.flatten([styles.measurementValue, { color: colors.primary }])}>{item.labels[item.value as keyof typeof item.labels]}</ThemedText>
-                    </View>
-                  </View>
-                ))}
-              </View>
+    <DetailCard title="Medidas Detalhadas" icon="ruler-measure">
+      <View style={styles.measurementsContent}>
+        {groupsWithMeasurements.map((group, groupIndex) => (
+          <View key={group.title} style={[styles.measurementGroup, groupIndex > 0 && styles.measurementGroupBorder, { borderTopColor: colors.border + "50" }]}>
+            <View style={styles.groupHeader}>
+              <View style={[styles.groupIconContainer, { backgroundColor: colors.muted + "30" }]}>{group.icon}</View>
+              <ThemedText style={StyleSheet.flatten([styles.groupTitle, { color: colors.foreground }])}>{group.title}</ThemedText>
             </View>
-          ))}
-        </View>
+            <View style={styles.groupItems}>
+              {group.items.map((item) => (
+                <View key={item.label} style={[styles.measurementItem, { backgroundColor: colors.muted + "20" }]}>
+                  <ThemedText style={StyleSheet.flatten([styles.measurementLabel, { color: colors.mutedForeground }])}>{item.label}</ThemedText>
+                  <View style={[styles.measurementValueContainer, { backgroundColor: colors.primary + "10" }]}>
+                    <ThemedText style={StyleSheet.flatten([styles.measurementValue, { color: colors.primary }])}>{item.labels[item.value as keyof typeof item.labels]}</ThemedText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   measurementsContent: {
     gap: spacing.xl,
   },

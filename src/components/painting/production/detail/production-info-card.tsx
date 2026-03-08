@@ -1,9 +1,8 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconFlask, IconDroplet, IconWeight, IconCalendar } from "@tabler/icons-react-native";
+import { fontSize } from "@/constants/design-system";
 import type { PaintProduction } from '../../../../types';
 import { formatDateTime } from "@/utils";
 
@@ -17,146 +16,53 @@ export function ProductionInfoCard({ production }: ProductionInfoCardProps) {
   const totalWeightGrams = production.volumeLiters * Number(formula?.density || 1) * 1000;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFlask size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações da Produção</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.infoContainer}>
-          {/* Production Metrics Section */}
-          <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-              Dados de Produção
+    <DetailCard title="Informações da Produção" icon="flask">
+      <DetailField
+        label="Volume Produzido"
+        icon="droplet"
+        value={
+          <View>
+            <ThemedText style={[styles.valueLarge, { color: colors.foreground }]}>
+              {production.volumeLiters.toFixed(2)} L
             </ThemedText>
-            <View style={styles.fieldsContainer}>
-              {/* Volume */}
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <IconDroplet size={16} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Volume Produzido
-                  </ThemedText>
-                </View>
-                <View style={styles.valueContainer}>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValueLarge, { color: colors.foreground }])}>
-                    {production.volumeLiters.toFixed(2)} L
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValueSmall, { color: colors.mutedForeground }])}>
-                    {(production.volumeLiters * 1000).toFixed(0)} mL
-                  </ThemedText>
-                </View>
-              </View>
-
-              {/* Weight */}
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <IconWeight size={16} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Peso Total
-                  </ThemedText>
-                </View>
-                <View style={styles.valueContainer}>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValueLarge, { color: colors.foreground }])}>
-                    {Math.round(totalWeightGrams)} g
-                  </ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.fieldValueSmall, { color: colors.mutedForeground }])}>
-                    {(totalWeightGrams / 1000).toFixed(2)} kg
-                  </ThemedText>
-                </View>
-              </View>
-
-              {/* Date */}
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <IconCalendar size={16} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Data de Produção
-                  </ThemedText>
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                  {formatDateTime(production.createdAt)}
-                </ThemedText>
-              </View>
-            </View>
+            <ThemedText style={[styles.valueSmall, { color: colors.mutedForeground }]}>
+              {(production.volumeLiters * 1000).toFixed(0)} mL
+            </ThemedText>
           </View>
-        </View>
-      </View>
-    </Card>
+        }
+      />
+
+      <DetailField
+        label="Peso Total"
+        icon="weight"
+        value={
+          <View>
+            <ThemedText style={[styles.valueLarge, { color: colors.foreground }]}>
+              {Math.round(totalWeightGrams)} g
+            </ThemedText>
+            <ThemedText style={[styles.valueSmall, { color: colors.mutedForeground }]}>
+              {(totalWeightGrams / 1000).toFixed(2)} kg
+            </ThemedText>
+          </View>
+        }
+      />
+
+      <DetailField
+        label="Data de Produção"
+        icon="calendar"
+        value={formatDateTime(production.createdAt)}
+      />
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
+  valueLarge: {
     fontSize: fontSize.lg,
-    fontWeight: "500",
+    fontWeight: "700",
   },
-  content: {
-    gap: spacing.sm,
-  },
-  infoContainer: {
-    gap: spacing.xl,
-  },
-  section: {
-    gap: spacing.lg,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-  fieldsContainer: {
-    gap: spacing.md,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
-  },
-  valueContainer: {
-    alignItems: "flex-end",
-  },
-  fieldValueLarge: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-  },
-  fieldValueSmall: {
+  valueSmall: {
     fontSize: fontSize.xs,
-    marginTop: spacing.xxs,
+    marginTop: 2,
   },
 });

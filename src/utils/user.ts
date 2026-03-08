@@ -462,32 +462,32 @@ export function calculateUserStats(users: User[]) {
  */
 export function isTeamLeader(user: User | null | undefined): boolean {
   if (!user) return false;
-  return Boolean(user.managedSector?.id);
+  return Boolean(user.ledSector?.id);
 }
 
 /**
  * Check if user can manage another user (is their team leader)
  */
 export function canManageUser(manager: User, targetUser: User): boolean {
-  const managedSectorId = manager.managedSector?.id;
-  if (!isTeamLeader(manager) || !managedSectorId) {
+  const ledSectorId = manager.ledSector?.id;
+  if (!isTeamLeader(manager) || !ledSectorId) {
     return false;
   }
 
-  // Manager can manage users in the sector they manage
-  return targetUser.sectorId === managedSectorId;
+  // Leader can manage users in the sector they lead
+  return targetUser.sectorId === ledSectorId;
 }
 
 /**
  * Get users that a leader manages (team members)
  */
 export function getTeamMembers(leader: User, allUsers: User[]): User[] {
-  const managedSectorId = leader.managedSector?.id;
-  if (!isTeamLeader(leader) || !managedSectorId) {
+  const ledSectorId = leader.ledSector?.id;
+  if (!isTeamLeader(leader) || !ledSectorId) {
     return [];
   }
 
-  return allUsers.filter((user) => user.sectorId === managedSectorId);
+  return allUsers.filter((user) => user.sectorId === ledSectorId);
 }
 
 /**
@@ -503,17 +503,17 @@ export function getUsersInSameSector(user: User, allUsers: User[]): User[] {
 
 /**
  * Check if user has both sector membership and leadership privileges
- * DEPRECATED: Leadership is now determined by managedSector relationship
+ * DEPRECATED: Leadership is now determined by ledSector relationship
  */
 export function isUserLeaderWithPrivileges(user: User): boolean {
   return isTeamLeader(user);
 }
 
 /**
- * Get sector that user manages (if any)
+ * Get sector that user leads (if any)
  */
-export function getManagedSector(user: User): string | null {
-  return user.managedSector?.id || null;
+export function getLedSector(user: User): string | null {
+  return user.ledSector?.id || null;
 }
 
 /**

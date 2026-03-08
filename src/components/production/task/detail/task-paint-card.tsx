@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard, DetailSection } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -8,7 +8,7 @@ import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants/enum-labels';
 import { TRUCK_MANUFACTURER } from '@/constants/enums';
 import { PAINT_FINISH } from '@/constants/enums';
-import { IconPaint, IconBrush, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconAlertCircle } from "@tabler/icons-react-native";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
 // Badge colors - unified neutral, more subtle
@@ -127,89 +127,27 @@ export const TaskPaintCard: React.FC<TaskPaintCardProps> = ({
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconPaint size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Tintas</ThemedText>
-      </View>
+    <DetailCard title="Tintas" icon="paint">
+      {/* General Painting */}
+      {generalPainting && (
+        <DetailSection title="Pintura Geral">
+          {renderPaintItem(generalPainting, 56)}
+        </DetailSection>
+      )}
 
-      <View style={styles.content}>
-        {/* General Painting */}
-        {generalPainting && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <IconBrush size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Pintura Geral
-              </ThemedText>
-            </View>
-            {renderPaintItem(generalPainting, 56)}
+      {/* Logo Paints */}
+      {logoPaints && logoPaints.length > 0 && (
+        <DetailSection title="Tintas da Logomarca">
+          <View style={styles.logoPaintsContainer}>
+            {logoPaints.map((paint) => renderPaintItem(paint, 44))}
           </View>
-        )}
-
-        {/* Logo Paints */}
-        {logoPaints && logoPaints.length > 0 && (
-          <View style={[styles.section, generalPainting && styles.sectionWithMargin]}>
-            <View style={styles.sectionHeader}>
-              <IconPaint size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Tintas da Logomarca
-              </ThemedText>
-              <Badge variant="secondary" style={styles.countBadge}>
-                {logoPaints.length}
-              </Badge>
-            </View>
-            <View style={styles.logoPaintsContainer}>
-              {logoPaints.map((paint) => renderPaintItem(paint, 44))}
-            </View>
-          </View>
-        )}
-      </View>
-    </Card>
+        </DetailSection>
+      )}
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionWithMargin: {
-    marginTop: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: "600",
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   paintItemContainer: {
     borderRadius: borderRadius.lg,
     padding: spacing.md,

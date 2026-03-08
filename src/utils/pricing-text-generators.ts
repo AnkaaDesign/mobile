@@ -1,5 +1,5 @@
 import { formatCurrency, formatDate } from './index';
-import type { TaskPricing, PAYMENT_CONDITION } from '../types/task-pricing';
+import { PAYMENT_CONDITION } from '../constants/enums';
 
 /**
  * Convert number to written form in Portuguese
@@ -24,21 +24,28 @@ function getInstallmentCount(condition: PAYMENT_CONDITION | null): number {
   if (!condition) return 0;
 
   const countMap: Record<PAYMENT_CONDITION, number> = {
-    CASH: 1,
-    INSTALLMENTS_2: 2,
-    INSTALLMENTS_3: 3,
-    INSTALLMENTS_4: 4,
-    INSTALLMENTS_5: 5,
-    INSTALLMENTS_6: 6,
-    INSTALLMENTS_7: 7,
-    CUSTOM: 0,
+    [PAYMENT_CONDITION.CASH]: 1,
+    [PAYMENT_CONDITION.INSTALLMENTS_2]: 2,
+    [PAYMENT_CONDITION.INSTALLMENTS_3]: 3,
+    [PAYMENT_CONDITION.INSTALLMENTS_4]: 4,
+    [PAYMENT_CONDITION.INSTALLMENTS_5]: 5,
+    [PAYMENT_CONDITION.INSTALLMENTS_6]: 6,
+    [PAYMENT_CONDITION.INSTALLMENTS_7]: 7,
+    [PAYMENT_CONDITION.CUSTOM]: 0,
   };
 
   return countMap[condition] || 0;
 }
 
+interface PaymentTextData {
+  customPaymentText: string | null;
+  paymentCondition?: string | null;
+  downPaymentDate?: Date | string | null;
+  total: number;
+}
+
 /**
- * Generate payment terms text based on pricing data
+ * Generate payment terms text based on payment data
  * If customPaymentText is provided, it overrides the auto-generated text
  *
  * Payment structure:
@@ -47,18 +54,21 @@ function getInstallmentCount(condition: PAYMENT_CONDITION | null): number {
  * - INSTALLMENTS_3: 3 payments (entrada + 20 + 40 days)
  * - etc. (always 20 days interval between payments)
  */
-export function generatePaymentText(pricing: TaskPricing): string {
+export function generatePaymentText(pricing: PaymentTextData): string {
   // If custom text is provided, use it
   if (pricing.customPaymentText) {
     return pricing.customPaymentText;
   }
 
+  const paymentCondition = pricing.paymentCondition ?? null;
+  const downPaymentDate = pricing.downPaymentDate ?? null;
+
   // No payment condition, return empty
-  if (!pricing.paymentCondition || pricing.paymentCondition === 'CUSTOM') {
+  if (!paymentCondition || paymentCondition === PAYMENT_CONDITION.CUSTOM) {
     return '';
   }
 
-  const installmentCount = getInstallmentCount(pricing.paymentCondition);
+  const installmentCount = getInstallmentCount(paymentCondition as PAYMENT_CONDITION | null);
   if (installmentCount === 0) return '';
 
   const total = pricing.total;
@@ -66,8 +76,8 @@ export function generatePaymentText(pricing: TaskPricing): string {
   const word = numberToWord(installmentCount);
 
   // Format the down payment date if available
-  const dateText = pricing.downPaymentDate
-    ? ` em ${formatDate(new Date(pricing.downPaymentDate))}`
+  const dateText = downPaymentDate
+    ? ` em ${formatDate(new Date(downPaymentDate))}`
     : '';
 
   // Single payment (à vista)
@@ -88,7 +98,7 @@ export function generatePaymentText(pricing: TaskPricing): string {
  * Generate guarantee terms text based on pricing data
  * If customGuaranteeText is provided, it overrides the auto-generated text
  */
-export function generateGuaranteeText(pricing: TaskPricing): string {
+export function generateGuaranteeText(pricing: { customGuaranteeText?: string | null; guaranteeYears?: number | null }): string {
   // If custom text is provided, use it
   if (pricing.customGuaranteeText) {
     return pricing.customGuaranteeText;

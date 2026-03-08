@@ -2,9 +2,9 @@
  * Files Section Component
  * Handles client files, layout/artwork uploads, project files, and check-in/check-out photos
  *
- * File changes are synced to react-hook-form via setValue on baseFileIds/artworkIds/projectFileIds/
- * checkinFileIds/checkoutFileIds, matching the web pattern where file ID arrays are tracked
- * for dirty detection.
+ * Check-in/check-out files are now grouped by service order (matching web behavior).
+ * Each service order gets its own file picker for checkin and checkout photos.
+ * File IDs are injected into service order data on submission.
  *
  * Visibility & editability per sector:
  *   - Client files & Layouts: visible to ADMIN, COMMERCIAL, LOGISTIC, DESIGN; editable by all who can view
@@ -13,14 +13,20 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, Image, ScrollView } from 'react-native';
 import { FormCard } from '@/components/ui/form-section';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
 import { FileSuggestions } from '@/components/ui/file-suggestions';
 import { ArtworkFileUploadField, type ArtworkFileItem } from '../artwork-file-upload-field';
+import { ThemedText } from '@/components/ui/themed-text';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormContext } from 'react-hook-form';
 import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
+import { SERVICE_ORDER_STATUS } from '@/constants/enums';
+import { spacing, fontSize } from '@/constants/design-system';
+import { useTheme } from '@/lib/theme';
 import type { File as AnkaaFile } from '@/types';
+import { getApiBaseUrl } from '@/utils/file';
 
 interface FilesSectionProps {
   isSubmitting?: boolean;
@@ -32,6 +38,7 @@ interface FilesSectionProps {
   initialProjectFiles?: FilePickerItem[];
   initialCheckinFiles?: FilePickerItem[];
   initialCheckoutFiles?: FilePickerItem[];
+  serviceOrders?: any[];
 }
 
 /** Convert a File entity to a FilePickerItem */
@@ -65,14 +72,38 @@ export default function FilesSection({
   initialProjectFiles = [],
   initialCheckinFiles = [],
   initialCheckoutFiles = [],
+  serviceOrders = [],
 }: FilesSectionProps) {
   const { user } = useAuth();
   const { setValue } = useFormContext();
+  const { colors } = useTheme();
   const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>(initialBaseFiles);
   const [artworkFiles, setArtworkFiles] = useState<ArtworkFileItem[]>(initialArtworkFiles);
   const [projectFiles, setProjectFiles] = useState<FilePickerItem[]>(initialProjectFiles);
-  const [checkinFiles, setCheckinFiles] = useState<FilePickerItem[]>(initialCheckinFiles);
-  const [checkoutFiles, setCheckoutFiles] = useState<FilePickerItem[]>(initialCheckoutFiles);
+
+  // Per-service-order checkin/checkout files
+  const [checkinFilesByServiceOrder, setCheckinFilesByServiceOrder] = useState<Record<string, FilePickerItem[]>>(() => {
+    const map: Record<string, FilePickerItem[]> = {};
+    if (serviceOrders) {
+      for (const so of serviceOrders) {
+        if (so.id) {
+          map[so.id] = ((so as any).checkinFiles || []).map((f: any) => fileToPickerItem(f));
+        }
+      }
+    }
+    return map;
+  });
+  const [checkoutFilesByServiceOrder, setCheckoutFilesByServiceOrder] = useState<Record<string, FilePickerItem[]>>(() => {
+    const map: Record<string, FilePickerItem[]> = {};
+    if (serviceOrders) {
+      for (const so of serviceOrders) {
+        if (so.id) {
+          map[so.id] = ((so as any).checkoutFiles || []).map((f: any) => fileToPickerItem(f));
+        }
+      }
+    }
+    return map;
+  });
 
   // Check user sector privileges
   const userPrivilege = user?.sector?.privileges;
@@ -96,6 +127,11 @@ export default function FilesSection({
   const canViewCheckout = canViewCheckinCheckout && taskStatus === TASK_STATUS.COMPLETED;
   const canEditCheckinCheckout = isAdmin || isLogistic;
 
+  // Filter active service orders (non-cancelled, with ID)
+  const activeServiceOrders = (serviceOrders || []).filter(
+    (so: any) => so.id && so.status !== SERVICE_ORDER_STATUS?.CANCELLED
+  );
+
   // If the user cannot see any section, hide the entire component
   if (!canViewClientAndLayouts && !canViewProjectFiles && !canViewCheckinCheckout) {
     return null;
@@ -117,18 +153,32 @@ export default function FilesSection({
     setValue('_projectFiles', files);
   }, [setValue]);
 
-  const handleCheckinFilesChange = useCallback((files: FilePickerItem[]) => {
-    setCheckinFiles(files);
-    setValue('checkinFileIds', extractFileIds(files), { shouldDirty: true });
-    // Store raw file objects for new file upload at submission time
-    setValue('_checkinFiles', files);
+  const handleCheckinFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
+    setCheckinFilesByServiceOrder(prev => ({ ...prev, [serviceOrderId]: files }));
+    // Store per-SO checkin files for submission
+    setValue(`_checkinFilesByServiceOrder.${serviceOrderId}`, files, { shouldDirty: true });
+    // Also store raw files for new file upload
+    setValue('_checkinFiles', files.filter((f: any) => !f.id && !f.fileId && f.uri));
   }, [setValue]);
 
-  const handleCheckoutFilesChange = useCallback((files: FilePickerItem[]) => {
-    setCheckoutFiles(files);
-    setValue('checkoutFileIds', extractFileIds(files), { shouldDirty: true });
-    setValue('_checkoutFiles', files);
+  const handleCheckoutFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
+    setCheckoutFilesByServiceOrder(prev => ({ ...prev, [serviceOrderId]: files }));
+    // Store per-SO checkout files for submission
+    setValue(`_checkoutFilesByServiceOrder.${serviceOrderId}`, files, { shouldDirty: true });
+    setValue('_checkoutFiles', files.filter((f: any) => !f.id && !f.fileId && f.uri));
   }, [setValue]);
+
+  const getThumbnailUri = (file: FilePickerItem) => {
+    const apiBase = getApiBaseUrl();
+    if (file.thumbnailUrl) {
+      if (file.thumbnailUrl.startsWith('/api')) return `${apiBase}${file.thumbnailUrl}`;
+      if (file.thumbnailUrl.startsWith('http')) return file.thumbnailUrl;
+      return file.thumbnailUrl;
+    }
+    if (file.uri) return file.uri;
+    if (file.id) return `${apiBase}/files/thumbnail/${file.id}`;
+    return '';
+  };
 
   return (
     <>
@@ -229,41 +279,142 @@ export default function FilesSection({
         </FormCard>
       )}
 
-      {/* Check-in */}
-      {canViewCheckinCheckout && (
+      {/* Check-in - Grouped by Service Order */}
+      {canViewCheckinCheckout && activeServiceOrders.length > 0 && (
         <FormCard title="Check-in" icon="IconCamera">
-          <FilePicker
-            value={checkinFiles}
-            onChange={handleCheckinFilesChange}
-            maxFiles={20}
-            placeholder="Adicionar fotos de check-in"
-            helperText="Fotos de check-in da tarefa"
-            showCamera={true}
-            showVideoCamera={false}
-            showGallery={true}
-            showFilePicker={false}
-            disabled={isSubmitting || !canEditCheckinCheckout}
-          />
+          {activeServiceOrders.map((so: any) => {
+            const soFiles = checkinFilesByServiceOrder[so.id] || [];
+            return (
+              <View key={`checkin-${so.id}`} style={styles.serviceOrderGroup}>
+                <View style={styles.serviceOrderHeader}>
+                  <ThemedText style={styles.serviceOrderLabel}>{so.description}</ThemedText>
+                  <ThemedText style={styles.fileCount}>{soFiles.filter((f: any) => f.uploaded || f.id).length} foto(s)</ThemedText>
+                </View>
+                <FilePicker
+                  value={soFiles}
+                  onChange={(files) => handleCheckinFilesChange(so.id, files)}
+                  maxFiles={20}
+                  placeholder="Adicionar fotos de check-in"
+                  showCamera={true}
+                  showVideoCamera={false}
+                  showGallery={true}
+                  showFilePicker={false}
+                  disabled={isSubmitting || !canEditCheckinCheckout}
+                  previewSize={56}
+                />
+              </View>
+            );
+          })}
         </FormCard>
       )}
 
-      {/* Check-out - only available for completed tasks */}
-      {canViewCheckout && (
-        <FormCard title="Check-out" icon="IconCameraOff">
-          <FilePicker
-            value={checkoutFiles}
-            onChange={handleCheckoutFilesChange}
-            maxFiles={20}
-            placeholder="Adicionar fotos de check-out"
-            helperText="Fotos de check-out da tarefa"
-            showCamera={true}
-            showVideoCamera={false}
-            showGallery={true}
-            showFilePicker={false}
-            disabled={isSubmitting || !canEditCheckinCheckout}
-          />
+      {/* Check-out - Grouped by Service Order, with checkin reference images */}
+      {canViewCheckout && activeServiceOrders.length > 0 && (
+        <FormCard title="Check-out" icon="IconCameraCheck">
+          {activeServiceOrders.map((so: any) => {
+            const soCheckinFiles = checkinFilesByServiceOrder[so.id] || [];
+            const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || [];
+            const checkinCount = soCheckinFiles.filter((f: any) => f.uploaded || f.id).length;
+            const checkoutCount = soCheckoutFiles.filter((f: any) => f.uploaded || f.id).length;
+            const needsMore = checkinCount > 0 && checkoutCount < checkinCount;
+            return (
+              <View key={`checkout-${so.id}`} style={styles.serviceOrderGroup}>
+                <View style={styles.serviceOrderHeader}>
+                  <ThemedText style={styles.serviceOrderLabel}>{so.description}</ThemedText>
+                  {needsMore && (
+                    <ThemedText style={[styles.fileCount, { color: '#d97706' }]}>
+                      falta {checkinCount - checkoutCount}
+                    </ThemedText>
+                  )}
+                </View>
+                {/* Checkin reference images - small horizontal row */}
+                {soCheckinFiles.length > 0 && (
+                  <View style={styles.referenceRow}>
+                    <ThemedText style={styles.referenceLabel}>Ref:</ThemedText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceScroll}>
+                      {soCheckinFiles.filter((f: any) => f.uploaded || f.id).map((file) => {
+                        const src = getThumbnailUri(file);
+                        return (
+                          <View key={file.id || file.uri} style={[styles.referenceThumbnail, { borderColor: colors.border }]}>
+                            {src ? (
+                              <Image source={{ uri: src }} style={styles.referenceImage} />
+                            ) : (
+                              <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />
+                            )}
+                          </View>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
+                <FilePicker
+                  value={soCheckoutFiles}
+                  onChange={(files) => handleCheckoutFilesChange(so.id, files)}
+                  maxFiles={20}
+                  placeholder="Adicionar fotos de check-out"
+                  showCamera={true}
+                  showVideoCamera={false}
+                  showGallery={true}
+                  showFilePicker={false}
+                  disabled={isSubmitting || !canEditCheckinCheckout}
+                  previewSize={56}
+                />
+              </View>
+            );
+          })}
         </FormCard>
       )}
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  serviceOrderGroup: {
+    marginBottom: spacing.md,
+  },
+  serviceOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  serviceOrderLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  fileCount: {
+    fontSize: fontSize.xs,
+    opacity: 0.6,
+  },
+  referenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
+  },
+  referenceLabel: {
+    fontSize: 10,
+    opacity: 0.5,
+  },
+  referenceScroll: {
+    flexDirection: 'row',
+  },
+  referenceThumbnail: {
+    width: 40,
+    height: 40,
+    borderRadius: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    opacity: 0.6,
+    marginRight: spacing.xs,
+  },
+  referenceImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  referencePlaceholder: {
+    width: '100%',
+    height: '100%',
+  },
+});

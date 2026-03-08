@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -17,7 +17,6 @@ interface Commission {
     name: string;
   };
 }
-import { IconCoin } from "@tabler/icons-react-native";
 
 interface TaskCommissionsCardProps {
   commissions: Commission[];
@@ -44,15 +43,11 @@ export const TaskCommissionsCard: React.FC<TaskCommissionsCardProps> = ({ commis
   const totalValue = commissions.reduce((sum, c) => sum + (c.value || 0), 0);
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconCoin size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Comissões</ThemedText>
-        <Badge variant="secondary" style={styles.countBadge}>
-          {commissions.length}
-        </Badge>
-      </View>
-
+    <DetailCard
+      title="Comissões"
+      icon="coin"
+      badge={<Badge variant="secondary">{commissions.length}</Badge>}
+    >
       <View style={styles.content}>
         {commissions.map((commission, index) => {
           const statusColors = getStatusColor(commission.status);
@@ -95,31 +90,11 @@ export const TaskCommissionsCard: React.FC<TaskCommissionsCardProps> = ({ commis
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   content: {
     gap: spacing.xs,
   },

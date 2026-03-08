@@ -1,35 +1,40 @@
-import { useState } from "react";
-import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
-import { useLocalSearchParams, Stack, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePpeDelivery, useScreenReady} from '@/hooks';
-import { ThemedView } from "@/components/ui/themed-view";
-import { Header } from "@/components/ui/header";
-import { ErrorScreen } from "@/components/ui/error-screen";
+import { useState, useCallback } from "react";
+import { View, StyleSheet, Alert, Linking } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { usePpeDelivery, useScreenReady } from "@/hooks";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { PPE_DELIVERY_STATUS } from "@/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
-import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { spacing, fontSize } from "@/constants/design-system";
+import { API_BASE_URL } from "@/config/urls";
+import { DetailPageLayout, DetailCard, DetailField } from "@/components/ui/detail-page-layout";
+import {
+  IconShieldCheck,
+  IconFileText,
+} from "@tabler/icons-react-native";
 
-// Import detail card components
+// Import modular components
 import { PpeDeliveryCard, PpeItemCard, CertificateCard } from "@/components/personal/ppe-delivery/detail";
 import { SignDeliveryButton, SignatureEvidenceCard } from "@/components/human-resources/ppe/delivery/detail";
-import { PPE_DELIVERY_STATUS } from "@/constants";
 
-
-import { Skeleton } from "@/components/ui/skeleton";export default function PpeDeliveryDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function PpeDeliveryDetailScreen() {
+  const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { goBack } = useNavigationHistory();
   const [refreshing, setRefreshing] = useState(false);
+
+  const id = params?.id || "";
 
   const {
     data: response,
     isLoading,
     error,
     refetch,
-  } = usePpeDelivery(id || '', {
+  } = usePpeDelivery(id, {
     include: {
       user: true,
       reviewedByUser: true,
@@ -40,211 +45,234 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PpeD
         },
       },
       ppeSchedule: true,
-      signature: true,
+      signature: {
+        include: {
+          signedByUser: true,
+          signedDocument: true,
+        },
+      },
+      deliveryDocument: true,
     },
-    enabled: !!id,
+    enabled: !!id && id !== "",
   });
 
   useScreenReady(!isLoading);
 
   const delivery = response?.data;
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  };
+    refetch()
+      .then(() => {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso");
+      })
+      .finally(() => {
+        setRefreshing(false);
+      });
+  }, [refetch]);
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {/* Header card skeleton */}
-        <View style={{ margin: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 20 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <Skeleton style={{ width: 40, height: 40, borderRadius: 20 }} />
-            <View style={{ flex: 1, gap: 8 }}>
-              <Skeleton style={{ height: 20, width: '60%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          {/* Header card skeleton */}
+          <Card style={styles.headerCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Skeleton style={{ width: 24, height: 24, borderRadius: 12 }} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+                <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
+              </View>
             </View>
-          </View>
-        </View>
-        {/* Delivery info card skeleton */}
-        <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
-          <View style={{ gap: 10 }}>
-            {[['30%', '30%'], ['35%', '25%'], ['28%', '35%']].map(([l, r], i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton width={l} height={14} borderRadius={4} />
-                <Skeleton width={r} height={14} borderRadius={4} />
-              </View>
-            ))}
-          </View>
-        </View>
-        {/* Item info card skeleton */}
-        <View style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
-          <View style={{ gap: 10 }}>
-            {[['25%', '40%'], ['30%', '20%']].map(([l, r], i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton width={l} height={14} borderRadius={4} />
-                <Skeleton width={r} height={14} borderRadius={4} />
-              </View>
-            ))}
-          </View>
+          </Card>
+          {/* Field skeletons matching label-above-value pattern */}
+          <Card style={styles.skeletonCard}>
+            <Skeleton style={{ height: 16, width: '45%', borderRadius: 4, marginBottom: spacing.md }} />
+            <View style={{ gap: spacing.md }}>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ gap: spacing.xs }}>
+                  <Skeleton style={{ height: 12, width: '30%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 36, width: '100%', borderRadius: 8 }} />
+                </View>
+              ))}
+            </View>
+          </Card>
+          <Card style={styles.skeletonCard}>
+            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4, marginBottom: spacing.md }} />
+            <View style={{ gap: spacing.md }}>
+              {[1, 2].map((i) => (
+                <View key={i} style={{ gap: spacing.xs }}>
+                  <Skeleton style={{ height: 12, width: '25%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 36, width: '100%', borderRadius: 8 }} />
+                </View>
+              ))}
+            </View>
+          </Card>
         </View>
       </View>
     );
   }
 
-  if (error || !delivery) {
+  if (error || !delivery || !id || id === "") {
     return (
-      <ThemedView style={styles.container}>
-        <Header title="Detalhes da Entrega" showBackButton />
-        <ErrorScreen
-          message={error ? "Erro ao carregar entrega" : "Entrega não encontrada"}
-          detail={error?.message || "A entrega solicitada não existe ou foi removida"}
-          onRetry={error ? handleRefresh : undefined}
-        />
-      </ThemedView>
+      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
+        <View style={styles.container}>
+          <Card style={styles.skeletonCard}>
+            <View style={styles.errorContent}>
+              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
+                <IconShieldCheck size={32} color={colors.mutedForeground} />
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
+                Entrega não encontrada
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
+                A entrega solicitada não foi encontrada ou pode ter sido removida.
+              </ThemedText>
+              <Button onPress={() => goBack()}>
+                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
+              </Button>
+            </View>
+          </Card>
+        </View>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          title: "Detalhes da Entrega",
-          headerShown: false,
-        }}
-      />
-      <Header title="Detalhes da Entrega" showBackButton />
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + spacing.lg }]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
-      >
-        {/* Header Card with Item Name */}
-        <Card style={[styles.headerCard, { backgroundColor: colors.primary + "10" }]}>
-          <View style={styles.headerContent}>
-            <Icon name="package" size={40} color={colors.primary} />
-            <View style={styles.headerTextContainer}>
-              <ThemedText style={styles.headerTitle}>{delivery.item?.name || "EPI"}</ThemedText>
-              <ThemedText style={[styles.headerSubtitle, { color: colors.mutedForeground }]}>
+    <DetailPageLayout refreshing={refreshing} onRefresh={handleRefresh}>
+      {/* Header Card */}
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <View style={[styles.headerLeft, { flex: 1 }]}>
+            <IconShieldCheck size={24} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <ThemedText style={StyleSheet.flatten([styles.deliveryTitle, { color: colors.foreground }])} numberOfLines={1}>
+                {delivery.item?.name || "Entrega de EPI"}
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.deliverySubtitle, { color: colors.mutedForeground }])} numberOfLines={1}>
                 Entrega #{delivery.id.slice(0, 8)}
               </ThemedText>
             </View>
           </View>
-        </Card>
+        </View>
+      </Card>
 
-        {/* Delivery Information Card */}
-        <PpeDeliveryCard delivery={delivery} />
+      {/* Modular Components */}
+      <PpeDeliveryCard delivery={delivery} />
+      <PpeItemCard item={delivery.item} />
+      <CertificateCard item={delivery.item} />
 
-        {/* PPE Item Information Card */}
-        <PpeItemCard item={delivery.item} />
+      {/* In-App Signature — Sign or show evidence */}
+      {(delivery.status === PPE_DELIVERY_STATUS.DELIVERED ||
+        delivery.status === PPE_DELIVERY_STATUS.WAITING_SIGNATURE) && (
+        <SignDeliveryButton delivery={delivery} />
+      )}
+      {delivery.status === PPE_DELIVERY_STATUS.COMPLETED && delivery.signature && (
+        <SignatureEvidenceCard deliveryId={delivery.id} signature={delivery.signature} />
+      )}
 
-        {/* Certificate Card */}
-        <CertificateCard item={delivery.item} />
-
-        {/* In-App Signature — Sign or show evidence */}
-        {(delivery.status === PPE_DELIVERY_STATUS.DELIVERED ||
-          delivery.status === PPE_DELIVERY_STATUS.WAITING_SIGNATURE) && (
-          <SignDeliveryButton delivery={delivery} />
-        )}
-        {delivery.status === PPE_DELIVERY_STATUS.COMPLETED && (
-          <SignatureEvidenceCard deliveryId={delivery.id} signature={delivery.signature} />
-        )}
-
-        {/* Schedule Information */}
-        {delivery.ppeSchedule && (
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <Icon name="clock" size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Entrega Agendada</ThemedText>
-              </View>
+      {/* Delivery Document PDF — show when no in-app signature PDF */}
+      {delivery.deliveryDocument && !delivery.signature?.signedDocumentId && (
+        <DetailCard title="Termo de Entrega" icon="file-text">
+          <Button
+            onPress={() => {
+              const url = `${API_BASE_URL}/files/serve/${delivery.deliveryDocument!.id}`;
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Erro', 'Não foi possível abrir o documento.');
+              });
+            }}
+            style={StyleSheet.flatten([styles.pdfButton, { backgroundColor: colors.primary }])}
+          >
+            <View style={styles.pdfButtonContent}>
+              <IconFileText size={16} color="#ffffff" />
+              <ThemedText style={styles.pdfButtonText}>Ver Termo de Entrega (PDF)</ThemedText>
             </View>
-            <View style={styles.cardContent}>
-              <View style={[styles.infoBox, { backgroundColor: colors.muted + "20" }]}>
-                <Icon name="info-circle" size={16} color={colors.primary} />
-                <ThemedText style={[styles.infoText, { color: colors.foreground }]}>
-                  Esta entrega faz parte de um cronograma automatizado de distribuição de EPIs.
-                </ThemedText>
-              </View>
-            </View>
-          </Card>
-        )}
-      </ScrollView>
-    </ThemedView>
+          </Button>
+        </DetailCard>
+      )}
+
+      {/* Schedule Information */}
+      {delivery.ppeSchedule && (
+        <DetailCard title="Entrega Agendada" icon="calendar-event">
+          <DetailField
+            label="Informação"
+            icon="info-circle"
+            value="Esta entrega faz parte de um cronograma automatizado de distribuição de EPIs."
+          />
+        </DetailCard>
+      )}
+    </DetailPageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
+  container: {
     padding: spacing.md,
     gap: spacing.md,
   },
   headerCard: {
-    padding: spacing.lg,
+    padding: spacing.md,
+  },
+  skeletonCard: {
+    padding: spacing.md,
   },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: fontSize["2xl"],
-    fontWeight: fontWeight.bold,
-  },
-  headerSubtitle: {
-    fontSize: fontSize.sm,
-    marginTop: spacing.xs,
-  },
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  title: {
+  deliveryTitle: {
     fontSize: fontSize.lg,
-    fontWeight: "500",
+    fontWeight: "600",
   },
-  cardContent: {
-    gap: spacing.sm,
-  },
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: spacing.sm,
-  },
-  infoText: {
+  deliverySubtitle: {
     fontSize: fontSize.sm,
-    flex: 1,
-    lineHeight: 20,
+    marginTop: 2,
+  },
+  errorContent: {
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.xl,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  errorDescription: {
+    fontSize: fontSize.sm,
+    textAlign: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  pdfButton: {
+    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pdfButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  pdfButtonText: {
+    color: "#ffffff",
+    fontSize: fontSize.sm,
+    fontWeight: "600",
   },
 });

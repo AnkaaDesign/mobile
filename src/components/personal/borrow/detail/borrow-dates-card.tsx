@@ -1,9 +1,8 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconCalendar, IconCalendarCheck} from "@tabler/icons-react-native";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import type { Borrow } from "@/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,61 +24,27 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
     }
   };
 
-  const formatDateOnly = (date: Date | string | null) => {
-    if (!date) return "Não definido";
-    try {
-      const dateObj = typeof date === "string" ? new Date(date) : date;
-      return format(dateObj, "dd/MM/yyyy", { locale: ptBR });
-    } catch {
-      return "Data inválida";
-    }
-  };
-
-
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Datas</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Datas" icon="calendar">
       <View style={styles.content}>
-        {/* Created Date */}
-        <View style={styles.dateItem}>
-          <View style={styles.dateHeader}>
-            <IconCalendar size={18} color={colors.mutedForeground} />
-            <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
-              Data do Empréstimo
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
-            {formatDate(borrow.createdAt)}
-          </ThemedText>
-        </View>
+        <DetailField
+          label="Data do Empréstimo"
+          value={formatDate(borrow.createdAt)}
+          icon="calendar"
+        />
 
-        {/* Actual Return Date */}
         {borrow.returnedAt && (
-          <View style={[styles.dateItem, styles.returnedItem]}>
-            <View style={styles.dateHeader}>
-              <IconCalendarCheck size={18} color="#15803d" />
-              <ThemedText style={[styles.dateLabel, { color: "#15803d" }]}>
-                Data de Devolução
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
-              {formatDate(borrow.returnedAt)}
-            </ThemedText>
-          </View>
+          <DetailField
+            label="Data de Devolução"
+            value={formatDate(borrow.returnedAt)}
+            icon="calendar-check"
+            iconColor="#15803d"
+          />
         )}
 
-        {/* Duration Info */}
         {borrow.returnedAt && borrow.createdAt && (
-          <View style={[styles.durationSection, { borderTopColor: colors.border + "50" }]}>
-            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-              Duração do Empréstimo
-            </ThemedText>
-            <ThemedText style={[styles.durationText, { color: colors.mutedForeground }]}>
+          <DetailSection title="Duração do Empréstimo">
+            <ThemedText style={StyleSheet.flatten([styles.durationText, { color: colors.mutedForeground }])}>
               {(() => {
                 const start = new Date(borrow.createdAt);
                 const end = new Date(borrow.returnedAt);
@@ -88,91 +53,24 @@ export function BorrowDatesCard({ borrow }: BorrowDatesCardProps) {
                 return `${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
               })()}
             </ThemedText>
-          </View>
+          </DetailSection>
         )}
 
-        {/* Last Updated */}
         {borrow.updatedAt && (
-          <View style={[styles.metaInfo, { borderTopColor: colors.border + "50" }]}>
-            <ThemedText style={[styles.metaLabel, { color: colors.mutedForeground }]}>
+          <View style={StyleSheet.flatten([styles.metaInfo, { borderTopColor: colors.border + "50" }])}>
+            <ThemedText style={StyleSheet.flatten([styles.metaLabel, { color: colors.mutedForeground }])}>
               Última atualização: {formatDate(borrow.updatedAt)}
             </ThemedText>
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.lg,
-  },
-  dateItem: {
-    gap: spacing.sm,
-  },
-  returnedItem: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  dateHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  dateLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  dateValueContainer: {
-    gap: spacing.xs,
-  },
-  dateValue: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    marginLeft: spacing.md + spacing.sm,
-  },
-  overdueChip: {
-    alignSelf: "flex-start",
-    backgroundColor: "#fed7aa",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    marginLeft: spacing.md + spacing.sm,
-  },
-  overdueChipText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-    color: "#9a3412",
-  },
-  durationSection: {
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    gap: spacing.sm,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
   },
   durationText: {
     fontSize: fontSize.base,

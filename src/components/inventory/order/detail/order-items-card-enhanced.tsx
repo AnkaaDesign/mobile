@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, TextInput, StyleSheet, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatQuantity } from "@/utils";
@@ -380,23 +380,22 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
 
   if (items.length === 0) {
     return (
-      <Card style={styles.card}>
-        <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
+      <DetailCard title="Itens do Pedido" icon="shopping-cart">
         <ThemedText style={styles.emptyText}>Nenhum item no pedido</ThemedText>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      {/* Header with item count */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ThemedText style={styles.title}>Itens do Pedido</ThemedText>
+    <DetailCard
+      title="Itens do Pedido"
+      icon="shopping-cart"
+      badge={
         <Badge size="sm">
           <ThemedText style={styles.countText}>{items.length} itens</ThemedText>
         </Badge>
-      </View>
-
+      }
+    >
       {/* Summary Statistics */}
       <View style={styles.summaryContainer}>
         <View style={[styles.summaryCard, { backgroundColor: colors.muted }]}>
@@ -618,26 +617,11 @@ export const OrderItemsCardEnhanced: React.FC<OrderItemsCardEnhancedProps> = ({
           );
         })}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
   countText: {
     fontSize: fontSize.xs,
     color: "#fff",

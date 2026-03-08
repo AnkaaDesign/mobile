@@ -1,15 +1,15 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconUsers, IconChevronRight, IconUser } from "@tabler/icons-react-native";
+import { IconChevronRight, IconUser } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { routes, USER_STATUS_LABELS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface EmployeesCardProps {
   position: Position;
@@ -26,113 +26,72 @@ export function EmployeesCard({ position }: EmployeesCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconUsers size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Colaboradores ({employees.length})
+    <DetailCard title={`Colaboradores (${employees.length})`} icon="users">
+      {!hasEmployees ? (
+        <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
+          <IconUser size={32} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.emptyStateText, { color: colors.mutedForeground }])}>
+            Nenhum colaborador neste cargo
           </ThemedText>
         </View>
-      </View>
-      <View style={styles.content}>
-        {!hasEmployees ? (
-          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "30" }])}>
-            <IconUser size={32} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.emptyStateText, { color: colors.mutedForeground }])}>
-              Nenhum colaborador neste cargo
-            </ThemedText>
-          </View>
-        ) : (
-          <View style={styles.employeesList}>
-            {employees.slice(0, 10).map((employee, index) => (
-              <TouchableOpacity
-                key={employee.id}
-                onPress={() => handleEmployeePress(employee.id)}
-                style={StyleSheet.flatten([
-                  styles.employeeItem,
-                  {
-                    backgroundColor: colors.muted + "20",
-                    borderBottomWidth: index < Math.min(employees.length, 10) - 1 ? 1 : 0,
-                    borderBottomColor: colors.border,
-                  },
-                ])}
-                activeOpacity={0.7}
-              >
-                <View style={styles.employeeContent}>
-                  <View style={styles.employeeInfo}>
-                    <View style={StyleSheet.flatten([styles.employeeIcon, { backgroundColor: colors.primary + "10" }])}>
-                      <IconUser size={16} color={colors.primary} />
-                    </View>
-                    <View style={styles.employeeDetails}>
-                      <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>{employee.name}</ThemedText>
-                      {employee.email && (
-                        <ThemedText style={StyleSheet.flatten([styles.employeeEmail, { color: colors.mutedForeground }])}>
-                          {employee.email}
-                        </ThemedText>
-                      )}
-                    </View>
+      ) : (
+        <View style={styles.employeesList}>
+          {employees.slice(0, 10).map((employee, index) => (
+            <TouchableOpacity
+              key={employee.id}
+              onPress={() => handleEmployeePress(employee.id)}
+              style={StyleSheet.flatten([
+                styles.employeeItem,
+                {
+                  backgroundColor: colors.muted + "20",
+                  borderBottomWidth: index < Math.min(employees.length, 10) - 1 ? 1 : 0,
+                  borderBottomColor: colors.border,
+                },
+              ])}
+              activeOpacity={0.7}
+            >
+              <View style={styles.employeeContent}>
+                <View style={styles.employeeInfo}>
+                  <View style={StyleSheet.flatten([styles.employeeIcon, { backgroundColor: colors.primary + "10" }])}>
+                    <IconUser size={16} color={colors.primary} />
                   </View>
-                  <View style={styles.employeeActions}>
-                    {employee.status && (
-                      <Badge variant="secondary" style={styles.statusBadge}>
-                        <ThemedText style={StyleSheet.flatten([styles.statusText, { color: colors.foreground }])}>
-                          {USER_STATUS_LABELS[employee.status]}
-                        </ThemedText>
-                      </Badge>
+                  <View style={styles.employeeDetails}>
+                    <ThemedText style={StyleSheet.flatten([styles.employeeName, { color: colors.foreground }])}>{employee.name}</ThemedText>
+                    {employee.email && (
+                      <ThemedText style={StyleSheet.flatten([styles.employeeEmail, { color: colors.mutedForeground }])}>
+                        {employee.email}
+                      </ThemedText>
                     )}
-                    <IconChevronRight size={18} color={colors.mutedForeground} />
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))}
-
-            {employees.length > 10 && (
-              <View style={StyleSheet.flatten([styles.moreEmployees, { backgroundColor: colors.muted + "30" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.moreEmployeesText, { color: colors.mutedForeground }])}>
-                  +{employees.length - 10} {employees.length - 10 === 1 ? "colaborador" : "colaboradores"}
-                </ThemedText>
+                <View style={styles.employeeActions}>
+                  {employee.status && (
+                    <Badge variant="secondary" style={styles.statusBadge}>
+                      <ThemedText style={StyleSheet.flatten([styles.statusText, { color: colors.foreground }])}>
+                        {USER_STATUS_LABELS[employee.status]}
+                      </ThemedText>
+                    </Badge>
+                  )}
+                  <IconChevronRight size={18} color={colors.mutedForeground} />
+                </View>
               </View>
-            )}
-          </View>
-        )}
-      </View>
-    </Card>
+            </TouchableOpacity>
+          ))}
+
+          {employees.length > 10 && (
+            <View style={StyleSheet.flatten([styles.moreEmployees, { backgroundColor: colors.muted + "30" }])}>
+              <ThemedText style={StyleSheet.flatten([styles.moreEmployeesText, { color: colors.mutedForeground }])}>
+                +{employees.length - 10} {employees.length - 10 === 1 ? "colaborador" : "colaboradores"}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
   emptyState: {
     padding: spacing.xl,
     borderRadius: borderRadius.md,

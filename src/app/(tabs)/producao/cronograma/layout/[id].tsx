@@ -316,7 +316,7 @@ export default function LayoutOnlyEditScreen() {
     goBack();
   };
 
-  // Check if user can edit this specific task's layout (managed sector check)
+  // Check if user can edit this specific task's layout (led sector check)
   const canEditThisTaskLayout = canEditLayoutForTask(user, task?.sectorId);
 
   // Debug logging
@@ -355,10 +355,10 @@ export default function LayoutOnlyEditScreen() {
         return;
       }
 
-      // Check if user can edit THIS task's layout (managed sector validation)
+      // Check if user can edit THIS task's layout (led sector validation)
       if (!canEditThisTaskLayout) {
         console.log('[Layout Page] Cannot edit this task layout');
-        Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor gerenciado ou tarefas sem setor definido");
+        Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor liderado ou tarefas sem setor definido");
         const source = navigationTracker.getSource();
         router.replace((source || "/(tabs)/producao/cronograma") as any);
       }

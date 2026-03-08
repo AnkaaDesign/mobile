@@ -1,7 +1,7 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconClock } from "@tabler/icons-react-native";
@@ -37,13 +37,7 @@ export function VacationDatesCard({ vacation }: VacationDatesCardProps) {
   const statusColor = getStatusColor();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Período de Férias</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Período de Férias" icon="calendar">
       <View style={styles.content}>
         {/* Period Status Card */}
         <View style={StyleSheet.flatten([styles.periodCard, { backgroundColor: statusColor[50 as keyof typeof statusColor], borderColor: statusColor[200 as keyof typeof statusColor] }])}>
@@ -126,31 +120,11 @@ export function VacationDatesCard({ vacation }: VacationDatesCardProps) {
           </View>
         </View>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.lg,
   },

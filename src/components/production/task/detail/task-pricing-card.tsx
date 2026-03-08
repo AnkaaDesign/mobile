@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, Image, Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text
 import type { TaskPricing } from "@/types/task-pricing";
 import { WEB_BASE_URL } from "@/config/urls";
 import {
-  IconFileInvoice,
   IconExternalLink,
   IconReceipt,
   IconCalendar,
@@ -37,24 +36,33 @@ interface TaskPricingCardProps {
   chassisNumber?: string | null;
 }
 
-type PricingStatus = "DRAFT" | "APPROVED" | "REJECTED" | "CANCELLED";
+type PricingStatus = "PENDING" | "BUDGET_APPROVED" | "VERIFIED" | "INTERNAL_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED";
 
 const STATUS_CONFIG: Record<PricingStatus, { label: string; variant: "secondary" | "approved" | "rejected" | "cancelled" }> = {
-  DRAFT: { label: "Rascunho", variant: "secondary" },
-  APPROVED: { label: "Aprovado", variant: "approved" },
-  REJECTED: { label: "Rejeitado", variant: "rejected" },
-  CANCELLED: { label: "Cancelado", variant: "cancelled" },
+  PENDING: { label: "Pendente", variant: "secondary" },
+  BUDGET_APPROVED: { label: "Orçamento Aprovado", variant: "approved" },
+  VERIFIED: { label: "Verificado", variant: "approved" },
+  INTERNAL_APPROVED: { label: "Aprovado Internamente", variant: "approved" },
+  UPCOMING: { label: "A Vencer", variant: "secondary" },
+  PARTIAL: { label: "Parcial", variant: "secondary" },
+  SETTLED: { label: "Liquidado", variant: "approved" },
 };
 
 export function TaskPricingCard({ pricing, customerId, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: TaskPricingCardProps) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
-  if (!pricing || !pricing.items || pricing.items.length === 0) {
+  if (!pricing || !pricing.services || pricing.services.length === 0) {
     return null;
   }
 
-  const statusConfig = STATUS_CONFIG[pricing.status as PricingStatus] || STATUS_CONFIG.DRAFT;
-  const paymentText = generatePaymentText(pricing);
+  const statusConfig = STATUS_CONFIG[pricing.status as PricingStatus] || STATUS_CONFIG.PENDING;
+  const activeConfig = pricing.customerConfigs?.[0];
+  const paymentText = generatePaymentText({
+    customPaymentText: activeConfig?.customPaymentText || null,
+    paymentCondition: activeConfig?.paymentCondition,
+    downPaymentDate: activeConfig?.downPaymentDate,
+    total: typeof pricing.total === 'number' ? pricing.total : Number(pricing.total) || 0,
+  });
   const guaranteeText = generateGuaranteeText(pricing);
 
   const handleViewBudget = async () => {
@@ -93,26 +101,25 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
   };
 
   const handleViewSignature = () => {
-    if (pricing.customerSignature) {
-      fileViewer.actions.viewFile(pricing.customerSignature);
+    if (activeConfig?.customerSignature) {
+      fileViewer.actions.viewFile(activeConfig.customerSignature);
     }
   };
 
-  // Calculate discount amount
-  const discountAmount = pricing.discountType === "PERCENTAGE" && pricing.discountValue
-    ? (pricing.subtotal * pricing.discountValue) / 100
-    : pricing.discountType === "FIXED_VALUE" && pricing.discountValue
-      ? pricing.discountValue
+  // Calculate discount amount from first customer config
+  const configDiscountType = activeConfig?.discountType || 'NONE';
+  const configDiscountValue = activeConfig?.discountValue;
+  const discountAmount = configDiscountType === "PERCENTAGE" && configDiscountValue
+    ? (pricing.subtotal * configDiscountValue) / 100
+    : configDiscountType === "FIXED_VALUE" && configDiscountValue
+      ? configDiscountValue
       : 0;
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFileInvoice size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.headerTitle}>Precificação Detalhada</ThemedText>
-        </View>
+    <DetailCard
+      title="Precificação Detalhada"
+      icon="file-invoice"
+      badge={
         <View style={styles.headerRight}>
           <Button
             variant="outline"
@@ -128,9 +135,8 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             {statusConfig.label}
           </Badge>
         </View>
-      </View>
-
-      {/* Content */}
+      }
+    >
       <View style={styles.content}>
         {/* Budget Number and Validity */}
         <View style={styles.infoRow}>
@@ -167,7 +173,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           </View>
 
           {/* Table Body */}
-          {pricing.items.map((item, index) => {
+          {pricing.services.map((item, index) => {
             const isOutrosWithObservation = item.description === 'Outros' && !!item.observation;
             const displayDescription = isOutrosWithObservation ? item.observation : item.description;
             return (
@@ -176,7 +182,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
               style={[
                 styles.tableRow,
                 { borderBottomColor: colors.border },
-                index === pricing.items!.length - 1 && styles.tableRowLast,
+                index === pricing.services!.length - 1 && styles.tableRowLast,
               ]}
             >
               <View style={[styles.descriptionColumn, styles.descriptionCell]}>
@@ -214,15 +220,15 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           </View>
 
           {/* Discount */}
-          {pricing.discountType && pricing.discountType !== "NONE" && pricing.discountValue && (
+          {configDiscountType && configDiscountType !== "NONE" && configDiscountValue && (
             <View style={styles.summaryRow}>
               <View style={styles.discountLabelContainer}>
                 <ThemedText style={[styles.summaryLabel, { color: colors.destructive }]}>
-                  Desconto{pricing.discountType === "PERCENTAGE" ? ` (${pricing.discountValue}%)` : " (Valor Fixo)"}
+                  Desconto{configDiscountType === "PERCENTAGE" ? ` (${configDiscountValue}%)` : " (Valor Fixo)"}
                 </ThemedText>
-                {pricing.discountReference && (
+                {activeConfig?.discountReference && (
                   <ThemedText style={[styles.discountReference, { color: colors.mutedForeground }]}>
-                    Ref: {pricing.discountReference}
+                    Ref: {activeConfig.discountReference}
                   </ThemedText>
                 )}
               </View>
@@ -295,7 +301,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
         )}
 
         {/* Customer Signature */}
-        {pricing.customerSignature && (
+        {activeConfig?.customerSignature && (
           <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
             <View style={styles.infoSectionHeader}>
               <IconWriting size={16} color={colors.mutedForeground} />
@@ -303,7 +309,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             </View>
             <TouchableOpacity onPress={handleViewSignature} activeOpacity={0.8} style={styles.signatureContainer}>
               <Image
-                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/serve/${pricing.customerSignature.id}` }}
+                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/serve/${activeConfig.customerSignature.id}` }}
                 style={styles.signatureImage}
                 resizeMode="contain"
               />
@@ -311,30 +317,11 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "column",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    gap: spacing.md,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",

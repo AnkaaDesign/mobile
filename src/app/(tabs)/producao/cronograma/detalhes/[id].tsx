@@ -8,11 +8,10 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { SkeletonCard, SkeletonText, SkeletonListItem } from "@/components/ui/skeleton-card";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady } from "@/hooks";
+import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady, useTaskPermissions } from "@/hooks";
 import { useTaskDetailMinimalInclude, useTaskDetailFullInclude } from "@/hooks/use-task-detail-include";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege, formatCurrency, formatDate, isTeamLeader } from "@/utils";
+import { formatCurrency, formatDate } from "@/utils";
 import { perfLog } from "@/utils/performance-logger";
 import { useScreenPerformance } from "@/utils/screen-performance-monitor";
 import { apiPerformanceLogger } from "@/utils/api-performance-logger";
@@ -90,70 +89,20 @@ export default function ScheduleDetailsScreen() {
   // Get file viewer context
   const fileViewer = useFileViewer();
 
-  // Check permissions - Use exact privilege checks (matching web task-edit-form.tsx)
-  const userPrivilege = user?.sector?.privileges;
-
-  // Individual sector checks
-  const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
-  const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
-  const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
-  const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
-  const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
-  const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
-  const isProductionUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
-  const isPlottingUser = userPrivilege === SECTOR_PRIVILEGES.PLOTTING;
-
-  // ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC can edit tasks (matches canEditTasks in entity-permissions.ts)
-  const canEdit = isAdminUser || isCommercialUser || isDesignerUser || isFinancialUser || isLogisticUser;
-  const canDelete = isAdminUser;
-
-  // Check if user can view documents (admin/financial only) - matches web canViewFinancialSections
-  const canViewDocuments = isAdminUser || isFinancialUser;
-
-  // Check if user can view base files (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER only) - matches web
-  const canViewBaseFiles = isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser;
-
-  // Check if user can view project files (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER only) - matches web
-  const canViewProjectFiles = isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser;
-
-  // Check if user can view checkin/checkout files (ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC only) - matches web
-  const canViewCheckinCheckout = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser;
-
-  // Check if user can view artwork badges and non-approved artworks (admin/commercial/financial/logistic/designer only)
-  const canViewArtworkBadges = isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isDesignerUser;
-
-  // Check if user can view artworks section - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web)
-  const canViewArtworks = !isWarehouseUser && !isFinancialUser && !isLogisticUser;
-
-  // Check if user can view truck layout (admin/commercial/designer/financial/logistic/production manager only)
-  const canViewTruckLayout = isAdminUser || isCommercialUser || isDesignerUser || isFinancialUser || isLogisticUser || (isProductionUser && isTeamLeader(user));
-
-  // Check if user can view financial fields (invoiceTo, commission) - ADMIN, FINANCIAL, COMMERCIAL only
-  const canViewFinancialFields = isAdminUser || isFinancialUser || isCommercialUser;
-
-  // Check if user can view restricted fields (negotiatingWith, forecastDate) - ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER only (matches web)
-  const canViewRestrictedFields = isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser;
-
-  // Check if user can view pricing section - ADMIN, FINANCIAL, COMMERCIAL only (matches web canViewPricingSections)
-  const canViewPricingSection = isAdminUser || isFinancialUser || isCommercialUser;
-
-  // Paint sections - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web)
-  const canViewPaintSections = !isWarehouseUser && !isFinancialUser && !isLogisticUser;
-
-  // Logo paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL (matches web)
-  const canViewLogoPaints = !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isCommercialUser;
-
-  // Observation section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
-  const canViewObservation = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
-
-  // Cuts section - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web)
-  const canViewCuts = !isFinancialUser && !isLogisticUser && !isCommercialUser;
-
-  // Airbrushing section - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web)
-  const canViewAirbrushing = !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
-
-  // Truck details (chassis, category, implement) - Hidden from PRODUCTION users except team leaders (privilege managers)
-  const canViewTruckDetails = !isProductionUser || isTeamLeader(user);
+  // Centralized task permissions (matches web use-task-permissions hook)
+  const {
+    isTeamLeader: isTeamLeaderUser,
+    isDesigner: isDesignerUser,
+    canEdit, canDelete,
+    canViewDocuments, canViewBaseFiles, canViewProjectFiles,
+    canViewCheckinCheckout, canViewArtworkBadges,
+    canViewRestrictedFields, canViewPricing: canViewPricingSection,
+    canViewPaint: canViewPaintSections, canViewLogoPaint: canViewLogoPaints,
+    canViewCuts, canViewAirbrushing, canViewObservation,
+    canViewLayout: canViewTruckLayout,
+    canViewTruckDetails, canViewArtworks,
+    canViewCommission: canViewFinancialFields,
+  } = useTaskPermissions();
 
   // TWO-PHASE LOADING: Minimal include for fast above-the-fold, full include for below-fold
   const minimalInclude = useTaskDetailMinimalInclude(user);
@@ -428,7 +377,7 @@ export default function ScheduleDetailsScreen() {
           <TaskDatesCard task={{
             ...task,
             createdBy: task.createdBy,
-          }} canViewRestrictedFields={canViewRestrictedFields} />
+          } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} />
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
           {canViewTruckLayout && (task as any)?.truck && layouts && (layouts.leftSideLayout || layouts.rightSideLayout || layouts.backSideLayout) && (
@@ -454,7 +403,7 @@ export default function ScheduleDetailsScreen() {
           {showBelowFold && <>
 
           {/* Pricing Card - Only visible to ADMIN, FINANCIAL, and COMMERCIAL sectors */}
-          {canViewPricingSection && (task as any)?.pricing && (task as any).pricing.items && (task as any).pricing.items.length > 0 && (
+          {canViewPricingSection && (task as any)?.pricing && (task as any).pricing.services && (task as any).pricing.services.length > 0 && (
             <TaskPricingCard
               pricing={(task as any).pricing}
               customerId={task.customer?.id}
@@ -808,152 +757,114 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Check-in Files Section - Only for ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC */}
-          {canViewCheckinCheckout && (task as any)?.checkinFiles && (task as any).checkinFiles.length > 0 && (
+          {/* Check-in Files Section - Grouped by Service Order */}
+          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.checkinFiles?.length > 0) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
                   <IconCamera size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.sectionTitle}>Check-in</ThemedText>
                   <Badge variant="secondary">
-                    {(task as any).checkinFiles.length}
+                    {task.serviceOrders.reduce((sum: number, so: any) => sum + (so.checkinFiles?.length || 0), 0)}
                   </Badge>
+                </View>
+                <View style={styles.viewModeButtons}>
+                  <TouchableOpacity
+                    style={[styles.viewModeButton, { backgroundColor: checkinFilesViewMode === "list" ? colors.primary : colors.muted }]}
+                    onPress={() => setCheckinFilesViewMode("list")}
+                    activeOpacity={0.7}
+                  >
+                    <IconList size={16} color={checkinFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.viewModeButton, { backgroundColor: checkinFilesViewMode === "grid" ? colors.primary : colors.muted }]}
+                    onPress={() => setCheckinFilesViewMode("grid")}
+                    activeOpacity={0.7}
+                  >
+                    <IconLayoutGrid size={16} color={checkinFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
                 </View>
               </View>
               <View style={styles.sectionContent}>
-                <View style={styles.viewModeControls}>
-                  {(task as any).checkinFiles.length > 1 && (
-                    <TouchableOpacity
-                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                      onPress={async () => {
-                        for (const file of (task as any).checkinFiles) {
-                          try {
-                            await fileViewer.actions.downloadFile(file);
-                          } catch (_error) {
-                            console.error("Error downloading file:", _error);
-                          }
-                        }
-                        Alert.alert("Sucesso", `${(task as any).checkinFiles.length} arquivos baixados`);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <IconDownload size={16} color={colors.primaryForeground} />
-                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                        Baixar Todos
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
-                  <View style={styles.viewModeButtons}>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: checkinFilesViewMode === "list" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setCheckinFilesViewMode("list")}
-                      activeOpacity={0.7}
-                    >
-                      <IconList size={16} color={checkinFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: checkinFilesViewMode === "grid" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setCheckinFilesViewMode("grid")}
-                      activeOpacity={0.7}
-                    >
-                      <IconLayoutGrid size={16} color={checkinFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <View style={checkinFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                  {(task as any).checkinFiles.map((file: any, index: number) => (
-                    <FileItem
-                      key={file.id}
-                      file={file}
-                      viewMode={checkinFilesViewMode}
-                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                      onPress={() => {
-                        fileViewer.actions.viewFiles((task as any).checkinFiles, index);
-                      }}
-                    />
+                {task.serviceOrders
+                  .filter((so: any) => so.checkinFiles?.length > 0)
+                  .map((so: any) => (
+                    <View key={`checkin-${so.id}`} style={{ marginBottom: spacing.md }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+                        <ThemedText style={{ fontSize: fontSize.sm, fontWeight: '600' }}>{so.description}</ThemedText>
+                        <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.6 }}>{so.checkinFiles.length} foto(s)</ThemedText>
+                      </View>
+                      <View style={checkinFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                        {so.checkinFiles.map((file: any, index: number) => (
+                          <FileItem
+                            key={file.id}
+                            file={file}
+                            viewMode={checkinFilesViewMode}
+                            baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                            onPress={() => {
+                              fileViewer.actions.viewFiles(so.checkinFiles, index);
+                            }}
+                          />
+                        ))}
+                      </View>
+                    </View>
                   ))}
-                </View>
               </View>
             </Card>
           )}
 
-          {/* Check-out Files Section - Only for ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC */}
-          {canViewCheckinCheckout && (task as any)?.checkoutFiles && (task as any).checkoutFiles.length > 0 && (
+          {/* Check-out Files Section - Grouped by Service Order */}
+          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.checkoutFiles?.length > 0) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
                   <IconPhotoCheck size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.sectionTitle}>Check-out</ThemedText>
                   <Badge variant="secondary">
-                    {(task as any).checkoutFiles.length}
+                    {task.serviceOrders.reduce((sum: number, so: any) => sum + (so.checkoutFiles?.length || 0), 0)}
                   </Badge>
+                </View>
+                <View style={styles.viewModeButtons}>
+                  <TouchableOpacity
+                    style={[styles.viewModeButton, { backgroundColor: checkoutFilesViewMode === "list" ? colors.primary : colors.muted }]}
+                    onPress={() => setCheckoutFilesViewMode("list")}
+                    activeOpacity={0.7}
+                  >
+                    <IconList size={16} color={checkoutFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.viewModeButton, { backgroundColor: checkoutFilesViewMode === "grid" ? colors.primary : colors.muted }]}
+                    onPress={() => setCheckoutFilesViewMode("grid")}
+                    activeOpacity={0.7}
+                  >
+                    <IconLayoutGrid size={16} color={checkoutFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
+                  </TouchableOpacity>
                 </View>
               </View>
               <View style={styles.sectionContent}>
-                <View style={styles.viewModeControls}>
-                  {(task as any).checkoutFiles.length > 1 && (
-                    <TouchableOpacity
-                      style={[styles.downloadAllButton, { backgroundColor: colors.primary }]}
-                      onPress={async () => {
-                        for (const file of (task as any).checkoutFiles) {
-                          try {
-                            await fileViewer.actions.downloadFile(file);
-                          } catch (_error) {
-                            console.error("Error downloading file:", _error);
-                          }
-                        }
-                        Alert.alert("Sucesso", `${(task as any).checkoutFiles.length} arquivos baixados`);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <IconDownload size={16} color={colors.primaryForeground} />
-                      <ThemedText style={[styles.downloadAllText, { color: colors.primaryForeground }]}>
-                        Baixar Todos
-                      </ThemedText>
-                    </TouchableOpacity>
-                  )}
-                  <View style={styles.viewModeButtons}>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: checkoutFilesViewMode === "list" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setCheckoutFilesViewMode("list")}
-                      activeOpacity={0.7}
-                    >
-                      <IconList size={16} color={checkoutFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.viewModeButton,
-                        { backgroundColor: checkoutFilesViewMode === "grid" ? colors.primary : colors.muted }
-                      ]}
-                      onPress={() => setCheckoutFilesViewMode("grid")}
-                      activeOpacity={0.7}
-                    >
-                      <IconLayoutGrid size={16} color={checkoutFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <View style={checkoutFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                  {(task as any).checkoutFiles.map((file: any, index: number) => (
-                    <FileItem
-                      key={file.id}
-                      file={file}
-                      viewMode={checkoutFilesViewMode}
-                      baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                      onPress={() => {
-                        fileViewer.actions.viewFiles((task as any).checkoutFiles, index);
-                      }}
-                    />
+                {task.serviceOrders
+                  .filter((so: any) => so.checkoutFiles?.length > 0)
+                  .map((so: any) => (
+                    <View key={`checkout-${so.id}`} style={{ marginBottom: spacing.md }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+                        <ThemedText style={{ fontSize: fontSize.sm, fontWeight: '600' }}>{so.description}</ThemedText>
+                        <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.6 }}>{so.checkoutFiles.length} foto(s)</ThemedText>
+                      </View>
+                      <View style={checkoutFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+                        {so.checkoutFiles.map((file: any, index: number) => (
+                          <FileItem
+                            key={file.id}
+                            file={file}
+                            viewMode={checkoutFilesViewMode}
+                            baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                            onPress={() => {
+                              fileViewer.actions.viewFiles(so.checkoutFiles, index);
+                            }}
+                          />
+                        ))}
+                      </View>
+                    </View>
                   ))}
-                </View>
               </View>
             </Card>
           )}
@@ -1139,7 +1050,7 @@ export default function ScheduleDetailsScreen() {
           {/* Total is already displayed inside TaskPricingCard — no duplicate section needed */}
 
           {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
-          {/* Team leaders can swipe to request new cuts for tasks in their managed sector */}
+          {/* Team leaders can swipe to request new cuts for tasks in their led sector */}
           {canViewCuts && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
 
           {/* Airbrushings Table - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
@@ -1149,8 +1060,8 @@ export default function ScheduleDetailsScreen() {
           {/* === End below-fold sections === */}
 
           {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
-          {/* Team leadership is now determined by managedSector relationship */}
-          {(canViewDocuments || isTeamLeader(user)) && (
+          {/* Team leadership is now determined by ledSector relationship */}
+          {(canViewDocuments || isTeamLeaderUser) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>

@@ -56,7 +56,7 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
   const { update } = useServiceOrderMutations();
 
   // Check if user can edit service orders (Admin or team leaders only)
-  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
+  // Note: Team leadership is now determined by ledSector relationship (user.ledSector?.id)
   const canEditServiceOrders = useMemo(() => {
     return user && (
       isTeamLeader(user) ||

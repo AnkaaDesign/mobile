@@ -1,15 +1,15 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { routes, CHANGE_LOG_ENTITY_TYPE, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import type { ChangeLog } from '../../../../types';
-import { IconLink, IconChevronRight, IconExternalLink } from "@tabler/icons-react-native";
+import { IconChevronRight, IconExternalLink } from "@tabler/icons-react-native";
 
 interface EntityLinkCardProps {
   changeLog: ChangeLog;
@@ -112,15 +112,7 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconLink size={20} color={colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.title, { color: colors.foreground }])}>
-            Entidade Afetada
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Entidade Afetada" icon="link">
       <View style={styles.content}>
         <TouchableOpacity
           style={[
@@ -178,31 +170,11 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
           )}
         </TouchableOpacity>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

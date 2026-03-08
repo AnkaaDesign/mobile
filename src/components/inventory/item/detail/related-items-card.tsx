@@ -1,8 +1,8 @@
 import { View, ScrollView, Pressable, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
-import { IconExternalLink, IconPackage, IconChevronRight } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
+import { IconPackage, IconChevronRight } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
 import { router } from "expo-router";
 import { routes } from "@/constants";
@@ -30,17 +30,11 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconExternalLink size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Produtos Relacionados</ThemedText>
-        </View>
-        <Badge variant="muted">
-          {allRelated.length}
-        </Badge>
-      </View>
-      <View style={styles.content}>
+    <DetailCard
+      title="Produtos Relacionados"
+      icon="external-link"
+      badge={<Badge variant="muted">{allRelated.length}</Badge>}
+    >
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {allRelated.map((relatedItem) => (
             <Pressable
@@ -108,35 +102,11 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
             <ThemedText style={StyleSheet.flatten([styles.scrollIndicator, { color: colors.mutedForeground }])}>Deslize para ver mais →</ThemedText>
           </View>
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   badgeText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,

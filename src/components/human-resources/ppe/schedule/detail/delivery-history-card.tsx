@@ -1,18 +1,15 @@
 
 import { View, StyleSheet, ScrollView } from "react-native";
-
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconHistory, IconUser, IconPackage, IconCalendar, IconCircleCheck, IconClock, IconAlertTriangle } from "@tabler/icons-react-native";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { formatDate, formatRelativeTime, formatQuantity } from "@/utils";
-
 import type { PpeDeliverySchedule } from '../../../../../types';
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface DeliveryHistoryCardProps {
   schedule: PpeDeliverySchedule;
@@ -60,43 +57,29 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
 
   if (sortedDeliveries.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconHistory size={20} color={colors.mutedForeground} />
-            <ThemedText style={[styles.title, { color: colors.foreground }]}>
-              Histórico de Entregas
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <View
-            style={StyleSheet.flatten([
-              styles.emptyState,
-              { backgroundColor: colors.muted + "30" },
-            ])}
+      <DetailCard title="Histórico de Entregas" icon="history">
+        <View
+          style={StyleSheet.flatten([
+            styles.emptyState,
+            { backgroundColor: colors.muted + "30" },
+          ])}
+        >
+          <IconHistory size={40} color={colors.mutedForeground} />
+          <ThemedText
+            style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}
           >
-            <IconHistory size={40} color={colors.mutedForeground} />
-            <ThemedText
-              style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}
-            >
-              Nenhuma entrega registrada
-            </ThemedText>
-          </View>
+            Nenhuma entrega registrada
+          </ThemedText>
         </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconHistory size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>
-            Histórico de Entregas
-          </ThemedText>
-        </View>
+    <DetailCard
+      title="Histórico de Entregas"
+      icon="history"
+      badge={
         <Badge variant="secondary">
           <ThemedText
             style={{
@@ -107,132 +90,108 @@ export function DeliveryHistoryCard({ schedule, maxHeight = 400 }: DeliveryHisto
             {sortedDeliveries.length}
           </ThemedText>
         </Badge>
-      </View>
-      <View style={styles.content}>
-        <ScrollView
-          style={StyleSheet.flatten([styles.scrollView, { maxHeight }])}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          <View style={styles.deliveriesList}>
-            {sortedDeliveries.map((delivery) => {
-              const statusColors = getStatusColor(delivery.status);
-              return (
-                <View
-                  key={delivery.id}
-                  style={StyleSheet.flatten([
-                    styles.deliveryItem,
-                    {
-                      backgroundColor: colors.muted + "30",
-                      borderColor: colors.border,
-                    },
-                  ])}
-                >
-                  <View style={styles.deliveryHeader}>
-                    <Badge
-                      variant="secondary"
-                      style={{ backgroundColor: statusColors.bg }}
+      }
+    >
+      <ScrollView
+        style={StyleSheet.flatten([styles.scrollView, { maxHeight }])}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
+        <View style={styles.deliveriesList}>
+          {sortedDeliveries.map((delivery) => {
+            const statusColors = getStatusColor(delivery.status);
+            return (
+              <View
+                key={delivery.id}
+                style={StyleSheet.flatten([
+                  styles.deliveryItem,
+                  {
+                    backgroundColor: colors.muted + "30",
+                    borderColor: colors.border,
+                  },
+                ])}
+              >
+                <View style={styles.deliveryHeader}>
+                  <Badge
+                    variant="secondary"
+                    style={{ backgroundColor: statusColors.bg }}
+                  >
+                    {delivery.status === PPE_DELIVERY_STATUS.DELIVERED && (
+                      <IconCircleCheck size={14} color={statusColors.icon} />
+                    )}
+                    {delivery.status === PPE_DELIVERY_STATUS.PENDING && (
+                      <IconClock size={14} color={statusColors.icon} />
+                    )}
+                    {delivery.status === PPE_DELIVERY_STATUS.REPROVED && (
+                      <IconAlertTriangle size={14} color={statusColors.icon} />
+                    )}
+                    <ThemedText
+                      style={{
+                        color: statusColors.text,
+                        fontSize: fontSize.xs,
+                        marginLeft: spacing.xs,
+                      }}
                     >
-                      {delivery.status === PPE_DELIVERY_STATUS.DELIVERED && (
-                        <IconCircleCheck size={14} color={statusColors.icon} />
-                      )}
-                      {delivery.status === PPE_DELIVERY_STATUS.PENDING && (
-                        <IconClock size={14} color={statusColors.icon} />
-                      )}
-                      {delivery.status === PPE_DELIVERY_STATUS.REPROVED && (
-                        <IconAlertTriangle size={14} color={statusColors.icon} />
-                      )}
-                      <ThemedText
-                        style={{
-                          color: statusColors.text,
-                          fontSize: fontSize.xs,
-                          marginLeft: spacing.xs,
-                        }}
-                      >
-                        {PPE_DELIVERY_STATUS_LABELS[delivery.status]}
-                      </ThemedText>
-                    </Badge>
-                  </View>
+                      {PPE_DELIVERY_STATUS_LABELS[delivery.status]}
+                    </ThemedText>
+                  </Badge>
+                </View>
 
-                  <View style={styles.deliveryInfo}>
-                    {delivery.user && (
-                      <View style={styles.infoRow}>
-                        <IconUser size={14} color={colors.mutedForeground} />
-                        <ThemedText
-                          style={StyleSheet.flatten([
-                            styles.infoText,
-                            { color: colors.foreground },
-                          ])}
-                        >
-                          {delivery.user.name}
-                        </ThemedText>
-                      </View>
-                    )}
-
-                    {delivery.item && (
-                      <View style={styles.infoRow}>
-                        <IconPackage size={14} color={colors.mutedForeground} />
-                        <ThemedText
-                          style={StyleSheet.flatten([
-                            styles.infoText,
-                            { color: colors.foreground },
-                          ])}
-                        >
-                          {delivery.item.name} ({formatQuantity(delivery.quantity)}x)
-                        </ThemedText>
-                      </View>
-                    )}
-
+                <View style={styles.deliveryInfo}>
+                  {delivery.user && (
                     <View style={styles.infoRow}>
-                      <IconCalendar size={14} color={colors.mutedForeground} />
+                      <IconUser size={14} color={colors.mutedForeground} />
                       <ThemedText
                         style={StyleSheet.flatten([
                           styles.infoText,
-                          { color: colors.mutedForeground },
+                          { color: colors.foreground },
                         ])}
                       >
-                        {delivery.actualDeliveryDate
-                          ? `Entregue ${formatDate(new Date(delivery.actualDeliveryDate))}`
-                          : delivery.scheduledDate
-                            ? `Agendado ${formatDate(new Date(delivery.scheduledDate))}`
-                            : formatRelativeTime(new Date(delivery.createdAt))}
+                        {delivery.user.name}
                       </ThemedText>
                     </View>
+                  )}
+
+                  {delivery.item && (
+                    <View style={styles.infoRow}>
+                      <IconPackage size={14} color={colors.mutedForeground} />
+                      <ThemedText
+                        style={StyleSheet.flatten([
+                          styles.infoText,
+                          { color: colors.foreground },
+                        ])}
+                      >
+                        {delivery.item.name} ({formatQuantity(delivery.quantity)}x)
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  <View style={styles.infoRow}>
+                    <IconCalendar size={14} color={colors.mutedForeground} />
+                    <ThemedText
+                      style={StyleSheet.flatten([
+                        styles.infoText,
+                        { color: colors.mutedForeground },
+                      ])}
+                    >
+                      {delivery.actualDeliveryDate
+                        ? `Entregue ${formatDate(new Date(delivery.actualDeliveryDate))}`
+                        : delivery.scheduledDate
+                          ? `Agendado ${formatDate(new Date(delivery.scheduledDate))}`
+                          : formatRelativeTime(new Date(delivery.createdAt))}
+                    </ThemedText>
                   </View>
                 </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </View>
-    </Card>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   emptyState: {
     padding: spacing.xl,
     borderRadius: borderRadius.md,

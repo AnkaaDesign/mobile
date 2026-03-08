@@ -1,10 +1,8 @@
 import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
-import { DetailField } from "@/components/ui/detail-page-layout";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import {
-  IconChartLine,
   IconCurrencyDollar,
   IconSquareArrowUpFilled,
   IconSquareArrowDownFilled,
@@ -103,233 +101,202 @@ export function MetricsCard({ item }: MetricsCardProps) {
   const stockStatusColor = getStockStatusColor();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconChartLine size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Métricas e Análises</ThemedText>
+    <DetailCard title="Métricas e Análises" icon="chart-line">
+      {/* Financial Metrics */}
+      <View style={styles.section}>
+        <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+          Métricas Financeiras
+        </ThemedText>
+        <View style={styles.metricsGrid}>
+          {/* Current Price - 5/12 width */}
+          <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardSmall, { backgroundColor: colors.muted + "50" }])}>
+            <View style={styles.metricHeader}>
+              <IconCurrencyDollar size={16} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                Preço Atual
+              </ThemedText>
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+              {formatCurrency(metrics.currentPrice)}
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: colors.mutedForeground }])}>
+              por unidade
+            </ThemedText>
+          </View>
+
+          {/* Stock Value - 7/12 width */}
+          <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardLarge, { backgroundColor: colors.muted + "50" }])}>
+            <View style={styles.metricHeader}>
+              <IconCurrencyDollar size={16} color={colors.mutedForeground} />
+              <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
+                Valor em Estoque
+              </ThemedText>
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
+              {formatCurrency(item.totalPrice || metrics.stockValue)}
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: colors.mutedForeground }])}>
+              {itemUtils.formatItemQuantity(item)} × {formatCurrency(metrics.currentPrice)}
+            </ThemedText>
+          </View>
         </View>
       </View>
-      <View style={styles.content}>
-        {/* Financial Metrics */}
-        <View style={styles.section}>
+
+      {/* Movement Summary */}
+      <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
+        <View style={styles.sectionTitleRow}>
+          <IconActivity size={16} color={colors.mutedForeground} />
           <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-            Métricas Financeiras
+            Movimentações (30 dias)
           </ThemedText>
-          <View style={styles.metricsGrid}>
-            {/* Current Price - 5/12 width */}
-            <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardSmall, { backgroundColor: colors.muted + "50" }])}>
-              <View style={styles.metricHeader}>
-                <IconCurrencyDollar size={16} color={colors.mutedForeground} />
-                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
-                  Preço Atual
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
-                {formatCurrency(metrics.currentPrice)}
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: colors.mutedForeground }])}>
-                por unidade
-              </ThemedText>
-            </View>
-
-            {/* Stock Value - 7/12 width */}
-            <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardLarge, { backgroundColor: colors.muted + "50" }])}>
-              <View style={styles.metricHeader}>
-                <IconCurrencyDollar size={16} color={colors.mutedForeground} />
-                <ThemedText style={StyleSheet.flatten([styles.metricLabel, { color: colors.mutedForeground }])}>
-                  Valor em Estoque
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.metricValue, { color: colors.foreground }])}>
-                {formatCurrency(item.totalPrice || metrics.stockValue)}
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.metricSubtext, { color: colors.mutedForeground }])}>
-                {itemUtils.formatItemQuantity(item)} × {formatCurrency(metrics.currentPrice)}
-              </ThemedText>
-            </View>
-          </View>
         </View>
-
-        {/* Movement Summary */}
-        <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
-          <View style={styles.sectionTitleRow}>
-            <IconActivity size={16} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-              Movimentações (30 dias)
+        <View style={styles.movementsGrid}>
+          <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
+            <ThemedText style={StyleSheet.flatten([styles.movementLabel, { color: colors.mutedForeground }])}>
+              Total
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
+              {metrics.movementCount}
             </ThemedText>
           </View>
-          <View style={styles.movementsGrid}>
-            <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
+          <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
+            <View style={styles.movementHeader}>
+              <IconSquareArrowUpFilled size={14} color="#16a34a" />
               <ThemedText style={StyleSheet.flatten([styles.movementLabel, { color: colors.mutedForeground }])}>
-                Total
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
-                {metrics.movementCount}
+                Entradas
               </ThemedText>
             </View>
-            <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
-              <View style={styles.movementHeader}>
-                <IconSquareArrowUpFilled size={14} color="#16a34a" />
-                <ThemedText style={StyleSheet.flatten([styles.movementLabel, { color: colors.mutedForeground }])}>
-                  Entradas
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
-                {metrics.totalEntries}
+            <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
+              {metrics.totalEntries}
+            </ThemedText>
+          </View>
+          <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
+            <View style={styles.movementHeader}>
+              <IconSquareArrowDownFilled size={14} color="#dc2626" />
+              <ThemedText style={StyleSheet.flatten([styles.movementLabel, { color: colors.mutedForeground }])}>
+                Saídas
               </ThemedText>
             </View>
-            <View style={StyleSheet.flatten([styles.movementItem, { backgroundColor: colors.muted + "30" }])}>
-              <View style={styles.movementHeader}>
-                <IconSquareArrowDownFilled size={14} color="#dc2626" />
-                <ThemedText style={StyleSheet.flatten([styles.movementLabel, { color: colors.mutedForeground }])}>
-                  Saídas
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
-                {metrics.totalExits}
-              </ThemedText>
-            </View>
+            <ThemedText style={StyleSheet.flatten([styles.movementValue, { color: colors.foreground }])}>
+              {metrics.totalExits}
+            </ThemedText>
           </View>
         </View>
+      </View>
 
-        {/* Stock Status */}
-        <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
-          <View style={styles.sectionTitleRow}>
-            <IconAlertTriangle size={16} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-              Status do Estoque
+      {/* Stock Status */}
+      <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
+        <View style={styles.sectionTitleRow}>
+          <IconAlertTriangle size={16} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+            Status do Estoque
+          </ThemedText>
+        </View>
+        <View style={StyleSheet.flatten([styles.stockStatusCard, { backgroundColor: colors.muted + "30" }])}>
+          <View style={styles.stockStatusHeader}>
+            <View style={StyleSheet.flatten([styles.stockStatusIndicator, { backgroundColor: stockStatusColor }])} />
+            <ThemedText style={StyleSheet.flatten([styles.stockStatusText, { color: stockStatusColor }])}>
+              {getStockStatusLabel()}
             </ThemedText>
           </View>
-          <View style={StyleSheet.flatten([styles.stockStatusCard, { backgroundColor: colors.muted + "30" }])}>
-            <View style={styles.stockStatusHeader}>
-              <View style={StyleSheet.flatten([styles.stockStatusIndicator, { backgroundColor: stockStatusColor }])} />
-              <ThemedText style={StyleSheet.flatten([styles.stockStatusText, { color: stockStatusColor }])}>
-                {getStockStatusLabel()}
-              </ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.stockStatusDetail, { color: colors.mutedForeground }])}>
-              {getStockLevelMessage(metrics.stockLevel, item.quantity || 0, item.reorderPoint || null)}
-            </ThemedText>
-          </View>
+          <ThemedText style={StyleSheet.flatten([styles.stockStatusDetail, { color: colors.mutedForeground }])}>
+            {getStockLevelMessage(metrics.stockLevel, item.quantity || 0, item.reorderPoint || null)}
+          </ThemedText>
+        </View>
 
-          {/* Stock Levels */}
-          <View style={styles.stockLevelsContainer}>
-            <DetailField
-              label="Quantidade Atual"
-              value={formatQuantity(item.quantity)}
-              icon="package"
-            />
-            {item.maxQuantity !== null && (
-              <DetailField
-                label="Máximo"
-                value={formatQuantity(item.maxQuantity)}
-                icon="arrow-bar-to-up"
-              />
-            )}
-            {item.reorderPoint !== null && (
-              <DetailField
-                label="Ponto de Reposição"
-                value={formatQuantity(item.reorderPoint)}
-                icon="alert-triangle"
-              />
-            )}
-          </View>
-
-          {/* Visual Stock Level Indicator */}
+        {/* Stock Levels */}
+        <View style={styles.stockLevelsContainer}>
+          <DetailField
+            label="Quantidade Atual"
+            value={formatQuantity(item.quantity)}
+            icon="package"
+          />
           {item.maxQuantity !== null && (
-            <View style={styles.progressContainer}>
-              <View style={StyleSheet.flatten([styles.progressTrack, { backgroundColor: colors.muted + "50" }])}>
-                <View
-                  style={StyleSheet.flatten([
-                    styles.progressBar,
-                    {
-                      backgroundColor: stockStatusColor,
-                      width: `${Math.min(100, (item.quantity / item.maxQuantity) * 100)}%`,
-                    },
-                  ])}
-                />
-              </View>
-              <View style={styles.progressLabels}>
-                <ThemedText style={StyleSheet.flatten([styles.progressLabel, { color: colors.mutedForeground }])}>
-                  0
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.progressLabel, { color: colors.mutedForeground }])}>
-                  {formatQuantity(item.maxQuantity)}
-                </ThemedText>
-              </View>
-            </View>
+            <DetailField
+              label="Máximo"
+              value={formatQuantity(item.maxQuantity)}
+              icon="arrow-bar-to-up"
+            />
+          )}
+          {item.reorderPoint !== null && (
+            <DetailField
+              label="Ponto de Reposição"
+              value={formatQuantity(item.reorderPoint)}
+              icon="alert-triangle"
+            />
           )}
         </View>
 
-        {/* ABC/XYZ Categorization */}
-        {(item.abcCategory || item.xyzCategory) && (
-          <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
-            <View style={styles.sectionTitleRow}>
-              <IconTags size={16} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
-                Categorização ABC/XYZ
-              </ThemedText>
+        {/* Visual Stock Level Indicator */}
+        {item.maxQuantity !== null && (
+          <View style={styles.progressContainer}>
+            <View style={StyleSheet.flatten([styles.progressTrack, { backgroundColor: colors.muted + "50" }])}>
+              <View
+                style={StyleSheet.flatten([
+                  styles.progressBar,
+                  {
+                    backgroundColor: stockStatusColor,
+                    width: `${Math.min(100, (item.quantity / item.maxQuantity) * 100)}%`,
+                  },
+                ])}
+              />
             </View>
-            <View style={styles.categorizationGrid}>
-              {item.abcCategory && (
-                <View style={StyleSheet.flatten([styles.categorizationCard, { backgroundColor: colors.muted + "30" }])}>
-                  <View style={styles.categorizationHeader}>
-                    <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: "#3b82f6" }])} />
-                    <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: colors.mutedForeground }])}>
-                      Análise ABC
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: colors.foreground }])}>
-                    {ABC_CATEGORY_LABELS[item.abcCategory]}
-                  </ThemedText>
-                </View>
-              )}
-              {item.xyzCategory && (
-                <View style={StyleSheet.flatten([styles.categorizationCard, { backgroundColor: colors.muted + "30" }])}>
-                  <View style={styles.categorizationHeader}>
-                    <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: "#9333ea" }])} />
-                    <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: colors.mutedForeground }])}>
-                      Análise XYZ
-                    </ThemedText>
-                  </View>
-                  <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: colors.foreground }])}>
-                    {XYZ_CATEGORY_LABELS[item.xyzCategory]}
-                  </ThemedText>
-                </View>
-              )}
+            <View style={styles.progressLabels}>
+              <ThemedText style={StyleSheet.flatten([styles.progressLabel, { color: colors.mutedForeground }])}>
+                0
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.progressLabel, { color: colors.mutedForeground }])}>
+                {formatQuantity(item.maxQuantity)}
+              </ThemedText>
             </View>
           </View>
         )}
       </View>
-    </Card>
+
+      {/* ABC/XYZ Categorization */}
+      {(item.abcCategory || item.xyzCategory) && (
+        <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
+          <View style={styles.sectionTitleRow}>
+            <IconTags size={16} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+              Categorização ABC/XYZ
+            </ThemedText>
+          </View>
+          <View style={styles.categorizationGrid}>
+            {item.abcCategory && (
+              <View style={StyleSheet.flatten([styles.categorizationCard, { backgroundColor: colors.muted + "30" }])}>
+                <View style={styles.categorizationHeader}>
+                  <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: "#3b82f6" }])} />
+                  <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: colors.mutedForeground }])}>
+                    Análise ABC
+                  </ThemedText>
+                </View>
+                <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: colors.foreground }])}>
+                  {ABC_CATEGORY_LABELS[item.abcCategory]}
+                </ThemedText>
+              </View>
+            )}
+            {item.xyzCategory && (
+              <View style={StyleSheet.flatten([styles.categorizationCard, { backgroundColor: colors.muted + "30" }])}>
+                <View style={styles.categorizationHeader}>
+                  <View style={StyleSheet.flatten([styles.categorizationIndicator, { backgroundColor: "#9333ea" }])} />
+                  <ThemedText style={StyleSheet.flatten([styles.categorizationType, { color: colors.mutedForeground }])}>
+                    Análise XYZ
+                  </ThemedText>
+                </View>
+                <ThemedText style={StyleSheet.flatten([styles.categorizationLabel, { color: colors.foreground }])}>
+                  {XYZ_CATEGORY_LABELS[item.xyzCategory]}
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.lg,
-  },
   section: {
     gap: spacing.md,
   },

@@ -1,6 +1,5 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconCircleCheck, IconCircleX, IconUser, IconCalendar, IconMessageCircle } from "@tabler/icons-react-native";
@@ -10,6 +9,7 @@ import { formatDateTime, formatRelativeTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface ApprovalCardProps {
   vacation: Vacation;
@@ -33,139 +33,102 @@ export function ApprovalCard({ vacation }: ApprovalCardProps) {
   const approverName = "Sistema"; // Placeholder - would come from approver user relation
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: statusColor[100 as keyof typeof statusColor] }])}>
-            <StatusIcon size={18} color={statusColor[600 as keyof typeof statusColor]} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            {isApproved ? "Informações de Aprovação" : "Informações de Rejeição"}
-          </ThemedText>
+    <DetailCard
+      title={isApproved ? "Informações de Aprovação" : "Informações de Rejeição"}
+      icon={isApproved ? "circle-check" : "circle-x"}
+      iconColor={statusColor[600 as keyof typeof statusColor] as string}
+    >
+      <View style={styles.approvalContent}>
+        {/* Status Badge */}
+        <View style={styles.statusBadgeContainer}>
+          <Badge
+            variant={isApproved ? "success" : "destructive"}
+            style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: statusColor[500 as keyof typeof statusColor] }])}
+          >
+            <View style={styles.badgeContent}>
+              <StatusIcon size={16} color="#FFFFFF" />
+              <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: "#FFFFFF" }])}>
+                {isApproved ? "Férias Aprovadas" : "Férias Rejeitadas"}
+              </ThemedText>
+            </View>
+          </Badge>
         </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.approvalContent}>
-          {/* Status Badge */}
-          <View style={styles.statusBadgeContainer}>
-            <Badge
-              variant={isApproved ? "success" : "destructive"}
-              style={StyleSheet.flatten([styles.statusBadge, { backgroundColor: statusColor[500 as keyof typeof statusColor] }])}
-            >
-              <View style={styles.badgeContent}>
-                <StatusIcon size={16} color="#FFFFFF" />
-                <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: "#FFFFFF" }])}>
-                  {isApproved ? "Férias Aprovadas" : "Férias Rejeitadas"}
-                </ThemedText>
-              </View>
-            </Badge>
-          </View>
 
-          {/* Approval Details Card */}
-          <View style={StyleSheet.flatten([styles.detailsCard, { backgroundColor: statusColor[50 as keyof typeof statusColor], borderColor: statusColor[200 as keyof typeof statusColor] }])}>
-            {/* Date Information */}
-            <View style={styles.detailItem}>
-              <View style={styles.detailHeader}>
-                <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: statusColor[700 as keyof typeof statusColor] }])}>
-                  Data de {isApproved ? "Aprovação" : "Rejeição"}
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
-                {formatDateTime(approvalDate)}
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.detailRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
-                {formatRelativeTime(approvalDate)}
+        {/* Approval Details Card */}
+        <View style={StyleSheet.flatten([styles.detailsCard, { backgroundColor: statusColor[50 as keyof typeof statusColor], borderColor: statusColor[200 as keyof typeof statusColor] }])}>
+          {/* Date Information */}
+          <View style={styles.detailItem}>
+            <View style={styles.detailHeader}>
+              <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
+              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: statusColor[700 as keyof typeof statusColor] }])}>
+                Data de {isApproved ? "Aprovação" : "Rejeição"}
               </ThemedText>
             </View>
-
-            {/* Approver Information */}
-            <View style={StyleSheet.flatten([styles.detailItem, { borderTopColor: statusColor[200 as keyof typeof statusColor], borderTopWidth: 1, paddingTop: spacing.md }])}>
-              <View style={styles.detailHeader}>
-                <IconUser size={16} color={statusColor[600 as keyof typeof statusColor]} />
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: statusColor[700 as keyof typeof statusColor] }])}>
-                  {isApproved ? "Aprovado por" : "Rejeitado por"}
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
-                {approverName}
-              </ThemedText>
-            </View>
-          </View>
-
-          {/* Additional Information */}
-          <View style={StyleSheet.flatten([styles.infoCard, { backgroundColor: colors.muted + "20" }])}>
-            <View style={styles.infoHeader}>
-              <IconMessageCircle size={16} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.infoTitle, { color: colors.foreground }])}>
-                Observações
-              </ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.infoText, { color: colors.mutedForeground }])}>
-              {isApproved
-                ? "As férias foram aprovadas e o funcionário será notificado. O período de férias está confirmado conforme as datas solicitadas."
-                : "As férias foram rejeitadas. Entre em contato com o departamento de recursos humanos para mais informações sobre o motivo da rejeição."}
+            <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
+              {formatDateTime(approvalDate)}
+            </ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.detailRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
+              {formatRelativeTime(approvalDate)}
             </ThemedText>
           </View>
 
-          {/* Next Steps */}
-          {isApproved && vacation.status === VACATION_STATUS.APPROVED && (
-            <View style={StyleSheet.flatten([styles.nextStepsCard, { backgroundColor: extendedColors.blue[50], borderColor: extendedColors.blue[200] }])}>
-              <ThemedText style={StyleSheet.flatten([styles.nextStepsTitle, { color: extendedColors.blue[800] }])}>
-                Próximos Passos
+          {/* Approver Information */}
+          <View style={StyleSheet.flatten([styles.detailItem, { borderTopColor: statusColor[200 as keyof typeof statusColor], borderTopWidth: 1, paddingTop: spacing.md }])}>
+            <View style={styles.detailHeader}>
+              <IconUser size={16} color={statusColor[600 as keyof typeof statusColor]} />
+              <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: statusColor[700 as keyof typeof statusColor] }])}>
+                {isApproved ? "Aprovado por" : "Rejeitado por"}
               </ThemedText>
-              <View style={styles.stepsList}>
-                <View style={styles.stepItem}>
-                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
-                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
-                    Aguardar o início das férias em {formatDateTime(vacation.startAt, "short")}
-                  </ThemedText>
-                </View>
-                <View style={styles.stepItem}>
-                  <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
-                  <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
-                    O funcionário deve confirmar o recebimento da notificação
-                  </ThemedText>
-                </View>
+            </View>
+            <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
+              {approverName}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Additional Information */}
+        <View style={StyleSheet.flatten([styles.infoCard, { backgroundColor: colors.muted + "20" }])}>
+          <View style={styles.infoHeader}>
+            <IconMessageCircle size={16} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.infoTitle, { color: colors.foreground }])}>
+              Observações
+            </ThemedText>
+          </View>
+          <ThemedText style={StyleSheet.flatten([styles.infoText, { color: colors.mutedForeground }])}>
+            {isApproved
+              ? "As férias foram aprovadas e o funcionário será notificado. O período de férias está confirmado conforme as datas solicitadas."
+              : "As férias foram rejeitadas. Entre em contato com o departamento de recursos humanos para mais informações sobre o motivo da rejeição."}
+          </ThemedText>
+        </View>
+
+        {/* Next Steps */}
+        {isApproved && vacation.status === VACATION_STATUS.APPROVED && (
+          <View style={StyleSheet.flatten([styles.nextStepsCard, { backgroundColor: extendedColors.blue[50], borderColor: extendedColors.blue[200] }])}>
+            <ThemedText style={StyleSheet.flatten([styles.nextStepsTitle, { color: extendedColors.blue[800] }])}>
+              Próximos Passos
+            </ThemedText>
+            <View style={styles.stepsList}>
+              <View style={styles.stepItem}>
+                <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
+                <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
+                  Aguardar o início das férias em {formatDateTime(vacation.startAt, "short")}
+                </ThemedText>
+              </View>
+              <View style={styles.stepItem}>
+                <View style={StyleSheet.flatten([styles.stepBullet, { backgroundColor: extendedColors.blue[500] }])} />
+                <ThemedText style={StyleSheet.flatten([styles.stepText, { color: extendedColors.blue[700] }])}>
+                  O funcionário deve confirmar o recebimento da notificação
+                </ThemedText>
               </View>
             </View>
-          )}
-        </View>
+          </View>
+        )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
   approvalContent: {
     gap: spacing.lg,
   },

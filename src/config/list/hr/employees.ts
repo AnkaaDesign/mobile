@@ -58,7 +58,7 @@ export const employeesListConfig: ListConfig<User> = {
           name: true,
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,
@@ -245,12 +245,12 @@ export const employeesListConfig: ListConfig<User> = {
         format: 'datetime',
       },
       {
-        key: 'managedSector.name',
-        label: 'SETOR GERENCIADO',
+        key: 'ledSector.name',
+        label: 'SETOR LIDERADO',
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (employee) => employee.managedSector?.name || '-',
+        render: (employee) => employee.ledSector?.name || '-',
       },
       {
         key: 'city',
@@ -497,7 +497,7 @@ export const employeesListConfig: ListConfig<User> = {
       { key: 'performanceLevel', label: 'Nível de Performance', path: 'performanceLevel', format: 'number' },
       { key: 'verified', label: 'Verificado', path: 'verified', format: 'boolean' },
       { key: 'lastLoginAt', label: 'Último Login', path: 'lastLoginAt', format: 'datetime' },
-      { key: 'managedSector', label: 'Setor Gerenciado', path: 'managedSector.name' },
+      { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
       { key: 'city', label: 'Cidade', path: 'city' },
       { key: 'state', label: 'Estado', path: 'state' },
       { key: 'zipCode', label: 'CEP', path: 'zipCode' },

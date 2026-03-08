@@ -53,15 +53,10 @@ export interface PpeDelivery extends BaseEntity {
   statusOrder: number;
   quantity: number;
   reason: string | null;
-  size?: string | null; // PPE size
-  expirationDate?: Date | null; // Expiration date for the delivered PPE
-  notes?: string | null; // Additional notes about the delivery
+  size?: string | null;
+  expirationDate?: Date | null;
+  notes?: string | null;
 
-  // ClickSign integration fields
-  clicksignEnvelopeId?: string | null;
-  clicksignDocumentKey?: string | null;
-  clicksignSignerKey?: string | null;
-  clicksignSignedAt?: Date | null;
   deliveryDocumentId?: string | null;
 
   // Relations (optional, populated based on query)
@@ -114,6 +109,14 @@ export interface PpeDeliverySignature extends BaseEntity {
 
   // Relations
   signedByUser?: User;
+  signedDocument?: {
+    id: string;
+    filename: string;
+    originalName: string;
+    mimetype: string;
+    path: string;
+    size: number;
+  } | null;
 }
 
 // PPE configuration is now stored directly on the Item model
@@ -163,7 +166,7 @@ export interface PpeDeliverySchedule extends BaseEntity {
 
   // Relations (optional, populated based on query)
   items?: PpeScheduleItem[];
-  ppeItems?: PpeScheduleItem[]; // Alias for items - used by API responses and frontend components
+  ppeItems?: PpeScheduleItem[];
   deliveries?: PpeDelivery[];
   autoOrders?: Order[];
 }
@@ -240,6 +243,15 @@ export interface PpeDeliveryIncludes {
     | {
         include?: ItemIncludes;
       };
+  signature?:
+    | boolean
+    | {
+        include?: {
+          signedByUser?: boolean;
+          signedDocument?: boolean;
+        };
+      };
+  deliveryDocument?: boolean;
 }
 
 // PPE configuration includes are not needed as PPE config is stored directly on Item

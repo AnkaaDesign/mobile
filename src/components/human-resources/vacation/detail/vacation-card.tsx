@@ -1,15 +1,15 @@
 
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconCalendar, IconClock, IconBeach } from "@tabler/icons-react-native";
+import { IconCalendar, IconClock } from "@tabler/icons-react-native";
 import type { Vacation } from '../../../../types';
 import { VACATION_STATUS_LABELS, VACATION_TYPE_LABELS, getBadgeVariant } from "@/constants";
 import { formatDate, formatRelativeTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface VacationCardProps {
   vacation: Vacation;
@@ -39,146 +39,115 @@ export function VacationCard({ vacation }: VacationCardProps) {
   const statusColor = getStatusColor();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconBeach size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.title, { color: colors.foreground }]}>Informações das Férias</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        <View style={styles.vacationContent}>
-          {/* Status and Type Badges */}
-          <View style={styles.badgesRow}>
-            <Badge variant={getBadgeVariant(vacation.status, "VACATION")}>
+    <DetailCard title="Informações das Férias" icon="beach">
+      <View style={styles.vacationContent}>
+        {/* Status and Type Badges */}
+        <View style={styles.badgesRow}>
+          <Badge variant={getBadgeVariant(vacation.status, "VACATION")}>
+            <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>
+              {VACATION_STATUS_LABELS[vacation.status]}
+            </ThemedText>
+          </Badge>
+          <Badge variant="outline">
+            <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.foreground }])}>
+              {VACATION_TYPE_LABELS[vacation.type]}
+            </ThemedText>
+          </Badge>
+          {vacation.isCollective && (
+            <Badge variant="info">
               <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>
-                {VACATION_STATUS_LABELS[vacation.status]}
+                Coletivas
               </ThemedText>
             </Badge>
-            <Badge variant="outline">
-              <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.foreground }])}>
-                {VACATION_TYPE_LABELS[vacation.type]}
-              </ThemedText>
-            </Badge>
-            {vacation.isCollective && (
-              <Badge variant="info">
-                <ThemedText style={StyleSheet.flatten([styles.badgeText, { color: colors.primaryForeground }])}>
-                  Coletivas
-                </ThemedText>
-              </Badge>
-            )}
-          </View>
+          )}
+        </View>
 
-          {/* Period Card */}
-          <View style={StyleSheet.flatten([styles.periodCard, { backgroundColor: statusColor[50 as keyof typeof statusColor], borderColor: statusColor[200 as keyof typeof statusColor] }])}>
-            <View style={styles.periodHeader}>
-              <View style={StyleSheet.flatten([styles.periodIndicator, { backgroundColor: statusColor[500 as keyof typeof statusColor] }])} />
-              <ThemedText style={StyleSheet.flatten([styles.periodStatus, { color: statusColor[700 as keyof typeof statusColor] }])}>
-                {isActive ? "Em Andamento" : isUpcoming ? "Próximas" : "Concluídas"}
-              </ThemedText>
-            </View>
-
-            {/* Date Range */}
-            <View style={styles.dateRange}>
-              <View style={styles.dateItem}>
-                <View style={styles.dateHeader}>
-                  <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
-                  <ThemedText style={StyleSheet.flatten([styles.dateLabel, { color: statusColor[600 as keyof typeof statusColor] }])}>Início</ThemedText>
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.dateValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
-                  {formatDate(vacation.startAt)}
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.dateRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
-                  {formatRelativeTime(vacation.startAt)}
-                </ThemedText>
-              </View>
-
-              <View style={StyleSheet.flatten([styles.dateSeparator, { backgroundColor: statusColor[300 as keyof typeof statusColor] }])} />
-
-              <View style={styles.dateItem}>
-                <View style={styles.dateHeader}>
-                  <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
-                  <ThemedText style={StyleSheet.flatten([styles.dateLabel, { color: statusColor[600 as keyof typeof statusColor] }])}>Término</ThemedText>
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.dateValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
-                  {formatDate(vacation.endAt)}
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.dateRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
-                  {formatRelativeTime(vacation.endAt)}
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-
-          {/* Duration Info */}
-          <View style={StyleSheet.flatten([styles.durationCard, { backgroundColor: colors.muted + "30" }])}>
-            <View style={styles.durationHeader}>
-              <IconClock size={20} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.durationLabel, { color: colors.mutedForeground }])}>Duração Total</ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.durationValue, { color: colors.foreground }])}>
-              {daysDifference} {daysDifference === 1 ? "dia" : "dias"}
+        {/* Period Card */}
+        <View style={StyleSheet.flatten([styles.periodCard, { backgroundColor: statusColor[50 as keyof typeof statusColor], borderColor: statusColor[200 as keyof typeof statusColor] }])}>
+          <View style={styles.periodHeader}>
+            <View style={StyleSheet.flatten([styles.periodIndicator, { backgroundColor: statusColor[500 as keyof typeof statusColor] }])} />
+            <ThemedText style={StyleSheet.flatten([styles.periodStatus, { color: statusColor[700 as keyof typeof statusColor] }])}>
+              {isActive ? "Em Andamento" : isUpcoming ? "Próximas" : "Concluídas"}
             </ThemedText>
           </View>
 
-          {/* Visual Calendar Representation */}
-          <View style={styles.calendarRepresentation}>
-            <ThemedText style={StyleSheet.flatten([styles.calendarTitle, { color: colors.foreground }])}>Representação Visual</ThemedText>
-            <View style={StyleSheet.flatten([styles.calendarBar, { backgroundColor: colors.muted + "30" }])}>
-              <View
-                style={StyleSheet.flatten([
-                  styles.calendarProgress,
-                  {
-                    backgroundColor: statusColor[500 as keyof typeof statusColor],
-                    width: isActive ? `${((now.getTime() - startDate.getTime()) / (endDate.getTime() - startDate.getTime())) * 100}%` : isPast ? "100%" : "0%",
-                  },
-                ])}
-              />
-            </View>
-            <View style={styles.calendarLabels}>
-              <ThemedText style={StyleSheet.flatten([styles.calendarLabel, { color: colors.mutedForeground }])}>
-                {formatDate(vacation.startAt, "short")}
+          {/* Date Range */}
+          <View style={styles.dateRange}>
+            <View style={styles.dateItem}>
+              <View style={styles.dateHeader}>
+                <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
+                <ThemedText style={StyleSheet.flatten([styles.dateLabel, { color: statusColor[600 as keyof typeof statusColor] }])}>Início</ThemedText>
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.dateValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
+                {formatDate(vacation.startAt)}
               </ThemedText>
-              {isActive && (
-                <ThemedText style={StyleSheet.flatten([styles.calendarLabelCenter, { color: statusColor[700 as keyof typeof statusColor] }])}>
-                  Hoje
-                </ThemedText>
-              )}
-              <ThemedText style={StyleSheet.flatten([styles.calendarLabel, { color: colors.mutedForeground }])}>
-                {formatDate(vacation.endAt, "short")}
+              <ThemedText style={StyleSheet.flatten([styles.dateRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
+                {formatRelativeTime(vacation.startAt)}
+              </ThemedText>
+            </View>
+
+            <View style={StyleSheet.flatten([styles.dateSeparator, { backgroundColor: statusColor[300 as keyof typeof statusColor] }])} />
+
+            <View style={styles.dateItem}>
+              <View style={styles.dateHeader}>
+                <IconCalendar size={16} color={statusColor[600 as keyof typeof statusColor]} />
+                <ThemedText style={StyleSheet.flatten([styles.dateLabel, { color: statusColor[600 as keyof typeof statusColor] }])}>Término</ThemedText>
+              </View>
+              <ThemedText style={StyleSheet.flatten([styles.dateValue, { color: statusColor[800 as keyof typeof statusColor] }])}>
+                {formatDate(vacation.endAt)}
+              </ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.dateRelative, { color: statusColor[600 as keyof typeof statusColor] }])}>
+                {formatRelativeTime(vacation.endAt)}
               </ThemedText>
             </View>
           </View>
         </View>
+
+        {/* Duration Info */}
+        <View style={StyleSheet.flatten([styles.durationCard, { backgroundColor: colors.muted + "30" }])}>
+          <View style={styles.durationHeader}>
+            <IconClock size={20} color={colors.primary} />
+            <ThemedText style={StyleSheet.flatten([styles.durationLabel, { color: colors.mutedForeground }])}>Duração Total</ThemedText>
+          </View>
+          <ThemedText style={StyleSheet.flatten([styles.durationValue, { color: colors.foreground }])}>
+            {daysDifference} {daysDifference === 1 ? "dia" : "dias"}
+          </ThemedText>
+        </View>
+
+        {/* Visual Calendar Representation */}
+        <View style={styles.calendarRepresentation}>
+          <ThemedText style={StyleSheet.flatten([styles.calendarTitle, { color: colors.foreground }])}>Representação Visual</ThemedText>
+          <View style={StyleSheet.flatten([styles.calendarBar, { backgroundColor: colors.muted + "30" }])}>
+            <View
+              style={StyleSheet.flatten([
+                styles.calendarProgress,
+                {
+                  backgroundColor: statusColor[500 as keyof typeof statusColor],
+                  width: isActive ? `${((now.getTime() - startDate.getTime()) / (endDate.getTime() - startDate.getTime())) * 100}%` : isPast ? "100%" : "0%",
+                },
+              ])}
+            />
+          </View>
+          <View style={styles.calendarLabels}>
+            <ThemedText style={StyleSheet.flatten([styles.calendarLabel, { color: colors.mutedForeground }])}>
+              {formatDate(vacation.startAt, "short")}
+            </ThemedText>
+            {isActive && (
+              <ThemedText style={StyleSheet.flatten([styles.calendarLabelCenter, { color: statusColor[700 as keyof typeof statusColor] }])}>
+                Hoje
+              </ThemedText>
+            )}
+            <ThemedText style={StyleSheet.flatten([styles.calendarLabel, { color: colors.mutedForeground }])}>
+              {formatDate(vacation.endAt, "short")}
+            </ThemedText>
+          </View>
+        </View>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   vacationContent: {
     gap: spacing.lg,
   },

@@ -118,7 +118,7 @@ export default function TeamMemberDetailsScreen() {
                 Membro não encontrado
               </ThemedText>
               <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-                O membro da equipe solicitado não foi encontrado ou não pertence ao seu setor gerenciado.
+                O membro da equipe solicitado não foi encontrado ou não pertence ao seu setor liderado.
               </ThemedText>
             </CardContent>
           </Card>

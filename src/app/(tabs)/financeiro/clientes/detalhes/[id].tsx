@@ -48,11 +48,11 @@ export default function FinancialCustomerDetailScreen() {
   const id = params?.id || "";
 
   // Financial module requires ADMIN, FINANCIAL privileges, or team leadership to view documents
-  // Team leadership is now determined by managedSector relationship
+  // Team leadership is now determined by ledSector relationship
   const canViewDocuments = user && (hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.FINANCIAL,
-  ]) || Boolean(user.managedSector?.id));
+  ]) || Boolean(user.ledSector?.id));
 
   const {
     data: response,

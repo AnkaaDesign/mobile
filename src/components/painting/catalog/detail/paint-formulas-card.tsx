@@ -1,9 +1,7 @@
-
-import { View, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, TouchableOpacity, Alert } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Text } from "@/components/ui/text";
-
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -12,9 +10,7 @@ import type { Paint, PaintFormula } from '../../../../types';
 import { routes, SECTOR_PRIVILEGES } from '@/constants';
 import { routeToMobilePath } from '@/utils/route-mapper';
 import * as Clipboard from 'expo-clipboard';
-// import { showToast } from '@/components/ui/toast';
 import { useTheme } from '@/lib/theme';
-import { spacing, fontSize } from '@/constants/design-system';
 import { useAuth } from '@/contexts/auth-context';
 
 interface PaintFormulasCardProps {
@@ -24,13 +20,10 @@ interface PaintFormulasCardProps {
 }
 
 // Helper to get component count from either _count or components array
-// Supports both optimized select queries (with _count) and full include queries (with components array)
 function getFormulaComponentCount(formula: PaintFormula): number {
-  // Prefer _count.components (from optimized select query) if available
   if (formula._count?.components !== undefined) {
     return formula._count.components;
   }
-  // Fall back to components array length (from include query)
   return formula.components?.length || 0;
 }
 
@@ -39,7 +32,6 @@ export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCa
   const { user } = useAuth();
   const userPrivilege = user?.sector?.privileges;
 
-  // Only COMMERCIAL, ADMIN, FINANCIAL can see prices (WAREHOUSE excluded)
   const canSeePrices = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
     userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
     userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
@@ -53,18 +45,17 @@ export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCa
   const handleFormulaCopy = async (formula: PaintFormula) => {
     try {
       const componentCount = getFormulaComponentCount(formula);
-      let formulaText = `Fórmula: ${formula.description || 'Sem descrição'}
+      let formulaText = `Formula: ${formula.description || 'Sem descricao'}
 Componentes: ${componentCount}`;
 
-      // Only include price in copy if user can see prices
       if (canSeePrices) {
-        formulaText += `\nPreço/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.pricePerLiter)) : '-'}`;
+        formulaText += `\nPreco/L: ${formula.pricePerLiter != null ? formatCurrency(Number(formula.pricePerLiter)) : '-'}`;
       }
 
       formulaText += `\nDensidade: ${formula.density != null ? `${Number(formula.density).toFixed(3)} g/ml` : '-'}`;
 
       await Clipboard.setStringAsync(formulaText);
-      Alert.alert("Sucesso", "Fórmula copiada!");
+      Alert.alert("Sucesso", "Formula copiada!");
     } catch (error) {
       Alert.alert("Erro", "Erro ao copiar");
     }
@@ -79,18 +70,7 @@ Componentes: ${componentCount}`;
   };
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Icon name="flask" size={20} color={colors.mutedForeground} />
-          <Text style={styles.title}>
-            Fórmulas ({paint.formulas?.length || 0})
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.content}>
+    <DetailCard title={`Formulas (${paint.formulas?.length || 0})`} icon="flask">
       {hasFormulas ? (
         <View className="gap-3">
           {/* Formula List */}
@@ -105,10 +85,10 @@ Componentes: ${componentCount}`;
               >
                 {/* Formula Name */}
                 <Text className="text-sm font-semibold text-foreground mb-2" numberOfLines={2}>
-                  {formula.description || "Sem descrição"}
+                  {formula.description || "Sem descricao"}
                 </Text>
 
-                {/* Component Count - supports both _count (select) and components array (include) */}
+                {/* Component Count */}
                 {(() => {
                   const count = getFormulaComponentCount(formula);
                   return (
@@ -123,12 +103,11 @@ Componentes: ${componentCount}`;
 
                 {/* Metrics Row */}
                 <View className="flex-row gap-4">
-                  {/* Price per Liter - Only show if user can see prices */}
                   {canSeePrices && (
                     <View className="flex-1">
                       <View className="flex-row items-center gap-1 mb-1">
                         <Icon name="currency-dollar" size={14} className="text-muted-foreground" />
-                        <Text className="text-xs text-muted-foreground">Preço/L</Text>
+                        <Text className="text-xs text-muted-foreground">Preco/L</Text>
                       </View>
                       <Text className="text-sm font-medium text-foreground">
                         {formula.pricePerLiter != null && formula.pricePerLiter !== undefined ? formatCurrency(Number(formula.pricePerLiter)) : '-'}
@@ -155,7 +134,7 @@ Componentes: ${componentCount}`;
             </View>
           ))}
 
-          {/* Actions - Only show if can navigate */}
+          {/* Actions */}
           {canNavigate && (
             <View className="flex-row gap-2 pt-2">
               <Button
@@ -177,7 +156,7 @@ Componentes: ${componentCount}`;
               >
                 <View className="flex-row items-center gap-2">
                   <Icon name="plus" size={16} />
-                  <Text className="text-sm">Nova Fórmula</Text>
+                  <Text className="text-sm">Nova Formula</Text>
                 </View>
               </Button>
             </View>
@@ -187,7 +166,7 @@ Componentes: ${componentCount}`;
         <View className="items-center py-6 gap-3">
           <Icon name="flask" size={40} className="text-muted-foreground/50" />
           <Text className="text-sm text-muted-foreground">
-            Nenhuma fórmula cadastrada
+            Nenhuma formula cadastrada
           </Text>
           {canNavigate && (
             <View className="flex-row gap-2">
@@ -200,40 +179,13 @@ Componentes: ${componentCount}`;
               <Button variant="outline" size="sm" onPress={handleCreateFormula}>
                 <View className="flex-row items-center gap-2">
                   <Icon name="plus" size={16} />
-                  <Text className="text-sm">Nova Fórmula</Text>
+                  <Text className="text-sm">Nova Formula</Text>
                 </View>
               </Button>
             </View>
           )}
         </View>
       )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-});

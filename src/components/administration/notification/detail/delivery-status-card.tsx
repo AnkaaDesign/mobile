@@ -1,13 +1,13 @@
 
 import { View, StyleSheet } from "react-native";
 import type { Notification } from '../../../../types';
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Progress } from "@/components/ui/progress";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconChartBar, IconSend, IconCircleCheck, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconSend, IconCircleCheck, IconAlertCircle } from "@tabler/icons-react-native";
 
 interface DeliveryStatusCardProps {
   notification: Notification;
@@ -27,15 +27,8 @@ export function DeliveryStatusCard({ notification }: DeliveryStatusCardProps) {
   const readPercentage = totalRecipients > 0 ? (readCount / totalRecipients) * 100 : 0;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconChartBar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Estatísticas de Entrega</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Estatísticas de Entrega" icon="chart-bar">
       <View style={styles.content}>
-        <View style={styles.content}>
           {/* Progress Bar */}
           {totalRecipients > 0 && (
             <View style={styles.progressSection}>
@@ -85,33 +78,12 @@ export function DeliveryStatusCard({ notification }: DeliveryStatusCardProps) {
               </View>
             </View>
           </View>
-        </View>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.md,
   },

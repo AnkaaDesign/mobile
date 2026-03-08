@@ -114,7 +114,7 @@ export function FormulaManager({ formulas, onFormulasChange, paintId, availableI
         <View style={styles.section}>
           <Label>Componentes da Fórmula</Label>
           <View style={styles.editorContainer}>
-            <FormulaComponentsEditor availableItems={availableItems} formulaPaintId={formulas[0]?.id} />
+            <FormulaComponentsEditor availableItems={availableItems} />
           </View>
           {form.formState.errors.components && (
             <Text style={[styles.errorText, { color: colors.destructive }]}>

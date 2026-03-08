@@ -53,11 +53,12 @@ export enum SECTOR_PRIVILEGES {
   LOGISTIC = "LOGISTIC",
   COMMERCIAL = "COMMERCIAL",
   PLOTTING = "PLOTTING",
+  PRODUCTION_MANAGER = "PRODUCTION_MANAGER",
 }
 
 /**
  * TEAM_LEADER is a virtual privilege - not stored in database
- * Determined by: user.sector.privilege === PRODUCTION && user.id === user.sector.managerId
+ * Determined by: user.sector.privilege === PRODUCTION && user.id === user.sector.leaderId
  * Use isTeamLeader() helper function to check this status
  */
 export const TEAM_LEADER = 'TEAM_LEADER' as const;
@@ -176,7 +177,6 @@ export enum SERVICE_ORDER_STATUS {
 
 export enum SERVICE_ORDER_TYPE {
   PRODUCTION = "PRODUCTION",
-  FINANCIAL = "FINANCIAL",
   COMMERCIAL = "COMMERCIAL",
   LOGISTIC = "LOGISTIC",
   ARTWORK = "ARTWORK",
@@ -2053,10 +2053,52 @@ export enum PAYROLL_MONTH {
 // =====================
 
 export enum TASK_PRICING_STATUS {
+  PENDING = "PENDING",
+  BUDGET_APPROVED = "BUDGET_APPROVED",
+  VERIFIED = "VERIFIED",
+  INTERNAL_APPROVED = "INTERNAL_APPROVED",
+  UPCOMING = "UPCOMING",
+  PARTIAL = "PARTIAL",
+  SETTLED = "SETTLED",
+}
+
+// =====================
+// Invoice / Billing Enums
+// =====================
+
+export enum INVOICE_STATUS {
   DRAFT = "DRAFT",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED",
+  ACTIVE = "ACTIVE",
+  PARTIALLY_PAID = "PARTIALLY_PAID",
+  PAID = "PAID",
   CANCELLED = "CANCELLED",
+}
+
+export enum INSTALLMENT_STATUS {
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  PAID = "PAID",
+  OVERDUE = "OVERDUE",
+  CANCELLED = "CANCELLED",
+}
+
+export enum BANK_SLIP_STATUS {
+  CREATING = "CREATING",
+  REGISTERING = "REGISTERING",
+  ACTIVE = "ACTIVE",
+  OVERDUE = "OVERDUE",
+  PAID = "PAID",
+  CANCELLED = "CANCELLED",
+  REJECTED = "REJECTED",
+  ERROR = "ERROR",
+}
+
+export enum NFSE_STATUS {
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  AUTHORIZED = "AUTHORIZED",
+  CANCELLED = "CANCELLED",
+  ERROR = "ERROR",
 }
 
 // =====================

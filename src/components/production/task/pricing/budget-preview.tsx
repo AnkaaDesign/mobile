@@ -6,7 +6,6 @@ import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text
 import { getFileUrl } from "@/utils/file-utils";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
-import type { TaskPricing } from "@/types/task-pricing";
 import { COMPANY_INFO, DIRECTOR_INFO, BRAND_COLORS } from "@/config/company";
 
 function toTitleCase(str: string): string {
@@ -19,22 +18,30 @@ interface BudgetPreviewProps {
   pricing: {
     budgetNumber?: number;
     subtotal: number;
-    discountType: string;
-    discountValue: number | null;
     total: number;
     expiresAt?: Date | string | null;
     status: string;
-    paymentCondition?: string | null;
-    customPaymentText?: string | null;
     guaranteeYears?: number | null;
     customGuaranteeText?: string | null;
     layoutFileId?: string | null;
     layoutFile?: { id: string } | null;
-    items?: Array<{
+    services?: Array<{
       id?: string;
       description: string;
       observation?: string | null;
       amount: number;
+    }>;
+    customerConfigs?: Array<{
+      customerId: string;
+      subtotal: number;
+      discountType: string;
+      discountValue: number | null;
+      total: number;
+      paymentCondition?: string | null;
+      downPaymentDate?: Date | string | null;
+      customPaymentText?: string | null;
+      responsibleId?: string | null;
+      discountReference?: string | null;
     }>;
     createdAt?: Date | string;
   };
@@ -57,10 +64,10 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     task?.customer?.corporateName ||
     task?.customer?.fantasyName ||
     "Cliente";
-  // Prefer the explicitly selected budget responsible from pricing
+  // Prefer the explicitly selected budget responsible from first customer config
+  const activeConfig = pricing.customerConfigs?.[0];
   const commercialRep = task?.responsibles?.find((r: any) => r.role === "COMMERCIAL");
-  const contactName = (pricing as any)?.responsible?.name
-    || commercialRep?.name
+  const contactName = commercialRep?.name
     || task?.responsibles?.[0]?.name
     || "";
   const budgetNumber = pricing.budgetNumber
@@ -78,16 +85,23 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     : 30;
 
   const termDate = task?.term ? formatDate(task.term as any) : "";
-  const paymentText = generatePaymentText(pricing as TaskPricing);
-  const guaranteeText = generateGuaranteeText(pricing as TaskPricing);
+  const paymentText = generatePaymentText({
+    customPaymentText: activeConfig?.customPaymentText || null,
+    paymentCondition: activeConfig?.paymentCondition,
+    downPaymentDate: activeConfig?.downPaymentDate,
+    total: pricing.total,
+  });
+  const guaranteeText = generateGuaranteeText(pricing);
+  const configDiscountType = activeConfig?.discountType || "NONE";
+  const configDiscountValue = activeConfig?.discountValue;
   const hasDiscount =
-    pricing.discountType !== "NONE" &&
-    pricing.discountValue != null &&
-    pricing.discountValue > 0;
+    configDiscountType !== "NONE" &&
+    configDiscountValue != null &&
+    configDiscountValue > 0;
   const discountAmount =
-    pricing.discountType === "PERCENTAGE"
-      ? (pricing.subtotal * (pricing.discountValue || 0)) / 100
-      : pricing.discountValue || 0;
+    configDiscountType === "PERCENTAGE"
+      ? (pricing.subtotal * (configDiscountValue || 0)) / 100
+      : configDiscountValue || 0;
 
   // Handle both uploaded files (with id) and newly selected files (with uri)
   const layoutImageUrl =
@@ -142,7 +156,7 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       {/* Services */}
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
-        {pricing.items?.map((item, index) => {
+        {pricing.services?.map((item, index) => {
           const description = toTitleCase(item.description || "");
           const observation = item.observation
             ? toTitleCase(item.observation)
@@ -174,8 +188,8 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
             <View style={styles.totalRow}>
               <ThemedText style={styles.discountText}>
                 Desconto
-                {pricing.discountType === "PERCENTAGE"
-                  ? ` (${pricing.discountValue}%)`
+                {configDiscountType === "PERCENTAGE"
+                  ? ` (${configDiscountValue}%)`
                   : ""}
               </ThemedText>
               <ThemedText style={styles.discountText}>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -190,15 +190,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconShield size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Entregas de EPI {ppeDeliveries.length > 0 && `(${ppeDeliveries.length}${totalCount ? `/${totalCount}` : ""})`}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailCard title={`Entregas de EPI ${ppeDeliveries.length > 0 ? `(${ppeDeliveries.length}${totalCount ? `/${totalCount}` : ""})` : ""}`} icon="shield">
 
         <View style={styles.content}>
           {/* Search and Column Visibility Controls */}
@@ -258,7 +250,7 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
             </View>
           )}
         </View>
-      </Card>
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -274,26 +266,6 @@ export function PpeDeliveriesTable({ employee, maxHeight = 500 }: PpeDeliveriesT
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

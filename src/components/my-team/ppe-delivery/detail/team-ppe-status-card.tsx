@@ -1,5 +1,4 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -8,6 +7,7 @@ import { IconCircleCheck, IconAlertCircle, IconClock, IconX, IconSignature, Icon
 import type { PpeDelivery } from '@/types';
 import { PPE_DELIVERY_STATUS_LABELS, PPE_DELIVERY_STATUS } from '@/constants';
 import { BADGE_COLORS, ENTITY_BADGE_CONFIG } from "@/constants/badge-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface TeamPpeStatusCardProps {
   delivery: PpeDelivery;
@@ -98,88 +98,57 @@ export function TeamPpeStatusCard({ delivery }: TeamPpeStatusCardProps) {
   const statusInfo = getStatusInfo();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCircleCheck size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Status</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        {/* Status Badge and Info */}
-        <View style={[styles.statusContainer, { backgroundColor: statusInfo.color.background, borderColor: statusInfo.color.border || statusInfo.color.background }]}>
-          <View style={styles.statusHeader}>
-            <View style={[styles.statusIconContainer, { backgroundColor: statusInfo.color.background }]}>
-              {statusInfo.icon}
-            </View>
-            <View style={{ flex: 1 }}>
-              <ThemedText style={[styles.statusLabel, { color: statusInfo.color.text }]}>
-                {statusInfo.label}
-              </ThemedText>
-              <ThemedText style={[styles.statusDescription, { color: statusInfo.color.text, opacity: 0.8 }]}>
-                {statusInfo.description}
-              </ThemedText>
-            </View>
+    <DetailCard title="Status" icon="circle-check">
+      {/* Status Badge and Info */}
+      <View style={[styles.statusContainer, { backgroundColor: statusInfo.color.background, borderColor: statusInfo.color.border || statusInfo.color.background }]}>
+        <View style={styles.statusHeader}>
+          <View style={[styles.statusIconContainer, { backgroundColor: statusInfo.color.background }]}>
+            {statusInfo.icon}
           </View>
-        </View>
-
-        {/* Status Order (Priority) */}
-        {delivery.statusOrder !== undefined && (
-          <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
-            <View style={styles.fieldLabelWithIcon}>
-              <IconAlertCircle size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
-                Prioridade
-              </ThemedText>
-            </View>
-            <Badge variant="secondary" size="sm">
-              <ThemedText style={{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>
-                {delivery.statusOrder}
-              </ThemedText>
-            </Badge>
-          </View>
-        )}
-
-        {/* Review Reason (if reproved or signature rejected) */}
-        {(delivery.status === PPE_DELIVERY_STATUS.REPROVED || delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED) && delivery.reason && (
-          <View style={[styles.reasonContainer, { backgroundColor: BADGE_COLORS.red.bg + "20", borderColor: BADGE_COLORS.red.bg + "40" }]}>
-            <ThemedText style={[styles.reasonLabel, { color: BADGE_COLORS.red.bg }]}>
-              {delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED ? "Motivo da Rejeição" : "Motivo da Reprovação"}
+          <View style={{ flex: 1 }}>
+            <ThemedText style={[styles.statusLabel, { color: statusInfo.color.text }]}>
+              {statusInfo.label}
             </ThemedText>
-            <ThemedText style={[styles.reasonText, { color: BADGE_COLORS.red.bg }]}>
-              {delivery.reason}
+            <ThemedText style={[styles.statusDescription, { color: statusInfo.color.text, opacity: 0.8 }]}>
+              {statusInfo.description}
             </ThemedText>
           </View>
-        )}
+        </View>
       </View>
-    </Card>
+
+      {/* Status Order (Priority) */}
+      {delivery.statusOrder !== undefined && (
+        <View style={[styles.fieldRow, { backgroundColor: colors.muted + "50" }]}>
+          <View style={styles.fieldLabelWithIcon}>
+            <IconAlertCircle size={16} color={colors.mutedForeground} />
+            <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>
+              Prioridade
+            </ThemedText>
+          </View>
+          <Badge variant="secondary" size="sm">
+            <ThemedText style={{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold }}>
+              {delivery.statusOrder}
+            </ThemedText>
+          </Badge>
+        </View>
+      )}
+
+      {/* Review Reason (if reproved or signature rejected) */}
+      {(delivery.status === PPE_DELIVERY_STATUS.REPROVED || delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED) && delivery.reason && (
+        <View style={[styles.reasonContainer, { backgroundColor: BADGE_COLORS.red.bg + "20", borderColor: BADGE_COLORS.red.bg + "40" }]}>
+          <ThemedText style={[styles.reasonLabel, { color: BADGE_COLORS.red.bg }]}>
+            {delivery.status === PPE_DELIVERY_STATUS.SIGNATURE_REJECTED ? "Motivo da Rejeição" : "Motivo da Reprovação"}
+          </ThemedText>
+          <ThemedText style={[styles.reasonText, { color: BADGE_COLORS.red.bg }]}>
+            {delivery.reason}
+          </ThemedText>
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   statusContainer: {
     padding: spacing.md,
     borderRadius: borderRadius.lg,

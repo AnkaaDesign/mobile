@@ -311,7 +311,7 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/pessoal/preferences': 'BASIC',
   
   // =====================
-  // MEU PESSOAL (MY TEAM) - Requires being a team leader (having managedSector)
+  // MEU PESSOAL (MY TEAM) - Requires being a team leader (having ledSector)
   // =====================
 
   '/(tabs)/meu-pessoal': 'BASIC', // Access is controlled by isTeamLeader check, not privilege

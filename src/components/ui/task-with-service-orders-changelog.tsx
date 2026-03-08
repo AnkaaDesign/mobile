@@ -832,7 +832,7 @@ const TimelineItem = React.memo(({
     }
 
     const hasBudgetInfo = pricing.budgetNumber || pricing.total !== null;
-    const items = pricing.items || [];
+    const items = pricing.services || [];
 
     if (hasBudgetInfo) {
       return (

@@ -4,8 +4,8 @@
  * This controls visibility of checkboxes, swipe actions, and bulk action buttons
  *
  * NOTE: LEADER privilege was removed. Team leadership is now determined by
- * the managedSector relationship (Sector.managerId points to the user).
- * Use isTeamLeader(user) to check if a user manages a sector.
+ * the ledSector relationship (Sector.leaderId points to the user).
+ * Use isTeamLeader(user) to check if a user leads a sector.
  */
 
 import { SECTOR_PRIVILEGES, SERVICE_ORDER_TYPE } from '@/constants';
@@ -22,17 +22,17 @@ import { hasAnyPrivilege, isTeamLeader } from '@/utils';
  * MATCHES WEB: /web/src/utils/permissions/service-order-permissions.ts
  *
  * Permission Matrix (VISIBILITY):
- * | Sector          | PRODUCTION | FINANCIAL | COMMERCIAL | LOGISTIC | ARTWORK |
- * |-----------------|------------|-----------|------------|----------|---------|
- * | ADMIN           | ✓          | ✓         | ✓          | ✓        | ✓       |
- * | COMMERCIAL      | ✓          | ✓         | ✓          | ✓        | ✓       |
- * | DESIGNER        | ✓          | -         | -          | -        | ✓       |
- * | FINANCIAL       | ✓          | ✓         | ✓          | ✓        | ✓       |
- * | LOGISTIC        | ✓          | -         | ✓          | ✓        | ✓       |
- * | PRODUCTION      | ✓          | -         | -          | -        | -       |
- * | WAREHOUSE       | ✓          | -         | -          | -        | -       |
- * | HUMAN_RESOURCES | ✓          | -         | -          | -        | -       |
- * | Others          | ✓          | -         | -          | -        | -       |
+ * | Sector          | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |-----------------|------------|------------|----------|---------|
+ * | ADMIN           | ✓          | ✓          | ✓        | ✓       |
+ * | COMMERCIAL      | ✓          | ✓          | ✓        | ✓       |
+ * | DESIGNER        | ✓          | -          | -        | ✓       |
+ * | FINANCIAL       | -          | ✓          | ✓        | -       |
+ * | LOGISTIC        | ✓          | ✓          | ✓        | ✓       |
+ * | PRODUCTION      | ✓          | -          | -        | -       |
+ * | WAREHOUSE       | ✓          | -          | -        | -       |
+ * | HUMAN_RESOURCES | ✓          | -          | -        | -       |
+ * | Others          | ✓          | -          | -        | -       |
  */
 export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TYPE[] {
   if (!user?.sector?.privileges) return [];
@@ -44,7 +44,6 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
       // ADMIN can see all service order types
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.FINANCIAL,
         SERVICE_ORDER_TYPE.COMMERCIAL,
         SERVICE_ORDER_TYPE.LOGISTIC,
         SERVICE_ORDER_TYPE.ARTWORK,
@@ -54,7 +53,6 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
       // COMMERCIAL can see all service order types (matches web)
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.FINANCIAL,
         SERVICE_ORDER_TYPE.COMMERCIAL,
         SERVICE_ORDER_TYPE.LOGISTIC,
         SERVICE_ORDER_TYPE.ARTWORK,
@@ -68,13 +66,10 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
       ];
 
     case SECTOR_PRIVILEGES.FINANCIAL:
-      // FINANCIAL can see all service order types (matches web)
+      // FINANCIAL can see COMMERCIAL and LOGISTIC (matches web)
       return [
-        SERVICE_ORDER_TYPE.PRODUCTION,
-        SERVICE_ORDER_TYPE.FINANCIAL,
         SERVICE_ORDER_TYPE.COMMERCIAL,
         SERVICE_ORDER_TYPE.LOGISTIC,
-        SERVICE_ORDER_TYPE.ARTWORK,
       ];
 
     case SECTOR_PRIVILEGES.LOGISTIC:
@@ -111,15 +106,15 @@ export function canViewServiceOrderType(user: User | null, serviceOrderType: SER
  * Check if user can edit service orders of a specific type
  *
  * Edit Permission Matrix:
- * | Sector          | PRODUCTION | FINANCIAL | COMMERCIAL | LOGISTIC | ARTWORK |
- * |-----------------|------------|-----------|------------|----------|---------|
- * | ADMIN           | ✓          | ✓         | ✓          | ✓        | ✓       |
- * | COMMERCIAL      | -          | -         | ✓          | -        | -       |
- * | DESIGNER        | -          | -         | -          | -        | ✓       |
- * | FINANCIAL       | -          | ✓         | -          | -        | -       |
- * | LOGISTIC        | ✓          | -         | -          | ✓        | -       |
- * | Leader          | ✓          | -         | -          | -        | -       |
- * | Others          | -          | -         | -          | -        | -       |
+ * | Sector          | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |-----------------|------------|------------|----------|---------|
+ * | ADMIN           | ✓          | ✓          | ✓        | ✓       |
+ * | COMMERCIAL      | -          | ✓          | -        | -       |
+ * | DESIGNER        | -          | -          | -        | ✓       |
+ * | FINANCIAL       | -          | -          | -        | -       |
+ * | LOGISTIC        | ✓          | -          | ✓        | -       |
+ * | Leader          | ✓          | -          | -        | -       |
+ * | Others          | -          | -          | -        | -       |
  */
 export function canEditServiceOrderOfType(user: User | null, serviceOrderType: SERVICE_ORDER_TYPE): boolean {
   if (!user?.sector?.privileges) return false;
@@ -134,10 +129,6 @@ export function canEditServiceOrderOfType(user: User | null, serviceOrderType: S
     case SERVICE_ORDER_TYPE.PRODUCTION:
       // LOGISTIC and team leaders can edit production service orders
       return privilege === SECTOR_PRIVILEGES.LOGISTIC || isTeamLeader(user);
-
-    case SERVICE_ORDER_TYPE.FINANCIAL:
-      // Only FINANCIAL can edit financial service orders
-      return privilege === SECTOR_PRIVILEGES.FINANCIAL;
 
     case SERVICE_ORDER_TYPE.COMMERCIAL:
       // Only COMMERCIAL can edit commercial service orders
@@ -302,7 +293,7 @@ export function canDeleteTasks(user: User | null): boolean {
 
 /**
  * Can user start/finish tasks?
- * Team leaders can start/finish tasks in their managed sector (or tasks without sector)
+ * Team leaders can start/finish tasks in their led sector (or tasks without sector)
  * ADMIN can start/finish any task
  */
 export function canManageTaskStatus(user: User | null): boolean {
@@ -311,6 +302,18 @@ export function canManageTaskStatus(user: User | null): boolean {
   if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN])) return true;
   // Team leaders (users who manage a sector) can manage task status
   return isTeamLeader(user);
+}
+
+/**
+ * Can user finish/complete tasks?
+ * Only LOGISTIC and ADMIN can finish tasks
+ */
+export function canFinishTask(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.LOGISTIC,
+  ]);
 }
 
 /**
@@ -409,8 +412,8 @@ export function canCancelTasks(user: User | null): boolean {
 
 /**
  * Check if team leader can manage a specific task (start/finish) (sector-based validation)
- * Team leaders can manage tasks in their MANAGED sector OR tasks without a sector
- * When starting a task without sector, it will be assigned to leader's managed sector
+ * Team leaders can manage tasks in their LED sector OR tasks without a sector
+ * When starting a task without sector, it will be assigned to leader's led sector
  * ADMIN can manage any task
  */
 export function canLeaderManageTask(user: User | null, taskSectorId: string | null | undefined): boolean {
@@ -419,12 +422,12 @@ export function canLeaderManageTask(user: User | null, taskSectorId: string | nu
   // ADMIN can manage any task
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Team leaders can manage tasks in their MANAGED sector OR tasks without a sector
+  // Team leaders can manage tasks in their LED sector OR tasks without a sector
   if (isTeamLeader(user)) {
-    // Task has no sector - leader can manage it (will assign to their managed sector on start)
+    // Task has no sector - leader can manage it (will assign to their led sector on start)
     if (!taskSectorId) return true;
-    // Task sector matches leader's MANAGED sector (not their own sector)
-    return user.managedSector?.id === taskSectorId;
+    // Task sector matches leader's LED sector (not their own sector)
+    return user.ledSector?.id === taskSectorId;
   }
 
   return false;
@@ -432,7 +435,7 @@ export function canLeaderManageTask(user: User | null, taskSectorId: string | nu
 
 /**
  * Check if team leader can update service orders for a specific task
- * Team leaders can ONLY update service orders for tasks in their MANAGED sector
+ * Team leaders can ONLY update service orders for tasks in their LED sector
  * Tasks with null sector are NOT allowed (unlike task start/finish)
  * ADMIN can update any service order
  */
@@ -442,18 +445,18 @@ export function canLeaderUpdateServiceOrder(user: User | null, taskSectorId: str
   // ADMIN can update any service order
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Team leaders can ONLY update service orders for tasks in their MANAGED sector
+  // Team leaders can ONLY update service orders for tasks in their LED sector
   // NOT for tasks with null sector
   if (isTeamLeader(user)) {
     if (!taskSectorId) return false; // Cannot update service orders for tasks without sector
-    return user.managedSector?.id === taskSectorId;
+    return user.ledSector?.id === taskSectorId;
   }
 
   return false;
 }
 
 /**
- * Check if user is a team leader (manages a sector)
+ * Check if user is a team leader (leads a sector)
  * @deprecated Use isTeamLeader from @/utils instead
  */
 export function isLeader(user: User | null): boolean {
@@ -505,8 +508,8 @@ export function canEditLayoutsOnly(user: User | null): boolean {
 
 /**
  * Can user edit layout for a specific task?
- * Team leaders can only edit layouts for tasks in their MANAGED sector or tasks with null sector
- * Uses managedSector.id (the sector they manage), NOT their own sectorId
+ * Team leaders can only edit layouts for tasks in their LED sector or tasks with null sector
+ * Uses ledSector.id (the sector they lead), NOT their own sectorId
  * ADMIN can edit layouts for any task
  */
 export function canEditLayoutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
@@ -524,9 +527,9 @@ export function canEditLayoutForTask(user: User | null, taskSectorId: string | n
   // Task has no sector - team leader can edit
   if (!taskSectorId) return true;
 
-  // Check if task is in user's MANAGED sector (not their own sector)
-  // managedSector.id is the sector they supervise/manage
-  return user.managedSector?.id === taskSectorId;
+  // Check if task is in user's LED sector (not their own sector)
+  // ledSector.id is the sector they supervise/lead
+  return user.ledSector?.id === taskSectorId;
 }
 
 // =====================
@@ -594,7 +597,7 @@ export function canRequestCut(user: User | null): boolean {
 
 /**
  * Can user request a cut for a specific task?
- * Team leaders can only request cuts for tasks in their MANAGED sector
+ * Team leaders can only request cuts for tasks in their LED sector
  * Tasks with null sector are NOT allowed for cut requests
  * ADMIN can request cuts for any task
  */
@@ -604,11 +607,11 @@ export function canRequestCutForTask(user: User | null, taskSectorId: string | n
   // ADMIN can request cuts for any task
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Team leaders can only request cuts for tasks in their MANAGED sector
+  // Team leaders can only request cuts for tasks in their LED sector
   // NOT for tasks with null sector
   if (isTeamLeader(user)) {
     if (!taskSectorId) return false; // Cannot request cuts for tasks without sector
-    return user.managedSector?.id === taskSectorId;
+    return user.ledSector?.id === taskSectorId;
   }
 
   return false;

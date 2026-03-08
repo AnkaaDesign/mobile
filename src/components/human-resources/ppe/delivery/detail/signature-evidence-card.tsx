@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { Card } from '@/components/ui/card';
+import { View, StyleSheet, Alert, ActivityIndicator, Linking } from 'react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/lib/theme';
 import { spacing, fontSize, fontWeight } from '@/constants/design-system';
-import { IconShieldCheck, IconDeviceMobile, IconClock, IconMapPin } from '@tabler/icons-react-native';
+import { IconFileText } from '@tabler/icons-react-native';
 import { usePpeSignatureVerification } from '@/hooks/usePpeSignature';
 import { PpeDeliveryService } from '@/api-client/ppe';
 import { formatDate } from '@/utils';
+import { API_BASE_URL } from '@/config/urls';
 import type { PpeDeliverySignature, BiometricMethod } from '@/types/ppe';
+import { DetailCard, DetailField } from '@/components/ui/detail-page-layout';
 
 const BIOMETRIC_LABELS: Record<BiometricMethod, string> = {
   FINGERPRINT: 'Impressão Digital',
@@ -45,9 +46,9 @@ export function SignatureEvidenceCard({ deliveryId, signature }: SignatureEviden
 
   if (loadingDetails) {
     return (
-      <Card style={styles.card}>
+      <DetailCard title="Assinatura Eletrônica" icon="shield-check" iconColor="#16a34a">
         <ActivityIndicator size="small" color={colors.primary} />
-      </Card>
+      </DetailCard>
     );
   }
 
@@ -67,7 +68,7 @@ export function SignatureEvidenceCard({ deliveryId, signature }: SignatureEviden
     });
   };
 
-  // Mask CPF: full digits → ***.456.789-**
+  // Mask CPF: full digits -> ***.456.789-**
   const maskedCpf = data.signedByCpf
     ? (() => {
         const d = (data.signedByCpf as string).replace(/\D/g, '');
@@ -80,173 +81,92 @@ export function SignatureEvidenceCard({ deliveryId, signature }: SignatureEviden
   const verificationCode = (data.hmacSignature || data.verificationCode || '').substring(0, 16).toUpperCase();
 
   return (
-    <Card style={[styles.card, { borderColor: '#22c55e' }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconShieldCheck size={20} color="#16a34a" />
-          <ThemedText style={[styles.title, { color: '#16a34a' }]}>
-            Assinatura Eletrônica Verificada
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Assinatura Eletrônica Verificada" icon="shield-check" iconColor="#16a34a">
+      <DetailField label="Assinante" icon="user" value={signerName} />
+      <DetailField label="CPF" icon="id" value={maskedCpf} />
+      <DetailField label="Autenticação" icon="device-mobile" value={biometricLabel} />
+      <DetailField
+        label="Data/Hora"
+        icon="clock"
+        value={
+          data.serverTimestamp
+            ? formatDate(new Date(data.serverTimestamp))
+            : data.clientTimestamp
+              ? formatDate(new Date(data.clientTimestamp))
+              : '-'
+        }
+      />
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Signer */}
-        <View style={styles.infoRow}>
-          <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-            Assinante
-          </ThemedText>
-          <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-            {signerName}
-          </ThemedText>
-        </View>
+      {data.latitude != null && data.longitude != null && (
+        <DetailField
+          label="Localização"
+          icon="map-pin"
+          value={`${Number(data.latitude).toFixed(4)}, ${Number(data.longitude).toFixed(4)}`}
+        />
+      )}
 
-        <View style={styles.infoRow}>
-          <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-            CPF
-          </ThemedText>
-          <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-            {maskedCpf}
-          </ThemedText>
-        </View>
+      {verificationCode && (
+        <DetailField
+          label="Código de verificação"
+          icon="hash"
+          value={verificationCode}
+          monospace
+        />
+      )}
 
-        {/* Biometric */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoLabelContainer}>
-            <IconDeviceMobile size={14} color={colors.mutedForeground} style={styles.infoIcon} />
-            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-              Autenticação
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-            {biometricLabel}
-          </ThemedText>
-        </View>
-
-        {/* Timestamps */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoLabelContainer}>
-            <IconClock size={14} color={colors.mutedForeground} style={styles.infoIcon} />
-            <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-              Data/Hora
-            </ThemedText>
-          </View>
-          <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-            {data.serverTimestamp
-              ? formatDate(new Date(data.serverTimestamp))
-              : data.clientTimestamp
-                ? formatDate(new Date(data.clientTimestamp))
-                : '-'}
-          </ThemedText>
-        </View>
-
-        {/* Location */}
-        {data.latitude != null && data.longitude != null && (
-          <View style={styles.infoRow}>
-            <View style={styles.infoLabelContainer}>
-              <IconMapPin size={14} color={colors.mutedForeground} style={styles.infoIcon} />
-              <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                Localização
-              </ThemedText>
-            </View>
-            <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-              {Number(data.latitude).toFixed(4)}, {Number(data.longitude).toFixed(4)}
-            </ThemedText>
-          </View>
-        )}
-
-        {/* Verification code */}
-        {verificationCode && (
-          <View style={[styles.verificationRow, { backgroundColor: '#f0fdf4' }]}>
-            <ThemedText style={[styles.verificationLabel, { color: colors.mutedForeground }]}>
-              Código de verificação
-            </ThemedText>
-            <ThemedText style={styles.verificationCode}>
-              {verificationCode}
-            </ThemedText>
-          </View>
-        )}
-
-        {/* Verify button */}
+      {/* View Signed PDF */}
+      {(data.signedDocumentId || data.signedDocument) && (
         <Button
-          onPress={handleVerify}
-          disabled={verifyMutation.isPending}
-          style={[styles.verifyButton, { borderColor: '#22c55e' }]}
+          onPress={() => {
+            const fileId = data.signedDocument?.id || data.signedDocumentId;
+            if (fileId) {
+              const url = `${API_BASE_URL}/files/serve/${fileId}`;
+              Linking.openURL(url).catch(() => {
+                Alert.alert('Erro', 'Não foi possível abrir o documento assinado.');
+              });
+            }
+          }}
+          style={StyleSheet.flatten([styles.pdfButton, { backgroundColor: '#0a5c1e' }])}
         >
-          {verifyMutation.isPending ? (
-            <ActivityIndicator size="small" color="#16a34a" />
-          ) : (
-            <ThemedText style={styles.verifyButtonText}>Verificar Integridade</ThemedText>
-          )}
+          <View style={styles.pdfButtonContent}>
+            <IconFileText size={16} color="#ffffff" />
+            <ThemedText style={styles.pdfButtonText}>Ver Termo Assinado (PDF)</ThemedText>
+          </View>
         </Button>
-      </View>
-    </Card>
+      )}
+
+      {/* Verify button */}
+      <Button
+        onPress={handleVerify}
+        disabled={verifyMutation.isPending}
+        style={StyleSheet.flatten([styles.verifyButton, { borderColor: '#22c55e' }])}
+      >
+        {verifyMutation.isPending ? (
+          <ActivityIndicator size="small" color="#16a34a" />
+        ) : (
+          <ThemedText style={styles.verifyButtonText}>Verificar Integridade</ThemedText>
+        )}
+      </Button>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-    borderWidth: 1,
-  },
-  header: {
-    flexDirection: 'row',
+  pdfButton: {
+    paddingVertical: spacing.sm + 2,
+    borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
+    justifyContent: 'center',
   },
-  headerLeft: {
+  pdfButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  title: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  infoLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoIcon: {
-    marginRight: spacing.xs,
-  },
-  infoLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  infoValue: {
+  pdfButtonText: {
+    color: '#ffffff',
     fontSize: fontSize.sm,
     fontWeight: fontWeight.semibold,
-  },
-  verificationRow: {
-    padding: spacing.sm,
-    borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  verificationLabel: {
-    fontSize: fontSize.xs,
-  },
-  verificationCode: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.bold,
-    fontFamily: 'monospace',
-    color: '#16a34a',
-    letterSpacing: 1,
   },
   verifyButton: {
     borderWidth: 1,

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -121,15 +121,7 @@ export function UsersTable({ sector, maxHeight = 500 }: UsersTableProps) {
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconUsers size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Usuários do Setor {users.length > 0 && `(${users.length}${totalCount ? `/${totalCount}` : ""})`}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailCard title={`Usuários do Setor ${users.length > 0 ? `(${users.length}${totalCount ? `/${totalCount}` : ""})` : ""}`} icon="users">
 
         <View style={styles.content}>
           {/* Search and Column Visibility Controls */}
@@ -183,7 +175,7 @@ export function UsersTable({ sector, maxHeight = 500 }: UsersTableProps) {
             </View>
           )}
         </View>
-      </Card>
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -199,26 +191,6 @@ export function UsersTable({ sector, maxHeight = 500 }: UsersTableProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

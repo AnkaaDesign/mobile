@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet} from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { formatDateTime } from "@/utils";
@@ -110,11 +110,7 @@ export const OrderTimelineCard: React.FC<OrderTimelineCardProps> = ({ order, act
   });
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ThemedText style={styles.title}>Histórico</ThemedText>
-      </View>
-
+    <DetailCard title="Histórico" icon="clock">
       <View style={styles.timeline}>
         {timelineEvents.map((event, index) => {
           const Icon = event.icon;
@@ -155,23 +151,11 @@ export const OrderTimelineCard: React.FC<OrderTimelineCardProps> = ({ order, act
           </ThemedText>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
   timeline: {
     paddingLeft: spacing.xs,
   },

@@ -9,6 +9,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import type { PaintFormula } from "@/types";
 import type { PaintCreateFormData, PaintFormulaCreateFormData } from "@/schemas";
+import { paintFormulaComponentService } from "@/api-client/paint";
 
 export default function CreateCatalogScreen() {
   const router = useRouter();
@@ -78,11 +79,28 @@ export default function CreateCatalogScreen() {
           }
         }
 
-        // API client already shows success alert
+        // Deduct stock for all formula components after successful creation
+        if (formulas && formulas.length > 0) {
+          for (const formula of formulas) {
+            const validComponents = formula.components?.filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0) || [];
+            for (const component of validComponents) {
+              if (component.weightInGrams && component.weightInGrams > 0 && component.itemId) {
+                try {
+                  await paintFormulaComponentService.deductForFormulationTest({
+                    itemId: component.itemId,
+                    weight: component.weightInGrams,
+                  });
+                } catch {
+                  // Stock deduction is best-effort
+                }
+              }
+            }
+          }
+        }
+
         router.replace(routeToMobilePath(routes.painting.catalog.details(paintId)) as any);
       }
     } catch (error) {
-      // API client already shows error alert
       console.error("Error creating paint:", error);
     } finally {
       setIsSubmitting(false);

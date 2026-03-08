@@ -1,8 +1,8 @@
 /**
  * Hook for fetching tasks filtered by sector leadership
  *
- * Team leaders (users who manage a sector) should only see:
- * 1. Tasks from their managed sector
+ * Team leaders (users who lead a sector) should only see:
+ * 1. Tasks from their led sector
  * 2. Tasks without a sector assigned (sectorId = null)
  *
  * Admin users can see all tasks.
@@ -26,14 +26,14 @@ interface UseTasksForSectorLeaderParams extends Partial<TaskGetManyFormData> {
 /**
  * Filter tasks based on user's sector leadership
  * - Admin: sees all tasks
- * - Team leader: sees tasks from their managed sector + tasks without sector
+ * - Team leader: sees tasks from their led sector + tasks without sector
  * - Other users: sees all tasks (they shouldn't have edit access anyway)
  */
 export function filterTasksForSectorLeader(
   tasks: Task[],
   user: {
     sector?: { privileges?: string } | null;
-    managedSector?: { id?: string } | null
+    ledSector?: { id?: string } | null
   } | null
 ): Task[] {
   if (!user) return [];
@@ -43,15 +43,15 @@ export function filterTasksForSectorLeader(
   if (isAdmin) return tasks;
 
   // Check if user is a team leader
-  const managedSectorId = user.managedSector?.id;
-  if (!managedSectorId) {
+  const ledSectorId = user.ledSector?.id;
+  if (!ledSectorId) {
     // Non-team-leaders see all tasks (permission checks happen elsewhere)
     return tasks;
   }
 
-  // Team leaders only see tasks from their managed sector OR tasks without a sector
+  // Team leaders only see tasks from their led sector OR tasks without a sector
   return tasks.filter(task =>
-    task.sectorId === managedSectorId || task.sectorId === null
+    task.sectorId === ledSectorId || task.sectorId === null
   );
 }
 
@@ -69,7 +69,7 @@ export function filterTasksForSectorLeader(
 export function useTasksForSectorLeader(params?: UseTasksForSectorLeaderParams) {
   const { user } = useAuth();
 
-  // Fetch all tasks (we'll filter client-side for the OR condition: managed sector OR null sector)
+  // Fetch all tasks (we'll filter client-side for the OR condition: led sector OR null sector)
   const { data: rawTasks, ...queryResult } = useTasksInfiniteMobile({
     ...params,
     // Include sector info for filtering - use optimized select patterns

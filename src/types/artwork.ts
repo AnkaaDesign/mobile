@@ -21,12 +21,11 @@ import type { ORDER_BY_DIRECTION } from '@constants';
 export interface Artwork extends BaseEntity {
   fileId: string;
   status: 'DRAFT' | 'APPROVED' | 'REPROVED';
-  taskId?: string | null;
   airbrushingId?: string | null;
 
-  // Relations
+  // Relations (Many-to-Many: Artwork can be shared across multiple Tasks)
   file?: File;
-  task?: Task | null;
+  tasks?: Task[];
   airbrushing?: Airbrushing | null;
 
   // Index signature for compatibility
@@ -39,7 +38,7 @@ export interface Artwork extends BaseEntity {
 
 export interface ArtworkIncludes {
   file?: boolean | { include?: FileIncludes };
-  task?: boolean | { include?: TaskIncludes };
+  tasks?: boolean | { include?: TaskIncludes };
   airbrushing?: boolean | { include?: AirbrushingIncludes };
 }
 
@@ -53,7 +52,6 @@ export interface ArtworkOrderBy {
   id?: ORDER_BY_DIRECTION;
   fileId?: ORDER_BY_DIRECTION;
   status?: ORDER_BY_DIRECTION;
-  taskId?: ORDER_BY_DIRECTION;
   airbrushingId?: ORDER_BY_DIRECTION;
   createdAt?: ORDER_BY_DIRECTION;
   updatedAt?: ORDER_BY_DIRECTION;
@@ -67,8 +65,8 @@ export interface ArtworkWhere {
   id?: string;
   fileId?: string;
   status?: 'DRAFT' | 'APPROVED' | 'REPROVED';
-  taskId?: string | null;
   airbrushingId?: string | null;
+  tasks?: { some?: { id?: string }; every?: { id?: string }; none?: { id?: string } };
   AND?: ArtworkWhere[];
   OR?: ArtworkWhere[];
   NOT?: ArtworkWhere[];
@@ -81,15 +79,15 @@ export interface ArtworkWhere {
 export interface ArtworkCreateFormData {
   fileId: string;
   status?: 'DRAFT' | 'APPROVED' | 'REPROVED';
-  taskId?: string | null;
   airbrushingId?: string | null;
+  taskIds?: string[];
 }
 
 export interface ArtworkUpdateFormData {
   fileId?: string;
   status?: 'DRAFT' | 'APPROVED' | 'REPROVED';
-  taskId?: string | null;
   airbrushingId?: string | null;
+  taskIds?: string[];
 }
 
 export interface ArtworkQueryFormData {

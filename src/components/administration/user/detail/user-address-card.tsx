@@ -1,10 +1,10 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconMapPin, IconExternalLink } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface UserAddressCardProps {
   user: User;
@@ -74,77 +74,46 @@ export function UserAddressCard({ user }: UserAddressCardProps) {
   const fullAddress = getFullAddress();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconMapPin size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Endereço</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        {hasAddress && fullAddress ? (
-          <TouchableOpacity
-            onPress={handleOpenMaps}
-            style={[
-              styles.fullAddressBox,
-              { backgroundColor: colors.muted, borderColor: colors.border },
-            ]}
-            activeOpacity={0.7}
-          >
-            <View style={styles.addressBoxContent}>
-              <ThemedText style={[styles.addressBoxValue, { color: colors.foreground }]}>
-                {fullAddress}
+    <DetailCard title="Endereço" icon="map-pin">
+      {hasAddress && fullAddress ? (
+        <TouchableOpacity
+          onPress={handleOpenMaps}
+          style={[
+            styles.fullAddressBox,
+            { backgroundColor: colors.muted, borderColor: colors.border },
+          ]}
+          activeOpacity={0.7}
+        >
+          <View style={styles.addressBoxContent}>
+            <ThemedText style={[styles.addressBoxValue, { color: colors.foreground }]}>
+              {fullAddress}
+            </ThemedText>
+            <View style={styles.openMapsRow}>
+              <ThemedText style={[styles.openMapsText, { color: colors.primary }]}>
+                Abrir no Google Maps
               </ThemedText>
-              <View style={styles.openMapsRow}>
-                <ThemedText style={[styles.openMapsText, { color: colors.primary }]}>
-                  Abrir no Google Maps
-                </ThemedText>
-                <IconExternalLink size={14} color={colors.primary} />
-              </View>
+              <IconExternalLink size={14} color={colors.primary} />
             </View>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
-              <IconMapPin size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Nenhum endereço cadastrado
-            </ThemedText>
-            <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
-              Este usuário não possui endereço registrado.
-            </ThemedText>
           </View>
-        )}
-      </View>
-    </Card>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
+            <IconMapPin size={32} color={colors.mutedForeground} />
+          </View>
+          <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Nenhum endereço cadastrado
+          </ThemedText>
+          <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
+            Este usuário não possui endereço registrado.
+          </ThemedText>
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   fullAddressBox: {
     borderRadius: borderRadius.md,
     borderWidth: 1,

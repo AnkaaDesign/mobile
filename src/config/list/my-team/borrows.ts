@@ -427,7 +427,7 @@ export const myTeamBorrowsListConfig: ListConfig<Borrow> = {
   },
 
   permissions: {
-    // Note: Team leadership is now determined by managedSector, checked at component level
+    // Note: Team leadership is now determined by ledSector, checked at component level
     view: 'TEAM_LEADER',
   },
 

@@ -3,8 +3,8 @@ import { myTeamWarningsListConfig } from '@/config/list/my-team'
 
 /**
  * My Team Warnings List Page
- * Shows all warnings for users in the team leader's managed sector
- * The API endpoint handles the filtering based on the user's managedSector.id
+ * Shows all warnings for users in the team leader's led sector
+ * The API endpoint handles the filtering based on the user's ledSector.id
  */
 export default function MyTeamWarningsScreen() {
   // useScreenReady is handled internally by Layout component

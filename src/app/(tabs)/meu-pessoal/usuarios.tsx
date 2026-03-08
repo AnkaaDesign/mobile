@@ -15,29 +15,29 @@ import type { User } from '@/types'
 
 /**
  * Team Members List Page
- * Shows all users in the team leader's managed sector
+ * Shows all users in the team leader's led sector
  */
 export default function TeamMembersScreen() {
   const { colors } = useTheme()
   const { user: currentUser } = useAuth()
 
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false
-  const managedSectorId = currentUser?.managedSector?.id
+  const ledSectorId = currentUser?.ledSector?.id
 
-  // Create a modified config that filters by user's managed sector
+  // Create a modified config that filters by user's led sector
   const config = useMemo((): ListConfig<User> => {
-    if (!managedSectorId) return teamMembersListConfig
+    if (!ledSectorId) return teamMembersListConfig
 
     return {
       ...teamMembersListConfig,
       query: {
         ...teamMembersListConfig.query,
         where: {
-          sectorId: managedSectorId,
+          sectorId: ledSectorId,
         },
       },
     }
-  }, [managedSectorId])
+  }, [ledSectorId])
 
   // Show access denied if not a team leader
   if (!userIsTeamLeader) {

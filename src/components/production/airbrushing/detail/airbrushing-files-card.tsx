@@ -1,14 +1,12 @@
-
 import { useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFiles, IconList, IconLayoutGrid, IconDownload } from "@tabler/icons-react-native";
 import { FileItem, useFileViewer, type FileViewMode } from "@/components/file";
-// import { showToast } from "@/components/ui/toast";
 
 interface AirbrushingFilesCardProps {
   airbrushing: any;
@@ -30,42 +28,28 @@ export function AirbrushingFilesCard({ airbrushing }: AirbrushingFilesCardProps)
 
   if (!hasFiles) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconFiles size={20} color={colors.primary} />
-            <ThemedText style={styles.title}>Arquivos</ThemedText>
+      <DetailCard title="Arquivos" icon="files">
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.muted + "30" }]}>
+            <IconFiles size={32} color={colors.mutedForeground} />
           </View>
+          <ThemedText style={[styles.emptyTitle, { color: colors.foreground }]}>
+            Nenhum arquivo anexado
+          </ThemedText>
+          <ThemedText style={[styles.emptyDescription, { color: colors.mutedForeground }]}>
+            Este airbrushing nao possui recibos, notas fiscais ou artes anexados.
+          </ThemedText>
         </View>
-        <View style={styles.content}>
-          <View style={styles.emptyState}>
-            <View style={StyleSheet.flatten([styles.emptyIcon, { backgroundColor: colors.muted + "30" }])}>
-              <IconFiles size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.emptyTitle, { color: colors.foreground }])}>
-              Nenhum arquivo anexado
-            </ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.emptyDescription, { color: colors.mutedForeground }])}>
-              Este airbrushing não possui recibos, notas fiscais ou artes anexados.
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFiles size={20} color={colors.primary} />
-          <ThemedText style={styles.title}>Arquivos</ThemedText>
-          <Badge variant="secondary" style={{ marginLeft: spacing.sm }}>
-            {totalFiles}
-          </Badge>
-        </View>
-      </View>
-
+    <DetailCard
+      title="Arquivos"
+      icon="files"
+      badge={<Badge variant="secondary">{totalFiles}</Badge>}
+    >
       {/* View Mode Controls */}
       <View style={styles.viewModeControls}>
         {allFiles.length > 1 && (
@@ -113,118 +97,95 @@ export function AirbrushingFilesCard({ airbrushing }: AirbrushingFilesCardProps)
         </View>
       </View>
 
-      <View style={styles.content}>
-        {/* Receipts Section */}
-        {receipts.length > 0 && (
-          <View style={styles.section}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-                Recibos
-              </ThemedText>
-              <Badge variant="secondary" size="sm">
-                {receipts.length}
-              </Badge>
-            </View>
-            <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-              {receipts.map((file: any, index: number) => (
-                <FileItem
-                  key={file.id}
-                  file={file}
-                  viewMode={viewMode}
-                  baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                  onPress={() => {
-                    fileViewer.actions.viewFiles(receipts, index);
-                  }}
-                />
-              ))}
-            </View>
+      {/* Receipts Section */}
+      {receipts.length > 0 && (
+        <View style={styles.section}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
+              Recibos
+            </ThemedText>
+            <Badge variant="secondary" size="sm">
+              {receipts.length}
+            </Badge>
           </View>
-        )}
+          <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+            {receipts.map((file: any, index: number) => (
+              <FileItem
+                key={file.id}
+                file={file}
+                viewMode={viewMode}
+                baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                onPress={() => {
+                  fileViewer.actions.viewFiles(receipts, index);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      )}
 
-        {/* Invoices Section */}
-        {invoices.length > 0 && (
-          <View style={[styles.section, receipts.length > 0 && { marginTop: spacing.xl }]}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-                Notas Fiscais
-              </ThemedText>
-              <Badge variant="secondary" size="sm">
-                {invoices.length}
-              </Badge>
-            </View>
-            <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-              {invoices.map((file: any, index: number) => (
-                <FileItem
-                  key={file.id}
-                  file={file}
-                  viewMode={viewMode}
-                  baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                  onPress={() => {
-                    fileViewer.actions.viewFiles(invoices, index);
-                  }}
-                />
-              ))}
-            </View>
+      {/* Invoices Section */}
+      {invoices.length > 0 && (
+        <View style={[styles.section, receipts.length > 0 && { marginTop: spacing.xl }]}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
+              Notas Fiscais
+            </ThemedText>
+            <Badge variant="secondary" size="sm">
+              {invoices.length}
+            </Badge>
           </View>
-        )}
+          <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+            {invoices.map((file: any, index: number) => (
+              <FileItem
+                key={file.id}
+                file={file}
+                viewMode={viewMode}
+                baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                onPress={() => {
+                  fileViewer.actions.viewFiles(invoices, index);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      )}
 
-        {/* Artworks Section */}
-        {artworks.length > 0 && (
-          <View style={[styles.section, (receipts.length > 0 || invoices.length > 0) && { marginTop: spacing.xl }]}>
-            <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-              <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
-                Artes
-              </ThemedText>
-              <Badge variant="secondary" size="sm">
-                {artworks.length}
-              </Badge>
-            </View>
-            <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-              {artworks.map((file: any, index: number) => (
-                <FileItem
-                  key={file.id}
-                  file={file}
-                  viewMode={viewMode}
-                  baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                  onPress={() => {
-                    fileViewer.actions.viewFiles(artworks, index);
-                  }}
-                />
-              ))}
-            </View>
+      {/* Artworks Section */}
+      {artworks.length > 0 && (
+        <View style={[styles.section, (receipts.length > 0 || invoices.length > 0) && { marginTop: spacing.xl }]}>
+          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+            <ThemedText style={[styles.subsectionHeader, { color: colors.foreground }]}>
+              Artes
+            </ThemedText>
+            <Badge variant="secondary" size="sm">
+              {artworks.length}
+            </Badge>
           </View>
-        )}
-      </View>
-    </Card>
+          <View style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
+            {artworks.map((file: any, index: number) => (
+              <FileItem
+                key={file.id}
+                file={file}
+                viewMode={viewMode}
+                baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                onPress={() => {
+                  fileViewer.actions.viewFiles(artworks, index);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   viewModeControls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
   },
   downloadAllButton: {
     flexDirection: "row",
@@ -249,9 +210,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
-  },
-  content: {
-    gap: spacing.sm,
   },
   section: {
     gap: spacing.md,

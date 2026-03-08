@@ -18,11 +18,11 @@ import { TRUCK_SPOT } from '@/constants';
 import { useKeyboardAwareScroll } from '@/hooks/useKeyboardAwareScroll';
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from '@/contexts/KeyboardAwareFormContext';
 import {
-  getPricingItemsToAddFromServiceOrders,
-  getServiceOrdersToAddFromPricingItems,
+  getPricingServicesToAddFromServiceOrders,
+  getServiceOrdersToAddFromPricingServices,
   normalizeDescription,
   type SyncServiceOrder,
-  type SyncPricingItem,
+  type SyncPricingService,
 } from '@/utils/task-pricing-service-order-sync';
 
 // Import essential sections immediately
@@ -117,9 +117,9 @@ export function TaskForm({
   const isSyncingRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedServiceOrderCountRef = useRef<number>(0);
-  const lastSyncedPricingItemCountRef = useRef<number>(0);
+  const lastSyncedPricingServiceCountRef = useRef<number>(0);
   const deletedServiceOrderDescriptionsRef = useRef<Set<string>>(new Set());
-  const deletedPricingItemDescriptionsRef = useRef<Set<string>>(new Set());
+  const deletedPricingServiceDescriptionsRef = useRef<Set<string>>(new Set());
   const prevSOObservationsRef = useRef<Map<string, string | null>>(new Map());
   const prevPIObservationsRef = useRef<Map<string, string | null>>(new Map());
 
@@ -128,17 +128,17 @@ export function TaskForm({
     if (isFormInitializedRef.current) return;
     const serviceOrders = (form.getValues('serviceOrders') as any[]) || [];
     const pricing = form.getValues('pricing') as any;
-    const pricingItems = (pricing?.items as any[]) || [];
+    const pricingServices = (pricing?.services as any[]) || [];
 
     const validSOs = serviceOrders.filter(
       (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
     );
-    const validPIs = pricingItems.filter(
-      (item: any) => item.description?.trim().length >= 3
+    const validPSs = pricingServices.filter(
+      (svc: any) => svc.description?.trim().length >= 3
     );
 
     lastSyncedServiceOrderCountRef.current = validSOs.length;
-    lastSyncedPricingItemCountRef.current = validPIs.length;
+    lastSyncedPricingServiceCountRef.current = validPSs.length;
 
     // Initialize observation maps
     const soMap = new Map<string, string | null>();
@@ -149,9 +149,9 @@ export function TaskForm({
     prevSOObservationsRef.current = soMap;
 
     const piMap = new Map<string, string | null>();
-    for (const item of validPIs) {
-      const nd = normalizeDescription(item.description);
-      if (nd) piMap.set(nd, item.observation || null);
+    for (const svc of validPSs) {
+      const nd = normalizeDescription(svc.description);
+      if (nd) piMap.set(nd, svc.observation || null);
     }
     prevPIObservationsRef.current = piMap;
 
@@ -171,20 +171,20 @@ export function TaskForm({
 
     syncTimeoutRef.current = setTimeout(() => {
       const currentServiceOrders = (watchedServiceOrders as any[]) || [];
-      const currentPricingItems = ((watchedPricing as any)?.items as any[]) || [];
+      const currentPricingServices = ((watchedPricing as any)?.services as any[]) || [];
 
       const validSOs = currentServiceOrders.filter(
         (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.description?.trim().length >= 3
       );
-      const validPIs = currentPricingItems.filter(
-        (item: any) => item.description?.trim().length >= 3
+      const validPSs = currentPricingServices.filter(
+        (svc: any) => svc.description?.trim().length >= 3
       );
 
       const currentSOCount = validSOs.length;
-      const currentPICount = validPIs.length;
+      const currentPSCount = validPSs.length;
 
       const serviceOrdersAdded = currentSOCount > lastSyncedServiceOrderCountRef.current;
-      const pricingItemsAdded = currentPICount > lastSyncedPricingItemCountRef.current;
+      const pricingServicesAdded = currentPSCount > lastSyncedPricingServiceCountRef.current;
 
       isSyncingRef.current = true;
 
@@ -199,12 +199,12 @@ export function TaskForm({
           shouldSync: so.shouldSync !== false,
         }));
 
-        const syncPIs: SyncPricingItem[] = validPIs.map((item: any) => ({
-          id: item.id,
-          description: item.description || '',
-          observation: item.observation || null,
-          amount: item.amount || 0,
-          shouldSync: item.shouldSync !== false,
+        const syncPSs: SyncPricingService[] = validPSs.map((svc: any) => ({
+          id: svc.id,
+          description: svc.description || '',
+          observation: svc.observation || null,
+          amount: svc.amount || 0,
+          shouldSync: svc.shouldSync !== false,
         }));
 
         // --- Observation sync with change detection ---
@@ -215,9 +215,9 @@ export function TaskForm({
         }
 
         const currentPIObsMap = new Map<string, string | null>();
-        for (const item of syncPIs) {
-          const nd = normalizeDescription(item.description);
-          if (nd) currentPIObsMap.set(nd, item.observation || null);
+        for (const svc of syncPSs) {
+          const nd = normalizeDescription(svc.description);
+          if (nd) currentPIObsMap.set(nd, svc.observation || null);
         }
 
         const soObsChanged = new Set<string>();
@@ -235,7 +235,7 @@ export function TaskForm({
         }
 
         let pricingObsUpdated = false;
-        const pricingItemsWithSyncedObs = currentPricingItems.map((item: any) => {
+        const pricingServicesWithSyncedObs = currentPricingServices.map((item: any) => {
           if (!item.description || item.description.trim().length < 3) return item;
           const nd = normalizeDescription(item.description);
           if (soObsChanged.has(nd) && !piObsChanged.has(nd)) {
@@ -263,35 +263,35 @@ export function TaskForm({
           return so;
         });
 
-        // --- SYNC 1: Service Orders → Pricing Items ---
-        const filterEmptyPIs = (items: any[]) => items.filter((item: any) => {
-          const hasDesc = item.description && item.description.trim() !== '';
-          const hasAmount = item.amount !== null && item.amount !== undefined && item.amount > 0;
+        // --- SYNC 1: Service Orders → Pricing Services ---
+        const filterEmptyPSs = (services: any[]) => services.filter((svc: any) => {
+          const hasDesc = svc.description && svc.description.trim() !== '';
+          const hasAmount = svc.amount !== null && svc.amount !== undefined && svc.amount > 0;
           return hasDesc || hasAmount;
         });
 
-        const pricingItemsToAddRaw = serviceOrdersAdded
-          ? getPricingItemsToAddFromServiceOrders(syncSOs, syncPIs)
+        const pricingServicesToAddRaw = serviceOrdersAdded
+          ? getPricingServicesToAddFromServiceOrders(syncSOs, syncPSs)
           : [];
-        const pricingItemsToAdd = pricingItemsToAddRaw.filter((item: any) => {
-          return !deletedPricingItemDescriptionsRef.current.has(normalizeDescription(item.description));
+        const pricingServicesToAdd = pricingServicesToAddRaw.filter((svc: any) => {
+          return !deletedPricingServiceDescriptionsRef.current.has(normalizeDescription(svc.description));
         });
 
-        if (pricingItemsToAdd.length > 0 || pricingObsUpdated) {
-          const basePIs = pricingItemsToAdd.length > 0
-            ? filterEmptyPIs(pricingItemsWithSyncedObs)
-            : pricingItemsWithSyncedObs;
-          const finalPIs = [...basePIs, ...pricingItemsToAdd];
-          form.setValue('pricing.items', finalPIs, { shouldDirty: true });
+        if (pricingServicesToAdd.length > 0 || pricingObsUpdated) {
+          const basePSs = pricingServicesToAdd.length > 0
+            ? filterEmptyPSs(pricingServicesWithSyncedObs)
+            : pricingServicesWithSyncedObs;
+          const finalPSs = [...basePSs, ...pricingServicesToAdd];
+          form.setValue('pricing.services', finalPSs, { shouldDirty: true });
         }
 
-        // --- SYNC 2: Pricing Items → Service Orders ---
+        // --- SYNC 2: Pricing Services → Service Orders ---
         const filterEmptySOs = (orders: any[]) => orders.filter((so: any) => {
           return so.description && so.description.trim().length >= 3;
         });
 
-        const serviceOrdersToAddRaw = pricingItemsAdded
-          ? getServiceOrdersToAddFromPricingItems(syncPIs, syncSOs)
+        const serviceOrdersToAddRaw = pricingServicesAdded
+          ? getServiceOrdersToAddFromPricingServices(syncPSs, syncSOs)
           : [];
         const serviceOrdersToAdd = serviceOrdersToAddRaw.filter((so: any) => {
           return !deletedServiceOrderDescriptionsRef.current.has(normalizeDescription(so.description));
@@ -316,16 +316,16 @@ export function TaskForm({
         prevSOObservationsRef.current = newPrevSOMap;
 
         const newPrevPIMap = new Map<string, string | null>();
-        const finalPIsForPrev = pricingObsUpdated ? pricingItemsWithSyncedObs : currentPricingItems;
-        for (const item of finalPIsForPrev) {
-          const nd = normalizeDescription(item.description);
-          if (nd) newPrevPIMap.set(nd, item.observation || null);
+        const finalPSsForPrev = pricingObsUpdated ? pricingServicesWithSyncedObs : currentPricingServices;
+        for (const svc of finalPSsForPrev) {
+          const nd = normalizeDescription(svc.description);
+          if (nd) newPrevPIMap.set(nd, svc.observation || null);
         }
         prevPIObservationsRef.current = newPrevPIMap;
 
         // Update synced counts
         lastSyncedServiceOrderCountRef.current = currentSOCount + serviceOrdersToAdd.length;
-        lastSyncedPricingItemCountRef.current = currentPICount + pricingItemsToAdd.length;
+        lastSyncedPricingServiceCountRef.current = currentPSCount + pricingServicesToAdd.length;
       } finally {
         setTimeout(() => {
           isSyncingRef.current = false;
@@ -360,7 +360,7 @@ export function TaskForm({
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
-  const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.managedSector && user?.sector?.privileges === 'PRODUCTION');
+  const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.ledSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser;
   const canViewFiles = !isWarehouseUser;
   // Observation: only in edit mode for completed tasks (same restriction as checkout)
@@ -478,10 +478,20 @@ export function TaskForm({
         }
       }
 
+      // Check for per-service-order checkin/checkout file changes
+      const checkinBySO = (current as any)._checkinFilesByServiceOrder;
+      const checkoutBySO = (current as any)._checkoutFilesByServiceOrder;
+      if (checkinBySO && typeof checkinBySO === 'object' && Object.keys(checkinBySO).length > 0) {
+        changedKeys.push('_checkinFilesByServiceOrder');
+      }
+      if (checkoutBySO && typeof checkoutBySO === 'object' && Object.keys(checkoutBySO).length > 0) {
+        changedKeys.push('_checkoutFilesByServiceOrder');
+      }
+
       // Compare array fields (file IDs, paint IDs) by JSON
       const arrayFields = [
         'paintIds', 'baseFileIds', 'artworkIds', 'projectFileIds',
-        'checkinFileIds', 'checkoutFileIds', 'budgetIds', 'invoiceIds',
+        'budgetIds', 'invoiceIds',
         'receiptIds', 'bankSlipIds',
       ];
       for (const key of arrayFields) {
@@ -512,11 +522,11 @@ export function TaskForm({
           changedKeys.push(`pricing.${key}`);
         }
       }
-      // Compare pricing items by JSON
-      const defaultItems = JSON.stringify(defaultPricing.items || []);
-      const currentItems = JSON.stringify(currentPricing.items || []);
-      if (defaultItems !== currentItems) {
-        changedKeys.push('pricing.items');
+      // Compare pricing services by JSON
+      const defaultServices = JSON.stringify(defaultPricing.services || []);
+      const currentServices = JSON.stringify(currentPricing.services || []);
+      if (defaultServices !== currentServices) {
+        changedKeys.push('pricing.services');
       }
 
       // Compare observation
@@ -539,9 +549,9 @@ export function TaskForm({
         if (hasIncomplete) validationBlocks = true;
       }
 
-      // hasIncompletePricing: pricing items with amounts but no descriptions
-      if (changedKeys.some(k => k.startsWith('pricing')) && watchedPricing?.items) {
-        const items = Array.isArray(watchedPricing.items) ? watchedPricing.items : [];
+      // hasIncompletePricing: pricing services with amounts but no descriptions
+      if (changedKeys.some(k => k.startsWith('pricing')) && watchedPricing?.services) {
+        const items = Array.isArray(watchedPricing.services) ? watchedPricing.services : [];
         const hasIncomplete = items.some(
           (item: any) => {
             const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
@@ -696,6 +706,7 @@ export function TaskForm({
             initialProjectFiles={task?.projectFiles}
             initialCheckinFiles={task?.checkinFiles}
             initialCheckoutFiles={task?.checkoutFiles}
+            serviceOrders={task?.serviceOrders}
           />
         )}
       </Suspense>

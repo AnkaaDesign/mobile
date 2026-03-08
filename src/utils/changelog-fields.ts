@@ -207,8 +207,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     positionId: "Cargo",
     sector: "Setor",
     sectorId: "Setor",
-    managedSector: "Setor Gerenciado",
-    managedSectorId: "Setor Gerenciado",
+    ledSector: "Setor Liderado",
+    ledSectorId: "Setor Liderado",
     performanceLevel: "Nível de Desempenho",
 
     // Status and employment
@@ -867,10 +867,10 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     budgetNumber: "Número do Orçamento",
     simultaneousTasks: "Tarefas Simultâneas",
     discountReference: "Referência do Desconto",
-    invoicesToCustomerIds: "Faturar Para (Clientes)",
+    customerConfigs: "Configurações de Clientes",
     customerSignatureId: "Assinatura do Cliente",
     customForecastDays: "Dias de Previsão Personalizados",
-    "items.length": "Quantidade de Itens",
+    "services.length": "Quantidade de Serviços",
   },
   [CHANGE_LOG_ENTITY_TYPE.TIME_CLOCK_ENTRY]: {
     userId: "Funcionário",
@@ -1900,7 +1900,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
         field === "monthlyConfigId" ||
         field === "yearlyConfigId" ||
         field === "positionId" ||
-        field === "managedSectorId" ||
+        field === "ledSectorId" ||
         field === "approvedBy" ||
         field === "rejectedBy" ||
         field === "cancelledBy" ||
@@ -2121,7 +2121,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
 
     // Special handling for budget field in TASK - format as human readable
     if ((field === "budget" || field === "pricing") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
-      const data = value as { id?: string; budgetNumber?: number; total?: string | number; items?: Array<{ description?: string; amount?: string | number }> };
+      const data = value as { id?: string; budgetNumber?: number; total?: string | number; services?: Array<{ description?: string; amount?: string | number }> };
       if (!data) return "Nenhum";
 
       // Format budget number and total
@@ -2135,8 +2135,8 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
           parts.push(`Total: ${formatCurrency(totalValue)}`);
         }
       }
-      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-        parts.push(`${data.items.length} ${data.items.length === 1 ? "item" : "itens"}`);
+      if (data.services && Array.isArray(data.services) && data.services.length > 0) {
+        parts.push(`${data.services.length} ${data.services.length === 1 ? "serviço" : "serviços"}`);
       }
 
       if (parts.length > 0) {

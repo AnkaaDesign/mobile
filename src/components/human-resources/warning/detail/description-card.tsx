@@ -1,12 +1,12 @@
 
 import { View, StyleSheet } from "react-native";
 import type { Warning } from '../../../../types';
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconFileText, IconNotes } from "@tabler/icons-react-native";
+import { IconNotes } from "@tabler/icons-react-native";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface DescriptionCardProps {
   warning: Warning;
@@ -16,19 +16,7 @@ export function DescriptionCard({ warning }: DescriptionCardProps) {
   const { colors, isDark } = useTheme();
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconFileText size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Detalhes da Advertência
-          </ThemedText>
-        </View>
-      </View>
-
+    <DetailCard title="Detalhes da Advertência" icon="file-text">
       <View style={styles.content}>
         {/* Reason */}
         <View>
@@ -87,37 +75,11 @@ export function DescriptionCard({ warning }: DescriptionCardProps) {
           </>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   content: {
     gap: spacing.lg,
   },

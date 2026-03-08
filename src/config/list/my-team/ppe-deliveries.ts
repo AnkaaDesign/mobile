@@ -95,7 +95,17 @@ export const myTeamPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     ],
     defaultVisible: ['user', 'item', 'status'],
     rowHeight: 72,
-    actions: [],
+    actions: [
+      {
+        key: 'view',
+        label: 'Visualizar',
+        icon: 'eye',
+        variant: 'default',
+        onPress: (delivery, router) => {
+          router.push(`/(tabs)/meu-pessoal/epis/detalhes/${delivery.id}`)
+        },
+      },
+    ],
   },
 
   filters: {

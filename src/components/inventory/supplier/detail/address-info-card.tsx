@@ -1,6 +1,6 @@
 import { View, StyleSheet, Linking, TouchableOpacity, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconMapPin, IconExternalLink } from "@tabler/icons-react-native";
@@ -75,14 +75,7 @@ export function AddressInfoCard({ supplier }: AddressInfoCardProps) {
   const fullAddress = getFullAddress();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconMapPin size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Endereço</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
+    <DetailCard title="Endereço" icon="map-pin">
         {hasAddress && fullAddress ? (
           <TouchableOpacity
             onPress={handleOpenMaps}
@@ -117,35 +110,11 @@ export function AddressInfoCard({ supplier }: AddressInfoCardProps) {
             </ThemedText>
           </View>
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   fullAddressBox: {
     borderRadius: borderRadius.md,
     borderWidth: 1,

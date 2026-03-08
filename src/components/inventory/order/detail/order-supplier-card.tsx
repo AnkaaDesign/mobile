@@ -1,12 +1,12 @@
 import React from "react";
-import { View, Linking, TouchableOpacity , StyleSheet} from "react-native";
-import { Card } from "@/components/ui/card";
+import { View, Linking, TouchableOpacity, StyleSheet} from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField, DetailPhoneField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { formatCNPJ, formatBrazilianPhone } from "@/utils";
+import { formatCNPJ } from "@/utils";
 import type { Supplier } from '../../../../types';
-import { IconPhone, IconMail, IconMapPin, IconBuilding, IconBrandWhatsapp } from "@tabler/icons-react-native";
+import { IconMapPin, IconExternalLink } from "@tabler/icons-react-native";
 
 interface OrderSupplierCardProps {
   supplier: Supplier;
@@ -14,27 +14,6 @@ interface OrderSupplierCardProps {
 
 export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }) => {
   const { colors } = useTheme();
-
-  const handleCallPhone = (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    Linking.openURL(`tel:${cleanPhone}`);
-  };
-
-  const handleWhatsAppPress = async (phone: string) => {
-    const cleanPhone = phone.replace(/\D/g, "");
-    const whatsappNumber = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
-    // Try opening WhatsApp app directly first
-    try {
-      await Linking.openURL(`whatsapp://send?phone=${whatsappNumber}`);
-    } catch {
-      // Fallback to web WhatsApp
-      try {
-        await Linking.openURL(`https://wa.me/${whatsappNumber}`);
-      } catch {
-        // Silent fail
-      }
-    }
-  };
 
   const handleSendEmail = (email: string) => {
     Linking.openURL(`mailto:${email}`);
@@ -47,171 +26,100 @@ export const OrderSupplierCard: React.FC<OrderSupplierCardProps> = ({ supplier }
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconBuilding size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Fornecedor</ThemedText>
-      </View>
+    <DetailCard title="Fornecedor" icon="building">
+      <DetailField
+        label="Nome Fantasia"
+        value={supplier.fantasyName}
+        icon="building"
+      />
 
-      <View style={styles.content}>
-        <View style={styles.row}>
-          <ThemedText style={styles.supplierName}>{supplier.fantasyName}</ThemedText>
-        </View>
+      {supplier.corporateName && (
+        <DetailField
+          label="Razão Social"
+          value={supplier.corporateName}
+          icon="building"
+        />
+      )}
 
-        {supplier.corporateName && (
-          <View style={styles.row}>
-            <ThemedText style={styles.label}>Razão Social:</ThemedText>
-            <ThemedText style={styles.value}>{supplier.corporateName}</ThemedText>
-          </View>
-        )}
+      {supplier.cnpj && (
+        <DetailField
+          label="CNPJ"
+          value={formatCNPJ(supplier.cnpj)}
+          icon="certificate"
+          monospace
+        />
+      )}
 
-        {supplier.cnpj && (
-          <View style={styles.row}>
-            <ThemedText style={styles.label}>CNPJ:</ThemedText>
-            <ThemedText style={styles.value}>{formatCNPJ(supplier.cnpj)}</ThemedText>
-          </View>
-        )}
+      {supplier.phones && supplier.phones.length > 0 && (
+        <DetailPhoneField
+          label="Telefone"
+          phone={supplier.phones[0]}
+          icon="phone"
+        />
+      )}
 
-
-        {supplier.phones && supplier.phones.length > 0 && (
-          <View style={styles.actionRow}>
-            <IconPhone size={16} color={colors.mutedForeground} />
-            <View style={styles.phoneContainer}>
-              <TouchableOpacity
-                onPress={() => handleCallPhone(supplier.phones[0])}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={[styles.phoneValue, { color: "#16a34a" }]}>
-                  {formatBrazilianPhone(supplier.phones[0])}
-                </ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleWhatsAppPress(supplier.phones[0])}
-                activeOpacity={0.7}
-              >
-                <IconBrandWhatsapp size={20} color="#16a34a" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {supplier.email && (
-          <TouchableOpacity
-            style={styles.actionRow}
-            onPress={() => handleSendEmail(supplier.email!)}
-          >
-            <IconMail size={16} color={colors.primary} />
-            <ThemedText style={StyleSheet.flatten([styles.value, styles.link])}>
-              {supplier.email}
-            </ThemedText>
-          </TouchableOpacity>
-        )}
-
-        {supplier.address && (
-          <TouchableOpacity
-            style={StyleSheet.flatten([styles.actionRow, styles.addressRow])}
-            onPress={handleOpenAddress}
-          >
-            <IconMapPin size={16} color={colors.primary} />
-            <View style={styles.addressContent}>
-              <ThemedText style={StyleSheet.flatten([styles.value, styles.link])}>
-                {supplier.address}
+      {supplier.email && (
+        <DetailField
+          label="E-mail"
+          icon="mail"
+          value={
+            <TouchableOpacity
+              onPress={() => handleSendEmail(supplier.email!)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                {supplier.email}
               </ThemedText>
-              {supplier.city && supplier.state && (
-                <ThemedText style={StyleSheet.flatten([styles.value, styles.link])}>
-                  {supplier.city}, {supplier.state}
-                </ThemedText>
-              )}
-              {supplier.zipCode && (
-                <ThemedText style={StyleSheet.flatten([styles.value, styles.link])}>
-                  CEP: {supplier.zipCode}
-                </ThemedText>
-              )}
-            </View>
-          </TouchableOpacity>
-        )}
+            </TouchableOpacity>
+          }
+        />
+      )}
 
-      </View>
-    </Card>
+      {supplier.address && (
+        <DetailField
+          label="Endereço"
+          icon="map-pin"
+          value={
+            <TouchableOpacity
+              onPress={handleOpenAddress}
+              activeOpacity={0.7}
+              style={styles.addressContainer}
+            >
+              <View style={styles.addressContent}>
+                <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                  {supplier.address}
+                </ThemedText>
+                {supplier.city && supplier.state && (
+                  <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                    {supplier.city}, {supplier.state}
+                  </ThemedText>
+                )}
+                {supplier.zipCode && (
+                  <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                    CEP: {supplier.zipCode}
+                  </ThemedText>
+                )}
+              </View>
+            </TouchableOpacity>
+          }
+        />
+      )}
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  phoneContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-  },
-  phoneValue: {
+  linkText: {
     fontSize: fontSize.sm,
-    fontWeight: "500",
-    fontFamily: "monospace",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
-  addressRow: {
+  addressContainer: {
+    flexDirection: "row",
     alignItems: "flex-start",
-  },
-  addressIcon: {
-    marginTop: 2,
   },
   addressContent: {
     flex: 1,
-  },
-  supplierName: {
-    fontSize: fontSize.md,
-    fontWeight: "600",
-    marginBottom: spacing.xs,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-  },
-  value: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  link: {
-    color: undefined, // Will use theme's primary color
-    textDecorationLine: "underline",
-  },
-  notesRow: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
     gap: spacing.xs,
-  },
-  notes: {
-    fontSize: fontSize.sm,
-    opacity: 0.8,
-    lineHeight: fontSize.sm * 1.5,
   },
 });

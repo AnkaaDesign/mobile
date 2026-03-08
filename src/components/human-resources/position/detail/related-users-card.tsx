@@ -1,13 +1,12 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconUsers, IconAlertCircle, IconList } from "@tabler/icons-react-native";
+import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
@@ -17,6 +16,7 @@ import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useUsersInfiniteMobile } from "@/hooks";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface RelatedUsersCardProps {
   position: Position;
@@ -115,67 +115,59 @@ export function RelatedUsersCard({ position, maxHeight = 500 }: RelatedUsersCard
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconUsers size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Funcionários com este Cargo {users.length > 0 && `(${users.length}${totalCount ? `/${totalCount}` : ""})`}
+      <DetailCard
+        title={`Funcionários com este Cargo ${users.length > 0 ? `(${users.length}${totalCount ? `/${totalCount}` : ""})` : ""}`}
+        icon="users"
+      >
+        {/* Search and Column Visibility Controls */}
+        <View style={styles.controlsContainer}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Buscar funcionários..."
+            style={styles.searchBar}
+          />
+          <ListActionButton
+            icon={<IconList size={20} color={colors.foreground} />}
+            onPress={handleOpenColumns}
+            badgeCount={visibleColumnKeys.length}
+            badgeVariant="primary"
+          />
+        </View>
+
+        {/* User Table */}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <ThemedText style={styles.loadingText}>Carregando funcionários...</ThemedText>
+          </View>
+        ) : error ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              Erro ao carregar funcionários.
             </ThemedText>
           </View>
-        </View>
-
-        <View style={styles.content}>
-          {/* Search and Column Visibility Controls */}
-          <View style={styles.controlsContainer}>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Buscar funcionários..."
-              style={styles.searchBar}
-            />
-            <ListActionButton
-              icon={<IconList size={20} color={colors.foreground} />}
-              onPress={handleOpenColumns}
-              badgeCount={visibleColumnKeys.length}
-              badgeVariant="primary"
+        ) : filteredUsers.length === 0 ? (
+          <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
+            <IconAlertCircle size={48} color={colors.mutedForeground} />
+            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+              {searchQuery
+                ? `Nenhum funcionário encontrado para "${searchQuery}".`
+                : "Nenhum funcionário com este cargo."}
+            </ThemedText>
+          </View>
+        ) : (
+          <View style={[styles.tableContainer, { maxHeight }]}>
+            <UserTable
+              users={filteredUsers as any}
+              onUserPress={handleUserPress}
+              onEndReached={() => canLoadMore && loadMore()}
+              loadingMore={isFetchingNextPage}
             />
           </View>
-
-          {/* User Table */}
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <ThemedText style={styles.loadingText}>Carregando funcionários...</ThemedText>
-            </View>
-          ) : error ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                Erro ao carregar funcionários.
-              </ThemedText>
-            </View>
-          ) : filteredUsers.length === 0 ? (
-            <View style={StyleSheet.flatten([styles.emptyState, { backgroundColor: colors.muted + "20" }])}>
-              <IconAlertCircle size={48} color={colors.mutedForeground} />
-              <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-                {searchQuery
-                  ? `Nenhum funcionário encontrado para "${searchQuery}".`
-                  : "Nenhum funcionário com este cargo."}
-              </ThemedText>
-            </View>
-          ) : (
-            <View style={[styles.tableContainer, { maxHeight }]}>
-              <UserTable
-                users={filteredUsers as any}
-                onUserPress={handleUserPress}
-                onEndReached={() => canLoadMore && loadMore()}
-                loadingMore={isFetchingNextPage}
-              />
-            </View>
-          )}
-        </View>
-      </Card>
+        )}
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -191,29 +183,6 @@ export function RelatedUsersCard({ position, maxHeight = 500 }: RelatedUsersCard
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   controlsContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -247,9 +216,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.sm,
     textAlign: "center",
-  },
-  footerLoader: {
-    paddingVertical: spacing.md,
-    alignItems: "center",
   },
 });

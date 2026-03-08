@@ -422,8 +422,6 @@ const ALL_ROUTES = [
   { name: "servidor/registros-de-alteracoes/entidade/[entityType]/[entityId]", title: "Registros por Entidade" },
   { name: "servidor/usuarios/index", title: "Usuários" },
 
-  // Assinatura Digital Gov.br (Teste)
-  { name: "assinatura-govbr", title: "Assinatura Digital Gov.br" },
 ];
 
 // Pre-computed route lookup map for O(1) title lookups instead of O(n) array.find()
@@ -486,7 +484,7 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     }
 
     // Catalogo routes - accessible for team leaders and DESIGNER users (view-only catalog)
-    // NOTE: Team leadership is now checked via user.managedSector, not privilege
+    // NOTE: Team leadership is now checked via user.ledSector, not privilege
     if (path === 'catalogo' || path.startsWith('catalogo/')) {
       // Designers get access to the view-only catalog
       if (userPrivileges.includes(SECTOR_PRIVILEGES.DESIGNER)) {

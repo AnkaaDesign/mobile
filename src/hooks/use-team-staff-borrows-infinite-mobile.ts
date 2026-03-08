@@ -15,7 +15,7 @@ export const teamStaffBorrowsKeys = {
 
 /**
  * Hook for infinite scrolling team staff borrows
- * Automatically filters borrows by the current user's managed sector on the backend
+ * Automatically filters borrows by the current user's led sector on the backend
  * Requires team leader privileges
  * Uses select for optimized data fetching (40-60% reduction)
  */

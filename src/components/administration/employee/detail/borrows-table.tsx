@@ -1,13 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator, FlatList } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { IconPackage, IconAlertCircle, IconList } from "@tabler/icons-react-native";
+import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { User, Borrow } from "@/types";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
@@ -203,15 +203,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
 
   return (
     <>
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconPackage size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Empréstimos {borrows.length > 0 && `(${borrows.length}${totalCount ? `/${totalCount}` : ""})`}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailCard title={`Empréstimos ${borrows.length > 0 ? `(${borrows.length}${totalCount ? `/${totalCount}` : ""})` : ""}`} icon="package">
 
         <View style={styles.content}>
           {/* Search and Column Visibility Controls */}
@@ -271,7 +263,7 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
             </View>
           )}
         </View>
-      </Card>
+      </DetailCard>
 
       <SlideInPanel isOpen={isColumnPanelOpen} onClose={handleCloseColumns}>
         <ColumnVisibilitySlidePanel
@@ -287,26 +279,6 @@ export function BorrowsTable({ employee, maxHeight = 500 }: BorrowsTableProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

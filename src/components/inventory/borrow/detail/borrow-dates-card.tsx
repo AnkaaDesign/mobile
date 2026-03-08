@@ -1,17 +1,14 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { DetailField } from "@/components/ui/detail-page-layout";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { getBadgeVariant } from "@/constants/badge-colors";
-import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDateTime, formatQuantity } from "@/utils";
 import { BORROW_STATUS, BORROW_STATUS_LABELS } from "@/constants";
 import type { Borrow } from '../../../../types';
 import {
-  IconCalendar,
   IconCheck,
   IconX,
   IconAlertCircle,
@@ -22,8 +19,6 @@ interface BorrowDatesCardProps {
 }
 
 export const BorrowDatesCard: React.FC<BorrowDatesCardProps> = ({ borrow }) => {
-  const { colors } = useTheme();
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case BORROW_STATUS.ACTIVE:
@@ -38,12 +33,10 @@ export const BorrowDatesCard: React.FC<BorrowDatesCardProps> = ({ borrow }) => {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Detalhes do Empréstimo</ThemedText>
-        </View>
+    <DetailCard
+      title="Detalhes do Empréstimo"
+      icon="calendar"
+      badge={
         <Badge
           variant={getBadgeVariant(borrow.status, 'BORROW')}
           size="default"
@@ -55,61 +48,36 @@ export const BorrowDatesCard: React.FC<BorrowDatesCardProps> = ({ borrow }) => {
             </ThemedText>
           </View>
         </Badge>
-      </View>
+      }
+    >
+      {/* Quantity */}
+      <DetailField
+        label="Quantidade"
+        value={`${formatQuantity(borrow.quantity)} ${borrow.quantity === 1 ? "unidade" : "unidades"}`}
+        icon="hash"
+      />
 
-      <View style={styles.content}>
-        {/* Quantity */}
+      {/* Borrow Date */}
+      <DetailField
+        label="Data do Empréstimo"
+        value={formatDateTime(borrow.createdAt)}
+        icon="calendar"
+      />
+
+      {/* Return Date */}
+      {borrow.returnedAt && borrow.status === BORROW_STATUS.RETURNED && (
         <DetailField
-          label="Quantidade"
-          value={`${formatQuantity(borrow.quantity)} ${borrow.quantity === 1 ? "unidade" : "unidades"}`}
-          icon="hash"
+          label="Data de Devolução"
+          value={formatDateTime(borrow.returnedAt)}
+          icon="check"
+          iconColor="#10b981"
         />
-
-        {/* Borrow Date */}
-        <DetailField
-          label="Data do Empréstimo"
-          value={formatDateTime(borrow.createdAt)}
-          icon="calendar"
-        />
-
-        {/* Return Date */}
-        {borrow.returnedAt && borrow.status === BORROW_STATUS.RETURNED && (
-          <DetailField
-            label="Data de Devolução"
-            value={formatDateTime(borrow.returnedAt)}
-            icon="check"
-            iconColor="#10b981"
-          />
-        )}
-      </View>
-    </Card>
+      )}
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   badgeContent: {
     flexDirection: "row",
     alignItems: "center",

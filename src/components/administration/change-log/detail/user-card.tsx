@@ -1,15 +1,15 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import type { ChangeLog } from '../../../../types';
-import { IconUser, IconChevronRight } from "@tabler/icons-react-native";
+import { IconChevronRight } from "@tabler/icons-react-native";
 
 interface UserCardProps {
   changeLog: ChangeLog;
@@ -20,23 +20,13 @@ export function UserCard({ changeLog }: UserCardProps) {
 
   if (!changeLog.user && !changeLog.userId) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconUser size={20} color={colors.mutedForeground} />
-            <ThemedText style={StyleSheet.flatten([styles.title, { color: colors.foreground }])}>
-              Usuário
-            </ThemedText>
-          </View>
+      <DetailCard title="Usuário" icon="user">
+        <View style={styles.emptyState}>
+          <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
+            Alteração realizada pelo sistema
+          </ThemedText>
         </View>
-        <View style={styles.content}>
-          <View style={styles.emptyState}>
-            <ThemedText style={StyleSheet.flatten([styles.emptyText, { color: colors.mutedForeground }])}>
-              Alteração realizada pelo sistema
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
+      </DetailCard>
     );
   }
 
@@ -51,15 +41,7 @@ export function UserCard({ changeLog }: UserCardProps) {
   const avatarUrl = changeLog.user?.avatar?.url;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconUser size={20} color={colors.mutedForeground} />
-          <ThemedText style={StyleSheet.flatten([styles.title, { color: colors.foreground }])}>
-            Realizado por
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Realizado por" icon="user">
       <View style={styles.content}>
         <TouchableOpacity
           style={[styles.userContainer, { backgroundColor: colors.muted + "40" }]}
@@ -125,31 +107,11 @@ export function UserCard({ changeLog }: UserCardProps) {
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.sm,
   },

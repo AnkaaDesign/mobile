@@ -1,10 +1,8 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconCalendar, IconMapPin } from "@tabler/icons-react-native";
+import { DetailCard, DetailField, DetailSection } from "@/components/ui/detail-page-layout";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import type { Holiday } from '../../../../types';
 import { formatDate } from "@/utils";
 import { HOLIDAY_TYPE_LABELS } from '@/constants/enum-labels';
@@ -44,8 +42,6 @@ const getDaysUntil = (date: Date): string => {
 };
 
 export function HolidayCard({ holiday }: HolidayCardProps) {
-  const { colors } = useTheme();
-
   const getTypeColor = (type: HOLIDAY_TYPE) => {
     switch (type) {
       case HOLIDAY_TYPE.NATIONAL:
@@ -65,83 +61,24 @@ export function HolidayCard({ holiday }: HolidayCardProps) {
   const daysUntil = getDaysUntil(holiday.date);
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Informações do Feriado</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Informações do Feriado" icon="calendar">
       <View style={styles.content}>
-        {/* Holiday Name */}
-        <View style={styles.section}>
-          <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-            Identificação
-          </ThemedText>
-          <View style={styles.fieldsContainer}>
-            <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-              <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                Nome
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                {holiday.name}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
+        <DetailSection title="Identificação">
+          <DetailField label="Nome" value={holiday.name} />
+        </DetailSection>
 
-        {/* Date Information */}
-        <View style={styles.section}>
-          <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-            Data
-          </ThemedText>
-          <View style={styles.fieldsContainer}>
-            <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-              <View style={styles.fieldLabelWithIcon}>
-                <IconCalendar size={16} color={colors.mutedForeground} />
-                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                  Data
-                </ThemedText>
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                {formatDate(new Date(holiday.date))}
-              </ThemedText>
-            </View>
+        <DetailSection title="Data">
+          <DetailField label="Data" value={formatDate(new Date(holiday.date))} icon="calendar" />
+          <DetailField label="Dia da Semana" value={getDayOfWeek(holiday.date)} />
+          <DetailField label="Status" value={daysUntil} />
+        </DetailSection>
 
-            <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-              <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                Dia da Semana
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                {getDayOfWeek(holiday.date)}
-              </ThemedText>
-            </View>
-
-            <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-              <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                Status
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                {daysUntil}
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {/* Type */}
         {holiday.type && (
-          <View style={styles.section}>
-            <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-              Tipo
-            </ThemedText>
-            <View style={styles.fieldsContainer}>
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <View style={styles.fieldLabelWithIcon}>
-                  <IconMapPin size={16} color={colors.mutedForeground} />
-                  <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                    Abrangência
-                  </ThemedText>
-                </View>
+          <DetailSection title="Tipo">
+            <DetailField
+              label="Abrangência"
+              icon="map-pin"
+              value={
                 <Badge
                   variant="secondary"
                   size="sm"
@@ -160,104 +97,26 @@ export function HolidayCard({ holiday }: HolidayCardProps) {
                     {HOLIDAY_TYPE_LABELS[holiday.type]}
                   </ThemedText>
                 </Badge>
-              </View>
-            </View>
-          </View>
+              }
+            />
+          </DetailSection>
         )}
 
-        {/* Metadata */}
-        <View style={styles.section}>
-          <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
-            Informações do Sistema
-          </ThemedText>
-          <View style={styles.fieldsContainer}>
-            {holiday.createdAt && (
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                  Cadastrado Em
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                  {formatDate(new Date(holiday.createdAt))}
-                </ThemedText>
-              </View>
-            )}
-
-            {holiday.updatedAt && (
-              <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                  Atualizado Em
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                  {formatDate(new Date(holiday.updatedAt))}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </View>
+        <DetailSection title="Informações do Sistema">
+          {holiday.createdAt && (
+            <DetailField label="Cadastrado Em" value={formatDate(new Date(holiday.createdAt))} />
+          )}
+          {holiday.updatedAt && (
+            <DetailField label="Atualizado Em" value={formatDate(new Date(holiday.updatedAt))} />
+          )}
+        </DetailSection>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   content: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  subsectionHeader: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-  },
-  fieldsContainer: {
-    gap: spacing.xs,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-    minHeight: 44,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
-    marginLeft: spacing.md,
+    gap: spacing.lg,
   },
 });

@@ -33,7 +33,7 @@ interface RouteConfig {
 }
 
 // Privilege hierarchy - higher privileges include lower ones
-// Note: Team leadership is now determined by managedSector relationship, not privilege
+// Note: Team leadership is now determined by ledSector relationship, not privilege
 const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, number> = {
   [SECTOR_PRIVILEGES.ADMIN]: 10,
   [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: 8,
@@ -45,9 +45,10 @@ const PRIVILEGE_HIERARCHY: Record<SECTOR_PRIVILEGES | typeof TEAM_LEADER, number
   [SECTOR_PRIVILEGES.COMMERCIAL]: 3, // Same level as LOGISTIC
   [SECTOR_PRIVILEGES.DESIGNER]: 2,
   [SECTOR_PRIVILEGES.PLOTTING]: 2, // Same level as DESIGNER
-  [TEAM_LEADER]: 2, // Virtual privilege - checked via user.managedSector
+  [TEAM_LEADER]: 2, // Virtual privilege - checked via user.ledSector
   [SECTOR_PRIVILEGES.EXTERNAL]: 1,
   [SECTOR_PRIVILEGES.BASIC]: 0,
+  [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: 6,
 };
 
 // Core routes everyone can access (minimal set)
@@ -113,7 +114,7 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
   ],
 
   // Team leadership routes - Note: Access is now controlled at component level via isTeamLeader()
-  // checking user.managedSector?.id relationship, not privilege-based
+  // checking user.ledSector?.id relationship, not privilege-based
   // These routes are available to users who manage a sector (team leaders)
 
   // MAINTENANCE routes
@@ -188,7 +189,7 @@ function getUserAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[]): RouteConf
     }
 
     // Note: Team leadership access (meu-pessoal/*) is now controlled at component level
-    // via isTeamLeader() checking user.managedSector?.id, not privilege-based
+    // via isTeamLeader() checking user.ledSector?.id, not privilege-based
   });
 
   // Cache the result

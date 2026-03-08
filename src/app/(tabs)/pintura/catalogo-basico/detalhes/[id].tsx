@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * - Shows essential paint information (specifications, formulas, related paints)
  * - Does not allow editing or deleting
  * - Does not show tasks or production history (warehouse-specific features)
- * - Is accessible to team leaders (managedSector relationship) without requiring WAREHOUSE access
+ * - Is accessible to team leaders (ledSector relationship) without requiring WAREHOUSE access
  *
  * Use case: Team leaders need to view paint information to understand production
  * requirements without having full warehouse management access.
@@ -45,7 +45,7 @@ export default function CatalogoBasicoDetailsScreen() {
   // End navigation loading overlay when screen mounts
 
   // Check user permissions - team leaders can view, warehouse can edit
-  // Team leadership is now determined by managedSector relationship
+  // Team leadership is now determined by ledSector relationship
   const isLeader = isTeamLeader(user);
   const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const userPrivilege = user?.sector?.privileges;

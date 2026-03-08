@@ -4,8 +4,8 @@ import { ppeDeliveryKeys } from './queryKeys';
 import type { PpeDeliveryGetManyFormData } from '@/schemas';
 
 /**
- * Hook for fetching PPE deliveries for the current user's managed team/sector
- * Uses the /ppe/deliveries/my-team endpoint which filters by the user's managed sector
+ * Hook for fetching PPE deliveries for the current user's led team/sector
+ * Uses the /ppe/deliveries/my-team endpoint which filters by the user's led sector
  */
 export const useMyTeamPpeDeliveriesInfinite = (filters?: Partial<PpeDeliveryGetManyFormData>) => {
   const pageSize = 40;

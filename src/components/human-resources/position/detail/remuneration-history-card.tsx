@@ -1,14 +1,14 @@
 
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconHistory, IconCurrencyReal, IconTrendingUp, IconTrendingDown, IconMinus } from "@tabler/icons-react-native";
+import { IconTrendingUp, IconTrendingDown, IconMinus, IconCurrencyReal } from "@tabler/icons-react-native";
 import type { Position, PositionRemuneration } from '../../../../types';
 import { formatCurrency, formatDateTime } from "@/utils";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface RemunerationHistoryCardProps {
   position: Position;
@@ -19,25 +19,14 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
 
   if (!position.remunerations || position.remunerations.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconHistory size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Histórico de Remunerações
-            </ThemedText>
-          </View>
+      <DetailCard title="Histórico de Remunerações" icon="history">
+        <View style={[styles.emptyState, { backgroundColor: colors.muted + "30" }]}>
+          <IconCurrencyReal size={48} color={colors.mutedForeground} />
+          <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
+            Nenhum histórico de remuneração encontrado
+          </ThemedText>
         </View>
-
-        <View style={styles.content}>
-          <View style={[styles.emptyState, { backgroundColor: colors.muted + "30" }]}>
-            <IconCurrencyReal size={48} color={colors.mutedForeground} />
-            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Nenhum histórico de remuneração encontrado
-            </ThemedText>
-          </View>
-        </View>
-      </Card>
+      </DetailCard>
     );
   }
 
@@ -76,121 +65,92 @@ export function RemunerationHistoryCard({ position }: RemunerationHistoryCardPro
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconHistory size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Histórico de Remunerações
-          </ThemedText>
-        </View>
+    <DetailCard
+      title="Histórico de Remunerações"
+      icon="history"
+      badge={
         <Badge variant="secondary">
           <ThemedText style={[styles.badgeText, { color: colors.foreground }]}>
             {sortedRemunerations.length} registro{sortedRemunerations.length !== 1 ? 's' : ''}
           </ThemedText>
         </Badge>
-      </View>
+      }
+    >
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={true}
+        nestedScrollEnabled={true}
+      >
+        <View style={styles.remunerationsList}>
+          {sortedRemunerations.map((remuneration, index) => {
+            const previous = sortedRemunerations[index + 1];
+            const changeInfo = getChangeInfo(remuneration, previous);
+            const isLatest = index === 0;
+            const isFirst = index === sortedRemunerations.length - 1;
 
-      <View style={styles.content}>
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          <View style={styles.remunerationsList}>
-            {sortedRemunerations.map((remuneration, index) => {
-              const previous = sortedRemunerations[index + 1];
-              const changeInfo = getChangeInfo(remuneration, previous);
-              const isLatest = index === 0;
-              const isFirst = index === sortedRemunerations.length - 1;
-
-              return (
-                <View
-                  key={remuneration.id}
-                  style={[
-                    styles.remunerationItem,
-                    {
-                      backgroundColor: isLatest ? colors.primary + "10" : colors.card,
-                      borderColor: isLatest ? colors.primary : colors.border,
-                      borderWidth: 1,
-                    },
-                  ]}
-                >
-                  <View style={styles.remunerationHeader}>
-                    <View style={styles.valueContainer}>
-                      <ThemedText style={[styles.remunerationValue, { color: colors.foreground }]}>
-                        {formatCurrency(remuneration.value)}
-                      </ThemedText>
-                      {isLatest && (
-                        <Badge variant="default" style={styles.currentBadge}>
-                          <ThemedText style={[styles.currentBadgeText, { color: colors.primaryForeground }]}>
-                            Atual
-                          </ThemedText>
-                        </Badge>
-                      )}
-                    </View>
-
-                    {changeInfo && (
-                      <View style={styles.changeContainer}>
-                        <changeInfo.icon size={16} color={changeInfo.color} />
-                        <Badge variant={changeInfo.badge}>
-                          <ThemedText style={[styles.changeText, { color: colors.primaryForeground }]}>
-                            {changeInfo.text}
-                          </ThemedText>
-                        </Badge>
-                      </View>
+            return (
+              <View
+                key={remuneration.id}
+                style={[
+                  styles.remunerationItem,
+                  {
+                    backgroundColor: isLatest ? colors.primary + "10" : colors.card,
+                    borderColor: isLatest ? colors.primary : colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+              >
+                <View style={styles.remunerationHeader}>
+                  <View style={styles.valueContainer}>
+                    <ThemedText style={[styles.remunerationValue, { color: colors.foreground }]}>
+                      {formatCurrency(remuneration.value)}
+                    </ThemedText>
+                    {isLatest && (
+                      <Badge variant="default" style={styles.currentBadge}>
+                        <ThemedText style={[styles.currentBadgeText, { color: colors.primaryForeground }]}>
+                          Atual
+                        </ThemedText>
+                      </Badge>
                     )}
                   </View>
 
-                  <View style={styles.dateContainer}>
-                    <ThemedText style={[styles.dateText, { color: colors.mutedForeground }]}>
-                      Registrado em {formatDateTime(remuneration.createdAt)}
-                    </ThemedText>
-                  </View>
-
-                  {isFirst && (
-                    <View style={[styles.initialBadgeContainer, { borderTopColor: colors.border }]}>
-                      <ThemedText style={[styles.initialBadgeText, { color: colors.mutedForeground }]}>
-                        Remuneração inicial do cargo
-                      </ThemedText>
+                  {changeInfo && (
+                    <View style={styles.changeContainer}>
+                      <changeInfo.icon size={16} color={changeInfo.color} />
+                      <Badge variant={changeInfo.badge}>
+                        <ThemedText style={[styles.changeText, { color: colors.primaryForeground }]}>
+                          {changeInfo.text}
+                        </ThemedText>
+                      </Badge>
                     </View>
                   )}
                 </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </View>
-    </Card>
+
+                <View style={styles.dateContainer}>
+                  <ThemedText style={[styles.dateText, { color: colors.mutedForeground }]}>
+                    Registrado em {formatDateTime(remuneration.createdAt)}
+                  </ThemedText>
+                </View>
+
+                {isFirst && (
+                  <View style={[styles.initialBadgeContainer, { borderTopColor: colors.border }]}>
+                    <ThemedText style={[styles.initialBadgeText, { color: colors.mutedForeground }]}>
+                      Remuneração inicial do cargo
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   badgeText: {
     fontSize: fontSize.xs,
-  },
-  content: {
-    gap: spacing.sm,
   },
   scrollView: {
     maxHeight: 400,

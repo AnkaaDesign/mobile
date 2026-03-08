@@ -2,14 +2,14 @@ import { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { formatCurrency } from "@/utils";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
-import { IconCurrencyDollar, IconTrendingUp, IconCalendar, IconAward } from "@tabler/icons-react-native";
+import { IconTrendingUp, IconCalendar, IconAward } from "@tabler/icons-react-native";
 
 interface CommissionsCardProps {
   employee: User;
@@ -43,22 +43,15 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
 
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconCurrencyDollar size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Comissões e Bonificações
-          </ThemedText>
-        </View>
-        {totalBonuses > 0 && (
-          <Badge variant="secondary">
-            {totalBonuses} {totalBonuses === 1 ? "registro" : "registros"}
-          </Badge>
-        )}
-      </View>
+    <DetailCard
+      title="Comissões e Bonificações"
+      icon="currency-dollar"
+      badge={totalBonuses > 0 ? (
+        <Badge variant="secondary">
+          {totalBonuses} {totalBonuses === 1 ? "registro" : "registros"}
+        </Badge>
+      ) : undefined}
+    >
       <View style={styles.content}>
         {bonuses.length === 0 ? (
           <EmptyState
@@ -176,38 +169,11 @@ export function CommissionsCard({ employee, maxItems = 5 }: CommissionsCardProps
           </>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   content: {
     gap: spacing.lg,
   },

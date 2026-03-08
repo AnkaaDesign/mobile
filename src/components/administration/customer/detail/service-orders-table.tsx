@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { View, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
@@ -113,15 +113,7 @@ export function ServiceOrdersTable({ customer, maxHeight = 400 }: ServiceOrdersT
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconClipboardList size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Ordens de Serviço {serviceOrders.length > 0 && `(${serviceOrders.length})`}
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title={`Ordens de Serviço ${serviceOrders.length > 0 ? `(${serviceOrders.length})` : ""}`} icon="clipboard-list">
 
       <View style={styles.content}>
         {/* Statistics Summary */}
@@ -244,31 +236,11 @@ export function ServiceOrdersTable({ customer, maxHeight = 400 }: ServiceOrdersT
           </ScrollView>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
   content: {
     gap: spacing.md,
   },

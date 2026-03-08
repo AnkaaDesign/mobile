@@ -65,7 +65,7 @@ export default function CuttingDetailsScreen() {
 
   // Check permissions
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  // Team leadership is now determined by managedSector relationship
+  // Team leadership is now determined by ledSector relationship
   const canRequestCut = isTeamLeader(user) ||
                         hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
   const canChangeStatus =

@@ -41,7 +41,7 @@ export function CutsFilterDrawerContent({
   const [localFilters, setLocalFilters] = useState(() => filters || {});
 
   // Check if user is a team leader (they have automatic sector filtering)
-  // Note: Team leadership is now determined by managedSector relationship (user.managedSector?.id)
+  // Note: Team leadership is now determined by ledSector relationship (user.ledSector?.id)
   const shouldHideSectorFilter = useMemo(() => {
     return isTeamLeader(user);
   }, [user]);

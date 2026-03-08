@@ -1,10 +1,8 @@
-
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconCalendar } from "@tabler/icons-react-native";
+import { fontSize } from "@/constants/design-system";
 import { formatDate, formatRelativeTime } from "@/utils";
 
 interface ObservationMetadataCardProps {
@@ -20,124 +18,46 @@ export function ObservationMetadataCard({ createdAt, updatedAt }: ObservationMet
   const hasBeenUpdated = createdDate.getTime() !== updatedDate.getTime();
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconCalendar size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Metadados</ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Metadados" icon="calendar">
+      <DetailField
+        label="Criada em"
+        icon="calendar"
+        value={
+          <View>
+            <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
+              {formatDate(createdDate)}
+            </ThemedText>
+            <ThemedText style={[styles.dateRelative, { color: colors.mutedForeground }]}>
+              {formatRelativeTime(createdDate)}
+            </ThemedText>
+          </View>
+        }
+      />
 
-      <View style={styles.content}>
-        <View style={styles.datesContainer}>
-          {/* Created At */}
-          <View style={[styles.dateRow, { backgroundColor: colors.muted }]}>
-            <View style={styles.dateLabelContainer}>
-              <IconCalendar size={16} color={colors.mutedForeground} />
-              <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
-                Criada em
-              </ThemedText>
-            </View>
-            <View style={styles.dateValueContainer}>
+      {hasBeenUpdated && (
+        <DetailField
+          label="Atualizada em"
+          icon="calendar"
+          value={
+            <View>
               <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
-                {formatDate(createdDate)}
+                {formatDate(updatedDate)}
               </ThemedText>
               <ThemedText style={[styles.dateRelative, { color: colors.mutedForeground }]}>
-                {formatRelativeTime(createdDate)}
+                {formatRelativeTime(updatedDate)}
               </ThemedText>
             </View>
-          </View>
-
-          {/* Updated At */}
-          {hasBeenUpdated && (
-            <View style={[styles.dateRow, { backgroundColor: colors.muted }]}>
-              <View style={styles.dateLabelContainer}>
-                <IconCalendar size={16} color={colors.mutedForeground} />
-                <ThemedText style={[styles.dateLabel, { color: colors.mutedForeground }]}>
-                  Atualizada em
-                </ThemedText>
-              </View>
-              <View style={styles.dateValueContainer}>
-                <ThemedText style={[styles.dateValue, { color: colors.foreground }]}>
-                  {formatDate(updatedDate)}
-                </ThemedText>
-                <ThemedText style={[styles.dateRelative, { color: colors.mutedForeground }]}>
-                  {formatRelativeTime(updatedDate)}
-                </ThemedText>
-              </View>
-            </View>
-          )}
-        </View>
-      </View>
-    </Card>
+          }
+        />
+      )}
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    marginLeft: spacing.sm,
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-  },
-  datesContainer: {
-    gap: spacing.sm,
-  },
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    gap: spacing.sm,
-  },
-  dateLabelContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  dateLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  dateValueContainer: {
-    alignItems: "flex-end",
-  },
   dateValue: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    fontWeight: "600",
   },
   dateRelative: {
     fontSize: fontSize.xs,

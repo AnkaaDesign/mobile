@@ -63,7 +63,7 @@ export const userIncludeSchema = z
         }),
       ])
       .optional(),
-    managedSector: z
+    ledSector: z
       .union([
         z.boolean(),
         z.object({
@@ -226,7 +226,7 @@ export const userOrderBySchema = z.union([
         })
         .optional(),
 
-      managedSector: z
+      ledSector: z
         .object({
           id: orderByDirectionSchema.optional(),
           name: orderByDirectionSchema.optional(),
@@ -582,7 +582,7 @@ const userFilters = {
   hasTasks: z.boolean().optional(),
   hasVacations: z.boolean().optional(),
   showDismissed: z.boolean().optional(),
-  hasManagedSector: z.boolean().optional(),
+  hasLedSector: z.boolean().optional(),
   performanceLevelRange: z
     .object({
       min: z.number().optional(),
@@ -727,14 +727,14 @@ const userTransform = (data: any) => {
     delete data.hasVacations;
   }
 
-  // Handle hasManagedSector filter
-  if (typeof data.hasManagedSector === "boolean") {
-    if (data.hasManagedSector) {
-      andConditions.push({ managedSector: { is: { id: { not: undefined } } } });
+  // Handle hasLedSector filter
+  if (typeof data.hasLedSector === "boolean") {
+    if (data.hasLedSector) {
+      andConditions.push({ ledSector: { is: { id: { not: undefined } } } });
     } else {
-      andConditions.push({ managedSector: { is: null } });
+      andConditions.push({ ledSector: { is: null } });
     }
-    delete data.hasManagedSector;
+    delete data.hasLedSector;
   }
 
   // Handle performanceLevelRange filter
@@ -966,8 +966,8 @@ export const userCreateSchema = z
     notificationPreferences: z.array(notificationPreferenceCreateNestedSchema).optional(),
     // Required for changelog tracking
     userId: z.string().optional(),
-    // Sector leader flag - when true, sets this user as manager of the selected sector
-    // The backend will update Sector.managerId accordingly
+    // Sector leader flag - when true, sets this user as leader of the selected sector
+    // The backend will update Sector.leaderId accordingly
     isSectorLeader: z.boolean().default(false),
   })
   .refine((data) => data.email || data.phone, {
@@ -1053,8 +1053,8 @@ export const userUpdateSchema = z
     preferences: z.record(z.any()).optional(),
     // Store current status for validation (used by backend)
     currentStatus: z.nativeEnum(USER_STATUS).optional(),
-    // Sector leader flag - when true, sets this user as manager of the selected sector
-    // The backend will update Sector.managerId accordingly
+    // Sector leader flag - when true, sets this user as leader of the selected sector
+    // The backend will update Sector.leaderId accordingly
     isSectorLeader: z.boolean().optional(),
   })
   .refine(

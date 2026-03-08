@@ -15,7 +15,7 @@ export interface NavigationUser {
       privileges?: SECTOR_PRIVILEGES;
     };
   };
-  managedSector?: {
+  ledSector?: {
     id?: string;
   } | null;
 }
@@ -66,7 +66,7 @@ export function getFilteredMenuForUser(menuItems: MenuItem[], user: NavigationUs
 
   // Apply privilege and team leader filtering
   const userPrivilege = user?.sector?.privileges;
-  const isTeamLeader = Boolean(user?.managedSector?.id);
+  const isTeamLeader = Boolean(user?.ledSector?.id);
 
   filteredMenu = filterMenuByPrivilegesAndTeamLeader(filteredMenu, userPrivilege, isTeamLeader);
 
@@ -101,7 +101,7 @@ export function getIconoirIcon(iconKey: string): string {
 /**
  * Check if user has access to menu item based on privilege requirements and team leader status
  * Uses exact matching for menu display (following web behavior)
- * TEAM_LEADER is a virtual privilege - checked via user.managedSector relationship
+ * TEAM_LEADER is a virtual privilege - checked via user.ledSector relationship
  * Note: This differs from route guards which use hierarchical checking
  */
 function hasMenuItemAccess(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, isTeamLeader: boolean = false): boolean {
@@ -488,7 +488,7 @@ function segmentsMatch(navSegments: string[], routeSegments: string[]): boolean 
 /**
  * Check if user has access to a specific menu item
  * Uses exact matching for menu display (following web behavior)
- * TEAM_LEADER is a virtual privilege - checked via user.managedSector relationship
+ * TEAM_LEADER is a virtual privilege - checked via user.ledSector relationship
  * Note: For route access control, use privilege utils with hierarchical checking
  */
 export function hasAccessToMenuItem(item: MenuItem, userPrivilege?: SECTOR_PRIVILEGES, isTeamLeader: boolean = false): boolean {

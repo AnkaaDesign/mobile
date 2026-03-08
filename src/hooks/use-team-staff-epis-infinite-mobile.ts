@@ -14,7 +14,7 @@ export const teamStaffEpisKeys = {
 
 /**
  * Hook for infinite scrolling team staff EPI deliveries
- * Automatically filters EPI deliveries by the current user's managed sector on the backend
+ * Automatically filters EPI deliveries by the current user's led sector on the backend
  * Requires team leader privileges
  */
 export function useTeamStaffEpisInfinite(

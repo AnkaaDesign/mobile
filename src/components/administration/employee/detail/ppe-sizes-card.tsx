@@ -1,11 +1,10 @@
 
 import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconShield } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 
 interface PpeSizesCardProps {
   employee: User;
@@ -28,21 +27,11 @@ export function PpeSizesCard({ employee }: PpeSizesCardProps) {
   // If no PPE size data, show empty state
   if (!employee.ppeSize) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconShield size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Tamanhos de EPI
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <ThemedText style={[styles.emptyState, { color: colors.mutedForeground }]}>
-            Nenhum tamanho de EPI configurado
-          </ThemedText>
-        </View>
-      </Card>
+      <DetailCard title="Tamanhos de EPI" icon="shield">
+        <ThemedText style={[styles.emptyState, { color: colors.mutedForeground }]}>
+          Nenhum tamanho de EPI configurado
+        </ThemedText>
+      </DetailCard>
     );
   }
 
@@ -63,85 +52,42 @@ export function PpeSizesCard({ employee }: PpeSizesCardProps) {
   // If no sizes configured at all
   if (ppeSizes.length === 0) {
     return (
-      <Card style={styles.card}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <View style={styles.headerLeft}>
-            <IconShield size={20} color={colors.mutedForeground} />
-            <ThemedText style={styles.title}>
-              Tamanhos de EPI
-            </ThemedText>
-          </View>
-        </View>
-        <View style={styles.content}>
-          <ThemedText style={[styles.emptyState, { color: colors.mutedForeground }]}>
-            Nenhum tamanho de EPI configurado
-          </ThemedText>
-        </View>
-      </Card>
+      <DetailCard title="Tamanhos de EPI" icon="shield">
+        <ThemedText style={[styles.emptyState, { color: colors.mutedForeground }]}>
+          Nenhum tamanho de EPI configurado
+        </ThemedText>
+      </DetailCard>
     );
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconShield size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>
-            Tamanhos de EPI
-          </ThemedText>
-        </View>
+    <DetailCard title="Tamanhos de EPI" icon="shield">
+      <View style={styles.grid}>
+        {ppeSizes.map((item) => (
+          <View
+            key={item.key}
+            style={[
+              styles.gridItem,
+              {
+                borderColor: colors.border,
+                backgroundColor: colors.muted + "20",
+              }
+            ]}
+          >
+            <ThemedText style={[styles.sizeLabel, { color: colors.mutedForeground }]}>
+              {item.label}
+            </ThemedText>
+            <ThemedText style={[styles.sizeValue, { color: colors.foreground }]}>
+              {item.value}
+            </ThemedText>
+          </View>
+        ))}
       </View>
-      <View style={styles.content}>
-        <View style={styles.grid}>
-          {ppeSizes.map((item, _index) => (
-            <View
-              key={item.key}
-              style={[
-                styles.gridItem,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: colors.muted + "20",
-                }
-              ]}
-            >
-              <ThemedText style={[styles.sizeLabel, { color: colors.mutedForeground }]}>
-                {item.label}
-              </ThemedText>
-              <ThemedText style={[styles.sizeValue, { color: colors.foreground }]}>
-                {item.value}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.md,
-  },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",

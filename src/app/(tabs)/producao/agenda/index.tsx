@@ -69,11 +69,7 @@ export default function ProductionPreparationScreen() {
       // Non-designer users use the standard preparation display logic
       defaultFilters.shouldDisplayInPreparation = true;
 
-      // Everyone except FINANCIAL users excludes FINANCIAL SOs from the completion check
-      if (!isFinancialUser) {
-        defaultFilters.preparationExcludeFinancial = true;
-      }
-      // Only FINANCIAL users exclude LOGISTIC SOs from the completion check
+      // FINANCIAL users exclude LOGISTIC SOs from the completion check
       if (isFinancialUser) {
         defaultFilters.preparationExcludeLogistic = true;
       }

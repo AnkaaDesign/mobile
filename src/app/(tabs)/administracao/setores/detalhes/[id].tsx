@@ -52,13 +52,13 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Sect
         include: {
           position: true,
           sector: true,
-          managedSector: true,
+          ledSector: true,
         },
         orderBy: {
           name: "asc",
         },
       },
-      managedByUsers: true,
+      leader: true,
       changelogs: {
         include: {
           user: true,

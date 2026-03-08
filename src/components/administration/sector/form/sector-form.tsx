@@ -99,7 +99,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
   };
 
   // Define privilege descriptions and order (matching web version)
-  // Note: Team leadership is now determined by managedSector relationship, not LEADER privilege
+  // Note: Team leadership is now determined by ledSector relationship, not LEADER privilege
   const privilegeInfo = {
     [SECTOR_PRIVILEGES.BASIC]: { order: 1, description: "Acesso básico aos recursos do sistema" },
     [SECTOR_PRIVILEGES.EXTERNAL]: { order: 2, description: "Acesso para colaboradores externos" },

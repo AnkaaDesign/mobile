@@ -1,11 +1,11 @@
 
 import { View, StyleSheet, Alert } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconDownload, IconShieldCheck, IconTrash, IconSettings } from "@tabler/icons-react-native";
+import { IconDownload, IconShieldCheck, IconTrash } from "@tabler/icons-react-native";
 import type { BackupJob } from '../../../../types';
 
 interface RestoreOptionsCardProps {
@@ -65,17 +65,7 @@ export function RestoreOptionsCard({
   }
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={StyleSheet.flatten([styles.titleIcon, { backgroundColor: colors.primary + "10" }])}>
-            <IconSettings size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={StyleSheet.flatten([styles.titleText, { color: colors.foreground }])}>
-            Opções de Restauração
-          </ThemedText>
-        </View>
-      </View>
+    <DetailCard title="Opções de Restauração" icon="settings">
       <View style={styles.content}>
         {/* Warning Message */}
         <View style={StyleSheet.flatten([styles.warningBox, { backgroundColor: colors.warning + "10", borderColor: colors.warning }])}>
@@ -180,39 +170,13 @@ export function RestoreOptionsCard({
           </View>
         </View>
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
   content: {
     gap: spacing.md,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
   },
   warningBox: {
     padding: spacing.md,

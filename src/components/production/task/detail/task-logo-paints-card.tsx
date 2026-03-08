@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
@@ -8,7 +8,7 @@ import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '@/constants/enum-labels';
 import { TRUCK_MANUFACTURER } from '@/constants/enums';
 import { PAINT_FINISH } from '@/constants/enums';
-import { IconPaint, IconAlertCircle } from "@tabler/icons-react-native";
+import { IconAlertCircle } from "@tabler/icons-react-native";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
 const BADGE_COLORS = {
@@ -127,43 +127,19 @@ export const TaskLogoPaintsCard: React.FC<TaskLogoPaintsCardProps> = ({
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <IconPaint size={20} color={colors.primary} />
-        <ThemedText style={styles.title}>Tintas da Logomarca</ThemedText>
-        <Badge variant="secondary" style={styles.countBadge}>
-          {paints.length}
-        </Badge>
-      </View>
-
+    <DetailCard
+      title="Tintas da Logomarca"
+      icon="paint"
+      badge={<Badge variant="secondary">{paints.length}</Badge>}
+    >
       <View style={styles.content}>
         {paints.map((paint) => renderPaintItem(paint))}
       </View>
-    </Card>
+    </DetailCard>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   content: {
     gap: spacing.sm,
   },

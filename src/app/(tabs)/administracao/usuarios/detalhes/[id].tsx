@@ -106,7 +106,7 @@ export default function UserDetailScreen() {
           privileges: true, // Needed for privilege display
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,

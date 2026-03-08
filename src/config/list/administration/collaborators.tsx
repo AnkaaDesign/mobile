@@ -61,7 +61,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
           name: true,
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,
@@ -218,12 +218,12 @@ export const collaboratorsListConfig: ListConfig<User> = {
         format: 'datetime',
       },
       {
-        key: 'managedSector',
-        label: 'SETOR GERENCIADO',
+        key: 'ledSector',
+        label: 'SETOR LIDERADO',
         sortable: true,
         width: 1.5,
         align: 'left',
-        render: (user) => user.managedSector?.name || '-',
+        render: (user) => user.ledSector?.name || '-',
       },
       {
         key: 'city',
@@ -470,7 +470,7 @@ export const collaboratorsListConfig: ListConfig<User> = {
       { key: 'pis', label: 'PIS', path: 'pis' },
       { key: 'position', label: 'Cargo', path: 'position.name' },
       { key: 'sector', label: 'Setor', path: 'sector.name' },
-      { key: 'managedSector', label: 'Setor Gerenciado', path: 'managedSector.name' },
+      { key: 'ledSector', label: 'Setor Liderado', path: 'ledSector.name' },
       { key: 'status', label: 'Status', path: 'status', format: (value) => STATUS_LABELS[value] || value },
       { key: 'birth', label: 'Data de Nascimento', path: 'birth', format: 'date' },
       { key: 'dismissedAt', label: 'Data de Demissão', path: 'dismissedAt', format: 'date' },

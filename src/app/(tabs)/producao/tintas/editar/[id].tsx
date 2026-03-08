@@ -12,6 +12,7 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
+import { paintFormulaComponentService } from "@/api-client/paint";
 
 export default function EditPaintScreen() {
   const router = useRouter();
@@ -94,11 +95,28 @@ export default function EditPaintScreen() {
         }
       }
 
-      // API client already shows success alert
+      // Deduct stock for new formula components after successful update
+      if (newFormulas && newFormulas.length > 0) {
+        for (const formula of newFormulas) {
+          const validComponents = formula.components?.filter((c) => c.itemId && c.weight && c.weight > 0) || [];
+          for (const component of validComponents) {
+            if (component.weight && component.weight > 0 && component.itemId) {
+              try {
+                await paintFormulaComponentService.deductForFormulationTest({
+                  itemId: component.itemId,
+                  weight: component.weight,
+                });
+              } catch {
+                // Stock deduction is best-effort
+              }
+            }
+          }
+        }
+      }
+
       goBack();
     } catch (error) {
       console.error("Error updating paint:", error);
-      // API client already shows error alert
     } finally {
       setIsSubmitting(false);
     }

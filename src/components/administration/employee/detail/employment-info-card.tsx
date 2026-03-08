@@ -1,21 +1,14 @@
 
-import { View, StyleSheet } from "react-native";
 import type { User } from '../../../../types';
 import { formatDate } from "@/utils";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconBriefcase, IconCalendar, IconBuilding, IconUserCheck } from "@tabler/icons-react-native";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 
 interface EmploymentInfoCardProps {
   employee: User;
 }
 
 export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
-  const { colors } = useTheme();
-
   const formattedAdmissional = employee.exp1StartAt ? formatDate(employee.exp1StartAt) : "Não informado";
   const formattedDismissal = employee.dismissedAt ? formatDate(employee.dismissedAt) : "-";
 
@@ -37,135 +30,37 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
   const timeAtCompany = getTimeAtCompany();
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconBriefcase size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Informações de Emprego
-          </ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
-        {employee.position && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconBriefcase size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                Cargo
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {employee.position.name}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+    <DetailCard title="Informações de Emprego" icon="briefcase">
+      {employee.position && (
+        <DetailField label="Cargo" icon="briefcase" value={employee.position.name} />
+      )}
 
-        {employee.sector && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconBuilding size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                Setor
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {employee.sector.name}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {employee.sector && (
+        <DetailField label="Setor" icon="building" value={employee.sector.name} />
+      )}
 
-        {employee.managedSector && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconUserCheck size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                Setor Gerenciado
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {employee.managedSector.name}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {employee.ledSector && (
+        <DetailField label="Setor Liderado" icon="user-check" value={employee.ledSector.name} />
+      )}
 
-        <View style={styles.detailRow}>
-          <View style={styles.detailIcon}>
-            <IconCalendar size={20} color={colors.mutedForeground} />
-          </View>
-          <View style={styles.detailContent}>
-            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-              Data de Admissão
-            </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-              {formattedAdmissional}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailField label="Data de Admissão" icon="calendar" value={formattedAdmissional} />
 
-        {employee.dismissedAt && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconCalendar size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                Data de Desligamento
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {formattedDismissal}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {employee.dismissedAt && (
+        <DetailField label="Data de Desligamento" icon="calendar" value={formattedDismissal} />
+      )}
 
-        <View style={styles.detailRow}>
-          <View style={styles.detailIcon}>
-            <IconCalendar size={20} color={colors.mutedForeground} />
-          </View>
-          <View style={styles.detailContent}>
-            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-              Tempo na Empresa
-            </ThemedText>
-            <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-              {timeAtCompany}
-            </ThemedText>
-          </View>
-        </View>
+      <DetailField label="Tempo na Empresa" icon="calendar" value={timeAtCompany} />
 
-        {employee.payrollNumber && (
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <IconUserCheck size={20} color={colors.mutedForeground} />
-            </View>
-            <View style={styles.detailContent}>
-              <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
-                Número de Folha
-              </ThemedText>
-              <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
-                {employee.payrollNumber.toString()}
-              </ThemedText>
-            </View>
-          </View>
-        )}
+      {employee.payrollNumber && (
+        <DetailField label="Número de Folha" icon="user-check" value={employee.payrollNumber.toString()} />
+      )}
 
-        {/* Performance Level */}
-        {employee.performanceLevel !== undefined && employee.performanceLevel !== null && (
-          <View style={styles.performanceRow}>
-            <View style={styles.performanceLabel}>
-              <IconUserCheck size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.label, { color: colors.mutedForeground }]}>
-                Nível de Desempenho
-              </ThemedText>
-            </View>
+      {/* Performance Level */}
+      {employee.performanceLevel !== undefined && employee.performanceLevel !== null && (
+        <DetailField
+          label="Nível de Desempenho"
+          icon="user-check"
+          value={
             <Badge
               variant={
                 employee.performanceLevel >= 4 ? "success" :
@@ -176,75 +71,9 @@ export function EmploymentInfoCard({ employee }: EmploymentInfoCardProps) {
             >
               Nível {employee.performanceLevel}
             </Badge>
-          </View>
-        )}
-      </View>
-    </Card>
+          }
+        />
+      )}
+    </DetailCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    gap: spacing.md,
-  },
-  detailRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  detailIcon: {
-    paddingTop: 2,
-  },
-  detailContent: {
-    flex: 1,
-    gap: spacing.xs / 2,
-  },
-  detailLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-  },
-  detailValue: {
-    fontSize: fontSize.sm,
-  },
-  performanceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: spacing.sm,
-  },
-  performanceLabel: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  label: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-});

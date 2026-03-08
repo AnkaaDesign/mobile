@@ -13,6 +13,7 @@ export * from "./use-screen-ready";
 // =====================================================
 export * from "./useAuth";
 export * from "./usePrivileges";
+export * from "./use-task-permissions";
 
 // =====================================================
 // Statistics & Analytics Hooks
@@ -235,6 +236,11 @@ export * from "./use-after-interactions";
 // File Viewer & Media Hooks
 // =====================================================
 export * from "./use-file-viewer-orientation";
+
+// =====================================================
+// Invoice / Billing Hooks
+// =====================================================
+export * from "./useInvoice";
 
 // =====================================================
 // Monitoring & Utilities

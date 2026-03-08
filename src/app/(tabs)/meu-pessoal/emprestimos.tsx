@@ -13,26 +13,26 @@ import type { Borrow } from '@/types'
 
 /**
  * My Team Borrows List Page
- * Shows all borrows for users in the team leader's managed sector
+ * Shows all borrows for users in the team leader's led sector
  */
 export default function MyTeamBorrowsScreen() {
   const { colors } = useTheme()
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser()
 
-  // Build where clause to filter by team members in the managed sector
-  const managedSectorId = currentUser?.managedSector?.id
+  // Build where clause to filter by team members in the led sector
+  const ledSectorId = currentUser?.ledSector?.id
   const buildWhereClause = useCallback(
     (baseWhere: any) => {
-      if (!managedSectorId) return baseWhere
+      if (!ledSectorId) return baseWhere
 
       return {
         ...baseWhere,
         user: {
-          sectorId: managedSectorId,
+          sectorId: ledSectorId,
         },
       }
     },
-    [managedSectorId]
+    [ledSectorId]
   )
 
   // Customize config with dynamic where clause

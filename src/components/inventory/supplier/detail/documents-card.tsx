@@ -1,6 +1,6 @@
 import { View, StyleSheet } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconFileText, IconCertificate } from "@tabler/icons-react-native";
@@ -29,14 +29,7 @@ export function DocumentsCard({
   const hasDocuments = supplier.cnpj || allDocuments.length > 0;
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFileText size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.title}>Documentos</ThemedText>
-        </View>
-      </View>
-      <View style={styles.content}>
+    <DetailCard title="Documentos" icon="file-text">
         {hasDocuments ? (
           <View style={styles.documentsContainer}>
             {/* CNPJ Information */}
@@ -45,19 +38,11 @@ export function DocumentsCard({
                 <ThemedText style={StyleSheet.flatten([styles.subsectionHeader, { color: colors.foreground }])}>
                   Documentação Legal
                 </ThemedText>
-                <View style={styles.fieldsContainer}>
-                  <View style={StyleSheet.flatten([styles.fieldRow, { backgroundColor: colors.muted + "50" }])}>
-                    <View style={styles.fieldLabelWithIcon}>
-                      <IconCertificate size={16} color={colors.mutedForeground} />
-                      <ThemedText style={StyleSheet.flatten([styles.fieldLabel, { color: colors.mutedForeground }])}>
-                        CNPJ
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={StyleSheet.flatten([styles.fieldValue, { color: colors.foreground }])}>
-                      {formatCNPJ(supplier.cnpj)}
-                    </ThemedText>
-                  </View>
-                </View>
+                <DetailField
+                  label="CNPJ"
+                  value={formatCNPJ(supplier.cnpj)}
+                  icon="certificate"
+                />
               </View>
             )}
 
@@ -138,35 +123,11 @@ export function DocumentsCard({
             </ThemedText>
           </View>
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   documentsContainer: {
     gap: spacing.xl,
   },
@@ -185,32 +146,6 @@ const styles = StyleSheet.create({
   subsectionHeader: {
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
-  },
-  fieldsContainer: {
-    gap: spacing.md,
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.lg,
-  },
-  fieldLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  fieldLabelWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  fieldValue: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    flex: 1,
-    textAlign: "right",
   },
   filesContainer: {
     gap: spacing.sm,

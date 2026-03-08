@@ -218,7 +218,7 @@ function PrivilegeDrawerContent({
   }, [accessibleRoutes]);
 
   // Get highest privilege for display
-  // Note: Team leadership is now determined by managedSector relationship, not privilege
+  // Note: Team leadership is now determined by ledSector relationship, not privilege
   const highestPrivilege = useMemo(() => {
     if (userPrivileges.includes(SECTOR_PRIVILEGES.ADMIN)) return SECTOR_PRIVILEGES.ADMIN;
     if (userPrivileges.includes(SECTOR_PRIVILEGES.HUMAN_RESOURCES)) return SECTOR_PRIVILEGES.HUMAN_RESOURCES;

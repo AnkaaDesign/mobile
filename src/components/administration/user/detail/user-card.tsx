@@ -90,10 +90,10 @@ export function UserCard({ user }: UserCardProps) {
           />
         )}
 
-        {user.managedSector && (
+        {user.ledSector && (
           <DetailField
-            label="Setor Gerenciado"
-            value={user.managedSector.name}
+            label="Setor Liderado"
+            value={user.ledSector.name}
             icon="shield-check"
             iconColor={colors.warning}
           />

@@ -128,7 +128,7 @@ export function LowStockList({ items, totalCount }: LowStockListProps) {
         return (
           <Pressable
             key={item.id}
-            onPress={() => router.push(`/estoque/itens/${item.id}` as any)}
+            onPress={() => router.push(`/estoque/produtos/detalhes/${item.id}` as any)}
             style={{
               flexDirection: "row",
               alignItems: "center",

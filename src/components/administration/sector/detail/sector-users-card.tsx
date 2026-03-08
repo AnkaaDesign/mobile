@@ -1,9 +1,9 @@
 
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { IconUsers, IconChevronRight } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
+import { IconChevronRight } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
 import { routes, USER_STATUS } from "@/constants";
@@ -30,12 +30,10 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <IconUsers size={20} color={colors.primary} />
-          <ThemedText style={styles.sectionTitle}>Usuários do Setor</ThemedText>
-        </View>
+    <DetailCard
+      title="Usuários do Setor"
+      icon="users"
+      badge={
         <TouchableOpacity
           onPress={handleViewAllUsers}
           style={[styles.viewAllButton, { backgroundColor: colors.muted }]}
@@ -46,7 +44,8 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
           </ThemedText>
           <IconChevronRight size={16} color={colors.foreground} />
         </TouchableOpacity>
-      </View>
+      }
+    >
 
       {users.length === 0 ? (
         <View style={styles.emptyState}>
@@ -140,32 +139,11 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
           </ThemedText>
         </View>
       )}
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "600",
-  },
   viewAllButton: {
     flexDirection: "row",
     alignItems: "center",

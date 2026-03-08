@@ -28,7 +28,7 @@ const MOBILE_ROUTE_PRIVILEGES: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILE
   // Human Resources routes
   "human-resources": SECTOR_PRIVILEGES.HUMAN_RESOURCES,
 
-  // Statistics routes (removed LEADER privilege - team leadership is now based on managedSector)
+  // Statistics routes (removed LEADER privilege - team leadership is now based on ledSector)
   // statistics: SECTOR_PRIVILEGES.BASIC,
 
   // Personal routes (accessible to all authenticated users)
@@ -45,7 +45,7 @@ const MOBILE_ROUTE_PRIVILEGES: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILE
 /**
  * Sensitive operations that require elevated privileges
  * These routes require higher privileges regardless of their parent module
- * Note: Team leadership is now determined by managedSector relationship, not LEADER privilege
+ * Note: Team leadership is now determined by ledSector relationship, not LEADER privilege
  */
 const SENSITIVE_OPERATIONS: Record<string, SECTOR_PRIVILEGES | SECTOR_PRIVILEGES[]> = {
   // Creation and edit operations now use BASIC (authenticated) - specific permissions checked in components

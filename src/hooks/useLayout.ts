@@ -51,8 +51,8 @@ export const useLayoutsByTruck = (
     queryFn: async () => {
       const response = await layoutService.getByTruckId(truckId, {
         include: options?.include,
-        includePhoto: includePhoto ? 'true' : undefined,
-      });
+        ...(includePhoto ? { includePhoto: 'true' } : {}),
+      } as any);
       return response.data;
     },
     enabled: (options?.enabled !== false) && !!truckId,

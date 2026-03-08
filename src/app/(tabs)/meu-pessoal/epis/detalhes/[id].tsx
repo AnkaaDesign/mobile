@@ -9,9 +9,11 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconShieldCheck } from "@tabler/icons-react-native";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { CHANGE_LOG_ENTITY_TYPE } from "@/constants/enums";
+import { PPE_DELIVERY_STATUS } from "@/constants";
 import { isTeamLeader } from "@/utils/user";
 
 // Import modular components
@@ -21,6 +23,7 @@ import {
   TeamPpeItemCard,
   TeamPpeStatusCard,
 } from "@/components/my-team/ppe-delivery/detail";
+import { SignatureEvidenceCard } from "@/components/human-resources/ppe/delivery/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function TeamPpeDeliveryDetailScreen() {
@@ -54,6 +57,12 @@ export default function TeamPpeDeliveryDetailScreen() {
       },
       reviewedByUser: true,
       ppeSchedule: true,
+      signature: {
+        include: {
+          signedByUser: true,
+          signedDocument: true,
+        },
+      },
     },
     enabled: !!id && id !== "",
   });
@@ -78,8 +87,8 @@ export default function TeamPpeDeliveryDetailScreen() {
   }, [refetch]);
 
   // Check if user has access (team leader with matching sector)
-  const managedSectorId = currentUser?.managedSector?.id;
-  const hasAccess = currentUser && isTeamLeader(currentUser) && delivery?.user?.sectorId === managedSectorId;
+  const ledSectorId = currentUser?.ledSector?.id;
+  const hasAccess = currentUser && isTeamLeader(currentUser) && delivery?.user?.sectorId === ledSectorId;
 
   if (isLoading) {
     return (
@@ -224,16 +233,13 @@ export default function TeamPpeDeliveryDetailScreen() {
         <TeamPpeDeliveryCard delivery={delivery} />
         <TeamPpeStatusCard delivery={delivery} />
 
+        {/* Signature Evidence (view-only for team leaders) */}
+        {delivery.status === PPE_DELIVERY_STATUS.COMPLETED && delivery.signature && (
+          <SignatureEvidenceCard deliveryId={delivery.id} signature={delivery.signature} />
+        )}
+
         {/* Changelog Timeline */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconShieldCheck size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>
-                Histórico de Alterações
-              </ThemedText>
-            </View>
-          </View>
+        <DetailCard title="Histórico de Alterações" icon="history">
           <ChangelogTimeline
             entityType={CHANGE_LOG_ENTITY_TYPE.PPE_DELIVERY}
             entityId={delivery.id}
@@ -241,7 +247,7 @@ export default function TeamPpeDeliveryDetailScreen() {
             entityCreatedAt={delivery.createdAt}
             maxHeight={400}
           />
-        </Card>
+        </DetailCard>
       </View>
     </ScrollView>
   );
@@ -261,14 +267,6 @@ const styles = StyleSheet.create({
   headerCard: {
     padding: spacing.md,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
@@ -286,10 +284,6 @@ const styles = StyleSheet.create({
   deliverySubtitle: {
     fontSize: fontSize.sm,
     marginTop: 2,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
   },
   errorContent: {
     alignItems: "center",

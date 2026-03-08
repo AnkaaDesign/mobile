@@ -68,7 +68,6 @@ export function ServiceSelectorAutoGrouped({
   const { groupedServices, ungroupedIndices } = useMemo(() => {
     const groups: Record<string, number[]> = {
       [SERVICE_ORDER_TYPE.PRODUCTION]: [],
-      [SERVICE_ORDER_TYPE.FINANCIAL]: [],
       [SERVICE_ORDER_TYPE.COMMERCIAL]: [],
       [SERVICE_ORDER_TYPE.LOGISTIC]: [],
       [SERVICE_ORDER_TYPE.ARTWORK]: [],
@@ -98,7 +97,7 @@ export function ServiceSelectorAutoGrouped({
       case SECTOR_PRIVILEGES.DESIGNER:
         return SERVICE_ORDER_TYPE.ARTWORK;
       case SECTOR_PRIVILEGES.FINANCIAL:
-        return SERVICE_ORDER_TYPE.FINANCIAL;
+        return SERVICE_ORDER_TYPE.COMMERCIAL;
       case SECTOR_PRIVILEGES.LOGISTIC:
         return SERVICE_ORDER_TYPE.LOGISTIC;
       default:
@@ -155,7 +154,7 @@ export function ServiceSelectorAutoGrouped({
 
       onChange(newValues);
 
-      // Notify parent to reorder synced pricing items for PRODUCTION groups
+      // Notify parent to reorder synced pricing services for PRODUCTION groups
       if (type === SERVICE_ORDER_TYPE.PRODUCTION && onProductionReorder) {
         const newDescriptionOrder = groupItems
           .map((item: any) => item.description)
@@ -241,11 +240,10 @@ export function ServiceSelectorAutoGrouped({
       return Object.values(SERVICE_ORDER_TYPE);
     }
     if (userPrivilege === SECTOR_PRIVILEGES.FINANCIAL) {
-      // Financial can only see COMMERCIAL, LOGISTIC, FINANCIAL (not PRODUCTION, ARTWORK)
+      // Financial can only see COMMERCIAL, LOGISTIC (not PRODUCTION, ARTWORK)
       return [
         SERVICE_ORDER_TYPE.COMMERCIAL,
         SERVICE_ORDER_TYPE.LOGISTIC,
-        SERVICE_ORDER_TYPE.FINANCIAL,
       ];
     }
     if (userPrivilege === SECTOR_PRIVILEGES.DESIGNER) {
@@ -397,7 +395,6 @@ export function ServiceSelectorAutoGrouped({
           SERVICE_ORDER_TYPE.COMMERCIAL,
           SERVICE_ORDER_TYPE.ARTWORK,
           SERVICE_ORDER_TYPE.PRODUCTION,
-          SERVICE_ORDER_TYPE.FINANCIAL,
           SERVICE_ORDER_TYPE.LOGISTIC,
         ].map((type) => renderServiceGroup(type))}
       </View>
@@ -538,9 +535,6 @@ function ServiceRow({
       case SERVICE_ORDER_TYPE.ARTWORK:
         // Artwork service orders: designer and admin users
         return [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.ADMIN];
-      case SERVICE_ORDER_TYPE.FINANCIAL:
-        // Financial service orders: commercial, financial, and admin users
-        return [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.ADMIN];
       default:
         return undefined;
     }

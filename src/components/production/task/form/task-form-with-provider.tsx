@@ -60,7 +60,7 @@ function getCreateDefaultValues() {
     ],
     pricing: {
       expiresAt,
-      status: 'DRAFT',
+      status: 'PENDING',
       subtotal: 0,
       discountType: 'NONE',
       discountValue: null,
@@ -72,7 +72,7 @@ function getCreateDefaultValues() {
       customGuaranteeText: null,
       customForecastDays: null,
       layoutFileId: null,
-      items: [{ description: '', amount: null, observation: null, shouldSync: true }],
+      services: [{ description: '', amount: null, observation: null, shouldSync: true }],
     },
     truck: {
       category: '',
@@ -121,7 +121,7 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         customerId: '',
         sectorId: undefined,
         serviceOrders: [],
-        pricing: { items: [] },
+        pricing: { services: [] },
       };
     }
   }

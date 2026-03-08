@@ -106,7 +106,7 @@ export function TaskDeadlineList({
         return (
           <Pressable
             key={task.id}
-            onPress={() => router.push(`/producao/tarefas/${task.id}` as any)}
+            onPress={() => router.push(`/(tabs)/producao/agenda/detalhes/${task.id}` as any)}
             style={{
               flexDirection: "row",
               alignItems: "center",

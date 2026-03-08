@@ -317,7 +317,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
 
   // MINHA EQUIPE (for team leaders - manages their sector's staff)
-  // Only visible to users who are sector managers (have managedSector relation)
+  // Only visible to users who are sector leaders (have ledSector relation)
   // sortOrder: 35 places it alphabetically between Historico (30) and Observacoes (40) for PRODUCTION + TEAM_LEADER users
   {
     id: "minha-equipe",

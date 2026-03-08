@@ -109,7 +109,7 @@ export default function EmployeeDetailsScreen() {
           name: true,
         },
       },
-      managedSector: {
+      ledSector: {
         select: {
           id: true,
           name: true,

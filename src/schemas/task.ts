@@ -172,6 +172,8 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
             include: z
               .object({
                 task: z.boolean().optional(),
+                checkinFiles: z.boolean().optional(),
+                checkoutFiles: z.boolean().optional(),
               })
               .optional(),
           }),
@@ -1115,9 +1117,11 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_TYPE.PRODUCTION),
   assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
   observation: z.string().nullable().optional(), // For rejection/approval notes
-  shouldSync: z.boolean().optional().default(true), // Sync with pricing items (matches web)
+  shouldSync: z.boolean().optional().default(true), // Sync with pricing services (matches web)
   startedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
+  checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),
+  checkoutFileIds: z.array(z.string().uuid('Arquivo de checkout inválido')).optional(),
 });
 
 // Layout section schema for truck layouts

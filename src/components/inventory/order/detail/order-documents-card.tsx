@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
@@ -79,14 +79,11 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      {/* Header */}
-      <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <IconFileText size={20} color={colors.mutedForeground} />
-          <ThemedText style={styles.cardTitle}>Documentos</ThemedText>
-        </View>
-        {hasDocuments && (
+    <DetailCard
+      title="Documentos"
+      icon="file-text"
+      badge={
+        hasDocuments ? (
           <View style={styles.viewModeButtons}>
             <TouchableOpacity
               style={[
@@ -129,11 +126,9 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
               />
             </TouchableOpacity>
           </View>
-        )}
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
+        ) : undefined
+      }
+    >
         {hasDocuments ? (
           <>
             {renderFileSection(
@@ -190,32 +185,11 @@ export function OrderDocumentsCard({ order }: OrderDocumentsCardProps) {
             </ThemedText>
           </View>
         )}
-      </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 0,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  cardTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: "500" as const,
-  },
   viewModeButtons: {
     flexDirection: "row",
     gap: spacing.xs,
@@ -226,9 +200,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     alignItems: "center",
     justifyContent: "center",
-  },
-  content: {
-    padding: spacing.md,
   },
   section: {
     marginBottom: spacing.lg,

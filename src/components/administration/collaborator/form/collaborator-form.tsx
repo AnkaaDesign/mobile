@@ -24,7 +24,7 @@ import type { User } from "@/types";
 import { useUserMutations } from "@/hooks/useUser";
 import { useSectors } from "@/hooks/useSector";
 import { usePositions } from "@/hooks/usePosition";
-import { USER_STATUS, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE } from "@/constants";
+import { USER_STATUS, SHIRT_SIZE, BOOT_SIZE, PANTS_SIZE, SLEEVES_SIZE, MASK_SIZE, GLOVES_SIZE, RAIN_BOOTS_SIZE, SECTOR_PRIVILEGES } from "@/constants";
 import { USER_STATUS_LABELS, SHIRT_SIZE_LABELS, BOOT_SIZE_LABELS, PANTS_SIZE_LABELS, SLEEVES_SIZE_LABELS, MASK_SIZE_LABELS, GLOVES_SIZE_LABELS, RAIN_BOOTS_SIZE_LABELS } from "@/constants/enum-labels";
 
 interface CollaboratorFormProps {
@@ -151,7 +151,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             status: user?.status || USER_STATUS.EXPERIENCE_PERIOD_1,
             sectorId: user?.sectorId || null,
             positionId: user?.positionId || null,
-            isSectorLeader: Boolean(user?.managedSector?.id),
+            isSectorLeader: Boolean(user?.ledSector?.id),
             verified: user?.verified || false,
             isActive: user?.isActive ?? true,
             performanceLevel: user?.performanceLevel || 0,
@@ -196,6 +196,21 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
   const watchedStatus = form.watch("status");
   const exp1StartAt = form.watch("exp1StartAt");
   const effectedAt = form.watch("effectedAt");
+  const watchedSectorId = form.watch("sectorId");
+
+  // Determine if the selected sector is PRODUCTION (only PRODUCTION sectors can have leaders)
+  const selectedSector = useMemo(
+    () => sectors?.data?.find((s) => s.id === watchedSectorId),
+    [sectors?.data, watchedSectorId]
+  );
+  const isProductionSector = selectedSector?.privileges === SECTOR_PRIVILEGES.PRODUCTION;
+
+  // Reset isSectorLeader when sector changes to non-PRODUCTION
+  useEffect(() => {
+    if (watchedSectorId && !isProductionSector) {
+      form.setValue("isSectorLeader", false);
+    }
+  }, [watchedSectorId, isProductionSector, form]);
 
   // Track previous values to detect actual changes (not just initial mount)
   const prevExp1StartAtRef = useRef<Date | null | undefined>(undefined);
@@ -835,24 +850,26 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
             </>
           )}
 
-          {/* Sector Leader Switch */}
-          <FormFieldGroup
-            label="Líder do Setor"
-          >
-            <Controller
-              control={form.control}
-              name="isSectorLeader"
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.switchRow}>
-                  <Switch
-                    checked={Boolean(value)}
-                    onCheckedChange={onChange}
-                    disabled={isLoading || !form.watch("sectorId")}
-                  />
-                </View>
-              )}
-            />
-          </FormFieldGroup>
+          {/* Sector Leader Switch - only for PRODUCTION sectors */}
+          {isProductionSector && (
+            <FormFieldGroup
+              label="Líder do Setor"
+            >
+              <Controller
+                control={form.control}
+                name="isSectorLeader"
+                render={({ field: { onChange, value } }) => (
+                  <View style={styles.switchRow}>
+                    <Switch
+                      checked={Boolean(value)}
+                      onCheckedChange={onChange}
+                      disabled={isLoading || !watchedSectorId}
+                    />
+                  </View>
+                )}
+              />
+            </FormFieldGroup>
+          )}
 
           {/* Verified Toggle */}
           <FormFieldGroup

@@ -4,13 +4,13 @@ import { router } from "expo-router";
 import type { User } from '../../../../types';
 import { TASK_STATUS_LABELS, routes } from "@/constants";
 import { formatDate } from "@/utils";
-import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
+import { DetailCard } from "@/components/ui/detail-page-layout";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconClipboardList, IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
+import { IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
 import { getBadgeVariant } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
 
@@ -30,22 +30,15 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
   };
 
   return (
-    <Card style={styles.card}>
-      <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-        <View style={styles.titleRow}>
-          <View style={[styles.titleIcon, { backgroundColor: colors.primary + "10" }]}>
-            <IconClipboardList size={18} color={colors.primary} />
-          </View>
-          <ThemedText style={[styles.titleText, { color: colors.foreground }]}>
-            Ordens de Serviço Recentes
-          </ThemedText>
-        </View>
-        {totalTasks > 0 && (
-          <Badge variant="secondary">
-            {totalTasks} {totalTasks === 1 ? "ordem" : "ordens"}
-          </Badge>
-        )}
-      </View>
+    <DetailCard
+      title="Ordens de Serviço Recentes"
+      icon="clipboard-list"
+      badge={totalTasks > 0 ? (
+        <Badge variant="secondary">
+          {totalTasks} {totalTasks === 1 ? "ordem" : "ordens"}
+        </Badge>
+      ) : undefined}
+    >
       <View style={styles.content}>
         {tasks.length === 0 ? (
           <EmptyState
@@ -126,38 +119,11 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
           </View>
         )}
       </View>
-    </Card>
+    </DetailCard>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: spacing.md,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  titleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
   content: {
     paddingHorizontal: 0,
   },
