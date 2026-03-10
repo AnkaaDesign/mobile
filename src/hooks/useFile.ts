@@ -356,8 +356,8 @@ export const useMultiFileUpload = (options: MultiFileUploadOptions = {}) => {
         });
 
         // Mark all files as completed or failed based on response
-        if (response.data?.successful && response.data.successful.length > 0) {
-          response.data.successful.forEach((file: any, index: number) => {
+        if (response.data?.success && response.data.success.length > 0) {
+          response.data.success.forEach((file: any, index: number) => {
             const fileId = `multi-upload-${Date.now()}-${index}`;
             const completedProgress: UploadProgress = {
               fileId,

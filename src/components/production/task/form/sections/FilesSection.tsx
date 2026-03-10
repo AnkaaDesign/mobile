@@ -22,7 +22,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormContext } from 'react-hook-form';
 import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
-import { SERVICE_ORDER_STATUS } from '@/constants/enums';
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums';
 import { spacing, fontSize } from '@/constants/design-system';
 import { useTheme } from '@/lib/theme';
 import type { File as AnkaaFile } from '@/types';
@@ -129,7 +129,7 @@ export default function FilesSection({
 
   // Filter active service orders (non-cancelled, with ID)
   const activeServiceOrders = (serviceOrders || []).filter(
-    (so: any) => so.id && so.status !== SERVICE_ORDER_STATUS?.CANCELLED
+    (so: any) => so.id && so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.status !== SERVICE_ORDER_STATUS?.CANCELLED
   );
 
   // If the user cannot see any section, hide the entire component

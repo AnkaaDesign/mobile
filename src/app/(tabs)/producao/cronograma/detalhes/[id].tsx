@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady, useTaskPermissions } from "@/hooks";
 import { useTaskDetailMinimalInclude, useTaskDetailFullInclude } from "@/hooks/use-task-detail-include";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { SERVICE_ORDER_TYPE } from "@/constants/enums";
 import { formatCurrency, formatDate } from "@/utils";
 import { perfLog } from "@/utils/performance-logger";
 import { useScreenPerformance } from "@/utils/screen-performance-monitor";
@@ -758,14 +759,14 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Check-in Files Section - Grouped by Service Order */}
-          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.checkinFiles?.length > 0) && (
+          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkinFiles?.length > 0) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
                   <IconCamera size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.sectionTitle}>Check-in</ThemedText>
                   <Badge variant="secondary">
-                    {task.serviceOrders.reduce((sum: number, so: any) => sum + (so.checkinFiles?.length || 0), 0)}
+                    {task.serviceOrders.filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION).reduce((sum: number, so: any) => sum + (so.checkinFiles?.length || 0), 0)}
                   </Badge>
                 </View>
                 <View style={styles.viewModeButtons}>
@@ -787,7 +788,7 @@ export default function ScheduleDetailsScreen() {
               </View>
               <View style={styles.sectionContent}>
                 {task.serviceOrders
-                  .filter((so: any) => so.checkinFiles?.length > 0)
+                  .filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkinFiles?.length > 0)
                   .map((so: any) => (
                     <View key={`checkin-${so.id}`} style={{ marginBottom: spacing.md }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
@@ -814,14 +815,14 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Check-out Files Section - Grouped by Service Order */}
-          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.checkoutFiles?.length > 0) && (
+          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkoutFiles?.length > 0) && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
                   <IconPhotoCheck size={20} color={colors.mutedForeground} />
                   <ThemedText style={styles.sectionTitle}>Check-out</ThemedText>
                   <Badge variant="secondary">
-                    {task.serviceOrders.reduce((sum: number, so: any) => sum + (so.checkoutFiles?.length || 0), 0)}
+                    {task.serviceOrders.filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION).reduce((sum: number, so: any) => sum + (so.checkoutFiles?.length || 0), 0)}
                   </Badge>
                 </View>
                 <View style={styles.viewModeButtons}>
@@ -843,7 +844,7 @@ export default function ScheduleDetailsScreen() {
               </View>
               <View style={styles.sectionContent}>
                 {task.serviceOrders
-                  .filter((so: any) => so.checkoutFiles?.length > 0)
+                  .filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkoutFiles?.length > 0)
                   .map((so: any) => (
                     <View key={`checkout-${so.id}`} style={{ marginBottom: spacing.md }}>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
