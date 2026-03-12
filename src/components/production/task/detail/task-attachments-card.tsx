@@ -31,8 +31,6 @@ interface TaskAttachmentsCardProps {
   baseFiles?: File[];
   artworks?: File[];
   projectFiles?: File[];
-  checkinFiles?: File[];
-  checkoutFiles?: File[];
 }
 
 export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
@@ -40,8 +38,6 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
   baseFiles,
   artworks,
   projectFiles,
-  checkinFiles,
-  checkoutFiles,
 }) => {
   const { colors } = useTheme();
   const { openFile } = useFileViewer();
@@ -92,13 +88,6 @@ export const TaskAttachmentsCard: React.FC<TaskAttachmentsCardProps> = ({
   if (projectFiles && projectFiles.length > 0) {
     sections.push({ label: "Projetos", files: projectFiles });
   }
-  if (checkinFiles && checkinFiles.length > 0) {
-    sections.push({ label: "Check-in", files: checkinFiles });
-  }
-  if (checkoutFiles && checkoutFiles.length > 0) {
-    sections.push({ label: "Check-out", files: checkoutFiles });
-  }
-
   // Fallback: if only the legacy `files` prop is provided with no named sections
   if (sections.length === 0 && files && files.length > 0) {
     sections.push({ label: "Anexos", files });

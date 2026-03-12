@@ -10,8 +10,8 @@ import {
   MASK_SIZE_LABELS,
   GLOVES_SIZE_LABELS,
   RAIN_BOOTS_SIZE_LABELS,
-  TASK_PRICING_STATUS_LABELS,
-  TASK_PRICING_STATUS,
+  TASK_QUOTE_STATUS_LABELS,
+  TASK_QUOTE_STATUS,
   DISCOUNT_TYPE_LABELS,
   DISCOUNT_TYPE,
   PAYMENT_CONDITION_LABELS,
@@ -301,7 +301,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     commissions: "Comissões",
     services: "Serviços", // Legacy - for historical changelog records
     serviceOrders: "Ordens de Serviço",
-    pricingId: "Orçamento",
+    quoteId: "Orçamento",
     airbrushings: "Aerografias",
     cuts: "Recortes",
     cutRequest: "Solicitações de Corte",
@@ -851,7 +851,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     "approvedBy.name": "Nome de quem Aprovou",
     "completedBy.name": "Nome de quem Concluiu",
   },
-  [CHANGE_LOG_ENTITY_TYPE.TASK_PRICING]: {
+  [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE]: {
     subtotal: "Subtotal",
     discountType: "Tipo de Desconto",
     discountValue: "Valor do Desconto",
@@ -1912,9 +1912,9 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   }
 
   // Handle task pricing fields
-  if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING) {
+  if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE) {
     if ((field === "status" || field === "status_transition") && typeof value === "string") {
-      return TASK_PRICING_STATUS_LABELS[value as TASK_PRICING_STATUS] || value;
+      return TASK_QUOTE_STATUS_LABELS[value as TASK_QUOTE_STATUS] || value;
     }
     if (field === "discountType" && typeof value === "string") {
       return DISCOUNT_TYPE_LABELS[value as DISCOUNT_TYPE] || value;
@@ -2120,7 +2120,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     }
 
     // Special handling for budget field in TASK - format as human readable
-    if ((field === "budget" || field === "pricing") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+    if ((field === "budget" || field === "quoteId" || field === "pricing") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
       const data = value as { id?: string; budgetNumber?: number; total?: string | number; services?: Array<{ description?: string; amount?: string | number }> };
       if (!data) return "Nenhum";
 

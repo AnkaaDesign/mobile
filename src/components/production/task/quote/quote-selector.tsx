@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { SERVICE_ORDER_TYPE } from "@/constants/enums";
-import { DISCOUNT_TYPE_LABELS, PAYMENT_CONDITION_LABELS, GUARANTEE_YEARS_LABELS, TASK_PRICING_STATUS_LABELS } from "@/constants/enum-labels";
-import { DISCOUNT_TYPE, PAYMENT_CONDITION, TASK_PRICING_STATUS } from "@/constants/enums";
+import { DISCOUNT_TYPE_LABELS, PAYMENT_CONDITION_LABELS, GUARANTEE_YEARS_LABELS, TASK_QUOTE_STATUS_LABELS } from "@/constants/enum-labels";
+import { DISCOUNT_TYPE, PAYMENT_CONDITION, TASK_QUOTE_STATUS } from "@/constants/enums";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
@@ -52,9 +52,9 @@ const VALIDITY_PERIOD_OPTIONS = [
 ];
 
 // Status options
-const STATUS_OPTIONS = Object.values(TASK_PRICING_STATUS).map((value) => ({
+const STATUS_OPTIONS = Object.values(TASK_QUOTE_STATUS).map((value) => ({
   value,
-  label: TASK_PRICING_STATUS_LABELS[value],
+  label: TASK_QUOTE_STATUS_LABELS[value],
 }));
 
 // Forecast days options (1-30)
@@ -74,7 +74,7 @@ interface ArtworkOption {
   size?: number;
 }
 
-interface PricingSelectorProps {
+interface QuoteSelectorProps {
   control: any;
   disabled?: boolean;
   userRole?: string;
@@ -83,16 +83,16 @@ interface PricingSelectorProps {
   onLayoutFilesChange?: (files: FilePickerItem[]) => void;
   /** Initial invoice-to customer objects for populating the combobox in edit mode */
   initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
-  /** Task artworks available for selection as pricing layout */
+  /** Task artworks available for selection as quote layout */
   artworks?: ArtworkOption[];
 }
 
-export interface PricingSelectorRef {
+export interface QuoteSelectorRef {
   addItem: () => void;
   clearAll: () => void;
 }
 
-export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorProps>(
+export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
   ({ control, disabled, userRole, onItemCountChange, layoutFiles: externalLayoutFiles, onLayoutFilesChange, initialInvoiceToCustomers, artworks }, ref) => {
     const { colors } = useTheme();
     const fileViewer = useFileViewer();
@@ -345,15 +345,22 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
         }, 0);
 
         const roundedSubtotal = Math.round(customerSubtotal * 100) / 100;
-        const configDiscountType = config.discountType || 'NONE';
-        const configDiscountValue = config.discountValue || 0;
-        let customerDiscountAmount = 0;
-        if (configDiscountType === 'PERCENTAGE' && configDiscountValue) {
-          customerDiscountAmount = Math.round((roundedSubtotal * configDiscountValue / 100) * 100) / 100;
-        } else if (configDiscountType === 'FIXED_VALUE' && configDiscountValue) {
-          customerDiscountAmount = configDiscountValue;
-        }
-        const roundedTotal = Math.max(0, Math.round((roundedSubtotal - customerDiscountAmount) * 100) / 100);
+
+        // Calculate per-customer total from service-level discounts
+        const customerTotal = services.reduce((sum: number, svc: any) => {
+          if (svc.invoiceToCustomerId === customerId) {
+            const amount = typeof svc.amount === 'number' ? svc.amount : Number(svc.amount) || 0;
+            let discount = 0;
+            if (svc.discountType === 'PERCENTAGE' && svc.discountValue) {
+              discount = Math.round((amount * svc.discountValue / 100) * 100) / 100;
+            } else if (svc.discountType === 'FIXED_VALUE' && svc.discountValue) {
+              discount = Math.min(svc.discountValue, amount);
+            }
+            return sum + Math.max(0, amount - discount);
+          }
+          return sum;
+        }, 0);
+        const roundedTotal = Math.max(0, Math.round(customerTotal * 100) / 100);
 
         if (config.subtotal !== roundedSubtotal || config.total !== roundedTotal) {
           updated = true;
@@ -1395,7 +1402,7 @@ export const PricingSelector = forwardRef<PricingSelectorRef, PricingSelectorPro
   }
 );
 
-PricingSelector.displayName = "PricingSelector";
+QuoteSelector.displayName = "QuoteSelector";
 
 // Pricing Item Row Component
 interface PricingItemRowProps {
@@ -1740,4 +1747,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PricingSelector;
+export default QuoteSelector;

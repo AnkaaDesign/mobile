@@ -9,8 +9,8 @@ import { useTheme } from "@/lib/theme";
 import { useFileViewer } from "@/components/file";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatDate } from "@/utils";
-import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
-import type { TaskPricing } from "@/types/task-pricing";
+import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
+import type { TaskQuote } from "@/types/task-quote";
 import { WEB_BASE_URL } from "@/config/urls";
 import {
   IconExternalLink,
@@ -24,8 +24,8 @@ import {
   IconTruck,
 } from "@tabler/icons-react-native";
 
-interface TaskPricingCardProps {
-  pricing: TaskPricing;
+interface TaskQuoteCardProps {
+  quote: TaskQuote;
   customerId?: string;
   customerName?: string;
   contactName?: string;
@@ -36,43 +36,48 @@ interface TaskPricingCardProps {
   chassisNumber?: string | null;
 }
 
-type PricingStatus = "PENDING" | "BUDGET_APPROVED" | "VERIFIED" | "INTERNAL_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED";
+type QuoteStatus = "PENDING" | "BUDGET_APPROVED" | "VERIFIED_BY_FINANCIAL" | "INTERNAL_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED" | "DUE";
 
-const STATUS_CONFIG: Record<PricingStatus, { label: string; variant: "secondary" | "approved" | "rejected" | "cancelled" }> = {
+const STATUS_CONFIG: Record<QuoteStatus, { label: string; variant: "secondary" | "approved" | "rejected" | "cancelled" }> = {
   PENDING: { label: "Pendente", variant: "secondary" },
   BUDGET_APPROVED: { label: "Orçamento Aprovado", variant: "approved" },
-  VERIFIED: { label: "Verificado", variant: "approved" },
+  VERIFIED_BY_FINANCIAL: { label: "Verificado pelo Financeiro", variant: "approved" },
   INTERNAL_APPROVED: { label: "Aprovado Internamente", variant: "approved" },
   UPCOMING: { label: "A Vencer", variant: "secondary" },
   PARTIAL: { label: "Parcial", variant: "secondary" },
   SETTLED: { label: "Liquidado", variant: "approved" },
+  DUE: { label: "Vencido", variant: "rejected" },
 };
 
-export function TaskPricingCard({ pricing, customerId, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: TaskPricingCardProps) {
+export function TaskQuoteCard({ quote, customerId, customerName, contactName, termDate, serialNumber, plate, chassisNumber }: TaskQuoteCardProps) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
-  if (!pricing || !pricing.services || pricing.services.length === 0) {
+  if (!quote || !quote.services || quote.services.length === 0) {
     return null;
   }
 
-  const statusConfig = STATUS_CONFIG[pricing.status as PricingStatus] || STATUS_CONFIG.PENDING;
-  const activeConfig = pricing.customerConfigs?.[0];
+  // Dynamic label: "Orçamento" when PENDING or no quote, "Faturamento" when BUDGET_APPROVED or later
+  const isPendingOrNoQuote = !quote.status || quote.status === 'PENDING';
+  const cardTitle = isPendingOrNoQuote ? "Orçamento Detalhado" : "Faturamento Detalhado";
+
+  const statusConfig = STATUS_CONFIG[quote.status as QuoteStatus] || STATUS_CONFIG.PENDING;
+  const activeConfig = quote.customerConfigs?.[0];
   const paymentText = generatePaymentText({
     customPaymentText: activeConfig?.customPaymentText || null,
     paymentCondition: activeConfig?.paymentCondition,
     downPaymentDate: activeConfig?.downPaymentDate,
-    total: typeof pricing.total === 'number' ? pricing.total : Number(pricing.total) || 0,
+    total: typeof quote.total === 'number' ? quote.total : Number(quote.total) || 0,
   });
-  const guaranteeText = generateGuaranteeText(pricing);
+  const guaranteeText = generateGuaranteeText(quote);
 
   const handleViewBudget = async () => {
     // Use customer id if available, otherwise fallback to 'c' (matching web behavior)
     const cId = customerId || 'c';
-    // Use pricing.id if available
-    const pricingId = pricing.id;
+    // Use quote.id if available
+    const quoteId = quote.id;
 
-    if (pricingId) {
-      const url = `${WEB_BASE_URL}/cliente/${cId}/orcamento/${pricingId}`;
+    if (quoteId) {
+      const url = `${WEB_BASE_URL}/cliente/${cId}/orcamento/${quoteId}`;
 
       try {
         // Use WebBrowser.openBrowserAsync which works better with Safari on iOS
@@ -89,14 +94,14 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
       }
     } else {
       // Debug: Show what we have
-      console.log("Pricing object:", JSON.stringify(pricing, null, 2));
+      console.log("Quote object:", JSON.stringify(quote, null, 2));
       Alert.alert("Erro", "ID do orçamento não disponível. Salve a tarefa primeiro.");
     }
   };
 
   const handleViewLayoutFile = () => {
-    if (pricing.layoutFile) {
-      fileViewer.actions.viewFile(pricing.layoutFile);
+    if (quote.layoutFile) {
+      fileViewer.actions.viewFile(quote.layoutFile);
     }
   };
 
@@ -110,14 +115,14 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
   const configDiscountType = activeConfig?.discountType || 'NONE';
   const configDiscountValue = activeConfig?.discountValue;
   const discountAmount = configDiscountType === "PERCENTAGE" && configDiscountValue
-    ? (pricing.subtotal * configDiscountValue) / 100
+    ? (quote.subtotal * configDiscountValue) / 100
     : configDiscountType === "FIXED_VALUE" && configDiscountValue
       ? configDiscountValue
       : 0;
 
   return (
     <DetailCard
-      title="Precificação Detalhada"
+      title={cardTitle}
       icon="file-invoice"
       badge={
         <View style={styles.headerRight}>
@@ -125,11 +130,11 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             variant="outline"
             size="sm"
             onPress={handleViewBudget}
-            disabled={!pricing.id}
+            disabled={!quote.id}
             style={styles.headerButton}
           >
-            <IconExternalLink size={14} color={pricing.id ? colors.foreground : colors.mutedForeground} />
-            <ThemedText style={[styles.headerButtonText, { color: pricing.id ? colors.foreground : colors.mutedForeground }]}>Ver</ThemedText>
+            <IconExternalLink size={14} color={quote.id ? colors.foreground : colors.mutedForeground} />
+            <ThemedText style={[styles.headerButtonText, { color: quote.id ? colors.foreground : colors.mutedForeground }]}>Ver</ThemedText>
           </Button>
           <Badge variant={statusConfig.variant} size="lg">
             {statusConfig.label}
@@ -140,24 +145,24 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
       <View style={styles.content}>
         {/* Budget Number and Validity */}
         <View style={styles.infoRow}>
-          {pricing.budgetNumber && (
+          {quote.budgetNumber && (
             <View style={[styles.infoChip, { backgroundColor: colors.muted }]}>
               <IconReceipt size={14} color={colors.mutedForeground} />
               <ThemedText style={[styles.infoChipText, { color: colors.mutedForeground }]}>
                 Orçamento Nº:{" "}
                 <ThemedText style={[styles.infoChipValue, { color: colors.foreground }]}>
-                  {String(pricing.budgetNumber).padStart(4, "0")}
+                  {String(quote.budgetNumber).padStart(4, "0")}
                 </ThemedText>
               </ThemedText>
             </View>
           )}
-          {pricing.expiresAt && (
+          {quote.expiresAt && (
             <View style={[styles.infoChip, { backgroundColor: colors.muted }]}>
               <IconCalendar size={14} color={colors.mutedForeground} />
               <ThemedText style={[styles.infoChipText, { color: colors.mutedForeground }]}>
                 Validade:{" "}
                 <ThemedText style={[styles.infoChipValue, { color: colors.foreground }]}>
-                  {formatDate(pricing.expiresAt)}
+                  {formatDate(quote.expiresAt)}
                 </ThemedText>
               </ThemedText>
             </View>
@@ -173,7 +178,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           </View>
 
           {/* Table Body */}
-          {pricing.services.map((item, index) => {
+          {quote.services.map((item, index) => {
             const isOutrosWithObservation = item.description === 'Outros' && !!item.observation;
             const displayDescription = isOutrosWithObservation ? item.observation : item.description;
             return (
@@ -182,7 +187,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
               style={[
                 styles.tableRow,
                 { borderBottomColor: colors.border },
-                index === pricing.services!.length - 1 && styles.tableRowLast,
+                index === quote.services!.length - 1 && styles.tableRowLast,
               ]}
             >
               <View style={[styles.descriptionColumn, styles.descriptionCell]}>
@@ -215,7 +220,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           <View style={styles.summaryRow}>
             <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>Subtotal</ThemedText>
             <ThemedText style={styles.summaryValue}>
-              {formatCurrency(typeof pricing.subtotal === "number" ? pricing.subtotal : Number(pricing.subtotal) || 0)}
+              {formatCurrency(typeof quote.subtotal === "number" ? quote.subtotal : Number(quote.subtotal) || 0)}
             </ThemedText>
           </View>
 
@@ -242,21 +247,21 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
           <View style={[styles.totalRow, { borderTopColor: colors.border }]}>
             <ThemedText style={styles.totalLabel}>TOTAL</ThemedText>
             <ThemedText style={[styles.totalValue, { color: colors.primary }]}>
-              {formatCurrency(typeof pricing.total === "number" ? pricing.total : Number(pricing.total) || 0)}
+              {formatCurrency(typeof quote.total === "number" ? quote.total : Number(quote.total) || 0)}
             </ThemedText>
           </View>
         </View>
 
         {/* Delivery Deadline */}
-        {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1)) && (
+        {(quote.customForecastDays || (quote.simultaneousTasks && quote.simultaneousTasks > 1)) && (
           <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
             <View style={styles.infoSectionHeader}>
               <IconTruck size={16} color={colors.mutedForeground} />
               <ThemedText style={styles.infoSectionTitle}>Prazo de Entrega</ThemedText>
             </View>
             <ThemedText style={[styles.infoSectionText, { color: colors.mutedForeground }]}>
-              {pricing.customForecastDays ? `O prazo de entrega é de ${pricing.customForecastDays} dias úteis.` : ''}
-              {pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? ` Capacidade: ${pricing.simultaneousTasks} tarefas simultâneas.` : ''}
+              {quote.customForecastDays ? `O prazo de entrega é de ${quote.customForecastDays} dias úteis.` : ''}
+              {quote.simultaneousTasks && quote.simultaneousTasks > 1 ? ` Capacidade: ${quote.simultaneousTasks} tarefas simultâneas.` : ''}
             </ThemedText>
           </View>
         )}
@@ -284,7 +289,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
         ) : null}
 
         {/* Layout Aprovado */}
-        {pricing.layoutFile && (
+        {quote.layoutFile && (
           <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
             <View style={styles.infoSectionHeader}>
               <IconPhoto size={16} color={colors.mutedForeground} />
@@ -292,7 +297,7 @@ export function TaskPricingCard({ pricing, customerId, customerName, contactName
             </View>
             <TouchableOpacity onPress={handleViewLayoutFile} activeOpacity={0.7} style={styles.layoutImageContainer}>
               <Image
-                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/thumbnail/${pricing.layoutFile.id}` }}
+                source={{ uri: `${process.env.EXPO_PUBLIC_API_URL}/files/thumbnail/${quote.layoutFile.id}` }}
                 style={styles.layoutImage}
                 resizeMode="cover"
               />
@@ -507,4 +512,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TaskPricingCard;
+export default TaskQuoteCard;

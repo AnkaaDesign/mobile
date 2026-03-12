@@ -3,6 +3,7 @@
 
 import * as Crypto from 'expo-crypto';
 import { formatNumberWithDecimals } from "./number";
+import { rewriteCdnUrl } from './file-viewer-utils';
 import type { File as AnkaaFile } from '../types';
 
 // =====================
@@ -124,9 +125,9 @@ export const getApiBaseUrl = (): string => {
 export const normalizeThumbnailUrl = (thumbnailUrl: string | undefined | null): string | undefined => {
   if (!thumbnailUrl) return undefined;
 
-  // If already a complete URL, return as-is
+  // If already a complete URL, rewrite CDN URLs when on LAN
   if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
-    return thumbnailUrl;
+    return rewriteCdnUrl(thumbnailUrl);
   }
 
   const apiBaseUrl = getApiBaseUrl();

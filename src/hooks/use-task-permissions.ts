@@ -53,7 +53,7 @@ export function useTaskPermissions() {
   ]);
 
   // Section visibility
-  const canViewPricing = isAdmin || isFinancial || isCommercial;
+  const canViewQuote = isAdmin || isFinancial || isCommercial;
   const canViewRestrictedFields = isAdmin || isFinancial || isCommercial || isLogistic || isProductionManager || isDesigner;
   const canViewCommission = isAdmin || isFinancial || isCommercial || isProduction;
   const canViewDates = !isWarehouse;
@@ -90,7 +90,7 @@ export function useTaskPermissions() {
     isDesigner,
     canCreate, canEdit, canDelete, canBatchOperate,
     canManageStatus, canFinish, canCancel,
-    canViewPricing, canViewRestrictedFields, canViewCommission,
+    canViewQuote, canViewRestrictedFields, canViewCommission,
     canViewDates, canViewServices, canViewLayout, canViewTruckSpot,
     canViewPaint, canViewLogoPaint, canViewCuts,
     canViewAirbrushing, canViewBaseFiles, canViewProjectFiles,

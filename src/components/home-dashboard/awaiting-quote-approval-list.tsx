@@ -5,11 +5,11 @@ import { Icon } from "@/components/ui/icon";
 import { DashboardCardList } from "./dashboard-card-list";
 import type { HomeDashboardTask } from "@/types";
 
-interface AwaitingPricingApprovalListProps {
+interface AwaitingQuoteApprovalListProps {
   tasks: HomeDashboardTask[];
 }
 
-export function AwaitingPricingApprovalList({ tasks }: AwaitingPricingApprovalListProps) {
+export function AwaitingQuoteApprovalList({ tasks }: AwaitingQuoteApprovalListProps) {
   const { colors, isDark } = useTheme();
   const router = useRouter();
 

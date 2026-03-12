@@ -1,5 +1,19 @@
-import { QueryClient, focusManager } from '@tanstack/react-query'
+import { QueryClient, focusManager, onlineManager } from '@tanstack/react-query'
 import { AppState, AppStateStatus } from 'react-native'
+import NetInfo from '@react-native-community/netinfo'
+
+// Set up React Query online manager to use NetInfo for mobile
+// IMPORTANT: Use isConnected (has any network), NOT isInternetReachable.
+// On LAN without internet, isInternetReachable is false but the local API
+// server IS reachable. Using isInternetReachable would pause ALL queries
+// even when the API works fine on the local network.
+onlineManager.setEventListener((setOnline) => {
+  return NetInfo.addEventListener((state) => {
+    // isConnected = device has network (WiFi, cellular, ethernet)
+    // This allows React Query to work on LAN without internet
+    setOnline(state.isConnected === true)
+  })
+})
 
 // Set up React Query focus manager to use AppState for mobile
 // This enables refetchOnWindowFocus to work with app foreground/background

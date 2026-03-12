@@ -7,6 +7,7 @@ import { useTheme } from "@/lib/theme";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { getCurrentApiUrl } from "@/api-client";
+import { rewriteCdnUrl } from "@/utils/file-viewer-utils";
 
 export type FileViewMode = "grid" | "list";
 
@@ -36,21 +37,15 @@ const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "
 
   // If file has thumbnailUrl property
   if (file.thumbnailUrl) {
-    // If already a complete URL, replace localhost with correct API URL and ensure size parameter
+    // If already a complete URL, rewrite CDN URLs when on LAN
     if (file.thumbnailUrl.startsWith("http://") || file.thumbnailUrl.startsWith("https://")) {
-      // Extract the path from the URL using string manipulation (React Native URL may not have pathname)
-      const urlWithoutProtocol = file.thumbnailUrl.replace(/^https?:\/\//, '');
-      const pathStartIndex = urlWithoutProtocol.indexOf('/');
-      const pathWithQuery = pathStartIndex >= 0 ? urlWithoutProtocol.substring(pathStartIndex) : '/';
-      const pathname = pathWithQuery.split('?')[0];
-      // Always add or update the size parameter
-      const correctedUrl = `${apiUrl}${pathname}?size=${size}`;
-      console.log('🔍 [FileItem] Corrected thumbnailUrl with size:', {
+      const rewrittenUrl = rewriteCdnUrl(file.thumbnailUrl);
+      console.log('🔍 [FileItem] Rewritten thumbnailUrl:', {
         original: file.thumbnailUrl,
-        corrected: correctedUrl,
+        rewritten: rewrittenUrl,
         size: size
       });
-      return correctedUrl;
+      return rewrittenUrl;
     }
     // Otherwise construct URL - NOTE: No /api prefix!
     const url = `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;

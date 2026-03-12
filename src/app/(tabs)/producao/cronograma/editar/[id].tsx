@@ -136,7 +136,7 @@ export default function EditScheduleScreen() {
           },
         }
       },
-      pricing: {
+      quote: {
         select: {
           id: true,
           status: true,
@@ -320,7 +320,7 @@ export default function EditScheduleScreen() {
     const restrictedFieldsBySector: Record<string, string[]> = {
       [SECTOR_PRIVILEGES.PRODUCTION]: [
         'baseFileIds', 'budgetIds', 'invoiceIds', 'receiptIds', 'bankSlipIds',
-        'customerId', 'serialNumber', 'name', 'pricing', 'serviceOrders',
+        'customerId', 'serialNumber', 'name', 'quote', 'serviceOrders',
         'artworkIds', 'artworkStatuses', 'truck', 'paintIds', 'paintId',
         'reimbursementIds', 'reimbursementInvoiceIds',
       ],
@@ -769,7 +769,7 @@ export default function EditScheduleScreen() {
     // Process pricing - filter empty items, coerce types, and check for changes
     if (formData.pricing !== undefined) {
       const currPricing = { ...formData.pricing };
-      const origPricing = originalTask.pricing;
+      const origPricing = (originalTask as any).quote;
 
       // Ensure services is a proper array and filter/coerce
       if (currPricing.services) {
@@ -872,15 +872,15 @@ export default function EditScheduleScreen() {
           if (!hasNonEmptyItems && !hasNonDefaultValues) {
             console.log('[processFormData] Pricing: default template unchanged, skipping');
           } else {
-            processed.pricing = currPricing;
+            processed.quote = currPricing;
           }
         } else {
-          processed.pricing = currPricing;
+          processed.quote = currPricing;
         }
 
         // Clean pricing payload: strip relation objects and non-API fields
-        if (processed.pricing) {
-          const { id: _pricingId, layoutFile: _layoutFile, ...cleanPricing } = processed.pricing;
+        if (processed.quote) {
+          const { id: _pricingId, layoutFile: _layoutFile, ...cleanPricing } = processed.quote;
           // Clean services: strip shouldSync, clean temp IDs
           if (cleanPricing.services) {
             cleanPricing.services = ensureArray(cleanPricing.services).map((item: any) => {
@@ -889,7 +889,7 @@ export default function EditScheduleScreen() {
               return cleanItem;
             });
           }
-          processed.pricing = cleanPricing;
+          processed.quote = cleanPricing;
         }
       }
     }
@@ -1090,20 +1090,20 @@ export default function EditScheduleScreen() {
           invoiceIds: ((task as any).invoices || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           receiptIds: ((task as any).receipts || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           bankSlipIds: ((task as any).bankSlips || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
-          // Include pricing for edit mode (with default empty item row, matches web)
-          pricing: (task as any).pricing ? {
-            id: (task as any).pricing.id,
-            status: (task as any).pricing.status || 'PENDING',
-            expiresAt: (task as any).pricing.expiresAt,
-            subtotal: (task as any).pricing.subtotal || 0,
-            total: (task as any).pricing.total || 0,
-            guaranteeYears: (task as any).pricing.guaranteeYears || null,
-            customGuaranteeText: (task as any).pricing.customGuaranteeText || null,
-            layoutFileId: (task as any).pricing.layoutFileId || null,
-            layoutFile: (task as any).pricing.layoutFile || null,
-            customForecastDays: (task as any).pricing.customForecastDays || null,
-            simultaneousTasks: (task as any).pricing.simultaneousTasks || null,
-            customerConfigs: (task as any).pricing.customerConfigs?.map((c: any) => ({
+          // Map API's task.quote to form field 'pricing' (with default empty item row, matches web)
+          pricing: (task as any).quote ? {
+            id: (task as any).quote.id,
+            status: (task as any).quote.status || 'PENDING',
+            expiresAt: (task as any).quote.expiresAt,
+            subtotal: (task as any).quote.subtotal || 0,
+            total: (task as any).quote.total || 0,
+            guaranteeYears: (task as any).quote.guaranteeYears || null,
+            customGuaranteeText: (task as any).quote.customGuaranteeText || null,
+            layoutFileId: (task as any).quote.layoutFileId || null,
+            layoutFile: (task as any).quote.layoutFile || null,
+            customForecastDays: (task as any).quote.customForecastDays || null,
+            simultaneousTasks: (task as any).quote.simultaneousTasks || null,
+            customerConfigs: (task as any).quote.customerConfigs?.map((c: any) => ({
               customerId: c.customerId || c.id || c,
               subtotal: c.subtotal ?? 0,
               discountType: c.discountType || 'NONE',
@@ -1116,8 +1116,8 @@ export default function EditScheduleScreen() {
               discountReference: c.discountReference ?? null,
             })) || [],
             // Include default empty row if no services exist (matches web)
-            services: (task as any).pricing.services && (task as any).pricing.services.length > 0
-              ? (task as any).pricing.services.map((item: any) => ({
+            services: (task as any).quote.services && (task as any).quote.services.length > 0
+              ? (task as any).quote.services.map((item: any) => ({
                   id: item.id,
                   description: item.description || '',
                   observation: item.observation || null,
@@ -1126,7 +1126,7 @@ export default function EditScheduleScreen() {
                 }))
               : [{ description: '', amount: null, observation: null, shouldSync: true }],
           } : {
-            // Default pricing structure when no pricing exists (matches web)
+            // Default quote structure when no quote exists (matches web)
             status: 'PENDING',
             expiresAt: (() => {
               const date = new Date();
@@ -1149,7 +1149,7 @@ export default function EditScheduleScreen() {
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}
         initialLogoPaints={task.logoPaints}
-        initialInvoiceToCustomers={(task as any).pricing?.customerConfigs}
+        initialInvoiceToCustomers={(task as any).quote?.customerConfigs}
         existingLayouts={existingLayouts}
         onSubmit={handleSubmit}
         onCancel={handleCancel}

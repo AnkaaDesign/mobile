@@ -313,7 +313,7 @@ export function calculateTaskStats(tasks: Task[]) {
   const completionRate = total > 0 ? (completed / total) * 100 : 0;
 
   const totalValue = tasks.reduce((sum, task) => {
-    const taskValue = task.pricing?.total || 0;
+    const taskValue = (task as any).quote?.total || 0;
     return sum + taskValue;
   }, 0);
   const averagePrice = total > 0 ? totalValue / total : 0;
@@ -447,19 +447,19 @@ export function validateAllServiceOrdersCompleted(task: Task): ServiceOrderValid
 }
 
 // ============================================================================
-// TASK PRICING UTILITIES
+// TASK QUOTE UTILITIES
 // ============================================================================
 
-import type { TaskPricing } from '../types/task-pricing';
+import type { TaskQuote } from '../types/task-quote';
 
 /**
- * Get task price from APPROVED pricing
- * Returns 0 if no approved pricing exists
+ * Get task price from APPROVED quote
+ * Returns 0 if no approved quote exists
  */
 export function getTaskPrice(task: any): number {
-  if (!task.pricing) return 0;
-  if (task.pricing.status !== 'APPROVED') return 0;
-  return task.pricing.total || 0;
+  if (!task.quote) return 0;
+  if (task.quote.status !== 'APPROVED') return 0;
+  return task.quote.total || 0;
 }
 
 /**
@@ -477,7 +477,7 @@ export function formatTaskPrice(task: any): string {
 /**
  * Check if pricing is expired
  */
-export function isPricingExpired(pricing: TaskPricing): boolean {
+export function isQuoteExpired(pricing: TaskQuote): boolean {
   if (!pricing.expiresAt) return false;
   return new Date(pricing.expiresAt) < new Date();
 }

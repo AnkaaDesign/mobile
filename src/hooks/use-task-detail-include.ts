@@ -164,16 +164,6 @@ export function useTaskDetailFullInclude(user: any) {
         take: 20,
       },
     }),
-    ...(canViewCheckinCheckout && {
-      checkinFiles: {
-        select: { id: true, filename: true, size: true, mimetype: true },
-        take: 20,
-      },
-      checkoutFiles: {
-        select: { id: true, filename: true, size: true, mimetype: true },
-        take: 20,
-      },
-    }),
     ...(canViewArtworks && {
       artworks: {
         select: {
@@ -187,7 +177,7 @@ export function useTaskDetailFullInclude(user: any) {
       },
     }),
     ...(canViewPricingSection && {
-      pricing: {
+      quote: {
         select: {
           id: true,
           total: true,

@@ -413,7 +413,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
           budgets: true,
           invoices: true,
           receipts: true,
-          pricing: true,
+          quote: true,
           logoPaints: true,
           cuts: true,
           serviceOrders: true,

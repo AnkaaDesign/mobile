@@ -2,23 +2,23 @@
 import type { File } from './file';
 import type { Installment } from './invoice';
 
-export type TASK_PRICING_STATUS = 'PENDING' | 'BUDGET_APPROVED' | 'VERIFIED' | 'INTERNAL_APPROVED' | 'UPCOMING' | 'PARTIAL' | 'SETTLED';
+export type TASK_QUOTE_STATUS = 'PENDING' | 'BUDGET_APPROVED' | 'VERIFIED_BY_FINANCIAL' | 'INTERNAL_APPROVED' | 'UPCOMING' | 'DUE' | 'PARTIAL' | 'SETTLED';
 export type DISCOUNT_TYPE = 'NONE' | 'PERCENTAGE' | 'FIXED_VALUE';
 
-export type TaskPricingService = {
+export type TaskQuoteService = {
   id?: string;
   description: string;
   observation?: string | null;
   amount: number;
   shouldSync?: boolean;
-  pricingId?: string;
+  quoteId?: string;
   invoiceToCustomerId?: string | null;
   invoiceToCustomer?: { id: string; corporateName?: string; fantasyName: string; cnpj?: string | null };
 };
 
-export type TaskPricingCustomerConfig = {
+export type TaskQuoteCustomerConfig = {
   id?: string;
-  pricingId?: string;
+  quoteId?: string;
   customerId: string;
   subtotal: number;
   discountType: DISCOUNT_TYPE;
@@ -36,13 +36,13 @@ export type TaskPricingCustomerConfig = {
   customerSignature?: File;
 };
 
-export type TaskPricing = {
+export type TaskQuote = {
   id?: string;
   budgetNumber: number; // Auto-generated sequential number for display
   subtotal: number;
   total: number;
   expiresAt: Date;
-  status: TASK_PRICING_STATUS;
+  status: TASK_QUOTE_STATUS;
   statusOrder: number;
 
   // Guarantee Terms
@@ -60,8 +60,8 @@ export type TaskPricing = {
   simultaneousTasks: number | null; // Number of tasks being quoted together (for bulk discounts)
 
   task?: any; // One-to-one relationship with task
-  services?: TaskPricingService[];
-  customerConfigs?: TaskPricingCustomerConfig[];
+  services?: TaskQuoteService[];
+  customerConfigs?: TaskQuoteCustomerConfig[];
   createdAt?: Date;
   updatedAt?: Date;
 };

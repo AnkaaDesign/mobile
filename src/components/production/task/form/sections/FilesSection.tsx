@@ -27,6 +27,7 @@ import { spacing, fontSize } from '@/constants/design-system';
 import { useTheme } from '@/lib/theme';
 import type { File as AnkaaFile } from '@/types';
 import { getApiBaseUrl } from '@/utils/file';
+import { rewriteCdnUrl } from '@/utils/file-viewer-utils';
 
 interface FilesSectionProps {
   isSubmitting?: boolean;
@@ -173,7 +174,7 @@ export default function FilesSection({
     const apiBase = getApiBaseUrl();
     if (file.thumbnailUrl) {
       if (file.thumbnailUrl.startsWith('/api')) return `${apiBase}${file.thumbnailUrl}`;
-      if (file.thumbnailUrl.startsWith('http')) return file.thumbnailUrl;
+      if (file.thumbnailUrl.startsWith('http')) return rewriteCdnUrl(file.thumbnailUrl);
       return file.thumbnailUrl;
     }
     if (file.uri) return file.uri;

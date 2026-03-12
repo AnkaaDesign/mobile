@@ -29,8 +29,8 @@ import { BudgetPreview } from "./budget-preview";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations } from "@/hooks/useTask";
-import { useTaskPricingByTask } from "@/hooks/useTaskPricing";
-import { taskPricingCreateNestedSchema } from "@/schemas/task-pricing";
+import { useTaskQuoteByTask } from "@/hooks/useTaskQuote";
+import { taskQuoteCreateNestedSchema } from "@/schemas/task-quote";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { SERVICE_ORDER_TYPE } from "@/constants/enums";
 import { RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
@@ -53,9 +53,9 @@ interface ArtworkOption {
   size?: number;
 }
 
-// Wizard form schema wrapping the nested pricing schema
+// Wizard form schema wrapping the nested quote schema
 const wizardSchema = z.object({
-  pricing: taskPricingCreateNestedSchema,
+  pricing: taskQuoteCreateNestedSchema,
 });
 
 type WizardFormData = z.infer<typeof wizardSchema>;
@@ -111,11 +111,11 @@ const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
   label: `${i + 1} ${i + 1 === 1 ? 'dia' : 'dias'}`,
 }));
 
-interface TaskPricingWizardProps {
+interface TaskQuoteWizardProps {
   taskId: string;
 }
 
-export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
+export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -165,7 +165,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
   const {
     data: pricingResponse,
     isLoading: pricingLoading,
-  } = useTaskPricingByTask(taskId);
+  } = useTaskQuoteByTask(taskId);
   const existingPricing = pricingResponse?.data;
 
   // Task mutations for saving
@@ -417,7 +417,6 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         pricingPayload.customerConfigs = pricingPayload.customerConfigs.map((config: any) => ({
           ...config,
           subtotal: toNumber(config.subtotal) ?? 0,
-          discountValue: toNumber(config.discountValue),
           total: toNumber(config.total) ?? 0,
         }));
       }
@@ -433,16 +432,16 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
       if (newLayoutFiles.length > 0) {
         const formData = new FormData();
 
-        // Add layout file - backend expects 'pricingLayoutFile' field name (singular, only 1 file)
+        // Add layout file - backend expects 'quoteLayoutFile' field name (singular, only 1 file)
         const layoutFile = newLayoutFiles[0];
-        formData.append('pricingLayoutFile', {
+        formData.append('quoteLayoutFile', {
           uri: layoutFile.uri,
           type: layoutFile.type,
           name: layoutFile.name,
         } as any);
 
-        // Add pricing data as JSON field in FormData
-        formData.append('pricing', JSON.stringify(pricingPayload));
+        // Add quote data as JSON field in FormData (API expects 'quote' field name)
+        formData.append('quote', JSON.stringify(pricingPayload));
 
         await updateAsync({
           id: taskId,
@@ -452,7 +451,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
         // No new files - send JSON only
         await updateAsync({
           id: taskId,
-          data: { pricing: pricingPayload } as any,
+          data: { quote: pricingPayload } as any,
         });
       }
 
@@ -473,7 +472,7 @@ export function TaskPricingWizard({ taskId }: TaskPricingWizardProps) {
       }
       router.replace(detailRoute as any);
     } catch (error: any) {
-      console.error("[TaskPricingWizard] Save failed:", error);
+      console.error("[TaskQuoteWizard] Save failed:", error);
       // API client already shows error toast, no need for Alert
     } finally {
       setIsSaving(false);

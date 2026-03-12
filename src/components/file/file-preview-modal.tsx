@@ -71,7 +71,7 @@ try {
 import { Badge } from "@/components/ui/badge";
 import type { File as AnkaaFile } from '../../types';
 import { isImageFile, formatFileSize, getFileExtension } from '../../utils';
-import { getApiBaseUrl } from '../../utils/file-viewer-utils';
+import { getApiBaseUrl, rewriteCdnUrl } from '../../utils/file-viewer-utils';
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 
@@ -1014,19 +1014,15 @@ export function FilePreviewModal({
 
     // If file has thumbnailUrl, use it
     if (file.thumbnailUrl) {
-      // If already absolute URL, replace localhost with correct API URL and ensure size parameter
+      // If already absolute URL, rewrite CDN URLs when on LAN
       if (file.thumbnailUrl.startsWith('http')) {
-        // Extract the path from the URL manually for React Native compatibility
-        const urlWithoutProtocol = file.thumbnailUrl.replace(/^https?:\/\/[^\/]+/, '');
-        // Remove any existing query string and add size parameter
-        const pathOnly = urlWithoutProtocol.split('?')[0];
-        const correctedUrl = `${apiUrl}${pathOnly}?size=${size}`;
-        console.log('🔍 [FilePreviewModal] Corrected thumbnailUrl with size:', {
+        const rewrittenUrl = rewriteCdnUrl(file.thumbnailUrl);
+        console.log('🔍 [FilePreviewModal] Rewritten thumbnailUrl:', {
           original: file.thumbnailUrl,
-          corrected: correctedUrl,
+          rewritten: rewrittenUrl,
           size: size
         });
-        return correctedUrl;
+        return rewrittenUrl;
       }
       // Otherwise construct URL
       const url = `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;

@@ -5,6 +5,7 @@ import { FileTypeIcon } from '@/components/ui/file-type-icon'
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/formatters'
 import { getBadgeVariant, BADGE_COLORS, type BadgeVariant } from '@/constants/badge-colors'
 import { getCurrentApiUrl } from '@/api-client'
+import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
 import {
   ORDER_STATUS_LABELS,
   USER_STATUS_LABELS,
@@ -136,13 +137,7 @@ function getFileThumbnailUrl(file: AnkaaFile, size: 'small' | 'medium' | 'large'
 
   if (file.thumbnailUrl) {
     if (file.thumbnailUrl.startsWith('http://') || file.thumbnailUrl.startsWith('https://')) {
-      try {
-        const urlObj = new URL(file.thumbnailUrl)
-        const pathname = (urlObj as any).pathname || ''
-        return `${apiUrl}${pathname}?size=${size}`
-      } catch {
-        return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`
-      }
+      return rewriteCdnUrl(file.thumbnailUrl)
     }
     return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`
   }

@@ -6,7 +6,7 @@ import type { Task } from "../types";
 import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
-import { taskPricingCreateNestedSchema } from "./task-pricing";
+import { taskQuoteCreateNestedSchema } from "./task-quote";
 import { responsibleCreateInlineSchema } from "./responsible";
 
 // =====================
@@ -240,7 +240,7 @@ export const taskIncludeSchema: z.ZodSchema = z.lazy(() =>
         .optional(),
       cutRequest: z.boolean().optional(),
       cutPlan: z.boolean().optional(),
-      pricing: z
+      quote: z
         .union([
           z.boolean(),
           z.object({
@@ -1117,7 +1117,7 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_TYPE.PRODUCTION),
   assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
   observation: z.string().nullable().optional(), // For rejection/approval notes
-  shouldSync: z.boolean().optional().default(true), // Sync with pricing services (matches web)
+  shouldSync: z.boolean().optional().default(true), // Sync with quote services (matches web)
   startedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
   checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),
@@ -1243,7 +1243,7 @@ export const taskCreateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    pricing: taskPricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
+    quote: taskQuoteCreateNestedSchema.optional(), // One-to-one quote with status and items
   })
   .superRefine((data, ctx) => {
     if (data.entryDate && data.term && data.term <= data.entryDate) {
@@ -1356,7 +1356,7 @@ export const taskUpdateSchema = z
     cut: cutCreateNestedSchema.nullable().optional(),
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
-    pricing: taskPricingCreateNestedSchema.optional(), // One-to-one pricing with status and items
+    quote: taskQuoteCreateNestedSchema.optional(), // One-to-one quote with status and items
   })
   // Auto-fill dates based on status changes (before validation)
   .transform((data) => {

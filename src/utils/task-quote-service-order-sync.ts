@@ -1,19 +1,18 @@
 /**
- * Task Pricing and Production Service Order Bidirectional Synchronization Utilities
+ * Task Quote and Production Service Order Bidirectional Synchronization Utilities
  *
- * This module provides synchronization logic for the mobile form between
- * TaskPricingServices and Production Service Orders. The sync happens in real-time
- * as the user edits the form.
+ * This module provides synchronization logic between
+ * TaskQuoteServices and Production Service Orders.
  *
  * Sync Rules:
- * 1. Service Order (PRODUCTION) → Task Pricing Service:
- *    - description → pricing service description (1:1)
- *    - observation → pricing service observation (1:1)
+ * 1. Service Order (PRODUCTION) -> Task Quote Service:
+ *    - description -> quote service description (1:1)
+ *    - observation -> quote service observation (1:1)
  *    - Amount defaults to 0
  *
- * 2. Task Pricing Service → Service Order (PRODUCTION):
- *    - description → SO description (1:1)
- *    - observation → SO observation (1:1)
+ * 2. Task Quote Service -> Service Order (PRODUCTION):
+ *    - description -> SO description (1:1)
+ *    - observation -> SO observation (1:1)
  */
 
 import { SERVICE_ORDER_TYPE, SERVICE_ORDER_STATUS } from '../constants/enums';
@@ -29,7 +28,7 @@ export interface SyncServiceOrder {
   shouldSync?: boolean;
 }
 
-export interface SyncPricingService {
+export interface SyncQuoteService {
   id?: string;
   description: string;
   observation?: string | null;
@@ -48,17 +47,17 @@ export function normalizeDescription(description: string | null | undefined): st
 /**
  * Gets pricing services that should be added based on PRODUCTION service orders.
  */
-export function getPricingServicesToAddFromServiceOrders(
+export function getQuoteServicesToAddFromServiceOrders(
   serviceOrders: SyncServiceOrder[],
-  existingPricingServices: SyncPricingService[],
-): SyncPricingService[] {
-  const servicesToAdd: SyncPricingService[] = [];
+  existingQuoteServices: SyncQuoteService[],
+): SyncQuoteService[] {
+  const servicesToAdd: SyncQuoteService[] = [];
   const existingDescriptions = new Set(
-    existingPricingServices.map(svc => normalizeDescription(svc.description))
+    existingQuoteServices.map(svc => normalizeDescription(svc.description))
   );
 
   const noSyncDescriptions = new Set(
-    existingPricingServices
+    existingQuoteServices
       .filter(svc => svc.shouldSync === false)
       .map(svc => normalizeDescription(svc.description))
   );
@@ -86,8 +85,8 @@ export function getPricingServicesToAddFromServiceOrders(
 /**
  * Gets service orders that should be added based on pricing services.
  */
-export function getServiceOrdersToAddFromPricingServices(
-  pricingServices: SyncPricingService[],
+export function getServiceOrdersToAddFromQuoteServices(
+  quoteServices: SyncQuoteService[],
   existingServiceOrders: SyncServiceOrder[],
 ): SyncServiceOrder[] {
   const ordersToAdd: SyncServiceOrder[] = [];
@@ -104,7 +103,7 @@ export function getServiceOrdersToAddFromPricingServices(
       .map(so => normalizeDescription(so.description))
   );
 
-  for (const svc of pricingServices) {
+  for (const svc of quoteServices) {
     if (!svc.description || svc.description.trim().length < 3) continue;
     if (svc.shouldSync === false) continue;
 
@@ -132,10 +131,10 @@ export function getServiceOrdersToAddFromPricingServices(
  * Syncs observations from service orders to matching pricing services.
  * This function propagates both set and cleared observations.
  */
-export function syncObservationsFromServiceOrdersToPricing(
+export function syncObservationsFromServiceOrdersToQuote(
   serviceOrders: SyncServiceOrder[],
-  pricingServices: SyncPricingService[],
-): SyncPricingService[] {
+  quoteServices: SyncQuoteService[],
+): SyncQuoteService[] {
   const soObservationMap = new Map<string, string | null>();
   for (const so of serviceOrders) {
     if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
@@ -145,7 +144,7 @@ export function syncObservationsFromServiceOrdersToPricing(
     soObservationMap.set(normalizedDesc, observationValue);
   }
 
-  return pricingServices.map(item => {
+  return quoteServices.map(item => {
     if (!item.description || item.description.trim().length < 3) return item;
     const normalizedDesc = normalizeDescription(item.description);
     if (soObservationMap.has(normalizedDesc)) {
@@ -163,27 +162,27 @@ export function syncObservationsFromServiceOrdersToPricing(
  * Syncs observations from pricing services to matching service orders.
  * This function propagates both set and cleared observations.
  */
-export function syncObservationsFromPricingToServiceOrders(
-  pricingServices: SyncPricingService[],
+export function syncObservationsFromQuoteToServiceOrders(
+  quoteServices: SyncQuoteService[],
   serviceOrders: SyncServiceOrder[],
 ): SyncServiceOrder[] {
-  const pricingObservationMap = new Map<string, string | null>();
-  for (const item of pricingServices) {
+  const quoteObservationMap = new Map<string, string | null>();
+  for (const item of quoteServices) {
     if (!item.description || item.description.trim().length < 3) continue;
     const normalizedDesc = normalizeDescription(item.description);
     const observationValue = item.observation && item.observation.trim() ? item.observation : null;
-    pricingObservationMap.set(normalizedDesc, observationValue);
+    quoteObservationMap.set(normalizedDesc, observationValue);
   }
 
   return serviceOrders.map(so => {
     if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) return so;
     if (!so.description || so.description.trim().length < 3) return so;
     const normalizedDesc = normalizeDescription(so.description);
-    if (pricingObservationMap.has(normalizedDesc)) {
-      const pricingObservation = pricingObservationMap.get(normalizedDesc);
+    if (quoteObservationMap.has(normalizedDesc)) {
+      const quoteObservation = quoteObservationMap.get(normalizedDesc);
       const currentObs = so.observation && so.observation.trim() ? so.observation : null;
-      if (currentObs !== pricingObservation) {
-        return { ...so, observation: pricingObservation };
+      if (currentObs !== quoteObservation) {
+        return { ...so, observation: quoteObservation };
       }
     }
     return so;

@@ -51,6 +51,7 @@ web-build/
 .DS_Store
 
 # Android
+android/android/
 android/app/build/
 android/.gradle/
 android/build/

@@ -176,20 +176,20 @@ export const sanitizeFilename = (filename: string): string => {
 // File URLs
 // =====================
 
-import { getApiBaseUrl } from './file-viewer-utils';
+import { getApiBaseUrl, rewriteCdnUrl } from './file-viewer-utils';
 export { getApiBaseUrl };
 
 /**
  * Normalizes a thumbnail URL to ensure it's a complete URL
  * If the URL is relative (starts with /files), it prepends the API base URL
- * If it's already a complete URL (starts with http), it returns it as-is
+ * If it's already a complete URL (starts with http), it rewrites CDN URLs when on LAN
  */
 export const normalizeThumbnailUrl = (thumbnailUrl: string | undefined | null): string | undefined => {
   if (!thumbnailUrl) return undefined;
 
-  // If already a complete URL, return as-is
+  // If already a complete URL, rewrite CDN URLs when on LAN
   if (thumbnailUrl.startsWith('http://') || thumbnailUrl.startsWith('https://')) {
-    return thumbnailUrl;
+    return rewriteCdnUrl(thumbnailUrl);
   }
 
   const apiBaseUrl = getApiBaseUrl();

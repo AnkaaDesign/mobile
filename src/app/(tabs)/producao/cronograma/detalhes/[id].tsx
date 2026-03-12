@@ -28,7 +28,7 @@ import { TaskGroundPaintsCard } from "@/components/production/task/detail/task-g
 import { ObservationsTable } from "@/components/production/task/detail/observations-table";
 import { CutsTable } from "@/components/production/task/detail/cuts-table";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
-import { TaskPricingCard } from "@/components/production/task/detail/task-pricing-card";
+import { TaskQuoteCard } from "@/components/production/task/detail/task-quote-card";
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,7 @@ import {
   IconAlertCircle,
   IconDownload,
   IconFolderOpen,
+  IconFolderCheck,
   IconCamera,
   IconPhotoCheck,
 } from "@tabler/icons-react-native";
@@ -71,8 +72,6 @@ export default function ScheduleDetailsScreen() {
   const [artworksViewMode, setArtworksViewMode] = useState<FileViewMode>("grid");
   const [documentsViewMode, setDocumentsViewMode] = useState<FileViewMode>("grid");
   const [projectFilesViewMode, setProjectFilesViewMode] = useState<FileViewMode>("grid");
-  const [checkinFilesViewMode, setCheckinFilesViewMode] = useState<FileViewMode>("grid");
-  const [checkoutFilesViewMode, setCheckoutFilesViewMode] = useState<FileViewMode>("grid");
   const [showBelowFold, setShowBelowFold] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
 
@@ -97,7 +96,7 @@ export default function ScheduleDetailsScreen() {
     canEdit, canDelete,
     canViewDocuments, canViewBaseFiles, canViewProjectFiles,
     canViewCheckinCheckout, canViewArtworkBadges,
-    canViewRestrictedFields, canViewPricing: canViewPricingSection,
+    canViewRestrictedFields, canViewQuote: canViewPricingSection,
     canViewPaint: canViewPaintSections, canViewLogoPaint: canViewLogoPaints,
     canViewCuts, canViewAirbrushing, canViewObservation,
     canViewLayout: canViewTruckLayout,
@@ -403,14 +402,14 @@ export default function ScheduleDetailsScreen() {
           {/* === Below-fold sections (deferred for faster perceived render) === */}
           {showBelowFold && <>
 
-          {/* Pricing Card - Only visible to ADMIN, FINANCIAL, and COMMERCIAL sectors */}
-          {canViewPricingSection && (task as any)?.pricing && (task as any).pricing.services && (task as any).pricing.services.length > 0 && (
-            <TaskPricingCard
-              pricing={(task as any).pricing}
+          {/* Quote Card - Only visible to ADMIN, FINANCIAL, and COMMERCIAL sectors */}
+          {canViewPricingSection && (task as any)?.quote && (task as any).quote?.services?.length > 0 && (
+            <TaskQuoteCard
+              quote={(task as any).quote}
               customerId={task.customer?.id}
               customerName={task.customer?.corporateName || task.customer?.fantasyName}
               contactName={
-                (task as any).pricing?.responsible?.name
+                (task as any).quote?.responsible?.name
                 || (task as any).responsibles?.find((r: any) => r.role === "COMMERCIAL")?.name
                 || (task as any).responsibles?.[0]?.name
                 || (task as any).negotiatingWith?.name
@@ -758,117 +757,103 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Check-in Files Section - Grouped by Service Order */}
-          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkinFiles?.length > 0) && (
-            <Card style={styles.sectionCard}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <View style={styles.sectionHeaderLeft}>
-                  <IconCamera size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Check-in</ThemedText>
-                  <Badge variant="secondary">
-                    {task.serviceOrders.filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION).reduce((sum: number, so: any) => sum + (so.checkinFiles?.length || 0), 0)}
-                  </Badge>
-                </View>
-                <View style={styles.viewModeButtons}>
-                  <TouchableOpacity
-                    style={[styles.viewModeButton, { backgroundColor: checkinFilesViewMode === "list" ? colors.primary : colors.muted }]}
-                    onPress={() => setCheckinFilesViewMode("list")}
-                    activeOpacity={0.7}
-                  >
-                    <IconList size={16} color={checkinFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.viewModeButton, { backgroundColor: checkinFilesViewMode === "grid" ? colors.primary : colors.muted }]}
-                    onPress={() => setCheckinFilesViewMode("grid")}
-                    activeOpacity={0.7}
-                  >
-                    <IconLayoutGrid size={16} color={checkinFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View style={styles.sectionContent}>
-                {task.serviceOrders
-                  .filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkinFiles?.length > 0)
-                  .map((so: any) => (
-                    <View key={`checkin-${so.id}`} style={{ marginBottom: spacing.md }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
-                        <ThemedText style={{ fontSize: fontSize.sm, fontWeight: '600' }}>{so.description}</ThemedText>
-                        <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.6 }}>{so.checkinFiles.length} foto(s)</ThemedText>
-                      </View>
-                      <View style={checkinFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                        {so.checkinFiles.map((file: any, index: number) => (
-                          <FileItem
-                            key={file.id}
-                            file={file}
-                            viewMode={checkinFilesViewMode}
-                            baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                            onPress={() => {
-                              fileViewer.actions.viewFiles(so.checkinFiles, index);
-                            }}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  ))}
-              </View>
-            </Card>
-          )}
+          {/* Dossiê Card - Proof of services organized by service order with check-in/check-out files */}
+          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && (so.checkinFiles?.length > 0 || so.checkoutFiles?.length > 0)) && (() => {
+            const serviceOrdersWithFiles = (task.serviceOrders || [])
+              .filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && (so.checkinFiles?.length > 0 || so.checkoutFiles?.length > 0))
+              .sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0));
+            const totalDossieFiles = serviceOrdersWithFiles.reduce(
+              (sum: number, so: any) => sum + (so.checkinFiles?.length || 0) + (so.checkoutFiles?.length || 0), 0
+            );
 
-          {/* Check-out Files Section - Grouped by Service Order */}
-          {canViewCheckinCheckout && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkoutFiles?.length > 0) && (
-            <Card style={styles.sectionCard}>
-              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-                <View style={styles.sectionHeaderLeft}>
-                  <IconPhotoCheck size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.sectionTitle}>Check-out</ThemedText>
-                  <Badge variant="secondary">
-                    {task.serviceOrders.filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION).reduce((sum: number, so: any) => sum + (so.checkoutFiles?.length || 0), 0)}
-                  </Badge>
+            return (
+              <Card style={styles.sectionCard}>
+                <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                  <View style={styles.sectionHeaderLeft}>
+                    <IconFolderCheck size={20} color={colors.mutedForeground} />
+                    <ThemedText style={styles.sectionTitle}>Dossiê</ThemedText>
+                    <Badge variant="secondary">
+                      {totalDossieFiles} {totalDossieFiles === 1 ? 'foto' : 'fotos'}
+                    </Badge>
+                  </View>
                 </View>
-                <View style={styles.viewModeButtons}>
-                  <TouchableOpacity
-                    style={[styles.viewModeButton, { backgroundColor: checkoutFilesViewMode === "list" ? colors.primary : colors.muted }]}
-                    onPress={() => setCheckoutFilesViewMode("list")}
-                    activeOpacity={0.7}
-                  >
-                    <IconList size={16} color={checkoutFilesViewMode === "list" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.viewModeButton, { backgroundColor: checkoutFilesViewMode === "grid" ? colors.primary : colors.muted }]}
-                    onPress={() => setCheckoutFilesViewMode("grid")}
-                    activeOpacity={0.7}
-                  >
-                    <IconLayoutGrid size={16} color={checkoutFilesViewMode === "grid" ? colors.primaryForeground : colors.foreground} />
-                  </TouchableOpacity>
+                <View style={styles.sectionContent}>
+                  <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.5, marginBottom: spacing.md }}>
+                    Registro fotográfico dos serviços por ordem de serviço
+                  </ThemedText>
+                  {serviceOrdersWithFiles.map((so: any) => {
+                    const checkinFiles = so.checkinFiles || [];
+                    const checkoutFiles = so.checkoutFiles || [];
+                    const isOutrosWithObservation = so.description === 'Outros' && !!so.observation;
+                    const displayDescription = isOutrosWithObservation ? so.observation : so.description;
+
+                    return (
+                      <View key={so.id} style={{ marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.md, overflow: 'hidden' }}>
+                        {/* Service Order Header */}
+                        <View style={{ backgroundColor: colors.muted, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                          <ThemedText style={{ fontSize: fontSize.xs, fontWeight: '600' }}>{displayDescription}</ThemedText>
+                        </View>
+
+                        <View style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm }}>
+                          {/* Check-in */}
+                          <View style={{ marginBottom: spacing.md }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs }}>
+                              <IconCamera size={16} color="#3b82f6" />
+                              <ThemedText style={{ fontSize: fontSize.xs, fontWeight: '500' }}>Check-in</ThemedText>
+                              <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.5 }}>{checkinFiles.length}</ThemedText>
+                            </View>
+                            {checkinFiles.length > 0 ? (
+                              <View style={styles.gridContainer}>
+                                {checkinFiles.map((file: any, index: number) => (
+                                  <FileItem
+                                    key={file.id}
+                                    file={file}
+                                    viewMode="grid"
+                                    baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                                    onPress={() => {
+                                      fileViewer.actions.viewFiles([...checkinFiles, ...checkoutFiles], index);
+                                    }}
+                                  />
+                                ))}
+                              </View>
+                            ) : (
+                              <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.4, fontStyle: 'italic' }}>Nenhuma foto</ThemedText>
+                            )}
+                          </View>
+
+                          {/* Check-out */}
+                          <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs }}>
+                              <IconPhotoCheck size={16} color="#22c55e" />
+                              <ThemedText style={{ fontSize: fontSize.xs, fontWeight: '500' }}>Check-out</ThemedText>
+                              <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.5 }}>{checkoutFiles.length}</ThemedText>
+                            </View>
+                            {checkoutFiles.length > 0 ? (
+                              <View style={styles.gridContainer}>
+                                {checkoutFiles.map((file: any, index: number) => (
+                                  <FileItem
+                                    key={file.id}
+                                    file={file}
+                                    viewMode="grid"
+                                    baseUrl={process.env.EXPO_PUBLIC_API_URL}
+                                    onPress={() => {
+                                      fileViewer.actions.viewFiles([...checkinFiles, ...checkoutFiles], checkinFiles.length + index);
+                                    }}
+                                  />
+                                ))}
+                              </View>
+                            ) : (
+                              <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.4, fontStyle: 'italic' }}>Nenhuma foto</ThemedText>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
-              </View>
-              <View style={styles.sectionContent}>
-                {task.serviceOrders
-                  .filter((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.checkoutFiles?.length > 0)
-                  .map((so: any) => (
-                    <View key={`checkout-${so.id}`} style={{ marginBottom: spacing.md }}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
-                        <ThemedText style={{ fontSize: fontSize.sm, fontWeight: '600' }}>{so.description}</ThemedText>
-                        <ThemedText style={{ fontSize: fontSize.xs, opacity: 0.6 }}>{so.checkoutFiles.length} foto(s)</ThemedText>
-                      </View>
-                      <View style={checkoutFilesViewMode === "grid" ? styles.gridContainer : styles.listContainer}>
-                        {so.checkoutFiles.map((file: any, index: number) => (
-                          <FileItem
-                            key={file.id}
-                            file={file}
-                            viewMode={checkoutFilesViewMode}
-                            baseUrl={process.env.EXPO_PUBLIC_API_URL}
-                            onPress={() => {
-                              fileViewer.actions.viewFiles(so.checkoutFiles, index);
-                            }}
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  ))}
-              </View>
-            </Card>
-          )}
+              </Card>
+            );
+          })()}
 
           {/* Documents Section - Only for Admin and Financial, hidden when no documents */}
           {canViewDocuments && (
@@ -1048,7 +1033,7 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Total is already displayed inside TaskPricingCard — no duplicate section needed */}
+          {/* Total is already displayed inside TaskQuoteCard — no duplicate section needed */}
 
           {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {/* Team leaders can swipe to request new cuts for tasks in their led sector */}
@@ -1079,7 +1064,7 @@ export default function ScheduleDetailsScreen() {
                     serviceOrderIds={serviceOrderIds}
                     truckId={(task as any)?.truck?.id}
                     layoutIds={changelogLayoutIds}
-                    pricingId={(task as any)?.pricing?.id}
+                    quoteId={(task as any)?.quote?.id}
                   />
                 ) : (
                   <ChangelogSkeleton />

@@ -29,6 +29,7 @@ import {
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
 import { SERVICE_ORDER_STATUS_LABELS } from '@/constants/enum-labels';
 import { API_BASE_URL } from '@/config/urls';
+import { rewriteCdnUrl } from '@/utils/file-viewer-utils';
 
 const ARTWORK_STATUS_LABELS: Record<string, string> = {
   APPROVED: 'Aprovado',
@@ -432,7 +433,7 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
                     const fileData = artwork.file || artwork;
                     const thumbnailUrl = fileData.thumbnailUrl || fileData.url;
                     const fullUrl = thumbnailUrl?.startsWith('http')
-                      ? thumbnailUrl
+                      ? rewriteCdnUrl(thumbnailUrl)
                       : thumbnailUrl
                         ? `${API_BASE_URL}${thumbnailUrl}`
                         : null;

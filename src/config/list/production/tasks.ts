@@ -4,7 +4,7 @@ import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
 import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask } from '@/utils/permissions/entity-permissions'
-import { canViewPricing } from '@/utils/permissions/pricing-permissions'
+import { canViewQuote } from '@/utils/permissions/quote-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
 
@@ -327,7 +327,7 @@ export const tasksListConfig: ListConfig<Task> = {
         sortable: false,
         width: 1.0,
         align: 'right',
-        render: (task) => task.pricing?.total || null,
+        render: (task) => task.quote?.total || null,
         format: 'currency',
         // Only visible to ADMIN, FINANCIAL, COMMERCIAL (matches web canViewPricingSections)
         canView: canViewPriceField,
@@ -554,7 +554,7 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Orçamento',
         icon: 'currency-real',
         variant: 'default',
-        canPerform: (user: any) => canViewPricing(user?.sector?.privileges || ''),
+        canPerform: (user: any) => canViewQuote(user?.sector?.privileges || ''),
         onPress: (task, router, context) => {
           // Store navigation source for proper back navigation
           const currentPath = context?.route || '/(tabs)/producao/agenda'
@@ -683,7 +683,7 @@ export const tasksListConfig: ListConfig<Task> = {
       { key: 'term', label: 'Prazo', path: 'term', format: 'date' },
       { key: 'status', label: 'Status', path: 'status' },
       { key: 'details', label: 'Detalhes', path: 'details' },
-      { key: 'price', label: 'Preço', path: 'pricing.total', format: 'currency' },
+      { key: 'price', label: 'Preço', path: 'quote.total', format: 'currency' },
       { key: 'commission', label: 'Comissão', path: 'commission' },
       { key: 'createdAt', label: 'Criado Em', path: 'createdAt', format: 'date' },
     ],

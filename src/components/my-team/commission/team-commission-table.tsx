@@ -43,14 +43,15 @@ export function TeamCommissionTable({
   };
 
   const getCommissionValue = (task: Task): string => {
-    if (!task.pricing?.total) return "R$ 0,00";
+    const total = task.quote?.total;
+    if (!total) return "R$ 0,00";
 
     switch (task.commission) {
       case "FULL_COMMISSION":
-        return formatCurrency(task.pricing.total);
+        return formatCurrency(total);
       case "PARTIAL_COMMISSION":
         // Assuming 50% for partial commission
-        return formatCurrency(task.pricing.total * 0.5);
+        return formatCurrency(total * 0.5);
       default:
         return "R$ 0,00";
     }

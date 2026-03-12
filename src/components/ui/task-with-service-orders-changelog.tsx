@@ -28,7 +28,7 @@ import {
   CHANGE_LOG_ENTITY_TYPE_LABELS,
   SERVICE_ORDER_TYPE,
   SECTOR_PRIVILEGES,
-  TASK_PRICING_STATUS,
+  TASK_QUOTE_STATUS,
   PAYMENT_CONDITION,
 } from "@/constants";
 import {
@@ -40,7 +40,7 @@ import {
   SERVICE_ORDER_STATUS_LABELS,
   SERVICE_ORDER_TYPE_LABELS,
   TASK_STATUS_LABELS,
-  TASK_PRICING_STATUS_LABELS,
+  TASK_QUOTE_STATUS_LABELS,
   PAYMENT_CONDITION_LABELS,
   TRUCK_MANUFACTURER_LABELS,
 } from "@/constants/enum-labels";
@@ -59,7 +59,7 @@ interface TaskWithServiceOrdersChangelogProps {
   serviceOrderIds: string[];
   truckId?: string;
   layoutIds?: string[];
-  pricingId?: string;
+  quoteId?: string;
   maxHeight?: number;
   limit?: number;
 }
@@ -667,9 +667,9 @@ const TimelineItem = React.memo(({
       );
     }
 
-    // Special handling for TASK_PRICING CREATE - show budget details (matching web)
+    // Special handling for TASK_QUOTE CREATE - show budget details (matching web)
     if (
-      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING &&
+      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE &&
       firstLog.action === CHANGE_LOG_ACTION.CREATE
     ) {
       let createdEntityData: any = null;
@@ -700,7 +700,7 @@ const TimelineItem = React.memo(({
             )}
             {createdEntityData.status && (
               <ThemedText style={[styles.itemType, { color: colors.mutedForeground }]}>
-                Status: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{TASK_PRICING_STATUS_LABELS[createdEntityData.status as TASK_PRICING_STATUS] || createdEntityData.status}</ThemedText>
+                Status: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{TASK_QUOTE_STATUS_LABELS[createdEntityData.status as TASK_QUOTE_STATUS] || createdEntityData.status}</ThemedText>
               </ThemedText>
             )}
             {(createdEntityData.total !== null && createdEntityData.total !== undefined) && (
@@ -737,9 +737,9 @@ const TimelineItem = React.memo(({
       }
     }
 
-    // Special handling for TASK_PRICING_ITEM CREATE - show item details (matching web)
+    // Special handling for TASK_QUOTE_ITEM CREATE - show item details (matching web)
     if (
-      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING_ITEM &&
+      firstLog.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_ITEM &&
       firstLog.action === CHANGE_LOG_ACTION.CREATE
     ) {
       let createdEntityData: any = null;
@@ -884,7 +884,7 @@ const TimelineItem = React.memo(({
 
     // Per-field permission filtering (matching web's inline filtering)
     const alwaysHiddenFields = ["statusOrder", "colorOrder", "services", "serviceOrders", "serviceOrderIds"];
-    const financialFieldsList = ["pricingId", "budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
+    const financialFieldsList = ["quoteId", "budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
     const restrictedFieldsList = ["forecastDate", "responsibles", "responsibleIds", "negotiatingWith"];
     const invoiceToFieldsList = ["invoiceTo", "invoiceToId"];
 
@@ -963,8 +963,8 @@ const TimelineItem = React.memo(({
           return;
         }
 
-        // Special handling for pricingId (Orçamento) - matching web implementation
-        if (field === "pricingId") {
+        // Special handling for quoteId (Orçamento) - matching web implementation
+        if (field === "quoteId") {
           const oldPricing = parsePricingValue(log.oldValue);
           const newPricing = parsePricingValue(log.newValue);
 
@@ -991,8 +991,8 @@ const TimelineItem = React.memo(({
           // Use the correct label map based on entity type
           const statusLabels = log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK
             ? TASK_STATUS_LABELS
-            : log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_PRICING
-              ? TASK_PRICING_STATUS_LABELS
+            : log.entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE
+              ? TASK_QUOTE_STATUS_LABELS
               : SERVICE_ORDER_STATUS_LABELS;
           const oldStatusLabel = log.oldValue
             ? (statusLabels as Record<string, string>)[log.oldValue] || String(log.oldValue)
@@ -1082,8 +1082,8 @@ const TimelineItem = React.memo(({
           return;
         }
 
-        // Special handling for pricingId on CREATE
-        if (field === "pricingId") {
+        // Special handling for quoteId on CREATE
+        if (field === "quoteId") {
           const newPricing = parsePricingValue(log.newValue);
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
@@ -1188,7 +1188,7 @@ export function TaskWithServiceOrdersChangelog({
   serviceOrderIds,
   truckId,
   layoutIds = [],
-  pricingId,
+  quoteId,
   limit = 100,
 }: TaskWithServiceOrdersChangelogProps) {
   const { colors } = useTheme();
@@ -1217,11 +1217,11 @@ export function TaskWithServiceOrdersChangelog({
     if (layoutIds.length > 0) {
       conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.LAYOUT, entityId: { in: layoutIds } });
     }
-    if (pricingId) {
-      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.TASK_PRICING, entityId: pricingId });
+    if (quoteId) {
+      conditions.push({ entityType: CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE, entityId: quoteId });
     }
     return conditions;
-  }, [taskId, serviceOrderIds, truckId, layoutIds, pricingId]);
+  }, [taskId, serviceOrderIds, truckId, layoutIds, quoteId]);
 
   // Single combined changelog query using OR conditions
   const { data: allLogsResponse, isLoading } = useChangeLogs({

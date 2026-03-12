@@ -2,7 +2,7 @@ import { View, StyleSheet, Image } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { formatCurrency, formatDate } from "@/utils";
-import { generatePaymentText, generateGuaranteeText } from "@/utils/pricing-text-generators";
+import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";

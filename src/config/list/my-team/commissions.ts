@@ -92,12 +92,12 @@ export const teamCommissionsListConfig: ListConfig<Task> = {
         format: 'badge',
       },
       {
-        key: 'pricing.total',
+        key: 'quote.total',
         label: 'VALOR',
         sortable: true,
         width: 1.2,
         align: 'right',
-        render: (task) => task.pricing?.total || null,
+        render: (task) => task.quote?.total || null,
         format: 'currency',
       },
       {

@@ -1,8 +1,8 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { TaskPricingWizard } from "@/components/production/task/pricing/task-pricing-wizard";
+import { TaskQuoteWizard } from "@/components/production/task/quote/task-quote-wizard";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
-export default function TaskPricingScreen() {
+export default function TaskQuoteScreen() {
   useScreenReady();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -15,7 +15,7 @@ export default function TaskPricingScreen() {
           headerShown: true,
         }}
       />
-      <TaskPricingWizard taskId={id} />
+      <TaskQuoteWizard taskId={id} />
     </>
   );
 }

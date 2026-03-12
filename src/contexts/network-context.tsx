@@ -12,61 +12,47 @@ import NetInfo, {
   NetInfoState,
   NetInfoSubscription,
 } from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { updateApiUrl, getCurrentApiUrl } from "../api-client";
 import { ONLINE_API_URL, OFFLINE_API_URL } from "@/constants/api";
+
+// =====================================================
+// Constants
+// =====================================================
+
+const STORAGE_KEY_LOCAL_API = "@ankaa:network:local_api_url";
+const STORAGE_KEY_SERVER_ADDRESSES = "@ankaa:network:server_addresses";
+const PING_TIMEOUT = 4000; // 4 seconds to check reachability
 
 // =====================================================
 // Types & Interfaces
 // =====================================================
 
 interface NetworkContextType {
-  /**
-   * Whether the device has internet connectivity
-   */
+  /** Whether the device has internet connectivity */
   isConnected: boolean;
-
-  /**
-   * Whether the network state has been determined
-   * (initial check complete)
-   */
+  /** Whether the network state has been determined (initial check complete) */
   isNetworkReady: boolean;
-
-  /**
-   * The current base URL being used for API calls
-   * Automatically switches based on connectivity
-   */
+  /** The current base URL being used for API calls */
   currentBaseUrl: string;
-
-  /**
-   * Whether currently using the offline/local URL
-   */
+  /** Whether currently using the offline/local URL */
   isUsingOfflineUrl: boolean;
-
-  /**
-   * Get the appropriate API URL based on current connectivity
-   * Same as currentBaseUrl but as a function for flexibility
-   */
+  /** Get the appropriate API URL based on current connectivity */
   getApiUrl: () => string;
-
-  /**
-   * Manually refresh the network state
-   * Useful for retry scenarios
-   */
+  /** Manually refresh the network state */
   refreshNetworkState: () => Promise<void>;
-
-  /**
-   * Raw network state from NetInfo
-   * For advanced use cases
-   */
+  /** Raw network state from NetInfo */
   networkState: NetInfoState | null;
 }
 
 interface NetworkProviderProps {
   children: ReactNode;
-  /**
-   * Optional callback when connectivity changes
-   */
   onConnectivityChange?: (isConnected: boolean) => void;
+}
+
+interface ServerAddress {
+  name: string;
+  ip: string;
 }
 
 // =====================================================
@@ -74,6 +60,123 @@ interface NetworkProviderProps {
 // =====================================================
 
 const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
+
+// =====================================================
+// Helper: Check if a URL is reachable (lightweight ping)
+// =====================================================
+
+const isUrlReachable = async (url: string, timeout = PING_TIMEOUT): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(`${url}/ping`, {
+      method: "GET",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+// =====================================================
+// Helper: Discover and store server local addresses
+// =====================================================
+
+const discoverServerAddresses = async (apiUrl: string): Promise<void> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${apiUrl}/network-config`, {
+      method: "GET",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    if (data?.addresses?.length > 0 && data?.port) {
+      // Store the server addresses for offline fallback
+      await AsyncStorage.setItem(
+        STORAGE_KEY_SERVER_ADDRESSES,
+        JSON.stringify({ addresses: data.addresses, port: data.port }),
+      );
+
+      // Build and store the primary local URL (first non-loopback IPv4)
+      const primaryAddr = data.addresses[0];
+      if (primaryAddr?.ip) {
+        const localUrl = `http://${primaryAddr.ip}:${data.port}`;
+        await AsyncStorage.setItem(STORAGE_KEY_LOCAL_API, localUrl);
+
+        if (__DEV__) {
+          console.log(
+            `[NetworkContext] Discovered server local addresses:`,
+            data.addresses.map((a: ServerAddress) => a.ip).join(", "),
+            `-> Stored fallback: ${localUrl}`,
+          );
+        }
+      }
+    }
+  } catch {
+    // Silently fail - discovery is best-effort
+  }
+};
+
+// =====================================================
+// Helper: Find a reachable local API URL
+// =====================================================
+
+const findReachableLocalUrl = async (): Promise<string | null> => {
+  try {
+    // 1. Try the configured OFFLINE_API_URL first (if different from online)
+    if (OFFLINE_API_URL !== ONLINE_API_URL) {
+      if (await isUrlReachable(OFFLINE_API_URL)) {
+        return OFFLINE_API_URL;
+      }
+    }
+
+    // 2. Try the stored local URL from server discovery
+    const storedUrl = await AsyncStorage.getItem(STORAGE_KEY_LOCAL_API);
+    if (storedUrl) {
+      if (await isUrlReachable(storedUrl)) {
+        return storedUrl;
+      }
+    }
+
+    // 3. Try all stored server addresses
+    const storedAddresses = await AsyncStorage.getItem(STORAGE_KEY_SERVER_ADDRESSES);
+    if (storedAddresses) {
+      const { addresses, port } = JSON.parse(storedAddresses) as {
+        addresses: ServerAddress[];
+        port: number;
+      };
+
+      for (const addr of addresses) {
+        const url = `http://${addr.ip}:${port}`;
+        if (url !== storedUrl) {
+          // Don't re-check the one we already tried
+          if (await isUrlReachable(url)) {
+            // Update the stored URL for next time
+            await AsyncStorage.setItem(STORAGE_KEY_LOCAL_API, url);
+            return url;
+          }
+        }
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+};
 
 // =====================================================
 // Network Provider Component
@@ -84,75 +187,119 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
  *
  * Features:
  * - Monitors network connectivity continuously using NetInfo
- * - Automatically switches API URLs based on connectivity:
- *   - Online: Uses primary cloud API URL
- *   - Offline: Uses local network API URL
- * - Exposes connectivity status and current URL through context
+ * - Automatically discovers local server addresses for LAN fallback
+ * - When internet is lost but LAN is available, finds and uses local API server
  * - Updates axiosClient baseURL automatically when connectivity changes
- *
- * Usage:
- * - Wrap your app with <NetworkProvider>
- * - Use useNetwork() hook in components to access network state
  */
 export const NetworkProvider = ({
   children,
   onConnectivityChange,
 }: NetworkProviderProps) => {
-  // Network state from NetInfo
   const [networkState, setNetworkState] = useState<NetInfoState | null>(null);
-
-  // Derived connectivity state (simplified boolean)
   const [isConnected, setIsConnected] = useState<boolean>(true);
-
-  // Whether initial network check is complete
   const [isNetworkReady, setIsNetworkReady] = useState<boolean>(false);
-
-  // Current base URL being used
   const [currentBaseUrl, setCurrentBaseUrl] = useState<string>(ONLINE_API_URL);
 
-  // Subscription reference for cleanup
   const subscriptionRef = useRef<NetInfoSubscription | null>(null);
-
-  // Previous connectivity state for change detection
   const prevConnectedRef = useRef<boolean | null>(null);
+  const isResolvingRef = useRef<boolean>(false);
+  const hasDiscoveredRef = useRef<boolean>(false);
 
   /**
-   * Determine if device has internet connectivity
-   * Returns true if connected to internet, false otherwise
+   * Set the active API URL (updates state + axios client)
    */
-  const checkIsConnected = useCallback((state: NetInfoState): boolean => {
-    // Check multiple indicators for reliable connectivity detection
-    // isConnected: device has network connection (WiFi, cellular, etc.)
-    // isInternetReachable: device can actually reach the internet
-
-    // If isInternetReachable is null, it hasn't been determined yet
-    // In that case, fall back to isConnected
-    if (state.isInternetReachable !== null) {
-      return state.isInternetReachable === true;
-    }
-
-    return state.isConnected === true;
+  const setActiveUrl = useCallback((url: string) => {
+    setCurrentBaseUrl(url);
+    updateApiUrl(url);
   }, []);
 
   /**
-   * Update the API URL based on connectivity
+   * Discover server addresses (run once when online)
    */
-  const updateUrlBasedOnConnectivity = useCallback((connected: boolean) => {
-    const newUrl = connected ? ONLINE_API_URL : OFFLINE_API_URL;
+  const tryDiscoverServer = useCallback(async () => {
+    if (hasDiscoveredRef.current) return;
+    hasDiscoveredRef.current = true;
 
-    // Update local state
-    setCurrentBaseUrl(newUrl);
-
-    // Update the axios client's base URL
-    updateApiUrl(newUrl);
-
-    if (__DEV__) {
-      console.log(
-        `[NetworkContext] Connectivity changed: ${connected ? "ONLINE" : "OFFLINE"}`,
-        `-> Using URL: ${newUrl}`,
-      );
-    }
+    const currentUrl = getCurrentApiUrl();
+    await discoverServerAddresses(currentUrl);
   }, []);
+
+  /**
+   * Resolve the best API URL based on network conditions.
+   * Called when connectivity changes.
+   */
+  const resolveApiUrl = useCallback(
+    async (state: NetInfoState) => {
+      // Prevent concurrent resolution
+      if (isResolvingRef.current) return;
+      isResolvingRef.current = true;
+
+      try {
+        const hasNetwork = state.isConnected === true;
+        const hasInternet = state.isInternetReachable === true;
+
+        if (!hasNetwork) {
+          // No network at all - truly offline
+          if (__DEV__) {
+            console.log("[NetworkContext] No network connection - fully offline");
+          }
+          setIsConnected(false);
+          // Keep current URL (might have cached data)
+          return;
+        }
+
+        if (hasInternet) {
+          // Has internet - use the primary online URL
+          if (__DEV__) {
+            console.log("[NetworkContext] Internet available -> using ONLINE URL:", ONLINE_API_URL);
+          }
+          setIsConnected(true);
+          setActiveUrl(ONLINE_API_URL);
+
+          // Discover server addresses in the background (for future offline use)
+          tryDiscoverServer();
+          return;
+        }
+
+        // Has network (WiFi/LAN) but no internet
+        // This is the LAN-without-internet scenario
+        if (__DEV__) {
+          console.log("[NetworkContext] Network available but no internet - searching for local API...");
+        }
+
+        // First, check if the online URL is actually reachable
+        // (might be a split-horizon DNS or the check was wrong)
+        if (await isUrlReachable(ONLINE_API_URL)) {
+          if (__DEV__) {
+            console.log("[NetworkContext] Online URL reachable despite no internet flag -> using it");
+          }
+          setIsConnected(true);
+          setActiveUrl(ONLINE_API_URL);
+          return;
+        }
+
+        // Try to find a reachable local server
+        const localUrl = await findReachableLocalUrl();
+        if (localUrl) {
+          if (__DEV__) {
+            console.log("[NetworkContext] Found local API server:", localUrl);
+          }
+          setIsConnected(true);
+          setActiveUrl(localUrl);
+          return;
+        }
+
+        // No API reachable - mark as disconnected but keep last URL
+        if (__DEV__) {
+          console.log("[NetworkContext] No API server reachable - offline");
+        }
+        setIsConnected(false);
+      } finally {
+        isResolvingRef.current = false;
+      }
+    },
+    [setActiveUrl, tryDiscoverServer],
+  );
 
   /**
    * Handle network state changes
@@ -161,24 +308,56 @@ export const NetworkProvider = ({
     (state: NetInfoState) => {
       setNetworkState(state);
 
-      const connected = checkIsConnected(state);
-      setIsConnected(connected);
+      const hasNetwork = state.isConnected === true;
+      const hasInternet = state.isInternetReachable === true;
+      const wasConnected = prevConnectedRef.current;
 
-      // Only trigger URL update and callback if connectivity actually changed
-      if (prevConnectedRef.current !== connected) {
-        prevConnectedRef.current = connected;
-        updateUrlBasedOnConnectivity(connected);
-        onConnectivityChange?.(connected);
+      // Quick path: if internet is available, switch immediately
+      if (hasInternet) {
+        setIsConnected(true);
+        if (currentBaseUrl !== ONLINE_API_URL) {
+          setActiveUrl(ONLINE_API_URL);
+        }
+        if (wasConnected !== true) {
+          prevConnectedRef.current = true;
+          onConnectivityChange?.(true);
+        }
+        // Discover in background
+        tryDiscoverServer();
+        setIsNetworkReady(true);
+        return;
       }
 
-      // Mark network as ready after first state update
+      // If we have network but not internet, do async resolution
+      if (hasNetwork && state.isInternetReachable === false) {
+        // Run async URL resolution
+        resolveApiUrl(state).then(() => {
+          const nowConnected = isConnected;
+          if (wasConnected !== nowConnected) {
+            prevConnectedRef.current = nowConnected;
+            onConnectivityChange?.(nowConnected);
+          }
+          setIsNetworkReady(true);
+        });
+        return;
+      }
+
+      // No network at all
+      if (!hasNetwork) {
+        setIsConnected(false);
+        if (wasConnected !== false) {
+          prevConnectedRef.current = false;
+          onConnectivityChange?.(false);
+        }
+      }
+
       setIsNetworkReady(true);
     },
-    [checkIsConnected, updateUrlBasedOnConnectivity, onConnectivityChange],
+    [currentBaseUrl, isConnected, setActiveUrl, resolveApiUrl, tryDiscoverServer, onConnectivityChange],
   );
 
   /**
-   * Manually refresh network state
+   * Manually refresh the network state
    */
   const refreshNetworkState = useCallback(async () => {
     try {
@@ -186,32 +365,30 @@ export const NetworkProvider = ({
       handleNetworkStateChange(state);
     } catch (error) {
       if (__DEV__) {
-        console.error(
-          "[NetworkContext] Error refreshing network state:",
-          error,
-        );
+        console.error("[NetworkContext] Error refreshing network state:", error);
       }
     }
   }, [handleNetworkStateChange]);
 
-  /**
-   * Get the current API URL
-   */
   const getApiUrl = useCallback((): string => {
     return currentBaseUrl;
   }, [currentBaseUrl]);
 
   // Subscribe to network state changes on mount
   useEffect(() => {
-    // Initial fetch of network state
+    // Load stored local URL for immediate fallback availability
+    AsyncStorage.getItem(STORAGE_KEY_LOCAL_API).then((stored) => {
+      if (stored && __DEV__) {
+        console.log("[NetworkContext] Loaded stored local API URL:", stored);
+      }
+    });
+
+    // Initial fetch
     NetInfo.fetch().then(handleNetworkStateChange);
 
     // Subscribe to ongoing changes
-    subscriptionRef.current = NetInfo.addEventListener(
-      handleNetworkStateChange,
-    );
+    subscriptionRef.current = NetInfo.addEventListener(handleNetworkStateChange);
 
-    // Cleanup subscription on unmount
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current();
@@ -220,25 +397,17 @@ export const NetworkProvider = ({
     };
   }, [handleNetworkStateChange]);
 
-  // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo<NetworkContextType>(
     () => ({
       isConnected,
       isNetworkReady,
       currentBaseUrl,
-      isUsingOfflineUrl: currentBaseUrl === OFFLINE_API_URL,
+      isUsingOfflineUrl: currentBaseUrl !== ONLINE_API_URL,
       getApiUrl,
       refreshNetworkState,
       networkState,
     }),
-    [
-      isConnected,
-      isNetworkReady,
-      currentBaseUrl,
-      getApiUrl,
-      refreshNetworkState,
-      networkState,
-    ],
+    [isConnected, isNetworkReady, currentBaseUrl, getApiUrl, refreshNetworkState, networkState],
   );
 
   return (
@@ -254,17 +423,6 @@ export const NetworkProvider = ({
 
 /**
  * useNetwork - Hook to access network connectivity state
- *
- * @returns NetworkContextType with connectivity status and current API URL
- * @throws Error if used outside of NetworkProvider
- *
- * @example
- * const { isConnected, currentBaseUrl } = useNetwork();
- *
- * // Check connectivity before making a request
- * if (!isConnected) {
- *   console.log('Using offline URL:', currentBaseUrl);
- * }
  */
 export const useNetwork = (): NetworkContextType => {
   const context = useContext(NetworkContext);
@@ -280,30 +438,18 @@ export const useNetwork = (): NetworkContextType => {
 // Utility Functions (for use outside React components)
 // =====================================================
 
-/**
- * Get the online (primary) API URL
- */
 export const getOnlineApiUrl = (): string => ONLINE_API_URL;
 
-/**
- * Get the offline (local) API URL
- */
 export const getOfflineApiUrl = (): string => OFFLINE_API_URL;
 
 /**
  * Check network connectivity imperatively (one-time check)
- * For use outside of React components
- *
- * @returns Promise<boolean> - true if connected to internet
  */
 export const checkNetworkConnectivity = async (): Promise<boolean> => {
   try {
     const state = await NetInfo.fetch();
-
-    if (state.isInternetReachable !== null) {
-      return state.isInternetReachable === true;
-    }
-
+    // Use isConnected (has network) rather than isInternetReachable
+    // because LAN-only scenarios should still be "connected"
     return state.isConnected === true;
   } catch {
     return false;
@@ -312,11 +458,21 @@ export const checkNetworkConnectivity = async (): Promise<boolean> => {
 
 /**
  * Get the appropriate API URL based on current connectivity
- * For use outside of React components (one-time check)
- *
- * @returns Promise<string> - the API URL to use
  */
 export const getApiUrlForCurrentConnectivity = async (): Promise<string> => {
-  const connected = await checkNetworkConnectivity();
-  return connected ? ONLINE_API_URL : OFFLINE_API_URL;
+  const state = await NetInfo.fetch();
+
+  // If internet is reachable, use online URL
+  if (state.isInternetReachable === true) {
+    return ONLINE_API_URL;
+  }
+
+  // If connected to network but no internet, try local
+  if (state.isConnected === true) {
+    const localUrl = await findReachableLocalUrl();
+    if (localUrl) return localUrl;
+  }
+
+  // Fallback
+  return OFFLINE_API_URL !== ONLINE_API_URL ? OFFLINE_API_URL : ONLINE_API_URL;
 };

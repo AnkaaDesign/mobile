@@ -5,6 +5,7 @@
  */
 
 import { getCurrentApiUrl } from '../api-client';
+import { ONLINE_API_URL } from '@/constants/api';
 import type { File as AnkaaFile } from '../types';
 
 // =====================
@@ -17,6 +18,55 @@ import type { File as AnkaaFile } from '../types';
  */
 export const getApiBaseUrl = (): string => {
   return getCurrentApiUrl();
+};
+
+// =====================
+// CDN URL Rewriting for Offline/LAN Mode
+// =====================
+
+/** CDN domains that serve files (won't resolve on LAN without internet) */
+const CDN_DOMAINS = ['arquivos.ankaadesign.com.br', 'arquivos.ankaa.app'];
+
+/**
+ * Check if a URL points to a CDN domain that may not resolve on LAN
+ */
+const isCdnUrl = (url: string): boolean => {
+  try {
+    const hostname = new URL(url).hostname;
+    return CDN_DOMAINS.some(d => hostname === d);
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Check if the app is currently using a non-production API URL (LAN/offline mode).
+ * When true, CDN URLs should be rewritten to use the local API server.
+ */
+const isUsingLocalApi = (): boolean => {
+  const currentUrl = getCurrentApiUrl();
+  return currentUrl !== ONLINE_API_URL;
+};
+
+/**
+ * Rewrite a CDN URL to use the local API's static file serving route.
+ * CDN URL: https://arquivos.ankaadesign.com.br/24/3/12/uuid.jpg
+ * Local:   http://192.168.0.11:3030/files/storage/24/3/12/uuid.jpg
+ *
+ * Returns the original URL if not a CDN URL or not on LAN.
+ */
+export const rewriteCdnUrl = (url: string): string => {
+  if (!isUsingLocalApi() || !isCdnUrl(url)) {
+    return url;
+  }
+  try {
+    const parsed = new URL(url);
+    const apiUrl = getApiBaseUrl();
+    // The API serves FILES_ROOT at /files/storage/ prefix
+    return `${apiUrl}/files/storage${parsed.pathname}`;
+  } catch {
+    return url;
+  }
 };
 
 // =====================
@@ -66,9 +116,9 @@ export const getThumbnailUrl = (
 
   // If file has thumbnailUrl, use it (with proper URL construction)
   if (file.thumbnailUrl) {
-    // Handle absolute URLs
+    // Handle absolute URLs - rewrite CDN URLs when on LAN
     if (file.thumbnailUrl.startsWith('http')) {
-      return file.thumbnailUrl;
+      return rewriteCdnUrl(file.thumbnailUrl);
     }
 
     // Handle relative URLs - ensure proper format
