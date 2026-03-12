@@ -9,6 +9,10 @@ import { formatCurrency } from "@/utils/formatters";
 import { useInvoicesByTask } from "@/hooks/useInvoice";
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 import { InstallmentList } from "./installment-list";
+import { InvoiceDetailModal } from "./invoice-detail-modal";
+import { NfseStatusBadge } from "./nfse-status-badge";
+import { NfseActions } from "./nfse-actions";
+import { NfseEnrichedInfo } from "./nfse-enriched-info";
 import { IconChevronDown, IconChevronUp, IconFileInvoice } from "@tabler/icons-react-native";
 import type { Invoice } from "@/types/invoice";
 import type { INVOICE_STATUS } from "@/constants/enums";
@@ -20,6 +24,18 @@ interface InvoiceListCardProps {
 export function InvoiceListCard({ taskId }: InvoiceListCardProps) {
   const { colors } = useTheme();
   const { data: invoices, isLoading, isError } = useInvoicesByTask(taskId);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+
+  const handleOpenDetail = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setDetailModalVisible(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalVisible(false);
+    setSelectedInvoice(null);
+  };
 
   if (isLoading) {
     return (
@@ -67,20 +83,29 @@ export function InvoiceListCard({ taskId }: InvoiceListCardProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Faturas ({invoices.length})</CardTitle>
-      </CardHeader>
-      <CardContent style={styles.cardContent}>
-        {invoices.map((invoice: Invoice, index: number) => (
-          <InvoiceRow
-            key={invoice.id}
-            invoice={invoice}
-            isLast={index === invoices.length - 1}
-          />
-        ))}
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Faturas ({invoices.length})</CardTitle>
+        </CardHeader>
+        <CardContent style={styles.cardContent}>
+          {invoices.map((invoice: Invoice, index: number) => (
+            <InvoiceRow
+              key={invoice.id}
+              invoice={invoice}
+              isLast={index === invoices.length - 1}
+              onOpenDetail={handleOpenDetail}
+            />
+          ))}
+        </CardContent>
+      </Card>
+
+      <InvoiceDetailModal
+        invoice={selectedInvoice}
+        visible={detailModalVisible}
+        onClose={handleCloseDetail}
+      />
+    </>
   );
 }
 
@@ -89,9 +114,10 @@ export function InvoiceListCard({ taskId }: InvoiceListCardProps) {
 interface InvoiceRowProps {
   invoice: Invoice;
   isLast: boolean;
+  onOpenDetail: (invoice: Invoice) => void;
 }
 
-function InvoiceRow({ invoice, isLast }: InvoiceRowProps) {
+function InvoiceRow({ invoice, isLast, onOpenDetail }: InvoiceRowProps) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
@@ -107,13 +133,18 @@ function InvoiceRow({ invoice, isLast }: InvoiceRowProps) {
       ]}
     >
       <TouchableOpacity
-        onPress={() => hasInstallments && setExpanded(!expanded)}
-        activeOpacity={hasInstallments ? 0.7 : 1}
+        onPress={() => setExpanded(!expanded)}
+        onLongPress={() => onOpenDetail(invoice)}
+        activeOpacity={0.7}
         style={styles.invoiceHeader}
       >
-        <View style={styles.invoiceIconContainer}>
-          <IconFileInvoice size={18} color={colors.mutedForeground} />
-        </View>
+        <TouchableOpacity
+          onPress={() => onOpenDetail(invoice)}
+          activeOpacity={0.7}
+          style={styles.invoiceIconContainer}
+        >
+          <IconFileInvoice size={18} color={colors.primary} />
+        </TouchableOpacity>
 
         <View style={styles.invoiceInfo}>
           <ThemedText style={[styles.customerName, { color: colors.foreground }]} numberOfLines={1}>
@@ -129,9 +160,7 @@ function InvoiceRow({ invoice, isLast }: InvoiceRowProps) {
 
         <View style={styles.invoiceRight}>
           <InvoiceStatusBadge status={invoice.status as INVOICE_STATUS} />
-          {hasInstallments && (
-            <ChevronIcon size={16} color={colors.mutedForeground} />
-          )}
+          <ChevronIcon size={16} color={colors.mutedForeground} />
         </View>
       </TouchableOpacity>
 
@@ -140,6 +169,43 @@ function InvoiceRow({ invoice, isLast }: InvoiceRowProps) {
           <InstallmentList installments={invoice.installments!} />
         </View>
       )}
+
+      {expanded && (() => {
+        const nfseDocuments = invoice.nfseDocuments ?? [];
+        const activeNfse = nfseDocuments.find((d) => d.status === "AUTHORIZED") ?? nfseDocuments[nfseDocuments.length - 1] ?? null;
+        return (
+          <View style={[styles.nfseSection, { backgroundColor: colors.muted + "20" }]}>
+            <View style={styles.nfseSectionHeader}>
+              <IconFileInvoice size={14} color={colors.mutedForeground} />
+              <ThemedText style={[styles.nfseSectionTitle, { color: colors.mutedForeground }]}>
+                NFS-e
+              </ThemedText>
+            </View>
+            <View style={styles.nfseContent}>
+              <View style={styles.nfseRow}>
+                <View style={styles.nfseStatusRow}>
+                  {activeNfse ? (
+                    <NfseStatusBadge status={activeNfse.status} size="sm" />
+                  ) : (
+                    <ThemedText style={[styles.nfseNotIssued, { color: colors.mutedForeground }]}>
+                      Nao emitida
+                    </ThemedText>
+                  )}
+                  {nfseDocuments.length > 1 && (
+                    <ThemedText style={[styles.nfseCount, { color: colors.mutedForeground }]}>
+                      ({nfseDocuments.length} emissoes)
+                    </ThemedText>
+                  )}
+                </View>
+                <NfseActions invoiceId={invoice.id} nfseDocuments={nfseDocuments} />
+              </View>
+              {activeNfse?.elotechNfseId && (
+                <NfseEnrichedInfo elotechNfseId={activeNfse.elotechNfseId} />
+              )}
+            </View>
+          </View>
+        );
+      })()}
     </View>
   );
 }
@@ -212,5 +278,44 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     borderRadius: borderRadius.md,
     marginBottom: spacing.sm,
+  },
+  nfseSection: {
+    borderRadius: borderRadius.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    overflow: "hidden",
+  },
+  nfseSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  nfseSectionTitle: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  nfseContent: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  nfseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  nfseStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  nfseNotIssued: {
+    fontSize: fontSize.sm,
+  },
+  nfseCount: {
+    fontSize: fontSize.xs,
   },
 });

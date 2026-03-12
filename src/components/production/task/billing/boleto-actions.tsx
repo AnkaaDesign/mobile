@@ -1,0 +1,195 @@
+import React from "react";
+import { View, StyleSheet, TouchableOpacity, Alert, Linking } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import { useTheme } from "@/lib/theme";
+import { spacing, borderRadius } from "@/constants/design-system";
+import { useRegenerateBoleto, useCancelBoleto } from "@/hooks/useInvoice";
+import { getCurrentApiUrl } from "@/api-client";
+import {
+  IconFileDownload,
+  IconCopy,
+  IconQrcode,
+  IconRefresh,
+  IconX,
+} from "@tabler/icons-react-native";
+import type { BankSlip } from "@/types/invoice";
+
+interface BoletoActionsProps {
+  installmentId: string;
+  bankSlip: BankSlip | null | undefined;
+}
+
+export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
+  const { colors } = useTheme();
+  const regenerateBoleto = useRegenerateBoleto();
+  const cancelBoleto = useCancelBoleto();
+
+  if (!bankSlip) return null;
+
+  const isActive = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
+  const canRegenerate = bankSlip.status === "ERROR" || bankSlip.status === "REJECTED";
+  const canCancel = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
+
+  const handleViewPdf = async () => {
+    try {
+      const apiUrl = getCurrentApiUrl();
+      const pdfUrl = `${apiUrl}/invoices/${installmentId}/boleto/pdf`;
+      await Linking.openURL(pdfUrl);
+    } catch {
+      Alert.alert("Erro", "Erro ao abrir PDF do boleto");
+    }
+  };
+
+  const handleCopyBarcode = async () => {
+    if (!bankSlip.digitableLine) return;
+    try {
+      await Clipboard.setStringAsync(bankSlip.digitableLine);
+      Alert.alert("Sucesso", "Linha digitavel copiada");
+    } catch {
+      Alert.alert("Erro", "Erro ao copiar linha digitavel");
+    }
+  };
+
+  const handleCopyPix = async () => {
+    if (!bankSlip.pixQrCode) return;
+    try {
+      await Clipboard.setStringAsync(bankSlip.pixQrCode);
+      Alert.alert("Sucesso", "Codigo PIX copiado");
+    } catch {
+      Alert.alert("Erro", "Erro ao copiar codigo PIX");
+    }
+  };
+
+  const handleRegenerate = () => {
+    Alert.alert(
+      "Regenerar Boleto",
+      "Deseja regenerar este boleto?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: () => {
+            regenerateBoleto.mutate(installmentId, {
+              onSuccess: () => {
+                Alert.alert("Sucesso", "Boleto regenerado com sucesso");
+              },
+              onError: () => {
+                Alert.alert("Erro", "Erro ao regenerar boleto");
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCancel = () => {
+    Alert.alert(
+      "Cancelar Boleto",
+      "Tem certeza que deseja cancelar este boleto? Esta acao nao pode ser desfeita.",
+      [
+        { text: "Voltar", style: "cancel" },
+        {
+          text: "Confirmar Cancelamento",
+          style: "destructive",
+          onPress: () => {
+            cancelBoleto.mutate(
+              { installmentId },
+              {
+                onSuccess: () => {
+                  Alert.alert("Sucesso", "Boleto cancelado com sucesso");
+                },
+                onError: () => {
+                  Alert.alert("Erro", "Erro ao cancelar boleto");
+                },
+              },
+            );
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {(bankSlip.pdfFileId || bankSlip.digitableLine) && isActive && (
+        <TouchableOpacity
+          onPress={handleViewPdf}
+          style={[styles.actionButton, { backgroundColor: colors.muted }]}
+          activeOpacity={0.7}
+        >
+          <IconFileDownload size={16} color={colors.foreground} />
+        </TouchableOpacity>
+      )}
+
+      {bankSlip.digitableLine && isActive && (
+        <TouchableOpacity
+          onPress={handleCopyBarcode}
+          style={[styles.actionButton, { backgroundColor: colors.muted }]}
+          activeOpacity={0.7}
+        >
+          <IconCopy size={16} color={colors.foreground} />
+        </TouchableOpacity>
+      )}
+
+      {bankSlip.pixQrCode && isActive && (
+        <TouchableOpacity
+          onPress={handleCopyPix}
+          style={[styles.actionButton, { backgroundColor: colors.muted }]}
+          activeOpacity={0.7}
+        >
+          <IconQrcode size={16} color={colors.foreground} />
+        </TouchableOpacity>
+      )}
+
+      {canRegenerate && (
+        <TouchableOpacity
+          onPress={handleRegenerate}
+          disabled={regenerateBoleto.isPending}
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.muted },
+            regenerateBoleto.isPending && styles.disabledButton,
+          ]}
+          activeOpacity={0.7}
+        >
+          <IconRefresh size={16} color={colors.foreground} />
+        </TouchableOpacity>
+      )}
+
+      {canCancel && (
+        <TouchableOpacity
+          onPress={handleCancel}
+          disabled={cancelBoleto.isPending}
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.muted },
+            cancelBoleto.isPending && styles.disabledButton,
+          ]}
+          activeOpacity={0.7}
+        >
+          <IconX size={16} color={colors.destructive} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+});

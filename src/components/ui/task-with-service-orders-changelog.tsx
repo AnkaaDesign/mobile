@@ -896,12 +896,14 @@ const TimelineItem = React.memo(({
       userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
       userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
       userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER ||
       userSectorPrivilege === SECTOR_PRIVILEGES.DESIGNER;
     const canViewInvoiceTo =
       userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
       userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
       userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-      userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+      userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
     // Filter the group's logs by field permissions
     const filteredGroup = group.filter((log) => {

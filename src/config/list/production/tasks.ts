@@ -15,6 +15,7 @@ const canViewRestrictedFields = (user: any) => {
          privilege === SECTOR_PRIVILEGES.FINANCIAL ||
          privilege === SECTOR_PRIVILEGES.COMMERCIAL ||
          privilege === SECTOR_PRIVILEGES.LOGISTIC ||
+         privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER ||
          privilege === SECTOR_PRIVILEGES.DESIGNER
 }
 

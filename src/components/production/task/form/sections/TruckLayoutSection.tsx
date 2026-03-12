@@ -41,13 +41,14 @@ export default function TruckLayoutSection({
   const truck = useWatch({ control, name: 'truck' });
   const hasTruck = !!(truck?.plate || truck?.category || truck?.chassisNumber);
 
-  // Only show for Admin, Logistic, and Production team leaders
+  // Only show for Admin, Logistic, Production Manager, and Production team leaders
   const userPrivilege = user?.sector?.privileges;
   const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isProductionLeader = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && user?.ledSector;
 
-  const canViewSection = isAdminUser || isLogisticUser || isProductionLeader;
+  const canViewSection = isAdminUser || isLogisticUser || isProductionManagerUser || isProductionLeader;
 
   // Handle layout changes - filter out initial state emissions
   const handleLayoutChange = useCallback((side: string, data: any) => {

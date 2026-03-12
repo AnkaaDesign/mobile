@@ -108,6 +108,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     [SECTOR_PRIVILEGES.PRODUCTION]: { order: 5, description: "Gestão de produção e tarefas" },
     [SECTOR_PRIVILEGES.MAINTENANCE]: { order: 6, description: "Manutenção e equipamentos" },
     [SECTOR_PRIVILEGES.LOGISTIC]: { order: 7, description: "Logística e transporte" },
+    [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: { order: 7.5, description: "Gerência de produção" },
     [SECTOR_PRIVILEGES.HUMAN_RESOURCES]: { order: 8, description: "Recursos humanos e pessoal" },
     [SECTOR_PRIVILEGES.FINANCIAL]: { order: 9, description: "Controle financeiro e orçamentário" },
     [SECTOR_PRIVILEGES.ADMIN]: { order: 10, description: "Administração completa do sistema" },

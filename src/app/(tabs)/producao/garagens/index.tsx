@@ -23,10 +23,10 @@ export default function GaragesScreen() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  // Check privileges - only ADMIN, LOGISTIC, or team leaders can edit positions
+  // Check privileges - only ADMIN, LOGISTIC, PRODUCTION_MANAGER, or team leaders can edit positions
   const { isAdmin, user, canAccess } = usePrivileges();
   const userIsTeamLeader = isTeamLeader(user);
-  const canEditGaragePositions = isAdmin || userIsTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC]);
+  const canEditGaragePositions = isAdmin || userIsTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 
   // OR logic: include tasks where truck has a spot (any status), OR not completed with forecastDate <= today
   const todayStr = useMemo(() => {

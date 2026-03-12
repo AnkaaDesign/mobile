@@ -31,14 +31,15 @@ export default function DatesSection({
   const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
   const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
 
   // Web disables dates for warehouse, financial, and designer users
   const canEditDates = !isFinancialUser && !isWarehouseUser && !isDesignerUser;
 
-  // forecastDate visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, DESIGNER (canViewRestrictedFields)
-  const canViewForecast = isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser;
+  // forecastDate visible to ADMIN, FINANCIAL, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER, DESIGNER (canViewRestrictedFields)
+  const canViewForecast = isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser;
 
   // startedAt and finishedAt only visible in edit mode (web shows them in edit form only)
   const canViewStartFinish = mode === 'edit';

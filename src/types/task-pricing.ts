@@ -13,7 +13,7 @@ export type TaskPricingService = {
   shouldSync?: boolean;
   pricingId?: string;
   invoiceToCustomerId?: string | null;
-  invoiceToCustomer?: { id: string; fantasyName: string; cnpj?: string | null };
+  invoiceToCustomer?: { id: string; corporateName?: string; fantasyName: string; cnpj?: string | null };
 };
 
 export type TaskPricingCustomerConfig = {
@@ -30,7 +30,7 @@ export type TaskPricingCustomerConfig = {
   downPaymentDate?: Date | null;
   customPaymentText: string | null;
   installments?: Installment[];
-  customer?: { id: string; fantasyName: string; cnpj?: string | null };
+  customer?: { id: string; corporateName?: string; fantasyName: string; cnpj?: string | null };
   responsible?: { id: string; name: string; role: string };
   customerSignatureId?: string | null;
   customerSignature?: File;

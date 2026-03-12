@@ -33,6 +33,7 @@ export default function CustomerSection({
   const isWarehouseSector = user?.sector?.privileges === 'WAREHOUSE';
   const isDesignerSector = user?.sector?.privileges === 'DESIGNER';
   const isLogisticSector = user?.sector?.privileges === 'LOGISTIC';
+  const isProductionManagerSector = user?.sector?.privileges === 'PRODUCTION_MANAGER';
 
   return (
     <FormCard title="Informações do Cliente" icon="IconUser">
@@ -55,7 +56,7 @@ export default function CustomerSection({
               placeholder="Ex: Pintura completa do caminhão"
               maxLength={200}
               error={!!errors.name}
-              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector}
+              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector && !isProductionManagerSector}
             />
           )}
         />

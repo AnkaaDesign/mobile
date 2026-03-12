@@ -198,6 +198,7 @@ import {
   IconCreditCard,
   IconScale,
   IconFolderOpen,
+  IconFileCheck,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -228,7 +229,7 @@ const tablerIcons = [
   IconCameraCheck, IconCameraOff, IconFolderOpen,
   IconMessageCircle, IconCertificate, IconBarcode, IconCategory, IconCake, IconBuildingCommunity,
   IconMailbox, IconShieldOff, IconArrowBarToUp, IconHanger, IconShirt, IconShoe, IconUmbrella,
-  IconMask, IconHandGrab, IconCreditCard, IconScale
+  IconMask, IconHandGrab, IconCreditCard, IconScale, IconFileCheck
 ];
 
 // Log any undefined icons for debugging
@@ -610,6 +611,8 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   creditCard: IconCreditCard, // camelCase version
   scale: IconScale,
   weight: IconScale, // Alias
+  "file-check": IconFileCheck,
+  fileCheck: IconFileCheck, // camelCase version
   "rotate-clockwise": IconRotateClockwise,
   rotateClockwise: IconRotateClockwise, // camelCase version
   "rotate-cw": IconRotateClockwise, // Alias (lucide-style)

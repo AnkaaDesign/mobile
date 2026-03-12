@@ -77,11 +77,12 @@ export function TruckDetailModal({ taskId, open, onOpenChange }: TruckDetailModa
 
   const task = taskResponse?.data;
 
-  // Check if user can view artwork badges (ADMIN, COMMERCIAL, LOGISTIC, DESIGNER)
+  // Check if user can view artwork badges (ADMIN, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER, DESIGNER)
   const canViewArtworkBadges = currentUser && (
     hasPrivilege(currentUser, SECTOR_PRIVILEGES.ADMIN) ||
     hasPrivilege(currentUser, SECTOR_PRIVILEGES.COMMERCIAL) ||
     hasPrivilege(currentUser, SECTOR_PRIVILEGES.LOGISTIC) ||
+    hasPrivilege(currentUser, SECTOR_PRIVILEGES.PRODUCTION_MANAGER) ||
     hasPrivilege(currentUser, SECTOR_PRIVILEGES.DESIGNER)
   );
 

@@ -55,11 +55,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
         <ThemedText style={styles.cellText} numberOfLines={1}>
           {delivery.item?.name || "-"}
         </ThemedText>
-        {delivery.size && (
-          <ThemedText style={styles.mutedText} numberOfLines={1}>
-            Tam: {delivery.size}
-          </ThemedText>
-        )}
       </View>
     ),
   },
@@ -144,18 +139,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
       </ThemedText>
     ),
   },
-  {
-    key: "validity",
-    header: "Validade",
-    align: "left",
-    sortable: false,
-    width: 0,
-    accessor: (delivery: PpeDelivery) => (
-      <ThemedText style={styles.cellText} numberOfLines={1}>
-        {delivery.expirationDate ? formatDate(new Date(delivery.expirationDate)) : "-"}
-      </ThemedText>
-    ),
-  },
 ];
 
 export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
@@ -189,7 +172,6 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
       reviewedBy: 1.5,
       status: 1.8, // Increased for longer status labels like "Aguardando Assinatura"
       ca: 1.0,
-      validity: 1.2,
     };
 
     const displayColumns = useMemo(() => {

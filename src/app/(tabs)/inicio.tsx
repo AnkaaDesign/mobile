@@ -31,6 +31,7 @@ export default function HomeScreen() {
   const userPrivilege = user?.sector?.privileges;
   const needsTimeEntries =
     userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+    userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER ||
     userPrivilege === SECTOR_PRIVILEGES.DESIGNER ||
     userPrivilege === SECTOR_PRIVILEGES.PRODUCTION ||
     userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;

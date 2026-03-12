@@ -14,19 +14,20 @@ function useTaskPermissions(user: any) {
   const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isProductionUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION;
 
   return {
-    canViewRestrictedFields: isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isDesignerUser,
-    canViewObservation: !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser,
-    canViewBaseFiles: isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser,
-    canViewProjectFiles: isAdminUser || isCommercialUser || isLogisticUser || isDesignerUser,
-    canViewCheckinCheckout: isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser,
-    canViewArtworks: !isWarehouseUser && !isFinancialUser && !isLogisticUser,
+    canViewRestrictedFields: isAdminUser || isFinancialUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser,
+    canViewObservation: !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser,
+    canViewBaseFiles: isAdminUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser,
+    canViewProjectFiles: isAdminUser || isCommercialUser || isLogisticUser || isProductionManagerUser || isDesignerUser,
+    canViewCheckinCheckout: isAdminUser || isCommercialUser || isFinancialUser || isLogisticUser || isProductionManagerUser,
+    canViewArtworks: !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isProductionManagerUser,
     canViewPricingSection: isAdminUser || isFinancialUser || isCommercialUser,
-    canViewPaintSections: !isWarehouseUser && !isFinancialUser && !isLogisticUser,
-    canViewLogoPaints: !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isCommercialUser,
+    canViewPaintSections: !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isProductionManagerUser,
+    canViewLogoPaints: !isWarehouseUser && !isFinancialUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser,
   };
 }
 

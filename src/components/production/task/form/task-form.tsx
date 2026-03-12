@@ -356,15 +356,16 @@ export function TaskForm({
   const isFinancialUser = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
   const isCommercialUser = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
   const canViewPricing = isAdminUser || isFinancialUser || isCommercialUser;
-  const canViewTruckLayout = isAdminUser || isLogisticUser || (user?.ledSector && user?.sector?.privileges === 'PRODUCTION');
-  const canViewTruckSpot = isAdminUser || isLogisticUser;
+  const canViewTruckLayout = isAdminUser || isLogisticUser || isProductionManagerUser || (user?.ledSector && user?.sector?.privileges === 'PRODUCTION');
+  const canViewTruckSpot = isAdminUser || isLogisticUser || isProductionManagerUser;
   const canViewFiles = !isWarehouseUser;
   // Observation: only in edit mode for completed tasks (same restriction as checkout)
-  const canViewObservation = mode === 'edit' && task?.status === TASK_STATUS.COMPLETED && !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isCommercialUser;
+  const canViewObservation = mode === 'edit' && task?.status === TASK_STATUS.COMPLETED && !isWarehouseUser && !isFinancialUser && !isDesignerUser && !isLogisticUser && !isProductionManagerUser && !isCommercialUser;
 
   // Watch truck data for spot selector
   const truckData = useWatch({ control: form.control, name: 'truck' });

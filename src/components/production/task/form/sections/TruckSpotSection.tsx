@@ -29,12 +29,13 @@ export default function TruckSpotSection({
   const truck = useWatch({ control, name: 'truck' });
   const hasTruck = !!(truck?.plate || truck?.category || truck?.chassisNumber);
 
-  // Only show for Admin and Logistic users when truck is selected
+  // Only show for Admin, Logistic, and Production Manager users when truck is selected
   const userPrivilege = user?.sector?.privileges;
   const isAdminUser = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isLogisticUser = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManagerUser = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
-  if (!isAdminUser && !isLogisticUser) {
+  if (!isAdminUser && !isLogisticUser && !isProductionManagerUser) {
     return null;
   }
 

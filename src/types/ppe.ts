@@ -53,9 +53,6 @@ export interface PpeDelivery extends BaseEntity {
   statusOrder: number;
   quantity: number;
   reason: string | null;
-  size?: string | null;
-  expirationDate?: Date | null;
-  notes?: string | null;
 
   deliveryDocumentId?: string | null;
 

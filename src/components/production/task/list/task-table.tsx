@@ -106,12 +106,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     width: 0,
     accessor: (task: Task) => (
       <View style={styles.sectorCell}>
-        <View
-          style={StyleSheet.flatten([
-            styles.sectorDot,
-            { backgroundColor: task.sector?.color || extendedColors.neutral[400] }
-          ])}
-        />
         <ThemedText style={styles.cellText} numberOfLines={1}>
           {task.sector?.name || "Não definido"}
         </ThemedText>
@@ -920,11 +914,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-  },
-  sectorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   loadingContainer: {
     flex: 1,

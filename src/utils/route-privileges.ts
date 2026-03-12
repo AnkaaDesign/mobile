@@ -28,12 +28,12 @@ export const ROUTE_PRIVILEGES: Record<
   // =====================
   
   '/(tabs)/administracao': 'ADMIN',
-  '/(tabs)/administracao/clientes': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
-  '/(tabs)/administracao/clientes/listar': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
-  '/(tabs)/administracao/clientes/cadastrar': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
-  '/(tabs)/administracao/clientes/detalhes/[id]': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
-  '/(tabs)/administracao/clientes/editar/[id]': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
-  '/(tabs)/administracao/clientes/editar-em-lote': ['ADMIN', 'FINANCIAL', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes/listar': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes/cadastrar': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes/detalhes/[id]': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes/editar/[id]': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
+  '/(tabs)/administracao/clientes/editar-em-lote': ['ADMIN', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL'],
   
   '/(tabs)/administracao/colaboradores': 'HUMAN_RESOURCES',
   '/(tabs)/administracao/colaboradores/listar': 'HUMAN_RESOURCES',
@@ -130,25 +130,25 @@ export const ROUTE_PRIVILEGES: Record<
   // PRODUÇÃO (PRODUCTION)
   // =====================
   
-  '/(tabs)/producao': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL'],
+  '/(tabs)/producao': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL'],
 
   // Schedule (Cronograma) - PLOTTING and COMMERCIAL have access - NO CREATE
-  '/(tabs)/producao/cronograma': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL'],
-  '/(tabs)/producao/cronograma/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL'],
-  '/(tabs)/producao/cronograma/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL', 'ADMIN'],
-  '/(tabs)/producao/cronograma/editar/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/cronograma': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL'],
+  '/(tabs)/producao/cronograma/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL'],
+  '/(tabs)/producao/cronograma/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/cronograma/editar/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/producao/cronograma/operacoes-em-lote': ['PRODUCTION', 'WAREHOUSE'],
 
   // History - PLOTTING and COMMERCIAL have access
-  '/(tabs)/producao/historico': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL'],
-  '/(tabs)/producao/historico/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL'],
-  '/(tabs)/producao/historico/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PLOTTING', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/historico': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL'],
+  '/(tabs)/producao/historico/listar': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL'],
+  '/(tabs)/producao/historico/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'COMMERCIAL', 'ADMIN'],
 
   // Agenda - COMMERCIAL has access - Only ADMIN can create
-  '/(tabs)/producao/agenda': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
-  '/(tabs)/producao/agenda/index': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda/index': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/producao/agenda/cadastrar': ['ADMIN'],
-  '/(tabs)/producao/agenda/detalhes/[id]': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/agenda/detalhes/[id]': ['DESIGNER', 'FINANCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
 
   // Airbrushings (Aerografia) - COMMERCIAL has access
   '/(tabs)/producao/aerografia': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL'],
@@ -166,18 +166,18 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/producao/recorte/plano-de-recorte/listar': ['PRODUCTION', 'PLOTTING', 'DESIGNER', 'ADMIN'],
   
   // Garages - COMMERCIAL has access
-  '/(tabs)/producao/garagens': ['PRODUCTION', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
-  '/(tabs)/producao/garagens/listar': ['PRODUCTION', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/garagens': ['PRODUCTION', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/garagens/listar': ['PRODUCTION', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/producao/garagens/cadastrar': ['PRODUCTION', 'ADMIN'],
-  '/(tabs)/producao/garagens/detalhes/[id]': ['PRODUCTION', 'LOGISTIC', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/producao/garagens/detalhes/[id]': ['PRODUCTION', 'LOGISTIC', 'PRODUCTION_MANAGER', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/producao/garagens/editar/[id]': ['PRODUCTION', 'ADMIN'],
 
-  // Observations - COMMERCIAL has access
-  '/(tabs)/producao/observacoes': ['PRODUCTION', 'WAREHOUSE', 'COMMERCIAL'],
-  '/(tabs)/producao/observacoes/listar': ['PRODUCTION', 'WAREHOUSE', 'COMMERCIAL'],
-  '/(tabs)/producao/observacoes/cadastrar': ['PRODUCTION', 'WAREHOUSE'],
-  '/(tabs)/producao/observacoes/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'COMMERCIAL'],
-  '/(tabs)/producao/observacoes/editar/[id]': ['PRODUCTION', 'WAREHOUSE'],
+  // Observations - matches API: FINANCIAL, COMMERCIAL, PRODUCTION, WAREHOUSE, ADMIN, PRODUCTION_MANAGER
+  '/(tabs)/producao/observacoes': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION_MANAGER', 'ADMIN'],
+  '/(tabs)/producao/observacoes/listar': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION_MANAGER', 'ADMIN'],
+  '/(tabs)/producao/observacoes/cadastrar': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION_MANAGER', 'ADMIN'],
+  '/(tabs)/producao/observacoes/detalhes/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION_MANAGER', 'ADMIN'],
+  '/(tabs)/producao/observacoes/editar/[id]': ['PRODUCTION', 'WAREHOUSE', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION_MANAGER', 'ADMIN'],
   
   // Trucks (Caminhões)
   '/(tabs)/producao/caminhoes': ['PRODUCTION', 'WAREHOUSE'],
@@ -201,13 +201,13 @@ export const ROUTE_PRIVILEGES: Record<
   // PINTURA (PAINT)
   // =====================
 
-  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/pintura': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'ADMIN'],
 
-  // Catalog (Catálogo) - COMMERCIAL and LOGISTIC have access
-  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
+  // Catalog (Catálogo) - COMMERCIAL, LOGISTIC, and PRODUCTION_MANAGER have access
+  '/(tabs)/pintura/catalogo': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/listar': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'ADMIN'],
   '/(tabs)/pintura/catalogo/cadastrar': ['WAREHOUSE', 'ADMIN'],
-  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'ADMIN'],
+  '/(tabs)/pintura/catalogo/detalhes/[id]': ['WAREHOUSE', 'DESIGNER', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'ADMIN'],
   '/(tabs)/pintura/catalogo/editar/[id]': ['WAREHOUSE', 'ADMIN'],
 
   // Formulas

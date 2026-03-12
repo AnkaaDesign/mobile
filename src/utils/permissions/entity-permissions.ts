@@ -22,17 +22,18 @@ import { hasAnyPrivilege, isTeamLeader } from '@/utils';
  * MATCHES WEB: /web/src/utils/permissions/service-order-permissions.ts
  *
  * Permission Matrix (VISIBILITY):
- * | Sector          | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
- * |-----------------|------------|------------|----------|---------|
- * | ADMIN           | ✓          | ✓          | ✓        | ✓       |
- * | COMMERCIAL      | ✓          | ✓          | ✓        | ✓       |
- * | DESIGNER        | ✓          | -          | -        | ✓       |
- * | FINANCIAL       | -          | ✓          | ✓        | -       |
- * | LOGISTIC        | ✓          | ✓          | ✓        | ✓       |
- * | PRODUCTION      | ✓          | -          | -        | -       |
- * | WAREHOUSE       | ✓          | -          | -        | -       |
- * | HUMAN_RESOURCES | ✓          | -          | -        | -       |
- * | Others          | ✓          | -          | -        | -       |
+ * | Sector             | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |--------------------|------------|------------|----------|---------|
+ * | ADMIN              | ✓          | ✓          | ✓        | ✓       |
+ * | COMMERCIAL         | ✓          | ✓          | ✓        | ✓       |
+ * | DESIGNER           | ✓          | -          | -        | ✓       |
+ * | FINANCIAL          | -          | ✓          | ✓        | -       |
+ * | LOGISTIC           | ✓          | ✓          | ✓        | ✓       |
+ * | PRODUCTION_MANAGER | ✓          | ✓          | ✓        | ✓       |
+ * | PRODUCTION         | ✓          | -          | -        | -       |
+ * | WAREHOUSE          | ✓          | -          | -        | -       |
+ * | HUMAN_RESOURCES    | ✓          | -          | -        | -       |
+ * | Others             | ✓          | -          | -        | -       |
  */
 export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TYPE[] {
   if (!user?.sector?.privileges) return [];
@@ -73,7 +74,8 @@ export function getVisibleServiceOrderTypes(user: User | null): SERVICE_ORDER_TY
       ];
 
     case SECTOR_PRIVILEGES.LOGISTIC:
-      // LOGISTIC can see PRODUCTION, LOGISTIC, COMMERCIAL, ARTWORK (matches web)
+    case SECTOR_PRIVILEGES.PRODUCTION_MANAGER:
+      // LOGISTIC / PRODUCTION_MANAGER can see PRODUCTION, LOGISTIC, COMMERCIAL, ARTWORK (matches web)
       return [
         SERVICE_ORDER_TYPE.PRODUCTION,
         SERVICE_ORDER_TYPE.LOGISTIC,
@@ -106,15 +108,16 @@ export function canViewServiceOrderType(user: User | null, serviceOrderType: SER
  * Check if user can edit service orders of a specific type
  *
  * Edit Permission Matrix:
- * | Sector          | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
- * |-----------------|------------|------------|----------|---------|
- * | ADMIN           | ✓          | ✓          | ✓        | ✓       |
- * | COMMERCIAL      | -          | ✓          | -        | -       |
- * | DESIGNER        | -          | -          | -        | ✓       |
- * | FINANCIAL       | -          | -          | -        | -       |
- * | LOGISTIC        | ✓          | -          | ✓        | -       |
- * | Leader          | ✓          | -          | -        | -       |
- * | Others          | -          | -          | -        | -       |
+ * | Sector             | PRODUCTION | COMMERCIAL | LOGISTIC | ARTWORK |
+ * |--------------------|------------|------------|----------|---------|
+ * | ADMIN              | ✓          | ✓          | ✓        | ✓       |
+ * | COMMERCIAL         | -          | ✓          | -        | -       |
+ * | DESIGNER           | -          | -          | -        | ✓       |
+ * | FINANCIAL          | -          | -          | -        | -       |
+ * | LOGISTIC           | ✓          | -          | ✓        | -       |
+ * | PRODUCTION_MANAGER | ✓          | -          | ✓        | -       |
+ * | Leader             | ✓          | -          | -        | -       |
+ * | Others             | -          | -          | -        | -       |
  */
 export function canEditServiceOrderOfType(user: User | null, serviceOrderType: SERVICE_ORDER_TYPE): boolean {
   if (!user?.sector?.privileges) return false;
@@ -127,16 +130,16 @@ export function canEditServiceOrderOfType(user: User | null, serviceOrderType: S
   // Type-specific edit permissions
   switch (serviceOrderType) {
     case SERVICE_ORDER_TYPE.PRODUCTION:
-      // LOGISTIC and team leaders can edit production service orders
-      return privilege === SECTOR_PRIVILEGES.LOGISTIC || isTeamLeader(user);
+      // LOGISTIC, PRODUCTION_MANAGER, and team leaders can edit production service orders
+      return privilege === SECTOR_PRIVILEGES.LOGISTIC || privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER || isTeamLeader(user);
 
     case SERVICE_ORDER_TYPE.COMMERCIAL:
       // Only COMMERCIAL can edit commercial service orders
       return privilege === SECTOR_PRIVILEGES.COMMERCIAL;
 
     case SERVICE_ORDER_TYPE.LOGISTIC:
-      // Only LOGISTIC can edit logistic service orders
-      return privilege === SECTOR_PRIVILEGES.LOGISTIC;
+      // LOGISTIC and PRODUCTION_MANAGER can edit logistic service orders
+      return privilege === SECTOR_PRIVILEGES.LOGISTIC || privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
     case SERVICE_ORDER_TYPE.ARTWORK:
       // Only DESIGNER can edit artwork service orders
@@ -152,7 +155,7 @@ export function canEditServiceOrderOfType(user: User | null, serviceOrderType: S
  * Detailed view includes: assigned user, start/finish dates, observation indicator, status combobox
  * Simplified view: only description and status badge in same row
  *
- * Users with detailed view: ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, Team Leaders
+ * Users with detailed view: ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER, Team Leaders
  * Users with simplified view: PRODUCTION (non-leaders), WAREHOUSE, HUMAN_RESOURCES, Others
  *
  * Note: Team leaders need detailed view to see observation indicators and change service order status
@@ -169,16 +172,21 @@ export function hasDetailedServiceOrderView(user: User | null): boolean {
     SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
 /**
  * Check if user can cancel any service order
- * Only ADMIN can cancel service orders
+ * FINANCIAL, COMMERCIAL, and ADMIN can cancel service orders
  */
 export function canCancelServiceOrder(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN]);
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 /**
@@ -200,9 +208,10 @@ export function canCompleteArtworkServiceOrder(user: User | null): boolean {
  * - PRODUCTION, FINANCIAL, COMMERCIAL, LOGISTIC: PENDING, IN_PROGRESS, COMPLETED (simple workflow)
  *
  * IMPORTANT:
- * - Only ADMIN can see/set CANCELLED status
+ * - CANCELLED is available to users who can cancel (ADMIN, COMMERCIAL, FINANCIAL)
  * - WAITING_APPROVE is ONLY for ARTWORK (designer → admin approval workflow)
  * - DESIGNER can only set WAITING_APPROVE, not COMPLETED (admin approves)
+ * - Users who can EDIT the SO type get base statuses even if they can't cancel
  */
 export function getAllowedServiceOrderStatuses(
   user: User | null,
@@ -214,14 +223,18 @@ export function getAllowedServiceOrderStatuses(
   // Check if user can edit this type at all
   if (!canEditServiceOrderOfType(user, serviceOrderType)) return [];
 
-  const isAdmin = user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN;
+  const canCancel = canCancelServiceOrder(user);
 
   // ARTWORK has special approval workflow with WAITING_APPROVE status
   if (serviceOrderType === SERVICE_ORDER_TYPE.ARTWORK) {
     const artworkStatuses = ['PENDING', 'IN_PROGRESS', 'WAITING_APPROVE', 'COMPLETED'];
 
-    // ADMIN can set any status including CANCELLED
-    if (isAdmin) {
+    // Users who can cancel get CANCELLED status option
+    if (canCancel) {
+      // DESIGNER cannot set COMPLETED (only WAITING_APPROVE for admin approval)
+      if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) {
+        return [...artworkStatuses.filter(s => s !== 'COMPLETED'), 'CANCELLED'];
+      }
       return [...artworkStatuses, 'CANCELLED'];
     }
 
@@ -233,11 +246,11 @@ export function getAllowedServiceOrderStatuses(
     return artworkStatuses;
   }
 
-  // PRODUCTION, FINANCIAL, COMMERCIAL, LOGISTIC: Simple workflow without WAITING_APPROVE
+  // PRODUCTION, COMMERCIAL, LOGISTIC: Simple workflow without WAITING_APPROVE
   const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
 
-  // ADMIN can set any status including CANCELLED
-  if (isAdmin) {
+  // Users who can cancel get CANCELLED status option
+  if (canCancel) {
     return [...simpleStatuses, 'CANCELLED'];
   }
 
@@ -250,7 +263,7 @@ export function getAllowedServiceOrderStatuses(
 
 /**
  * Can user create tasks?
- * ADMIN, COMMERCIAL, FINANCIAL, and LOGISTIC can create new tasks
+ * ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, and PRODUCTION_MANAGER can create new tasks
  */
 export function canCreateTasks(user: User | null): boolean {
   if (!user) return false;
@@ -259,13 +272,14 @@ export function canCreateTasks(user: User | null): boolean {
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
 /**
  * Can user edit tasks?
  * ADMIN can edit all fields
- * COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC can edit limited fields (form handles field visibility)
+ * COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER can edit limited fields (form handles field visibility)
  * Team leaders can start/finish tasks but NOT edit details
  * PRODUCTION is view-only
  */
@@ -277,6 +291,7 @@ export function canEditTasks(user: User | null): boolean {
     SECTOR_PRIVILEGES.DESIGNER,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
@@ -306,13 +321,13 @@ export function canManageTaskStatus(user: User | null): boolean {
 
 /**
  * Can user finish/complete tasks?
- * Only LOGISTIC and ADMIN can finish tasks
+ * Only PRODUCTION_MANAGER and ADMIN can finish tasks
  */
 export function canFinishTask(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
-    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
@@ -343,21 +358,23 @@ export function canViewCancelledTasks(user: User | null): boolean {
 
 /**
  * Can user release tasks (set forecastDate to today)?
- * ADMIN, LOGISTIC, and COMMERCIAL can release tasks
- * Matches web canLiberar permission
+ * PRODUCTION, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL, and ADMIN can release tasks
+ * Matches API prepare endpoint permissions
  */
 export function canReleaseTasks(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.PRODUCTION,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.COMMERCIAL,
+    SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 /**
  * Can user access advanced task menu options (artworks, copy from task)?
- * ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can access advanced menu
+ * ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER can access advanced menu
  * Matches web canAccessAdvancedMenu permission
  */
 export function canAccessAdvancedTaskMenu(user: User | null): boolean {
@@ -367,6 +384,7 @@ export function canAccessAdvancedTaskMenu(user: User | null): boolean {
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
@@ -385,19 +403,20 @@ export function canAddArtworks(user: User | null): boolean {
 
 /**
  * Can user change task sector?
- * ADMIN and LOGISTIC can change task sector
+ * ADMIN, LOGISTIC, and PRODUCTION_MANAGER can change task sector
  */
 export function canChangeTaskSector(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
 /**
  * Can user cancel tasks (set status to CANCELLED)?
- * ADMIN, LOGISTIC, FINANCIAL, COMMERCIAL can cancel tasks
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER, FINANCIAL, COMMERCIAL can cancel tasks
  * Different from delete - cancel just changes status
  */
 export function canCancelTasks(user: User | null): boolean {
@@ -405,6 +424,7 @@ export function canCancelTasks(user: User | null): boolean {
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
   ]);
@@ -470,47 +490,48 @@ export function isLeader(user: User | null): boolean {
 
 /**
  * Can user edit truck layouts?
- * Team leaders and LOGISTIC can edit truck layouts only (not other task fields)
- * ADMIN can edit everything including layouts
+ * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can edit truck layouts
+ * Team leaders can also edit layouts
  */
 export function canEditLayouts(user: User | null): boolean {
   if (!user) return false;
-  // ADMIN and LOGISTIC can always edit layouts
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.ADMIN])) return true;
+  // PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can always edit layouts
+  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.ADMIN])) return true;
   // Team leaders can also edit layouts
   return isTeamLeader(user);
 }
 
 /**
  * Can user view truck layouts?
- * Team leaders, LOGISTIC and ADMIN can view truck layouts
+ * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can view truck layouts
+ * Team leaders can also view layouts
  */
 export function canViewLayouts(user: User | null): boolean {
   if (!user) return false;
-  // ADMIN and LOGISTIC can always view layouts
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.ADMIN])) return true;
+  // PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can always view layouts
+  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.ADMIN])) return true;
   // Team leaders can also view layouts
   return isTeamLeader(user);
 }
 
 /**
  * Can user edit ONLY layouts (not other task fields)?
- * This is for team leaders and LOGISTIC who can only edit layouts
+ * This is for users who can edit layouts but NOT other task fields
  * ADMIN has full edit access, so they should use the regular edit page
  */
 export function canEditLayoutsOnly(user: User | null): boolean {
   if (!user) return false;
-  // LOGISTIC can always edit layouts only
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.LOGISTIC])) return true;
+  // PRODUCTION, DESIGNER, LOGISTIC, and PRODUCTION_MANAGER can edit layouts only
+  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER])) return true;
   // Team leaders can also edit layouts only
   return isTeamLeader(user);
 }
 
 /**
  * Can user edit layout for a specific task?
+ * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can edit any task's layout
  * Team leaders can only edit layouts for tasks in their LED sector or tasks with null sector
  * Uses ledSector.id (the sector they lead), NOT their own sectorId
- * ADMIN can edit layouts for any task
  */
 export function canEditLayoutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
   if (!user) return false;
@@ -518,8 +539,11 @@ export function canEditLayoutForTask(user: User | null, taskSectorId: string | n
   // ADMIN can edit any task's layout
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // LOGISTIC can edit any task's layout
+  // PRODUCTION, DESIGNER, LOGISTIC, and PRODUCTION_MANAGER can edit any task's layout
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION) return true;
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) return true;
   if (user.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC) return true;
+  if (user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return true;
 
   // Team leaders need to check sector
   if (!isTeamLeader(user)) return false;
@@ -530,6 +554,19 @@ export function canEditLayoutForTask(user: User | null, taskSectorId: string | n
   // Check if task is in user's LED sector (not their own sector)
   // ledSector.id is the sector they supervise/lead
   return user.ledSector?.id === taskSectorId;
+}
+
+/**
+ * Can user delete layouts?
+ * API allows PRODUCTION, DESIGNER, and ADMIN to delete layouts
+ */
+export function canDeleteLayouts(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.PRODUCTION,
+    SECTOR_PRIVILEGES.DESIGNER,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 // =====================
@@ -668,14 +705,18 @@ export function canViewAirbrushingFinancials(user: User | null): boolean {
 
 /**
  * Can user create/edit/delete observations?
- * ADMIN, COMMERCIAL, and LOGISTIC can create/edit observations
+ * FINANCIAL, COMMERCIAL, PRODUCTION, WAREHOUSE, ADMIN, PRODUCTION_MANAGER can create/edit observations
+ * Matches API observation permissions
  */
 export function canCreateObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION,
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
@@ -683,14 +724,18 @@ export function canEditObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION,
+    SECTOR_PRIVILEGES.WAREHOUSE,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 
 export function canDeleteObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
@@ -788,7 +833,7 @@ export function canDeletePaintProductions(user: User | null): boolean {
 
 /**
  * Can user edit/delete customers?
- * FINANCIAL, COMMERCIAL, LOGISTIC, and ADMIN manage customers
+ * FINANCIAL, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER, and ADMIN manage customers
  */
 export function canEditCustomers(user: User | null): boolean {
   if (!user) return false;
@@ -796,16 +841,25 @@ export function canEditCustomers(user: User | null): boolean {
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.ADMIN,
   ]);
 }
 
 export function canDeleteCustomers(user: User | null): boolean {
-  return canEditCustomers(user);
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 export function canBatchOperateCustomers(user: User | null): boolean {
-  return canEditCustomers(user);
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.FINANCIAL,
+    SECTOR_PRIVILEGES.ADMIN,
+  ]);
 }
 
 // =====================

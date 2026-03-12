@@ -36,6 +36,7 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
         case SECTOR_PRIVILEGES.FINANCIAL: return '#9333ea'; // purple (same as HR)
         case SECTOR_PRIVILEGES.DESIGNER: return '#9333ea'; // purple (same as HR)
         case SECTOR_PRIVILEGES.LOGISTIC: return '#9333ea'; // purple (same as HR)
+        case SECTOR_PRIVILEGES.PRODUCTION_MANAGER: return '#9333ea'; // purple (same as LOGISTIC)
         case SECTOR_PRIVILEGES.MAINTENANCE: return '#f97316'; // orange
         case SECTOR_PRIVILEGES.WAREHOUSE: return '#16a34a'; // green
         case SECTOR_PRIVILEGES.PLOTTING: return '#14b8a6'; // teal
@@ -54,6 +55,7 @@ const PrivilegeBadge = memo<{ privilege: SECTOR_PRIVILEGES; isDark: boolean }>(
         case SECTOR_PRIVILEGES.DESIGNER: return 'DES';
         case SECTOR_PRIVILEGES.PLOTTING: return 'PLT';
         case SECTOR_PRIVILEGES.EXTERNAL: return 'EXT';
+        case SECTOR_PRIVILEGES.PRODUCTION_MANAGER: return 'GPR';
         default: return 'BSC';
       }
     };

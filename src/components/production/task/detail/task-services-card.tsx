@@ -132,9 +132,10 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
     // For PRODUCTION service orders, apply sector-based restrictions for team leaders
     if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
-      // ADMIN and LOGISTIC can always get options
+      // ADMIN, LOGISTIC, and PRODUCTION_MANAGER can always get options
       if (userSectorPrivilege !== SECTOR_PRIVILEGES.ADMIN &&
-          userSectorPrivilege !== SECTOR_PRIVILEGES.LOGISTIC) {
+          userSectorPrivilege !== SECTOR_PRIVILEGES.LOGISTIC &&
+          userSectorPrivilege !== SECTOR_PRIVILEGES.PRODUCTION_MANAGER) {
         // For team leaders, check if the task belongs to their led sector
         if (!canLeaderUpdateServiceOrder(user, taskSectorId)) {
           return []; // No options if user can't edit this task's service orders
@@ -163,9 +164,10 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     // This is the key check: a Production 1 leader should NOT be able to edit service orders
     // for tasks assigned to Production 2
     if (serviceType === SERVICE_ORDER_TYPE.PRODUCTION) {
-      // ADMIN and LOGISTIC can edit any task's PRODUCTION service orders (no sector restriction)
+      // ADMIN, LOGISTIC, and PRODUCTION_MANAGER can edit any task's PRODUCTION service orders (no sector restriction)
       if (userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-          userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC) {
+          userSectorPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+          userSectorPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) {
         return true;
       }
 

@@ -4,7 +4,7 @@ import { apiClient } from "./axiosClient";
 import type { Invoice } from '../types';
 
 // =====================
-// Invoice Service Class (Read-only)
+// Invoice Service Class
 // =====================
 
 export class InvoiceService {
@@ -42,6 +42,35 @@ export class InvoiceService {
     });
     return response.data;
   }
+
+  // =====================
+  // Mutation Operations
+  // =====================
+
+  async cancel(id: string, data?: any): Promise<Invoice> {
+    const response = await apiClient.put<Invoice>(`${this.basePath}/${id}/cancel`, data);
+    return response.data;
+  }
+
+  async regenerateBoleto(installmentId: string): Promise<any> {
+    const response = await apiClient.post(`${this.basePath}/${installmentId}/boleto/regenerate`);
+    return response.data;
+  }
+
+  async cancelBoleto(installmentId: string, data?: any): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${installmentId}/boleto/cancel`, data);
+    return response.data;
+  }
+
+  async emitNfse(invoiceId: string): Promise<any> {
+    const response = await apiClient.post(`${this.basePath}/${invoiceId}/nfse/emit`);
+    return response.data;
+  }
+
+  async cancelNfse(invoiceId: string, nfseDocumentId: string, data: { reason: string }): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${invoiceId}/nfse/${nfseDocumentId}/cancel`, data);
+    return response.data;
+  }
 }
 
 // =====================
@@ -59,3 +88,8 @@ export const getInvoicesByCustomer = (customerId: string) => invoiceService.getB
 export const getInvoiceById = (id: string) => invoiceService.getById(id);
 export const getBoletoPdf = (installmentId: string) => invoiceService.getBoletoPdf(installmentId);
 export const getNfsePdf = (invoiceId: string) => invoiceService.getNfsePdf(invoiceId);
+export const cancelInvoice = (id: string, data?: any) => invoiceService.cancel(id, data);
+export const regenerateBoleto = (installmentId: string) => invoiceService.regenerateBoleto(installmentId);
+export const cancelBoleto = (installmentId: string, data?: any) => invoiceService.cancelBoleto(installmentId, data);
+export const emitNfse = (invoiceId: string) => invoiceService.emitNfse(invoiceId);
+export const cancelNfse = (invoiceId: string, nfseDocumentId: string, data: { reason: string }) => invoiceService.cancelNfse(invoiceId, nfseDocumentId, data);

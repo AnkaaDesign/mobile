@@ -31,29 +31,34 @@ interface TaskTableRowSwipeProps {
 
 // Permission helpers matching web task context menu
 const canRelease = (user: any) => {
-  // Liberar: ADMIN, LOGISTIC, COMMERCIAL (matches web canLiberar)
+  // Liberar: ADMIN, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL (matches web canLiberar)
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.COMMERCIAL,
   ]);
 };
 
 const canAccessAdvancedMenu = (user: any) => {
-  // Advanced menu: ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC (matches web canAccessAdvancedMenu)
+  // Advanced menu: ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER (matches web canAccessAdvancedMenu)
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 };
 
 const canViewLayout = (user: any) => {
-  // Layout: ADMIN, LOGISTIC, or Team Leaders
+  // Layout: ADMIN, LOGISTIC, PRODUCTION_MANAGER, PRODUCTION, DESIGNER, or Team Leaders
   const privilege = user?.sector?.privileges;
   return privilege === SECTOR_PRIVILEGES.ADMIN ||
          privilege === SECTOR_PRIVILEGES.LOGISTIC ||
+         privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER ||
+         privilege === SECTOR_PRIVILEGES.PRODUCTION ||
+         privilege === SECTOR_PRIVILEGES.DESIGNER ||
          isTeamLeader(user);
 };
 
@@ -81,10 +86,10 @@ const TaskTableRowSwipeComponent = ({
 
   // Permission checks
   const userIsTeamLeader = isTeamLeader(user);
-  const canEdit = canEditTasks(user); // ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC
+  const canEdit = canEditTasks(user); // ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER
   const canLeaderManage = userIsTeamLeader && canLeaderManageTask(user, taskSectorId);
-  const userCanFinish = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN || user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
-  const canEditLayoutOnly = canEditLayoutsOnly(user); // Team leaders, LOGISTIC only (not ADMIN)
+  const userCanFinish = user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN || user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
+  const canEditLayoutOnly = canEditLayoutsOnly(user); // Team leaders, LOGISTIC, PRODUCTION_MANAGER only (not ADMIN)
   const userCanRelease = canRelease(user);
   const userCanAccessAdvanced = canAccessAdvancedMenu(user);
   const userCanViewLayout = canViewLayout(user);
@@ -161,7 +166,7 @@ const TaskTableRowSwipeComponent = ({
   const actions: SwipeAction[] = [];
 
   // 1. LIBERAR (Release) - Only for PREPARATION tasks
-  // Available to: ADMIN, LOGISTIC, COMMERCIAL
+  // Available to: ADMIN, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL
   if (onRelease && userCanRelease && taskStatus === TASK_STATUS.PREPARATION) {
     actions.push({
       key: "release",
@@ -185,7 +190,7 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // 3. FINISH - For IN_PRODUCTION tasks (LOGISTIC / ADMIN only)
+  // 3. FINISH - For IN_PRODUCTION tasks (PRODUCTION_MANAGER / ADMIN only)
   if (userCanFinish && taskStatus === TASK_STATUS.IN_PRODUCTION && onFinish) {
     actions.push({
       key: "finish",
@@ -197,7 +202,7 @@ const TaskTableRowSwipeComponent = ({
     });
   }
 
-  // 4. EDIT - Available to ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC
+  // 4. EDIT - Available to ADMIN, COMMERCIAL, DESIGNER, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER
   if (onEdit && canEdit) {
     actions.push({
       key: "edit",

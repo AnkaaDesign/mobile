@@ -38,14 +38,15 @@ export default function ResponsiblesSection({
   const isDesignerSector = user?.sector?.privileges === 'DESIGNER';
   const isFinancialSector = user?.sector?.privileges === 'FINANCIAL';
   const isLogisticSector = user?.sector?.privileges === 'LOGISTIC';
+  const isProductionManagerSector = user?.sector?.privileges === 'PRODUCTION_MANAGER';
 
   // Check if user can view restricted fields (matches web logic)
-  const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER'].includes(
+  const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'DESIGNER'].includes(
     user?.sector?.privileges || ''
   );
 
   // Only ADMIN and COMMERCIAL can edit responsibles
-  const isReadOnlyForResponsibles = isFinancialSector || isDesignerSector || isLogisticSector;
+  const isReadOnlyForResponsibles = isFinancialSector || isDesignerSector || isLogisticSector || isProductionManagerSector;
 
   // Track if we've initialized from initial data
   const [hasInitialized, setHasInitialized] = useState(false);

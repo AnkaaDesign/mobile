@@ -87,12 +87,6 @@ export const TaskSectorModal: React.FC<TaskSectorModalProps> = ({
                     activeOpacity={0.7}
                   >
                     <View style={styles.sectorItemContent}>
-                      <View
-                        style={[
-                          styles.colorDot,
-                          { backgroundColor: sector.color || colors.primary },
-                        ]}
-                      />
                       <ThemedText
                         style={[
                           styles.sectorName,
@@ -193,11 +187,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
     flex: 1,
-  },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
   sectorName: {
     fontSize: fontSize.md,

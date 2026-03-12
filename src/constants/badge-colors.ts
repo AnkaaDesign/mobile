@@ -681,6 +681,7 @@ export const ENTITY_BADGE_CONFIG = {
     [SECTOR_PRIVILEGES.BASIC]: "gray" as BadgeVariant,             // Gray - basic access
     [SECTOR_PRIVILEGES.EXTERNAL]: "gray" as BadgeVariant,          // Gray - external access
     [SECTOR_PRIVILEGES.WAREHOUSE]: "green" as BadgeVariant,        // Green - warehouse role
+    [SECTOR_PRIVILEGES.PRODUCTION_MANAGER]: "purple" as BadgeVariant, // Purple - production manager (same as logistic)
   },
 
   // Commission Status

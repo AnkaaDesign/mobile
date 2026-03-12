@@ -36,8 +36,11 @@ function CreateObservationScreenInner() {
   const canCreate = React.useMemo(() => {
     if (!user) return false;
     return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
+           hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL) ||
            hasPrivilege(user, SECTOR_PRIVILEGES.COMMERCIAL) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.LOGISTIC);
+           hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
+           hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
+           hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION_MANAGER);
   }, [user]);
 
   // Fetch available tasks

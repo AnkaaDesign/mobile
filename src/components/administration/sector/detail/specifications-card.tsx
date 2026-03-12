@@ -19,6 +19,7 @@ const getPrivilegeColor = (privilege: string) => {
     case SECTOR_PRIVILEGES.FINANCIAL:
     case SECTOR_PRIVILEGES.DESIGNER:
     case SECTOR_PRIVILEGES.LOGISTIC:
+    case SECTOR_PRIVILEGES.PRODUCTION_MANAGER:
       return "purple";
     case SECTOR_PRIVILEGES.MAINTENANCE:
       return "orange";

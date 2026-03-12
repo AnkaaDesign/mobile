@@ -35,11 +35,12 @@ export default function ProductionPreparationScreen() {
     }, [])
   );
 
-  // ADMIN, COMMERCIAL, and LOGISTIC can create tasks
+  // ADMIN, COMMERCIAL, LOGISTIC, and PRODUCTION_MANAGER can create tasks
   const canCreateTasks =
     user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN ||
     user?.sector?.privileges === SECTOR_PRIVILEGES.COMMERCIAL ||
-    user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC;
+    user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC ||
+    user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
   const handleCreateTask = () => {
     pushWithLoading("/(tabs)/producao/agenda/cadastrar");
@@ -123,7 +124,8 @@ export default function ProductionPreparationScreen() {
         canCreate: (user) =>
           user?.sector?.privileges === SECTOR_PRIVILEGES.ADMIN ||
           user?.sector?.privileges === SECTOR_PRIVILEGES.COMMERCIAL ||
-          user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC,
+          user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC ||
+          user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
       },
     },
   };

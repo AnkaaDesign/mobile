@@ -74,10 +74,11 @@ export default function BasicInfoSection({
   const isWarehouseSector = userPrivilege === 'WAREHOUSE';
   const isDesignerSector = userPrivilege === 'DESIGNER';
   const isLogisticSector = userPrivilege === 'LOGISTIC';
+  const isProductionManagerSector = userPrivilege === 'PRODUCTION_MANAGER';
   const isCommercialSector = userPrivilege === 'COMMERCIAL';
 
   // Check if user can view restricted fields
-  const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'DESIGNER'].includes(userPrivilege || '');
+  const canViewRestrictedFields = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'DESIGNER'].includes(userPrivilege || '');
   const canViewCommissionField = ['ADMIN', 'FINANCIAL', 'COMMERCIAL', 'PRODUCTION'].includes(userPrivilege || '');
   // Fetch sectors
   const { data: sectors, isLoading: isLoadingSectors } = useSectors({
@@ -130,7 +131,7 @@ export default function BasicInfoSection({
               placeholder="Ex: Pintura completa do caminhão"
               maxLength={200}
               error={!!errors.name}
-              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector}
+              editable={!isSubmitting && !isFinancialSector && !isWarehouseSector && !isDesignerSector && !isLogisticSector && !isProductionManagerSector}
             />
           )}
         />
@@ -350,7 +351,7 @@ export default function BasicInfoSection({
                 onValueChange={onChange}
                 options={commissionOptions}
                 placeholder="Selecione o status da comissão"
-                disabled={isSubmitting || isFinancialSector || isDesignerSector || isLogisticSector || isWarehouseSector}
+                disabled={isSubmitting || isFinancialSector || isDesignerSector || isLogisticSector || isProductionManagerSector || isWarehouseSector}
                 error={errors.commission?.message}
               />
             )}

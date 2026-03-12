@@ -1,7 +1,16 @@
 // packages/hooks/src/hooks/useInvoice.ts
 
-import { useQuery } from "@tanstack/react-query";
-import { getInvoicesByTask, getInvoicesByCustomer, getInvoiceById } from '@/api-client';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getInvoicesByTask,
+  getInvoicesByCustomer,
+  getInvoiceById,
+  cancelInvoice,
+  regenerateBoleto,
+  cancelBoleto,
+  emitNfse,
+  cancelNfse,
+} from '@/api-client';
 
 // =====================================================
 // Invoice Query Keys
@@ -17,7 +26,7 @@ export const invoiceKeys = {
 };
 
 // ===============================================
-// INVOICE HOOKS (Read-only)
+// INVOICE HOOKS - Queries
 // ===============================================
 
 // -------------------------------------
@@ -50,5 +59,84 @@ export function useInvoice(id: string, options?: { enabled?: boolean }) {
     queryKey: invoiceKeys.detail(id),
     queryFn: () => getInvoiceById(id),
     enabled: (options?.enabled ?? true) && !!id,
+  });
+}
+
+// ===============================================
+// INVOICE HOOKS - Mutations
+// ===============================================
+
+// -------------------------------------
+// CANCEL INVOICE
+// -------------------------------------
+export function useCancelInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data?: any }) =>
+      cancelInvoice(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+// -------------------------------------
+// REGENERATE BOLETO
+// -------------------------------------
+export function useRegenerateBoleto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (installmentId: string) =>
+      regenerateBoleto(installmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+// -------------------------------------
+// CANCEL BOLETO
+// -------------------------------------
+export function useCancelBoleto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ installmentId, data }: { installmentId: string; data?: any }) =>
+      cancelBoleto(installmentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+// -------------------------------------
+// EMIT NFS-e
+// -------------------------------------
+export function useEmitNfse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (invoiceId: string) =>
+      emitNfse(invoiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+// -------------------------------------
+// CANCEL NFS-e
+// -------------------------------------
+export function useCancelNfse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ invoiceId, nfseDocumentId, data }: { invoiceId: string; nfseDocumentId: string; data: { reason: string } }) =>
+      cancelNfse(invoiceId, nfseDocumentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
   });
 }

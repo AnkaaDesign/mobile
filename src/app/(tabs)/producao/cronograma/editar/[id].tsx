@@ -33,7 +33,8 @@ export default function EditScheduleScreen() {
                   userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
                   userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
                   userPrivilege === SECTOR_PRIVILEGES.DESIGNER ||
-                  userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+                  userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
+                  userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
   useEffect(() => {
     // Wait for user to load

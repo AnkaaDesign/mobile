@@ -99,6 +99,7 @@ export function ServiceSelectorAutoGrouped({
       case SECTOR_PRIVILEGES.FINANCIAL:
         return SERVICE_ORDER_TYPE.COMMERCIAL;
       case SECTOR_PRIVILEGES.LOGISTIC:
+      case SECTOR_PRIVILEGES.PRODUCTION_MANAGER:
         return SERVICE_ORDER_TYPE.LOGISTIC;
       default:
         return SERVICE_ORDER_TYPE.PRODUCTION;
@@ -527,8 +528,8 @@ function ServiceRow({
         // Production service orders: only production sector users
         return [SECTOR_PRIVILEGES.PRODUCTION];
       case SERVICE_ORDER_TYPE.LOGISTIC:
-        // Logistic service orders: logistic and admin users
-        return [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.ADMIN];
+        // Logistic service orders: logistic, production manager, and admin users
+        return [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.ADMIN];
       case SERVICE_ORDER_TYPE.COMMERCIAL:
         // Commercial service orders: commercial and admin users
         return [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN];

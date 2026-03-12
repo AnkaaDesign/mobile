@@ -69,6 +69,7 @@ export function usePrivileges() {
   const isWarehouse = user ? hasPrivilegeAccess(SECTOR_PRIVILEGES.WAREHOUSE) : false;
   const isProduction = user ? hasPrivilegeAccess(SECTOR_PRIVILEGES.PRODUCTION) : false;
   const isMaintenance = user ? hasPrivilegeAccess(SECTOR_PRIVILEGES.MAINTENANCE) : false;
+  const isProductionManager = user ? hasPrivilegeAccess(SECTOR_PRIVILEGES.PRODUCTION_MANAGER) : false;
   const isBasic = user ? !user.sector || user.sector.privileges === SECTOR_PRIVILEGES.BASIC : false;
 
   /**
@@ -85,8 +86,8 @@ export function usePrivileges() {
 
   const canManageEPI = canAccess([SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]);
 
-  // ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can create tasks (matches canCreateTasks in entity-permissions.ts)
-  const canCreateTasks = canAccess([SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC]);
+  // ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER can create tasks (matches canCreateTasks in entity-permissions.ts)
+  const canCreateTasks = canAccess([SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 
   const canViewStatistics = canAccess([SECTOR_PRIVILEGES.ADMIN]);
 
@@ -115,6 +116,7 @@ export function usePrivileges() {
           isHR,
           isWarehouse,
           isProduction,
+          isProductionManager,
           isMaintenance,
         });
       }
@@ -141,6 +143,7 @@ export function usePrivileges() {
     isHR,
     isWarehouse,
     isProduction,
+    isProductionManager,
     isMaintenance,
     isBasic,
 
@@ -194,7 +197,7 @@ export const privilegeUtils = {
     HR_MANAGEMENT: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
     PPE_MANAGEMENT: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
     STATISTICS_ACCESS: [SECTOR_PRIVILEGES.ADMIN],
-    TASK_CREATION: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC],
+    TASK_CREATION: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
   } as const,
 };
 

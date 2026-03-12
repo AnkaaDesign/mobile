@@ -110,22 +110,23 @@ export default function FilesSection({
   const isAdmin = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
   const isCommercial = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
   const isLogistic = userPrivilege === SECTOR_PRIVILEGES.LOGISTIC;
+  const isProductionManager = userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
   const isDesigner = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
   const isFinancial = userPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
 
-  // Client files & Layouts: visible to ADMIN, COMMERCIAL, LOGISTIC, DESIGN
-  const canViewClientAndLayouts = isAdmin || isCommercial || isLogistic || isDesigner;
+  // Client files & Layouts: visible to ADMIN, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER, DESIGN
+  const canViewClientAndLayouts = isAdmin || isCommercial || isLogistic || isProductionManager || isDesigner;
 
-  // Project files: visible to ADMIN, COMMERCIAL, LOGISTIC, DESIGN; editable by ADMIN, COMMERCIAL, LOGISTIC
-  const canViewProjectFiles = isAdmin || isCommercial || isLogistic || isDesigner;
-  const canEditProjectFiles = isAdmin || isCommercial || isLogistic;
+  // Project files: visible to ADMIN, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER, DESIGN; editable by ADMIN, COMMERCIAL, LOGISTIC, PRODUCTION_MANAGER
+  const canViewProjectFiles = isAdmin || isCommercial || isLogistic || isProductionManager || isDesigner;
+  const canEditProjectFiles = isAdmin || isCommercial || isLogistic || isProductionManager;
 
-  // Check-in/Check-out: visible to ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC; editable by ADMIN, LOGISTIC
+  // Check-in/Check-out: visible to ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC, PRODUCTION_MANAGER; editable by ADMIN, LOGISTIC, PRODUCTION_MANAGER
   // Not available in create mode; checkout only available for completed tasks
   const isEditMode = mode === 'edit';
-  const canViewCheckinCheckout = isEditMode && (isAdmin || isCommercial || isFinancial || isLogistic);
+  const canViewCheckinCheckout = isEditMode && (isAdmin || isCommercial || isFinancial || isLogistic || isProductionManager);
   const canViewCheckout = canViewCheckinCheckout && taskStatus === TASK_STATUS.COMPLETED;
-  const canEditCheckinCheckout = isAdmin || isLogistic;
+  const canEditCheckinCheckout = isAdmin || isLogistic || isProductionManager;
 
   // Filter active service orders (non-cancelled, with ID)
   const activeServiceOrders = (serviceOrders || []).filter(
