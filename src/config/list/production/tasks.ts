@@ -550,7 +550,7 @@ export const tasksListConfig: ListConfig<Task> = {
         // Action is handled by TaskScheduleLayout - opens modal
       },
       {
-        key: 'pricing',
+        key: 'quote',
         label: 'Orçamento',
         icon: 'currency-real',
         variant: 'default',
@@ -558,7 +558,7 @@ export const tasksListConfig: ListConfig<Task> = {
         onPress: (task, router, context) => {
           // Store navigation source for proper back navigation
           const currentPath = context?.route || '/(tabs)/producao/agenda'
-          console.log('[Tasks] Storing navigation source for pricing:', currentPath)
+          console.log('[Tasks] Storing navigation source for quote:', currentPath)
           navigationTracker.setSource(currentPath)
           router.push(`/producao/agenda/precificacao/${task.id}`)
         },

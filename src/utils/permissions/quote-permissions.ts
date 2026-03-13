@@ -51,7 +51,7 @@ export const canDeletePricing = canDeleteQuote;
 /**
  * Check if user can update task quote status.
  * ADMIN, FINANCIAL, and COMMERCIAL can update status.
- * FINANCIAL cannot set INTERNAL_APPROVED (only ADMIN/COMMERCIAL can).
+ * FINANCIAL cannot set BILLING_APPROVED (only ADMIN/COMMERCIAL can).
  */
 export function canUpdateQuoteStatus(userRole: string): boolean {
   return [
@@ -68,12 +68,12 @@ export const canUpdatePricingStatus = canUpdateQuoteStatus;
  * Valid status transitions for task quote.
  *
  * Typical flow:
- *   PENDING -> BUDGET_APPROVED -> VERIFIED_BY_FINANCIAL -> INTERNAL_APPROVED -> UPCOMING -> PARTIAL -> SETTLED
+ *   PENDING -> BUDGET_APPROVED -> VERIFIED_BY_FINANCIAL -> BILLING_APPROVED -> UPCOMING -> PARTIAL -> SETTLED
  *
  * DUE: When installments are overdue
  * UPCOMING: No paid, no overdue installments
  *
- * INTERNAL_APPROVED is a critical transition: it triggers automatic invoice
+ * BILLING_APPROVED is a critical transition: it triggers automatic invoice
  * and boleto generation, which is hard to reverse. The UI should confirm
  * before allowing this transition.
  *
@@ -83,9 +83,9 @@ export const canUpdatePricingStatus = canUpdateQuoteStatus;
 const VALID_TRANSITIONS: Record<TASK_QUOTE_STATUS, TASK_QUOTE_STATUS[]> = {
   PENDING: [TASK_QUOTE_STATUS.BUDGET_APPROVED],
   BUDGET_APPROVED: [TASK_QUOTE_STATUS.VERIFIED, TASK_QUOTE_STATUS.PENDING],
-  VERIFIED: [TASK_QUOTE_STATUS.INTERNAL_APPROVED, TASK_QUOTE_STATUS.BUDGET_APPROVED],
-  INTERNAL_APPROVED: [TASK_QUOTE_STATUS.UPCOMING],
-  UPCOMING: [TASK_QUOTE_STATUS.PARTIAL, TASK_QUOTE_STATUS.INTERNAL_APPROVED],
+  VERIFIED: [TASK_QUOTE_STATUS.BILLING_APPROVED, TASK_QUOTE_STATUS.BUDGET_APPROVED],
+  BILLING_APPROVED: [TASK_QUOTE_STATUS.UPCOMING],
+  UPCOMING: [TASK_QUOTE_STATUS.PARTIAL, TASK_QUOTE_STATUS.BILLING_APPROVED],
   PARTIAL: [TASK_QUOTE_STATUS.SETTLED, TASK_QUOTE_STATUS.UPCOMING],
   // SETTLED -> PARTIAL is intentionally allowed to handle payment reversal
   // (chargeback/estorno) scenarios where a previously settled invoice has
@@ -103,9 +103,9 @@ export function getAvailableQuoteStatusTransitions(
 ): TASK_QUOTE_STATUS[] {
   const transitions = VALID_TRANSITIONS[currentStatus] || [];
 
-  // FINANCIAL cannot set INTERNAL_APPROVED
+  // FINANCIAL cannot set BILLING_APPROVED
   if (userRole === SECTOR_PRIVILEGES.FINANCIAL) {
-    return transitions.filter((s) => s !== TASK_QUOTE_STATUS.INTERNAL_APPROVED);
+    return transitions.filter((s) => s !== TASK_QUOTE_STATUS.BILLING_APPROVED);
   }
 
   return transitions;

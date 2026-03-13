@@ -99,7 +99,7 @@ const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pendente" },
   { value: "BUDGET_APPROVED", label: "Orçamento Aprovado" },
   { value: "VERIFIED", label: "Verificado" },
-  { value: "INTERNAL_APPROVED", label: "Aprovação Interna" },
+  { value: "BILLING_APPROVED", label: "Faturamento Aprovado" },
   { value: "UPCOMING", label: "A Vencer" },
   { value: "PARTIAL", label: "Parcial" },
   { value: "SETTLED", label: "Liquidado" },

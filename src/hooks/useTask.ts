@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask, copyFromTask } from '@/api-client';
+import { getTasks, getTaskById, createTask, updateTask, deleteTask, batchCreateTasks, batchUpdateTasks, batchDeleteTasks, duplicateTask, copyFromTask, rescheduleForecast, getForecastHistory } from '@/api-client';
 import type {
   TaskGetManyFormData,
   TaskCreateFormData,
@@ -698,6 +698,30 @@ export function useBatchUpdateTasks() {
 export function useBatchDeleteTasks() {
   const { batchDelete, batchDeleteAsync } = useTaskBatchMutations();
   return { mutate: batchDelete, mutateAsync: batchDeleteAsync };
+}
+
+// -------------------------------------
+// FORECAST HISTORY HOOKS
+// -------------------------------------
+export function useRescheduleForecast() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { forecastDate: Date; reason: string } }) =>
+      rescheduleForecast(id, data),
+    onSuccess: (_response, variables) => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    },
+  });
+}
+
+export function useForecastHistory(taskId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['tasks', 'forecastHistory', taskId],
+    queryFn: () => getForecastHistory(taskId),
+    enabled: enabled && !!taskId,
+    staleTime: 1000 * 60 * 5,
+  });
 }
 
 // -------------------------------------

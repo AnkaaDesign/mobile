@@ -247,7 +247,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             } else if (action.key === 'addArtworks' || action.icon === 'photo') {
               backgroundColor = '#db2777' // pink-600
               Icon = IconPhoto
-            } else if (action.key === 'pricing' || action.icon === 'currency-real') {
+            } else if (action.key === 'quote' || action.icon === 'currency-real') {
               backgroundColor = '#f59e0b' // amber-500
               Icon = IconCurrencyReal
             } else if (action.key === 'cancel' || action.icon === 'x') {

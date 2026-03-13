@@ -164,6 +164,20 @@ export class TaskService {
     );
     return response.data;
   }
+
+  // =====================
+  // Forecast History Operations
+  // =====================
+
+  async rescheduleForecast(id: string, data: { forecastDate: Date; reason: string }) {
+    const response = await apiClient.put(`${this.basePath}/${id}/reschedule-forecast`, data);
+    return response.data;
+  }
+
+  async getForecastHistory(id: string, query?: { page?: number; take?: number }) {
+    const response = await apiClient.get(`${this.basePath}/${id}/forecast-history`, { params: query });
+    return response.data;
+  }
 }
 
 // =====================
@@ -216,3 +230,7 @@ export const bulkUpdatePositions = (
 ) => taskService.bulkUpdatePositions(data, query);
 export const swapTaskPositions = (id: string, targetTaskId: string, query?: TaskQueryFormData) =>
   taskService.swapTaskPositions(id, targetTaskId, query);
+
+// Forecast History operation exports
+export const rescheduleForecast = (id: string, data: { forecastDate: Date; reason: string }) => taskService.rescheduleForecast(id, data);
+export const getForecastHistory = (id: string, query?: { page?: number; take?: number }) => taskService.getForecastHistory(id, query);

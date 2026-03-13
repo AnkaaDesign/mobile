@@ -20,6 +20,7 @@ import { apiPerformanceLogger } from "@/utils/api-performance-logger";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
+import { ForecastHistoryCard } from "@/components/production/task/detail/forecast-history-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
 
 import { TaskGeneralPaintCard } from "@/components/production/task/detail/task-general-paint-card";
@@ -378,6 +379,11 @@ export default function ScheduleDetailsScreen() {
             ...task,
             createdBy: task.createdBy,
           } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} />
+
+          {/* Forecast History Card - Only for users who can view restricted fields */}
+          {canViewRestrictedFields && (
+            <ForecastHistoryCard taskId={id as string} />
+          )}
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
           {canViewTruckLayout && (task as any)?.truck && layouts && (layouts.leftSideLayout || layouts.rightSideLayout || layouts.backSideLayout) && (

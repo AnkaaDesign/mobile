@@ -77,7 +77,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
       {/* Forecast Date */}
       {canViewRestrictedFields && task.forecastDate && (
         <DetailField
-          label="Previsão"
+          label="Previsão de Liberação"
           icon="calendar-stats"
           value={formatDate(task.forecastDate)}
         />

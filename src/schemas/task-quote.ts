@@ -27,7 +27,7 @@ export const taskQuoteStatusSchema = z.enum([
   'PENDING',
   'BUDGET_APPROVED',
   'VERIFIED_BY_FINANCIAL',
-  'INTERNAL_APPROVED',
+  'BILLING_APPROVED',
   'UPCOMING',
   'DUE',
   'PARTIAL',

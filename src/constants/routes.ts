@@ -585,7 +585,8 @@ export const routes = {
       root: "/producao/agenda",
       create: "/producao/agenda/cadastrar",
       details: (id: string) => `/producao/agenda/detalhes/${id}`,
-      pricing: (id: string) => `/producao/agenda/precificacao/${id}`,
+      // Note: path uses 'precificacao' to match Expo Router filesystem directory; property renamed to 'quote'
+      quote: (id: string) => `/producao/agenda/precificacao/${id}`,
     },
     serviceOrders: {
       create: "/producao/ordens-de-servico/cadastrar",
