@@ -145,12 +145,20 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           corporateName: true,
           cnpj: true,
           cpf: true,
+          stateRegistration: true,
+          address: true,
+          addressNumber: true,
+          neighborhood: true,
+          city: true,
+          state: true,
+          zipCode: true,
         },
       },
       truck: {
         select: {
           id: true,
           plate: true,
+          chassisNumber: true,
           model: true,
         },
       },
@@ -613,6 +621,7 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
                 </CardHeader>
                 <CardContent>
                   <StepCustomerPayment
+                    key={`customer-config-${configIndex}`}
                     control={control}
                     configIndex={configIndex}
                     customer={customer}
@@ -647,6 +656,7 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
                     } : undefined,
                     responsibles: task.responsibles,
                   } : undefined}
+                  selectedCustomers={selectedCustomers}
                 />
               </CardContent>
             </Card>
@@ -941,7 +951,21 @@ function Step1Info({
             {task.truck?.plate && (
               <View style={{ minWidth: 80 }}>
                 <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Placa</ThemedText>
-                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.truck.plate}</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.truck.plate.toUpperCase()}</ThemedText>
+              </View>
+            )}
+            {task.truck?.chassisNumber && (
+              <View style={{ minWidth: 80 }}>
+                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Chassi</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.truck.chassisNumber}</ThemedText>
+              </View>
+            )}
+            {task.finishedAt && (
+              <View style={{ minWidth: 80 }}>
+                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Finalização</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>
+                  {new Date(task.finishedAt).toLocaleDateString("pt-BR")}
+                </ThemedText>
               </View>
             )}
           </View>
@@ -986,6 +1010,79 @@ function Step1Info({
                 <IconX size={12} color={colors.mutedForeground} />
               </TouchableOpacity>
             ))}
+          </View>
+        )}
+
+        {/* Customer NFS-e/Invoice Data Cards */}
+        {selectedCustomers.size > 0 && (
+          <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+            {Array.from(selectedCustomers.entries()).map(([id, customer], index) => {
+              const missingFields: string[] = [];
+              if (!customer.cnpj && !customer.cpf) missingFields.push("CNPJ/CPF");
+              if (!customer.corporateName) missingFields.push("Razão Social");
+              if (!customer.city || !customer.state) missingFields.push("Cidade/Estado");
+              if (!customer.address) missingFields.push("Endereço");
+
+              return (
+                <View
+                  key={id}
+                  style={[styles.infoCard, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xs }}>
+                    <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600" }}>
+                      Cliente {index + 1}
+                    </ThemedText>
+                    {missingFields.length > 0 && (
+                      <View style={{ backgroundColor: colors.destructive, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <ThemedText style={{ fontSize: 10, color: "#fff", fontWeight: "600" }}>
+                          Dados incompletos
+                        </ThemedText>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>Razão Social</ThemedText>
+                      <ThemedText style={{ fontSize: 12, fontWeight: "500" }} numberOfLines={1}>
+                        {customer.corporateName || customer.fantasyName || "-"}
+                      </ThemedText>
+                    </View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                        {customer.cnpj ? "CNPJ" : "CPF"}
+                      </ThemedText>
+                      <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>
+                        {customer.cnpj || customer.cpf || (
+                          <ThemedText style={{ fontSize: 11, color: colors.destructive }}>Não informado</ThemedText>
+                        )}
+                      </ThemedText>
+                    </View>
+                    {customer.stateRegistration ? (
+                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>IE</ThemedText>
+                        <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>{customer.stateRegistration}</ThemedText>
+                      </View>
+                    ) : null}
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>Endereço</ThemedText>
+                      <ThemedText style={{ fontSize: 12, fontWeight: "500", flex: 1, textAlign: "right", marginLeft: spacing.md }} numberOfLines={2}>
+                        {[customer.address, customer.addressNumber, customer.neighborhood, customer.city, customer.state].filter(Boolean).join(", ") || (
+                          <ThemedText style={{ fontSize: 11, color: colors.destructive }}>Não informado</ThemedText>
+                        )}
+                        {customer.zipCode ? ` — ${customer.zipCode}` : ""}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  {missingFields.length > 0 && (
+                    <ThemedText style={{ fontSize: 11, color: colors.destructive, marginTop: spacing.xs }}>
+                      Campos faltantes: {missingFields.join(", ")}
+                    </ThemedText>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </View>
@@ -1436,13 +1533,16 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
     }
   }, [config?.customPaymentText, showCustomPayment]);
 
-  // Default budget responsible to the first task responsible
+  // Default budget responsible to the first task responsible (only on mount)
+  const hasAutoDefaulted = useRef(false);
   useEffect(() => {
+    if (hasAutoDefaulted.current) return;
     if (
       taskResponsibles &&
       taskResponsibles.length > 0 &&
       !config?.responsibleId
     ) {
+      hasAutoDefaulted.current = true;
       const firstValid = taskResponsibles.find((r) => !r.id.startsWith("temp-"));
       if (firstValid) {
         setValue(

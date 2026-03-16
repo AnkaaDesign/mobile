@@ -16,6 +16,28 @@ function toTitleCase(str: string): string {
     .replace(/(?:^|\s)\S/g, (match) => match.toUpperCase());
 }
 
+interface ServiceItem {
+  id?: string;
+  description: string;
+  observation?: string | null;
+  amount: number;
+  discountType?: string;
+  discountValue?: number | null;
+  discountReference?: string | null;
+  invoiceToCustomerId?: string | null;
+}
+
+interface CustomerConfig {
+  customerId: string;
+  subtotal: number;
+  total: number;
+  paymentCondition?: string | null;
+  downPaymentDate?: Date | string | null;
+  customPaymentText?: string | null;
+  responsibleId?: string | null;
+  generateInvoice?: boolean;
+}
+
 interface BudgetPreviewProps {
   pricing: {
     budgetNumber?: number;
@@ -25,27 +47,12 @@ interface BudgetPreviewProps {
     status: string;
     guaranteeYears?: number | null;
     customGuaranteeText?: string | null;
+    customForecastDays?: number | null;
+    simultaneousTasks?: number | null;
     layoutFileId?: string | null;
     layoutFile?: { id: string } | null;
-    services?: Array<{
-      id?: string;
-      description: string;
-      observation?: string | null;
-      amount: number;
-      discountType?: string;
-      discountValue?: number | null;
-      discountReference?: string | null;
-    }>;
-    customerConfigs?: Array<{
-      customerId: string;
-      subtotal: number;
-      total: number;
-      paymentCondition?: string | null;
-      downPaymentDate?: Date | string | null;
-      customPaymentText?: string | null;
-      responsibleId?: string | null;
-      generateInvoice?: boolean;
-    }>;
+    services?: ServiceItem[];
+    customerConfigs?: CustomerConfig[];
     createdAt?: Date | string;
   };
   task?: {
@@ -58,9 +65,10 @@ interface BudgetPreviewProps {
     };
     responsibles?: { id: string; name?: string; role?: string }[];
   };
+  selectedCustomers?: Map<string, any>;
 }
 
-export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
+export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPreviewProps) {
   const { colors } = useTheme();
 
   const corporateName =
@@ -69,8 +77,12 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     "Cliente";
   // Prefer the explicitly selected budget responsible from first customer config
   const activeConfig = pricing.customerConfigs?.[0];
+  const selectedResponsible = activeConfig?.responsibleId
+    ? task?.responsibles?.find((r: any) => r.id === activeConfig.responsibleId)
+    : null;
   const commercialRep = task?.responsibles?.find((r: any) => r.role === "COMMERCIAL");
-  const contactName = commercialRep?.name
+  const contactName = selectedResponsible?.name
+    || commercialRep?.name
     || task?.responsibles?.[0]?.name
     || "";
   const budgetNumber = pricing.budgetNumber
@@ -88,19 +100,34 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     : 30;
 
   const termDate = task?.term ? formatDate(task.term as any) : "";
-  const paymentText = generatePaymentText({
-    customPaymentText: activeConfig?.customPaymentText || null,
-    paymentCondition: activeConfig?.paymentCondition,
-    downPaymentDate: activeConfig?.downPaymentDate,
-    total: pricing.total,
-  });
-  const guaranteeText = generateGuaranteeText(pricing);
+
   // Compute total discount from per-service discounts
   const totalDiscountAmount = (pricing.services || []).reduce((sum, svc) => {
     const amount = Number(svc.amount) || 0;
     return sum + computeServiceDiscount(amount, svc.discountType, svc.discountValue);
   }, 0);
   const hasDiscount = totalDiscountAmount > 0;
+
+  // Multi-customer support
+  const hasMultipleCustomers =
+    Array.isArray(pricing.customerConfigs) && pricing.customerConfigs.length >= 2;
+  const validServices = (pricing.services || []).filter((s) => s.description?.trim());
+
+  // Group services by customer for multi-customer view
+  const customerGroups = (() => {
+    if (!hasMultipleCustomers) return null;
+    const groups = new Map<string, { name: string; services: ServiceItem[] }>();
+    for (const svc of validServices) {
+      const customerId = svc.invoiceToCustomerId || "__unassigned__";
+      const customer = selectedCustomers?.get(customerId);
+      const name = customer?.fantasyName || customer?.corporateName || "Sem cliente";
+      if (!groups.has(customerId)) {
+        groups.set(customerId, { name, services: [] });
+      }
+      groups.get(customerId)!.services.push(svc);
+    }
+    return groups;
+  })();
 
   // Handle both uploaded files (with id) and newly selected files (with uri)
   const layoutImageUrl =
@@ -109,6 +136,58 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       : pricing.layoutFile?.id // Uploaded file - use getFileUrl
       ? getFileUrl(pricing.layoutFile as any)
       : null;
+
+  // Render a single service row with discount details
+  const renderServiceRow = (item: ServiceItem, index: number) => {
+    const amount = Number(item.amount) || 0;
+    const discount = computeServiceDiscount(amount, item.discountType, item.discountValue);
+    const net = computeServiceNet({ amount, discountType: item.discountType, discountValue: item.discountValue });
+    const isOutrosWithObservation = item.description === "Outros" && !!item.observation;
+    const displayDescription = isOutrosWithObservation
+      ? toTitleCase(item.observation!)
+      : toTitleCase(item.description || "");
+    const observation = !isOutrosWithObservation && item.observation
+      ? toTitleCase(item.observation)
+      : "";
+
+    return (
+      <View key={item.id || index}>
+        <View style={styles.serviceRow}>
+          <ThemedText style={styles.serviceDescription} numberOfLines={2}>
+            {index + 1} - {displayDescription}
+            {observation ? (
+              <ThemedText style={{ opacity: 0.6, fontStyle: "italic" }}> — {observation}</ThemedText>
+            ) : null}
+          </ThemedText>
+          <View style={{ alignItems: "flex-end" }}>
+            {discount > 0 ? (
+              <>
+                <ThemedText style={styles.strikethroughAmount}>
+                  {formatCurrency(amount)}
+                </ThemedText>
+                <ThemedText style={styles.serviceAmount}>
+                  {formatCurrency(net)}
+                </ThemedText>
+              </>
+            ) : (
+              <ThemedText style={styles.serviceAmount}>
+                {formatCurrency(amount)}
+              </ThemedText>
+            )}
+          </View>
+        </View>
+        {discount > 0 && (
+          <View style={{ paddingLeft: spacing.lg, marginTop: 2 }}>
+            <ThemedText style={styles.discountText}>
+              Desc: {item.discountType === "PERCENTAGE" ? `${item.discountValue}%` : formatCurrency(discount)}
+              {" "}({DISCOUNT_TYPE_LABELS[item.discountType as keyof typeof DISCOUNT_TYPE_LABELS] || item.discountType})
+              {item.discountReference ? ` — ${item.discountReference}` : ""}
+            </ThemedText>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -152,42 +231,44 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
         </ThemedText>
       </View>
 
-      {/* Services */}
+      {/* Services - Multi-customer grouped or flat */}
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
-        {pricing.services?.map((item, index) => {
-          const amount = Number(item.amount) || 0;
-          const discount = computeServiceDiscount(amount, item.discountType, item.discountValue);
-          const net = computeServiceNet({ amount, discountType: item.discountType, discountValue: item.discountValue });
-          const description = toTitleCase(item.description || "");
-          const observation = item.observation
-            ? toTitleCase(item.observation)
-            : "";
-          const displayText = observation
-            ? `${description} ${observation}`
-            : description;
-          return (
-            <View key={item.id || index}>
-              <View style={styles.serviceRow}>
-                <ThemedText style={styles.serviceDescription} numberOfLines={2}>
-                  {index + 1} - {displayText}
-                </ThemedText>
-                <ThemedText style={styles.serviceAmount}>
-                  {discount > 0 ? formatCurrency(net) : formatCurrency(amount)}
-                </ThemedText>
-              </View>
-              {discount > 0 && (
-                <View style={{ paddingLeft: spacing.lg, marginTop: 2 }}>
-                  <ThemedText style={styles.discountText}>
-                    Desc: {item.discountType === "PERCENTAGE" ? `${item.discountValue}%` : formatCurrency(discount)}
-                    {" "}({DISCOUNT_TYPE_LABELS[item.discountType as keyof typeof DISCOUNT_TYPE_LABELS] || item.discountType})
-                    {item.discountReference ? ` — ${item.discountReference}` : ""}
+
+        {hasMultipleCustomers && customerGroups ? (
+          // Multi-customer: group services by customer
+          Array.from(customerGroups.entries()).map(([customerId, group], groupIndex) => {
+            const groupSubtotal = group.services.reduce(
+              (sum, s) => sum + (Number(s.amount) || 0),
+              0,
+            );
+            return (
+              <View
+                key={customerId}
+                style={[
+                  styles.customerGroupCard,
+                  { borderColor: colors.border },
+                ]}
+              >
+                <View style={[styles.customerGroupHeader, { backgroundColor: colors.muted + "40", borderBottomColor: colors.border }]}>
+                  <ThemedText style={styles.customerGroupTitle}>
+                    <ThemedText style={{ opacity: 0.6 }}>Cliente {groupIndex + 1}: </ThemedText>
+                    {group.name}
+                  </ThemedText>
+                  <ThemedText style={[styles.customerGroupTotal, { opacity: 0.6 }]}>
+                    {formatCurrency(groupSubtotal)}
                   </ThemedText>
                 </View>
-              )}
-            </View>
-          );
-        })}
+                <View style={{ padding: spacing.sm, gap: spacing.xs }}>
+                  {group.services.map((svc, idx) => renderServiceRow(svc, idx))}
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          // Single customer: flat service list
+          validServices.map((item, index) => renderServiceRow(item, index))
+        )}
 
         {/* Totals */}
         {hasDiscount ? (
@@ -225,35 +306,118 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
         )}
       </View>
 
-      {/* Delivery Term */}
-      {termDate ? (
+      {/* Per-Customer Config Cards (multi-customer only) */}
+      {hasMultipleCustomers && pricing.customerConfigs && pricing.customerConfigs.length >= 2 && (
+        <View style={styles.section}>
+          {pricing.customerConfigs.map((config, i) => {
+            const customer = selectedCustomers?.get(config.customerId);
+            const configSubtotal = Number(config.subtotal) || 0;
+            const configTotal = Number(config.total) || 0;
+            const configDiscountAmount = Math.max(0, configSubtotal - configTotal);
+            const configPaymentText = generatePaymentText({
+              customPaymentText: config.customPaymentText || null,
+              paymentCondition: config.paymentCondition,
+              downPaymentDate: config.downPaymentDate,
+              total: configTotal,
+            });
+
+            return (
+              <View
+                key={config.customerId || i}
+                style={[styles.configCard, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}
+              >
+                <ThemedText style={styles.configCardTitle}>
+                  <ThemedText style={{ opacity: 0.6 }}>Cliente {i + 1}: </ThemedText>
+                  {customer?.corporateName || customer?.fantasyName || "Cliente"}
+                </ThemedText>
+
+                <View style={styles.configRow}>
+                  <ThemedText style={[styles.bodyText, { opacity: 0.6 }]}>Subtotal</ThemedText>
+                  <ThemedText style={styles.bodyText}>{formatCurrency(configSubtotal)}</ThemedText>
+                </View>
+
+                {configDiscountAmount > 0 && (
+                  <View style={styles.configRow}>
+                    <ThemedText style={styles.discountText}>Desconto (serviços)</ThemedText>
+                    <ThemedText style={styles.discountText}>- {formatCurrency(configDiscountAmount)}</ThemedText>
+                  </View>
+                )}
+
+                <View style={[styles.configRow, styles.configRowBorder, { borderTopColor: colors.border }]}>
+                  <ThemedText style={{ fontWeight: fontWeight.bold, fontSize: fontSize.sm }}>Total</ThemedText>
+                  <ThemedText style={{ fontWeight: fontWeight.bold, fontSize: fontSize.base, color: BRAND_COLORS.primaryGreen }}>
+                    {formatCurrency(configTotal)}
+                  </ThemedText>
+                </View>
+
+                {configPaymentText ? (
+                  <View style={{ marginTop: spacing.xs }}>
+                    <ThemedText style={{ fontWeight: fontWeight.semibold, fontSize: fontSize.sm, marginBottom: 2 }}>
+                      Condições de Pagamento
+                    </ThemedText>
+                    <ThemedText style={[styles.bodyText, { opacity: 0.6 }]}>{configPaymentText}</ThemedText>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Single customer payment conditions */}
+      {!hasMultipleCustomers && (() => {
+        const config = pricing.customerConfigs?.[0];
+        if (!config) return null;
+        const configTotal = Number(config.total) || 0;
+        const paymentText = generatePaymentText({
+          customPaymentText: config.customPaymentText || null,
+          paymentCondition: config.paymentCondition,
+          downPaymentDate: config.downPaymentDate,
+          total: configTotal,
+        });
+        if (!paymentText) return null;
+        return (
+          <View style={styles.section}>
+            <ThemedText style={styles.sectionTitle}>
+              Condições de pagamento
+            </ThemedText>
+            <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
+          </View>
+        );
+      })()}
+
+      {/* Delivery Deadline - from customForecastDays/simultaneousTasks or term */}
+      {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1) || termDate) ? (
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
             Prazo de entrega
           </ThemedText>
-          <ThemedText style={styles.bodyText}>
-            O prazo de entrega é de {termDate}, desde que o implemento
-            esteja nas condições previamente informada e não haja
-            alterações nos serviços descritos.
-          </ThemedText>
-        </View>
-      ) : null}
-
-      {/* Payment Terms */}
-      {paymentText ? (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Condições de pagamento
-          </ThemedText>
-          <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
+          {pricing.customForecastDays ? (
+            <ThemedText style={styles.bodyText}>
+              O prazo de entrega é de {pricing.customForecastDays} dias úteis a partir da data de liberação.
+              {pricing.simultaneousTasks && pricing.simultaneousTasks > 1
+                ? ` Capacidade de produção: ${pricing.simultaneousTasks} tarefas simultâneas.`
+                : ""}
+            </ThemedText>
+          ) : pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? (
+            <ThemedText style={styles.bodyText}>
+              Capacidade de produção: {pricing.simultaneousTasks} tarefas simultâneas.
+            </ThemedText>
+          ) : termDate ? (
+            <ThemedText style={styles.bodyText}>
+              O prazo de entrega é de {termDate}, desde que o implemento
+              esteja nas condições previamente informada e não haja
+              alterações nos serviços descritos.
+            </ThemedText>
+          ) : null}
         </View>
       ) : null}
 
       {/* Guarantee */}
-      {guaranteeText ? (
+      {(pricing.guaranteeYears || pricing.customGuaranteeText) ? (
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Garantias</ThemedText>
-          <ThemedText style={styles.bodyText}>{guaranteeText}</ThemedText>
+          <ThemedText style={styles.bodyText}>{generateGuaranteeText(pricing)}</ThemedText>
         </View>
       ) : null}
 
@@ -387,6 +551,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     flexShrink: 0,
   },
+  strikethroughAmount: {
+    fontSize: fontSize.xs,
+    opacity: 0.5,
+    textDecorationLine: "line-through",
+    flexShrink: 0,
+  },
   totalsContainer: {
     marginTop: spacing.md,
     paddingLeft: spacing.md,
@@ -421,6 +591,53 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
   },
+  // Multi-customer grouping styles
+  customerGroupCard: {
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginBottom: spacing.sm,
+  },
+  customerGroupHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
+  customerGroupTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    flex: 1,
+  },
+  customerGroupTotal: {
+    fontSize: fontSize.xs,
+  },
+  // Per-customer config card styles
+  configCard: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.md,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  configCardTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    marginBottom: spacing.xs,
+  },
+  configRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+  },
+  configRowBorder: {
+    paddingTop: spacing.xs,
+    borderTopWidth: 1,
+    marginTop: spacing.xs,
+  },
+  // Signature styles
   signatureSection: {
     flexDirection: "row",
     justifyContent: "space-around",

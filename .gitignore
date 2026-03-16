@@ -64,6 +64,13 @@ ios/Pods/
 ios/build/
 ios/.xcode.env.local
 
+# Build output
+build/
+
+# Android root-level config files (generated)
+android/app.json
+android/package.json
+
 # Documentation (temporary build files)
 BUILD_*.md
 STYLESHEETFIX_*.md

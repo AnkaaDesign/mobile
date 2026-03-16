@@ -291,6 +291,7 @@ export const taskOrderBySchema = z
       term: orderByDirectionSchema.optional(),
       startedAt: orderByDirectionSchema.optional(),
       finishedAt: orderByDirectionSchema.optional(),
+      forecastDate: orderByDirectionSchema.optional(),
       createdAt: orderByDirectionSchema.optional(),
       updatedAt: orderByDirectionSchema.optional(),
     }),
@@ -307,6 +308,7 @@ export const taskOrderBySchema = z
         term: orderByDirectionSchema.optional(),
         startedAt: orderByDirectionSchema.optional(),
         finishedAt: orderByDirectionSchema.optional(),
+        forecastDate: orderByDirectionSchema.optional(),
         createdAt: orderByDirectionSchema.optional(),
         updatedAt: orderByDirectionSchema.optional(),
       }),
@@ -794,6 +796,31 @@ const taskTransform = (data: any): any => {
     delete data.finishedDateRange;
   }
 
+  if (data.forecastDateRange && typeof data.forecastDateRange === "object") {
+    const condition: any = {};
+    // Handle both Date objects and ISO strings (from HTTP query params)
+    if (data.forecastDateRange.from) {
+      const fromDate = data.forecastDateRange.from instanceof Date
+        ? data.forecastDateRange.from
+        : new Date(data.forecastDateRange.from);
+      // Set to start of day (00:00:00)
+      fromDate.setHours(0, 0, 0, 0);
+      condition.gte = fromDate;
+    }
+    if (data.forecastDateRange.to) {
+      const toDate = data.forecastDateRange.to instanceof Date
+        ? data.forecastDateRange.to
+        : new Date(data.forecastDateRange.to);
+      // Set to end of day (23:59:59.999)
+      toDate.setHours(23, 59, 59, 999);
+      condition.lte = toDate;
+    }
+    if (Object.keys(condition).length > 0) {
+      andConditions.push({ forecastDate: condition });
+    }
+    delete data.forecastDateRange;
+  }
+
   if (data.createdAtRange && typeof data.createdAtRange === "object") {
     const condition: any = {};
     // Handle both Date objects and ISO strings (from HTTP query params)
@@ -991,6 +1018,24 @@ export const taskGetManySchema = z
       )
       .optional(),
     finishedDateRange: z
+      .object({
+        from: z.coerce.date().optional(),
+        to: z.coerce.date().optional(),
+      })
+      .refine(
+        (data) => {
+          if (data.from && data.to) {
+            return data.to >= data.from;
+          }
+          return true;
+        },
+        {
+          message: "Data final deve ser posterior ou igual à data inicial",
+          path: ["to"],
+        },
+      )
+      .optional(),
+    forecastDateRange: z
       .object({
         from: z.coerce.date().optional(),
         to: z.coerce.date().optional(),
@@ -1428,6 +1473,13 @@ export const taskBatchUpdateSchema = z.object({
       }),
     )
     .min(1, "Pelo menos uma tarefa deve ser fornecida"),
+  triggeredBy: z.string().optional(), // Optional metadata to track what triggered the batch update
+  metadata: z
+    .object({
+      sourceTaskName: z.string().optional(), // Source task name for copy operations
+      sourceTaskId: z.string().uuid().optional(), // Source task ID for copy operations
+    })
+    .optional(),
 });
 
 export const taskBatchDeleteSchema = z.object({
