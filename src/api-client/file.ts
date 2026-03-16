@@ -41,10 +41,13 @@ export interface FileUploadOptions {
   onProgress?: (progress: FileUploadProgress) => void;
   signal?: AbortSignal;
   timeout?: number;
-  // WebDAV context parameters
+  // Remote storage context parameters
   fileContext?: string;
   entityId?: string;
   entityType?: string;
+  customerName?: string;
+  supplierName?: string;
+  userName?: string;
   // Retry configuration
   maxRetries?: number; // Default: 3
   retryDelay?: number; // Initial delay in ms, default: 1000
@@ -279,11 +282,14 @@ export class FileService {
                 options.onProgress(progress);
               }
             },
-            // Add WebDAV context as query parameters
+            // Add remote storage context as query parameters
             params: {
               ...(options.fileContext && { fileContext: options.fileContext }),
               ...(options.entityId && { entityId: options.entityId }),
               ...(options.entityType && { entityType: options.entityType }),
+              ...(options.customerName && { customerName: options.customerName }),
+              ...(options.supplierName && { supplierName: options.supplierName }),
+              ...(options.userName && { userName: options.userName }),
             },
           };
 
@@ -351,11 +357,14 @@ export class FileService {
                   options.onProgress!({ loaded, total, percentage });
                 }
               : undefined,
-            // Add WebDAV context as query parameters
+            // Add remote storage context as query parameters
             params: {
               ...(options.fileContext && { fileContext: options.fileContext }),
               ...(options.entityId && { entityId: options.entityId }),
               ...(options.entityType && { entityType: options.entityType }),
+              ...(options.customerName && { customerName: options.customerName }),
+              ...(options.supplierName && { supplierName: options.supplierName }),
+              ...(options.userName && { userName: options.userName }),
             },
           };
 
