@@ -43,6 +43,8 @@ interface TaskFormProps {
   initialGeneralPaint?: any;
   /** Initial logo paints array for edit mode */
   initialLogoPaints?: any[];
+  /** Initial invoice-to customer objects for populating the combobox in edit mode */
+  initialInvoiceToCustomers?: Array<{ id: string; fantasyName?: string; [key: string]: any }>;
 }
 
 // Section loading placeholder

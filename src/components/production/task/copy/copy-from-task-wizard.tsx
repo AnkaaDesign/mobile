@@ -46,6 +46,7 @@ const CATEGORY_ORDER = [
   "Pintura",
   "Arquivos",
   "Produção",
+  "Ordens de Serviço",
   "Veículo",
 ];
 

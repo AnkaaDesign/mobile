@@ -28,7 +28,10 @@ export type CopyableTaskField =
   | 'logoPaintIds'
   | 'cuts'
   | 'airbrushings'
-  | 'serviceOrders'
+  | 'serviceOrders:PRODUCTION'
+  | 'serviceOrders:COMMERCIAL'
+  | 'serviceOrders:LOGISTIC'
+  | 'serviceOrders:ARTWORK'
   | 'implementType'
   | 'category'
   | 'layouts'
@@ -58,7 +61,10 @@ export const COPYABLE_TASK_FIELDS: CopyableTaskField[] = [
   'logoPaintIds',
   'cuts',
   'airbrushings',
-  'serviceOrders',
+  'serviceOrders:PRODUCTION',
+  'serviceOrders:COMMERCIAL',
+  'serviceOrders:LOGISTIC',
+  'serviceOrders:ARTWORK',
   'implementType',
   'category',
   'layouts',
@@ -107,14 +113,17 @@ export const COPYABLE_FIELD_PERMISSIONS: Record<Exclude<CopyableTaskField, 'all'
   // Airbrushings - hidden for Warehouse, Financial, Designer, Logistic, Commercial
   airbrushings: ['ADMIN', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-  // Service orders - hidden for Warehouse and Plotting
-  serviceOrders: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
+  // Service orders by type - hidden for Warehouse and Plotting
+  'serviceOrders:PRODUCTION': ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
+  'serviceOrders:COMMERCIAL': ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
+  'serviceOrders:LOGISTIC': ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
+  'serviceOrders:ARTWORK': ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'FINANCIAL', 'DESIGNER', 'PRODUCTION', 'MAINTENANCE'],
 
   // Vehicle fields - disabled for Warehouse, Designer, Financial
   implementType: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
   category: ['ADMIN', 'COMMERCIAL', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
-  // Medidas do Caminhao - hidden for Warehouse, Financial, Designer, Commercial
+  // Medidas do Caminhão - hidden for Warehouse, Financial, Designer, Commercial
   layouts: ['ADMIN', 'LOGISTIC', 'PRODUCTION_MANAGER', 'PLOTTING', 'PRODUCTION', 'MAINTENANCE'],
 
   // Observation - hidden for Warehouse, Financial, Designer, Logistic, Commercial
@@ -189,8 +198,8 @@ export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMet
     category: 'Datas',
   },
   forecastDate: {
-    label: 'Previsão',
-    description: 'Data prevista para conclusão',
+    label: 'Previsão de Liberação',
+    description: 'Data de previsão de liberação',
     category: 'Datas',
   },
   commission: {
@@ -209,8 +218,8 @@ export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMet
     category: 'Comercial',
   },
   quoteId: {
-    label: 'Precificação',
-    description: 'Cópia independente da tabela de preços e itens',
+    label: 'Orçamento',
+    description: 'Cópia independente do orçamento e itens',
     category: 'Comercial',
   },
   paintId: {
@@ -248,10 +257,25 @@ export const COPYABLE_FIELD_METADATA: Record<CopyableTaskField, CopyableFieldMet
     description: 'Trabalhos de aerografia',
     category: 'Produção',
   },
-  serviceOrders: {
-    label: 'Ordens de Serviço',
-    description: 'Ordens de serviço vinculadas',
-    category: 'Produção',
+  'serviceOrders:PRODUCTION': {
+    label: 'Ordem de Serviço - Produção',
+    description: 'Ordens de serviço de produção',
+    category: 'Ordens de Serviço',
+  },
+  'serviceOrders:COMMERCIAL': {
+    label: 'Ordem de Serviço - Comercial',
+    description: 'Ordens de serviço comerciais',
+    category: 'Ordens de Serviço',
+  },
+  'serviceOrders:LOGISTIC': {
+    label: 'Ordem de Serviço - Logística',
+    description: 'Ordens de serviço de logística',
+    category: 'Ordens de Serviço',
+  },
+  'serviceOrders:ARTWORK': {
+    label: 'Ordem de Serviço - Arte',
+    description: 'Ordens de serviço de arte',
+    category: 'Ordens de Serviço',
   },
   implementType: {
     label: 'Implemento',

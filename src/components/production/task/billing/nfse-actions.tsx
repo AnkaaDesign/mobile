@@ -69,7 +69,7 @@ export function NfseActions({ invoiceId, nfseDocuments }: NfseActionsProps) {
     if (!authorizedNfse) return;
 
     cancelNfse.mutate(
-      { invoiceId, nfseDocumentId: authorizedNfse.id, data: { reason: cancelReason } },
+      { invoiceId, nfseDocumentId: authorizedNfse.id, data: { reason: cancelReason, reasonCode: 1 } },
       {
         onSuccess: () => {
           setShowCancelModal(false);

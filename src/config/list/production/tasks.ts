@@ -3,7 +3,7 @@ import { View, Alert } from 'react-native'
 import { ThemedText } from '@/components/ui/themed-text'
 import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
-import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { canViewQuote } from '@/utils/permissions/quote-permissions'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
@@ -516,6 +516,20 @@ export const tasksListConfig: ListConfig<Task> = {
           console.log('[Tasks] Storing navigation source for layout:', currentPath)
           navigationTracker.setSource(currentPath)
           router.push(`/producao/cronograma/layout/${task.id}`)
+        },
+      },
+      // Check-in/Check-out - navigate to dedicated page
+      // Only for ADMIN, LOGISTIC, PRODUCTION_MANAGER
+      {
+        key: 'checkin-checkout',
+        label: 'Check-in/out',
+        icon: 'camera',
+        variant: 'default',
+        canPerform: canViewCheckinCheckout,
+        onPress: (task, router, context) => {
+          const currentPath = context?.route || '/(tabs)/producao/cronograma'
+          navigationTracker.setSource(currentPath)
+          router.push(`/producao/cronograma/checkin-checkout/${task.id}`)
         },
       },
       {

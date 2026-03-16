@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -15,13 +15,14 @@ import { navigationTracker } from "@/utils/navigation-tracker";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice, IconFileSearch, IconUpload, IconArrowLeft, IconX } from "@tabler/icons-react-native";
+import { IconPlus, IconTrash, IconNote, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice, IconFileSearch, IconUpload, IconArrowLeft, IconX, IconUser, IconInfoCircle, IconCreditCard } from "@tabler/icons-react-native";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { MultiStepFormContainer } from "@/components/forms";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -32,7 +33,8 @@ import { useTaskDetail, useTaskMutations } from "@/hooks/useTask";
 import { useTaskQuoteByTask } from "@/hooks/useTaskQuote";
 import { taskQuoteCreateNestedSchema } from "@/schemas/task-quote";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SERVICE_ORDER_TYPE } from "@/constants/enums";
+import { SERVICE_ORDER_TYPE, DISCOUNT_TYPE } from "@/constants/enums";
+import { DISCOUNT_TYPE_LABELS } from "@/constants/enum-labels";
 import { RESPONSIBLE_ROLE_LABELS } from "@/types/responsible";
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { formatCurrency } from "@/utils";
@@ -40,6 +42,16 @@ import { ONLINE_API_URL } from "@/constants/api";
 import { Image } from "expo-image";
 import { useFileViewer } from "@/components/file";
 import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
+import { getCustomers } from "@/api-client/customer";
+import {
+  computeServiceDiscount,
+  computeServiceNet,
+  computeCustomerConfigTotals,
+} from "@/utils/task-quote-calculations";
+import {
+  getQuoteServicesToAddFromServiceOrders,
+  type SyncServiceOrder,
+} from "@/utils/task-quote-service-order-sync";
 import type { FormStep } from "@/components/ui/form-steps";
 
 interface ArtworkOption {
@@ -59,12 +71,6 @@ const wizardSchema = z.object({
 });
 
 type WizardFormData = z.infer<typeof wizardSchema>;
-
-const WIZARD_STEPS: FormStep[] = [
-  { id: 1, name: "Configuração", description: "Dados básicos" },
-  { id: 2, name: "Serviços", description: "Itens e valores" },
-  { id: 3, name: "Resumo", description: "Prévia" },
-];
 
 // Payment condition options
 const PAYMENT_CONDITIONS = [
@@ -98,9 +104,10 @@ const VALIDITY_PERIOD_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pendente" },
   { value: "BUDGET_APPROVED", label: "Orçamento Aprovado" },
-  { value: "VERIFIED", label: "Verificado" },
+  { value: "VERIFIED_BY_FINANCIAL", label: "Verificado pelo Financeiro" },
   { value: "BILLING_APPROVED", label: "Faturamento Aprovado" },
   { value: "UPCOMING", label: "A Vencer" },
+  { value: "DUE", label: "Vencido" },
   { value: "PARTIAL", label: "Parcial" },
   { value: "SETTLED", label: "Liquidado" },
 ];
@@ -122,6 +129,8 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [layoutFiles, setLayoutFiles] = useState<FilePickerItem[]>([]);
+  const customersCache = useRef<Map<string, any>>(new Map());
+  const [selectedCustomers, setSelectedCustomers] = useState<Map<string, any>>(new Map());
 
   // Fetch task data for preview
   const {
@@ -157,11 +166,12 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           file: true,
         },
       },
+      serviceOrders: true,
     },
   });
   const task = taskResponse?.data;
 
-  // Fetch existing pricing for edit mode (now returns null data instead of 404)
+  // Fetch existing pricing for edit mode
   const {
     data: pricingResponse,
     isLoading: pricingLoading,
@@ -181,7 +191,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
         subtotal: 0,
         total: 0,
         expiresAt: (() => {
-          // Default to 30 days from now
           const defaultExpiry = new Date();
           defaultExpiry.setDate(defaultExpiry.getDate() + 30);
           defaultExpiry.setHours(23, 59, 59, 999);
@@ -206,7 +215,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
 
     const p = existingPricing;
     setValue("pricing.status", p.status || "PENDING");
-    // Default to 30 days from now if no expiry date exists
     setValue("pricing.expiresAt", p.expiresAt ? new Date(p.expiresAt) : (() => {
       const defaultExpiry = new Date();
       defaultExpiry.setDate(defaultExpiry.getDate() + 30);
@@ -223,14 +231,12 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
     setValue("pricing.customerConfigs", p.customerConfigs?.map((c: any) => ({
       customerId: c.customerId || c.id || c,
       subtotal: c.subtotal ?? 0,
-      discountType: c.discountType || 'NONE',
-      discountValue: c.discountValue ?? null,
       total: c.total ?? 0,
       paymentCondition: c.paymentCondition ?? null,
       downPaymentDate: c.downPaymentDate ? new Date(c.downPaymentDate) : null,
       customPaymentText: c.customPaymentText ?? null,
       responsibleId: c.responsibleId ?? null,
-      discountReference: c.discountReference ?? null,
+      generateInvoice: c.generateInvoice ?? true,
     })) || []);
 
     if (p.services && p.services.length > 0) {
@@ -241,7 +247,10 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           description: item.description || "",
           observation: item.observation ?? null,
           amount: item.amount ?? null,
-          shouldSync: true,
+          discountType: item.discountType || 'NONE',
+          discountValue: item.discountValue ?? null,
+          discountReference: item.discountReference ?? null,
+          invoiceToCustomerId: item.invoiceToCustomerId ?? null,
         }))
       );
     }
@@ -258,35 +267,70 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
         },
       ]);
     }
+
+    // Initialize customers cache from existing configs
+    if (p.customerConfigs && p.customerConfigs.length > 0) {
+      const customers = p.customerConfigs
+        .map((c: any) => c.customer)
+        .filter(Boolean);
+      customers.forEach((c: any) => customersCache.current.set(c.id, c));
+      setSelectedCustomers(new Map(customers.map((c: any) => [c.id, c])));
+    }
   }, [existingPricing, setValue]);
 
-  // Watch pricing data for preview AND validation
-  const pricingData = watch("pricing");
+  // Dynamic steps based on customer count
+  const customerConfigs = watch("pricing.customerConfigs");
+  const steps = useMemo(() => {
+    const base: FormStep[] = [
+      { id: 1, name: "Informações", description: "Dados e clientes" },
+      { id: 2, name: "Serviços", description: "Itens e valores" },
+    ];
+    if (Array.isArray(customerConfigs)) {
+      customerConfigs.forEach((config: any, i: number) => {
+        const customer = customersCache.current.get(config?.customerId);
+        base.push({
+          id: 3 + i,
+          name: "Pagamento",
+          description: customer?.fantasyName || "Cliente",
+        });
+      });
+    }
+    base.push({
+      id: base.length + 1,
+      name: "Resumo",
+      description: "Prévia",
+    });
+    return base;
+  }, [customerConfigs]);
 
-  // Watch the entire form to detect ANY changes (including deep array changes)
+  const totalSteps = steps.length;
+
+  // Clamp current step when customer count changes
+  useEffect(() => {
+    if (currentStep > totalSteps) {
+      setCurrentStep(totalSteps);
+    }
+  }, [totalSteps, currentStep]);
+
+  // Watch pricing data for preview
+  const pricingData = watch("pricing");
   const formValues = watch();
 
+  const customerCount = Array.isArray(customerConfigs) ? customerConfigs.length : 0;
 
   // Build preview pricing object
-  // NOTE: Cannot useMemo with pricingData — react-hook-form's watch() returns the same
-  // object reference even when nested properties (items array) change, which causes
-  // useMemo to return stale data and miss newly added/removed items.
   const previewPricing = (() => {
     if (!pricingData) return null;
 
-    // Determine layout file for preview
     let layoutFileForPreview = null;
     if (layoutFiles.length > 0) {
-      // Use the file from FilePicker (either newly selected or existing)
       const pickedFile = layoutFiles[0];
       layoutFileForPreview = pickedFile.uploaded && pickedFile.id
-        ? { id: pickedFile.id } // Uploaded file - use ID for getFileUrl
-        : { uri: pickedFile.uri }; // New file - use local URI
+        ? { id: pickedFile.id }
+        : { uri: pickedFile.uri };
     } else if (pricingData.layoutFileId) {
-      // Fallback to form data
       layoutFileForPreview = { id: pricingData.layoutFileId };
     } else if (existingPricing?.layoutFile) {
-      // Fallback to existing pricing
       layoutFileForPreview = existingPricing.layoutFile;
     }
 
@@ -299,51 +343,45 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
     };
   })();
 
-  // Validation for step navigation
-  const canProceedToStep2 = useMemo(() => {
-    return !!pricingData?.expiresAt;
-  }, [pricingData]);
+  // Validation
+  const canProceedFromStep1 = useMemo(() => {
+    const configs = Array.isArray(customerConfigs) ? customerConfigs : [];
+    return configs.length > 0 && !!pricingData?.expiresAt;
+  }, [customerConfigs, pricingData]);
 
-  const canProceedToStep3 = useMemo(() => {
-    // Use formValues.pricing.services to ensure we get updates when services change
+  const canProceedFromStep2 = useMemo(() => {
     const allItems = formValues?.pricing?.services || [];
-
-    // Filter out empty placeholder items (matching schema preprocessing behavior)
     const items = allItems.filter(
       (item: any) => item && item.description && item.description.trim() !== ''
     );
-
-    if (items.length === 0) {
-      return false;
-    }
-
-    const validationResults = items.map((item: any) => {
+    if (items.length === 0) return false;
+    return items.every((item: any) => {
       const hasDescription = !!(item.description?.trim());
-
-      // Amount can be null/undefined (defaults to 0 for courtesy items)
-      // Only reject if it's explicitly a negative number
       const numAmount = typeof item.amount === 'string' ? parseFloat(item.amount) : item.amount;
       const hasValidAmount =
         numAmount == null ||
         (typeof numAmount === 'number' && !isNaN(numAmount) && numAmount >= 0);
-
       return hasDescription && hasValidAmount;
     });
-
-    return validationResults.every(v => v === true);
   }, [formValues]);
 
+  const isLastStep = currentStep === totalSteps;
   const canSubmit = useMemo(() => {
-    return canProceedToStep3 && currentStep === 3;
-  }, [canProceedToStep3, currentStep]);
+    return canProceedFromStep2 && isLastStep;
+  }, [canProceedFromStep2, isLastStep]);
 
   // Step navigation
   const goNext = useCallback(() => {
-    if (currentStep === 1 && !canProceedToStep2) {
-      Alert.alert("Campo obrigatório", "Selecione o período de validade do orçamento.");
+    if (currentStep === 1 && !canProceedFromStep1) {
+      const configs = Array.isArray(customerConfigs) ? customerConfigs : [];
+      if (configs.length === 0) {
+        Alert.alert("Cliente obrigatório", "Selecione pelo menos um cliente para faturamento.");
+      } else {
+        Alert.alert("Campo obrigatório", "Selecione o período de validade do orçamento.");
+      }
       return;
     }
-    if (currentStep === 2 && !canProceedToStep3) {
+    if (currentStep === 2 && !canProceedFromStep2) {
       const items = (pricingData?.services || []).filter(
         (item: any) => item && item.description && item.description.trim() !== ''
       );
@@ -354,8 +392,8 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
       }
       return;
     }
-    if (currentStep < 3) setCurrentStep((s) => s + 1);
-  }, [currentStep, canProceedToStep2, canProceedToStep3, pricingData]);
+    if (currentStep < totalSteps) setCurrentStep((s) => s + 1);
+  }, [currentStep, canProceedFromStep1, canProceedFromStep2, pricingData, customerConfigs, totalSteps]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
@@ -387,7 +425,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
     try {
       setIsSaving(true);
 
-      // Coerce numeric fields to proper types before sending to API
       const toNumber = (v: any): number | null => {
         if (v === null || v === undefined || v === '') return null;
         if (typeof v === 'number') return v;
@@ -409,7 +446,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           amount: toNumber(svc.amount) ?? 0,
         }));
       }
-      // Ensure customerConfigs is a proper array with coerced numeric fields
       if (pricingPayload.customerConfigs) {
         if (!Array.isArray(pricingPayload.customerConfigs)) {
           pricingPayload.customerConfigs = Object.values(pricingPayload.customerConfigs);
@@ -420,27 +456,16 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           total: toNumber(config.total) ?? 0,
         }));
       }
-      // Strip shouldSync from services (not an API field)
-      if (pricingPayload.services) {
-        pricingPayload.services = pricingPayload.services.map(({ shouldSync: _, ...rest }: any) => rest);
-      }
-
-      // Filter only NEW layout files (not already uploaded)
       const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
 
-      // If we have NEW files to upload, use FormData
       if (newLayoutFiles.length > 0) {
         const formData = new FormData();
-
-        // Add layout file - backend expects 'quoteLayoutFile' field name (singular, only 1 file)
         const layoutFile = newLayoutFiles[0];
         formData.append('quoteLayoutFile', {
           uri: layoutFile.uri,
           type: layoutFile.type,
           name: layoutFile.name,
         } as any);
-
-        // Add quote data as JSON field in FormData (API expects 'quote' field name)
         formData.append('quote', JSON.stringify(pricingPayload));
 
         await updateAsync({
@@ -448,19 +473,16 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           data: formData as any,
         });
       } else {
-        // No new files - send JSON only
         await updateAsync({
           id: taskId,
           data: { quote: pricingPayload } as any,
         });
       }
 
-      // Reset form state and navigate to task detail page
       methods.reset();
       setCurrentStep(1);
       setLayoutFiles([]);
 
-      // Navigate to the correct detail page based on navigation source
       const source = navigationTracker.getSource();
       let detailRoute: string;
       if (source?.includes('/agenda')) {
@@ -473,7 +495,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
       router.replace(detailRoute as any);
     } catch (error: any) {
       console.error("[TaskQuoteWizard] Save failed:", error);
-      // API client already shows error toast, no need for Alert
     } finally {
       setIsSaving(false);
     }
@@ -499,36 +520,42 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
   const userRole = user?.sector?.privileges || "";
   const canEditStatus = userRole === "ADMIN" || userRole === "FINANCIAL" || userRole === "COMMERCIAL";
 
+  const canProceed = currentStep === 1
+    ? canProceedFromStep1
+    : currentStep === 2
+    ? canProceedFromStep2
+    : true;
+
   return (
     <FormProvider {...methods}>
       <MultiStepFormContainer
-        steps={WIZARD_STEPS}
+        steps={steps}
         currentStep={currentStep}
         onPrevStep={goPrev}
         onNextStep={goNext}
         onSubmit={onSave}
         onCancel={handleCancel}
         isSubmitting={isSaving}
-        canProceed={currentStep === 1 ? canProceedToStep2 : currentStep === 2 ? canProceedToStep3 : false}
+        canProceed={canProceed}
         canSubmit={canSubmit}
         submitLabel="Salvar"
         cancelLabel="Cancelar"
         scrollable={true}
       >
-        {/* Step 1 - Basic Configuration */}
+        {/* Step 1 - Info & Customers */}
         {currentStep === 1 && (
           <View style={styles.stepContainer}>
             <Card style={styles.card}>
               <CardHeader>
-                <CardTitle>Configuração do Orçamento</CardTitle>
+                <CardTitle>Informações do Orçamento</CardTitle>
               </CardHeader>
               <CardContent>
-                <Step1BasicConfig
+                <Step1Info
                   control={control}
+                  task={task}
                   canEditStatus={canEditStatus}
                   layoutFiles={layoutFiles}
                   onLayoutFilesChange={setLayoutFiles}
-                  taskResponsibles={task?.responsibles}
                   artworks={(task?.artworks || []).map((artwork: any) => {
                     const file = artwork.file || artwork;
                     return {
@@ -542,6 +569,9 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
                       size: file.size,
                     };
                   })}
+                  customersCache={customersCache}
+                  selectedCustomers={selectedCustomers}
+                  setSelectedCustomers={setSelectedCustomers}
                 />
               </CardContent>
             </Card>
@@ -556,14 +586,46 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
                 <CardTitle>Serviços e Valores</CardTitle>
               </CardHeader>
               <CardContent>
-                <Step2Services control={control} />
+                <Step2Services
+                  control={control}
+                  task={task}
+                  selectedCustomers={selectedCustomers}
+                />
               </CardContent>
             </Card>
           </View>
         )}
 
-        {/* Step 3 - Preview */}
-        {currentStep === 3 && previewPricing && (
+        {/* Steps 3..N - Customer Payment (dynamic) */}
+        {currentStep > 2 && currentStep <= 2 + customerCount && (() => {
+          const configIndex = currentStep - 3;
+          const config = customerConfigs?.[configIndex];
+          const customer = config
+            ? customersCache.current.get(config.customerId)
+            : null;
+          return (
+            <View style={styles.stepContainer}>
+              <Card style={styles.card}>
+                <CardHeader>
+                  <CardTitle>
+                    Pagamento - {customer?.fantasyName || customer?.corporateName || "Cliente"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StepCustomerPayment
+                    control={control}
+                    configIndex={configIndex}
+                    customer={customer}
+                    taskResponsibles={task?.responsibles}
+                  />
+                </CardContent>
+              </Card>
+            </View>
+          );
+        })()}
+
+        {/* Last Step - Preview */}
+        {currentStep === totalSteps && previewPricing && (
           <View style={styles.stepContainer}>
             <Card style={styles.card}>
               <CardHeader>
@@ -596,38 +658,46 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
 }
 
 // ============================================================================
-// Step 1 - Basic Configuration
+// Step 1 - Info & Customers
 // ============================================================================
 
 interface Step1Props {
   control: any;
+  task: any;
   canEditStatus: boolean;
   layoutFiles: FilePickerItem[];
   onLayoutFilesChange: (files: FilePickerItem[]) => void;
-  taskResponsibles?: Array<{ id: string; name: string; role: string }>;
   artworks?: ArtworkOption[];
+  customersCache: React.MutableRefObject<Map<string, any>>;
+  selectedCustomers: Map<string, any>;
+  setSelectedCustomers: (customers: Map<string, any>) => void;
 }
 
-function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesChange, taskResponsibles, artworks }: Step1Props) {
+function Step1Info({
+  control,
+  task,
+  canEditStatus,
+  layoutFiles,
+  onLayoutFilesChange,
+  artworks,
+  customersCache,
+  selectedCustomers,
+  setSelectedCustomers,
+}: Step1Props) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
   const { setValue, getValues } = useFormContext();
   const keyboardContext = useKeyboardAwareForm();
   const [validityPeriod, setValidityPeriod] = useState<string>("");
-  const [showCustomPayment, setShowCustomPayment] = useState(false);
   const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
   const [showLayoutUploadMode, setShowLayoutUploadMode] = useState(false);
 
   const pricingStatus = useWatch({ control, name: "pricing.status" }) || "PENDING";
-  const discountType = useWatch({ control, name: "pricing.customerConfigs.0.discountType" }) || "NONE";
-  const discountValue = useWatch({ control, name: "pricing.customerConfigs.0.discountValue" });
-  const discountReference = useWatch({ control, name: "pricing.customerConfigs.0.discountReference" });
-  const customPaymentText = useWatch({ control, name: "pricing.customerConfigs.0.customPaymentText" });
   const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
   const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
   const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
   const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
-  const responsibleId = useWatch({ control, name: "pricing.customerConfigs.0.responsibleId" });
+  const customerConfigsValue = useWatch({ control, name: "pricing.customerConfigs" }) || [];
 
   // Initialize
   useEffect(() => {
@@ -637,7 +707,6 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       const closest = [15, 30, 60, 90].find(d => Math.abs(d - diffDays) <= 3);
       setValidityPeriod(closest ? closest.toString() : "30");
     } else {
-      // Default to 30 days for new pricing
       setValidityPeriod("30");
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30);
@@ -645,14 +714,8 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
       setValue("pricing.expiresAt", expiryDate);
       setValue("pricing.status", "PENDING");
     }
-    if (customPaymentText) setShowCustomPayment(true);
     if (customGuaranteeText) setShowCustomGuarantee(true);
   }, []);
-
-  const currentPaymentCondition = useMemo(() => {
-    if (customPaymentText) return "CUSTOM";
-    return "";
-  }, [customPaymentText]);
 
   const currentGuaranteeOption = useMemo(() => {
     if (customGuaranteeText) return "CUSTOM";
@@ -668,16 +731,6 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     expiryDate.setDate(expiryDate.getDate() + days);
     expiryDate.setHours(23, 59, 59, 999);
     setValue("pricing.expiresAt", expiryDate);
-  }, [setValue]);
-
-  const handlePaymentChange = useCallback((val: string | string[] | null | undefined) => {
-    const value = typeof val === 'string' ? val : '';
-    if (value === "CUSTOM") {
-      setShowCustomPayment(true);
-    } else {
-      setShowCustomPayment(false);
-      setValue("pricing.customerConfigs.0.customPaymentText", null);
-    }
   }, [setValue]);
 
   const handleGuaranteeChange = useCallback((val: string | string[] | null | undefined) => {
@@ -744,22 +797,14 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     ];
   }, [artworks]);
 
-  // Render artwork option with thumbnail (or upload action for sentinel)
   const renderArtworkOption = useCallback((artwork: ArtworkOption) => {
     if (artwork.id === UPLOAD_NEW_SENTINEL) {
       return (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
           <View style={{
-            width: 48,
-            height: 48,
-            borderRadius: 8,
-            overflow: "hidden",
-            backgroundColor: colors.muted + "50",
-            borderWidth: 1,
-            borderStyle: "dashed",
-            borderColor: colors.border,
-            alignItems: "center",
-            justifyContent: "center",
+            width: 48, height: 48, borderRadius: 8, overflow: "hidden",
+            backgroundColor: colors.muted + "50", borderWidth: 1, borderStyle: "dashed",
+            borderColor: colors.border, alignItems: "center", justifyContent: "center",
           }}>
             <IconUpload size={20} color={colors.mutedForeground} />
           </View>
@@ -775,19 +820,10 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     return (
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 }}>
         <View style={{
-          width: 48,
-          height: 48,
-          borderRadius: 8,
-          overflow: "hidden",
-          backgroundColor: colors.muted,
-          borderWidth: 1,
-          borderColor: colors.border,
+          width: 48, height: 48, borderRadius: 8, overflow: "hidden",
+          backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border,
         }}>
-          <Image
-            source={{ uri: thumbnailSrc }}
-            style={{ width: 48, height: 48 }}
-            contentFit="cover"
-          />
+          <Image source={{ uri: thumbnailSrc }} style={{ width: 48, height: 48 }} contentFit="cover" />
         </View>
         <View style={{ flex: 1 }}>
           <ThemedText style={{ fontSize: 13 }} numberOfLines={1} ellipsizeMode="tail">
@@ -803,13 +839,159 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
     );
   }, [colors]);
 
-  // Current layoutFileId
   const currentLayoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
+
+  // Customer search (async queryFn for Combobox)
+  const searchCustomers = useCallback(async (search: string, page: number = 1) => {
+    try {
+      const params: any = {
+        orderBy: { fantasyName: "asc" },
+        page,
+        take: 50,
+      };
+      if (search?.trim()) params.searchingFor = search.trim();
+      const response = await getCustomers(params);
+      const customers = response.data || [];
+      customers.forEach((c: any) => customersCache.current.set(c.id, c));
+      return {
+        data: customers.map((c: any) => ({
+          value: c.id,
+          label: c.fantasyName || c.corporateName || "Cliente",
+        })),
+        hasMore: response.meta?.hasNextPage || false,
+      };
+    } catch {
+      return { data: [], hasMore: false };
+    }
+  }, [customersCache]);
+
+  // Handle customer selection change
+  const handleCustomerChange = useCallback((newIds: string | string[] | null | undefined) => {
+    const ids = Array.isArray(newIds) ? newIds : newIds ? [newIds] : [];
+    const currentConfigs: any[] = Array.isArray(customerConfigsValue) ? customerConfigsValue : [];
+    const newConfigs = ids.map((id: string) => {
+      const existing = currentConfigs.find((c: any) => c.customerId === id);
+      if (existing) return existing;
+      return {
+        customerId: id,
+        subtotal: 0,
+        total: 0,
+        paymentCondition: null,
+        downPaymentDate: null,
+        customPaymentText: null,
+        responsibleId: null,
+        generateInvoice: true,
+      };
+    });
+    setValue("pricing.customerConfigs", newConfigs);
+
+    const newMap = new Map<string, any>();
+    ids.forEach((id: string) => {
+      const cached = customersCache.current.get(id);
+      if (cached) newMap.set(id, cached);
+    });
+    setSelectedCustomers(newMap);
+  }, [customerConfigsValue, setValue, customersCache, setSelectedCustomers]);
+
+  const selectedCustomerIds = useMemo(() => {
+    if (!Array.isArray(customerConfigsValue)) return [];
+    return customerConfigsValue.map((c: any) => c.customerId).filter(Boolean);
+  }, [customerConfigsValue]);
+
+  // Customer options for combobox - combine cached selected customers with search results
+  const customerOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    selectedCustomers.forEach((c, id) => {
+      options.push({
+        value: id,
+        label: c.fantasyName || c.corporateName || "Cliente",
+      });
+    });
+    return options;
+  }, [selectedCustomers]);
 
   return (
     <View style={styles.fieldSection}>
+      {/* Task Info Card (read-only) */}
+      {task && (
+        <View style={[styles.infoCard, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing.sm }}>
+            <IconInfoCircle size={14} color={colors.mutedForeground} />
+            <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600", color: colors.foreground }}>
+              Dados da Tarefa
+            </ThemedText>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.md }}>
+            <View style={{ minWidth: 80 }}>
+              <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Tarefa</ThemedText>
+              <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.name || "-"}</ThemedText>
+            </View>
+            <View style={{ minWidth: 80 }}>
+              <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Cliente</ThemedText>
+              <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>
+                {task.customer?.fantasyName || task.customer?.corporateName || "-"}
+              </ThemedText>
+            </View>
+            {task.serialNumber && (
+              <View style={{ minWidth: 80 }}>
+                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Nº Série</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.serialNumber}</ThemedText>
+              </View>
+            )}
+            {task.truck?.plate && (
+              <View style={{ minWidth: 80 }}>
+                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }}>Placa</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500" }}>{task.truck.plate}</ThemedText>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Customer Selection */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing.xs }}>
+          <IconUser size={14} color={colors.mutedForeground} />
+          <ThemedText style={[styles.label, { color: colors.foreground, marginBottom: 0 }]}>
+            Faturar Para (Clientes) <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+          </ThemedText>
+        </View>
+        <Combobox
+          value={selectedCustomerIds}
+          onValueChange={handleCustomerChange}
+          mode="multiple"
+          async
+          queryKey={["customers", "quote-invoice-selector"]}
+          queryFn={searchCustomers}
+          initialOptions={customerOptions}
+          placeholder="Selecione clientes para faturamento..."
+          searchable
+          minSearchLength={0}
+          debounceMs={500}
+        />
+        {selectedCustomers.size > 0 && (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs }}>
+            {Array.from(selectedCustomers.values()).map((customer) => (
+              <TouchableOpacity
+                key={customer.id}
+                onPress={() => {
+                  const newIds = selectedCustomerIds.filter((id: string) => id !== customer.id);
+                  handleCustomerChange(newIds);
+                }}
+                style={[styles.customerBadge, { backgroundColor: colors.muted, borderColor: colors.border }]}
+              >
+                <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>
+                  {customer.fantasyName || customer.corporateName}
+                </ThemedText>
+                <IconX size={12} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
       {/* Status & Validity */}
-      <View style={styles.row}>
+      <View style={[styles.row, { marginTop: spacing.md }]}>
         <View style={styles.halfField}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
           <Combobox
@@ -843,100 +1025,6 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
           />
         </View>
       </View>
-
-      {/* Discount */}
-      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-        <View style={styles.row}>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tipo de Desconto</ThemedText>
-            <Combobox
-              value={discountType || "NONE"}
-              onValueChange={(v) => {
-                setValue("pricing.customerConfigs.0.discountType", v || "NONE");
-                if (v === "NONE") setValue("pricing.customerConfigs.0.discountValue", null);
-              }}
-              options={[
-                { value: "NONE", label: "Nenhum" },
-                { value: "PERCENTAGE", label: "Porcentagem" },
-                { value: "FIXED_VALUE", label: "Valor Fixo" },
-              ]}
-              placeholder="Selecione"
-              searchable={false}
-              avoidKeyboard={false}
-              onOpen={() => {}}
-              onClose={() => {}}
-            />
-          </View>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">
-              Valor do Desconto{" "}
-              {discountType === "PERCENTAGE" && <ThemedText style={{ color: colors.mutedForeground }}>(%)</ThemedText>}
-              {discountType === "FIXED_VALUE" && <ThemedText style={{ color: colors.mutedForeground }}>(R$)</ThemedText>}
-            </ThemedText>
-            <Input
-              type={discountType === "FIXED_VALUE" ? "currency" : "number"}
-              value={discountValue ?? ""}
-              onChange={(v) => setValue("pricing.customerConfigs.0.discountValue", v === "" || v == null ? null : Number(v))}
-              disabled={discountType === "NONE"}
-              placeholder={discountType === "NONE" ? "-" : discountType === "FIXED_VALUE" ? "R$ 0,00" : "0"}
-            />
-          </View>
-        </View>
-      </View>
-
-      {/* Discount Reference - only show when discount is active */}
-      {discountType !== "NONE" && (
-        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
-          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-discount-reference', e) : undefined}>
-            <TextInput
-              value={discountReference || ""}
-              onChangeText={(t) => setValue("pricing.customerConfigs.0.discountReference", t || null)}
-              placeholder="Justificativa ou referência para o desconto aplicado..."
-              placeholderTextColor={colors.mutedForeground}
-              maxLength={500}
-              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground, minHeight: 42 }]}
-              onFocus={() => keyboardContext?.onFieldFocus('pricing-discount-reference')}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* Payment Condition */}
-      <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
-        <View>
-          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
-          <Combobox
-            value={currentPaymentCondition}
-            onValueChange={handlePaymentChange}
-            options={PAYMENT_CONDITIONS.map((o) => ({ value: o.value, label: o.label }))}
-            placeholder="Selecione"
-            searchable={false}
-            avoidKeyboard={false}
-            onOpen={() => {}}
-            onClose={() => {}}
-          />
-        </View>
-      </View>
-
-      {/* Custom Payment Text */}
-      {showCustomPayment && (
-        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
-          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-payment', e) : undefined}>
-            <TextInput
-              value={customPaymentText || ""}
-              onChangeText={(t) => setValue("pricing.customerConfigs.0.customPaymentText", t || null)}
-              placeholder="Descreva as condições de pagamento..."
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              numberOfLines={3}
-              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-              onFocus={() => keyboardContext?.onFieldFocus('pricing-custom-payment')}
-            />
-          </View>
-        </View>
-      )}
 
       {/* Guarantee */}
       <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
@@ -1002,28 +1090,6 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
           </View>
         </View>
       </View>
-
-      {/* Budget Responsible */}
-      {taskResponsibles && taskResponsibles.length > 0 && (
-        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Responsável do Orçamento</ThemedText>
-          <Combobox
-            value={responsibleId || ""}
-            onValueChange={(v) => setValue("pricing.customerConfigs.0.responsibleId", v || null)}
-            options={taskResponsibles
-              .filter((r: any) => !r.id.startsWith('temp-'))
-              .map((r: any) => ({
-                value: r.id,
-                label: `${r.name} (${RESPONSIBLE_ROLE_LABELS[r.role as keyof typeof RESPONSIBLE_ROLE_LABELS] || r.role})`,
-              }))}
-            placeholder="Selecione o responsável"
-            searchable={false}
-            avoidKeyboard={false}
-            onOpen={() => {}}
-            onClose={() => {}}
-          />
-        </View>
-      )}
 
       {/* Layout Approved */}
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
@@ -1133,9 +1199,16 @@ function Step1BasicConfig({ control, canEditStatus, layoutFiles, onLayoutFilesCh
 // Step 2 - Services
 // ============================================================================
 
-function Step2Services({ control }: { control: any }) {
+interface Step2ServicesProps {
+  control: any;
+  task: any;
+  selectedCustomers: Map<string, any>;
+}
+
+function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps) {
   const { colors } = useTheme();
-  const { setValue, clearErrors } = useFormContext();
+  const { setValue, getValues, clearErrors } = useFormContext();
+  const [syncedOnMount, setSyncedOnMount] = useState(false);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -1143,47 +1216,65 @@ function Step2Services({ control }: { control: any }) {
   });
 
   const pricingItems = useWatch({ control, name: "pricing.services" });
-  const discountType = useWatch({ control, name: "pricing.customerConfigs.0.discountType" }) || "NONE";
-  const discountValue = useWatch({ control, name: "pricing.customerConfigs.0.discountValue" });
+  const watchedCustomerConfigs = useWatch({ control, name: "pricing.customerConfigs" });
 
-  // Track manually organized items (moved from incomplete to complete via "Organizar" button)
-  const [organizedIds, setOrganizedIds] = useState<Set<string>>(new Set());
+  // Service order sync on mount
+  useEffect(() => {
+    if (syncedOnMount || !task) return;
+    setSyncedOnMount(true);
 
-  // Separate incomplete items (shown at top) from complete items (shown below in order)
-  // An item is complete if it has description >= 3 chars AND amount > 0, or was manually organized
-  const { incompleteIndices, completeIndices } = useMemo(() => {
-    const incomplete: number[] = [];
-    const complete: number[] = [];
+    const serviceOrders: SyncServiceOrder[] = (task.serviceOrders || []).filter(
+      (so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION,
+    );
+    if (serviceOrders.length === 0) return;
 
-    fields.forEach((field, index) => {
-      const item = pricingItems?.[index];
-      const hasDescription = item?.description && item.description.trim().length >= 3;
-      const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
-      const isOrganized = organizedIds.has(field.id);
-      const isComplete = (hasDescription && hasAmount) || isOrganized;
+    const currentServices = getValues("pricing.services") || [];
+    const toAdd = getQuoteServicesToAddFromServiceOrders(
+      serviceOrders,
+      currentServices,
+    );
+    if (toAdd.length > 0) {
+      toAdd.forEach((svc) => {
+        append(
+          {
+            description: svc.description,
+            observation: svc.observation || null,
+            amount: svc.amount ?? 0,
+            invoiceToCustomerId: null,
+            discountType: "NONE",
+            discountValue: null,
+            discountReference: null,
+          },
+          { shouldFocus: false },
+        );
+      });
+    }
+  }, [task, syncedOnMount, getValues, append]);
 
-      if (isComplete) {
-        complete.push(index);
-      } else {
-        incomplete.push(index);
+  // Auto-calculate per-customer subtotals/totals
+  useEffect(() => {
+    const configs = watchedCustomerConfigs;
+    if (!Array.isArray(configs) || configs.length < 1 || !pricingItems) return;
+
+    const isSingleConfig = configs.length === 1;
+    let updated = false;
+    const newConfigs = configs.map((config: any) => {
+      if (!config?.customerId) return config;
+      const { subtotal, total } = computeCustomerConfigTotals(
+        pricingItems,
+        config.customerId,
+        isSingleConfig,
+      );
+      if (config.subtotal !== subtotal || config.total !== total) {
+        updated = true;
+        return { ...config, subtotal, total };
       }
+      return config;
     });
-
-    return { incompleteIndices: incomplete, completeIndices: complete };
-  }, [fields, pricingItems, organizedIds]);
-
-  // Handle "Organizar" - move all items with descriptions to complete section
-  const handleOrganize = useCallback(() => {
-    const newOrganized = new Set(organizedIds);
-    fields.forEach((field, index) => {
-      const item = pricingItems?.[index];
-      if (item?.description && item.description.trim().length >= 3) {
-        newOrganized.add(field.id);
-      }
-    });
-    setOrganizedIds(newOrganized);
-  }, [fields, pricingItems, organizedIds]);
-
+    if (updated) {
+      setValue("pricing.customerConfigs", newConfigs, { shouldDirty: false });
+    }
+  }, [pricingItems, watchedCustomerConfigs, setValue]);
 
   // Calculate subtotal
   const subtotal = useMemo(() => {
@@ -1194,28 +1285,75 @@ function Step2Services({ control }: { control: any }) {
     }, 0);
   }, [pricingItems]);
 
-  // Calculate discount amount
-  const discountAmount = useMemo(() => {
-    if (discountType === "NONE" || !discountValue) return 0;
-    if (discountType === "PERCENTAGE") return Math.round(((subtotal * discountValue) / 100) * 100) / 100;
-    if (discountType === "FIXED_VALUE") return discountValue;
-    return 0;
-  }, [subtotal, discountType, discountValue]);
+  // Calculate aggregate total from customer configs (accounts for per-service discounts)
+  const aggregateTotal = useMemo(() => {
+    if (!Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length === 0) {
+      // No configs: compute total from services directly
+      if (!pricingItems || pricingItems.length === 0) return 0;
+      return pricingItems.reduce(
+        (sum: number, item: any) => sum + computeServiceNet({
+          amount: typeof item.amount === "number" ? item.amount : Number(item.amount) || 0,
+          discountType: item.discountType,
+          discountValue: item.discountValue,
+        }),
+        0,
+      );
+    }
+    return watchedCustomerConfigs.reduce(
+      (sum: number, config: any) =>
+        sum + (typeof config?.total === "number" ? config.total : Number(config?.total) || 0),
+      0,
+    );
+  }, [watchedCustomerConfigs, pricingItems]);
 
-  const total = useMemo(() => Math.max(0, Math.round((subtotal - discountAmount) * 100) / 100), [subtotal, discountAmount]);
-
-  // Update form values
+  // Update form subtotal/total
   useEffect(() => {
     if (pricingItems && pricingItems.length > 0) {
-      setValue("pricing.subtotal", subtotal, { shouldDirty: false });
-      setValue("pricing.total", total, { shouldDirty: false });
+      const configSubtotalSum =
+        Array.isArray(watchedCustomerConfigs) && watchedCustomerConfigs.length > 0
+          ? watchedCustomerConfigs.reduce(
+              (sum: number, c: any) => sum + (Number(c?.subtotal) || 0),
+              0,
+            )
+          : subtotal;
+      setValue("pricing.subtotal", configSubtotalSum, { shouldDirty: false });
+      setValue("pricing.total", aggregateTotal, { shouldDirty: false });
     }
-  }, [subtotal, total, pricingItems, setValue]);
+  }, [subtotal, aggregateTotal, pricingItems, watchedCustomerConfigs, setValue]);
+
+  // Clear orphaned service assignments when customer configs change
+  useEffect(() => {
+    const configs = watchedCustomerConfigs || [];
+    const currentIds = Array.isArray(configs)
+      ? configs.map((c: any) => c?.customerId).filter(Boolean)
+      : [];
+    const items = getValues("pricing.services") || [];
+    items.forEach((item: any, index: number) => {
+      if (
+        item.invoiceToCustomerId &&
+        !currentIds.includes(item.invoiceToCustomerId)
+      ) {
+        setValue(`pricing.services.${index}.invoiceToCustomerId`, null);
+      }
+    });
+  }, [watchedCustomerConfigs, getValues, setValue]);
 
   const handleAddItem = useCallback(() => {
     clearErrors("pricing");
-    append({ description: "", observation: null, amount: undefined });
+    append({
+      description: "",
+      observation: null,
+      amount: undefined,
+      invoiceToCustomerId: null,
+      discountType: "NONE",
+      discountValue: null,
+      discountReference: null,
+    });
   }, [append, clearErrors]);
+
+  const hasMultipleCustomers =
+    Array.isArray(watchedCustomerConfigs) && watchedCustomerConfigs.length >= 2;
+  const customerConfigCustomers = Array.from(selectedCustomers.values());
 
   return (
     <View style={styles.fieldSection}>
@@ -1229,51 +1367,16 @@ function Step2Services({ control }: { control: any }) {
         <ThemedText style={{ marginLeft: 4, fontSize: 14, color: colors.foreground }}>Adicionar Serviço</ThemedText>
       </Button>
 
-      {/* Incomplete Items Section - Items being configured (shown at top) */}
-      {incompleteIndices.length > 0 && (
-        <View style={[styles.incompleteSection, { borderBottomColor: colors.border }]}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
-              Configurando Serviço
-            </ThemedText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-              <ThemedText style={[styles.sectionHint, { color: colors.mutedForeground }]}>
-                Preencha descrição e valor
-              </ThemedText>
-              {incompleteIndices.some((i) => {
-                const item = pricingItems?.[i];
-                return item?.description && item.description.trim().length >= 3;
-              }) && (
-                <TouchableOpacity onPress={handleOrganize} style={[styles.organizeButton, { borderColor: colors.border }]}>
-                  <ThemedText style={{ fontSize: 11, color: colors.primary }}>Organizar</ThemedText>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          {incompleteIndices.map((index) => (
-            <ServiceItemRow
-              key={fields[index].id}
-              control={control}
-              index={index}
-              onRemove={() => remove(index)}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Complete Items Section - Items with description (in their position order) */}
-      {completeIndices.length > 0 && (
-        <View>
-          {completeIndices.map((index) => (
-            <ServiceItemRow
-              key={fields[index].id}
-              control={control}
-              index={index}
-              onRemove={() => remove(index)}
-            />
-          ))}
-        </View>
-      )}
+      {/* Service Rows */}
+      {fields.map((field, index) => (
+        <ServiceItemRow
+          key={field.id}
+          control={control}
+          index={index}
+          onRemove={() => remove(index)}
+          customerConfigCustomers={hasMultipleCustomers ? customerConfigCustomers : undefined}
+        />
+      ))}
 
       {/* Totals */}
       {pricingItems && pricingItems.length > 0 && (
@@ -1294,9 +1397,206 @@ function Step2Services({ control }: { control: any }) {
                 <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">Valor Total</ThemedText>
               </View>
               <View style={[styles.readOnlyField, { borderColor: colors.primary, borderWidth: 2 }]}>
-                <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.primary }}>{formatCurrency(total)}</ThemedText>
+                <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.primary }}>{formatCurrency(aggregateTotal)}</ThemedText>
               </View>
             </View>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ============================================================================
+// Step Customer Payment (dynamic, one per customer)
+// ============================================================================
+
+interface StepCustomerPaymentProps {
+  control: any;
+  configIndex: number;
+  customer: any;
+  taskResponsibles?: Array<{ id: string; name: string; role: string }>;
+}
+
+function StepCustomerPayment({ control, configIndex, customer, taskResponsibles }: StepCustomerPaymentProps) {
+  const { colors } = useTheme();
+  const { setValue } = useFormContext();
+  const keyboardContext = useKeyboardAwareForm();
+  const [showCustomPayment, setShowCustomPayment] = useState(false);
+
+  const config = useWatch({
+    control,
+    name: `pricing.customerConfigs.${configIndex}`,
+  });
+
+  // Initialize custom payment state
+  useEffect(() => {
+    if (config?.customPaymentText && !showCustomPayment) {
+      setShowCustomPayment(true);
+    }
+  }, [config?.customPaymentText, showCustomPayment]);
+
+  // Default budget responsible to the first task responsible
+  useEffect(() => {
+    if (
+      taskResponsibles &&
+      taskResponsibles.length > 0 &&
+      !config?.responsibleId
+    ) {
+      const firstValid = taskResponsibles.find((r) => !r.id.startsWith("temp-"));
+      if (firstValid) {
+        setValue(
+          `pricing.customerConfigs.${configIndex}.responsibleId`,
+          firstValid.id,
+          { shouldDirty: false },
+        );
+      }
+    }
+  }, [taskResponsibles, config?.responsibleId, setValue, configIndex]);
+
+  const handlePaymentConditionChange = useCallback((val: string | string[] | null | undefined) => {
+    const value = typeof val === 'string' ? val : '';
+    if (value === "CUSTOM") {
+      setShowCustomPayment(true);
+      setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
+    } else {
+      setShowCustomPayment(false);
+      setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, null);
+      setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, value || null);
+    }
+  }, [setValue, configIndex]);
+
+  const configSubtotal = config?.subtotal || 0;
+  const configTotal = config?.total || 0;
+  const currentCondition = config?.customPaymentText
+    ? "CUSTOM"
+    : config?.paymentCondition || "";
+
+  return (
+    <View style={styles.fieldSection}>
+      {/* Customer Header */}
+      {customer && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: spacing.md }}>
+          <IconCreditCard size={18} color={colors.primary} />
+          <View>
+            <ThemedText style={{ fontSize: fontSize.md, fontWeight: "600" }}>
+              {customer.fantasyName || customer.corporateName || "Cliente"}
+            </ThemedText>
+            {customer.cnpj && (
+              <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
+                CNPJ: {customer.cnpj}
+              </ThemedText>
+            )}
+          </View>
+        </View>
+      )}
+
+      {/* Read-only Subtotal & Total */}
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <View style={styles.labelWithIcon}>
+            <IconCurrencyReal size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
+            <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+              Subtotal
+            </ThemedText>
+          </View>
+          <View style={[styles.readOnlyField, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500", color: colors.foreground }}>
+              {formatCurrency(configSubtotal)}
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.halfField}>
+          <View style={styles.labelWithIcon}>
+            <IconCurrencyReal size={14} color={colors.primary} style={{ flexShrink: 0 }} />
+            <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+              Valor Total
+            </ThemedText>
+          </View>
+          <View style={[styles.readOnlyField, { borderColor: colors.primary, borderWidth: 2 }]}>
+            <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "700", color: colors.primary }}>
+              {formatCurrency(configTotal)}
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+
+      {/* Budget Responsible */}
+      {taskResponsibles && taskResponsibles.length > 0 && (
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Responsável do Orçamento</ThemedText>
+          <Combobox
+            value={config?.responsibleId || ""}
+            onValueChange={(v) => setValue(`pricing.customerConfigs.${configIndex}.responsibleId`, v || null)}
+            options={taskResponsibles
+              .filter((r: any) => !r.id.startsWith('temp-'))
+              .map((r: any) => ({
+                value: r.id,
+                label: `${r.name} (${RESPONSIBLE_ROLE_LABELS[r.role as keyof typeof RESPONSIBLE_ROLE_LABELS] || r.role})`,
+              }))}
+            placeholder="Selecione o responsável"
+            searchable={false}
+            avoidKeyboard={false}
+            onOpen={() => {}}
+            onClose={() => {}}
+          />
+        </View>
+      )}
+
+      {/* Generate Invoice Toggle */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Emitir Nota Fiscal</ThemedText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <Switch
+            checked={config?.generateInvoice !== false}
+            onCheckedChange={(v) => setValue(`pricing.customerConfigs.${configIndex}.generateInvoice`, v)}
+          />
+          <ThemedText style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
+            {config?.generateInvoice !== false ? "Sim" : "Não"}
+          </ThemedText>
+        </View>
+      </View>
+
+      {/* Payment Condition */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Condição de Pagamento</ThemedText>
+        <Combobox
+          value={currentCondition}
+          onValueChange={handlePaymentConditionChange}
+          options={PAYMENT_CONDITIONS.map((o) => ({ value: o.value, label: o.label }))}
+          placeholder="Selecione"
+          searchable={false}
+          avoidKeyboard={false}
+          onOpen={() => {}}
+          onClose={() => {}}
+        />
+      </View>
+
+      {/* Down Payment Date */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
+        <DatePicker
+          value={config?.downPaymentDate ? new Date(config.downPaymentDate) : undefined}
+          onChange={(date) => setValue(`pricing.customerConfigs.${configIndex}.downPaymentDate`, date || null)}
+          placeholder="Selecione a data"
+        />
+      </View>
+
+      {/* Custom Payment Text */}
+      {showCustomPayment && (
+        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
+          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout(`pricing-custom-payment-${configIndex}`, e) : undefined}>
+            <TextInput
+              value={config?.customPaymentText || ""}
+              onChangeText={(t) => setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, t || null)}
+              placeholder="Descreva as condições de pagamento..."
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              numberOfLines={3}
+              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+              onFocus={() => keyboardContext?.onFieldFocus(`pricing-custom-payment-${configIndex}`)}
+            />
           </View>
         </View>
       )}
@@ -1308,7 +1608,18 @@ function Step2Services({ control }: { control: any }) {
 // Service Item Row
 // ============================================================================
 
-function ServiceItemRow({ control, index, onRemove }: { control: any; index: number; onRemove: () => void }) {
+interface ServiceItemRowProps {
+  control: any;
+  index: number;
+  onRemove: () => void;
+  customerConfigCustomers?: Array<{
+    id: string;
+    fantasyName?: string;
+    corporateName?: string;
+  }>;
+}
+
+function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: ServiceItemRowProps) {
   const { colors } = useTheme();
   const { setValue } = useFormContext();
   const [observationModal, setObservationModal] = useState({ visible: false, text: "" });
@@ -1316,6 +1627,11 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
   const description = useWatch({ control, name: `pricing.services.${index}.description` });
   const amount = useWatch({ control, name: `pricing.services.${index}.amount` });
   const observation = useWatch({ control, name: `pricing.services.${index}.observation` });
+  const discountType = useWatch({ control, name: `pricing.services.${index}.discountType` }) || "NONE";
+  const discountValue = useWatch({ control, name: `pricing.services.${index}.discountValue` });
+  const invoiceToCustomerId = useWatch({ control, name: `pricing.services.${index}.invoiceToCustomerId` });
+
+  const hasMultipleCustomers = customerConfigCustomers && customerConfigCustomers.length >= 2;
 
   const descriptionOptions = useMemo(() => {
     const baseOptions = getServiceDescriptionsByType(SERVICE_ORDER_TYPE.PRODUCTION).map((desc) => ({
@@ -1323,8 +1639,6 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
       label: desc,
     }));
 
-    // If the current description exists but isn't in the predefined list, add it to options
-    // This ensures existing values can be displayed when editing
     if (description && description.trim().length > 0) {
       const descriptionExists = baseOptions.some(opt => opt.value === description);
       if (!descriptionExists) {
@@ -1344,6 +1658,7 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
 
   return (
     <View style={styles.itemRow}>
+      {/* Description */}
       <View style={{ width: "100%" }}>
         <Combobox
           value={description || ""}
@@ -1354,6 +1669,8 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
           clearable={false}
         />
       </View>
+
+      {/* Amount Row */}
       <View style={styles.amountRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Input
@@ -1374,6 +1691,77 @@ function ServiceItemRow({ control, index, onRemove }: { control: any; index: num
           <IconTrash size={16} color={colors.destructive} />
         </TouchableOpacity>
       </View>
+
+      {/* Invoice To Customer (when multiple customers) */}
+      {hasMultipleCustomers && (
+        <View style={{ marginTop: spacing.xs }}>
+          <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>Faturar para</ThemedText>
+          <Combobox
+            value={invoiceToCustomerId || ""}
+            onValueChange={(v) => setValue(`pricing.services.${index}.invoiceToCustomerId`, v || null)}
+            options={customerConfigCustomers!.map((c) => ({
+              value: c.id,
+              label: c.fantasyName || c.corporateName || "Cliente",
+            }))}
+            placeholder="Selecione cliente"
+            searchable={false}
+          />
+        </View>
+      )}
+
+      {/* Discount Row */}
+      <View style={{ marginTop: spacing.xs }}>
+        <View style={styles.row}>
+          <View style={styles.halfField}>
+            <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>Desconto</ThemedText>
+            <Combobox
+              value={discountType}
+              onValueChange={(v) => {
+                const safeType = v || "NONE";
+                setValue(`pricing.services.${index}.discountType`, safeType);
+                if (safeType === "NONE") {
+                  setValue(`pricing.services.${index}.discountValue`, null);
+                  setValue(`pricing.services.${index}.discountReference`, null);
+                }
+              }}
+              options={Object.values(DISCOUNT_TYPE).map((type) => ({
+                value: type,
+                label: DISCOUNT_TYPE_LABELS[type],
+              }))}
+              placeholder="Nenhum"
+              searchable={false}
+            />
+          </View>
+          <View style={styles.halfField}>
+            <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>
+              Vlr. Desc.{" "}
+              {discountType === "PERCENTAGE" && "(%)"}
+              {discountType === "FIXED_VALUE" && "(R$)"}
+            </ThemedText>
+            <Input
+              type={discountType === "FIXED_VALUE" ? "currency" : "number"}
+              value={discountValue ?? ""}
+              onChange={(v) => setValue(`pricing.services.${index}.discountValue`, v === "" || v == null ? null : Number(v))}
+              disabled={discountType === "NONE"}
+              placeholder={discountType === "NONE" ? "-" : discountType === "FIXED_VALUE" ? "R$ 0,00" : "0"}
+              fieldKey={`pricing-item-${index}-discount`}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* Discount Reference */}
+      {discountType !== "NONE" && (
+        <View style={{ marginTop: spacing.xs }}>
+          <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>Referência do Desconto</ThemedText>
+          <Input
+            value={useWatch({ control, name: `pricing.services.${index}.discountReference` }) || ""}
+            onChange={(v) => setValue(`pricing.services.${index}.discountReference`, v || null)}
+            placeholder="Justificativa..."
+            fieldKey={`pricing-item-${index}-discount-ref`}
+          />
+        </View>
+      )}
 
       {/* Observation Modal */}
       <Modal
@@ -1479,31 +1867,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginVertical: spacing.sm,
   },
-  incompleteSection: {
-    paddingBottom: spacing.md,
-    marginBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderStyle: "dashed",
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: "500",
-  },
-  sectionHint: {
-    fontSize: fontSize.xs,
-  },
-  organizeButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-  },
   itemRow: {
     gap: spacing.xs,
     marginBottom: spacing.md,
@@ -1521,6 +1884,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
+  },
+  infoCard: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  customerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.DEFAULT,
+    borderWidth: 1,
   },
   // Modal styles
   modalOverlay: {

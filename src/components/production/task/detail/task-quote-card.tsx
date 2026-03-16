@@ -10,7 +10,8 @@ import { useFileViewer } from "@/components/file";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
-import type { TaskQuote } from "@/types/task-quote";
+import { computeServiceDiscount } from "@/utils/task-quote-calculations";
+import type { TaskQuote, TaskQuoteService } from "@/types/task-quote";
 import { WEB_BASE_URL } from "@/config/urls";
 import {
   IconExternalLink,
@@ -111,14 +112,14 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
     }
   };
 
-  // Calculate discount amount from first customer config
-  const configDiscountType = activeConfig?.discountType || 'NONE';
-  const configDiscountValue = activeConfig?.discountValue;
-  const discountAmount = configDiscountType === "PERCENTAGE" && configDiscountValue
-    ? (quote.subtotal * configDiscountValue) / 100
-    : configDiscountType === "FIXED_VALUE" && configDiscountValue
-      ? configDiscountValue
-      : 0;
+  // Calculate total discount amount from per-service discounts
+  const totalDiscountAmount = (quote.services || []).reduce((sum, svc: TaskQuoteService) => {
+    return sum + computeServiceDiscount(
+      typeof svc.amount === 'number' ? svc.amount : Number(svc.amount) || 0,
+      svc.discountType,
+      svc.discountValue,
+    );
+  }, 0);
 
   return (
     <DetailCard
@@ -224,21 +225,16 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
             </ThemedText>
           </View>
 
-          {/* Discount */}
-          {configDiscountType && configDiscountType !== "NONE" && configDiscountValue && (
+          {/* Discount (computed from per-service discounts) */}
+          {totalDiscountAmount > 0 && (
             <View style={styles.summaryRow}>
               <View style={styles.discountLabelContainer}>
                 <ThemedText style={[styles.summaryLabel, { color: colors.destructive }]}>
-                  Desconto{configDiscountType === "PERCENTAGE" ? ` (${configDiscountValue}%)` : " (Valor Fixo)"}
+                  Desconto
                 </ThemedText>
-                {activeConfig?.discountReference && (
-                  <ThemedText style={[styles.discountReference, { color: colors.mutedForeground }]}>
-                    Ref: {activeConfig.discountReference}
-                  </ThemedText>
-                )}
               </View>
               <ThemedText style={[styles.summaryValue, { color: colors.destructive }]}>
-                - {formatCurrency(discountAmount)}
+                - {formatCurrency(totalDiscountAmount)}
               </ThemedText>
             </View>
           )}

@@ -10,6 +10,7 @@ import {
   cancelBoleto,
   emitNfse,
   cancelNfse,
+  changeBankSlipDueDate,
 } from '@/api-client';
 
 // =====================================================
@@ -133,8 +134,23 @@ export function useCancelNfse() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ invoiceId, nfseDocumentId, data }: { invoiceId: string; nfseDocumentId: string; data: { reason: string } }) =>
+    mutationFn: ({ invoiceId, nfseDocumentId, data }: { invoiceId: string; nfseDocumentId: string; data: { reason: string; reasonCode?: number } }) =>
       cancelNfse(invoiceId, nfseDocumentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+    },
+  });
+}
+
+// -------------------------------------
+// CHANGE BANK SLIP DUE DATE
+// -------------------------------------
+export function useChangeBankSlipDueDate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ installmentId, newDueDate }: { installmentId: string; newDueDate: string }) =>
+      changeBankSlipDueDate(installmentId, newDueDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
     },

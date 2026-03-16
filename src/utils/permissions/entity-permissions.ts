@@ -415,6 +415,19 @@ export function canChangeTaskSector(user: User | null): boolean {
 }
 
 /**
+ * Can user view/edit check-in and check-out files on tasks?
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER can view and edit
+ */
+export function canViewCheckinCheckout(user: User | null): boolean {
+  if (!user) return false;
+  return hasAnyPrivilege(user, [
+    SECTOR_PRIVILEGES.ADMIN,
+    SECTOR_PRIVILEGES.LOGISTIC,
+    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+  ]);
+}
+
+/**
  * Can user cancel tasks (set status to CANCELLED)?
  * ADMIN, LOGISTIC, PRODUCTION_MANAGER, FINANCIAL, COMMERCIAL can cancel tasks
  * Different from delete - cancel just changes status

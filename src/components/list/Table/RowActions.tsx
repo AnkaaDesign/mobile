@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useRouter, usePathname } from 'expo-router'
 import { useNavigationLoading } from '@/contexts/navigation-loading-context'
 import { navigationTracker } from '@/utils/navigation-tracker'
-import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal } from '@tabler/icons-react-native'
+import { IconEye, IconEdit, IconTrash, IconTruck, IconPlayerPlay, IconCircleCheck, IconCut, IconUsers, IconClipboardCopy, IconCalendarCheck, IconPhoto, IconX, IconCurrencyReal, IconCamera } from '@tabler/icons-react-native'
 import type { TableAction, ActionMutationsContext, RenderContext } from '../types'
 
 interface RowActionsProps<T extends { id: string }> {
@@ -250,6 +250,9 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
             } else if (action.key === 'quote' || action.icon === 'currency-real') {
               backgroundColor = '#f59e0b' // amber-500
               Icon = IconCurrencyReal
+            } else if (action.key === 'checkin-checkout' || action.icon === 'camera') {
+              backgroundColor = '#0891b2' // cyan-600
+              Icon = IconCamera
             } else if (action.key === 'cancel' || action.icon === 'x') {
               backgroundColor = '#d97706' // amber-600 (different from delete-red and change-sector-orange)
               Icon = IconX

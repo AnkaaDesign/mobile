@@ -16,6 +16,7 @@ import { NfseEnrichedInfo } from "./nfse-enriched-info";
 import { IconChevronDown, IconChevronUp, IconFileInvoice } from "@tabler/icons-react-native";
 import type { Invoice } from "@/types/invoice";
 import type { INVOICE_STATUS } from "@/constants/enums";
+import { NFSE_STATUS } from "@/constants/enums";
 
 interface InvoiceListCardProps {
   taskId: string;
@@ -185,7 +186,7 @@ function InvoiceRow({ invoice, isLast, onOpenDetail }: InvoiceRowProps) {
               <View style={styles.nfseRow}>
                 <View style={styles.nfseStatusRow}>
                   {activeNfse ? (
-                    <NfseStatusBadge status={activeNfse.status} size="sm" />
+                    <NfseStatusBadge status={activeNfse.status as NFSE_STATUS} size="sm" />
                   ) : (
                     <ThemedText style={[styles.nfseNotIssued, { color: colors.mutedForeground }]}>
                       Nao emitida

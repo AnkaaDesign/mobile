@@ -101,7 +101,6 @@ export default function EditScheduleScreen() {
           observation: true,
           startedAt: true,
           finishedAt: true,
-          shouldSync: true,
           checkinFiles: { select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true } },
           checkoutFiles: { select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true } },
         }
@@ -137,34 +136,9 @@ export default function EditScheduleScreen() {
         }
       },
       quote: {
-        select: {
-          id: true,
-          status: true,
-          expiresAt: true,
-          subtotal: true,
-          discountType: true,
-          discountValue: true,
-          total: true,
-          paymentCondition: true,
-          downPaymentDate: true,
-          customPaymentText: true,
-          guaranteeYears: true,
-          customGuaranteeText: true,
-          layoutFileId: true,
-          layoutFile: true,
-          customForecastDays: true,
-          simultaneousTasks: true,
-          discountReference: true,
-          customerConfigs: true,
-          services: {
-            select: {
-              id: true,
-              description: true,
-              observation: true,
-              amount: true,
-            }
-          },
-        }
+        include: {
+          services: { select: { id: true, description: true } },
+        },
       },
       // File relations for edit form
       baseFiles: {
@@ -444,11 +418,11 @@ export default function EditScheduleScreen() {
       const checkoutNewFiles: FilePickerItem[] = data._checkoutFiles || [];
 
       if (checkinNewFiles.length > 0) {
-        newFilesForUpload['serviceOrderCheckinFiles'] = checkinNewFiles;
+        newFilesForUpload['checkinFiles'] = checkinNewFiles;
         hasNewFiles = true;
       }
       if (checkoutNewFiles.length > 0) {
-        newFilesForUpload['serviceOrderCheckoutFiles'] = checkoutNewFiles;
+        newFilesForUpload['checkoutFiles'] = checkoutNewFiles;
         hasNewFiles = true;
       }
 
@@ -525,11 +499,9 @@ export default function EditScheduleScreen() {
   /**
    * Process form data before submission:
    * 1. Filter empty service orders (no description)
-   * 2. Filter empty pricing services (no description)
-   * 3. Filter empty airbrushings (no meaningful data)
-   * 4. Compare with original task and only include changed fields
+   * 2. Compare with original task and only include changed fields
    *
-   * This matches the web version's useEditForm + handleFormSubmit logic
+   * Note: Quote/pricing is now managed on a separate page and stripped from submission.
    */
   const processFormDataForSubmission = (formData: any, originalTask: any): any => {
     const processed: any = {};
@@ -611,17 +583,6 @@ export default function EditScheduleScreen() {
         if (order.id && !order.id.startsWith('temp-')) return true;
         // For new service orders (no ID), require description >= 3 chars
         return order.description && order.description.trim().length >= 3;
-      });
-    };
-
-    // Helper: Filter empty pricing services
-    const filterPricingServices = (services: any[]): any[] => {
-      if (!services || !Array.isArray(services)) return [];
-      return services.filter(svc => {
-        // Keep if it has an ID (existing record)
-        if (svc.id && !svc.id.startsWith('temp-')) return true;
-        // For new services, require description
-        return svc.description && svc.description.trim() !== '';
       });
     };
 
@@ -766,132 +727,9 @@ export default function EditScheduleScreen() {
       }
     }
 
-    // Process pricing - filter empty items, coerce types, and check for changes
-    if (formData.pricing !== undefined) {
-      const currPricing = { ...formData.pricing };
-      const origPricing = (originalTask as any).quote;
-
-      // Ensure services is a proper array and filter/coerce
-      if (currPricing.services) {
-        currPricing.services = filterPricingServices(ensureArray(currPricing.services)).map((svc: any) => ({
-          ...svc,
-          amount: ensureNumber(svc.amount) ?? 0,
-        }));
-      }
-
-      // Coerce money fields to numbers (handles formatted currency strings)
-      currPricing.discountValue = ensureNumber(currPricing.discountValue);
-      currPricing.subtotal = ensureNumber(currPricing.subtotal);
-      currPricing.total = ensureNumber(currPricing.total);
-
-      // Ensure customerConfigs is a proper array
-      currPricing.customerConfigs = currPricing.customerConfigs
-        ? ensureArray(currPricing.customerConfigs)
-        : [];
-
-      // Build comparable shapes for both current and original pricing
-      // Strip non-comparable fields (id, layoutFile, customerConfigs relation) and normalize
-      const comparableFields = [
-        'status', 'expiresAt', 'subtotal', 'discountType', 'discountValue', 'total',
-        'paymentCondition', 'downPaymentDate', 'customPaymentText',
-        'guaranteeYears', 'customGuaranteeText', 'customForecastDays',
-        'layoutFileId', 'simultaneousTasks', 'discountReference',
-      ];
-
-      // Numeric pricing fields that must be coerced to 0 when null/undefined
-      // to avoid false positives (form initialData uses || 0, API may return null)
-      const numericPricingFields = ['subtotal', 'discountValue', 'total', 'guaranteeYears', 'customForecastDays', 'simultaneousTasks'];
-
-      const buildComparablePricing = (p: any) => {
-        if (!p) return null;
-        const comparable: any = {};
-        for (const f of comparableFields) {
-          let val = p[f] ?? null;
-          // Normalize numeric fields: null/undefined/0 → 0 (matches form initialData || 0)
-          if (numericPricingFields.includes(f)) {
-            val = ensureNumber(val) ?? 0;
-          }
-          // Normalize string fields: empty string → null
-          if (typeof val === 'string' && val.trim() === '') {
-            val = null;
-          }
-          comparable[f] = val;
-        }
-        // Normalize services for comparison (only id, description, observation, amount)
-        comparable.services = (p.services || [])
-          .filter((i: any) => i.description && i.description.trim() !== '')
-          .map((i: any) => ({
-            id: i.id || null,
-            description: i.description,
-            observation: i.observation || null,
-            amount: typeof i.amount === 'number' ? i.amount : (ensureNumber(i.amount) ?? 0),
-          }));
-        // Normalize customerConfigs
-        comparable.customerConfigs = [...(p.customerConfigs || []).map((c: any) => c.id || c.customerId || c)].sort();
-        return comparable;
-      };
-
-      const currComparable = buildComparablePricing(currPricing);
-      const origComparable = buildComparablePricing(origPricing);
-
-      // Normalize date fields to ISO strings for stable comparison
-      // (avoids Date object vs string mismatches)
-      for (const dateField of ['expiresAt', 'downPaymentDate']) {
-        for (const obj of [currComparable, origComparable]) {
-          if (obj && obj[dateField]) {
-            const d = obj[dateField] instanceof Date ? obj[dateField] : new Date(obj[dateField]);
-            obj[dateField] = isNaN(d.getTime()) ? null : d.toISOString();
-          }
-        }
-      }
-
-      const pricingChanged = hasChanged(currComparable, origComparable);
-
-      if (pricingChanged) {
-        // DEBUG: Log what differs in pricing to detect false positives
-        if (currComparable && origComparable) {
-          const diffs: string[] = [];
-          for (const key of Object.keys(currComparable)) {
-            const c = JSON.stringify(currComparable[key]);
-            const o = JSON.stringify(origComparable[key]);
-            if (c !== o) diffs.push(`${key}: ${o} → ${c}`);
-          }
-          console.log('[processFormData] Pricing diffs:', diffs.length > 0 ? diffs : 'none (deep object diff)');
-        }
-        // Guard: when original had no pricing, only send if user actually added content
-        // (not just the default empty template)
-        if (!origPricing) {
-          const services = ensureArray(currPricing.services);
-          const hasNonEmptyItems = services.some((svc: any) => svc.description && svc.description.trim() !== '');
-          const hasNonDefaultValues = (ensureNumber(currPricing.subtotal) ?? 0) > 0 ||
-            (ensureNumber(currPricing.total) ?? 0) > 0 ||
-            currPricing.paymentCondition || currPricing.guaranteeYears ||
-            currPricing.customPaymentText || currPricing.customGuaranteeText ||
-            currPricing.customForecastDays || currPricing.simultaneousTasks ||
-            currPricing.layoutFileId;
-          if (!hasNonEmptyItems && !hasNonDefaultValues) {
-            console.log('[processFormData] Pricing: default template unchanged, skipping');
-          } else {
-            processed.quote = currPricing;
-          }
-        } else {
-          processed.quote = currPricing;
-        }
-
-        // Clean pricing payload: strip relation objects and non-API fields
-        if (processed.quote) {
-          const { id: _pricingId, layoutFile: _layoutFile, ...cleanPricing } = processed.quote;
-          // Clean services: strip shouldSync, clean temp IDs
-          if (cleanPricing.services) {
-            cleanPricing.services = ensureArray(cleanPricing.services).map((item: any) => {
-              const { shouldSync: _shouldSync, ...cleanItem } = item;
-              if (cleanItem.id?.startsWith('temp-')) delete cleanItem.id;
-              return cleanItem;
-            });
-          }
-          processed.quote = cleanPricing;
-        }
-      }
+    // Quote is now managed on a separate page - remove from submission data
+    if (processed.quote) {
+      delete processed.quote;
     }
 
     // Process observation - compare only description and file IDs
@@ -1047,7 +885,6 @@ export default function EditScheduleScreen() {
                 observation: s.observation ?? null,
                 startedAt: s.startedAt ? new Date(s.startedAt) : null,
                 finishedAt: s.finishedAt ? new Date(s.finishedAt) : null,
-                shouldSync: (s as any).shouldSync !== false,
               }))
             : [{
                 // Default empty service order row
@@ -1090,61 +927,12 @@ export default function EditScheduleScreen() {
           invoiceIds: ((task as any).invoices || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           receiptIds: ((task as any).receipts || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
           bankSlipIds: ((task as any).bankSlips || []).map((f: any) => f.fileId || f.file?.id || f.id).filter(Boolean),
-          // Map API's task.quote to form field 'pricing' (with default empty item row, matches web)
-          pricing: (task as any).quote ? {
-            id: (task as any).quote.id,
-            status: (task as any).quote.status || 'PENDING',
-            expiresAt: (task as any).quote.expiresAt,
-            subtotal: (task as any).quote.subtotal || 0,
-            total: (task as any).quote.total || 0,
-            guaranteeYears: (task as any).quote.guaranteeYears || null,
-            customGuaranteeText: (task as any).quote.customGuaranteeText || null,
-            layoutFileId: (task as any).quote.layoutFileId || null,
-            layoutFile: (task as any).quote.layoutFile || null,
-            customForecastDays: (task as any).quote.customForecastDays || null,
-            simultaneousTasks: (task as any).quote.simultaneousTasks || null,
-            customerConfigs: (task as any).quote.customerConfigs?.map((c: any) => ({
-              customerId: c.customerId || c.id || c,
-              subtotal: c.subtotal ?? 0,
-              discountType: c.discountType || 'NONE',
-              discountValue: c.discountValue ?? null,
-              total: c.total ?? 0,
-              paymentCondition: c.paymentCondition ?? null,
-              downPaymentDate: c.downPaymentDate || null,
-              customPaymentText: c.customPaymentText ?? null,
-              responsibleId: c.responsibleId ?? null,
-              discountReference: c.discountReference ?? null,
-            })) || [],
-            // Include default empty row if no services exist (matches web)
-            services: (task as any).quote.services && (task as any).quote.services.length > 0
-              ? (task as any).quote.services.map((item: any) => ({
-                  id: item.id,
-                  description: item.description || '',
-                  observation: item.observation || null,
-                  amount: item.amount ?? null,
-                  shouldSync: true,
-                }))
-              : [{ description: '', amount: null, observation: null, shouldSync: true }],
-          } : {
-            // Default quote structure when no quote exists (matches web)
-            status: 'PENDING',
-            expiresAt: (() => {
-              const date = new Date();
-              date.setDate(date.getDate() + 30);
-              date.setHours(23, 59, 59, 999);
-              return date;
-            })(),
-            subtotal: 0,
-            total: 0,
-            guaranteeYears: null,
-            customGuaranteeText: null,
-            layoutFileId: null,
-            layoutFile: null,
-            customForecastDays: null,
-            simultaneousTasks: null,
-            customerConfigs: [],
-            services: [{ description: '', amount: null, observation: null, shouldSync: true }],
-          },
+          // Quote is managed on a separate page - only provide minimal data for QuoteSection display
+          pricing: task.quote ? {
+            status: task.quote.status || 'PENDING',
+            total: task.quote.total || 0,
+            services: (task.quote.services || []).map((s: any) => ({ id: s.id, description: s.description })),
+          } : undefined,
         }}
         initialCustomer={task.customer}
         initialGeneralPaint={task.generalPainting}

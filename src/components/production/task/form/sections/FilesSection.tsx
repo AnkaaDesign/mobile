@@ -334,7 +334,7 @@ export default function FilesSection({
                   <View style={styles.referenceRow}>
                     <ThemedText style={styles.referenceLabel}>Ref:</ThemedText>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceScroll}>
-                      {soCheckinFiles.filter((f: any) => f.uploaded || f.id).map((file) => {
+                      {soCheckinFiles.map((file) => {
                         const src = getThumbnailUri(file);
                         return (
                           <View key={file.id || file.uri} style={[styles.referenceThumbnail, { borderColor: colors.border }]}>

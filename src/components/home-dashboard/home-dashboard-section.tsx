@@ -24,7 +24,7 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
       (data.lowStockItems && data.lowStockItems.length > 0) ||
       (data.completedTasks && data.completedTasks.length > 0) ||
       (data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0) ||
-      (data.tasksAwaitingPricingApproval && data.tasksAwaitingPricingApproval.length > 0);
+      (data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0);
 
   if (!hasContent) return null;
 
@@ -68,8 +68,8 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
         <AwaitingApprovalTasksList tasks={data.tasksAwaitingPaymentApproval} />
       )}
 
-      {!isAdmin && data.tasksAwaitingPricingApproval && data.tasksAwaitingPricingApproval.length > 0 && (
-        <AwaitingQuoteApprovalList tasks={data.tasksAwaitingPricingApproval} />
+      {!isAdmin && data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0 && (
+        <AwaitingQuoteApprovalList tasks={data.tasksAwaitingQuoteApproval} />
       )}
 
     </View>

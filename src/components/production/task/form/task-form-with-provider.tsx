@@ -30,10 +30,6 @@ interface TaskFormWithProviderProps {
 }
 
 function getCreateDefaultValues() {
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
-  expiresAt.setHours(23, 59, 59, 999);
-
   return {
     status: TASK_STATUS.PREPARATION,
     name: '',
@@ -55,7 +51,6 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
       {
         description: 'Elaborar Layout',
@@ -63,7 +58,6 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
       {
         description: 'Elaborar Projeto',
@@ -71,7 +65,6 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
       {
         description: 'Preparar Arquivos para Plotagem',
@@ -79,7 +72,6 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
       {
         description: 'Checklist Entrada',
@@ -87,7 +79,6 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
       {
         description: 'Checklist Saída',
@@ -95,25 +86,8 @@ function getCreateDefaultValues() {
         status: SERVICE_ORDER_STATUS.PENDING,
         statusOrder: 1,
         assignedToId: null,
-        shouldSync: false,
       },
     ],
-    pricing: {
-      expiresAt,
-      status: 'PENDING',
-      subtotal: 0,
-      discountType: 'NONE',
-      discountValue: null,
-      total: 0,
-      paymentCondition: null,
-      downPaymentDate: null,
-      customPaymentText: null,
-      guaranteeYears: null,
-      customGuaranteeText: null,
-      customForecastDays: null,
-      layoutFileId: null,
-      services: [{ description: '', amount: null, observation: null, shouldSync: true }],
-    },
     truck: {
       category: '',
       implementType: IMPLEMENT_TYPE.REFRIGERATED,
@@ -161,7 +135,6 @@ export const TaskFormWithProvider = memo(function TaskFormWithProvider({
         customerId: '',
         sectorId: undefined,
         serviceOrders: [],
-        pricing: { services: [] },
       };
     }
   }

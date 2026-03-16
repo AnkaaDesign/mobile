@@ -4,6 +4,8 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
+import { computeServiceDiscount, computeServiceNet } from "@/utils/task-quote-calculations";
+import { DISCOUNT_TYPE_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { COMPANY_INFO, DIRECTOR_INFO, BRAND_COLORS } from "@/config/company";
@@ -30,18 +32,19 @@ interface BudgetPreviewProps {
       description: string;
       observation?: string | null;
       amount: number;
+      discountType?: string;
+      discountValue?: number | null;
+      discountReference?: string | null;
     }>;
     customerConfigs?: Array<{
       customerId: string;
       subtotal: number;
-      discountType: string;
-      discountValue: number | null;
       total: number;
       paymentCondition?: string | null;
       downPaymentDate?: Date | string | null;
       customPaymentText?: string | null;
       responsibleId?: string | null;
-      discountReference?: string | null;
+      generateInvoice?: boolean;
     }>;
     createdAt?: Date | string;
   };
@@ -92,16 +95,12 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
     total: pricing.total,
   });
   const guaranteeText = generateGuaranteeText(pricing);
-  const configDiscountType = activeConfig?.discountType || "NONE";
-  const configDiscountValue = activeConfig?.discountValue;
-  const hasDiscount =
-    configDiscountType !== "NONE" &&
-    configDiscountValue != null &&
-    configDiscountValue > 0;
-  const discountAmount =
-    configDiscountType === "PERCENTAGE"
-      ? (pricing.subtotal * (configDiscountValue || 0)) / 100
-      : configDiscountValue || 0;
+  // Compute total discount from per-service discounts
+  const totalDiscountAmount = (pricing.services || []).reduce((sum, svc) => {
+    const amount = Number(svc.amount) || 0;
+    return sum + computeServiceDiscount(amount, svc.discountType, svc.discountValue);
+  }, 0);
+  const hasDiscount = totalDiscountAmount > 0;
 
   // Handle both uploaded files (with id) and newly selected files (with uri)
   const layoutImageUrl =
@@ -157,6 +156,9 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
       <View style={styles.section}>
         <ThemedText style={styles.sectionTitle}>Serviços</ThemedText>
         {pricing.services?.map((item, index) => {
+          const amount = Number(item.amount) || 0;
+          const discount = computeServiceDiscount(amount, item.discountType, item.discountValue);
+          const net = computeServiceNet({ amount, discountType: item.discountType, discountValue: item.discountValue });
           const description = toTitleCase(item.description || "");
           const observation = item.observation
             ? toTitleCase(item.observation)
@@ -165,13 +167,24 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
             ? `${description} ${observation}`
             : description;
           return (
-            <View key={item.id || index} style={styles.serviceRow}>
-              <ThemedText style={styles.serviceDescription} numberOfLines={2}>
-                {index + 1} - {displayText}
-              </ThemedText>
-              <ThemedText style={styles.serviceAmount}>
-                {formatCurrency(Number(item.amount) || 0)}
-              </ThemedText>
+            <View key={item.id || index}>
+              <View style={styles.serviceRow}>
+                <ThemedText style={styles.serviceDescription} numberOfLines={2}>
+                  {index + 1} - {displayText}
+                </ThemedText>
+                <ThemedText style={styles.serviceAmount}>
+                  {discount > 0 ? formatCurrency(net) : formatCurrency(amount)}
+                </ThemedText>
+              </View>
+              {discount > 0 && (
+                <View style={{ paddingLeft: spacing.lg, marginTop: 2 }}>
+                  <ThemedText style={styles.discountText}>
+                    Desc: {item.discountType === "PERCENTAGE" ? `${item.discountValue}%` : formatCurrency(discount)}
+                    {" "}({DISCOUNT_TYPE_LABELS[item.discountType as keyof typeof DISCOUNT_TYPE_LABELS] || item.discountType})
+                    {item.discountReference ? ` — ${item.discountReference}` : ""}
+                  </ThemedText>
+                </View>
+              )}
             </View>
           );
         })}
@@ -187,13 +200,10 @@ export function BudgetPreview({ pricing, task }: BudgetPreviewProps) {
             </View>
             <View style={styles.totalRow}>
               <ThemedText style={styles.discountText}>
-                Desconto
-                {configDiscountType === "PERCENTAGE"
-                  ? ` (${configDiscountValue}%)`
-                  : ""}
+                Desconto (serviços)
               </ThemedText>
               <ThemedText style={styles.discountText}>
-                - {formatCurrency(discountAmount)}
+                - {formatCurrency(totalDiscountAmount)}
               </ThemedText>
             </View>
             <View style={[styles.totalRow, styles.totalRowFinal]}>

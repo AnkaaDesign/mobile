@@ -156,6 +156,8 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     ppeScheduleId: "Agendamento de EPI",
     notes: "Observações",
     doneAt: "Concluído em",
+    paymentResponsibleId: "Responsável pelo Pagamento",
+    paymentAssignedById: "Atribuído por (Pagamento)",
     "supplier.fantasyName": "Nome Fantasia do Fornecedor",
     "budget.filename": "Nome do Orçamento",
     "nfe.filename": "Nome da NFe",
@@ -535,6 +537,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     users: "Usuários",
     positions: "Cargos",
     tasks: "Tarefas",
+    leaderId: "Líder do Setor",
   },
   [CHANGE_LOG_ENTITY_TYPE.MAINTENANCE]: {
     type: "Tipo",
@@ -649,7 +652,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     // Additional fields
     logoId: "Logo",
     economicActivityId: "Atividade Econômica",
-    registrationStatus: "Status de Registro",
+    registrationStatus: "Situação Cadastral",
     stateRegistration: "Inscrição Estadual",
 
     // Nested relationship fields
@@ -870,7 +873,18 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     customerConfigs: "Configurações de Clientes",
     customerSignatureId: "Assinatura do Cliente",
     customForecastDays: "Dias de Previsão Personalizados",
+    services: "Serviços",
+    services_snapshot: "Snapshot dos Serviços",
     "services.length": "Quantidade de Serviços",
+  },
+  [CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_ITEM]: {
+    description: "Descrição",
+    amount: "Valor",
+    observation: "Observação",
+    discountType: "Tipo de Desconto",
+    discountValue: "Valor do Desconto",
+    discountReference: "Referência do Desconto",
+    invoiceToCustomerId: "Faturar Para",
   },
   [CHANGE_LOG_ENTITY_TYPE.TIME_CLOCK_ENTRY]: {
     userId: "Funcionário",

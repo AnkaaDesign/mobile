@@ -1117,7 +1117,6 @@ const taskServiceOrderCreateSchema = z.object({
     .default(SERVICE_ORDER_TYPE.PRODUCTION),
   assignedToId: z.string().uuid('ID do colaborador inválido').nullable().optional(),
   observation: z.string().nullable().optional(), // For rejection/approval notes
-  shouldSync: z.boolean().optional().default(true), // Sync with quote services (matches web)
   startedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
   checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),

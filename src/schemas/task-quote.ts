@@ -56,12 +56,13 @@ export const guaranteeYearsSchema = z.number().refine(
   { message: 'Período de garantia inválido' }
 );
 
+export const GUARANTEE_YEARS_OPTIONS = [5, 10, 15] as const;
+
 export const taskQuoteServiceSchema = z.object({
   id: z.string().uuid().optional(),
   description: z.string().min(1, 'Descrição é obrigatória').max(400),
   observation: z.string().max(2000).optional().nullable(),
   amount: z.number().min(0, 'Valor deve ser maior ou igual a zero'),
-  shouldSync: z.boolean().optional().default(true),
   invoiceToCustomerId: z.string().uuid('Cliente inválido').optional().nullable(),
   // Per-service discount (moved from CustomerConfig)
   discountType: discountTypeSchema.default('NONE').optional(),
@@ -76,7 +77,6 @@ const taskQuoteServiceCreateSchema = z.object({
   observation: z.string().max(2000).optional().nullable(),
   // Amount might come as formatted currency string (e.g., "R$ 520,00")
   amount: z.preprocess(preprocessMoney, z.number().optional().nullable()),
-  shouldSync: z.boolean().optional().default(true), // Controls bidirectional sync with ServiceOrder
   invoiceToCustomerId: z.string().uuid('Cliente inválido').optional().nullable(),
   // Per-service discount
   discountType: z.preprocess(
@@ -115,6 +115,7 @@ export const taskQuoteCustomerConfigSchema = z.object({
   customPaymentText: z.string().max(2000).optional().nullable(),
   responsibleId: z.string().uuid().optional().nullable(),
   customerSignatureId: z.string().uuid().optional().nullable(),
+  generateInvoice: z.boolean().optional().default(true),
   installments: z.array(z.object({
     id: z.string().uuid().optional(),
     number: z.number().int(),
@@ -147,7 +148,7 @@ export const taskQuoteCreateNestedSchema = z
     // Layout File
     layoutFileId: z.string().uuid().optional().nullable(),
     // Customer configs for per-customer billing (at least 1 required)
-    customerConfigs: z.array(taskQuoteCustomerConfigSchema).min(1, 'Pelo menos uma configuração de cliente é obrigatória'),
+    customerConfigs: z.array(taskQuoteCustomerConfigSchema).optional(),
     // Advanced pricing features
     simultaneousTasks: z.preprocess(
       (val) => val === '' || val === null || val === undefined ? null : Number(val),

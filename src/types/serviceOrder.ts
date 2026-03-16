@@ -23,8 +23,6 @@ export interface ServiceOrder extends BaseEntity {
   startedAt: Date | null;
   approvedAt: Date | null;
   finishedAt: Date | null;
-  shouldSync: boolean; // Controls bidirectional sync with TaskQuoteService
-
   // File relations (per service order)
   checkinFiles?: import('./file').File[];
   checkoutFiles?: import('./file').File[];

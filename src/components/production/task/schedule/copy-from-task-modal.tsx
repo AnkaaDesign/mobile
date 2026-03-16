@@ -264,14 +264,15 @@ export function CopyFromTaskModal({
   }, [tasksResponse?.data, targetTask.id, searchQuery]);
 
   const categoryOrder = [
-    "Acoes Rapidas",
-    "Informacoes Gerais",
+    "Ações Rápidas",
+    "Informações Gerais",
     "Datas",
     "Comercial",
     "Pintura",
     "Arquivos",
-    "Producao",
-    "Veiculo",
+    "Produção",
+    "Ordens de Serviço",
+    "Veículo",
   ];
 
   const handleToggleField = useCallback((field: CopyableTaskField) => {

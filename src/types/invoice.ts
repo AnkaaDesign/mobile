@@ -56,6 +56,7 @@ export interface BankSlip {
   liquidationData: Record<string, unknown> | null;
   errorMessage: string | null;
   errorCount: number;
+  pdfFile?: { id: string; filename: string; originalName: string; mimetype: string; path: string; size: number } | null;
   lastSyncAt: Date | null;
 }
 

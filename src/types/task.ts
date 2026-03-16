@@ -187,6 +187,8 @@ export interface TaskIncludes {
           services?: boolean;
           layoutFile?: boolean;
           customerSignature?: boolean;
+          customerConfigs?: boolean;
+          responsible?: boolean;
         };
       };
   airbrushings?:

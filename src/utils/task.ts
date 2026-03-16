@@ -129,12 +129,10 @@ export function isTaskCancelled(task: Task): boolean {
 }
 
 /**
- * Check if task is on hold
- * Note: ON_HOLD status does not exist in the API schema, so this always returns false
+ * Check if task is in preparation
  */
-export function isTaskOnHold(task: Task): boolean {
-  // return task.status === TASK_STATUS.ON_HOLD;
-  return false;
+export function isTaskInPreparation(task: Task): boolean {
+  return task.status === TASK_STATUS.PREPARATION;
 }
 
 /**
@@ -307,16 +305,10 @@ export function calculateTaskStats(tasks: Task[]) {
   const active = tasks.filter(isTaskActive).length;
   const completed = tasks.filter(isTaskCompleted).length;
   const cancelled = tasks.filter(isTaskCancelled).length;
-  const onHold = tasks.filter(isTaskOnHold).length;
+  const preparation = tasks.filter(isTaskInPreparation).length;
   const overdue = tasks.filter(isTaskOverdue).length;
 
   const completionRate = total > 0 ? (completed / total) * 100 : 0;
-
-  const totalValue = tasks.reduce((sum, task) => {
-    const taskValue = (task as any).quote?.total || 0;
-    return sum + taskValue;
-  }, 0);
-  const averagePrice = total > 0 ? totalValue / total : 0;
 
   return {
     total,
@@ -324,11 +316,9 @@ export function calculateTaskStats(tasks: Task[]) {
     active,
     completed,
     cancelled,
-    onHold,
+    preparation,
     overdue,
     completionRate: Math.round(completionRate),
-    totalValue,
-    averagePrice: Math.round(averagePrice),
   };
 }
 
@@ -453,25 +443,28 @@ export function validateAllServiceOrdersCompleted(task: Task): ServiceOrderValid
 import type { TaskQuote } from '../types/task-quote';
 
 /**
- * Get task price from APPROVED quote
- * Returns 0 if no approved quote exists
+ * Calculate task price from quote total (only BUDGET_APPROVED or later quote)
  */
-export function getTaskPrice(task: any): number {
+export function calculateTaskPrice(task: any): number {
   if (!task.quote) return 0;
-  if (task.quote.status !== 'APPROVED') return 0;
+  if (task.quote.status === 'PENDING') return 0;
   return task.quote.total || 0;
 }
 
 /**
- * Format task price with currency
+ * Get task price from approved quote (alias for calculateTaskPrice)
+ */
+export function getTaskPrice(task: any): number {
+  return calculateTaskPrice(task);
+}
+
+/**
+ * Format task price from quote total
  */
 export function formatTaskPrice(task: any): string {
-  const price = getTaskPrice(task);
+  const price = calculateTaskPrice(task);
   if (price === 0) return 'Sem valor';
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(price);
+  return numberUtils.formatCurrency(price);
 }
 
 /**
@@ -483,14 +476,21 @@ export function isQuoteExpired(pricing: TaskQuote): boolean {
 }
 
 /**
- * Get pricing status label in Portuguese
+ * Get quote status label in Portuguese
  */
-export function getPricingStatusLabel(status: string): string {
-  const labels = {
-    DRAFT: 'Rascunho',
-    APPROVED: 'Aprovado',
-    REJECTED: 'Rejeitado',
-    CANCELLED: 'Cancelado',
+export function getQuoteStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    PENDING: 'Pendente',
+    BUDGET_APPROVED: 'Orçamento Aprovado',
+    VERIFIED_BY_FINANCIAL: 'Verificado pelo Financeiro',
+    BILLING_APPROVED: 'Faturamento Aprovado',
+    UPCOMING: 'A Vencer',
+    DUE: 'Vencido',
+    PARTIAL: 'Parcial',
+    SETTLED: 'Liquidado',
   };
-  return labels[status as keyof typeof labels] || status;
+  return labels[status] || status;
 }
+
+/** @deprecated Use getQuoteStatusLabel instead */
+export const getPricingStatusLabel = getQuoteStatusLabel;

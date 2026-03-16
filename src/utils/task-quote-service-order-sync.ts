@@ -25,7 +25,6 @@ export interface SyncServiceOrder {
   status?: string;
   statusOrder?: number;
   assignedToId?: string | null;
-  shouldSync?: boolean;
 }
 
 export interface SyncQuoteService {
@@ -33,7 +32,6 @@ export interface SyncQuoteService {
   description: string;
   observation?: string | null;
   amount?: number | null;
-  shouldSync?: boolean;
 }
 
 /**
@@ -56,20 +54,13 @@ export function getQuoteServicesToAddFromServiceOrders(
     existingQuoteServices.map(svc => normalizeDescription(svc.description))
   );
 
-  const noSyncDescriptions = new Set(
-    existingQuoteServices
-      .filter(svc => svc.shouldSync === false)
-      .map(svc => normalizeDescription(svc.description))
-  );
-
   for (const so of serviceOrders) {
     if (so.type !== SERVICE_ORDER_TYPE.PRODUCTION) continue;
     if (!so.description || so.description.trim().length < 3) continue;
-    if (so.shouldSync === false) continue;
 
     const normalizedDesc = normalizeDescription(so.description);
 
-    if (!existingDescriptions.has(normalizedDesc) && !noSyncDescriptions.has(normalizedDesc)) {
+    if (!existingDescriptions.has(normalizedDesc)) {
       servicesToAdd.push({
         description: so.description.trim(),
         observation: so.observation || null,
@@ -97,19 +88,12 @@ export function getServiceOrdersToAddFromQuoteServices(
       .map(so => normalizeDescription(so.description))
   );
 
-  const noSyncDescriptions = new Set(
-    existingServiceOrders
-      .filter(so => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.shouldSync === false)
-      .map(so => normalizeDescription(so.description))
-  );
-
   for (const svc of quoteServices) {
     if (!svc.description || svc.description.trim().length < 3) continue;
-    if (svc.shouldSync === false) continue;
 
     const normalizedDesc = normalizeDescription(svc.description);
 
-    if (existingDescriptions.has(normalizedDesc) || noSyncDescriptions.has(normalizedDesc)) {
+    if (existingDescriptions.has(normalizedDesc)) {
       continue;
     }
 

@@ -15,7 +15,15 @@ export class InvoiceService {
   // =====================
 
   async getByTaskId(taskId: string): Promise<Invoice[]> {
-    const response = await apiClient.get<Invoice[]>(`${this.basePath}/task/${taskId}`);
+    const response = await apiClient.get<Invoice[]>(`${this.basePath}/task/${taskId}`, {
+      params: {
+        include: {
+          installments: { include: { bankSlip: { include: { pdfFile: true } } } },
+          nfseDocuments: true,
+          customer: true,
+        },
+      },
+    });
     return response.data;
   }
 
@@ -25,7 +33,16 @@ export class InvoiceService {
   }
 
   async getById(id: string): Promise<Invoice> {
-    const response = await apiClient.get<Invoice>(`${this.basePath}/${id}`);
+    const response = await apiClient.get<Invoice>(`${this.basePath}/${id}`, {
+      params: {
+        include: {
+          installments: { include: { bankSlip: { include: { pdfFile: true } } } },
+          nfseDocuments: true,
+          customer: true,
+          task: true,
+        },
+      },
+    });
     return response.data;
   }
 
@@ -67,8 +84,13 @@ export class InvoiceService {
     return response.data;
   }
 
-  async cancelNfse(invoiceId: string, nfseDocumentId: string, data: { reason: string }): Promise<any> {
+  async cancelNfse(invoiceId: string, nfseDocumentId: string, data: { reason: string; reasonCode?: number }): Promise<any> {
     const response = await apiClient.put(`${this.basePath}/${invoiceId}/nfse/${nfseDocumentId}/cancel`, data);
+    return response.data;
+  }
+
+  async changeBankSlipDueDate(installmentId: string, newDueDate: string): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${installmentId}/boleto/due-date`, { newDueDate });
     return response.data;
   }
 }
@@ -92,4 +114,5 @@ export const cancelInvoice = (id: string, data?: any) => invoiceService.cancel(i
 export const regenerateBoleto = (installmentId: string) => invoiceService.regenerateBoleto(installmentId);
 export const cancelBoleto = (installmentId: string, data?: any) => invoiceService.cancelBoleto(installmentId, data);
 export const emitNfse = (invoiceId: string) => invoiceService.emitNfse(invoiceId);
-export const cancelNfse = (invoiceId: string, nfseDocumentId: string, data: { reason: string }) => invoiceService.cancelNfse(invoiceId, nfseDocumentId, data);
+export const cancelNfse = (invoiceId: string, nfseDocumentId: string, data: { reason: string; reasonCode?: number }) => invoiceService.cancelNfse(invoiceId, nfseDocumentId, data);
+export const changeBankSlipDueDate = (installmentId: string, newDueDate: string) => invoiceService.changeBankSlipDueDate(installmentId, newDueDate);
