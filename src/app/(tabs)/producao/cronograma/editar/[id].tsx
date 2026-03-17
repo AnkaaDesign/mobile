@@ -301,7 +301,7 @@ export default function EditScheduleScreen() {
       [SECTOR_PRIVILEGES.FINANCIAL]: [
         'baseFileIds', 'artworkIds', 'artworkStatuses', 'paintIds', 'paintId',
         'truck', 'cuts', 'status', 'startedAt', 'finishedAt',
-        'entryDate', 'term', 'forecastDate', 'sectorId',
+        'entryDate', 'term', 'forecastDate', 'cleared', 'sectorId',
       ],
     };
 
@@ -871,6 +871,7 @@ export default function EditScheduleScreen() {
           entryDate: task.entryDate ? new Date(task.entryDate) : undefined,
           term: task.term ? new Date(task.term) : undefined,
           forecastDate: task.forecastDate ? new Date(task.forecastDate) : undefined,
+          cleared: task.cleared ?? false,
           paintId: task.paintId ?? undefined,
           paintIds: task.logoPaints?.filter((p) => p && p.id).map((p) => p.id) || [],
           // Initialize serviceOrders with default empty row if none exist (matches web)

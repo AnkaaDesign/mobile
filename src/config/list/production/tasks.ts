@@ -404,20 +404,23 @@ export const tasksListConfig: ListConfig<Task> = {
           router.push(`/producao/cronograma/detalhes/${task.id}`)
         },
       },
-      // Release action - sets forecastDate to today (ADMIN, LOGISTIC, COMMERCIAL)
-      // Only visible for PREPARATION status tasks
+      // Release action - marks task as cleared (ADMIN, LOGISTIC, COMMERCIAL)
+      // Only visible for PREPARATION status tasks that are not yet cleared
       {
         key: 'release',
         label: 'Liberar',
         icon: 'calendar-check',
         variant: 'default',
         canPerform: canReleaseTasks,
-        visible: (task: Task) => task.status === TASK_STATUS.PREPARATION,
+        visible: (task: Task) => task.status === TASK_STATUS.PREPARATION && !task.cleared,
         onPress: async (task: Task) => {
           try {
-            await updateTask(task.id, {
-              forecastDate: new Date(),
-            })
+            // If task has no forecast date yet, set it to now along with cleared
+            const data: Record<string, any> = { cleared: true }
+            if (!task.forecastDate) {
+              data.forecastDate = new Date()
+            }
+            await updateTask(task.id, data)
             queryClient.invalidateQueries({ queryKey: taskKeys.all })
             // API client already shows success/error alerts
           } catch (_error) {

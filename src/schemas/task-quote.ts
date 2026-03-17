@@ -41,7 +41,8 @@ export const discountTypeSchema = z.enum([
 ]);
 
 export const paymentConditionSchema = z.enum([
-  'CASH',
+  'CASH_5',
+  'CASH_40',
   'INSTALLMENTS_2',
   'INSTALLMENTS_3',
   'INSTALLMENTS_4',
@@ -108,10 +109,6 @@ export const taskQuoteCustomerConfigSchema = z.object({
     (val) => (val === null || val === undefined || val === '' ? null : String(val)),
     paymentConditionSchema.optional().nullable()
   ),
-  downPaymentDate: z.preprocess(
-    (val) => (val === null || val === undefined || val === '' ? null : val),
-    z.coerce.date().nullable()
-  ).optional(),
   customPaymentText: z.string().max(2000).optional().nullable(),
   responsibleId: z.string().uuid().optional().nullable(),
   customerSignatureId: z.string().uuid().optional().nullable(),

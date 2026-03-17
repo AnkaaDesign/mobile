@@ -12,6 +12,7 @@ interface TaskTableRowSwipeProps {
   taskId: string;
   taskName: string;
   taskStatus: TASK_STATUS;
+  taskCleared?: boolean;
   taskSectorId?: string;
   hasLayout?: boolean;
   onEdit?: (taskId: string) => void;
@@ -67,6 +68,7 @@ const TaskTableRowSwipeComponent = ({
   taskId,
   taskName,
   taskStatus,
+  taskCleared = false,
   taskSectorId,
   hasLayout = false,
   onEdit,
@@ -165,9 +167,9 @@ const TaskTableRowSwipeComponent = ({
   // Build actions array based on user role and task status
   const actions: SwipeAction[] = [];
 
-  // 1. LIBERAR (Release) - Only for PREPARATION tasks
+  // 1. LIBERAR (Release) - Only for PREPARATION tasks that are not yet cleared
   // Available to: ADMIN, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL
-  if (onRelease && userCanRelease && taskStatus === TASK_STATUS.PREPARATION) {
+  if (onRelease && userCanRelease && taskStatus === TASK_STATUS.PREPARATION && !taskCleared) {
     actions.push({
       key: "release",
       label: "Liberar",

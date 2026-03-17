@@ -25,7 +25,8 @@ import type { Customer } from "@/types";
 
 // Payment condition options
 const PAYMENT_CONDITIONS = [
-  { value: "CASH", label: "À vista" },
+  { value: "CASH_5", label: "À vista (5 dias)" },
+  { value: "CASH_40", label: "À vista (40 dias)" },
   { value: "INSTALLMENTS_2", label: "Entrada + 20" },
   { value: "INSTALLMENTS_3", label: "Entrada + 20/40" },
   { value: "INSTALLMENTS_4", label: "Entrada + 20/40/60" },
@@ -129,7 +130,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
     const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
     const watchedCustomerConfigs = useWatch({ control, name: "pricing.customerConfigs" });
-    const downPaymentDate = useWatch({ control, name: "pricing.downPaymentDate" });
 
     // Customer search for invoice-to selector
     const searchCustomers = useCallback(async (search: string, page: number = 1) => {
@@ -241,7 +241,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
           discountValue: null,
           total: 0,
           paymentCondition: null,
-          downPaymentDate: null,
           customPaymentText: null,
           responsibleId: null,
           discountReference: null,
@@ -290,14 +289,13 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       });
     }, [watchedCustomerConfigs, getValues, setValue]);
 
-    // Sync root-level paymentCondition/downPaymentDate to customerConfigs[0] in single-customer mode.
+    // Sync root-level paymentCondition to customerConfigs[0] in single-customer mode.
     // The API reads these from customerConfig, not from the root pricing object.
     useEffect(() => {
       const configs = watchedCustomerConfigs;
       if (!Array.isArray(configs) || configs.length !== 1) return;
 
       const rootPaymentCondition = getValues("pricing.paymentCondition");
-      const rootDownPaymentDate = getValues("pricing.downPaymentDate");
       const rootCustomPaymentText = getValues("pricing.customerConfigs.0.customPaymentText");
       const config = configs[0];
       if (!config || typeof config !== 'object') return;
@@ -309,10 +307,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
         updated.paymentCondition = rootPaymentCondition || null;
         needsUpdate = true;
       }
-      if (rootDownPaymentDate !== undefined && config.downPaymentDate !== rootDownPaymentDate) {
-        updated.downPaymentDate = rootDownPaymentDate || null;
-        needsUpdate = true;
-      }
       if (rootCustomPaymentText !== undefined && config.customPaymentText !== rootCustomPaymentText) {
         updated.customPaymentText = rootCustomPaymentText || null;
         needsUpdate = true;
@@ -321,7 +315,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       if (needsUpdate) {
         setValue("pricing.customerConfigs.0", updated, { shouldDirty: false });
       }
-    }, [watchedCustomerConfigs, paymentCondition, downPaymentDate, customPaymentText, getValues, setValue]);
+    }, [watchedCustomerConfigs, paymentCondition, customPaymentText, getValues, setValue]);
 
     // Auto-calculate per-customer subtotals/totals based on service invoiceToCustomerId assignments
     useEffect(() => {
@@ -988,16 +982,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   searchable={false}
                 />
               </View>
-              <View style={styles.halfField}>
-                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
-                <DatePicker
-                  value={downPaymentDate ? new Date(downPaymentDate) : undefined}
-                  onChange={(date) => setValue("pricing.downPaymentDate", date || null)}
-                  mode="date"
-                  placeholder="Selecione"
-                  disabled={disabled}
-                />
-              </View>
             </View>
           </View>
         )}
@@ -1086,16 +1070,6 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                         }))}
                         placeholder="Selecione"
                         searchable={false}
-                      />
-                    </View>
-                    <View style={styles.halfField}>
-                      <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Data Entrada</ThemedText>
-                      <DatePicker
-                        value={config?.downPaymentDate ? new Date(config.downPaymentDate) : undefined}
-                        onChange={(date) => setValue(`pricing.customerConfigs.${i}.downPaymentDate`, date || null)}
-                        mode="date"
-                        placeholder="Selecione"
-                        disabled={disabled}
                       />
                     </View>
                   </View>

@@ -74,7 +74,8 @@ type WizardFormData = z.infer<typeof wizardSchema>;
 
 // Payment condition options
 const PAYMENT_CONDITIONS = [
-  { value: "CASH", label: "À vista" },
+  { value: "CASH_5", label: "À vista (5 dias)" },
+  { value: "CASH_40", label: "À vista (40 dias)" },
   { value: "INSTALLMENTS_2", label: "Entrada + 20" },
   { value: "INSTALLMENTS_3", label: "Entrada + 20/40" },
   { value: "INSTALLMENTS_4", label: "Entrada + 20/40/60" },
@@ -241,7 +242,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
       subtotal: c.subtotal ?? 0,
       total: c.total ?? 0,
       paymentCondition: c.paymentCondition ?? null,
-      downPaymentDate: c.downPaymentDate ? new Date(c.downPaymentDate) : null,
       customPaymentText: c.customPaymentText ?? null,
       responsibleId: c.responsibleId ?? null,
       generateInvoice: c.generateInvoice ?? true,
@@ -887,7 +887,6 @@ function Step1Info({
         subtotal: 0,
         total: 0,
         paymentCondition: null,
-        downPaymentDate: null,
         customPaymentText: null,
         responsibleId: null,
         generateInvoice: true,
@@ -1672,15 +1671,6 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
         />
       </View>
 
-      {/* Down Payment Date */}
-      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Data da Entrada</ThemedText>
-        <DatePicker
-          value={config?.downPaymentDate ? new Date(config.downPaymentDate) : undefined}
-          onChange={(date) => setValue(`pricing.customerConfigs.${configIndex}.downPaymentDate`, date || null)}
-          placeholder="Selecione a data"
-        />
-      </View>
 
       {/* Custom Payment Text */}
       {showCustomPayment && (

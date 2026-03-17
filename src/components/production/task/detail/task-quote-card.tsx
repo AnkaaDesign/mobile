@@ -66,7 +66,6 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
   const paymentText = generatePaymentText({
     customPaymentText: activeConfig?.customPaymentText || null,
     paymentCondition: activeConfig?.paymentCondition,
-    downPaymentDate: activeConfig?.downPaymentDate,
     total: typeof quote.total === 'number' ? quote.total : Number(quote.total) || 0,
   });
   const guaranteeText = generateGuaranteeText(quote);

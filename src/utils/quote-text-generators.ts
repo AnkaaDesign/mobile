@@ -1,4 +1,4 @@
-import { formatCurrency, formatDate } from './index';
+import { formatCurrency } from './index';
 import { PAYMENT_CONDITION } from '../constants/enums';
 
 /**
@@ -24,7 +24,8 @@ function getInstallmentCount(condition: PAYMENT_CONDITION | null): number {
   if (!condition) return 0;
 
   const countMap: Record<PAYMENT_CONDITION, number> = {
-    [PAYMENT_CONDITION.CASH]: 1,
+    [PAYMENT_CONDITION.CASH_5]: 1,
+    [PAYMENT_CONDITION.CASH_40]: 1,
     [PAYMENT_CONDITION.INSTALLMENTS_2]: 2,
     [PAYMENT_CONDITION.INSTALLMENTS_3]: 3,
     [PAYMENT_CONDITION.INSTALLMENTS_4]: 4,
@@ -40,7 +41,6 @@ function getInstallmentCount(condition: PAYMENT_CONDITION | null): number {
 interface PaymentTextData {
   customPaymentText: string | null;
   paymentCondition?: string | null;
-  downPaymentDate?: Date | string | null;
   total: number;
 }
 
@@ -49,7 +49,7 @@ interface PaymentTextData {
  * If customPaymentText is provided, it overrides the auto-generated text
  *
  * Payment structure:
- * - CASH: 1 payment (à vista)
+ * - CASH_5/CASH_40: 1 payment (à vista)
  * - INSTALLMENTS_2: 2 payments (entrada + 20 days)
  * - INSTALLMENTS_3: 3 payments (entrada + 20 + 40 days)
  * - etc. (always 20 days interval between payments)
@@ -61,7 +61,6 @@ export function generatePaymentText(pricing: PaymentTextData): string {
   }
 
   const paymentCondition = pricing.paymentCondition ?? null;
-  const downPaymentDate = pricing.downPaymentDate ?? null;
 
   // No payment condition, return empty
   if (!paymentCondition || paymentCondition === PAYMENT_CONDITION.CUSTOM) {
@@ -75,23 +74,18 @@ export function generatePaymentText(pricing: PaymentTextData): string {
   const installmentValue = Math.round((total / installmentCount) * 100) / 100;
   const word = numberToWord(installmentCount);
 
-  // Format the down payment date if available
-  const dateText = downPaymentDate
-    ? ` em ${formatDate(new Date(downPaymentDate))}`
-    : '';
-
-  // Single payment (à vista)
-  if (installmentCount === 1) {
-    return `Pagamento à vista no valor de ${formatCurrency(total)}${dateText}.`;
+  // CASH_5: à vista for 5 days
+  if (paymentCondition === PAYMENT_CONDITION.CASH_5) {
+    return `Pagamento à vista no valor de ${formatCurrency(total)} para 5 dias a partir da finalização do serviço.`;
   }
 
-  // Two payments (Entrada + 20)
-  if (installmentCount === 2) {
-    return `Fica acertado o pagamento em 2 (${word}) parcelas de ${formatCurrency(installmentValue)}, a primeira${dateText} e a segunda em 20 dias a contar da primeira parcela.`;
+  // CASH_40: à vista for 40 days
+  if (paymentCondition === PAYMENT_CONDITION.CASH_40) {
+    return `Pagamento à vista no valor de ${formatCurrency(total)} para 40 dias a partir da finalização do serviço.`;
   }
 
-  // Multiple payments - build the payment schedule description
-  return `Fica acertado o pagamento em ${installmentCount} (${word}) parcelas de ${formatCurrency(installmentValue)}, a primeira${dateText} e as demais a cada 20 dias a contar da primeira parcela.`;
+  // Installment payments
+  return `Fica acertado o pagamento em ${installmentCount} (${word}) parcelas de ${formatCurrency(installmentValue)}, com entrada para 5 dias a partir da finalização do serviço e as demais a cada 20 dias.`;
 }
 
 /**

@@ -159,7 +159,14 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
           <DetailField
             label="Previsão de Liberação"
             icon="calendar-stats"
-            value={formatDateTime(task.forecastDate)}
+            value={
+              task.cleared ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <ThemedText style={{ fontSize: 13, fontWeight: '600', color: '#3b82f6' }}>Liberado</ThemedText>
+                  <ThemedText style={{ fontSize: 13, color: '#3b82f6' }}>{formatDateTime(task.forecastDate)}</ThemedText>
+                </View>
+              ) : formatDateTime(task.forecastDate)
+            }
           />
           <ForecastHistory taskId={task.id} />
         </View>

@@ -100,7 +100,7 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
 
   const forecastDate = new Date(task.forecastDate);
   const formattedDate = formatDate(task.forecastDate);
-  const today = isToday(forecastDate);
+  const isCleared = !!task.cleared;
   const past = isPast(forecastDate);
   const hasIncomplete = hasIncompleteOrders(task);
   const missingOrders = isMissingServiceOrders(task);
@@ -123,33 +123,33 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
   let showIndicator = false;
   let indicatorColor = URGENCY_COLORS.RED;
   let IndicatorIcon = IconAlertTriangle;
-  // Default text color - change to blue when forecast is today (matching web behavior)
+  // Default text color - change to blue when task is cleared (released)
   let textColor = isDark ? '#f5f5f5' : '#0a0a0a';
 
-  // Show blue text whenever the date is today (matching web behavior)
+  // Show blue text whenever the task is cleared (matching web behavior)
   // This is independent of the corner flag indicator logic
-  if (showCornerFlags && today) {
+  if (showCornerFlags && isCleared) {
     textColor = URGENCY_COLORS.BLUE;
   }
 
   if (showCornerFlags) {
-    if (today && !hasIncomplete && !missingOrders) {
-      // Today with no incomplete orders - blue check (ready for release)
+    if (isCleared && !hasIncomplete && !missingOrders) {
+      // Cleared with no incomplete orders - blue check (released)
       showIndicator = true;
       indicatorColor = URGENCY_COLORS.BLUE;
       IndicatorIcon = IconCheck;
-    } else if (today && (hasIncomplete || missingOrders)) {
-      // Today with pending/missing orders - red alert flag (no text color change)
+    } else if (isCleared && (hasIncomplete || missingOrders)) {
+      // Cleared with pending/missing orders - red alert flag
       showIndicator = true;
       indicatorColor = URGENCY_COLORS.RED;
       IndicatorIcon = IconAlertTriangle;
-    } else if (past && (hasIncomplete || missingOrders || !task.entryDate)) {
-      // Overdue with pending/missing orders or missing entry date - red alert flag (no text color change)
+    } else if (past && !isCleared && (hasIncomplete || missingOrders || !task.entryDate)) {
+      // Overdue and not cleared with pending/missing orders or missing entry date - red alert flag
       showIndicator = true;
       indicatorColor = URGENCY_COLORS.RED;
       IndicatorIcon = IconAlertTriangle;
-    } else if (!today && !past && (hasIncomplete || missingOrders) && urgencyInfo.show) {
-      // Approaching deadline with pending/missing orders - urgency color flag (no text color change)
+    } else if (!isCleared && !past && (hasIncomplete || missingOrders) && urgencyInfo.show) {
+      // Approaching deadline with pending/missing orders and not cleared - urgency color flag
       showIndicator = true;
       indicatorColor = urgencyInfo.color;
       IndicatorIcon = IconAlertTriangle;

@@ -594,6 +594,7 @@ export const TaskTable = React.memo<TaskTableProps>(
               taskId={item.id}
               taskName={item.name}
               taskStatus={item.status}
+              taskCleared={item.cleared}
               onEdit={onTaskEdit}
               onSetSector={onTaskSectorChange ? handleSetSector : undefined}
               onSetStatus={onTaskStatusChange ? handleSetStatus : undefined}

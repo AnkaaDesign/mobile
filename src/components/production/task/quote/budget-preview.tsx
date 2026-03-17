@@ -32,7 +32,6 @@ interface CustomerConfig {
   subtotal: number;
   total: number;
   paymentCondition?: string | null;
-  downPaymentDate?: Date | string | null;
   customPaymentText?: string | null;
   responsibleId?: string | null;
   generateInvoice?: boolean;
@@ -317,7 +316,6 @@ export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPrevie
             const configPaymentText = generatePaymentText({
               customPaymentText: config.customPaymentText || null,
               paymentCondition: config.paymentCondition,
-              downPaymentDate: config.downPaymentDate,
               total: configTotal,
             });
 
@@ -372,7 +370,6 @@ export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPrevie
         const paymentText = generatePaymentText({
           customPaymentText: config.customPaymentText || null,
           paymentCondition: config.paymentCondition,
-          downPaymentDate: config.downPaymentDate,
           total: configTotal,
         });
         if (!paymentText) return null;
