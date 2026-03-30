@@ -74,3 +74,10 @@ export {
   personalEmployeesListConfig,
   personalBorrowsListConfig,
 } from './personal'
+
+// Financial Module (3 configs)
+export {
+  billingListConfig,
+  budgetListConfig,
+  nfseListConfig,
+} from './financial'

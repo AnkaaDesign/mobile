@@ -184,6 +184,8 @@ export * from "./use-paint-productions-infinite-mobile";
 export * from "./use-paint-formula-components-infinite-mobile";
 export * from "./use-payrolls-infinite-mobile";
 export * from "./use-secullum-horarios-infinite-mobile";
+export * from "./use-nfse-list-infinite";
+export * from "./useNfse";
 
 // =====================================================
 // Team Staff Hooks (Secure Backend-Filtered Endpoints)
@@ -238,9 +240,16 @@ export * from "./use-after-interactions";
 export * from "./use-file-viewer-orientation";
 
 // =====================================================
+// Task Quote Hooks
+// =====================================================
+export * from "./useTaskQuote";
+export * from "./use-task-quotes-infinite-mobile";
+
+// =====================================================
 // Invoice / Billing Hooks
 // =====================================================
 export * from "./useInvoice";
+export * from "./use-invoices-infinite-mobile";
 
 // =====================================================
 // Monitoring & Utilities

@@ -2,7 +2,7 @@ import { useMemo, useCallback, useState } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -19,6 +19,7 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import type { User, Sector, Notification } from "@/types";
 import { getUsers, getSectors, adminSendNotification, type AdminSendNotificationData } from "@/api-client";
@@ -73,7 +74,7 @@ interface NotificationFormProps {
 }
 
 export function NotificationForm({ mode, notification, onSuccess, onCancel }: NotificationFormProps) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const [isSending, setIsSending] = useState(false);
@@ -180,7 +181,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
 
       Alert.alert("Sucesso", scheduleLater ? "Notificação agendada com sucesso" : "Notificação enviada com sucesso");
       onSuccess?.();
-      router.back();
+      goBack();
     } catch (error: any) {
       console.error("Error sending notification:", error);
       Alert.alert("Erro", error?.message || "Erro ao enviar notificação");
@@ -193,7 +194,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

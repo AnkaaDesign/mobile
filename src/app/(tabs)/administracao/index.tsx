@@ -155,30 +155,6 @@ export default function AdministracaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.administration.customers.list) as any)}
-              style={{
-                flex: 1,
-                minWidth: "45%",
-                backgroundColor: colors.card,
-                padding: 10,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              <Icon name="building" size={24} color="#22c55e" />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.foreground, fontWeight: "500", fontSize: 12 }}>Clientes</Text>
-                <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 14 }}>
-                  {data?.customerAnalysis?.totalCustomers?.value || 0}
-                </Text>
-              </View>
-            </Pressable>
-
-            <Pressable
               onPress={() => router.push(routeToMobilePath(routes.administration.sectors.list) as any)}
               style={{
                 flex: 1,
@@ -236,7 +212,6 @@ export default function AdministracaoScreen() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {[
               { title: "Total Usuários", value: data?.userMetrics?.totalUsers?.value || 0, icon: "users", color: "#3b82f6" },
-              { title: "Total Clientes", value: data?.customerAnalysis?.totalCustomers?.value || 0, icon: "building", color: "#22c55e" },
               { title: "Setores", value: data?.sectorMetrics?.totalSectors?.value || 0, icon: "sector", color: "#a855f7" },
               { title: "Tarefas Ativas", value: data?.taskMetrics?.tasksInProgress?.value || 0, icon: "clipboard-list", color: "#f97316" },
               { title: "Notificações", value: data?.notificationMetrics?.totalNotifications?.value || 0, icon: "bell", color: "#ef4444" },

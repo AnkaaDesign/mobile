@@ -205,7 +205,7 @@ export function TaskForm({
       const fieldsToCompare = [
         'name', 'customerId', 'sectorId', 'serialNumber', 'status',
         'details', 'entryDate', 'term', 'forecastDate', 'startedAt', 'finishedAt',
-        'paintId', 'commission',
+        'paintId', 'cleared',
       ];
 
       for (const key of fieldsToCompare) {

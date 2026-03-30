@@ -10,6 +10,7 @@ import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-
 import { useExternalWithdrawalMutations } from "@/hooks";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const STAGES = [
 export function ExternalWithdrawalCreateForm() {
   const { colors } = useTheme();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   // Form state hook
   const {
@@ -137,8 +139,8 @@ export function ExternalWithdrawalCreateForm() {
 
   const handleCancel = useCallback(async () => {
     await resetForm();
-    router.back();
-  }, [resetForm, router]);
+    goBack();
+  }, [resetForm, goBack]);
 
   // Handle file uploads
   const handleReceiptUpload = useCallback((files: FilePickerItem[]) => {

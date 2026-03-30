@@ -1,10 +1,6 @@
-import { Redirect } from "expo-router";
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { Layout } from '@/components/list/Layout'
+import { customersListConfig } from '@/config/list/administration/customers'
 
-// Customers are managed in the Administration section, redirect there
 export default function FinancialCustomerListScreen() {
-  useScreenReady();
-  return <Redirect href={routeToMobilePath(routes.administration.customers.root) as any} />;
+  return <Layout config={customersListConfig} />
 }

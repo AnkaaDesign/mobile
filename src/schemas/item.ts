@@ -2485,6 +2485,12 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   abcCategoryOrder: item.abcCategoryOrder,
   xyzCategory: item.xyzCategory,
   xyzCategoryOrder: item.xyzCategoryOrder,
+  price: (item as any).prices?.[0]?.value ?? undefined,
+  measures: (item as any).measures?.map((m: any) => ({
+    value: m.value,
+    unit: m.unit,
+    measureType: m.measureType,
+  })),
   // PPE fields
   ppeType: item.ppeType || undefined,
   ppeCA: item.ppeCA || undefined,

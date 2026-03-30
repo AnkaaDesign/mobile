@@ -16,6 +16,7 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
 import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
@@ -31,6 +32,7 @@ interface PositionFormProps {
 
 export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = usePositionMutations();
@@ -64,7 +66,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
         if (newId) {
           router.replace(routeToMobilePath(routes.humanResources.positions.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (position) {
         await updateAsync({
@@ -83,7 +85,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

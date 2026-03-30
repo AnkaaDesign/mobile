@@ -1,9 +1,9 @@
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
 import { Text } from "./text";
 import { Icon } from "./icon";
 import { cn } from "@/lib/cn";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 interface FormHeaderProps {
   title: string;
@@ -30,13 +30,13 @@ export function FormHeader({
   showActions = true,
   className,
 }: FormHeaderProps) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 
@@ -114,13 +114,13 @@ export function FormHeaderLarge({
   className?: string;
   children?: React.ReactNode;
 }) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      goBack();
     }
   };
 
@@ -197,13 +197,13 @@ export function FormStepHeader({
   isLastStep?: boolean;
   className?: string;
 }) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

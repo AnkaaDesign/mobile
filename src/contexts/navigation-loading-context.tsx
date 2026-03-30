@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useCallback, useRef, useMem
 import { View, StyleSheet, ActivityIndicator, Pressable, BackHandler } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { router, usePathname } from 'expo-router';
+import { useNavigationHistory } from '@/contexts/navigation-history-context';
 
 interface NavigationLoadingContextType {
   /** Ref for synchronous navigation-in-progress checks (no re-renders) */
@@ -41,6 +42,7 @@ const DEFAULT_TIMEOUT = 1500; // 1.5 seconds max for any navigation
 export function NavigationLoadingProvider({ children }: { children: React.ReactNode }) {
   const { colors, isDark } = useTheme();
   const pathname = usePathname();
+  const { goBack: historyGoBack } = useNavigationHistory();
 
   // Single source of truth: overlayVisible drives both visual AND touch blocking
   const [overlayVisible, setOverlayVisible] = useState(false);
@@ -201,21 +203,13 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
 
   const goBackWithLoading = useCallback((options?: { fallbackRoute?: string }) => {
     navigateWithLoading(() => {
-      if (router.canGoBack()) {
-        router.back();
-      } else if (options?.fallbackRoute) {
-        router.replace(options.fallbackRoute as any);
-      }
+      historyGoBack(options);
     });
-  }, [navigateWithLoading]);
+  }, [navigateWithLoading, historyGoBack]);
 
   const goBack = useCallback((options?: { fallbackRoute?: string }) => {
-    if (router.canGoBack()) {
-      router.back();
-    } else if (options?.fallbackRoute) {
-      pushWithLoading(options.fallbackRoute);
-    }
-  }, [pushWithLoading]);
+    historyGoBack(options);
+  }, [historyGoBack]);
 
   const contextValue = useMemo(() => ({
     isNavigatingRef,

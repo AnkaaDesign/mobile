@@ -19,6 +19,7 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { warningCreateSchema, warningUpdateSchema } from "@/schemas/warning";
 import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/warning";
@@ -53,6 +54,7 @@ const CATEGORY_LABELS = {
 
 export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useWarningMutations();
@@ -135,7 +137,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
         if (newId) {
           router.replace(routeToMobilePath(routes.humanResources.warnings.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (warning) {
         await updateAsync({
@@ -154,7 +156,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

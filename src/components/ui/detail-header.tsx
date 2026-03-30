@@ -1,11 +1,11 @@
 import React from "react";
 import { TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
 import { Text } from "./text";
 import { Icon } from "./icon";
 import { Badge } from "./badge";
 import { cn } from "@/lib/cn";
 import { useTheme } from "@/lib/theme";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 interface DetailHeaderProps {
   title: string;
@@ -33,14 +33,14 @@ export function DetailHeader({
   className,
   showBackButton = true,
 }: DetailHeaderProps) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      goBack();
     }
   };
 
@@ -123,14 +123,14 @@ export function DetailHeaderLarge({
   description?: string;
   children?: React.ReactNode;
 }) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      goBack();
     }
   };
 

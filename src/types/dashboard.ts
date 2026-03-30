@@ -494,7 +494,10 @@ export interface ProductionDashboardData {
   garageUtilization: {
     totalGarages: DashboardMetric;
     totalLanes: DashboardMetric;
+    totalParkingSpots: DashboardMetric;
+    occupiedSpots: DashboardMetric;
     utilizationRate: DashboardMetric; // percentage
+    spotsByGarage: DashboardChartData;
   };
   truckMetrics: {
     totalTrucks: DashboardMetric;
@@ -574,6 +577,61 @@ export interface UnifiedDashboardResponse {
   data?: UnifiedDashboardData;
 }
 
+// Financial Dashboard
+export interface FinancialDashboardData {
+  revenueMetrics: {
+    totalInvoiced: DashboardMetric;
+    totalPaid: DashboardMetric;
+    totalPending: DashboardMetric;
+    overdueAmount: DashboardMetric;
+    authorizedNfse: DashboardMetric;
+  };
+  invoiceMetrics: {
+    totalInvoices: DashboardMetric;
+    activeInvoices: DashboardMetric;
+    paidInvoices: DashboardMetric;
+    cancelledInvoices: DashboardMetric;
+  };
+  bankSlipMetrics: {
+    totalBankSlips: DashboardMetric;
+    activeBankSlips: DashboardMetric;
+    overdueBankSlips: DashboardMetric;
+    paidBankSlips: DashboardMetric;
+  };
+  nfseMetrics: {
+    totalNfse: DashboardMetric;
+    authorizedNfse: DashboardMetric;
+    pendingNfse: DashboardMetric;
+    cancelledNfse: DashboardMetric;
+  };
+  quoteMetrics: {
+    totalQuotes: DashboardMetric;
+    pendingQuotes: DashboardMetric;
+    approvedQuotes: DashboardMetric;
+    settledQuotes: DashboardMetric;
+  };
+  customerAnalysis: {
+    topCustomers: DashboardListItem[];
+    revenueByCustomer: DashboardChartData;
+  };
+  invoicesByStatus: DashboardChartData;
+  quotesByStatus: DashboardChartData;
+  monthlyRevenue: DashboardChartData;
+  recentActivities: Array<{
+    id: string;
+    title: string;
+    description: string;
+    type?: string;
+    timestamp: Date | string;
+  }>;
+}
+
+export interface FinancialDashboardResponse {
+  success: boolean;
+  message: string;
+  data?: FinancialDashboardData;
+}
+
 // Home Dashboard Types
 export interface HomeDashboardTask {
   id: string;
@@ -586,6 +644,9 @@ export interface HomeDashboardTask {
   forecastDate: string | null;
   customerName: string | null;
   sectorName: string | null;
+  quoteTotal?: number | null;
+  quoteExpiresAt?: string | null;
+  quoteBudgetNumber?: number | null;
 }
 
 export interface HomeDashboardServiceOrder {
@@ -629,6 +690,7 @@ export interface HomeDashboardData {
   completedTasks?: HomeDashboardTask[];
   tasksAwaitingPaymentApproval?: HomeDashboardTask[];
   tasksAwaitingQuoteApproval?: HomeDashboardTask[];
+  tasksAwaitingBudgetApproval?: HomeDashboardTask[];
   recentMessages?: HomeDashboardMessage[];
   counts: {
     tasksCloseDeadline?: number;
@@ -638,6 +700,7 @@ export interface HomeDashboardData {
     completedTasks?: number;
     tasksAwaitingPaymentApproval?: number;
     tasksAwaitingQuoteApproval?: number;
+    tasksAwaitingBudgetApproval?: number;
     recentMessages?: number;
     unreadMessages?: number;
   };

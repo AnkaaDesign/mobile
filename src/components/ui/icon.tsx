@@ -199,6 +199,8 @@ import {
   IconScale,
   IconFolderOpen,
   IconFileCheck,
+  IconCar,
+  IconCalendarCheck,
 } from "@tabler/icons-react-native";
 
 // Apply cssInterop to all Tabler icons to support className prop
@@ -229,7 +231,7 @@ const tablerIcons = [
   IconCameraCheck, IconCameraOff, IconFolderOpen,
   IconMessageCircle, IconCertificate, IconBarcode, IconCategory, IconCake, IconBuildingCommunity,
   IconMailbox, IconShieldOff, IconArrowBarToUp, IconHanger, IconShirt, IconShoe, IconUmbrella,
-  IconMask, IconHandGrab, IconCreditCard, IconScale, IconFileCheck
+  IconMask, IconHandGrab, IconCreditCard, IconScale, IconFileCheck, IconCar, IconCalendarCheck
 ];
 
 // Log any undefined icons for debugging
@@ -611,6 +613,9 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   creditCard: IconCreditCard, // camelCase version
   scale: IconScale,
   weight: IconScale, // Alias
+  car: IconCar,
+  "calendar-check": IconCalendarCheck,
+  calendarCheck: IconCalendarCheck, // camelCase version
   "file-check": IconFileCheck,
   fileCheck: IconFileCheck, // camelCase version
   "rotate-clockwise": IconRotateClockwise,

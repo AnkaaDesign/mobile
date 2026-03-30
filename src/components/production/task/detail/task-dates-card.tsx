@@ -4,7 +4,7 @@ import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
-import { fontSize, spacing } from "@/constants/design-system";
+import { fontSize, spacing, borderRadius, fontWeight } from "@/constants/design-system";
 import { formatDate, formatDateTime } from "@/utils";
 import { useForecastHistory } from "@/hooks/useTask";
 import type { Task } from '../../../../types';
@@ -37,39 +37,41 @@ function formatRelativeTime(date: Date | string): string {
   return formatDateTime(date);
 }
 
-function HistoryEntry({ entry }: { entry: TaskForecastHistory }) {
+function HistoryEntry({ entry, isLast }: { entry: TaskForecastHistory; isLast: boolean }) {
   const { colors } = useTheme();
 
   return (
-    <View style={styles.entryContainer}>
+    <View style={[styles.entryContainer, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, paddingBottom: spacing.sm, marginBottom: spacing.sm }]}>
       {/* Name + relative time */}
       <View style={styles.entryHeader}>
-        <ThemedText style={[styles.entryName, { color: colors.foreground }]}>
-          {entry.changedBy?.name || "Sistema"}
-        </ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          <Icon name="user" size={12} color={colors.mutedForeground} />
+          <ThemedText style={[styles.entryName, { color: colors.foreground }]}>
+            {entry.changedBy?.name || "Sistema"}
+          </ThemedText>
+        </View>
         <ThemedText style={[styles.entryTime, { color: colors.mutedForeground }]}>
           {formatRelativeTime(entry.createdAt)}
         </ThemedText>
       </View>
 
-      {/* Date range + reason inline */}
-      <View style={styles.entryDates}>
+      {/* Date range */}
+      <View style={[styles.entryDates, { backgroundColor: colors.muted, borderRadius: borderRadius.sm, padding: spacing.xs, marginTop: spacing.xs }]}>
         <ThemedText style={[styles.entryDateMuted, { color: colors.mutedForeground }]}>
-          {entry.previousDate ? formatDateTime(entry.previousDate) : "—"}
+          {entry.previousDate ? formatDate(entry.previousDate) : "—"}
         </ThemedText>
-        <Icon name="arrow-right" size={12} color={colors.mutedForeground} />
-        <ThemedText style={[styles.entryDateBold, { color: colors.foreground }]}>
-          {entry.newDate ? formatDateTime(entry.newDate) : "—"}
+        <Icon name="arrow-right" size={12} color={colors.primary} />
+        <ThemedText style={[styles.entryDateBold, { color: colors.primary }]}>
+          {entry.newDate ? formatDate(entry.newDate) : "—"}
         </ThemedText>
-        {entry.reason && (
-          <>
-            <ThemedText style={[styles.entryReasonDash, { color: colors.mutedForeground }]}>—</ThemedText>
-            <ThemedText style={[styles.entryReason, { color: colors.foreground }]} numberOfLines={1}>
-              {entry.reason}
-            </ThemedText>
-          </>
-        )}
       </View>
+
+      {/* Reason */}
+      {entry.reason && (
+        <ThemedText style={[styles.entryReason, { color: colors.mutedForeground }]} numberOfLines={2}>
+          {entry.reason}
+        </ThemedText>
+      )}
     </View>
   );
 }
@@ -77,50 +79,45 @@ function HistoryEntry({ entry }: { entry: TaskForecastHistory }) {
 function ForecastHistory({ taskId }: { taskId: string }) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
-  const { data, isLoading } = useForecastHistory(taskId, expanded);
+  // Always fetch to know if there are entries
+  const { data, isLoading } = useForecastHistory(taskId, true);
 
   const entries: TaskForecastHistory[] = data?.data ?? [];
 
+  // Don't show anything if no reschedule history
+  if (!isLoading && entries.length === 0) return null;
+
+  // Show loading indicator while fetching (brief)
+  if (isLoading) return null;
+
   return (
     <View style={styles.historyWrapper}>
-      <TouchableOpacity onPress={() => setExpanded(!expanded)} activeOpacity={0.7}>
-        <ThemedText style={[styles.toggleText, { color: colors.mutedForeground }]}>
-          {expanded ? "Ocultar histórico" : "Ver histórico de reagendamentos"}
+      <TouchableOpacity
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+        style={[styles.toggleButton, { backgroundColor: colors.muted, borderColor: colors.border }]}
+      >
+        <Icon name="history" size={14} color={colors.primary} />
+        <ThemedText style={[styles.toggleText, { color: colors.primary }]}>
+          {expanded ? "Ocultar histórico" : `Ver histórico de reagendamentos (${entries.length})`}
         </ThemedText>
+        <Icon name={expanded ? "chevron-up" : "chevron-down"} size={14} color={colors.primary} />
       </TouchableOpacity>
 
       {expanded && (
-        <View style={styles.historyContent}>
-          {isLoading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-                Carregando histórico...
-              </ThemedText>
-            </View>
-          )}
-
-          {!isLoading && entries.length === 0 && (
-            <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Nenhum reagendamento registrado.
+        <View style={[styles.historyContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.timelineHeader}>
+            <Icon name="calendar-stats" size={14} color={colors.primary} />
+            <ThemedText style={[styles.timelineTitle, { color: colors.foreground }]}>
+              Reagendamentos
             </ThemedText>
-          )}
-
-          {!isLoading && entries.length > 0 && (
-            <View style={styles.timeline}>
-              <View style={styles.timelineHeader}>
-                <Icon name="history" size={14} color={colors.foreground} />
-                <ThemedText style={[styles.timelineTitle, { color: colors.foreground }]}>
-                  Histórico de Reagendamentos ({entries.length})
-                </ThemedText>
-              </View>
-              {entries.map((entry) => (
-                <View key={entry.id} style={[styles.timelineEntry, { borderLeftColor: colors.border }]}>
-                  <HistoryEntry entry={entry} />
-                </View>
-              ))}
+            <View style={[styles.countBadge, { backgroundColor: colors.primary + '15' }]}>
+              <ThemedText style={[styles.countText, { color: colors.primary }]}>{entries.length}</ThemedText>
             </View>
-          )}
+          </View>
+          {entries.map((entry, index) => (
+            <HistoryEntry key={entry.id} entry={entry} isLast={index === entries.length - 1} />
+          ))}
         </View>
       )}
     </View>
@@ -162,10 +159,17 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
             value={
               task.cleared ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <ThemedText style={{ fontSize: 13, fontWeight: '600', color: '#3b82f6' }}>Liberado</ThemedText>
-                  <ThemedText style={{ fontSize: 13, color: '#3b82f6' }}>{formatDateTime(task.forecastDate)}</ThemedText>
+                  <View style={[styles.clearedBadge, { backgroundColor: '#3b82f615' }]}>
+                    <Icon name="check" size={12} color="#3b82f6" />
+                    <ThemedText style={{ fontSize: 13, fontWeight: '600', color: '#3b82f6' }}>Liberado</ThemedText>
+                  </View>
+                  <ThemedText style={{ fontSize: 13, color: colors.mutedForeground }}>{formatDateTime(task.forecastDate)}</ThemedText>
                 </View>
-              ) : formatDateTime(task.forecastDate)
+              ) : (
+                <ThemedText style={[styles.value, { color: colors.foreground }]}>
+                  {formatDateTime(task.forecastDate)}
+                </ThemedText>
+              )
             }
           />
           <ForecastHistory taskId={task.id} />
@@ -188,14 +192,22 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
           icon="calendar-event"
           iconColor={isOverdue ? colors.destructive : undefined}
           value={
-            <ThemedText style={[
-              styles.value,
-              { color: isOverdue ? colors.destructive : colors.foreground },
-              isOverdue && styles.overdueText,
-            ]}>
-              {formatDate(task.term)}
-              {isOverdue && " (Atrasado)"}
-            </ThemedText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <ThemedText style={[
+                styles.value,
+                { color: isOverdue ? colors.destructive : colors.foreground },
+              ]}>
+                {formatDate(task.term)}
+              </ThemedText>
+              {isOverdue && (
+                <View style={[styles.overdueBadge, { backgroundColor: colors.destructive + '15' }]}>
+                  <Icon name="alert-circle" size={12} color={colors.destructive} />
+                  <ThemedText style={{ fontSize: fontSize.xs, fontWeight: '600', color: colors.destructive }}>
+                    Atrasado
+                  </ThemedText>
+                </View>
+              )}
+            </View>
           }
         />
       )}
@@ -204,7 +216,7 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
       {task.startedAt && (
         <DetailField
           label="Iniciado"
-          icon="calendar-stats"
+          icon="player-play"
           value={formatDateTime(task.startedAt)}
         />
       )}
@@ -215,7 +227,11 @@ export const TaskDatesCard: React.FC<TaskDatesCardProps> = React.memo(({ task, c
           label="Finalizado"
           icon="calendar-check"
           iconColor="#10b981"
-          value={formatDateTime(task.finishedAt)}
+          value={
+            <ThemedText style={[styles.value, { color: '#10b981' }]}>
+              {formatDateTime(task.finishedAt)}
+            </ThemedText>
+          }
         />
       )}
     </DetailCard>
@@ -227,55 +243,78 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: "600",
   },
-  overdueText: {
-    fontWeight: "600",
-  },
   subtext: {
     fontSize: fontSize.xs,
     marginTop: 2,
   },
-  // Toggle
+  // Cleared badge
+  clearedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  // Overdue badge
+  overdueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  // Toggle button
   historyWrapper: {
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
   },
   toggleText: {
     fontSize: fontSize.xs,
-    fontWeight: "500",
+    fontWeight: "600",
+    flex: 1,
   },
   // History content
   historyContent: {
     marginTop: spacing.sm,
-  },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  loadingText: {
-    fontSize: fontSize.sm,
-  },
-  emptyText: {
-    fontSize: fontSize.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
   },
   // Timeline
-  timeline: {
-    gap: 0,
-  },
   timelineHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.xs,
   },
   timelineTitle: {
     fontSize: fontSize.sm,
     fontWeight: "600",
+    flex: 1,
   },
-  timelineEntry: {
-    borderLeftWidth: 2,
-    paddingLeft: spacing.md,
-    paddingBottom: spacing.sm,
+  countBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    borderRadius: borderRadius.full,
+    minWidth: 22,
+    alignItems: 'center',
+  },
+  countText: {
+    fontSize: fontSize.xs,
+    fontWeight: "700",
   },
   // Entry
   entryContainer: {
@@ -297,7 +336,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    flexWrap: "wrap",
   },
   entryDateMuted: {
     fontSize: fontSize.sm,
@@ -306,12 +344,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: "600",
   },
-  entryReasonDash: {
-    fontSize: fontSize.sm,
-  },
   entryReason: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     fontStyle: "italic",
-    flexShrink: 1,
+    marginTop: spacing.xs,
   },
 });

@@ -18,6 +18,7 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { vacationCreateSchema, vacationUpdateSchema } from "@/schemas/vacation";
 import type { VacationCreateFormData, VacationUpdateFormData } from "@/schemas/vacation";
@@ -48,6 +49,7 @@ export function VacationForm({
   onFormStateChange
 }: VacationFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useVacationMutations();
@@ -202,7 +204,7 @@ export function VacationForm({
         if (newId) {
           router.replace(routeToMobilePath(routes.humanResources.vacations.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (vacation) {
         await updateAsync({
@@ -221,7 +223,7 @@ export function VacationForm({
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

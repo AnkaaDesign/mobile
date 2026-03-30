@@ -15,6 +15,7 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { sectorCreateSchema, sectorUpdateSchema } from "@/schemas/sector";
 import type { SectorCreateFormData, SectorUpdateFormData } from "@/schemas/sector";
@@ -31,6 +32,7 @@ interface SectorFormProps {
 
 export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useSectorMutations();
@@ -71,7 +73,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
         if (newId) {
           router.replace(routeToMobilePath(routes.administration.sectors.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (sector) {
         const updateData = {
@@ -94,7 +96,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

@@ -381,9 +381,24 @@ const ALL_ROUTES = [
 
   // Financial
   { name: "financeiro/index", title: "Financeiro" },
+  { name: "financeiro/clientes", title: "Clientes" },
+  { name: "financeiro/clientes/index", title: "Clientes" },
   { name: "financeiro/clientes/listar", title: "Clientes" },
+  { name: "financeiro/clientes/cadastrar", title: "Cadastrar Cliente" },
   { name: "financeiro/clientes/detalhes/[id]", title: "Detalhes do Cliente" },
   { name: "financeiro/clientes/editar/[id]", title: "Editar Cliente" },
+  { name: "financeiro/faturamento", title: "Faturamento" },
+  { name: "financeiro/faturamento/index", title: "Faturamento" },
+  { name: "financeiro/faturamento/listar", title: "Faturamento" },
+  { name: "financeiro/faturamento/detalhes/[id]", title: "Detalhes da Fatura" },
+  { name: "financeiro/orcamento", title: "Orçamentos" },
+  { name: "financeiro/orcamento/index", title: "Orçamentos" },
+  { name: "financeiro/orcamento/listar", title: "Orçamentos" },
+  { name: "financeiro/orcamento/detalhes/[taskId]", title: "Detalhes do Orçamento" },
+  { name: "financeiro/notas-fiscais", title: "Notas Fiscais" },
+  { name: "financeiro/notas-fiscais/index", title: "Notas Fiscais" },
+  { name: "financeiro/notas-fiscais/listar", title: "Notas Fiscais" },
+  { name: "financeiro/notas-fiscais/detalhes/[id]", title: "Detalhes da NFS-e" },
 
   // Integrations
   { name: "integracoes/index", title: "Integrações" },
@@ -514,7 +529,10 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.FINANCIAL) && path.startsWith('financeiro/')) {
       return true;
     }
-    // COMMERCIAL users can access responsible routes and customer routes
+    // COMMERCIAL users can access financial routes and responsible/customer routes
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.COMMERCIAL) && path.startsWith('financeiro/')) {
+      return true;
+    }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.COMMERCIAL) && (
       path.startsWith('administracao/responsaveis/') ||
       path.startsWith('administracao/clientes/')

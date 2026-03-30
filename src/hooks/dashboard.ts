@@ -8,6 +8,7 @@ import type {
   PaintDashboardResponse,
   ProductionDashboardResponse,
   UnifiedDashboardResponse,
+  FinancialDashboardResponse,
   HomeDashboardResponse,
 } from '@/types';
 import type {
@@ -17,6 +18,7 @@ import type {
   PaintDashboardQueryFormData,
   ProductionDashboardQueryFormData,
   UnifiedDashboardQueryFormData,
+  FinancialDashboardQueryFormData,
   HomeDashboardQueryFormData,
 } from '@/schemas';
 
@@ -29,6 +31,7 @@ export const dashboardQueryKeys = {
   paint: (params?: PaintDashboardQueryFormData) => [...dashboardQueryKeys.all, "paint", params] as const,
   production: (params?: ProductionDashboardQueryFormData) => [...dashboardQueryKeys.all, "production", params] as const,
   unified: (params?: UnifiedDashboardQueryFormData) => [...dashboardQueryKeys.all, "unified", params] as const,
+  financial: (params?: FinancialDashboardQueryFormData) => [...dashboardQueryKeys.all, "financial", params] as const,
   home: (params?: HomeDashboardQueryFormData) => [...dashboardQueryKeys.all, "home", params] as const,
 };
 
@@ -107,6 +110,18 @@ export const useUnifiedDashboard = (params?: UnifiedDashboardQueryFormData, opti
   });
 };
 
+// Financial Dashboard Hook
+export const useFinancialDashboard = (params?: FinancialDashboardQueryFormData, options?: Omit<UseQueryOptions<FinancialDashboardResponse, Error>, "queryKey" | "queryFn">) => {
+  return useQuery({
+    queryKey: dashboardQueryKeys.financial(params),
+    queryFn: async () => {
+      return await dashboardService.getFinancialDashboard(params);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
+  });
+};
+
 // Home Dashboard Hook
 export const useHomeDashboard = (params?: HomeDashboardQueryFormData, options?: Omit<UseQueryOptions<HomeDashboardResponse, Error>, "queryKey" | "queryFn">) => {
   return useQuery({
@@ -127,5 +142,6 @@ export const dashboardHooks = {
   usePaintDashboard,
   useProductionDashboard,
   useUnifiedDashboard,
+  useFinancialDashboard,
   useHomeDashboard,
 };

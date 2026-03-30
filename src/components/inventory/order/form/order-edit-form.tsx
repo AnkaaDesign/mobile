@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "expo-router";
 
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
@@ -88,6 +89,7 @@ const STEPS: FormStep[] = [
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
   const { colors } = useTheme();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   // Fetch order data
   const { data: orderResponse, isLoading: isLoadingOrder } = useOrder(orderId, {
@@ -551,12 +553,12 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
           style: "destructive",
           onPress: async () => {
             await multiStepForm.resetForm();
-            router.back();
+            goBack();
           },
         },
       ],
     );
-  }, [multiStepForm, router]);
+  }, [multiStepForm, goBack]);
 
   // Loading state
   if (isLoadingOrder || multiStepForm.isLoading) {

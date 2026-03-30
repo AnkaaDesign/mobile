@@ -11,6 +11,7 @@ import {
   Text as RNText,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useForm, FormProvider, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -126,6 +127,7 @@ interface TaskQuoteWizardProps {
 export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
   const { colors } = useTheme();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -510,8 +512,8 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
 
   // Handle cancel
   const handleCancel = useCallback(() => {
-    router.back();
-  }, [router]);
+    goBack();
+  }, [goBack]);
 
   // Loading state
   if (taskLoading || pricingLoading) {

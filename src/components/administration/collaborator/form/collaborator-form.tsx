@@ -17,6 +17,7 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
 import type { UserCreateFormData, UserUpdateFormData } from "@/schemas/user";
@@ -66,6 +67,7 @@ const BRAZIL_STATES: ComboboxOption[] = [
 
 export function CollaboratorForm({ mode, user, onSuccess, onCancel }: CollaboratorFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useUserMutations();
@@ -345,7 +347,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         if (newId) {
           router.replace(routeToMobilePath(routes.administration.collaborators.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (user) {
         await updateAsync({
@@ -364,7 +366,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

@@ -70,6 +70,13 @@ export const unifiedDashboardQuerySchema = baseDashboardQuerySchema;
 
 export type UnifiedDashboardQueryFormData = z.input<typeof unifiedDashboardQuerySchema>;
 
+// Financial dashboard query
+export const financialDashboardQuerySchema = baseDashboardQuerySchema.extend({
+  customerId: z.string().uuid().optional(),
+});
+
+export type FinancialDashboardQueryFormData = z.input<typeof financialDashboardQuerySchema>;
+
 // Home dashboard query
 export const homeDashboardQuerySchema = z.object({
   platform: z.enum(['web', 'mobile']).optional(),

@@ -69,3 +69,30 @@ export interface NfseDocument {
   errorCount?: number;
   retryAfter?: Date | null;
 }
+
+export interface ElotechNfseListItem {
+  id: number;
+  numeroNotaFiscal: number;
+  tipoDocumento: string;
+  dataEmissao: string;
+  situacao: number;
+  descricaoSituacao: string;
+  cancelada: boolean;
+  emitida: boolean;
+  tomadorCnpjCpf: string;
+  tomadorRazaoNome: string;
+  valorDoc: number;
+  valorServico: number;
+  valorISS: number;
+  issRetido: string;
+  // Enriched from local DB
+  invoiceId?: string | null;
+  taskId?: string | null;
+  taskName?: string | null;
+  taskSerialNumber?: string | null;
+  customerName?: string | null;
+  nfseDocumentId?: string | null;
+  localStatus?: string | null;
+  idMotivoSituacao?: number;
+  descricaoMotivoSituacao?: string;
+}

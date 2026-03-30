@@ -133,11 +133,26 @@ export const routes = {
 
   // Financial - Financeiro - Financial Management
   financial: {
+    billing: {
+      root: "/financeiro/faturamento",
+      list: "/financeiro/faturamento/listar",
+      details: (id: string) => `/financeiro/faturamento/detalhes/${id}`,
+    },
+    budget: {
+      root: "/financeiro/orcamento",
+      list: "/financeiro/orcamento/listar",
+      details: (taskId: string) => `/financeiro/orcamento/detalhes/${taskId}`,
+    },
     customers: {
       create: "/financeiro/clientes/cadastrar",
       details: (id: string) => `/financeiro/clientes/detalhes/${id}`,
       edit: (id: string) => `/financeiro/clientes/editar/${id}`,
       root: "/financeiro/clientes",
+    },
+    nfse: {
+      root: "/financeiro/notas-fiscais",
+      list: "/financeiro/notas-fiscais/listar",
+      details: (id: string) => `/financeiro/notas-fiscais/detalhes/${id}`,
     },
     root: "/financeiro",
   },

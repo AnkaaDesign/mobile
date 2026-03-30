@@ -86,6 +86,21 @@ export class TaskQuoteService {
     return response.data;
   }
 
+  async budgetApprove(id: string): Promise<TaskQuoteResponse> {
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/budget-approve`);
+    return response.data;
+  }
+
+  async verify(id: string): Promise<TaskQuoteResponse> {
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/verify`);
+    return response.data;
+  }
+
+  async internalApprove(id: string): Promise<TaskQuoteResponse> {
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/internal-approve`);
+    return response.data;
+  }
+
   async reject(id: string, reason?: string): Promise<TaskQuoteResponse> {
     const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/reject`, { reason });
     return response.data;
@@ -130,6 +145,9 @@ export const updateTaskQuote = (id: string, data: Partial<TaskQuote>) => taskQuo
 export const deleteTaskQuote = (id: string) => taskQuoteService.delete(id);
 export const updateTaskQuoteStatus = (id: string, status: TASK_QUOTE_STATUS, reason?: string) => taskQuoteService.updateStatus(id, status, reason);
 export const approveTaskQuote = (id: string) => taskQuoteService.approve(id);
+export const budgetApproveTaskQuote = (id: string) => taskQuoteService.budgetApprove(id);
+export const verifyTaskQuote = (id: string) => taskQuoteService.verify(id);
+export const internalApproveTaskQuote = (id: string) => taskQuoteService.internalApprove(id);
 export const rejectTaskQuote = (id: string, reason?: string) => taskQuoteService.reject(id, reason);
 export const cancelTaskQuote = (id: string) => taskQuoteService.cancel(id);
 export const getExpiredTaskQuotes = () => taskQuoteService.getExpired();

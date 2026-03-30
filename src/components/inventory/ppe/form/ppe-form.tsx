@@ -14,6 +14,7 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { itemCreateSchema, itemUpdateSchema } from "@/schemas/item";
 import type { ItemCreateFormData, ItemUpdateFormData } from "@/schemas/item";
@@ -35,6 +36,7 @@ interface PPEFormProps {
 
 export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useItemMutations();
@@ -92,7 +94,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
         if (newId) {
           router.replace(routeToMobilePath(routes.inventory.ppe.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (item) {
         await updateAsync({
@@ -111,7 +113,7 @@ export function PPEForm({ mode, item, onSuccess, onCancel }: PPEFormProps) {
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

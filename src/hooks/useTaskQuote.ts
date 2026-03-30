@@ -166,6 +166,54 @@ export function useCancelTaskQuote() {
 }
 
 /**
+ * Budget approve quote mutation (PENDING -> BUDGET_APPROVED)
+ */
+export function useBudgetApproveTaskQuote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => taskQuoteService.budgetApprove(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    },
+  });
+}
+
+/**
+ * Verify quote mutation (BUDGET_APPROVED -> VERIFIED_BY_FINANCIAL)
+ */
+export function useVerifyTaskQuote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => taskQuoteService.verify(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    },
+  });
+}
+
+/**
+ * Internal approve quote mutation (VERIFIED_BY_FINANCIAL -> BILLING_APPROVED, triggers invoice generation)
+ */
+export function useInternalApproveTaskQuote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => taskQuoteService.internalApprove(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: taskQuoteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    },
+  });
+}
+
+/**
  * Update quote status mutation
  */
 export function useUpdateTaskQuoteStatus() {

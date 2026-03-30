@@ -75,35 +75,7 @@ export {
   type OrderItemWhere,
 } from "./order";
 export * from "./paint";
-export {
-  physicalPersonIncludeSchema,
-  physicalPersonOrderBySchema,
-  physicalPersonWhereSchema,
-  physicalPersonGetManySchema,
-  physicalPersonGetByIdSchema,
-  physicalPersonCreateSchema,
-  physicalPersonQuickCreateSchema,
-  physicalPersonUpdateSchema,
-  physicalPersonBatchCreateSchema,
-  physicalPersonBatchUpdateSchema,
-  physicalPersonBatchDeleteSchema,
-  physicalPersonQuerySchema,
-  physicalPersonBatchQuerySchema,
-  mapPhysicalPersonToFormData,
-  type PhysicalPersonGetManyFormData,
-  type PhysicalPersonGetByIdFormData,
-  type PhysicalPersonQueryFormData,
-  type PhysicalPersonBatchQueryFormData,
-  type PhysicalPersonCreateFormData,
-  type PhysicalPersonQuickCreateFormData,
-  type PhysicalPersonUpdateFormData,
-  type PhysicalPersonBatchCreateFormData,
-  type PhysicalPersonBatchUpdateFormData,
-  type PhysicalPersonBatchDeleteFormData,
-  type PhysicalPersonInclude,
-  type PhysicalPersonOrderBy,
-  type PhysicalPersonWhere,
-} from "./physical-person";
+// physical-person schema removed - dead code, customer schema handles CPF-only filtering
 export * from "./position";
 export * from "./responsible";
 export * from "./preferences";

@@ -93,6 +93,11 @@ export class ServiceOrderService {
     const response = await apiClient.delete<ServiceOrderBatchDeleteResponse>(`${this.basePath}/batch`, { data });
     return response.data;
   }
+
+  async getUniqueDescriptions(): Promise<{ success: boolean; data: string[] }> {
+    const response = await apiClient.get<{ success: boolean; data: string[] }>(`${this.basePath}/descriptions`);
+    return response.data;
+  }
 }
 
 // =====================
@@ -110,3 +115,4 @@ export const deleteServiceOrder = (id: string) => serviceOrderService.deleteServ
 export const batchCreateServiceOrders = (data: ServiceOrderBatchCreateFormData, query?: ServiceOrderQueryFormData) => serviceOrderService.batchCreateServiceOrders(data, query);
 export const batchUpdateServiceOrders = (data: ServiceOrderBatchUpdateFormData, query?: ServiceOrderQueryFormData) => serviceOrderService.batchUpdateServiceOrders(data, query);
 export const batchDeleteServiceOrders = (data: ServiceOrderBatchDeleteFormData) => serviceOrderService.batchDeleteServiceOrders(data);
+export const getUniqueServiceOrderDescriptions = () => serviceOrderService.getUniqueDescriptions();

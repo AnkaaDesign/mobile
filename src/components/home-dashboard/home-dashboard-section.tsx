@@ -7,6 +7,7 @@ import { LowStockList } from "./low-stock-list";
 import { CompletedTasksList } from "./completed-tasks-list";
 import { AwaitingApprovalTasksList } from "./awaiting-approval-tasks-list";
 import { AwaitingQuoteApprovalList } from "./awaiting-quote-approval-list";
+import { AwaitingBudgetApprovalList } from "./awaiting-budget-approval-list";
 
 interface HomeDashboardSectionProps {
   data: HomeDashboardData;
@@ -24,7 +25,8 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
       (data.lowStockItems && data.lowStockItems.length > 0) ||
       (data.completedTasks && data.completedTasks.length > 0) ||
       (data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0) ||
-      (data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0);
+      (data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0) ||
+      (data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0);
 
   if (!hasContent) return null;
 
@@ -70,6 +72,10 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
 
       {!isAdmin && data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0 && (
         <AwaitingQuoteApprovalList tasks={data.tasksAwaitingQuoteApproval} />
+      )}
+
+      {!isAdmin && data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0 && (
+        <AwaitingBudgetApprovalList tasks={data.tasksAwaitingBudgetApproval} />
       )}
 
     </View>

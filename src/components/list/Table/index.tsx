@@ -118,7 +118,7 @@ export const Table = memo(function Table<T extends { id: string }>({
           <FlatList
             data={data}
             renderItem={renderItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => String(item.id ?? index)}
             ListFooterComponent={renderFooter}
             ListEmptyComponent={renderEmpty}
             onEndReached={handleEndReached}

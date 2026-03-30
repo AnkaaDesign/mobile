@@ -14,6 +14,19 @@ export class InvoiceService {
   // Query Operations
   // =====================
 
+  async getMany(params?: Record<string, any>): Promise<{ data: Invoice[]; meta: any }> {
+    const response = await apiClient.get<{ data: Invoice[]; meta: any }>(this.basePath, {
+      params: {
+        ...params,
+        include: params?.include ?? {
+          customer: true,
+          task: true,
+        },
+      },
+    });
+    return response.data;
+  }
+
   async getByTaskId(taskId: string): Promise<Invoice[]> {
     const response = await apiClient.get<Invoice[]>(`${this.basePath}/task/${taskId}`, {
       params: {
@@ -105,6 +118,7 @@ export const invoiceService = new InvoiceService();
 // Convenience Functions
 // =====================
 
+export const getInvoices = (params?: Record<string, any>) => invoiceService.getMany(params);
 export const getInvoicesByTask = (taskId: string) => invoiceService.getByTaskId(taskId);
 export const getInvoicesByCustomer = (customerId: string) => invoiceService.getByCustomerId(customerId);
 export const getInvoiceById = (id: string) => invoiceService.getById(id);

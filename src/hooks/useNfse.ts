@@ -7,6 +7,7 @@ import { nfseService } from '@/api-client/nfse';
 
 export const nfseKeys = {
   all: ["nfse"] as const,
+  list: (filters: any) => ["nfse", "list", filters] as const,
   detail: (id: number) => ["nfse", "detail", id] as const,
   pdf: (id: number) => ["nfse", "pdf", id] as const,
 };
@@ -14,6 +15,25 @@ export const nfseKeys = {
 // ===============================================
 // NFSE HOOKS - Queries
 // ===============================================
+
+// -------------------------------------
+// NFSE LIST
+// -------------------------------------
+export function useNfseList(filters: {
+  dataEmissaoInicial?: string;
+  dataEmissaoFinal?: string;
+  situacao?: number;
+  numeroDocumentoInicial?: number;
+  numeroDocumentoFinal?: number;
+  page?: number;
+  limit?: number;
+}, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: nfseKeys.list(filters),
+    queryFn: () => nfseService.list(filters),
+    enabled: options?.enabled !== false,
+  });
+}
 
 // -------------------------------------
 // NFSE DETAIL

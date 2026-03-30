@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -18,6 +18,7 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import type { User, Sector } from "@/types";
 import { getUsers, getSectors, getPositions } from "@/api-client";
@@ -83,7 +84,7 @@ interface MessageFormProps {
 }
 
 export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormProps) {
-  const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -290,12 +291,12 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       if (mode === "create") {
         await createMessage(payload);
         Alert.alert("Sucesso", "Mensagem criada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); router.back(); } },
+          { text: "OK", onPress: () => { onSuccess?.(); goBack(); } },
         ]);
       } else if (message?.id) {
         await updateMessage(message.id, payload);
         Alert.alert("Sucesso", "Mensagem atualizada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); router.back(); } },
+          { text: "OK", onPress: () => { onSuccess?.(); goBack(); } },
         ]);
       }
 
@@ -311,7 +312,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

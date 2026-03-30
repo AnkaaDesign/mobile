@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTaskDetail, useTaskMutations, useLayoutsByTruck, useScreenReady, useTaskPermissions } from "@/hooks";
 import { useTaskDetailMinimalInclude, useTaskDetailFullInclude } from "@/hooks/use-task-detail-include";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SERVICE_ORDER_TYPE } from "@/constants/enums";
+import { SERVICE_ORDER_TYPE, SERVICE_ORDER_STATUS, TASK_STATUS } from "@/constants/enums";
 import { formatCurrency, formatDate } from "@/utils";
 import { perfLog } from "@/utils/performance-logger";
 import { useScreenPerformance } from "@/utils/screen-performance-monitor";
@@ -30,6 +30,7 @@ import { CutsTable } from "@/components/production/task/detail/cuts-table";
 import { TaskServicesCard } from "@/components/production/task/detail/task-services-card";
 import { TaskQuoteCard } from "@/components/production/task/detail/task-quote-card";
 import { AirbrushingsTable } from "@/components/production/task/detail/airbrushings-table";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithServiceOrdersChangelog, ChangelogSkeleton } from "@/components/ui/task-with-service-orders-changelog";
@@ -51,7 +52,9 @@ import {
   IconFolderCheck,
   IconCamera,
   IconPhotoCheck,
+  IconShare,
 } from "@tabler/icons-react-native";
+import { exportDossie } from "@/utils/dossie-export";
 
 export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -776,6 +779,23 @@ export default function ScheduleDetailsScreen() {
                     <Badge variant="secondary">
                       {totalDossieFiles} {totalDossieFiles === 1 ? 'foto' : 'fotos'}
                     </Badge>
+                    <TouchableOpacity
+                      onPress={() => router.push(`/(tabs)/producao/cronograma/checkin-checkout/${task.id}` as any)}
+                      style={{ paddingVertical: 2, paddingHorizontal: spacing.sm }}
+                    >
+                      <ThemedText style={{ fontSize: fontSize.xs, color: '#3b82f6', fontWeight: '500' }}>
+                        {task.status === TASK_STATUS.COMPLETED ? 'Adicionar Check-out' : 'Adicionar Check-in'}
+                      </ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => exportDossie(task)}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: spacing.sm }}
+                    >
+                      <IconShare size={14} color="#0a5c1e" />
+                      <ThemedText style={{ fontSize: fontSize.xs, color: '#0a5c1e', fontWeight: '500' }}>
+                        Exportar
+                      </ThemedText>
+                    </TouchableOpacity>
                   </View>
                 </View>
                 <View style={styles.sectionContent}>
@@ -855,6 +875,32 @@ export default function ScheduleDetailsScreen() {
               </Card>
             );
           })()}
+
+          {/* Dossiê empty state - show button to add first photos when no files exist yet */}
+          {canViewCheckinCheckout && !task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && (so.checkinFiles?.length > 0 || so.checkoutFiles?.length > 0)) && task?.serviceOrders?.some((so: any) => so.type === SERVICE_ORDER_TYPE.PRODUCTION && so.status !== SERVICE_ORDER_STATUS?.CANCELLED) && (
+            <Card style={styles.sectionCard}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconFolderCheck size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.sectionTitle}>Dossiê</ThemedText>
+                </View>
+              </View>
+              <View style={[styles.sectionContent, { alignItems: 'center', paddingVertical: spacing.lg }]}>
+                <ThemedText style={{ fontSize: fontSize.sm, opacity: 0.5, marginBottom: spacing.md, textAlign: 'center' }}>
+                  Nenhuma foto de check-in/check-out adicionada ainda.
+                </ThemedText>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onPress={() => router.push(`/(tabs)/producao/cronograma/checkin-checkout/${task.id}` as any)}
+                >
+                  <ThemedText style={{ fontSize: fontSize.sm }}>
+                    {task.status === TASK_STATUS.COMPLETED ? 'Adicionar Check-out' : 'Adicionar Check-in'}
+                  </ThemedText>
+                </Button>
+              </View>
+            </Card>
+          )}
 
           {/* Documents Section - Only for Admin and Financial, hidden when no documents */}
           {canViewDocuments && (

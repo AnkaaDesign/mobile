@@ -161,14 +161,14 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
 
       {/* Sector */}
       {task.sector && (
-        <DetailField label="Setor" icon="building-factory" value={task.sector.name} />
+        <DetailField label="Setor" icon="factory" value={task.sector.name} />
       )}
 
       {/* Commission Status */}
       {canViewFinancialFields && task.commission && (
         <DetailField
           label="Comissão"
-          icon="coin"
+          icon="coins"
           value={COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
         />
       )}
@@ -180,7 +180,7 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
 
       {/* Plate */}
       {task.truck?.plate && (
-        <DetailField label="Placa" icon="car" value={task.truck.plate.toUpperCase()} monospace />
+        <DetailField label="Placa" icon="truck" value={task.truck.plate.toUpperCase()} monospace />
       )}
 
       {/* Chassis Number */}

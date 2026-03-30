@@ -29,6 +29,7 @@ import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 interface MaintenanceFormProps {
   mode: "create" | "update";
@@ -39,6 +40,7 @@ interface MaintenanceFormProps {
 
 export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: MaintenanceFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useMaintenanceMutations();
@@ -95,7 +97,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
         if (newId) {
           router.replace(routeToMobilePath(routes.inventory.maintenance.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (maintenance) {
         await updateAsync({
@@ -114,7 +116,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

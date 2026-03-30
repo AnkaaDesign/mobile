@@ -37,7 +37,6 @@ import {
   TASK_STATUS,
   TASK_STATUS_LABELS,
   COMMISSION_STATUS_LABELS,
-  SERVICE_ORDER_STATUS,
 } from '@/constants'
 import { updateTask } from '@/api-client'
 import { queryClient } from '@/lib/query-client'
@@ -45,13 +44,6 @@ import { taskKeys, serviceOrderKeys, changeLogKeys, truckKeys } from '@/hooks/qu
 import { ServiceOrderProgressBar } from '@/components/production/task/service-order-progress-bar'
 import { ForecastDateCell } from '@/components/production/task/forecast-date-cell'
 
-// Helper to check if task has pending service orders
-const hasPendingServiceOrders = (task: Task): boolean => {
-  if (!task.serviceOrders || task.serviceOrders.length === 0) return false
-  return task.serviceOrders.some(
-    (service) => service.status === SERVICE_ORDER_STATUS.PENDING || service.status === SERVICE_ORDER_STATUS.IN_PROGRESS
-  )
-}
 import { DeadlineCountdown } from '@/components/production/DeadlineCountdown'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 
@@ -475,14 +467,7 @@ export const tasksListConfig: ListConfig<Task> = {
         },
         onPress: async (task: Task, router: any) => {
           try {
-            if (hasPendingServiceOrders(task)) {
-              Alert.alert(
-                'Não é possível finalizar',
-                'Existem ordens de serviço pendentes. Finalize todas as ordens de serviço antes de finalizar a tarefa.'
-              )
-              return
-            }
-
+            // Finish the task — the API auto-completes any remaining production SOs
             await updateTask(task.id, {
               status: TASK_STATUS.COMPLETED,
               finishedAt: new Date(),
@@ -493,7 +478,20 @@ export const tasksListConfig: ListConfig<Task> = {
             queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
             queryClient.invalidateQueries({ queryKey: truckKeys.all })
 
-            // API client already shows success alert
+            // Navigate to checkout screen so production manager can add checkout photos
+            Alert.alert(
+              'Tarefa finalizada',
+              'Deseja adicionar as fotos de check-out agora?',
+              [
+                { text: 'Depois', style: 'cancel' },
+                {
+                  text: 'Adicionar fotos',
+                  onPress: () => {
+                    router.push(`/(tabs)/producao/cronograma/checkin-checkout/${task.id}`)
+                  },
+                },
+              ]
+            )
           } catch (_error) {
             // API client already shows error alert
           }

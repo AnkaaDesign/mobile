@@ -40,29 +40,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
-        id: "clientes",
-        title: "Clientes",
-        icon: "users",
-        path: "/administracao/clientes",
-        requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.COMMERCIAL],
-        children: [
-          { id: "clientes-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/clientes/cadastrar" },
-          { id: "clientes-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/clientes/detalhes/:id", isDynamic: true },
-          { id: "clientes-editar", title: "Editar", icon: "edit", path: "/administracao/clientes/editar/:id", isDynamic: true },
-          {
-            id: "responsaveis",
-            title: "Responsáveis",
-            icon: "users",
-            path: "/administracao/responsaveis",
-            children: [
-              { id: "responsaveis-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/responsaveis/cadastrar" },
-              { id: "responsaveis-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/responsaveis/detalhes/:id", isDynamic: true },
-              { id: "responsaveis-editar", title: "Editar", icon: "edit", path: "/administracao/responsaveis/editar/:id", isDynamic: true },
-            ],
-          },
-        ],
-      },
-      {
         id: "colaboradores",
         title: "Colaboradores",
         icon: "user",
@@ -682,6 +659,71 @@ export const NAVIGATION_MENU: MenuItem[] = [
         icon: "systemUsers",
         path: "/servidor/usuarios",
         children: [{ id: "servidor-usuarios-cadastrar", title: "Criar Usuario", icon: "plus", path: "/servidor/usuarios/cadastrar" }],
+      },
+    ],
+  },
+
+  // ============================================================
+  // FINANCEIRO - Financial Management
+  // Accessible to FINANCIAL, COMMERCIAL, and ADMIN users
+  // ============================================================
+  {
+    id: "financeiro",
+    title: "Financeiro",
+    icon: "currency-dollar",
+    path: "/financeiro",
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+    children: [
+      {
+        id: "faturamento",
+        title: "Faturamento",
+        icon: "receipt",
+        path: "/financeiro/faturamento",
+        children: [
+          { id: "faturamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/faturamento/detalhes/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "orcamentos",
+        title: "Orçamentos",
+        icon: "calculator",
+        path: "/financeiro/orcamento",
+        children: [
+          { id: "orcamento-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/orcamento/detalhes/:taskId", isDynamic: true },
+        ],
+      },
+      {
+        id: "notas-fiscais",
+        title: "Notas Fiscais",
+        icon: "fileInvoice",
+        path: "/financeiro/notas-fiscais",
+        children: [
+          { id: "notas-fiscais-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/notas-fiscais/detalhes/:id", isDynamic: true },
+        ],
+      },
+      {
+        id: "financeiro-clientes",
+        title: "Clientes",
+        icon: "users",
+        path: "/financeiro/clientes",
+        requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
+        children: [
+          { id: "financeiro-clientes-cadastrar", title: "Cadastrar", icon: "plus", path: "/financeiro/clientes/cadastrar" },
+          { id: "financeiro-clientes-detalhes", title: "Detalhes", icon: "eye", path: "/financeiro/clientes/detalhes/:id", isDynamic: true },
+          { id: "financeiro-clientes-editar", title: "Editar", icon: "edit", path: "/financeiro/clientes/editar/:id", isDynamic: true },
+          {
+            id: "financeiro-responsaveis",
+            title: "Responsáveis",
+            icon: "users",
+            path: "/administracao/responsaveis",
+            requiredPrivilege: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL],
+            children: [
+              { id: "financeiro-responsaveis-cadastrar", title: "Cadastrar", icon: "plus", path: "/administracao/responsaveis/cadastrar" },
+              { id: "financeiro-responsaveis-detalhes", title: "Detalhes", icon: "eye", path: "/administracao/responsaveis/detalhes/:id", isDynamic: true },
+              { id: "financeiro-responsaveis-editar", title: "Editar", icon: "edit", path: "/administracao/responsaveis/editar/:id", isDynamic: true },
+            ],
+          },
+        ],
       },
     ],
   },

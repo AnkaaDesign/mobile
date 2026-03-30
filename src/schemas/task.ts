@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { createMapToFormDataHelper, orderByDirectionSchema, normalizeOrderBy, createNameSchema, createDescriptionSchema, nullableDate, moneySchema } from "./common";
 import type { Task } from "../types";
-import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from "../constants";
+import { TASK_STATUS, SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE, TRUCK_CATEGORY, IMPLEMENT_TYPE } from "../constants";
 import { cutCreateNestedSchema } from "./cut";
 import { airbrushingCreateNestedSchema } from "./airbrushing";
 import { taskQuoteCreateNestedSchema } from "./task-quote";
@@ -1559,12 +1559,15 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   details: task.details,
   entryDate: task.entryDate,
   term: task.term,
+  forecastDate: task.forecastDate,
   startedAt: task.startedAt,
   finishedAt: task.finishedAt,
   cleared: task.cleared ?? false,
   paintId: task.paintId,
   customerId: task.customerId,
   sectorId: task.sectorId,
+  // Responsibles relationship
+  responsibleIds: task.responsibles?.map((r: any) => r.id),
   // Many-to-many relations (arrays)
   budgetIds: task.budgets?.map((budget) => budget.id),
   invoiceIds: task.invoices?.map((nfe) => nfe.id),
@@ -1572,7 +1575,7 @@ export const mapTaskToFormData = createMapToFormDataHelper<Task, TaskUpdateFormD
   bankSlipIds: task.bankSlips?.map((bankSlip) => bankSlip.id),
   reimbursementIds: task.reimbursements?.map((reimbursement) => reimbursement.id),
   reimbursementInvoiceIds: task.invoiceReimbursements?.map((invoiceReimbursement) => invoiceReimbursement.id),
-  artworkIds: task.artworks?.map((artwork) => artwork.id),
+  artworkIds: task.artworks?.map((artwork: any) => artwork.fileId || artwork.id),
   baseFileIds: task.baseFiles?.map((baseFile) => baseFile.id),
   projectFileIds: task.projectFiles?.map((f: any) => f.id),
   checkinFileIds: task.checkinFiles?.map((f: any) => f.id),

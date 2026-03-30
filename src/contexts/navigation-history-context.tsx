@@ -1,11 +1,15 @@
 import { createContext, useContext, useEffect, useCallback, ReactNode, useRef } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { InteractionManager } from "react-native";
+import { InteractionManager, BackHandler, Platform } from "react-native";
 import { navigationDebugger, logNavigationStack } from '@/utils/navigation-debugger';
+
+interface GoBackOptions {
+  fallbackRoute?: string;
+}
 
 interface NavigationHistoryContextType {
   canGoBack: () => boolean;
-  goBack: () => void;
+  goBack: (options?: GoBackOptions) => void;
   getBackPath: () => string | null;
   clearHistory: () => void;
   pushToHistory: (path: string) => void;
@@ -21,7 +25,7 @@ interface NavigationHistoryProviderProps {
 }
 
 // Known action segments that should be stripped along with their dynamic parameter
-const ACTION_SEGMENTS = ['detalhes', 'editar', 'layout', 'precificacao'];
+const ACTION_SEGMENTS = ['detalhes', 'editar', 'layout', 'precificacao', 'copiar-de', 'checkin-checkout'];
 
 /**
  * Compute a parent route from the current pathname when history is empty.
@@ -30,6 +34,7 @@ const ACTION_SEGMENTS = ['detalhes', 'editar', 'layout', 'precificacao'];
  *   /producao/agenda/detalhes/123 → /(tabs)/producao/agenda
  *   /administracao/clientes/editar/abc → /(tabs)/administracao/clientes
  *   /administracao/clientes/cadastrar  → /(tabs)/administracao/clientes
+ *   /producao/cronograma/copiar-de/123 → /(tabs)/producao/cronograma
  *   /producao                   → /(tabs)/inicio
  */
 function computeParentRoute(pathname: string): string {
@@ -44,14 +49,17 @@ function computeParentRoute(pathname: string): string {
     return '/(tabs)/inicio';
   }
 
-  // Strip /cadastrar suffix
-  if (segments[segments.length - 1] === 'cadastrar') {
-    segments.pop();
-    const parent = '/(tabs)/' + segments.join('/');
-    return parent;
+  // Strip /cadastrar suffix (and nested cadastrar like /cadastrar/enviar)
+  const cadastrarIndex = segments.indexOf('cadastrar');
+  if (cadastrarIndex !== -1) {
+    const parent = segments.slice(0, cadastrarIndex);
+    if (parent.length === 0) {
+      return '/(tabs)/inicio';
+    }
+    return '/(tabs)/' + parent.join('/');
   }
 
-  // Strip action segments (detalhes/[id], editar/[id], layout/[id], precificacao/[id])
+  // Strip action segments (detalhes/[id], editar/[id], layout/[id], etc.)
   for (const action of ACTION_SEGMENTS) {
     const actionIndex = segments.indexOf(action);
     if (actionIndex !== -1) {
@@ -70,6 +78,32 @@ function computeParentRoute(pathname: string): string {
     return '/(tabs)/inicio';
   }
   return '/(tabs)/' + segments.join('/');
+}
+
+/**
+ * Smartly add a path to the history stack, handling:
+ * 1. Redirects: sub-route of last entry → replace instead of push
+ * 2. Edit/create returns: path matches second-to-last → pop intermediate entry
+ *    (e.g., [list, detail/123, edit/123] + detail/123 → [list, detail/123])
+ * 3. Normal navigation: just push
+ */
+function addToHistory(prev: string[], newPath: string): string[] {
+  // Detect redirect: new path is a sub-route of last entry
+  // (e.g., /producao/observacoes → /producao/observacoes/listar)
+  const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
+  if (lastEntry && newPath.startsWith(lastEntry + '/')) {
+    return [...prev.slice(0, -1), newPath].slice(-10);
+  }
+
+  // Detect edit/create return: if new path matches second-to-last entry,
+  // the user completed an action (detail→edit→save→detail). Remove the
+  // intermediate entry to keep the stack clean.
+  if (prev.length >= 2 && prev[prev.length - 2] === newPath) {
+    return prev.slice(0, -1);
+  }
+
+  // Normal push
+  return [...prev, newPath].slice(-10);
 }
 
 // Helper to determine if a screen should reset when left
@@ -121,23 +155,14 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       if (!pathname.startsWith("/(autenticacao)") && pathname !== "/") {
         const prev = historyRef.current;
         if (prev.length === 0 || prev[prev.length - 1] !== pathname) {
-          // Detect redirect: if the new path is a sub-route of the last entry
-          // (e.g., /producao/observacoes → /producao/observacoes/listar),
-          // this is an index.tsx redirect — replace the entry instead of pushing
-          // to prevent back-navigation loops through redirect pages.
-          const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
-          if (lastEntry && pathname.startsWith(lastEntry + '/')) {
-            historyRef.current = [...prev.slice(0, -1), pathname].slice(-10);
-          } else {
-            historyRef.current = [...prev, pathname].slice(-10);
-          }
+          historyRef.current = addToHistory(prev, pathname);
           logNavigationStack(historyRef.current, pathname);
         }
       }
     }
   }, [pathname]);
 
-  const goBack = useCallback(() => {
+  const goBack = useCallback((options?: GoBackOptions) => {
     const currentHistory = historyRef.current;
     const r = routerRef.current;
 
@@ -149,6 +174,9 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       // the active screen in Drawer/Tab navigators (replace only swaps the
       // current stack entry but doesn't change which Drawer screen is active)
       r.navigate(previousPath as any);
+    } else if (options?.fallbackRoute) {
+      // No history but explicit fallback provided — use it
+      r.navigate(options.fallbackRoute as any);
     } else {
       // Compute parent route from current pathname
       const current = currentPathnameRef.current;
@@ -177,13 +205,7 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     if (!path.startsWith("/(autenticacao)") && path !== "/") {
       const prev = historyRef.current;
       if (prev.length === 0 || prev[prev.length - 1] !== path) {
-        // Detect redirect (sub-route of last entry) — replace instead of push
-        const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
-        if (lastEntry && path.startsWith(lastEntry + '/')) {
-          historyRef.current = [...prev.slice(0, -1), path].slice(-10);
-        } else {
-          historyRef.current = [...prev, path].slice(-10);
-        }
+        historyRef.current = addToHistory(prev, path);
       }
     }
   }, []);
@@ -204,6 +226,30 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const unregisterScreenReset = useCallback((screenName: string) => {
     screenResetFunctions.current.delete(screenName);
   }, []);
+
+  // Global Android back button handler — uses custom history for correct navigation.
+  // Registered early (low priority in LIFO order), so modal/loading handlers registered
+  // later by child providers will take precedence when active.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      const current = currentPathnameRef.current;
+      // At home/auth/root screens, let default behavior handle (exit app or system back)
+      if (
+        current === '/(tabs)/inicio' ||
+        current === '/inicio' ||
+        current === '/' ||
+        current.startsWith('/(autenticacao)')
+      ) {
+        return false;
+      }
+      goBack();
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [goBack]);
 
   // Stable ref for context value — created once, never changes
   const valueRef = useRef<NavigationHistoryContextType>({

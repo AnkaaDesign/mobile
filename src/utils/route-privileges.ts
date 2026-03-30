@@ -320,6 +320,26 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/meu-pessoal/advertencias': 'BASIC',
   
   // =====================
+  // FINANCEIRO (FINANCIAL)
+  // =====================
+
+  '/(tabs)/financeiro': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/faturamento': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/faturamento/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/faturamento/detalhes/[id]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/orcamento': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/orcamento/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/orcamento/detalhes/[taskId]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/notas-fiscais': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/notas-fiscais/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/notas-fiscais/detalhes/[id]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/clientes': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/clientes/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/clientes/cadastrar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/clientes/detalhes/[id]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/clientes/editar/[id]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+
+  // =====================
   // SERVIDOR (SERVER)
   // =====================
 

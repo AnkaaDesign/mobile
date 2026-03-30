@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "expo-router";
 
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
@@ -80,6 +81,7 @@ const STEPS: FormStep[] = [
 export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const { colors } = useTheme();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   // Local state for date (since it's a Date object)
   const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
@@ -424,15 +426,15 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
               setBudgetFiles([]);
               setInvoiceFiles([]);
               setReceiptFiles([]);
-              router.back();
+              goBack();
             },
           },
         ],
       );
     } else {
-      router.back();
+      goBack();
     }
-  }, [multiStepForm, temporaryItems, router]);
+  }, [multiStepForm, temporaryItems, goBack]);
 
   // Loading state
   if (multiStepForm.isLoading) {

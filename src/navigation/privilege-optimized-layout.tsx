@@ -111,6 +111,12 @@ const PRIVILEGED_ROUTES: Record<string, RouteConfig[]> = {
   [SECTOR_PRIVILEGES.FINANCIAL]: [
     { name: "financeiro/index", title: "Financeiro", module: "financial" },
     { name: "financeiro/clientes/listar", title: "Clientes", module: "financial" },
+    { name: "financeiro/faturamento/listar", title: "Faturamento", module: "financial" },
+    { name: "financeiro/faturamento/detalhes/[id]", title: "Detalhes do Faturamento", module: "financial" },
+    { name: "financeiro/orcamento/listar", title: "Orçamentos", module: "financial" },
+    { name: "financeiro/orcamento/detalhes/[taskId]", title: "Detalhes do Orçamento", module: "financial" },
+    { name: "financeiro/notas-fiscais/listar", title: "Notas Fiscais", module: "financial" },
+    { name: "financeiro/notas-fiscais/detalhes/[id]", title: "Detalhes da NFS-e", module: "financial" },
   ],
 
   // Team leadership routes - Note: Access is now controlled at component level via isTeamLeader()

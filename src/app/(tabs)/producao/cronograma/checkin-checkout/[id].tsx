@@ -19,6 +19,7 @@ import { spacing, fontSize } from '@/constants/design-system'
 import { canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { getApiBaseUrl } from '@/utils/file'
 import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
+import { uploadSingleFile } from '@/api-client'
 import type { File as AnkaaFile } from '@/types'
 import type { FormStep } from '@/components/ui/form-steps'
 
@@ -188,71 +189,63 @@ export default function CheckinCheckoutScreen() {
     if (!id || !task) return
 
     try {
-      const newCheckinFiles: FilePickerItem[] = []
-      const newCheckoutFiles: FilePickerItem[] = []
+      const customerName = task.customer?.fantasyName || ''
 
-      // Build service orders payload - only PRODUCTION, non-cancelled
-      const serviceOrders = activeServiceOrders.map((so: any) => {
-        const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
-        const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
+      // Pre-upload new files per service order, then build JSON-only payload
+      // This ensures file IDs are properly associated with their service orders
+      const serviceOrders = await Promise.all(
+        activeServiceOrders.map(async (so: any) => {
+          const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
+          const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
 
-        // Collect new files for upload
-        newCheckinFiles.push(...soCheckinFiles.filter((f: any) => !f.id && !f.fileId && f.uri))
-        newCheckoutFiles.push(...soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && f.uri))
+          // Separate existing files from new files
+          const existingCheckinIds = soCheckinFiles
+            .filter((f: any) => f.id || f.fileId)
+            .map((f: any) => f.fileId || f.file?.id || f.id)
+            .filter(Boolean)
+          const existingCheckoutIds = soCheckoutFiles
+            .filter((f: any) => f.id || f.fileId)
+            .map((f: any) => f.fileId || f.file?.id || f.id)
+            .filter(Boolean)
 
-        // Extract existing file IDs
-        const checkinFileIds = soCheckinFiles
-          .map((f: any) => f.fileId || f.file?.id || f.id)
-          .filter(Boolean)
-        const checkoutFileIds = soCheckoutFiles
-          .map((f: any) => f.fileId || f.file?.id || f.id)
-          .filter(Boolean)
+          const newCheckinFiles = soCheckinFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
+          const newCheckoutFiles = soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
 
-        return {
-          id: so.id,
-          description: so.description,
-          status: so.status || 'PENDING',
-          type: so.type,
-          checkinFileIds,
-          checkoutFileIds,
-        }
-      })
+          // Pre-upload new checkin files
+          const uploadedCheckinIds = await Promise.all(
+            newCheckinFiles.map(async (file: FilePickerItem) => {
+              const res = await uploadSingleFile(
+                { uri: file.uri, name: file.name || `checkin_${Date.now()}.jpg`, type: file.type || file.mimeType || 'image/jpeg' },
+                { entityType: 'task', entityId: id, fileContext: 'serviceOrderCheckinFiles', customerName }
+              )
+              return res?.data?.id || res?.id
+            })
+          )
 
-      const hasNewFiles = newCheckinFiles.length > 0 || newCheckoutFiles.length > 0
-      const payload: any = { serviceOrders }
+          // Pre-upload new checkout files
+          const uploadedCheckoutIds = await Promise.all(
+            newCheckoutFiles.map(async (file: FilePickerItem) => {
+              const res = await uploadSingleFile(
+                { uri: file.uri, name: file.name || `checkout_${Date.now()}.jpg`, type: file.type || file.mimeType || 'image/jpeg' },
+                { entityType: 'task', entityId: id, fileContext: 'serviceOrderCheckoutFiles', customerName }
+              )
+              return res?.data?.id || res?.id
+            })
+          )
 
-      let result
-      if (hasNewFiles) {
-        // Build FormData with correct multer field names
-        const formData = new FormData()
-        formData.append('_context', JSON.stringify({
-          entityType: 'task',
-          entityId: id,
-          customerName: task.customer?.fantasyName || '',
-        }))
-        formData.append('serviceOrders', JSON.stringify(serviceOrders))
+          return {
+            id: so.id,
+            description: so.description,
+            status: so.status || 'PENDING',
+            type: so.type,
+            checkinFileIds: [...existingCheckinIds, ...uploadedCheckinIds.filter(Boolean)],
+            checkoutFileIds: [...existingCheckoutIds, ...uploadedCheckoutIds.filter(Boolean)],
+          }
+        })
+      )
 
-        // Use 'checkinFiles' / 'checkoutFiles' - the field names registered in API multer
-        for (const file of newCheckinFiles) {
-          formData.append('checkinFiles', {
-            uri: file.uri,
-            name: file.name || `checkin_${Date.now()}.jpg`,
-            type: file.type || file.mimeType || 'image/jpeg',
-          } as any)
-        }
-        for (const file of newCheckoutFiles) {
-          formData.append('checkoutFiles', {
-            uri: file.uri,
-            name: file.name || `checkout_${Date.now()}.jpg`,
-            type: file.type || file.mimeType || 'image/jpeg',
-          } as any)
-        }
-
-        result = await updateAsync({ id, data: formData as any })
-      } else {
-        // No new files - send plain JSON
-        result = await updateAsync({ id, data: payload })
-      }
+      // Always send as JSON - files are already uploaded with proper IDs
+      const result = await updateAsync({ id, data: { serviceOrders } })
 
       if (result.success) {
         handleNavigateBack()

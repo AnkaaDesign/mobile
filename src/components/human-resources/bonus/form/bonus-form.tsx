@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import { bonusCreateSchema, bonusUpdateSchema } from "@/schemas/bonus";
 import type { BonusCreateFormData, BonusUpdateFormData } from "@/schemas/bonus";
@@ -42,6 +43,7 @@ const PERFORMANCE_LEVELS = Array.from({ length: 6 }, (_, i) => ({
 
 export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) {
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useBonusMutations();
@@ -87,7 +89,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
         if (newId) {
           router.replace(routeToMobilePath(routes.humanResources.bonifications.details(newId)) as any);
         } else {
-          router.back();
+          goBack();
         }
       } else if (bonus) {
         await updateAsync({
@@ -106,7 +108,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
     if (onCancel) {
       onCancel();
     } else {
-      router.back();
+      goBack();
     }
   };
 

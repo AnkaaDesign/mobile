@@ -10,6 +10,7 @@ import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-
 import { useExternalWithdrawalMutations } from "@/hooks";
 import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
+import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 import type { ExternalWithdrawal, ExternalWithdrawalItem } from "@/types";
 
@@ -54,6 +55,7 @@ interface ExternalWithdrawalEditFormProps {
 export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEditFormProps) {
   const { colors } = useTheme();
   const router = useRouter();
+  const { goBack } = useNavigationHistory();
 
   // Convert existing withdrawal data to initial state
   const initialSelectedItems = useMemo(
@@ -227,8 +229,8 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
   const handleCancel = useCallback(async () => {
     await resetForm();
-    router.back();
-  }, [resetForm, router]);
+    goBack();
+  }, [resetForm, goBack]);
 
   // Handle file uploads
   const handleReceiptUpload = useCallback((files: FilePickerItem[]) => {
