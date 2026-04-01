@@ -10,7 +10,6 @@ import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { useTaskMutations, useLayoutsByTruck, useTaskDetail, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { navigationTracker } from "@/utils/navigation-tracker";
 import { useTheme } from "@/lib/theme";
 import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
@@ -240,18 +239,9 @@ export default function EditScheduleScreen() {
   }, [layoutsData]);
 
   const handleNavigateBack = () => {
-    // Determine correct detail route based on navigation source
-    const source = navigationTracker.getSource();
-    let detailRoute: string;
-    if (source?.includes('/agenda')) {
-      detailRoute = `/(tabs)/producao/agenda/detalhes/${id}`;
-    } else if (source?.includes('/historico')) {
-      detailRoute = `/(tabs)/producao/historico/detalhes/${id}`;
-    } else {
-      detailRoute = `/(tabs)/producao/cronograma/detalhes/${id}`;
-    }
-    console.log('[EditSchedule] Navigating to detail page:', detailRoute, '(source:', source, ')');
-    router.replace(detailRoute as any);
+    // Use goBack() to return to the previous screen in the navigation stack
+    // This correctly returns to agenda, cronograma, or historico - wherever the user came from
+    goBack();
   };
 
   /**

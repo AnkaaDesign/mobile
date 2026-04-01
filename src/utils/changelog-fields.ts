@@ -305,6 +305,7 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     services: "Serviços", // Legacy - for historical changelog records
     serviceOrders: "Ordens de Serviço",
     quoteId: "Orçamento",
+    pricingId: "Orçamento",
     airbrushings: "Aerografias",
     cuts: "Recortes",
     cutRequest: "Solicitações de Corte",
@@ -1928,7 +1929,15 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
   // Handle task pricing fields
   if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE) {
     if ((field === "status" || field === "status_transition") && typeof value === "string") {
-      return TASK_QUOTE_STATUS_LABELS[value as TASK_QUOTE_STATUS] || value;
+      // Legacy status values from before quote status refactor
+      const legacyQuoteStatusLabels: Record<string, string> = {
+        DRAFT: "Rascunho",
+        APPROVED: "Aprovado",
+        REJECTED: "Rejeitado",
+        CANCELLED: "Cancelado",
+        EXPIRED: "Expirado",
+      };
+      return TASK_QUOTE_STATUS_LABELS[value as TASK_QUOTE_STATUS] || legacyQuoteStatusLabels[value] || value;
     }
     if (field === "discountType" && typeof value === "string") {
       return DISCOUNT_TYPE_LABELS[value as DISCOUNT_TYPE] || value;
@@ -1947,6 +1956,13 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     }
     if (field === "simultaneousTasks" && typeof value === "number") {
       return `${value} ${value === 1 ? "tarefa" : "tarefas"}`;
+    }
+  }
+
+  // Handle task quote item fields (per-item granular tracking)
+  if (entityType === CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_ITEM) {
+    if (field === "amount" && (typeof value === "number" || (typeof value === "string" && !isNaN(Number(value))))) {
+      return formatCurrency(Number(value));
     }
   }
 

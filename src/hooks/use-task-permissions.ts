@@ -71,8 +71,10 @@ export function useTaskPermissions() {
   const canViewObservation = !isWarehouse && !isFinancial && !isDesigner && !isLogistic && !isProductionManager && !isCommercial;
   const canViewArtworkBadges = isAdmin || isCommercial || isFinancial || isLogistic || isProductionManager || isDesigner;
   const canViewDocuments = isAdmin || isFinancial;
-  // Mobile-specific
-  const canViewArtworks = !isWarehouse && !isFinancial && !isLogistic && !isProductionManager;
+  // Artworks are visible to ALL sectors. Non-approved artworks are filtered by canApproveArtworks.
+  const canViewArtworks = true;
+  // Only ADMIN and COMMERCIAL can see non-approved artworks (approve/reprove workflow)
+  const canApproveArtworks = isAdmin || isCommercial;
   const canViewTruckDetails = !isProduction || isTeamLeaderUser;
 
   // Field editability
@@ -96,7 +98,7 @@ export function useTaskPermissions() {
     canViewAirbrushing, canViewBaseFiles, canViewProjectFiles,
     canViewCheckinCheckout, canViewReimbursement, canViewObservation,
     canViewArtworkBadges, canViewDocuments,
-    canViewArtworks, canViewTruckDetails,
+    canViewArtworks, canApproveArtworks, canViewTruckDetails,
     canEditIdentity, canEditSector, canEditCommission,
     canEditDates, canEditResponsibles, canEditServices,
     canEditLayout, canEditPaint,

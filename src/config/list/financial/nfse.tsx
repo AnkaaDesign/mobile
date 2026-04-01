@@ -136,7 +136,7 @@ export const nfseListConfig: ListConfig<NfseListItem & { id: any }> = {
         key: 'valorDoc',
         label: 'VALOR',
         sortable: false,
-        width: 1.2,
+        width: 1.4,
         align: 'left',
         render: (item: NfseListItem) => (
           <ThemedText style={styles.cellText}>
@@ -166,7 +166,7 @@ export const nfseListConfig: ListConfig<NfseListItem & { id: any }> = {
           const { variant, label } = getSituacaoBadge(item)
           return (
             <Badge variant={variant as any} size="sm">
-              <ThemedText style={{ fontSize: 10 }}>{label}</ThemedText>
+              <ThemedText style={{ fontSize: 10 }} numberOfLines={1} ellipsizeMode="tail">{label}</ThemedText>
             </Badge>
           )
         },

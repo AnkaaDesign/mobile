@@ -38,6 +38,7 @@ interface CustomerConfig {
 }
 
 interface BudgetPreviewProps {
+  mode?: 'budget' | 'billing';
   pricing: {
     budgetNumber?: number;
     subtotal: number;
@@ -67,7 +68,7 @@ interface BudgetPreviewProps {
   selectedCustomers?: Map<string, any>;
 }
 
-export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPreviewProps) {
+export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget' }: BudgetPreviewProps) {
   const { colors } = useTheme();
 
   const corporateName =
@@ -190,45 +191,49 @@ export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPrevie
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <ThemedText style={styles.companyName}>{COMPANY_INFO.name}</ThemedText>
-        <View style={styles.headerRight}>
-          <ThemedText style={styles.budgetTitle}>
-            Orçamento Nº {budgetNumber}
-          </ThemedText>
-          {pricing.createdAt && (
-            <ThemedText style={styles.headerMeta}>
-              Emissão: {formatDate(pricing.createdAt as any)}
+      {/* Header - budget only */}
+      {mode === 'budget' && (
+        <>
+          <View style={styles.header}>
+            <ThemedText style={styles.companyName}>{COMPANY_INFO.name}</ThemedText>
+            <View style={styles.headerRight}>
+              <ThemedText style={styles.budgetTitle}>
+                Orçamento Nº {budgetNumber}
+              </ThemedText>
+              {pricing.createdAt && (
+                <ThemedText style={styles.headerMeta}>
+                  Emissão: {formatDate(pricing.createdAt as any)}
+                </ThemedText>
+              )}
+              <ThemedText style={styles.headerMeta}>
+                Validade: {validityDays} dias
+              </ThemedText>
+            </View>
+          </View>
+
+          {/* Green divider */}
+          <View style={styles.divider} />
+
+          {/* Title */}
+          <ThemedText style={styles.sectionTitle}>ORÇAMENTO</ThemedText>
+
+          {/* Customer Info */}
+          <View style={styles.section}>
+            <ThemedText style={styles.customerName}>
+              À {corporateName}
             </ThemedText>
-          )}
-          <ThemedText style={styles.headerMeta}>
-            Validade: {validityDays} dias
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* Green divider */}
-      <View style={styles.divider} />
-
-      {/* Title */}
-      <ThemedText style={styles.sectionTitle}>ORÇAMENTO</ThemedText>
-
-      {/* Customer Info */}
-      <View style={styles.section}>
-        <ThemedText style={styles.customerName}>
-          À {corporateName}
-        </ThemedText>
-        {contactName ? (
-          <ThemedText style={styles.bodyText}>
-            Caro {contactName}
-          </ThemedText>
-        ) : null}
-        <ThemedText style={styles.bodyText}>
-          Conforme solicitado, apresentamos nossa proposta de preço para
-          execução dos serviços abaixo descriminados.
-        </ThemedText>
-      </View>
+            {contactName ? (
+              <ThemedText style={styles.bodyText}>
+                Caro {contactName}
+              </ThemedText>
+            ) : null}
+            <ThemedText style={styles.bodyText}>
+              Conforme solicitado, apresentamos nossa proposta de preço para
+              execução dos serviços abaixo descriminados.
+            </ThemedText>
+          </View>
+        </>
+      )}
 
       {/* Services - Multi-customer grouped or flat */}
       <View style={styles.section}>
@@ -383,100 +388,90 @@ export function BudgetPreview({ pricing, task, selectedCustomers }: BudgetPrevie
         );
       })()}
 
-      {/* Delivery Deadline - from customForecastDays/simultaneousTasks or term */}
-      {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1) || termDate) ? (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Prazo de entrega
-          </ThemedText>
-          {pricing.customForecastDays ? (
-            <ThemedText style={styles.bodyText}>
-              O prazo de entrega é de {pricing.customForecastDays} dias úteis a partir da data de liberação.
-              {pricing.simultaneousTasks && pricing.simultaneousTasks > 1
-                ? ` Capacidade de produção: ${pricing.simultaneousTasks} tarefas simultâneas.`
-                : ""}
-            </ThemedText>
-          ) : pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? (
-            <ThemedText style={styles.bodyText}>
-              Capacidade de produção: {pricing.simultaneousTasks} tarefas simultâneas.
-            </ThemedText>
-          ) : termDate ? (
-            <ThemedText style={styles.bodyText}>
-              O prazo de entrega é de {termDate}, desde que o implemento
-              esteja nas condições previamente informada e não haja
-              alterações nos serviços descritos.
-            </ThemedText>
+      {/* Budget-only sections: Delivery, Guarantee, Layout, Signatures, Footer */}
+      {mode === 'budget' && (
+        <>
+          {/* Delivery Deadline */}
+          {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1) || termDate) ? (
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionTitle}>
+                Prazo de entrega
+              </ThemedText>
+              {pricing.customForecastDays ? (
+                <ThemedText style={styles.bodyText}>
+                  O prazo de entrega é de {pricing.customForecastDays} dias úteis a partir da data de liberação.
+                  {pricing.simultaneousTasks && pricing.simultaneousTasks > 1
+                    ? ` Capacidade de produção: ${pricing.simultaneousTasks} tarefas simultâneas.`
+                    : ""}
+                </ThemedText>
+              ) : pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? (
+                <ThemedText style={styles.bodyText}>
+                  Capacidade de produção: {pricing.simultaneousTasks} tarefas simultâneas.
+                </ThemedText>
+              ) : termDate ? (
+                <ThemedText style={styles.bodyText}>
+                  O prazo de entrega é de {termDate}, desde que o implemento
+                  esteja nas condições previamente informada e não haja
+                  alterações nos serviços descritos.
+                </ThemedText>
+              ) : null}
+            </View>
           ) : null}
-        </View>
-      ) : null}
 
-      {/* Guarantee */}
-      {(pricing.guaranteeYears || pricing.customGuaranteeText) ? (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Garantias</ThemedText>
-          <ThemedText style={styles.bodyText}>{generateGuaranteeText(pricing)}</ThemedText>
-        </View>
-      ) : null}
+          {/* Guarantee */}
+          {(pricing.guaranteeYears || pricing.customGuaranteeText) ? (
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionTitle}>Garantias</ThemedText>
+              <ThemedText style={styles.bodyText}>{generateGuaranteeText(pricing)}</ThemedText>
+            </View>
+          ) : null}
 
-      {/* Layout Image */}
-      {layoutImageUrl ? (
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Layout aprovado
-          </ThemedText>
-          <Image
-            source={{ uri: layoutImageUrl }}
-            style={styles.layoutImage}
-            resizeMode="contain"
-          />
-        </View>
-      ) : null}
+          {/* Layout Image */}
+          {layoutImageUrl ? (
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionTitle}>
+                Layout aprovado
+              </ThemedText>
+              <Image
+                source={{ uri: layoutImageUrl }}
+                style={styles.layoutImage}
+                resizeMode="contain"
+              />
+            </View>
+          ) : null}
 
-      {/* Signature area */}
-      <View style={styles.signatureSection}>
-        {/* Company Signature - Sergio */}
-        <View style={styles.signatureBlock}>
-          <View style={styles.signatureImageContainer}>
-            <Image
-              source={require("../../../../../assets/sergio-signature.webp")}
-              style={styles.sergioSignature}
-              resizeMode="contain"
-            />
+          {/* Signature area */}
+          <View style={styles.signatureSection}>
+            <View style={styles.signatureBlock}>
+              <View style={styles.signatureImageContainer}>
+                <Image
+                  source={require("../../../../../assets/sergio-signature.webp")}
+                  style={styles.sergioSignature}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
+              <ThemedText style={styles.signatureName}>{DIRECTOR_INFO.name}</ThemedText>
+              <ThemedText style={styles.signatureRole}>{DIRECTOR_INFO.title}</ThemedText>
+            </View>
+            <View style={styles.signatureBlock}>
+              <View style={styles.signatureImageContainer} />
+              <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
+              <ThemedText style={styles.signatureName}>Responsável CLIENTE</ThemedText>
+              <ThemedText style={styles.signatureRole}>&nbsp;</ThemedText>
+            </View>
           </View>
-          <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
-          <ThemedText style={styles.signatureName}>
-            {DIRECTOR_INFO.name}
-          </ThemedText>
-          <ThemedText style={styles.signatureRole}>
-            {DIRECTOR_INFO.title}
-          </ThemedText>
-        </View>
 
-        {/* Customer Signature */}
-        <View style={styles.signatureBlock}>
-          <View style={styles.signatureImageContainer}>
-            {/* Placeholder for customer signature */}
+          {/* Footer */}
+          <View style={styles.footer}>
+            <View style={styles.divider} />
+            <ThemedText style={styles.footerCompany}>{COMPANY_INFO.name}</ThemedText>
+            <ThemedText style={styles.footerText}>{COMPANY_INFO.address}</ThemedText>
+            <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>{COMPANY_INFO.phone}</ThemedText>
+            <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>{COMPANY_INFO.website}</ThemedText>
           </View>
-          <View style={[styles.signatureLine, { backgroundColor: colors.foreground }]} />
-          <ThemedText style={styles.signatureName}>
-            Responsável CLIENTE
-          </ThemedText>
-          <ThemedText style={styles.signatureRole}>&nbsp;</ThemedText>
-        </View>
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.divider} />
-        <ThemedText style={styles.footerCompany}>{COMPANY_INFO.name}</ThemedText>
-        <ThemedText style={styles.footerText}>{COMPANY_INFO.address}</ThemedText>
-        <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>
-          {COMPANY_INFO.phone}
-        </ThemedText>
-        <ThemedText style={[styles.footerText, { color: BRAND_COLORS.primaryGreen }]}>
-          {COMPANY_INFO.website}
-        </ThemedText>
-      </View>
+        </>
+      )}
     </ThemedView>
   );
 }

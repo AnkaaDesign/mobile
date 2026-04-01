@@ -884,13 +884,14 @@ const TimelineItem = React.memo(({
 
     // Per-field permission filtering (matching web's inline filtering)
     const alwaysHiddenFields = ["statusOrder", "colorOrder", "services", "serviceOrders", "serviceOrderIds"];
-    const financialFieldsList = ["quoteId", "budgetIds", "invoiceIds", "receiptIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
+    const financialFieldsList = ["quoteId", "pricingId", "budgetIds", "invoiceIds", "receiptIds", "bankSlipIds", "price", "cost", "value", "totalPrice", "totalCost", "discount", "profit"];
     const restrictedFieldsList = ["forecastDate", "responsibles", "responsibleIds", "negotiatingWith"];
     const invoiceToFieldsList = ["invoiceTo", "invoiceToId"];
 
     const canViewFinancial =
       userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL;
+      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
     const canViewRestricted =
       userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
       userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
@@ -964,7 +965,7 @@ const TimelineItem = React.memo(({
         }
 
         // Special handling for quoteId (Orçamento) - matching web implementation
-        if (field === "quoteId") {
+        if (field === "quoteId" || field === "pricingId") {
           const oldPricing = parsePricingValue(log.oldValue);
           const newPricing = parsePricingValue(log.newValue);
 
@@ -1083,7 +1084,7 @@ const TimelineItem = React.memo(({
         }
 
         // Special handling for quoteId on CREATE
-        if (field === "quoteId") {
+        if (field === "quoteId" || field === "pricingId") {
           const newPricing = parsePricingValue(log.newValue);
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
@@ -1235,11 +1236,24 @@ export function TaskWithServiceOrdersChangelog({
   const allChangelogs = useMemo(() => {
     const allLogs: ChangeLog[] = allLogsResponse?.data || [];
 
+    // Filter out TASK_QUOTE and TASK_QUOTE_ITEM entity logs for unauthorized sectors
+    const canViewQuoteLogs =
+      userSectorPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
+      userSectorPrivilege === SECTOR_PRIVILEGES.COMMERCIAL;
+    const permittedLogs = canViewQuoteLogs
+      ? allLogs
+      : allLogs.filter(
+          (log) =>
+            log.entityType !== CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE &&
+            log.entityType !== CHANGE_LOG_ENTITY_TYPE.TASK_QUOTE_ITEM
+        );
+
     // Separate service order logs for type-based filtering
-    const serviceLogs = allLogs.filter(
+    const serviceLogs = permittedLogs.filter(
       (log) => log.entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER
     );
-    const nonServiceLogs = allLogs.filter(
+    const nonServiceLogs = permittedLogs.filter(
       (log) => log.entityType !== CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER
     );
 
@@ -1352,7 +1366,7 @@ export function TaskWithServiceOrdersChangelog({
     });
 
     return filteredLogs.slice(0, limit);
-  }, [allLogsResponse, visibleServiceOrderTypes, limit]);
+  }, [allLogsResponse, visibleServiceOrderTypes, limit, userSectorPrivilege]);
 
   // Extract entity IDs for detail fetching - grouped by entity type
   const entityIdsByType = useMemo(() => {

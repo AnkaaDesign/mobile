@@ -236,7 +236,7 @@ export function GeneralPaintingSelector({
         name: true,
         code: true,
         hex: true,
-        hexColor: true,
+
         finish: true,
         colorPreview: true,
         manufacturer: true,
@@ -412,7 +412,7 @@ export function LogoPaintsSelector({
           name: true,
           code: true,
           hex: true,
-          hexColor: true,
+  
           finish: true,
           colorPreview: true,
           manufacturer: true,
@@ -461,7 +461,7 @@ export function LogoPaintsSelector({
         name: true,
         code: true,
         hex: true,
-        hexColor: true,
+
         finish: true,
         colorPreview: true,
         manufacturer: true,

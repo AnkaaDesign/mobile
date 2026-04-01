@@ -92,7 +92,7 @@ const PAINT_SELECT_FIELDS = {
   name: true,
   code: true,
   hex: true,
-  hexColor: true,
+
   finish: true,
   colorPreview: true,
   manufacturer: true,

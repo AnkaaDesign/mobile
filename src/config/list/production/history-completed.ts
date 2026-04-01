@@ -39,7 +39,6 @@ export const historyCompletedListConfig: ListConfig<Task> = {
           id: true,
           name: true,
           hex: true,
-          hexColor: true,
           paintType: {
             select: {
               id: true,
@@ -63,7 +62,9 @@ export const historyCompletedListConfig: ListConfig<Task> = {
       serviceOrders: {
         select: {
           id: true,
-          name: true,
+          description: true,
+          status: true,
+          type: true,
         },
       },
     },

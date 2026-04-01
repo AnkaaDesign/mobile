@@ -59,7 +59,7 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
 
   // Dynamic label: "Orçamento" when PENDING or no quote, "Faturamento" when BUDGET_APPROVED or later
   const isPendingOrNoQuote = !quote.status || quote.status === 'PENDING';
-  const cardTitle = isPendingOrNoQuote ? "Orçamento Detalhado" : "Faturamento Detalhado";
+  const cardTitle = isPendingOrNoQuote ? "Orçamento" : "Faturamento";
 
   const statusConfig = STATUS_CONFIG[quote.status as QuoteStatus] || STATUS_CONFIG.PENDING;
   const activeConfig = quote.customerConfigs?.[0];

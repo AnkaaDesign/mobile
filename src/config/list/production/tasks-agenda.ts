@@ -74,6 +74,15 @@ export const tasksListAgendaConfig: ListConfig<Task> = {
           assignedToId: true,
         },
       },
+
+      // Quote - needed for dynamic Orçamento/Faturamento label in swipe actions
+      quote: {
+        select: {
+          id: true,
+          status: true,
+          total: true,
+        },
+      },
     },
   },
 

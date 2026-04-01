@@ -55,6 +55,14 @@ import {
 } from "@/utils/task-quote-service-order-sync";
 import type { FormStep } from "@/components/ui/form-steps";
 
+function formatDocumentNumber(value: string | null | undefined): string {
+  if (!value) return "";
+  const clean = value.replace(/\D/g, "");
+  if (clean.length === 11) return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (clean.length === 14) return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  return value;
+}
+
 interface ArtworkOption {
   id: string;
   artworkId?: string;
@@ -122,9 +130,12 @@ const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
 
 interface TaskQuoteWizardProps {
   taskId: string;
+  /** 'budget' shows all fields (validade, garantia, tarefas simultaneas, prazo, layout).
+   *  'billing' hides budget-only fields. Default: 'budget'. */
+  mode?: 'budget' | 'billing';
 }
 
-export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
+export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProps) {
   const { colors } = useTheme();
   const router = useRouter();
   const { goBack } = useNavigationHistory();
@@ -162,7 +173,6 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           id: true,
           plate: true,
           chassisNumber: true,
-          model: true,
         },
       },
       sector: {
@@ -557,7 +567,7 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           <View style={styles.stepContainer}>
             <Card style={styles.card}>
               <CardHeader>
-                <CardTitle>Informações do Orçamento</CardTitle>
+                <CardTitle>{mode === 'billing' ? 'Informações do Faturamento' : 'Informações do Orçamento'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Step1Info
@@ -566,6 +576,7 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
                   canEditStatus={canEditStatus}
                   layoutFiles={layoutFiles}
                   onLayoutFilesChange={setLayoutFiles}
+                  mode={mode}
                   artworks={(task?.artworks || []).map((artwork: any) => {
                     const file = artwork.file || artwork;
                     return {
@@ -640,13 +651,14 @@ export function TaskQuoteWizard({ taskId }: TaskQuoteWizardProps) {
           <View style={styles.stepContainer}>
             <Card style={styles.card}>
               <CardHeader>
-                <CardTitle>Prévia do Orçamento</CardTitle>
+                <CardTitle>{mode === 'billing' ? 'Resumo do Faturamento' : 'Prévia do Orçamento'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ThemedText style={[styles.stepDescription, { color: colors.mutedForeground, marginBottom: spacing.md }]}>
-                  Revise o orçamento antes de salvar.
+                  {mode === 'billing' ? 'Revise o faturamento antes de salvar.' : 'Revise o orçamento antes de salvar.'}
                 </ThemedText>
                 <BudgetPreview
+                  mode={mode}
                   pricing={previewPricing as any}
                   task={task ? {
                     name: task.name,
@@ -683,6 +695,7 @@ interface Step1Props {
   customersCache: React.MutableRefObject<Map<string, any>>;
   selectedCustomers: Map<string, any>;
   setSelectedCustomers: (customers: Map<string, any>) => void;
+  mode: 'budget' | 'billing';
 }
 
 function Step1Info({
@@ -695,6 +708,7 @@ function Step1Info({
   customersCache,
   selectedCustomers,
   setSelectedCustomers,
+  mode,
 }: Step1Props) {
   const { colors } = useTheme();
   const fileViewer = useFileViewer();
@@ -985,6 +999,7 @@ function Step1Info({
           value={selectedCustomerIds}
           onValueChange={handleCustomerChange}
           mode="multiple"
+          hideDefaultBadges
           async
           queryKey={["customers", "quote-invoice-selector"]}
           queryFn={searchCustomers}
@@ -994,93 +1009,55 @@ function Step1Info({
           minSearchLength={0}
           debounceMs={500}
         />
-        {selectedCustomers.size > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs }}>
-            {Array.from(selectedCustomers.values()).map((customer) => (
-              <TouchableOpacity
-                key={customer.id}
-                onPress={() => {
-                  const newIds = selectedCustomerIds.filter((id: string) => id !== customer.id);
-                  handleCustomerChange(newIds);
-                }}
-                style={[styles.customerBadge, { backgroundColor: colors.muted, borderColor: colors.border }]}
-              >
-                <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>
-                  {customer.fantasyName || customer.corporateName}
-                </ThemedText>
-                <IconX size={12} color={colors.mutedForeground} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Customer NFS-e/Invoice Data Cards */}
+        {/* Selected Customer Cards */}
         {selectedCustomers.size > 0 && (
           <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
             {Array.from(selectedCustomers.entries()).map(([id, customer], index) => {
-              const missingFields: string[] = [];
-              if (!customer.cnpj && !customer.cpf) missingFields.push("CNPJ/CPF");
-              if (!customer.corporateName) missingFields.push("Razão Social");
-              if (!customer.city || !customer.state) missingFields.push("Cidade/Estado");
-              if (!customer.address) missingFields.push("Endereço");
+              const docValue = customer.cnpj || customer.cpf;
+              const docLabel = customer.cnpj ? "CNPJ" : customer.cpf ? "CPF" : "";
+              const formattedDoc = formatDocumentNumber(docValue);
+              const hasLogo = customer.logo?.id || customer.logoId;
+              const logoUrl = hasLogo ? `${ONLINE_API_URL}/files/thumbnail/${customer.logo?.id || customer.logoId}` : null;
 
               return (
                 <View
                   key={id}
                   style={[styles.infoCard, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xs }}>
-                    <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "600" }}>
-                      Cliente {index + 1}
-                    </ThemedText>
-                    {missingFields.length > 0 && (
-                      <View style={{ backgroundColor: colors.destructive, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                        <ThemedText style={{ fontSize: 10, color: "#fff", fontWeight: "600" }}>
-                          Dados incompletos
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                    {/* Customer Logo */}
+                    <View style={{
+                      width: 36, height: 36, borderRadius: 8,
+                      backgroundColor: colors.muted, alignItems: "center", justifyContent: "center", overflow: "hidden",
+                    }}>
+                      {logoUrl ? (
+                        <Image source={{ uri: logoUrl }} style={{ width: 36, height: 36 }} contentFit="cover" />
+                      ) : (
+                        <IconUser size={18} color={colors.mutedForeground} />
+                      )}
+                    </View>
+                    {/* Name & Doc */}
+                    <View style={{ flex: 1 }}>
+                      <ThemedText style={{ fontSize: 13, fontWeight: "600" }} numberOfLines={1}>
+                        {customer.corporateName || customer.fantasyName || `Cliente ${index + 1}`}
+                      </ThemedText>
+                      {formattedDoc ? (
+                        <ThemedText style={{ fontSize: 11, color: colors.mutedForeground }} numberOfLines={1}>
+                          {docLabel}: {formattedDoc}
                         </ThemedText>
-                      </View>
-                    )}
+                      ) : null}
+                    </View>
+                    {/* Remove button */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newIds = selectedCustomerIds.filter((cid: string) => cid !== customer.id);
+                        handleCustomerChange(newIds);
+                      }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <IconX size={16} color={colors.mutedForeground} />
+                    </TouchableOpacity>
                   </View>
-
-                  <View style={{ gap: 4 }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>Razão Social</ThemedText>
-                      <ThemedText style={{ fontSize: 12, fontWeight: "500" }} numberOfLines={1}>
-                        {customer.corporateName || customer.fantasyName || "-"}
-                      </ThemedText>
-                    </View>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
-                        {customer.cnpj ? "CNPJ" : "CPF"}
-                      </ThemedText>
-                      <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>
-                        {customer.cnpj || customer.cpf || (
-                          <ThemedText style={{ fontSize: 11, color: colors.destructive }}>Não informado</ThemedText>
-                        )}
-                      </ThemedText>
-                    </View>
-                    {customer.stateRegistration ? (
-                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>IE</ThemedText>
-                        <ThemedText style={{ fontSize: 12, fontWeight: "500" }}>{customer.stateRegistration}</ThemedText>
-                      </View>
-                    ) : null}
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>Endereço</ThemedText>
-                      <ThemedText style={{ fontSize: 12, fontWeight: "500", flex: 1, textAlign: "right", marginLeft: spacing.md }} numberOfLines={2}>
-                        {[customer.address, customer.addressNumber, customer.neighborhood, customer.city, customer.state].filter(Boolean).join(", ") || (
-                          <ThemedText style={{ fontSize: 11, color: colors.destructive }}>Não informado</ThemedText>
-                        )}
-                        {customer.zipCode ? ` — ${customer.zipCode}` : ""}
-                      </ThemedText>
-                    </View>
-                  </View>
-
-                  {missingFields.length > 0 && (
-                    <ThemedText style={{ fontSize: 11, color: colors.destructive, marginTop: spacing.xs }}>
-                      Campos faltantes: {missingFields.join(", ")}
-                    </ThemedText>
-                  )}
                 </View>
               );
             })}
@@ -1090,7 +1067,7 @@ function Step1Info({
 
       {/* Status & Validity */}
       <View style={[styles.row, { marginTop: spacing.md }]}>
-        <View style={styles.halfField}>
+        <View style={mode === 'billing' ? { flex: 1 } : styles.halfField}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
           <Combobox
             value={pricingStatus || "PENDING"}
@@ -1104,92 +1081,100 @@ function Step1Info({
             onClose={() => {}}
           />
         </View>
-        <View style={styles.halfField}>
-          <View style={styles.labelWithIcon}>
-            <IconCalendar size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
-            <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
-              Validade <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
-            </ThemedText>
-          </View>
-          <Combobox
-            value={validityPeriod}
-            onValueChange={handleValidityChange}
-            options={VALIDITY_PERIOD_OPTIONS}
-            placeholder="Período"
-            searchable={false}
-            avoidKeyboard={false}
-            onOpen={() => {}}
-            onClose={() => {}}
-          />
-        </View>
-      </View>
-
-      {/* Guarantee */}
-      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
-        <Combobox
-          value={currentGuaranteeOption}
-          onValueChange={handleGuaranteeChange}
-          options={GUARANTEE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-          placeholder="Selecione"
-          searchable={false}
-          avoidKeyboard={false}
-          onOpen={() => {}}
-          onClose={() => {}}
-        />
-      </View>
-
-      {/* Custom Guarantee Text */}
-      {showCustomGuarantee && (
-        <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-          <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Garantia</ThemedText>
-          <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-guarantee', e) : undefined}>
-            <TextInput
-              value={customGuaranteeText || ""}
-              onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
-              placeholder="Descreva as condições de garantia..."
-              placeholderTextColor={colors.mutedForeground}
-              multiline
-              numberOfLines={3}
-              style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
-              onFocus={() => keyboardContext?.onFieldFocus('pricing-custom-guarantee')}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* Simultaneous Tasks & Forecast Days */}
-      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
-        <View style={styles.row}>
+        {mode === 'budget' && (
           <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tarefas Simultâneas</ThemedText>
-            <Input
-              type="number"
-              value={simultaneousTasks ?? null}
-              onChange={(value) => {
-                const numVal = value ? Number(value) : null;
-                setValue("pricing.simultaneousTasks", numVal);
-              }}
-              placeholder="1-100"
-            />
-          </View>
-          <View style={styles.halfField}>
-            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
+            <View style={styles.labelWithIcon}>
+              <IconCalendar size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
+              <ThemedText style={[styles.label, { color: colors.foreground, marginLeft: 4, marginBottom: 0, flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+                Validade <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+              </ThemedText>
+            </View>
             <Combobox
-              value={customForecastDays ? String(customForecastDays) : ""}
-              onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
-              options={FORECAST_DAYS_OPTIONS}
-              placeholder="Auto"
+              value={validityPeriod}
+              onValueChange={handleValidityChange}
+              options={VALIDITY_PERIOD_OPTIONS}
+              placeholder="Período"
               searchable={false}
               avoidKeyboard={false}
               onOpen={() => {}}
               onClose={() => {}}
             />
           </View>
-        </View>
+        )}
       </View>
 
-      {/* Layout Approved */}
+      {/* Budget-only fields: Guarantee, Simultaneous Tasks, Forecast, Layout */}
+      {mode === 'budget' && (
+        <>
+          {/* Guarantee */}
+          <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+            <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Período de Garantia</ThemedText>
+            <Combobox
+              value={currentGuaranteeOption}
+              onValueChange={handleGuaranteeChange}
+              options={GUARANTEE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              placeholder="Selecione"
+              searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
+            />
+          </View>
+
+          {/* Custom Guarantee Text */}
+          {showCustomGuarantee && (
+            <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+              <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Garantia</ThemedText>
+              <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-guarantee', e) : undefined}>
+                <TextInput
+                  value={customGuaranteeText || ""}
+                  onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
+                  placeholder="Descreva as condições de garantia..."
+                  placeholderTextColor={colors.mutedForeground}
+                  multiline
+                  numberOfLines={3}
+                  style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground }]}
+                  onFocus={() => keyboardContext?.onFieldFocus('pricing-custom-guarantee')}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Simultaneous Tasks & Forecast Days */}
+          <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+            <View style={styles.row}>
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Tarefas Simultâneas</ThemedText>
+                <Input
+                  type="number"
+                  value={simultaneousTasks ?? null}
+                  onChange={(value) => {
+                    const numVal = value ? Number(value) : null;
+                    setValue("pricing.simultaneousTasks", numVal);
+                  }}
+                  placeholder="1-100"
+                />
+              </View>
+              <View style={styles.halfField}>
+                <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
+                <Combobox
+                  value={customForecastDays ? String(customForecastDays) : ""}
+                  onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
+                  options={FORECAST_DAYS_OPTIONS}
+                  placeholder="Auto"
+                  searchable={false}
+                  avoidKeyboard={false}
+                  onOpen={() => {}}
+                  onClose={() => {}}
+                />
+              </View>
+            </View>
+          </View>
+        </>
+      )}
+
+      {/* Layout Approved — budget only */}
+      {mode === 'budget' && (
       <View style={[styles.fieldSection, { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }]}>
         <View style={styles.labelWithIcon}>
           <IconPhoto size={14} color={colors.mutedForeground} style={{ flexShrink: 0 }} />
@@ -1289,6 +1274,7 @@ function Step1Info({
           </>
         )}
       </View>
+      )}
     </View>
   );
 }

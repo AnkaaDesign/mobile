@@ -15,12 +15,10 @@ export default function BillingDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Faturamento da Tarefa",
-          headerBackTitle: "Voltar",
-          headerShown: true,
+          headerShown: false,
         }}
       />
-      <TaskQuoteWizard taskId={id} />
+      <TaskQuoteWizard taskId={id} mode="billing" />
     </>
   );
 }

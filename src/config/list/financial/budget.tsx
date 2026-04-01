@@ -1,10 +1,7 @@
 import { View, StyleSheet } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { TaskQuote } from '@/types/task-quote'
-import {
-  TASK_QUOTE_STATUS,
-  TASK_QUOTE_STATUS_LABELS,
-} from '@/constants'
+import { TASK_QUOTE_STATUS } from '@/constants'
 import { canEditQuote } from '@/utils/permissions/quote-permissions'
 import { formatCurrency } from '@/utils/formatters'
 import { ThemedText } from '@/components/ui/themed-text'
@@ -26,34 +23,8 @@ const styles = StyleSheet.create({
 })
 
 /**
- * Map TASK_QUOTE_STATUS to badge variant — matches web QuoteStatusBadge
- */
-function getQuoteStatusBadge(status: TASK_QUOTE_STATUS): { variant: string } {
-  switch (status) {
-    case TASK_QUOTE_STATUS.PENDING:
-      return { variant: 'secondary' }
-    case TASK_QUOTE_STATUS.BUDGET_APPROVED:
-      return { variant: 'approved' }
-    case TASK_QUOTE_STATUS.VERIFIED_BY_FINANCIAL:
-      return { variant: 'processing' }
-    case TASK_QUOTE_STATUS.BILLING_APPROVED:
-      return { variant: 'approved' }
-    case TASK_QUOTE_STATUS.UPCOMING:
-      return { variant: 'pending' }
-    case TASK_QUOTE_STATUS.DUE:
-      return { variant: 'destructive' }
-    case TASK_QUOTE_STATUS.PARTIAL:
-      return { variant: 'inProgress' }
-    case TASK_QUOTE_STATUS.SETTLED:
-      return { variant: 'completed' }
-    default:
-      return { variant: 'secondary' }
-  }
-}
-
-/**
  * Budget list config — queries TaskQuotes.
- * Columns match the web budget page: LOGOMARCA, IDENTIFICADOR, CLIENTES, VALOR, STATUS
+ * Columns match the web budget page: LOGOMARCA, IDENTIFICADOR, CLIENTES, PREVISÃO, PRAZO, VALOR
  */
 export const budgetListConfig: ListConfig<TaskQuote> = {
   key: 'financial-budget',
@@ -72,6 +43,8 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
           id: true,
           name: true,
           serialNumber: true,
+          forecastDate: true,
+          term: true,
           truck: {
             select: {
               plate: true,
@@ -160,26 +133,21 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         style: { fontWeight: '500' },
       },
       {
-        key: 'status',
-        label: 'STATUS',
-        sortable: true,
-        sortField: 'statusOrder',
-        width: 1.5,
-        align: 'center',
-        render: (quote: TaskQuote) => {
-          if (!quote.status) return '-'
-          return TASK_QUOTE_STATUS_LABELS[quote.status as TASK_QUOTE_STATUS] || quote.status
-        },
-        format: 'badge',
-        badge: (quote: TaskQuote) => getQuoteStatusBadge(quote.status as TASK_QUOTE_STATUS),
-      },
-      {
-        key: 'expiresAt',
-        label: 'VALIDADE',
-        sortable: true,
+        key: 'task.forecastDate',
+        label: 'PREVISÃO',
+        sortable: false,
         width: 1.2,
         align: 'left',
-        render: (quote: TaskQuote) => quote.expiresAt,
+        render: (quote: TaskQuote) => (quote.task as any)?.forecastDate,
+        format: 'date',
+      },
+      {
+        key: 'task.term',
+        label: 'PRAZO',
+        sortable: false,
+        width: 1.2,
+        align: 'left',
+        render: (quote: TaskQuote) => (quote.task as any)?.term,
         format: 'date',
       },
       {
@@ -192,7 +160,7 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         format: 'date',
       },
     ],
-    defaultVisible: ['task.name', 'identificador', 'total', 'status'],
+    defaultVisible: ['task.name', 'identificador', 'task.term'],
     rowHeight: 52,
     actions: [
       {

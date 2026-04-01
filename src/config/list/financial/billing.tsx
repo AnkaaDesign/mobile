@@ -78,7 +78,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
 
   query: {
     hook: 'useTasksInfiniteMobile',
-    defaultSort: { field: 'finishedAt', direction: 'desc' },
+    defaultSort: { field: 'quote.statusOrder', direction: 'desc' },
     pageSize: 25,
     forcedParams: {
       shouldDisplayForFinancial: true,
@@ -203,7 +203,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
         key: 'quote.statusOrder',
         label: 'STATUS',
         sortable: true,
-        width: 1.5,
+        width: 1.8,
         align: 'center',
         render: (task: BillingTask) => {
           if (!task.quote?.status) return '-'
@@ -213,7 +213,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
         badge: (task: BillingTask) => getQuoteStatusBadge(task.quote?.status),
       },
     ],
-    defaultVisible: ['name', 'identificador', 'quoteTotal', 'quote.statusOrder', 'invoiceToCustomers'],
+    defaultVisible: ['name', 'identificador', 'quote.statusOrder'],
     rowHeight: 52,
     actions: [
       {
@@ -242,6 +242,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
           { label: 'A Vencer', value: TASK_QUOTE_STATUS.UPCOMING },
           { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },
           { label: 'Parcial', value: TASK_QUOTE_STATUS.PARTIAL },
+          { label: 'Liquidado', value: TASK_QUOTE_STATUS.SETTLED },
         ],
         placeholder: 'Todos os status',
       },

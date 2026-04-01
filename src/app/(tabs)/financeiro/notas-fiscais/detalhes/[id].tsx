@@ -4,7 +4,6 @@ import {
   ScrollView,
   RefreshControl,
   StyleSheet,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -30,6 +29,52 @@ import {
   IconReceipt,
 } from "@tabler/icons-react-native";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+
+function formatDocument(doc: string | null | undefined): { label: string; value: string } | null {
+  if (!doc) return null;
+  const clean = doc.replace(/\D/g, "");
+  if (clean.length === 11) {
+    return {
+      label: "CPF",
+      value: clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"),
+    };
+  }
+  if (clean.length === 14) {
+    return {
+      label: "CNPJ",
+      value: clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5"),
+    };
+  }
+  return { label: "CNPJ/CPF", value: doc };
+}
+
+function buildAddress(tomador: any): string | null {
+  const parts = [
+    tomador.endereco,
+    tomador.numeroEndereco,
+    tomador.complementoEndereco,
+    tomador.bairro,
+    typeof tomador.cidade === "object"
+      ? tomador.cidade?.descricao || tomador.cidade?.nome || tomador.cidade?.name
+      : tomador.cidade,
+    typeof tomador.uf === "object"
+      ? tomador.uf?.descricao || tomador.uf?.id?.unidadeFederacao || tomador.uf?.sigla || tomador.uf?.nome
+      : tomador.uf,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+function buildCidade(tomador: any): string | null {
+  const cidade = typeof tomador.cidade === "object"
+    ? tomador.cidade?.descricao || tomador.cidade?.nome || tomador.cidade?.name || ""
+    : tomador.cidade || "";
+  const uf = typeof tomador.uf === "object"
+    ? tomador.uf?.descricao || tomador.uf?.id?.unidadeFederacao || tomador.uf?.sigla || tomador.uf?.nome || ""
+    : tomador.uf || "";
+  if (!cidade && !uf) return null;
+  if (cidade && uf) return `${cidade}/${uf}`;
+  return cidade || uf || null;
+}
 
 export default function NfseDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
@@ -122,9 +167,11 @@ export default function NfseDetailScreen() {
 
   const numeroNfse = dadosNfse?.numeroNfse;
   const dataEmissao = dadosNfse?.dataEmissao;
-  const situacao = dadosNfse?.situacao;
-  const cancelada = situacao === 4 || situacao === "4";
-  const emitida = situacao === 1 || situacao === "1";
+
+  // Use localStatus (enriched by API) like web, fallback to situacao
+  const localStatus = (detail as any).localStatus;
+  const cancelada = localStatus === "CANCELLED" || dadosNfse?.situacao === 4 || dadosNfse?.situacao === "4";
+  const emitida = localStatus === "AUTHORIZED" || (!cancelada && (dadosNfse?.situacao === 1 || dadosNfse?.situacao === "1"));
 
   return (
     <ScrollView
@@ -163,8 +210,10 @@ export default function NfseDetailScreen() {
                 <ThemedText style={styles.badgeText}>Emitida</ThemedText>
               </Badge>
             ) : (
-              <Badge variant="amber" size="default">
-                <ThemedText style={styles.badgeText}>Pendente</ThemedText>
+              <Badge variant="secondary" size="default">
+                <ThemedText style={styles.badgeText}>
+                  {(detail as any).descricaoSituacao || "Pendente"}
+                </ThemedText>
               </Badge>
             )}
           </View>
@@ -190,32 +239,32 @@ export default function NfseDetailScreen() {
             </View>
             <View style={styles.infoGrid}>
               <InfoRow
-                label="Razao Social"
-                value={tomador.razaoNome}
+                label="Nome/Razao Social"
+                value={tomador.razao || tomador.razaoNome || (detail as any).customerName}
+                colors={colors}
+              />
+              {(() => {
+                const doc = formatDocument(tomador.cnpjCpf);
+                return doc ? <InfoRow label={doc.label} value={doc.value} colors={colors} /> : null;
+              })()}
+              <InfoRow
+                label="Endereco"
+                value={buildAddress(tomador)}
                 colors={colors}
               />
               <InfoRow
-                label="CNPJ/CPF"
-                value={tomador.cnpjCpf}
+                label="CEP"
+                value={tomador.cep}
+                colors={colors}
+              />
+              <InfoRow
+                label="Telefone"
+                value={tomador.telefone}
                 colors={colors}
               />
               <InfoRow
                 label="E-mail"
                 value={tomador.email}
-                colors={colors}
-              />
-              <InfoRow
-                label="Cidade"
-                value={
-                  tomador.cidade
-                    ? `${typeof tomador.cidade === 'object' ? (tomador.cidade as any)?.nome || (tomador.cidade as any)?.name || '' : tomador.cidade}${tomador.uf ? `/${typeof tomador.uf === 'object' ? (tomador.uf as any)?.sigla || (tomador.uf as any)?.nome || '' : tomador.uf}` : ""}`
-                    : null
-                }
-                colors={colors}
-              />
-              <InfoRow
-                label="Endereco"
-                value={tomador.endereco}
                 colors={colors}
               />
             </View>

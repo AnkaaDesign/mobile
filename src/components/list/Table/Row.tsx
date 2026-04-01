@@ -137,6 +137,8 @@ export const Row = memo(function Row<T extends { id: string }>({
       {columns.map((column, colIndex) => {
         // Extract raw value from item using column key for badge lookup
         const rawValue = column.badgeEntity ? (item as any)[column.key.split('.')[0]] : undefined
+        // Extract explicit badge variant from column config badge() function
+        const badgeVariant = column.badge ? column.badge(item)?.variant : undefined
         return (
           <Cell
             key={column.key}
@@ -150,6 +152,7 @@ export const Row = memo(function Row<T extends { id: string }>({
               style={column.style}
               badgeEntity={column.badgeEntity}
               rawValue={rawValue}
+              badgeVariant={badgeVariant}
               component={column.component}
               onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
             />

@@ -220,6 +220,7 @@ interface CellContentProps {
   style?: any
   badgeEntity?: string // Entity type for badge color resolution (e.g., 'ORDER', 'TASK', 'USER')
   rawValue?: any // Raw value for badge color lookup (when different from rendered value)
+  badgeVariant?: string // Explicit badge variant from column config badge() function
   component?: string // Special component to render (e.g., 'file-thumbnail')
   onCellPress?: () => void // Callback when cell is pressed (for file-thumbnail)
 }
@@ -237,6 +238,7 @@ export const CellContent = memo(function CellContent({
   style,
   badgeEntity,
   rawValue,
+  badgeVariant: explicitBadgeVariant,
   component,
   onCellPress,
 }: CellContentProps) {
@@ -356,10 +358,13 @@ export const CellContent = memo(function CellContent({
         // For numeric badges without entity (like itemsCount), always use default (gray)
         const isNumericWithoutEntity = !badgeEntity && !isNaN(Number(lookupValue))
 
-        // Use centralized badge configuration with entity context
-        const variant = isNumericWithoutEntity
-          ? 'default' as BadgeVariant
-          : getBadgeVariant(lookupValue, badgeEntity as any) as BadgeVariant
+        // Use explicit variant from column config badge() function when provided,
+        // otherwise fall back to centralized badge configuration
+        const variant = explicitBadgeVariant
+          ? explicitBadgeVariant as BadgeVariant
+          : isNumericWithoutEntity
+            ? 'default' as BadgeVariant
+            : getBadgeVariant(lookupValue, badgeEntity as any) as BadgeVariant
         const badgeColors = BADGE_COLORS[variant] || BADGE_COLORS.default
 
         // Use the rendered value for display (which may already be translated)

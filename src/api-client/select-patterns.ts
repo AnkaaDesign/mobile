@@ -282,7 +282,7 @@ export const PAINT_SELECT_MINIMAL = {
   id: true,
   name: true,
   code: true,
-  hexColor: true,
+  hex: true,
   finish: true,
   paintType: {
     select: {

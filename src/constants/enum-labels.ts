@@ -1941,11 +1941,20 @@ export const TASK_QUOTE_STATUS_LABELS: Record<TASK_QUOTE_STATUS, string> = {
  * Before BUDGET_APPROVED -> "Orçamento" (budget phase)
  * BUDGET_APPROVED or later -> "Faturamento" (billing phase)
  */
-export function getTaskQuoteDisplayLabel(status?: TASK_QUOTE_STATUS | null): string {
+export function getTaskQuoteDisplayLabel(status?: TASK_QUOTE_STATUS | string | null): string {
   if (!status || status === TASK_QUOTE_STATUS.PENDING) {
     return 'Orçamento';
   }
   return 'Faturamento';
+}
+
+/**
+ * Returns whether the task quote is in the billing phase (past budget).
+ * PENDING or no status → false (budget/orçamento phase)
+ * BUDGET_APPROVED or later → true (billing/faturamento phase)
+ */
+export function isTaskQuoteBillingPhase(status?: TASK_QUOTE_STATUS | string | null): boolean {
+  return !!status && status !== TASK_QUOTE_STATUS.PENDING;
 }
 
 // =====================

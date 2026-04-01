@@ -35,6 +35,7 @@ const ACTION_SEGMENTS = ['detalhes', 'editar', 'layout', 'precificacao', 'copiar
  *   /administracao/clientes/editar/abc → /(tabs)/administracao/clientes
  *   /administracao/clientes/cadastrar  → /(tabs)/administracao/clientes
  *   /producao/cronograma/copiar-de/123 → /(tabs)/producao/cronograma
+ *   /financeiro/faturamento/listar     → /(tabs)/financeiro
  *   /producao                   → /(tabs)/inicio
  */
 function computeParentRoute(pathname: string): string {
@@ -47,6 +48,15 @@ function computeParentRoute(pathname: string): string {
   if (segments.length <= 1) {
     // Already at a top-level section — go home
     return '/(tabs)/inicio';
+  }
+
+  // Strip /listar — its parent directory is always an index redirect, so go up two levels
+  if (segments[segments.length - 1] === 'listar') {
+    const parent = segments.slice(0, -2);
+    if (parent.length === 0) {
+      return '/(tabs)/inicio';
+    }
+    return '/(tabs)/' + parent.join('/');
   }
 
   // Strip /cadastrar suffix (and nested cadastrar like /cadastrar/enviar)
@@ -82,16 +92,24 @@ function computeParentRoute(pathname: string): string {
 
 /**
  * Smartly add a path to the history stack, handling:
- * 1. Redirects: sub-route of last entry → replace instead of push
+ * 1. Redirects: sub-route of last entry AND happened quickly (auto-redirect from index.tsx)
  * 2. Edit/create returns: path matches second-to-last → pop intermediate entry
  *    (e.g., [list, detail/123, edit/123] + detail/123 → [list, detail/123])
  * 3. Normal navigation: just push
+ *
+ * @param isQuickTransition - true if the transition happened within 500ms of the
+ *   previous one, suggesting an automatic index.tsx redirect rather than user navigation.
+ *   Without this guard, navigating from /agenda to /agenda/detalhes/123 would be
+ *   mistakenly treated as a redirect (because the detail path starts with the list path).
  */
-function addToHistory(prev: string[], newPath: string): string[] {
-  // Detect redirect: new path is a sub-route of last entry
-  // (e.g., /producao/observacoes → /producao/observacoes/listar)
+function addToHistory(prev: string[], newPath: string, isQuickTransition: boolean): string[] {
   const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
-  if (lastEntry && newPath.startsWith(lastEntry + '/')) {
+
+  // Detect redirect: sub-route of last entry AND happened very quickly.
+  // index.tsx redirects (e.g., /observacoes → /observacoes/listar) happen within
+  // a single render cycle (<50ms). User navigations (tap → animation → render)
+  // always take longer. Only replace if both conditions are met.
+  if (isQuickTransition && lastEntry && newPath.startsWith(lastEntry + '/')) {
     return [...prev.slice(0, -1), newPath].slice(-10);
   }
 
@@ -124,6 +142,8 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
   const historyRef = useRef<string[]>([]);
   const previousPathname = useRef<string>("");
   const currentPathnameRef = useRef(pathname);
+  // Timestamp of last history update — used to distinguish auto-redirects from user nav
+  const lastHistoryUpdateTime = useRef<number>(0);
 
   // Store screen reset functions
   const screenResetFunctions = useRef<Map<string, () => void>>(new Map());
@@ -155,7 +175,10 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
       if (!pathname.startsWith("/(autenticacao)") && pathname !== "/") {
         const prev = historyRef.current;
         if (prev.length === 0 || prev[prev.length - 1] !== pathname) {
-          historyRef.current = addToHistory(prev, pathname);
+          const now = Date.now();
+          const isQuickTransition = (now - lastHistoryUpdateTime.current) < 500;
+          historyRef.current = addToHistory(prev, pathname, isQuickTransition);
+          lastHistoryUpdateTime.current = now;
           logNavigationStack(historyRef.current, pathname);
         }
       }
@@ -205,7 +228,9 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     if (!path.startsWith("/(autenticacao)") && path !== "/") {
       const prev = historyRef.current;
       if (prev.length === 0 || prev[prev.length - 1] !== path) {
-        historyRef.current = addToHistory(prev, path);
+        // Manual push is never an auto-redirect
+        historyRef.current = addToHistory(prev, path, false);
+        lastHistoryUpdateTime.current = Date.now();
       }
     }
   }, []);

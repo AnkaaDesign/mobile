@@ -69,7 +69,7 @@ export function TasksTable({ sector, maxHeight = 500 }: TasksTableProps) {
           id: true,
           name: true,
           hex: true,
-          hexColor: true,
+
         },
       },
       services: {

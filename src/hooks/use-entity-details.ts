@@ -233,7 +233,7 @@ export function useEntityDetails(entityIds: {
                   id: true,
                   name: true,
                   code: true,
-                  hexColor: true,
+                  hex: true,
                   finish: true,
                   manufacturer: true,
                   paintBrand: { select: { id: true, name: true } },

@@ -103,7 +103,7 @@ export default function ScheduleDetailsScreen() {
     canViewPaint: canViewPaintSections, canViewLogoPaint: canViewLogoPaints,
     canViewCuts, canViewAirbrushing, canViewObservation,
     canViewLayout: canViewTruckLayout,
-    canViewTruckDetails, canViewArtworks,
+    canViewTruckDetails, canViewArtworks, canApproveArtworks,
     canViewCommission: canViewFinancialFields,
   } = useTaskPermissions();
 
@@ -586,11 +586,11 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Artworks Section - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
+          {/* Artworks Section - Visible to ALL sectors. Only ADMIN/COMMERCIAL see non-approved. */}
           {canViewArtworks && (() => {
-            // Filter artworks: show all if user can view badges, otherwise only approved
+            // Filter artworks: ADMIN/COMMERCIAL see all, others see only approved
             const filteredArtworks = (task as any)?.artworks?.filter((artwork: any) =>
-              canViewArtworkBadges || artwork.status === 'APPROVED'
+              canApproveArtworks || artwork.status === 'APPROVED'
             ) || [];
 
             if (filteredArtworks.length === 0) return null;
@@ -1111,7 +1111,7 @@ export default function ScheduleDetailsScreen() {
                     serviceOrderIds={serviceOrderIds}
                     truckId={(task as any)?.truck?.id}
                     layoutIds={changelogLayoutIds}
-                    quoteId={(task as any)?.quote?.id}
+                    quoteId={canViewPricingSection ? (task as any)?.quote?.id : undefined}
                   />
                 ) : (
                   <ChangelogSkeleton />

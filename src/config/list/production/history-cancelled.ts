@@ -37,7 +37,6 @@ export const historyCancelledListConfig: ListConfig<Task> = {
           id: true,
           name: true,
           hex: true,
-          hexColor: true,
           paintType: {
             select: {
               id: true,
@@ -55,7 +54,9 @@ export const historyCancelledListConfig: ListConfig<Task> = {
       serviceOrders: {
         select: {
           id: true,
-          name: true,
+          description: true,
+          status: true,
+          type: true,
         },
       },
       createdBy: {

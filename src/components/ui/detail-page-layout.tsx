@@ -128,7 +128,7 @@ export function DetailCard({
               color={iconColor || colors.primary}
             />
           )}
-          <ThemedText style={styles.cardTitle}>{title}</ThemedText>
+          <ThemedText style={styles.cardTitle} numberOfLines={1}>{title}</ThemedText>
         </View>
         {badge}
       </View>

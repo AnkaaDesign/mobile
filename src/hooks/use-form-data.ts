@@ -199,7 +199,7 @@ export function usePaintsMinimal(options?: {
           id: true,
           name: true,
           code: true,
-          hexColor: true,
+          hex: true,
           finish: true,
           paintType: {
             select: {
@@ -251,7 +251,7 @@ export function usePaintsForCatalogue(options?: {
           id: true,
           name: true,
           code: true,
-          hexColor: true,
+          hex: true,
           finish: true,
           colorPreview: true,
           description: true,

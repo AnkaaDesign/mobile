@@ -70,8 +70,9 @@ export const historyListConfig: ListConfig<Task> = {
       serviceOrders: {
         select: {
           id: true,
-          name: true,
+          description: true,
           status: true,
+          type: true,
         },
       },
       truck: {

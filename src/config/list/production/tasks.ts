@@ -5,6 +5,7 @@ import type { ListConfig } from '@/components/list/types'
 import type { Task } from '@/types'
 import { canEditTasks, canEditLayoutForTask, canLeaderManageTask, isLeader, canReleaseTasks, canAccessAdvancedTaskMenu, canViewLayouts, canChangeTaskSector, canCancelTasks, canAddArtworks, canFinishTask, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { canViewQuote } from '@/utils/permissions/quote-permissions'
+import { getTaskQuoteDisplayLabel, isTaskQuoteBillingPhase } from '@/constants/enum-labels'
 import { SECTOR_PRIVILEGES } from '@/constants'
 import { navigationTracker } from '@/utils/navigation-tracker'
 
@@ -150,9 +151,11 @@ export const tasksListConfig: ListConfig<Task> = {
       serviceOrders: {
         select: {
           id: true,
-          name: true,
+          description: true,
           type: true,
           status: true,
+          statusOrder: true,
+          assignedToId: true,
         },
       },
       createdBy: {
@@ -566,7 +569,7 @@ export const tasksListConfig: ListConfig<Task> = {
       },
       {
         key: 'quote',
-        label: 'Orçamento',
+        label: (task: Task) => getTaskQuoteDisplayLabel(task.quote?.status),
         icon: 'currency-real',
         variant: 'default',
         canPerform: (user: any) => canViewQuote(user?.sector?.privileges || ''),
@@ -575,7 +578,11 @@ export const tasksListConfig: ListConfig<Task> = {
           const currentPath = context?.route || '/(tabs)/producao/agenda'
           console.log('[Tasks] Storing navigation source for quote:', currentPath)
           navigationTracker.setSource(currentPath)
-          router.push(`/producao/agenda/precificacao/${task.id}`)
+          // Navigate to billing or budget detail page based on quote status
+          const route = isTaskQuoteBillingPhase(task.quote?.status)
+            ? `/(tabs)/financeiro/faturamento/detalhes/${task.id}`
+            : `/(tabs)/financeiro/orcamento/detalhes/${task.id}`
+          router.push(route as any)
         },
       },
       {

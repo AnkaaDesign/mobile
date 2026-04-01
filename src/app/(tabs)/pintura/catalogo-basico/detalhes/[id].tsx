@@ -69,7 +69,7 @@ export default function CatalogoBasicoDetailsScreen() {
       name: true,
       code: true,
       hex: true,
-      hexColor: true,
+
       finish: true,
       colorPreview: true,
       description: true,
