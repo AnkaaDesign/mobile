@@ -196,7 +196,7 @@ export function useSetSystemUserPassword() {
 
 export function useSharedFolders() {
   return useQuery({
-    queryKey: serverKeys.sharedFolders(),
+    queryKey: serverKeys.fileManagerFolders(),
     queryFn: getSharedFolders,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -204,7 +204,7 @@ export function useSharedFolders() {
 
 export function useSharedFolderContents(folderName?: string, subPath?: string, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: serverKeys.sharedFolderContents(folderName, subPath),
+    queryKey: serverKeys.fileManagerFolderContents(folderName, subPath),
     queryFn: () => (folderName ? getSharedFolderContents(folderName, subPath) : Promise.resolve(null)),
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: (options?.enabled ?? true) && !!folderName,

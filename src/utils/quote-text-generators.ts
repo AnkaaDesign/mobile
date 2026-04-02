@@ -54,13 +54,13 @@ interface PaymentTextData {
  * - INSTALLMENTS_3: 3 payments (entrada + 20 + 40 days)
  * - etc. (always 20 days interval between payments)
  */
-export function generatePaymentText(pricing: PaymentTextData): string {
+export function generatePaymentText(quote: PaymentTextData): string {
   // If custom text is provided, use it
-  if (pricing.customPaymentText) {
-    return pricing.customPaymentText;
+  if (quote.customPaymentText) {
+    return quote.customPaymentText;
   }
 
-  const paymentCondition = pricing.paymentCondition ?? null;
+  const paymentCondition = quote.paymentCondition ?? null;
 
   // No payment condition, return empty
   if (!paymentCondition || paymentCondition === PAYMENT_CONDITION.CUSTOM) {
@@ -70,7 +70,7 @@ export function generatePaymentText(pricing: PaymentTextData): string {
   const installmentCount = getInstallmentCount(paymentCondition as PAYMENT_CONDITION | null);
   if (installmentCount === 0) return '';
 
-  const total = pricing.total;
+  const total = quote.total;
   const installmentValue = Math.round((total / installmentCount) * 100) / 100;
   const word = numberToWord(installmentCount);
 
@@ -92,16 +92,16 @@ export function generatePaymentText(pricing: PaymentTextData): string {
  * Generate guarantee terms text based on pricing data
  * If customGuaranteeText is provided, it overrides the auto-generated text
  */
-export function generateGuaranteeText(pricing: { customGuaranteeText?: string | null; guaranteeYears?: number | null }): string {
+export function generateGuaranteeText(quote: { customGuaranteeText?: string | null; guaranteeYears?: number | null }): string {
   // If custom text is provided, use it
-  if (pricing.customGuaranteeText) {
-    return pricing.customGuaranteeText;
+  if (quote.customGuaranteeText) {
+    return quote.customGuaranteeText;
   }
 
   // No guarantee years, return empty
-  if (!pricing.guaranteeYears) {
+  if (!quote.guaranteeYears) {
     return '';
   }
 
-  return `A Garantia para o serviço de pintura é de ${pricing.guaranteeYears} anos desde que seja atendido as condições de uso e cuidado do implemento.`;
+  return `A Garantia para o serviço de pintura é de ${quote.guaranteeYears} anos desde que seja atendido as condições de uso e cuidado do implemento.`;
 }

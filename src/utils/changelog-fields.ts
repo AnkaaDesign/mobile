@@ -139,29 +139,42 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
   [CHANGE_LOG_ENTITY_TYPE.ORDER]: {
     orderId: "ID do Pedido",
     orderItemId: "ID do Item do Pedido",
+    description: "Descrição",
     totalAmount: "Valor Total",
     scheduledFor: "Agendado para",
     deliveryDate: "Data de Entrega",
     receivedDate: "Data de Recebimento",
-    forecast: "Previsão",
+    forecast: "Previsão de Entrega",
     status: "Status",
     status_transition: "Status",
     statusOrder: "Ordem do Status",
+    budgets: "Orçamentos",
     budgetIds: "Orçamentos",
+    invoices: "Notas Fiscais",
     invoiceIds: "Notas Fiscais",
-    receiptIds: "Recibos",
+    receipts: "Comprovantes",
+    receiptIds: "Comprovantes",
+    reimbursements: "Reembolsos",
+    reimbursementIds: "Reembolsos",
+    invoiceReimbursements: "NFEs de Reembolso",
+    invoiceReimbursementIds: "NFEs de Reembolso",
     supplierId: "Fornecedor",
     orderScheduleId: "Agendamento do Pedido",
     orderRuleId: "Regra do Pedido",
     ppeScheduleId: "Agendamento de EPI",
     notes: "Observações",
     doneAt: "Concluído em",
-    paymentResponsibleId: "Responsável pelo Pagamento",
-    paymentAssignedById: "Atribuído por (Pagamento)",
+    "supplier.name": "Nome do Fornecedor",
     "supplier.fantasyName": "Nome Fantasia do Fornecedor",
     "budget.filename": "Nome do Orçamento",
     "nfe.filename": "Nome da NFe",
     "receipt.filename": "Nome do Recibo",
+    paymentMethod: "Método de Pagamento",
+    paymentPix: "Chave Pix",
+    paymentDueDays: "Prazo de Vencimento",
+    paymentResponsibleId: "Responsável pelo Pagamento",
+    paymentAssignedById: "Atribuído por",
+    items: "Itens do Pedido",
   },
   [CHANGE_LOG_ENTITY_TYPE.ORDER_ITEM]: {
     orderId: "Pedido",
@@ -2150,7 +2163,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     }
 
     // Special handling for budget field in TASK - format as human readable
-    if ((field === "budget" || field === "quoteId" || field === "pricing") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
+    if ((field === "budget" || field === "quoteId" || field === "pricing" || field === "quote") && entityType === CHANGE_LOG_ENTITY_TYPE.TASK) {
       const data = value as { id?: string; budgetNumber?: number; total?: string | number; services?: Array<{ description?: string; amount?: string | number }> };
       if (!data) return "Nenhum";
 

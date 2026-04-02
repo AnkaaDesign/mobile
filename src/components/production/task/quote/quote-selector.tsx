@@ -112,24 +112,24 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
 
     const { fields, append, prepend, remove } = useFieldArray({
       control,
-      name: "pricing.services",
+      name: "quote.services",
     });
 
     // Watch pricing values
-    const pricingItems = useWatch({ control, name: "pricing.services" });
-    const pricingStatus = useWatch({ control, name: "pricing.status" }) || "PENDING";
-    const pricingExpiresAt = useWatch({ control, name: "pricing.expiresAt" });
-    const discountType = useWatch({ control, name: "pricing.customerConfigs.0.discountType" }) || DISCOUNT_TYPE.NONE;
-    const discountValue = useWatch({ control, name: "pricing.customerConfigs.0.discountValue" });
-    const paymentCondition = useWatch({ control, name: "pricing.paymentCondition" });
-    const customPaymentText = useWatch({ control, name: "pricing.customerConfigs.0.customPaymentText" });
-    const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
-    const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
-    const layoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
-    const discountReference = useWatch({ control, name: "pricing.customerConfigs.0.discountReference" });
-    const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
-    const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
-    const watchedCustomerConfigs = useWatch({ control, name: "pricing.customerConfigs" });
+    const quoteItems = useWatch({ control, name: "quote.services" });
+    const quoteStatus = useWatch({ control, name: "quote.status" }) || "PENDING";
+    const quoteExpiresAt = useWatch({ control, name: "quote.expiresAt" });
+    const discountType = useWatch({ control, name: "quote.customerConfigs.0.discountType" }) || DISCOUNT_TYPE.NONE;
+    const discountValue = useWatch({ control, name: "quote.customerConfigs.0.discountValue" });
+    const paymentCondition = useWatch({ control, name: "quote.paymentCondition" });
+    const customPaymentText = useWatch({ control, name: "quote.customerConfigs.0.customPaymentText" });
+    const guaranteeYears = useWatch({ control, name: "quote.guaranteeYears" });
+    const customGuaranteeText = useWatch({ control, name: "quote.customGuaranteeText" });
+    const layoutFileId = useWatch({ control, name: "quote.layoutFileId" });
+    const discountReference = useWatch({ control, name: "quote.customerConfigs.0.discountReference" });
+    const simultaneousTasks = useWatch({ control, name: "quote.simultaneousTasks" });
+    const customForecastDays = useWatch({ control, name: "quote.customForecastDays" });
+    const watchedCustomerConfigs = useWatch({ control, name: "quote.customerConfigs" });
 
     // Customer search for invoice-to selector
     const searchCustomers = useCallback(async (search: string, page: number = 1) => {
@@ -246,7 +246,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
           discountReference: null,
         };
       });
-      setValue("pricing.customerConfigs", newConfigs);
+      setValue("quote.customerConfigs", newConfigs);
 
       // Update customer cache with any newly fetched customers
       const newSelected = new Map(selectedCustomers);
@@ -267,11 +267,11 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     const handleCustomerPaymentConditionChange = useCallback((value: string, configIndex: number, customerId: string) => {
       if (value === "CUSTOM") {
         setShowCustomPayment(prev => ({ ...prev, [customerId]: true }));
-        setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
+        setValue(`quote.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
       } else {
         setShowCustomPayment(prev => ({ ...prev, [customerId]: false }));
-        setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, null);
-        setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, value);
+        setValue(`quote.customerConfigs.${configIndex}.customPaymentText`, null);
+        setValue(`quote.customerConfigs.${configIndex}.paymentCondition`, value);
       }
     }, [setValue]);
 
@@ -281,10 +281,10 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       const currentIds = Array.isArray(configs)
         ? configs.map((c: any) => typeof c === 'string' ? c : c?.customerId).filter(Boolean)
         : [];
-      const items = getValues("pricing.services") || [];
+      const items = getValues("quote.services") || [];
       items.forEach((item: any, index: number) => {
         if (item.invoiceToCustomerId && !currentIds.includes(item.invoiceToCustomerId)) {
-          setValue(`pricing.services.${index}.invoiceToCustomerId`, null);
+          setValue(`quote.services.${index}.invoiceToCustomerId`, null);
         }
       });
     }, [watchedCustomerConfigs, getValues, setValue]);
@@ -295,8 +295,8 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       const configs = watchedCustomerConfigs;
       if (!Array.isArray(configs) || configs.length !== 1) return;
 
-      const rootPaymentCondition = getValues("pricing.paymentCondition");
-      const rootCustomPaymentText = getValues("pricing.customerConfigs.0.customPaymentText");
+      const rootPaymentCondition = getValues("quote.paymentCondition");
+      const rootCustomPaymentText = getValues("quote.customerConfigs.0.customPaymentText");
       const config = configs[0];
       if (!config || typeof config !== 'object') return;
 
@@ -313,16 +313,16 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       }
 
       if (needsUpdate) {
-        setValue("pricing.customerConfigs.0", updated, { shouldDirty: false });
+        setValue("quote.customerConfigs.0", updated, { shouldDirty: false });
       }
     }, [watchedCustomerConfigs, paymentCondition, customPaymentText, getValues, setValue]);
 
     // Auto-calculate per-customer subtotals/totals based on service invoiceToCustomerId assignments
     useEffect(() => {
       const configs = watchedCustomerConfigs;
-      if (!Array.isArray(configs) || configs.length < 2 || !pricingItems) return;
+      if (!Array.isArray(configs) || configs.length < 2 || !quoteItems) return;
 
-      const services = pricingItems || [];
+      const services = quoteItems || [];
       let updated = false;
 
       const newConfigs = configs.map((config: any) => {
@@ -364,9 +364,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       });
 
       if (updated) {
-        setValue("pricing.customerConfigs", newConfigs, { shouldDirty: false });
+        setValue("quote.customerConfigs", newConfigs, { shouldDirty: false });
       }
-    }, [pricingItems, watchedCustomerConfigs, setValue]);
+    }, [quoteItems, watchedCustomerConfigs, setValue]);
 
     // Initialize custom states from existing data
     useEffect(() => {
@@ -375,7 +375,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
         setShowCustomPayment(prev => ({ ...prev, "__global__": true }));
       }
       // Per-customer custom payment text
-      const configs = getValues("pricing.customerConfigs") || [];
+      const configs = getValues("quote.customerConfigs") || [];
       if (Array.isArray(configs)) {
         configs.forEach((config: any) => {
           if (config?.customPaymentText && config?.customerId && !showCustomPayment[config.customerId]) {
@@ -390,12 +390,12 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
 
     // Calculate subtotal
     const subtotal = useMemo(() => {
-      if (!pricingItems || pricingItems.length === 0) return 0;
-      return pricingItems.reduce((sum: number, item: any) => {
+      if (!quoteItems || quoteItems.length === 0) return 0;
+      return quoteItems.reduce((sum: number, item: any) => {
         const amount = typeof item.amount === "number" ? item.amount : Number(item.amount) || 0;
         return sum + amount;
       }, 0);
-    }, [pricingItems]);
+    }, [quoteItems]);
 
     // Calculate discount amount
     const discountAmount = useMemo(() => {
@@ -417,8 +417,8 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     // Initialize local state from form data
     useEffect(() => {
       if (!initialized) {
-        const expiresAt = getValues("pricing.expiresAt");
-        const items = getValues("pricing.services");
+        const expiresAt = getValues("quote.expiresAt");
+        const items = getValues("quote.services");
         const hasItems = items && items.length > 0;
         const validOptions = [15, 30, 60, 90];
 
@@ -442,7 +442,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + 30);
             expiryDate.setHours(23, 59, 59, 999);
-            setValue("pricing.expiresAt", expiryDate, { shouldDirty: false });
+            setValue("quote.expiresAt", expiryDate, { shouldDirty: false });
           }
         }
         setInitialized(true);
@@ -452,39 +452,39 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     // Notify parent about count changes
     useEffect(() => {
       if (onItemCountChange) {
-        const count = pricingItems && pricingItems.length > 0 ? 1 : 0;
+        const count = quoteItems && quoteItems.length > 0 ? 1 : 0;
         onItemCountChange(count);
       }
-    }, [pricingItems, onItemCountChange]);
+    }, [quoteItems, onItemCountChange]);
 
     // Update subtotal and total in form
     useEffect(() => {
-      if (pricingItems && pricingItems.length > 0) {
-        const currentSubtotal = getValues("pricing.subtotal");
-        const currentTotal = getValues("pricing.total");
+      if (quoteItems && quoteItems.length > 0) {
+        const currentSubtotal = getValues("quote.subtotal");
+        const currentTotal = getValues("quote.total");
         if (currentSubtotal !== subtotal) {
-          setValue("pricing.subtotal", subtotal, { shouldDirty: false });
+          setValue("quote.subtotal", subtotal, { shouldDirty: false });
         }
         if (currentTotal !== calculatedTotal) {
-          setValue("pricing.total", calculatedTotal, { shouldDirty: false });
+          setValue("quote.total", calculatedTotal, { shouldDirty: false });
         }
       }
-    }, [subtotal, calculatedTotal, pricingItems, setValue, getValues]);
+    }, [subtotal, calculatedTotal, quoteItems, setValue, getValues]);
 
     const handleAddItem = useCallback(() => {
-      clearErrors("pricing");
+      clearErrors("quote");
       if (fields.length === 0) {
         const defaultPeriod = 30;
         setValidityPeriod(defaultPeriod);
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + defaultPeriod);
         expiryDate.setHours(23, 59, 59, 999);
-        setValue("pricing.expiresAt", expiryDate);
-        setValue("pricing.status", "PENDING");
-        setValue("pricing.customerConfigs.0.discountType", DISCOUNT_TYPE.NONE);
-        setValue("pricing.customerConfigs.0.discountValue", null);
-        setValue("pricing.subtotal", 0);
-        setValue("pricing.total", 0);
+        setValue("quote.expiresAt", expiryDate);
+        setValue("quote.status", "PENDING");
+        setValue("quote.customerConfigs.0.discountType", DISCOUNT_TYPE.NONE);
+        setValue("quote.customerConfigs.0.discountValue", null);
+        setValue("quote.subtotal", 0);
+        setValue("quote.total", 0);
       }
       // Use append to preserve addition order (first added = first position)
       // Incomplete items are displayed at top via the grouping logic
@@ -495,8 +495,8 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       for (let i = fields.length - 1; i >= 0; i--) {
         remove(i);
       }
-      setValue("pricing", undefined);
-      clearErrors("pricing");
+      setValue("quote", undefined);
+      clearErrors("quote");
       setValidityPeriod(null);
       setShowCustomPayment({});
       setShowCustomGuarantee(false);
@@ -515,7 +515,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + days);
         expiryDate.setHours(23, 59, 59, 999);
-        setValue("pricing.expiresAt", expiryDate);
+        setValue("quote.expiresAt", expiryDate);
       },
       [setValue]
     );
@@ -525,23 +525,23 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
         if (!value || Array.isArray(value)) return;
         if (value === "CUSTOM") {
           setShowCustomPayment(prev => ({ ...prev, "__global__": true }));
-          setValue("pricing.paymentCondition", "CUSTOM");
+          setValue("quote.paymentCondition", "CUSTOM");
         } else {
           setShowCustomPayment(prev => ({ ...prev, "__global__": false }));
-          setValue("pricing.customerConfigs.0.customPaymentText", null);
-          setValue("pricing.paymentCondition", value);
+          setValue("quote.customerConfigs.0.customPaymentText", null);
+          setValue("quote.paymentCondition", value);
         }
         // Propagate to the single customerConfig so the API receives it
-        const configs = getValues("pricing.customerConfigs");
+        const configs = getValues("quote.customerConfigs");
         if (Array.isArray(configs) && configs.length === 1) {
-          setValue("pricing.customerConfigs.0.paymentCondition", value === "CUSTOM" ? "CUSTOM" : (value || null));
+          setValue("quote.customerConfigs.0.paymentCondition", value === "CUSTOM" ? "CUSTOM" : (value || null));
           if (value === "CUSTOM") {
-            const customText = getValues("pricing.customerConfigs.0.customPaymentText");
+            const customText = getValues("quote.customerConfigs.0.customPaymentText");
             if (customText) {
-              setValue("pricing.customerConfigs.0.customPaymentText", customText);
+              setValue("quote.customerConfigs.0.customPaymentText", customText);
             }
           } else {
-            setValue("pricing.customerConfigs.0.customPaymentText", null);
+            setValue("quote.customerConfigs.0.customPaymentText", null);
           }
         }
       },
@@ -553,11 +553,11 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
         if (Array.isArray(value)) return;
         if (value === "CUSTOM") {
           setShowCustomGuarantee(true);
-          setValue("pricing.guaranteeYears", null);
+          setValue("quote.guaranteeYears", null);
         } else {
           setShowCustomGuarantee(false);
-          setValue("pricing.customGuaranteeText", null);
-          setValue("pricing.guaranteeYears", value ? Number(value) : null);
+          setValue("quote.customGuaranteeText", null);
+          setValue("quote.guaranteeYears", value ? Number(value) : null);
         }
       },
       [setValue]
@@ -575,9 +575,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       setLayoutFiles(files);
       // Only set layoutFileId if it's an existing uploaded file (has id and uploaded=true)
       if (files.length > 0 && files[0].id && files[0].uploaded) {
-        setValue("pricing.layoutFileId", files[0].id);
+        setValue("quote.layoutFileId", files[0].id);
       } else if (files.length === 0) {
-        setValue("pricing.layoutFileId", null);
+        setValue("quote.layoutFileId", null);
       }
       // For new files, layoutFileId stays null - the file will be uploaded during form submission
     }, [setValue, setLayoutFiles]);
@@ -602,12 +602,12 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             uri: `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`,
           };
           setLayoutFiles([fileItem]);
-          setValue("pricing.layoutFileId", artwork.id);
+          setValue("quote.layoutFileId", artwork.id);
           setShowLayoutUploadMode(false);
         }
       } else {
         setLayoutFiles([]);
-        setValue("pricing.layoutFileId", null);
+        setValue("quote.layoutFileId", null);
       }
     }, [artworks, setValue, setLayoutFiles]);
 
@@ -685,9 +685,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
     }, [colors]);
 
     // Current layoutFileId to track selected artwork
-    const currentLayoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
+    const currentLayoutFileId = useWatch({ control, name: "quote.layoutFileId" });
 
-    const hasPricingItems = pricingItems && pricingItems.length > 0;
+    const hasPricingItems = quoteItems && quoteItems.length > 0;
 
     // Track manually organized items (moved from incomplete to complete via "Organizar" button)
     const [organizedIds, setOrganizedIds] = useState<Set<string>>(new Set());
@@ -699,7 +699,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       const complete: number[] = [];
 
       fields.forEach((field, index) => {
-        const item = pricingItems?.[index];
+        const item = quoteItems?.[index];
         const hasDescription = item?.description && item.description.trim().length >= 3;
         const hasAmount = item?.amount !== null && item?.amount !== undefined && Number(item.amount) > 0;
         const isOrganized = organizedIds.has(field.id);
@@ -713,19 +713,19 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
       });
 
       return { incompleteIndices: incomplete, completeIndices: complete };
-    }, [fields, pricingItems, organizedIds]);
+    }, [fields, quoteItems, organizedIds]);
 
     // Handle "Organizar" - move all items with descriptions to complete section
     const handleOrganize = useCallback(() => {
       const newOrganized = new Set(organizedIds);
       fields.forEach((field, index) => {
-        const item = pricingItems?.[index];
+        const item = quoteItems?.[index];
         if (item?.description && item.description.trim().length >= 3) {
           newOrganized.add(field.id);
         }
       });
       setOrganizedIds(newOrganized);
-    }, [fields, pricingItems, organizedIds]);
+    }, [fields, quoteItems, organizedIds]);
 
     return (
       <View style={styles.container}>
@@ -779,7 +779,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   Preencha descrição e valor
                 </ThemedText>
                 {incompleteIndices.some((i) => {
-                  const item = pricingItems?.[i];
+                  const item = quoteItems?.[i];
                   return item?.description && item.description.trim().length >= 3;
                 }) && (
                   <TouchableOpacity onPress={handleOrganize} style={[styles.organizeButton, { borderColor: colors.border }]}>
@@ -833,12 +833,12 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   onValueChange={(value) => {
                     const safeType = value || DISCOUNT_TYPE.NONE;
                     const previousType = discountType || DISCOUNT_TYPE.NONE;
-                    setValue("pricing.customerConfigs.0.discountType", safeType);
+                    setValue("quote.customerConfigs.0.discountType", safeType);
                     if (safeType === DISCOUNT_TYPE.NONE) {
-                      setValue("pricing.customerConfigs.0.discountValue", null);
-                      setValue("pricing.customerConfigs.0.discountReference", null);
+                      setValue("quote.customerConfigs.0.discountValue", null);
+                      setValue("quote.customerConfigs.0.discountReference", null);
                     } else if (previousType !== safeType && previousType !== DISCOUNT_TYPE.NONE) {
-                      setValue("pricing.customerConfigs.0.discountValue", null);
+                      setValue("quote.customerConfigs.0.discountValue", null);
                     }
                   }}
                   disabled={disabled}
@@ -861,9 +861,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   value={discountValue ?? null}
                   onChange={(value) => {
                     if (value === null || value === undefined || value === "") {
-                      setValue("pricing.customerConfigs.0.discountValue", null);
+                      setValue("quote.customerConfigs.0.discountValue", null);
                     } else {
-                      setValue("pricing.customerConfigs.0.discountValue", typeof value === "number" ? value : Number(value));
+                      setValue("quote.customerConfigs.0.discountValue", typeof value === "number" ? value : Number(value));
                     }
                   }}
                   disabled={disabled || discountType === DISCOUNT_TYPE.NONE}
@@ -880,7 +880,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Referência do Desconto</ThemedText>
             <TextInput
               value={discountReference || ""}
-              onChangeText={(text) => setValue("pricing.customerConfigs.0.discountReference", text || null)}
+              onChangeText={(text) => setValue("quote.customerConfigs.0.discountReference", text || null)}
               placeholder="Justificativa ou referência para o desconto aplicado..."
               placeholderTextColor={colors.mutedForeground}
               editable={!disabled}
@@ -936,8 +936,8 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   <ThemedText style={[styles.label, { color: colors.foreground, marginBottom: 0 }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
                 </View>
                 <Combobox
-                  value={pricingStatus || "PENDING"}
-                  onValueChange={(value) => setValue("pricing.status", value)}
+                  value={quoteStatus || "PENDING"}
+                  onValueChange={(value) => setValue("quote.status", value)}
                   disabled={disabled || !canEditStatus}
                   options={STATUS_OPTIONS}
                   placeholder="Selecione"
@@ -992,7 +992,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Pagamento</ThemedText>
             <TextInput
               value={customPaymentText || ""}
-              onChangeText={(text) => setValue("pricing.customerConfigs.0.customPaymentText", text || null)}
+              onChangeText={(text) => setValue("quote.customerConfigs.0.customPaymentText", text || null)}
               placeholder="Descreva as condições de pagamento..."
               placeholderTextColor={colors.mutedForeground}
               multiline
@@ -1080,7 +1080,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                       <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Texto Personalizado</ThemedText>
                       <TextInput
                         value={config?.customPaymentText || ""}
-                        onChangeText={(text) => setValue(`pricing.customerConfigs.${i}.customPaymentText`, text || null)}
+                        onChangeText={(text) => setValue(`quote.customerConfigs.${i}.customPaymentText`, text || null)}
                         placeholder="Condições de pagamento personalizadas..."
                         placeholderTextColor={colors.mutedForeground}
                         multiline
@@ -1107,10 +1107,10 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                         value={configDiscountType}
                         onValueChange={(value) => {
                           const safeType = value || 'NONE';
-                          setValue(`pricing.customerConfigs.${i}.discountType`, safeType);
+                          setValue(`quote.customerConfigs.${i}.discountType`, safeType);
                           if (safeType === 'NONE') {
-                            setValue(`pricing.customerConfigs.${i}.discountValue`, null);
-                            setValue(`pricing.customerConfigs.${i}.discountReference`, null);
+                            setValue(`quote.customerConfigs.${i}.discountValue`, null);
+                            setValue(`quote.customerConfigs.${i}.discountReference`, null);
                           }
                         }}
                         disabled={disabled}
@@ -1132,7 +1132,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                         type={configDiscountType === 'FIXED_VALUE' ? "currency" : "number"}
                         value={config?.discountValue ?? null}
                         onChange={(value) => {
-                          setValue(`pricing.customerConfigs.${i}.discountValue`, value === null || value === undefined || value === "" ? null : typeof value === "number" ? value : Number(value));
+                          setValue(`quote.customerConfigs.${i}.discountValue`, value === null || value === undefined || value === "" ? null : typeof value === "number" ? value : Number(value));
                         }}
                         disabled={disabled || configDiscountType === 'NONE'}
                         placeholder={configDiscountType === 'NONE' ? "-" : configDiscountType === 'FIXED_VALUE' ? "R$ 0,00" : "0"}
@@ -1146,7 +1146,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                       <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>Ref. Desconto</ThemedText>
                       <TextInput
                         value={config?.discountReference || ""}
-                        onChangeText={(text) => setValue(`pricing.customerConfigs.${i}.discountReference`, text || null)}
+                        onChangeText={(text) => setValue(`quote.customerConfigs.${i}.discountReference`, text || null)}
                         placeholder="Referência do desconto..."
                         placeholderTextColor={colors.mutedForeground}
                         editable={!disabled}
@@ -1196,7 +1196,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
             <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Texto Personalizado de Garantia</ThemedText>
             <TextInput
               value={customGuaranteeText || ""}
-              onChangeText={(text) => setValue("pricing.customGuaranteeText", text || null)}
+              onChangeText={(text) => setValue("quote.customGuaranteeText", text || null)}
               placeholder="Descreva as condições de garantia..."
               placeholderTextColor={colors.mutedForeground}
               multiline
@@ -1240,7 +1240,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                   value={simultaneousTasks ?? null}
                   onChange={(value) => {
                     const numVal = value ? Number(value) : null;
-                    setValue("pricing.simultaneousTasks", numVal);
+                    setValue("quote.simultaneousTasks", numVal);
                   }}
                   disabled={disabled}
                   placeholder="1-100"
@@ -1251,7 +1251,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                 <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
                 <Combobox
                   value={customForecastDays ? String(customForecastDays) : ""}
-                  onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
+                  onValueChange={(value) => setValue("quote.customForecastDays", value ? Number(value) : null)}
                   disabled={disabled}
                   options={FORECAST_DAYS_OPTIONS}
                   placeholder="Auto"
@@ -1392,9 +1392,9 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
   const { setValue } = useFormContext();
   const [observationModal, setObservationModal] = useState({ visible: false, text: "" });
 
-  const description = useWatch({ control, name: `pricing.services.${index}.description` });
-  const amount = useWatch({ control, name: `pricing.services.${index}.amount` });
-  const observation = useWatch({ control, name: `pricing.services.${index}.observation` });
+  const description = useWatch({ control, name: `quote.services.${index}.description` });
+  const amount = useWatch({ control, name: `quote.services.${index}.amount` });
+  const observation = useWatch({ control, name: `quote.services.${index}.observation` });
 
   // Get description options from service descriptions
   const descriptionOptions = useMemo(() => {
@@ -1416,7 +1416,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
   }, [description]);
 
   const handleSaveObservation = () => {
-    setValue(`pricing.services.${index}.observation`, observationModal.text || null);
+    setValue(`quote.services.${index}.observation`, observationModal.text || null);
     setObservationModal({ visible: false, text: observationModal.text });
   };
 
@@ -1428,7 +1428,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
       <View style={styles.descriptionField}>
         <Combobox
           value={description || ""}
-          onValueChange={(value) => setValue(`pricing.services.${index}.description`, value || "")}
+          onValueChange={(value) => setValue(`quote.services.${index}.description`, value || "")}
           disabled={disabled}
           options={descriptionOptions}
           placeholder="Selecione o serviço..."
@@ -1443,7 +1443,7 @@ function PricingItemRow({ control, index, disabled, onRemove, isLastRow }: Prici
           <Input
             type="currency"
             value={amount ?? null}
-            onChange={(value) => setValue(`pricing.services.${index}.amount`, value)}
+            onChange={(value) => setValue(`quote.services.${index}.amount`, value)}
             disabled={disabled}
             placeholder="R$ 0,00"
           />

@@ -520,6 +520,11 @@ export interface ProductionDashboardData {
     averageAirbrushTime: DashboardMetric;
   };
   revenueAnalysis: {
+    totalRevenue: DashboardMetric;
+    averageTaskValue: DashboardMetric;
+    expectedRevenue: DashboardMetric;
+    invoicedRevenue: DashboardMetric;
+    receivedRevenue: DashboardMetric;
     revenueByMonth: TimeSeriesDataPoint[];
     revenueBySector: DashboardChartData;
     revenueByCustomerType: DashboardChartData;

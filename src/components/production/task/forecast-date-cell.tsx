@@ -4,7 +4,7 @@ import { useTheme } from '@/lib/theme';
 import { formatDate } from '@/utils/formatters';
 import { TASK_STATUS, SERVICE_ORDER_STATUS } from '@/constants';
 import type { Task } from '@/types';
-import { IconAlertTriangle, IconCheck } from '@tabler/icons-react-native';
+import { IconAlertTriangle, IconCheck, IconCalendarEvent } from '@tabler/icons-react-native';
 
 interface ForecastDateCellProps {
   task: Task;
@@ -16,12 +16,14 @@ interface ForecastDateCellProps {
   navigationRoute?: 'preparation' | 'schedule';
 }
 
-// Colors for urgency indicators
+// Colors for state-based indicators (matching web behavior)
 const URGENCY_COLORS = {
-  RED: '#ef4444', // red-500 - 0-3 days or overdue
-  ORANGE: '#f97316', // orange-500 - 4-7 days
-  YELLOW: '#eab308', // yellow-500 - 8-10 days
-  BLUE: '#3b82f6', // blue-500 - today, ready
+  RED: '#ef4444', // red-500 - overdue
+  ORANGE: '#f97316', // orange-500 - approaching (4-7 days)
+  YELLOW: '#eab308', // yellow-500 - today
+  BLUE: '#3b82f6', // blue-500 - cleared/released
+  GREEN: '#22c55e', // green-500 - vehicle entered
+  VIOLET: '#8b5cf6', // violet-500 - rescheduled
 };
 
 /**
@@ -119,21 +121,43 @@ export function ForecastDateCell({ task, compact = false, navigationRoute = 'pre
 
   const urgencyInfo = getUrgencyInfo(daysRemaining);
 
+  // Check for manual reschedule history (most recent MANUAL entry)
+  const lastManualReschedule = showCornerFlags
+    ? (task as any).forecastHistory
+        ?.filter((h: any) => h.source === 'MANUAL' && h.previousDate)
+        ?.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())?.[0]
+    : undefined;
+  const hasBeenRescheduled = !!lastManualReschedule && !isCleared;
+
   // Determine which indicator to show
   let showIndicator = false;
   let indicatorColor = URGENCY_COLORS.RED;
   let IndicatorIcon = IconAlertTriangle;
-  // Default text color - change to blue when task is cleared (released)
-  let textColor = isDark ? '#f5f5f5' : '#0a0a0a';
 
-  // Show blue text whenever the task is cleared (matching web behavior)
-  // This is independent of the corner flag indicator logic
-  if (showCornerFlags && isCleared) {
-    textColor = URGENCY_COLORS.BLUE;
+  // State-based text color (matching web behavior):
+  // Green = vehicle entered, Blue = cleared, Red = overdue, Yellow = today
+  let textColor = isDark ? '#f5f5f5' : '#0a0a0a';
+  const hasEntryDate = !!task.entryDate && task.status !== TASK_STATUS.COMPLETED;
+
+  if (showCornerFlags) {
+    if (hasEntryDate) {
+      textColor = URGENCY_COLORS.GREEN;
+    } else if (isCleared) {
+      textColor = URGENCY_COLORS.BLUE;
+    } else if (past) {
+      textColor = URGENCY_COLORS.RED;
+    } else if (isToday(forecastDate)) {
+      textColor = URGENCY_COLORS.YELLOW;
+    }
   }
 
   if (showCornerFlags) {
-    if (isCleared && !hasIncomplete && !missingOrders) {
+    if (hasBeenRescheduled) {
+      // Manual reschedule - violet corner flag (takes priority)
+      showIndicator = true;
+      indicatorColor = URGENCY_COLORS.VIOLET;
+      IndicatorIcon = IconCalendarEvent;
+    } else if (isCleared && !hasIncomplete && !missingOrders) {
       // Cleared with no incomplete orders - blue check (released)
       showIndicator = true;
       indicatorColor = URGENCY_COLORS.BLUE;

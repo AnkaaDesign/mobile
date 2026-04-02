@@ -76,7 +76,7 @@ interface ArtworkOption {
 
 // Wizard form schema wrapping the nested quote schema
 const wizardSchema = z.object({
-  pricing: taskQuoteCreateNestedSchema,
+  quote: taskQuoteCreateNestedSchema,
 });
 
 type WizardFormData = z.infer<typeof wizardSchema>;
@@ -194,10 +194,10 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
 
   // Fetch existing pricing for edit mode
   const {
-    data: pricingResponse,
-    isLoading: pricingLoading,
+    data: quoteResponse,
+    isLoading: quoteLoading,
   } = useTaskQuoteByTask(taskId);
-  const existingPricing = pricingResponse?.data;
+  const existingQuote = quoteResponse?.data;
 
   // Task mutations for saving
   const { updateAsync } = useTaskMutations();
@@ -206,7 +206,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   const methods = useForm<WizardFormData>({
     resolver: zodResolver(wizardSchema),
     defaultValues: {
-      pricing: {
+      quote: {
         status: "PENDING",
         services: [],
         subtotal: 0,
@@ -232,24 +232,24 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
 
   // Pre-populate form when existing pricing loads
   useEffect(() => {
-    if (!existingPricing) return;
+    if (!existingQuote) return;
 
-    const p = existingPricing;
-    setValue("pricing.status", p.status || "PENDING");
-    setValue("pricing.expiresAt", p.expiresAt ? new Date(p.expiresAt) : (() => {
+    const p = existingQuote;
+    setValue("quote.status", p.status || "PENDING");
+    setValue("quote.expiresAt", p.expiresAt ? new Date(p.expiresAt) : (() => {
       const defaultExpiry = new Date();
       defaultExpiry.setDate(defaultExpiry.getDate() + 30);
       defaultExpiry.setHours(23, 59, 59, 999);
       return defaultExpiry;
     })());
-    setValue("pricing.subtotal", p.subtotal || 0);
-    setValue("pricing.total", p.total || 0);
-    setValue("pricing.guaranteeYears", p.guaranteeYears ?? null);
-    setValue("pricing.customGuaranteeText", p.customGuaranteeText ?? null);
-    setValue("pricing.layoutFileId", p.layoutFileId ?? null);
-    setValue("pricing.customForecastDays", p.customForecastDays ?? null);
-    setValue("pricing.simultaneousTasks", p.simultaneousTasks ?? null);
-    setValue("pricing.customerConfigs", p.customerConfigs?.map((c: any) => ({
+    setValue("quote.subtotal", p.subtotal || 0);
+    setValue("quote.total", p.total || 0);
+    setValue("quote.guaranteeYears", p.guaranteeYears ?? null);
+    setValue("quote.customGuaranteeText", p.customGuaranteeText ?? null);
+    setValue("quote.layoutFileId", p.layoutFileId ?? null);
+    setValue("quote.customForecastDays", p.customForecastDays ?? null);
+    setValue("quote.simultaneousTasks", p.simultaneousTasks ?? null);
+    setValue("quote.customerConfigs", p.customerConfigs?.map((c: any) => ({
       customerId: c.customerId || c.id || c,
       subtotal: c.subtotal ?? 0,
       total: c.total ?? 0,
@@ -261,7 +261,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
 
     if (p.services && p.services.length > 0) {
       setValue(
-        "pricing.services",
+        "quote.services",
         p.services.map((item: any) => ({
           id: item.id,
           description: item.description || "",
@@ -296,10 +296,10 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       customers.forEach((c: any) => customersCache.current.set(c.id, c));
       setSelectedCustomers(new Map(customers.map((c: any) => [c.id, c])));
     }
-  }, [existingPricing, setValue]);
+  }, [existingQuote, setValue]);
 
   // Dynamic steps based on customer count
-  const customerConfigs = watch("pricing.customerConfigs");
+  const customerConfigs = watch("quote.customerConfigs");
   const steps = useMemo(() => {
     const base: FormStep[] = [
       { id: 1, name: "Informações", description: "Dados e clientes" },
@@ -333,14 +333,14 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   }, [totalSteps, currentStep]);
 
   // Watch pricing data for preview
-  const pricingData = watch("pricing");
+  const quoteData = watch("quote");
   const formValues = watch();
 
   const customerCount = Array.isArray(customerConfigs) ? customerConfigs.length : 0;
 
   // Build preview pricing object
-  const previewPricing = (() => {
-    if (!pricingData) return null;
+  const previewQuote = (() => {
+    if (!quoteData) return null;
 
     let layoutFileForPreview = null;
     if (layoutFiles.length > 0) {
@@ -348,17 +348,17 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       layoutFileForPreview = pickedFile.uploaded && pickedFile.id
         ? { id: pickedFile.id }
         : { uri: pickedFile.uri };
-    } else if (pricingData.layoutFileId) {
-      layoutFileForPreview = { id: pricingData.layoutFileId };
-    } else if (existingPricing?.layoutFile) {
-      layoutFileForPreview = existingPricing.layoutFile;
+    } else if (quoteData.layoutFileId) {
+      layoutFileForPreview = { id: quoteData.layoutFileId };
+    } else if (existingQuote?.layoutFile) {
+      layoutFileForPreview = existingQuote.layoutFile;
     }
 
     return {
-      ...pricingData,
-      services: pricingData.services ? [...pricingData.services] : [],
-      budgetNumber: existingPricing?.budgetNumber,
-      createdAt: existingPricing?.createdAt || new Date(),
+      ...quoteData,
+      services: quoteData.services ? [...quoteData.services] : [],
+      budgetNumber: existingQuote?.budgetNumber,
+      createdAt: existingQuote?.createdAt || new Date(),
       layoutFile: layoutFileForPreview,
     };
   })();
@@ -366,11 +366,11 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   // Validation
   const canProceedFromStep1 = useMemo(() => {
     const configs = Array.isArray(customerConfigs) ? customerConfigs : [];
-    return configs.length > 0 && !!pricingData?.expiresAt;
-  }, [customerConfigs, pricingData]);
+    return configs.length > 0 && !!quoteData?.expiresAt;
+  }, [customerConfigs, quoteData]);
 
   const canProceedFromStep2 = useMemo(() => {
-    const allItems = formValues?.pricing?.services || [];
+    const allItems = formValues?.quote?.services || [];
     const items = allItems.filter(
       (item: any) => item && item.description && item.description.trim() !== ''
     );
@@ -402,7 +402,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       return;
     }
     if (currentStep === 2 && !canProceedFromStep2) {
-      const items = (pricingData?.services || []).filter(
+      const items = (quoteData?.services || []).filter(
         (item: any) => item && item.description && item.description.trim() !== ''
       );
       if (items.length === 0) {
@@ -413,7 +413,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       return;
     }
     if (currentStep < totalSteps) setCurrentStep((s) => s + 1);
-  }, [currentStep, canProceedFromStep1, canProceedFromStep2, pricingData, customerConfigs, totalSteps]);
+  }, [currentStep, canProceedFromStep1, canProceedFromStep2, quoteData, customerConfigs, totalSteps]);
 
   const goPrev = useCallback(() => {
     if (currentStep > 1) setCurrentStep((s) => s - 1);
@@ -422,7 +422,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   // Handle save
   const onSave = useCallback(async () => {
     const data = getValues();
-    const items = data.pricing?.services || [];
+    const items = data.quote?.services || [];
 
     if (items.length === 0) {
       Alert.alert("Orçamento vazio", "Adicione pelo menos um serviço antes de salvar.");
@@ -437,7 +437,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       return;
     }
 
-    if (!data.pricing?.expiresAt) {
+    if (!data.quote?.expiresAt) {
       Alert.alert("Data de validade", "Selecione o período de validade do orçamento.");
       return;
     }
@@ -451,26 +451,26 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         const n = Number(v);
         return isNaN(n) ? null : n;
       };
-      const pricingPayload = { ...data.pricing };
-      pricingPayload.subtotal = toNumber(pricingPayload.subtotal) ?? 0;
-      pricingPayload.total = toNumber(pricingPayload.total) ?? 0;
-      pricingPayload.guaranteeYears = toNumber(pricingPayload.guaranteeYears);
-      pricingPayload.customForecastDays = toNumber(pricingPayload.customForecastDays);
-      pricingPayload.simultaneousTasks = toNumber(pricingPayload.simultaneousTasks);
-      if (pricingPayload.services) {
-        pricingPayload.services = (Array.isArray(pricingPayload.services)
-          ? pricingPayload.services
-          : Object.values(pricingPayload.services)
+      const quotePayload = { ...data.quote };
+      quotePayload.subtotal = toNumber(quotePayload.subtotal) ?? 0;
+      quotePayload.total = toNumber(quotePayload.total) ?? 0;
+      quotePayload.guaranteeYears = toNumber(quotePayload.guaranteeYears);
+      quotePayload.customForecastDays = toNumber(quotePayload.customForecastDays);
+      quotePayload.simultaneousTasks = toNumber(quotePayload.simultaneousTasks);
+      if (quotePayload.services) {
+        quotePayload.services = (Array.isArray(quotePayload.services)
+          ? quotePayload.services
+          : Object.values(quotePayload.services)
         ).map((svc: any) => ({
           ...svc,
           amount: toNumber(svc.amount) ?? 0,
         }));
       }
-      if (pricingPayload.customerConfigs) {
-        if (!Array.isArray(pricingPayload.customerConfigs)) {
-          pricingPayload.customerConfigs = Object.values(pricingPayload.customerConfigs);
+      if (quotePayload.customerConfigs) {
+        if (!Array.isArray(quotePayload.customerConfigs)) {
+          quotePayload.customerConfigs = Object.values(quotePayload.customerConfigs);
         }
-        pricingPayload.customerConfigs = pricingPayload.customerConfigs.map((config: any) => ({
+        quotePayload.customerConfigs = quotePayload.customerConfigs.map((config: any) => ({
           ...config,
           subtotal: toNumber(config.subtotal) ?? 0,
           total: toNumber(config.total) ?? 0,
@@ -486,7 +486,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
           type: layoutFile.type,
           name: layoutFile.name,
         } as any);
-        formData.append('quote', JSON.stringify(pricingPayload));
+        formData.append('quote', JSON.stringify(quotePayload));
 
         await updateAsync({
           id: taskId,
@@ -495,7 +495,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       } else {
         await updateAsync({
           id: taskId,
-          data: { quote: pricingPayload } as any,
+          data: { quote: quotePayload } as any,
         });
       }
 
@@ -526,7 +526,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
   }, [goBack]);
 
   // Loading state
-  if (taskLoading || pricingLoading) {
+  if (taskLoading || quoteLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -647,7 +647,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         })()}
 
         {/* Last Step - Preview */}
-        {currentStep === totalSteps && previewPricing && (
+        {currentStep === totalSteps && previewQuote && (
           <View style={styles.stepContainer}>
             <Card style={styles.card}>
               <CardHeader>
@@ -659,7 +659,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
                 </ThemedText>
                 <BudgetPreview
                   mode={mode}
-                  pricing={previewPricing as any}
+                  quote={previewQuote as any}
                   task={task ? {
                     name: task.name,
                     serialNumber: task.serialNumber ?? undefined,
@@ -718,16 +718,16 @@ function Step1Info({
   const [showCustomGuarantee, setShowCustomGuarantee] = useState(false);
   const [showLayoutUploadMode, setShowLayoutUploadMode] = useState(false);
 
-  const pricingStatus = useWatch({ control, name: "pricing.status" }) || "PENDING";
-  const guaranteeYears = useWatch({ control, name: "pricing.guaranteeYears" });
-  const customGuaranteeText = useWatch({ control, name: "pricing.customGuaranteeText" });
-  const simultaneousTasks = useWatch({ control, name: "pricing.simultaneousTasks" });
-  const customForecastDays = useWatch({ control, name: "pricing.customForecastDays" });
-  const customerConfigsValue = useWatch({ control, name: "pricing.customerConfigs" }) || [];
+  const quoteStatus = useWatch({ control, name: "quote.status" }) || "PENDING";
+  const guaranteeYears = useWatch({ control, name: "quote.guaranteeYears" });
+  const customGuaranteeText = useWatch({ control, name: "quote.customGuaranteeText" });
+  const simultaneousTasks = useWatch({ control, name: "quote.simultaneousTasks" });
+  const customForecastDays = useWatch({ control, name: "quote.customForecastDays" });
+  const customerConfigsValue = useWatch({ control, name: "quote.customerConfigs" }) || [];
 
   // Initialize
   useEffect(() => {
-    const expiresAt = getValues("pricing.expiresAt");
+    const expiresAt = getValues("quote.expiresAt");
     if (expiresAt) {
       const diffDays = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       const closest = [15, 30, 60, 90].find(d => Math.abs(d - diffDays) <= 3);
@@ -737,8 +737,8 @@ function Step1Info({
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + 30);
       expiryDate.setHours(23, 59, 59, 999);
-      setValue("pricing.expiresAt", expiryDate);
-      setValue("pricing.status", "PENDING");
+      setValue("quote.expiresAt", expiryDate);
+      setValue("quote.status", "PENDING");
     }
     if (customGuaranteeText) setShowCustomGuarantee(true);
   }, []);
@@ -756,27 +756,27 @@ function Step1Info({
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + days);
     expiryDate.setHours(23, 59, 59, 999);
-    setValue("pricing.expiresAt", expiryDate);
+    setValue("quote.expiresAt", expiryDate);
   }, [setValue]);
 
   const handleGuaranteeChange = useCallback((val: string | string[] | null | undefined) => {
     const value = typeof val === 'string' ? val : '';
     if (value === "CUSTOM") {
       setShowCustomGuarantee(true);
-      setValue("pricing.guaranteeYears", null);
+      setValue("quote.guaranteeYears", null);
     } else {
       setShowCustomGuarantee(false);
-      setValue("pricing.customGuaranteeText", null);
-      setValue("pricing.guaranteeYears", value ? Number(value) : null);
+      setValue("quote.customGuaranteeText", null);
+      setValue("quote.guaranteeYears", value ? Number(value) : null);
     }
   }, [setValue]);
 
   const handleLayoutChange = useCallback((files: FilePickerItem[]) => {
     onLayoutFilesChange(files);
     if (files.length > 0 && files[0].id && files[0].uploaded) {
-      setValue("pricing.layoutFileId", files[0].id);
+      setValue("quote.layoutFileId", files[0].id);
     } else if (files.length === 0) {
-      setValue("pricing.layoutFileId", null);
+      setValue("quote.layoutFileId", null);
     }
   }, [setValue, onLayoutFilesChange]);
 
@@ -800,12 +800,12 @@ function Step1Info({
           uri: `${ONLINE_API_URL}/files/thumbnail/${artwork.id}`,
         };
         onLayoutFilesChange([fileItem]);
-        setValue("pricing.layoutFileId", artwork.id);
+        setValue("quote.layoutFileId", artwork.id);
         setShowLayoutUploadMode(false);
       }
     } else {
       onLayoutFilesChange([]);
-      setValue("pricing.layoutFileId", null);
+      setValue("quote.layoutFileId", null);
     }
   }, [artworks, setValue, onLayoutFilesChange]);
 
@@ -865,7 +865,7 @@ function Step1Info({
     );
   }, [colors]);
 
-  const currentLayoutFileId = useWatch({ control, name: "pricing.layoutFileId" });
+  const currentLayoutFileId = useWatch({ control, name: "quote.layoutFileId" });
 
   // Customer search (async queryFn for Combobox)
   const searchCustomers = useCallback(async (search: string, page: number = 1) => {
@@ -908,7 +908,7 @@ function Step1Info({
         generateInvoice: true,
       };
     });
-    setValue("pricing.customerConfigs", newConfigs);
+    setValue("quote.customerConfigs", newConfigs);
 
     const newMap = new Map<string, any>();
     ids.forEach((id: string) => {
@@ -1070,8 +1070,8 @@ function Step1Info({
         <View style={mode === 'billing' ? { flex: 1 } : styles.halfField}>
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Status</ThemedText>
           <Combobox
-            value={pricingStatus || "PENDING"}
-            onValueChange={(v) => setValue("pricing.status", v)}
+            value={quoteStatus || "PENDING"}
+            onValueChange={(v) => setValue("quote.status", v)}
             disabled={!canEditStatus}
             options={STATUS_OPTIONS}
             placeholder="Selecione"
@@ -1128,7 +1128,7 @@ function Step1Info({
               <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout('pricing-custom-guarantee', e) : undefined}>
                 <TextInput
                   value={customGuaranteeText || ""}
-                  onChangeText={(t) => setValue("pricing.customGuaranteeText", t || null)}
+                  onChangeText={(t) => setValue("quote.customGuaranteeText", t || null)}
                   placeholder="Descreva as condições de garantia..."
                   placeholderTextColor={colors.mutedForeground}
                   multiline
@@ -1150,7 +1150,7 @@ function Step1Info({
                   value={simultaneousTasks ?? null}
                   onChange={(value) => {
                     const numVal = value ? Number(value) : null;
-                    setValue("pricing.simultaneousTasks", numVal);
+                    setValue("quote.simultaneousTasks", numVal);
                   }}
                   placeholder="1-100"
                 />
@@ -1159,7 +1159,7 @@ function Step1Info({
                 <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Prazo Entrega (dias)</ThemedText>
                 <Combobox
                   value={customForecastDays ? String(customForecastDays) : ""}
-                  onValueChange={(value) => setValue("pricing.customForecastDays", value ? Number(value) : null)}
+                  onValueChange={(value) => setValue("quote.customForecastDays", value ? Number(value) : null)}
                   options={FORECAST_DAYS_OPTIONS}
                   placeholder="Auto"
                   searchable={false}
@@ -1296,11 +1296,11 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "pricing.services",
+    name: "quote.services",
   });
 
-  const pricingItems = useWatch({ control, name: "pricing.services" });
-  const watchedCustomerConfigs = useWatch({ control, name: "pricing.customerConfigs" });
+  const quoteItems = useWatch({ control, name: "quote.services" });
+  const watchedCustomerConfigs = useWatch({ control, name: "quote.customerConfigs" });
 
   // Service order sync on mount
   useEffect(() => {
@@ -1312,7 +1312,7 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
     );
     if (serviceOrders.length === 0) return;
 
-    const currentServices = getValues("pricing.services") || [];
+    const currentServices = getValues("quote.services") || [];
     const toAdd = getQuoteServicesToAddFromServiceOrders(
       serviceOrders,
       currentServices,
@@ -1338,14 +1338,14 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
   // Auto-calculate per-customer subtotals/totals
   useEffect(() => {
     const configs = watchedCustomerConfigs;
-    if (!Array.isArray(configs) || configs.length < 1 || !pricingItems) return;
+    if (!Array.isArray(configs) || configs.length < 1 || !quoteItems) return;
 
     const isSingleConfig = configs.length === 1;
     let updated = false;
     const newConfigs = configs.map((config: any) => {
       if (!config?.customerId) return config;
       const { subtotal, total } = computeCustomerConfigTotals(
-        pricingItems,
+        quoteItems,
         config.customerId,
         isSingleConfig,
       );
@@ -1356,25 +1356,25 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
       return config;
     });
     if (updated) {
-      setValue("pricing.customerConfigs", newConfigs, { shouldDirty: false });
+      setValue("quote.customerConfigs", newConfigs, { shouldDirty: false });
     }
-  }, [pricingItems, watchedCustomerConfigs, setValue]);
+  }, [quoteItems, watchedCustomerConfigs, setValue]);
 
   // Calculate subtotal
   const subtotal = useMemo(() => {
-    if (!pricingItems || pricingItems.length === 0) return 0;
-    return pricingItems.reduce((sum: number, item: any) => {
+    if (!quoteItems || quoteItems.length === 0) return 0;
+    return quoteItems.reduce((sum: number, item: any) => {
       const amount = typeof item.amount === "number" ? item.amount : Number(item.amount) || 0;
       return sum + amount;
     }, 0);
-  }, [pricingItems]);
+  }, [quoteItems]);
 
   // Calculate aggregate total from customer configs (accounts for per-service discounts)
   const aggregateTotal = useMemo(() => {
     if (!Array.isArray(watchedCustomerConfigs) || watchedCustomerConfigs.length === 0) {
       // No configs: compute total from services directly
-      if (!pricingItems || pricingItems.length === 0) return 0;
-      return pricingItems.reduce(
+      if (!quoteItems || quoteItems.length === 0) return 0;
+      return quoteItems.reduce(
         (sum: number, item: any) => sum + computeServiceNet({
           amount: typeof item.amount === "number" ? item.amount : Number(item.amount) || 0,
           discountType: item.discountType,
@@ -1388,11 +1388,11 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
         sum + (typeof config?.total === "number" ? config.total : Number(config?.total) || 0),
       0,
     );
-  }, [watchedCustomerConfigs, pricingItems]);
+  }, [watchedCustomerConfigs, quoteItems]);
 
   // Update form subtotal/total
   useEffect(() => {
-    if (pricingItems && pricingItems.length > 0) {
+    if (quoteItems && quoteItems.length > 0) {
       const configSubtotalSum =
         Array.isArray(watchedCustomerConfigs) && watchedCustomerConfigs.length > 0
           ? watchedCustomerConfigs.reduce(
@@ -1400,10 +1400,10 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
               0,
             )
           : subtotal;
-      setValue("pricing.subtotal", configSubtotalSum, { shouldDirty: false });
-      setValue("pricing.total", aggregateTotal, { shouldDirty: false });
+      setValue("quote.subtotal", configSubtotalSum, { shouldDirty: false });
+      setValue("quote.total", aggregateTotal, { shouldDirty: false });
     }
-  }, [subtotal, aggregateTotal, pricingItems, watchedCustomerConfigs, setValue]);
+  }, [subtotal, aggregateTotal, quoteItems, watchedCustomerConfigs, setValue]);
 
   // Clear orphaned service assignments when customer configs change
   useEffect(() => {
@@ -1411,19 +1411,19 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
     const currentIds = Array.isArray(configs)
       ? configs.map((c: any) => c?.customerId).filter(Boolean)
       : [];
-    const items = getValues("pricing.services") || [];
+    const items = getValues("quote.services") || [];
     items.forEach((item: any, index: number) => {
       if (
         item.invoiceToCustomerId &&
         !currentIds.includes(item.invoiceToCustomerId)
       ) {
-        setValue(`pricing.services.${index}.invoiceToCustomerId`, null);
+        setValue(`quote.services.${index}.invoiceToCustomerId`, null);
       }
     });
   }, [watchedCustomerConfigs, getValues, setValue]);
 
   const handleAddItem = useCallback(() => {
-    clearErrors("pricing");
+    clearErrors("quote");
     append({
       description: "",
       observation: null,
@@ -1463,7 +1463,7 @@ function Step2Services({ control, task, selectedCustomers }: Step2ServicesProps)
       ))}
 
       {/* Totals */}
-      {pricingItems && pricingItems.length > 0 && (
+      {quoteItems && quoteItems.length > 0 && (
         <View style={[styles.fieldSection, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md, marginTop: spacing.md }]}>
           <View style={styles.row}>
             <View style={styles.halfField}>
@@ -1510,7 +1510,7 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
 
   const config = useWatch({
     control,
-    name: `pricing.customerConfigs.${configIndex}`,
+    name: `quote.customerConfigs.${configIndex}`,
   });
 
   // Initialize custom payment state
@@ -1533,7 +1533,7 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
       const firstValid = taskResponsibles.find((r) => !r.id.startsWith("temp-"));
       if (firstValid) {
         setValue(
-          `pricing.customerConfigs.${configIndex}.responsibleId`,
+          `quote.customerConfigs.${configIndex}.responsibleId`,
           firstValid.id,
           { shouldDirty: false },
         );
@@ -1545,11 +1545,11 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
     const value = typeof val === 'string' ? val : '';
     if (value === "CUSTOM") {
       setShowCustomPayment(true);
-      setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
+      setValue(`quote.customerConfigs.${configIndex}.paymentCondition`, "CUSTOM");
     } else {
       setShowCustomPayment(false);
-      setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, null);
-      setValue(`pricing.customerConfigs.${configIndex}.paymentCondition`, value || null);
+      setValue(`quote.customerConfigs.${configIndex}.customPaymentText`, null);
+      setValue(`quote.customerConfigs.${configIndex}.paymentCondition`, value || null);
     }
   }, [setValue, configIndex]);
 
@@ -1614,7 +1614,7 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
           <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">Responsável do Orçamento</ThemedText>
           <Combobox
             value={config?.responsibleId || ""}
-            onValueChange={(v) => setValue(`pricing.customerConfigs.${configIndex}.responsibleId`, v || null)}
+            onValueChange={(v) => setValue(`quote.customerConfigs.${configIndex}.responsibleId`, v || null)}
             options={taskResponsibles
               .filter((r: any) => !r.id.startsWith('temp-'))
               .map((r: any) => ({
@@ -1636,7 +1636,7 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <Switch
             checked={config?.generateInvoice !== false}
-            onCheckedChange={(v) => setValue(`pricing.customerConfigs.${configIndex}.generateInvoice`, v)}
+            onCheckedChange={(v) => setValue(`quote.customerConfigs.${configIndex}.generateInvoice`, v)}
           />
           <ThemedText style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
             {config?.generateInvoice !== false ? "Sim" : "Não"}
@@ -1667,7 +1667,7 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
           <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout(`pricing-custom-payment-${configIndex}`, e) : undefined}>
             <TextInput
               value={config?.customPaymentText || ""}
-              onChangeText={(t) => setValue(`pricing.customerConfigs.${configIndex}.customPaymentText`, t || null)}
+              onChangeText={(t) => setValue(`quote.customerConfigs.${configIndex}.customPaymentText`, t || null)}
               placeholder="Descreva as condições de pagamento..."
               placeholderTextColor={colors.mutedForeground}
               multiline
@@ -1702,12 +1702,12 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
   const { setValue } = useFormContext();
   const [observationModal, setObservationModal] = useState({ visible: false, text: "" });
 
-  const description = useWatch({ control, name: `pricing.services.${index}.description` });
-  const amount = useWatch({ control, name: `pricing.services.${index}.amount` });
-  const observation = useWatch({ control, name: `pricing.services.${index}.observation` });
-  const discountType = useWatch({ control, name: `pricing.services.${index}.discountType` }) || "NONE";
-  const discountValue = useWatch({ control, name: `pricing.services.${index}.discountValue` });
-  const invoiceToCustomerId = useWatch({ control, name: `pricing.services.${index}.invoiceToCustomerId` });
+  const description = useWatch({ control, name: `quote.services.${index}.description` });
+  const amount = useWatch({ control, name: `quote.services.${index}.amount` });
+  const observation = useWatch({ control, name: `quote.services.${index}.observation` });
+  const discountType = useWatch({ control, name: `quote.services.${index}.discountType` }) || "NONE";
+  const discountValue = useWatch({ control, name: `quote.services.${index}.discountValue` });
+  const invoiceToCustomerId = useWatch({ control, name: `quote.services.${index}.invoiceToCustomerId` });
 
   const hasMultipleCustomers = customerConfigCustomers && customerConfigCustomers.length >= 2;
 
@@ -1728,7 +1728,7 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
   }, [description]);
 
   const handleSaveObservation = () => {
-    setValue(`pricing.services.${index}.observation`, observationModal.text || null);
+    setValue(`quote.services.${index}.observation`, observationModal.text || null);
     setObservationModal({ visible: false, text: observationModal.text });
   };
 
@@ -1740,7 +1740,7 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
       <View style={{ width: "100%" }}>
         <Combobox
           value={description || ""}
-          onValueChange={(v) => setValue(`pricing.services.${index}.description`, v || "")}
+          onValueChange={(v) => setValue(`quote.services.${index}.description`, v || "")}
           options={descriptionOptions}
           placeholder="Selecione o serviço..."
           searchable
@@ -1754,7 +1754,7 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
           <Input
             type="currency"
             value={amount ?? ""}
-            onChange={(v) => setValue(`pricing.services.${index}.amount`, v)}
+            onChange={(v) => setValue(`quote.services.${index}.amount`, v)}
             placeholder="R$ 0,00"
             fieldKey={`pricing-item-${index}-amount`}
           />
@@ -1776,7 +1776,7 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
           <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>Faturar para</ThemedText>
           <Combobox
             value={invoiceToCustomerId || ""}
-            onValueChange={(v) => setValue(`pricing.services.${index}.invoiceToCustomerId`, v || null)}
+            onValueChange={(v) => setValue(`quote.services.${index}.invoiceToCustomerId`, v || null)}
             options={customerConfigCustomers!.map((c) => ({
               value: c.id,
               label: c.fantasyName || c.corporateName || "Cliente",
@@ -1796,10 +1796,10 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
               value={discountType}
               onValueChange={(v) => {
                 const safeType = v || "NONE";
-                setValue(`pricing.services.${index}.discountType`, safeType);
+                setValue(`quote.services.${index}.discountType`, safeType);
                 if (safeType === "NONE") {
-                  setValue(`pricing.services.${index}.discountValue`, null);
-                  setValue(`pricing.services.${index}.discountReference`, null);
+                  setValue(`quote.services.${index}.discountValue`, null);
+                  setValue(`quote.services.${index}.discountReference`, null);
                 }
               }}
               options={Object.values(DISCOUNT_TYPE).map((type) => ({
@@ -1819,7 +1819,7 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
             <Input
               type={discountType === "FIXED_VALUE" ? "currency" : "number"}
               value={discountValue ?? ""}
-              onChange={(v) => setValue(`pricing.services.${index}.discountValue`, v === "" || v == null ? null : Number(v))}
+              onChange={(v) => setValue(`quote.services.${index}.discountValue`, v === "" || v == null ? null : Number(v))}
               disabled={discountType === "NONE"}
               placeholder={discountType === "NONE" ? "-" : discountType === "FIXED_VALUE" ? "R$ 0,00" : "0"}
               fieldKey={`pricing-item-${index}-discount`}
@@ -1833,8 +1833,8 @@ function ServiceItemRow({ control, index, onRemove, customerConfigCustomers }: S
         <View style={{ marginTop: spacing.xs }}>
           <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>Referência do Desconto</ThemedText>
           <Input
-            value={useWatch({ control, name: `pricing.services.${index}.discountReference` }) || ""}
-            onChange={(v) => setValue(`pricing.services.${index}.discountReference`, v || null)}
+            value={useWatch({ control, name: `quote.services.${index}.discountReference` }) || ""}
+            onChange={(v) => setValue(`quote.services.${index}.discountReference`, v || null)}
             placeholder="Justificativa..."
             fieldKey={`pricing-item-${index}-discount-ref`}
           />

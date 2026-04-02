@@ -39,7 +39,7 @@ interface CustomerConfig {
 
 interface BudgetPreviewProps {
   mode?: 'budget' | 'billing';
-  pricing: {
+  quote: {
     budgetNumber?: number;
     subtotal: number;
     total: number;
@@ -68,7 +68,7 @@ interface BudgetPreviewProps {
   selectedCustomers?: Map<string, any>;
 }
 
-export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget' }: BudgetPreviewProps) {
+export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' }: BudgetPreviewProps) {
   const { colors } = useTheme();
 
   const corporateName =
@@ -76,7 +76,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
     task?.customer?.fantasyName ||
     "Cliente";
   // Prefer the explicitly selected budget responsible from first customer config
-  const activeConfig = pricing.customerConfigs?.[0];
+  const activeConfig = quote.customerConfigs?.[0];
   const selectedResponsible = activeConfig?.responsibleId
     ? task?.responsibles?.find((r: any) => r.id === activeConfig.responsibleId)
     : null;
@@ -85,15 +85,15 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
     || commercialRep?.name
     || task?.responsibles?.[0]?.name
     || "";
-  const budgetNumber = pricing.budgetNumber
-    ? String(pricing.budgetNumber).padStart(4, "0")
+  const budgetNumber = quote.budgetNumber
+    ? String(quote.budgetNumber).padStart(4, "0")
     : task?.serialNumber || "0000";
 
-  const validityDays = pricing.expiresAt
+  const validityDays = quote.expiresAt
     ? Math.max(
         0,
         Math.round(
-          (new Date(pricing.expiresAt).getTime() - Date.now()) /
+          (new Date(quote.expiresAt).getTime() - Date.now()) /
             (1000 * 60 * 60 * 24)
         )
       )
@@ -102,7 +102,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
   const termDate = task?.term ? formatDate(task.term as any) : "";
 
   // Compute total discount from per-service discounts
-  const totalDiscountAmount = (pricing.services || []).reduce((sum, svc) => {
+  const totalDiscountAmount = (quote.services || []).reduce((sum, svc) => {
     const amount = Number(svc.amount) || 0;
     return sum + computeServiceDiscount(amount, svc.discountType, svc.discountValue);
   }, 0);
@@ -110,8 +110,8 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
 
   // Multi-customer support
   const hasMultipleCustomers =
-    Array.isArray(pricing.customerConfigs) && pricing.customerConfigs.length >= 2;
-  const validServices = (pricing.services || []).filter((s) => s.description?.trim());
+    Array.isArray(quote.customerConfigs) && quote.customerConfigs.length >= 2;
+  const validServices = (quote.services || []).filter((s) => s.description?.trim());
 
   // Group services by customer for multi-customer view
   const customerGroups = (() => {
@@ -131,10 +131,10 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
 
   // Handle both uploaded files (with id) and newly selected files (with uri)
   const layoutImageUrl =
-    (pricing.layoutFile as any)?.uri // Newly selected file - use local URI
-      ? (pricing.layoutFile as any).uri
-      : pricing.layoutFile?.id // Uploaded file - use getFileUrl
-      ? getFileUrl(pricing.layoutFile as any)
+    (quote.layoutFile as any)?.uri // Newly selected file - use local URI
+      ? (quote.layoutFile as any).uri
+      : quote.layoutFile?.id // Uploaded file - use getFileUrl
+      ? getFileUrl(quote.layoutFile as any)
       : null;
 
   // Render a single service row with discount details
@@ -200,9 +200,9 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
               <ThemedText style={styles.budgetTitle}>
                 Orçamento Nº {budgetNumber}
               </ThemedText>
-              {pricing.createdAt && (
+              {quote.createdAt && (
                 <ThemedText style={styles.headerMeta}>
-                  Emissão: {formatDate(pricing.createdAt as any)}
+                  Emissão: {formatDate(quote.createdAt as any)}
                 </ThemedText>
               )}
               <ThemedText style={styles.headerMeta}>
@@ -280,7 +280,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
             <View style={styles.totalRow}>
               <ThemedText style={styles.bodyText}>Subtotal</ThemedText>
               <ThemedText style={styles.bodyText}>
-                {formatCurrency(pricing.subtotal)}
+                {formatCurrency(quote.subtotal)}
               </ThemedText>
             </View>
             <View style={styles.totalRow}>
@@ -294,7 +294,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
             <View style={[styles.totalRow, styles.totalRowFinal]}>
               <ThemedText style={styles.totalLabel}>Total</ThemedText>
               <ThemedText style={styles.totalValue}>
-                {formatCurrency(pricing.total)}
+                {formatCurrency(quote.total)}
               </ThemedText>
             </View>
           </View>
@@ -303,7 +303,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
             <View style={[styles.totalRow, styles.totalRowFinal]}>
               <ThemedText style={styles.totalLabel}>Total</ThemedText>
               <ThemedText style={styles.totalValue}>
-                {formatCurrency(pricing.total)}
+                {formatCurrency(quote.total)}
               </ThemedText>
             </View>
           </View>
@@ -311,9 +311,9 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
       </View>
 
       {/* Per-Customer Config Cards (multi-customer only) */}
-      {hasMultipleCustomers && pricing.customerConfigs && pricing.customerConfigs.length >= 2 && (
+      {hasMultipleCustomers && quote.customerConfigs && quote.customerConfigs.length >= 2 && (
         <View style={styles.section}>
-          {pricing.customerConfigs.map((config, i) => {
+          {quote.customerConfigs.map((config, i) => {
             const customer = selectedCustomers?.get(config.customerId);
             const configSubtotal = Number(config.subtotal) || 0;
             const configTotal = Number(config.total) || 0;
@@ -369,7 +369,7 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
 
       {/* Single customer payment conditions */}
       {!hasMultipleCustomers && (() => {
-        const config = pricing.customerConfigs?.[0];
+        const config = quote.customerConfigs?.[0];
         if (!config) return null;
         const configTotal = Number(config.total) || 0;
         const paymentText = generatePaymentText({
@@ -392,21 +392,21 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
       {mode === 'budget' && (
         <>
           {/* Delivery Deadline */}
-          {(pricing.customForecastDays || (pricing.simultaneousTasks && pricing.simultaneousTasks > 1) || termDate) ? (
+          {(quote.customForecastDays || (quote.simultaneousTasks && quote.simultaneousTasks > 1) || termDate) ? (
             <View style={styles.section}>
               <ThemedText style={styles.sectionTitle}>
                 Prazo de entrega
               </ThemedText>
-              {pricing.customForecastDays ? (
+              {quote.customForecastDays ? (
                 <ThemedText style={styles.bodyText}>
-                  O prazo de entrega é de {pricing.customForecastDays} dias úteis a partir da data de liberação.
-                  {pricing.simultaneousTasks && pricing.simultaneousTasks > 1
-                    ? ` Capacidade de produção: ${pricing.simultaneousTasks} tarefas simultâneas.`
+                  O prazo de entrega é de {quote.customForecastDays} dias úteis a partir da data de liberação.
+                  {quote.simultaneousTasks && quote.simultaneousTasks > 1
+                    ? ` Capacidade de produção: ${quote.simultaneousTasks} tarefas simultâneas.`
                     : ""}
                 </ThemedText>
-              ) : pricing.simultaneousTasks && pricing.simultaneousTasks > 1 ? (
+              ) : quote.simultaneousTasks && quote.simultaneousTasks > 1 ? (
                 <ThemedText style={styles.bodyText}>
-                  Capacidade de produção: {pricing.simultaneousTasks} tarefas simultâneas.
+                  Capacidade de produção: {quote.simultaneousTasks} tarefas simultâneas.
                 </ThemedText>
               ) : termDate ? (
                 <ThemedText style={styles.bodyText}>
@@ -419,10 +419,10 @@ export function BudgetPreview({ pricing, task, selectedCustomers, mode = 'budget
           ) : null}
 
           {/* Guarantee */}
-          {(pricing.guaranteeYears || pricing.customGuaranteeText) ? (
+          {(quote.guaranteeYears || quote.customGuaranteeText) ? (
             <View style={styles.section}>
               <ThemedText style={styles.sectionTitle}>Garantias</ThemedText>
-              <ThemedText style={styles.bodyText}>{generateGuaranteeText(pricing)}</ThemedText>
+              <ThemedText style={styles.bodyText}>{generateGuaranteeText(quote)}</ThemedText>
             </View>
           ) : null}
 

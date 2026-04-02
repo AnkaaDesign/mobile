@@ -15,10 +15,10 @@ export function AwaitingQuoteApprovalList({ tasks }: AwaitingQuoteApprovalListPr
 
   return (
     <DashboardCardList
-      title="Aguardando Aprov. Interna"
+      title="Faturamento Aguardando Aprovação"
       icon={<Icon name="file-check" size="sm" color="#3b82f6" />}
-      viewAllLink="/producao/agenda"
-      emptyMessage="Nenhuma tarefa aguardando aprovação interna"
+      viewAllLink="/financeiro/faturamento"
+      emptyMessage="Nenhuma tarefa aguardando aprovação de faturamento"
       isEmpty={tasks.length === 0}
     >
       {/* Table header */}
@@ -36,7 +36,7 @@ export function AwaitingQuoteApprovalList({ tasks }: AwaitingQuoteApprovalListPr
         <Text style={{ flex: 1, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
           Logomarca
         </Text>
-        <Text style={{ width: 80, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }} numberOfLines={1}>
+        <Text style={{ flex: 1, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }} numberOfLines={1}>
           Cliente
         </Text>
         <Text style={{ width: 70, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }} numberOfLines={1}>
@@ -49,7 +49,7 @@ export function AwaitingQuoteApprovalList({ tasks }: AwaitingQuoteApprovalListPr
         return (
           <Pressable
             key={task.id}
-            onPress={() => router.push(`/(tabs)/producao/agenda/detalhes/${task.id}` as any)}
+            onPress={() => router.push(`/(tabs)/financeiro/faturamento/detalhes/${task.id}` as any)}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -63,7 +63,7 @@ export function AwaitingQuoteApprovalList({ tasks }: AwaitingQuoteApprovalListPr
             <Text style={{ flex: 1, fontSize: 13, color: colors.foreground }} numberOfLines={1}>
               {task.name || "Tarefa Sem Nome"}
             </Text>
-            <Text style={{ width: 80, fontSize: 12, color: colors.foreground }} numberOfLines={1}>
+            <Text style={{ flex: 1, fontSize: 12, color: colors.foreground }} numberOfLines={1}>
               {task.customerName || "\u2014"}
             </Text>
             <Text style={{ width: 70, fontSize: 12, fontFamily: "monospace", color: colors.foreground }} numberOfLines={1}>

@@ -710,6 +710,7 @@ export function useRescheduleForecast() {
       rescheduleForecast(id, data),
     onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'forecastHistory', variables.id] });
       queryClient.invalidateQueries({ queryKey: taskKeys.all });
     },
   });

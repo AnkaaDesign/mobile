@@ -8,25 +8,27 @@ import { CompletedTasksList } from "./completed-tasks-list";
 import { AwaitingApprovalTasksList } from "./awaiting-approval-tasks-list";
 import { AwaitingQuoteApprovalList } from "./awaiting-quote-approval-list";
 import { AwaitingBudgetApprovalList } from "./awaiting-budget-approval-list";
+import { TimeEntriesCard } from "./time-entries-card";
 
 interface HomeDashboardSectionProps {
   data: HomeDashboardData;
   sector?: string;
+  showTimeEntries?: boolean;
 }
 
-export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps) {
+export function HomeDashboardSection({ data, sector, showTimeEntries }: HomeDashboardSectionProps) {
   const isAdmin = sector === SECTOR_PRIVILEGES.ADMIN;
 
-  const hasContent = isAdmin
-    ? (data.tasksCloseDeadline && data.tasksCloseDeadline.length > 0)
-    : (data.tasksCloseDeadline && data.tasksCloseDeadline.length > 0) ||
-      (data.openServiceOrders && data.openServiceOrders.length > 0) ||
-      (data.tasksCloseForecast && data.tasksCloseForecast.length > 0) ||
-      (data.lowStockItems && data.lowStockItems.length > 0) ||
-      (data.completedTasks && data.completedTasks.length > 0) ||
-      (data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0) ||
-      (data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0) ||
-      (data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0);
+  const hasContent =
+    (data.tasksCloseDeadline && data.tasksCloseDeadline.length > 0) ||
+    (data.openServiceOrders && data.openServiceOrders.length > 0) ||
+    (data.tasksCloseForecast && data.tasksCloseForecast.length > 0) ||
+    (data.lowStockItems && data.lowStockItems.length > 0) ||
+    (data.completedTasks && data.completedTasks.length > 0) ||
+    (data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0) ||
+    (data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0) ||
+    (data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0) ||
+    showTimeEntries;
 
   if (!hasContent) return null;
 
@@ -35,7 +37,7 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
     : "/producao/agenda";
 
   return (
-    <View style={{ gap: 12 }}>
+    <View style={{ gap: 24 }}>
       {data.tasksCloseDeadline && data.tasksCloseDeadline.length > 0 && (
         <TaskDeadlineList
           tasks={data.tasksCloseDeadline}
@@ -45,11 +47,11 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
         />
       )}
 
-      {!isAdmin && data.openServiceOrders && data.openServiceOrders.length > 0 && (
+      {data.openServiceOrders && data.openServiceOrders.length > 0 && (
         <ServiceOrderList orders={data.openServiceOrders} title="Ordens de Serviço Abertas" />
       )}
 
-      {!isAdmin && data.tasksCloseForecast && data.tasksCloseForecast.length > 0 && (
+      {data.tasksCloseForecast && data.tasksCloseForecast.length > 0 && (
         <TaskDeadlineList
           tasks={data.tasksCloseForecast}
           title="Tarefas com Liberação Próxima"
@@ -58,26 +60,27 @@ export function HomeDashboardSection({ data, sector }: HomeDashboardSectionProps
         />
       )}
 
-      {!isAdmin && data.lowStockItems && data.lowStockItems.length > 0 && (
-        <LowStockList items={data.lowStockItems} totalCount={data.counts.lowStockItems} />
-      )}
-
-      {!isAdmin && data.completedTasks && data.completedTasks.length > 0 && (
+      {data.completedTasks && data.completedTasks.length > 0 && (
         <CompletedTasksList tasks={data.completedTasks} />
       )}
 
-      {!isAdmin && data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0 && (
+      {data.tasksAwaitingPaymentApproval && data.tasksAwaitingPaymentApproval.length > 0 && (
         <AwaitingApprovalTasksList tasks={data.tasksAwaitingPaymentApproval} />
       )}
 
-      {!isAdmin && data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0 && (
+      {data.tasksAwaitingQuoteApproval && data.tasksAwaitingQuoteApproval.length > 0 && (
         <AwaitingQuoteApprovalList tasks={data.tasksAwaitingQuoteApproval} />
       )}
 
-      {!isAdmin && data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0 && (
+      {data.tasksAwaitingBudgetApproval && data.tasksAwaitingBudgetApproval.length > 0 && (
         <AwaitingBudgetApprovalList tasks={data.tasksAwaitingBudgetApproval} />
       )}
 
+      {data.lowStockItems && data.lowStockItems.length > 0 && (
+        <LowStockList items={data.lowStockItems} totalCount={data.counts.lowStockItems} />
+      )}
+
+      {showTimeEntries && <TimeEntriesCard />}
     </View>
   );
 }

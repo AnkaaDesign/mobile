@@ -714,17 +714,17 @@ const TimelineItem = React.memo(({
               </ThemedText>
             )}
             {Array.isArray(createdEntityData.items) && createdEntityData.items.length > 0 && (
-              <View style={[styles.pricingItems, { borderTopColor: colors.border }]}>
-                <ThemedText style={[styles.pricingItemsLabel, { color: colors.mutedForeground }]}>
+              <View style={[styles.quoteItems, { borderTopColor: colors.border }]}>
+                <ThemedText style={[styles.quoteItemsLabel, { color: colors.mutedForeground }]}>
                   Itens:
                 </ThemedText>
                 {createdEntityData.items.map((item: any, idx: number) => (
-                  <View key={idx} style={styles.pricingItemRow}>
-                    <ThemedText style={[styles.pricingItemDesc, { color: colors.foreground }]} numberOfLines={1}>
+                  <View key={idx} style={styles.quoteItemRow}>
+                    <ThemedText style={[styles.quoteItemDesc, { color: colors.foreground }]} numberOfLines={1}>
                       {item.description}
                     </ThemedText>
                     {item.amount !== null && item.amount !== undefined && (
-                      <ThemedText style={[styles.pricingItemAmount, { color: colors.mutedForeground }]}>
+                      <ThemedText style={[styles.quoteItemAmount, { color: colors.mutedForeground }]}>
                         {formatCurrency(Number(item.amount))}
                       </ThemedText>
                     )}
@@ -794,7 +794,7 @@ const TimelineItem = React.memo(({
     );
   };
 
-  // Helper to parse pricing/budget value (matching web implementation)
+  // Helper to parse quote/budget value (matching web implementation)
   const parsePricingValue = (val: any) => {
     if (val === null || val === undefined) return null;
     if (typeof val === "object" && val.id) return val;
@@ -821,9 +821,9 @@ const TimelineItem = React.memo(({
     }).format(value);
   };
 
-  // Render pricing value display (matching web implementation)
-  const renderPricingValue = (pricing: any, isOld: boolean) => {
-    if (!pricing || !pricing.id) {
+  // Render quote value display (matching web implementation)
+  const renderQuoteValue = (quote: any, isOld: boolean) => {
+    if (!quote || !quote.id) {
       return (
         <ThemedText style={{ fontSize: fontSize.xs, color: isOld ? colors.destructive : colors.success, fontWeight: "500" }}>
           Nenhum
@@ -831,35 +831,35 @@ const TimelineItem = React.memo(({
       );
     }
 
-    const hasBudgetInfo = pricing.budgetNumber || pricing.total !== null;
-    const items = pricing.services || [];
+    const hasBudgetInfo = quote.budgetNumber || quote.total !== null;
+    const items = quote.services || [];
 
     if (hasBudgetInfo) {
       return (
-        <View style={[styles.pricingCard, { borderColor: colors.border, backgroundColor: colors.muted }]}>
-          <View style={styles.pricingHeader}>
-            {pricing.budgetNumber && (
-              <ThemedText style={[styles.pricingTitle, { color: isOld ? colors.destructive : colors.success }]}>
-                Orçamento #{pricing.budgetNumber}
+        <View style={[styles.quoteCard, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+          <View style={styles.quoteHeader}>
+            {quote.budgetNumber && (
+              <ThemedText style={[styles.quoteTitle, { color: isOld ? colors.destructive : colors.success }]}>
+                Orçamento #{quote.budgetNumber}
               </ThemedText>
             )}
-            {pricing.total !== null && pricing.total !== undefined && (
-              <ThemedText style={[styles.pricingTotal, { color: colors.mutedForeground }]}>
-                {formatCurrency(pricing.total)}
+            {quote.total !== null && quote.total !== undefined && (
+              <ThemedText style={[styles.quoteTotal, { color: colors.mutedForeground }]}>
+                {formatCurrency(quote.total)}
               </ThemedText>
             )}
           </View>
           {items.length > 0 && (
-            <View style={[styles.pricingItems, { borderTopColor: colors.border }]}>
-              <ThemedText style={[styles.pricingItemsLabel, { color: colors.mutedForeground }]}>
+            <View style={[styles.quoteItems, { borderTopColor: colors.border }]}>
+              <ThemedText style={[styles.quoteItemsLabel, { color: colors.mutedForeground }]}>
                 Itens:
               </ThemedText>
               {items.map((item: any, itemIdx: number) => (
-                <View key={itemIdx} style={styles.pricingItemRow}>
-                  <ThemedText style={[styles.pricingItemDesc, { color: colors.foreground }]} numberOfLines={1}>
+                <View key={itemIdx} style={styles.quoteItemRow}>
+                  <ThemedText style={[styles.quoteItemDesc, { color: colors.foreground }]} numberOfLines={1}>
                     {item.description}
                   </ThemedText>
-                  <ThemedText style={[styles.pricingItemAmount, { color: colors.mutedForeground }]}>
+                  <ThemedText style={[styles.quoteItemAmount, { color: colors.mutedForeground }]}>
                     {formatCurrency(item.amount)}
                   </ThemedText>
                 </View>
@@ -873,7 +873,7 @@ const TimelineItem = React.memo(({
     // Fallback to showing just the ID if no budget info
     return (
       <ThemedText style={{ color: isOld ? colors.destructive : colors.success, fontFamily: "monospace", fontSize: fontSize.xs }}>
-        {pricing.id}
+        {quote.id}
       </ThemedText>
     );
   };
@@ -966,20 +966,20 @@ const TimelineItem = React.memo(({
 
         // Special handling for quoteId (Orçamento) - matching web implementation
         if (field === "quoteId" || field === "pricingId") {
-          const oldPricing = parsePricingValue(log.oldValue);
-          const newPricing = parsePricingValue(log.newValue);
+          const oldQuote = parsePricingValue(log.oldValue);
+          const newQuote = parsePricingValue(log.newValue);
 
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
               <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
               <View style={styles.changeValuesVertical}>
-                <View style={styles.pricingValueRow}>
+                <View style={styles.quoteValueRow}>
                   <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Antes:</ThemedText>
-                  {renderPricingValue(oldPricing, true)}
+                  {renderQuoteValue(oldQuote, true)}
                 </View>
-                <View style={styles.pricingValueRow}>
+                <View style={styles.quoteValueRow}>
                   <ThemedText style={[styles.valueLabel, { color: colors.mutedForeground }]}>Depois:</ThemedText>
-                  {renderPricingValue(newPricing, false)}
+                  {renderQuoteValue(newQuote, false)}
                 </View>
               </View>
             </View>
@@ -1085,12 +1085,12 @@ const TimelineItem = React.memo(({
 
         // Special handling for quoteId on CREATE
         if (field === "quoteId" || field === "pricingId") {
-          const newPricing = parsePricingValue(log.newValue);
+          const newQuote = parsePricingValue(log.newValue);
           changes.push(
             <View key={`${log.id}-${idx}`} style={styles.changeRow}>
               <ThemedText style={[styles.fieldLabel, { color: colors.mutedForeground }]}>Campo: <ThemedText style={{ fontSize: fontSize.xs, color: colors.foreground, fontWeight: "500" }}>{fieldLabel}</ThemedText></ThemedText>
-              <View style={styles.pricingValueRow}>
-                {renderPricingValue(newPricing, false)}
+              <View style={styles.quoteValueRow}>
+                {renderQuoteValue(newQuote, false)}
               </View>
             </View>
           );
@@ -1811,52 +1811,52 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: spacing.xs,
   },
-  // Pricing/Budget card styles (matching web)
-  pricingCard: {
+  // Quote/Budget card styles (matching web)
+  quoteCard: {
     borderWidth: 1,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
     marginTop: spacing.xs,
   },
-  pricingHeader: {
+  quoteHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  pricingTitle: {
+  quoteTitle: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.semibold,
   },
-  pricingTotal: {
+  quoteTotal: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
-  pricingItems: {
+  quoteItems: {
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
   },
-  pricingItemsLabel: {
+  quoteItemsLabel: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
     marginBottom: spacing.xs,
   },
-  pricingItemRow: {
+  quoteItemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 2,
   },
-  pricingItemDesc: {
+  quoteItemDesc: {
     fontSize: fontSize.xs,
     flex: 1,
     marginRight: spacing.sm,
   },
-  pricingItemAmount: {
+  quoteItemAmount: {
     fontSize: fontSize.xs,
     fontWeight: fontWeight.medium,
   },
-  pricingValueRow: {
+  quoteValueRow: {
     marginTop: spacing.xs,
   },
   // Status change text style (matching web "Status: old → new" format)

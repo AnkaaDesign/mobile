@@ -166,6 +166,22 @@ export default function GaragesScreen() {
       // Must not have COMPLETED status for yard display
       if (task.status === TASK_STATUS.COMPLETED) return false;
 
+      // Hide trucks whose term (deadline) has already passed (matches web calendar filter)
+      const term = (task as any).term;
+      if (term) {
+        const termDate = new Date(term);
+        termDate.setHours(0, 0, 0, 0);
+        if (today > termDate) return false;
+      }
+
+      // Hide trucks that were already finished before today
+      const finishedAt = (task as any).finishedAt;
+      if (finishedAt) {
+        const finished = new Date(finishedAt);
+        finished.setHours(0, 0, 0, 0);
+        if (finished < today) return false;
+      }
+
       // Show if truck already arrived (entryDate) or is expected (forecastDate)
       if (entryDate) {
         const entry = new Date(entryDate);

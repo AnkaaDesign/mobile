@@ -211,6 +211,14 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
     debounce: 500,
   },
 
+  actions: {
+    create: {
+      label: 'Criar Orçamento',
+      route: '/financeiro/orcamento/cadastrar',
+      canCreate: (user: any) => canEditQuote(user?.sector?.privileges || user?.sector || ''),
+    },
+  },
+
   emptyState: {
     icon: 'file-description',
     title: 'Nenhum orcamento encontrado',

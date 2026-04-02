@@ -103,14 +103,11 @@ export function LowStockList({ items, totalCount }: LowStockListProps) {
         <Text style={{ flex: 1, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
           Item
         </Text>
-        <Text style={{ width: 60, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
+        <Text style={{ width: 72, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
           Marca
         </Text>
         <Text style={{ width: 56, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
           Qnt
-        </Text>
-        <Text style={{ width: 48, fontSize: 9, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: colors.mutedForeground }}>
-          Cons.
         </Text>
       </View>
       {/* Table rows */}
@@ -142,7 +139,7 @@ export function LowStockList({ items, totalCount }: LowStockListProps) {
             <Text style={{ flex: 1, fontSize: 13, color: colors.foreground }} numberOfLines={1}>
               {item.name}
             </Text>
-            <Text style={{ width: 60, fontSize: 12, color: colors.foreground }} numberOfLines={1}>
+            <Text style={{ width: 72, fontSize: 12, color: colors.foreground }} numberOfLines={1}>
               {item.brandName || "—"}
             </Text>
             <View style={{ width: 56, flexDirection: "row", alignItems: "center", gap: 3 }}>
@@ -153,11 +150,6 @@ export function LowStockList({ items, totalCount }: LowStockListProps) {
                   : item.quantity.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             </View>
-            <Text style={{ width: 48, fontSize: 12, color: colors.foreground, fontVariant: ["tabular-nums"] }}>
-              {item.monthlyConsumption > 0
-                ? item.monthlyConsumption.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-                : "—"}
-            </Text>
           </Pressable>
         );
       })}

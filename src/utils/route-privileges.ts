@@ -329,6 +329,7 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/financeiro/faturamento/detalhes/[id]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/financeiro/orcamento': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/financeiro/orcamento/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
+  '/(tabs)/financeiro/orcamento/cadastrar': ['COMMERCIAL', 'ADMIN'],
   '/(tabs)/financeiro/orcamento/detalhes/[taskId]': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/financeiro/notas-fiscais': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],
   '/(tabs)/financeiro/notas-fiscais/listar': ['FINANCIAL', 'COMMERCIAL', 'ADMIN'],

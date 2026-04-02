@@ -141,6 +141,7 @@ export const routes = {
     budget: {
       root: "/financeiro/orcamento",
       list: "/financeiro/orcamento/listar",
+      create: "/financeiro/orcamento/cadastrar",
       details: (taskId: string) => `/financeiro/orcamento/detalhes/${taskId}`,
     },
     customers: {

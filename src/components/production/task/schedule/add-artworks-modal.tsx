@@ -78,7 +78,10 @@ export function AddArtworksModal({
             type: file.mimeType || file.type || "application/octet-stream",
           } as any);
 
-          const uploadResult = await uploadSingleFile(formData);
+          const uploadResult = await uploadSingleFile(formData, {
+            fileContext: 'artwork',
+            customerName: targetTask.customer?.fantasyName,
+          });
           if (uploadResult?.id) {
             uploadedFileIds.push(uploadResult.id);
           }

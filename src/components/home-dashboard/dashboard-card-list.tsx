@@ -29,22 +29,23 @@ export function DashboardCardList({
   const router = useRouter();
 
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: 6, marginBottom: 8 }}>
       {/* Section header — outside the card */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 8,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}>
           {icon}
-          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{title}</Text>
+          <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }} numberOfLines={1}>{title}</Text>
         </View>
         {viewAllLink && (
           <Pressable onPress={() => router.push(viewAllLink as any)}>
-            <Text style={{ fontSize: 11, color: colors.primary }}>Ver todos</Text>
+            <Text style={{ fontSize: 11, color: colors.primary, flexShrink: 0 }}>Ver todos</Text>
           </Pressable>
         )}
       </View>
@@ -58,7 +59,7 @@ export function DashboardCardList({
           overflow: "hidden",
         }}
       >
-        <ScrollView style={{ height: TABLE_HEIGHT }} nestedScrollEnabled>
+        <ScrollView style={{ maxHeight: TABLE_HEIGHT }} nestedScrollEnabled>
           {isEmpty ? (
             <Text
               style={{

@@ -470,9 +470,9 @@ export function formatTaskPrice(task: any): string {
 /**
  * Check if pricing is expired
  */
-export function isQuoteExpired(pricing: TaskQuote): boolean {
-  if (!pricing.expiresAt) return false;
-  return new Date(pricing.expiresAt) < new Date();
+export function isQuoteExpired(quote: TaskQuote): boolean {
+  if (!quote.expiresAt) return false;
+  return new Date(quote.expiresAt) < new Date();
 }
 
 /**
