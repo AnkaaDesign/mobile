@@ -82,7 +82,7 @@ export class TaskQuoteService {
   }
 
   async approve(id: string): Promise<TaskQuoteResponse> {
-    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/approve`);
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/budget-approve`);
     return response.data;
   }
 
@@ -102,12 +102,12 @@ export class TaskQuoteService {
   }
 
   async reject(id: string, reason?: string): Promise<TaskQuoteResponse> {
-    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/reject`, { reason });
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/status`, { status: 'PENDING', reason });
     return response.data;
   }
 
   async cancel(id: string): Promise<TaskQuoteResponse> {
-    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/cancel`);
+    const response = await apiClient.put<TaskQuoteResponse>(`${this.basePath}/${id}/status`, { status: 'PENDING' });
     return response.data;
   }
 

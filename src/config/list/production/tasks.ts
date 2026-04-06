@@ -407,7 +407,13 @@ export const tasksListConfig: ListConfig<Task> = {
         icon: 'calendar-check',
         variant: 'default',
         canPerform: canReleaseTasks,
-        visible: (task: Task) => task.status === TASK_STATUS.PREPARATION && !task.cleared,
+        visible: (task: Task, user: any) => {
+          if (task.status !== TASK_STATUS.PREPARATION || task.cleared) return false
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canReleaseTasks(user)
+        },
         onPress: async (task: Task) => {
           try {
             // If task has no forecast date yet, set it to now along with cleared
@@ -424,6 +430,8 @@ export const tasksListConfig: ListConfig<Task> = {
         },
       },
       // Leader actions (start/finish) - only shown for leaders managing tasks
+      // Start task - only for tasks assigned to the leader's sector
+      // Leaders cannot start unassigned tasks — PM/COMMERCIAL/ADMIN must assign a sector first
       {
         key: 'start',
         label: 'Iniciar Tarefa',
@@ -432,27 +440,15 @@ export const tasksListConfig: ListConfig<Task> = {
         canPerform: isLeader,
         visible: (task: Task, user: any) => {
           if (task.status !== TASK_STATUS.WAITING_PRODUCTION) return false
+          // Task must have a sector assigned AND it must match the leader's led sector
+          if (!task.sectorId) return false
           return canLeaderManageTask(user, task.sectorId)
         },
         onPress: async (task: Task, router: any, context?) => {
           try {
-            const user = context?.user
-            const updateData: any = {
-              status: TASK_STATUS.IN_PRODUCTION,
-              startedAt: new Date().toISOString(),
-            }
-
-            if (!task.sectorId && user?.ledSector?.id) {
-              updateData.sectorId = user.ledSector.id
-            }
-
-            await updateTask(task.id, updateData)
-            queryClient.invalidateQueries({ queryKey: taskKeys.all })
-            queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all })
-            queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
-            queryClient.invalidateQueries({ queryKey: truckKeys.all })
-
-            // API client already shows success alert
+            // Navigate to checkin-checkout screen first — API requires checkin files to start
+            navigationTracker.setSource(context?.route || '/(tabs)/producao/cronograma')
+            router.push(`/producao/cronograma/checkin-checkout/${task.id}`)
           } catch (_error) {
             // API client already shows error alert
           }
@@ -468,36 +464,10 @@ export const tasksListConfig: ListConfig<Task> = {
           if (task.status !== TASK_STATUS.IN_PRODUCTION) return false
           return canFinishTask(user)
         },
-        onPress: async (task: Task, router: any) => {
-          try {
-            // Finish the task — the API auto-completes any remaining production SOs
-            await updateTask(task.id, {
-              status: TASK_STATUS.COMPLETED,
-              finishedAt: new Date(),
-            })
-
-            queryClient.invalidateQueries({ queryKey: taskKeys.all })
-            queryClient.invalidateQueries({ queryKey: serviceOrderKeys.all })
-            queryClient.invalidateQueries({ queryKey: changeLogKeys.all })
-            queryClient.invalidateQueries({ queryKey: truckKeys.all })
-
-            // Navigate to checkout screen so production manager can add checkout photos
-            Alert.alert(
-              'Tarefa finalizada',
-              'Deseja adicionar as fotos de check-out agora?',
-              [
-                { text: 'Depois', style: 'cancel' },
-                {
-                  text: 'Adicionar fotos',
-                  onPress: () => {
-                    router.push(`/(tabs)/producao/cronograma/checkin-checkout/${task.id}`)
-                  },
-                },
-              ]
-            )
-          } catch (_error) {
-            // API client already shows error alert
-          }
+        onPress: async (task: Task, router: any, context?) => {
+          // Navigate to checkout screen first — API requires checkout files to finish
+          navigationTracker.setSource(context?.route || '/(tabs)/producao/cronograma')
+          router.push(`/producao/cronograma/checkin-checkout/${task.id}`)
         },
       },
       // Order from left to right: Medidas, Adicionar Layouts, Copiar de Outra, Definir Setor, Editar, Deletar
@@ -511,9 +481,12 @@ export const tasksListConfig: ListConfig<Task> = {
         },
         icon: 'truck',
         variant: 'default',
-        // ADMIN, LOGISTIC, or Team Leaders can view/edit layouts
+        // ADMIN, LOGISTIC, or Team Leaders can view/edit layouts (NOT PM)
         canPerform: canViewLayouts,
-        visible: (task: Task, user: any) => canEditLayoutForTask(user, task.sectorId),
+        visible: (task: Task, user: any) => {
+          if (user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          return canEditLayoutForTask(user, task.sectorId)
+        },
         onPress: (task, router, context) => {
           // Store navigation source for proper back navigation
           const currentPath = context?.route || '/(tabs)/producao/cronograma'
@@ -541,8 +514,14 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Adicionar Layouts',
         icon: 'photo',
         variant: 'default',
-        // ADMIN, COMMERCIAL, FINANCIAL can add artworks (LOGISTIC excluded)
+        // ADMIN, COMMERCIAL, FINANCIAL can add artworks (PM and LOGISTIC excluded)
         canPerform: canAddArtworks,
+        visible: (_task: Task, user: any) => {
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canAddArtworks(user)
+        },
         // Action is handled by TaskScheduleLayout - opens modal
       },
       {
@@ -550,8 +529,14 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Copiar de Outra',
         icon: 'clipboardCopy',
         variant: 'default',
-        // ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC can copy from another task
+        // ADMIN, COMMERCIAL, FINANCIAL can copy from another task (PM and LOGISTIC excluded)
         canPerform: canAccessAdvancedTaskMenu,
+        visible: (_task: Task, user: any) => {
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canAccessAdvancedTaskMenu(user)
+        },
         onPress: (task, router, context) => {
           const currentPath = context?.route || '/(tabs)/producao/agenda'
           navigationTracker.setSource(currentPath)
@@ -563,8 +548,12 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Definir Setor',
         icon: 'users',
         variant: 'default',
-        // ADMIN and LOGISTIC can change sector
+        // ADMIN, LOGISTIC, and PRODUCTION_MANAGER can change sector
         canPerform: canChangeTaskSector,
+        visible: (_task: Task, user: any) => {
+          if (user?.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canChangeTaskSector(user)
+        },
         // Action is handled by TaskScheduleLayout - opens modal
       },
       {
@@ -573,6 +562,12 @@ export const tasksListConfig: ListConfig<Task> = {
         icon: 'currency-real',
         variant: 'default',
         canPerform: (user: any) => canViewQuote(user?.sector?.privileges || ''),
+        visible: (_task: Task, user: any) => {
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canViewQuote(privilege || '')
+        },
         onPress: (task, router, context) => {
           // Store navigation source for proper back navigation
           const currentPath = context?.route || '/(tabs)/producao/agenda'
@@ -605,10 +600,15 @@ export const tasksListConfig: ListConfig<Task> = {
         label: 'Cancelar Tarefa',
         icon: 'x',
         variant: 'destructive',
-        // ADMIN, LOGISTIC, FINANCIAL, COMMERCIAL can cancel tasks
+        // ADMIN, FINANCIAL, COMMERCIAL can cancel tasks (PM and LOGISTIC excluded from swipe)
         canPerform: canCancelTasks,
-        // Don't show for already cancelled tasks
-        visible: (task: Task) => task.status !== TASK_STATUS.CANCELLED,
+        visible: (task: Task, user: any) => {
+          if (task.status === TASK_STATUS.CANCELLED) return false
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.LOGISTIC) return false
+          return canCancelTasks(user)
+        },
         confirm: {
           title: 'Confirmar Cancelamento',
           message: (task) => `Deseja cancelar a tarefa "${task.name}"?`,

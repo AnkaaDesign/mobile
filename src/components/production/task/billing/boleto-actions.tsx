@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert, Linking } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
-import { useRegenerateBoleto, useCancelBoleto } from "@/hooks/useInvoice";
+import { useRegenerateBoleto, useCancelBoleto, useMarkBoletoPaid } from "@/hooks/useInvoice";
 import { getCurrentApiUrl } from "@/api-client";
 import {
   IconFileDownload,
@@ -11,8 +11,16 @@ import {
   IconQrcode,
   IconRefresh,
   IconX,
+  IconCurrencyReal,
 } from "@tabler/icons-react-native";
 import type { BankSlip } from "@/types/invoice";
+
+const PAYMENT_METHODS = [
+  { key: "PIX", label: "PIX" },
+  { key: "CASH", label: "Dinheiro" },
+  { key: "TRANSFER", label: "Transferência" },
+  { key: "OTHER", label: "Outro" },
+];
 
 interface BoletoActionsProps {
   installmentId: string;
@@ -23,12 +31,14 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
   const { colors } = useTheme();
   const regenerateBoleto = useRegenerateBoleto();
   const cancelBoleto = useCancelBoleto();
+  const markPaid = useMarkBoletoPaid();
 
   if (!bankSlip) return null;
 
   const isActive = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
   const canRegenerate = bankSlip.status === "ERROR" || bankSlip.status === "REJECTED";
   const canCancel = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
+  const canMarkPaid = bankSlip.status === "ACTIVE" || bankSlip.status === "OVERDUE";
 
   const handleViewPdf = async () => {
     try {
@@ -110,6 +120,33 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
     );
   };
 
+  const handleMarkPaid = () => {
+    // Show payment method selection
+    Alert.alert(
+      "Marcar como Pago",
+      "O boleto sera cancelado no banco e a parcela sera marcada como paga.\n\nSelecione o metodo de pagamento:",
+      [
+        ...PAYMENT_METHODS.map((method) => ({
+          text: method.label,
+          onPress: () => {
+            markPaid.mutate(
+              { installmentId, paymentMethod: method.key },
+              {
+                onSuccess: () => {
+                  Alert.alert("Sucesso", `Parcela marcada como paga via ${method.label}`);
+                },
+                onError: () => {
+                  Alert.alert("Erro", "Erro ao marcar parcela como paga");
+                },
+              },
+            );
+          },
+        })),
+        { text: "Cancelar", style: "cancel" },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       {(bankSlip.pdfFileId || bankSlip.digitableLine) && isActive && (
@@ -154,6 +191,21 @@ export function BoletoActions({ installmentId, bankSlip }: BoletoActionsProps) {
           activeOpacity={0.7}
         >
           <IconRefresh size={16} color={colors.foreground} />
+        </TouchableOpacity>
+      )}
+
+      {canMarkPaid && (
+        <TouchableOpacity
+          onPress={handleMarkPaid}
+          disabled={markPaid.isPending}
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.muted },
+            markPaid.isPending && styles.disabledButton,
+          ]}
+          activeOpacity={0.7}
+        >
+          <IconCurrencyReal size={16} color="#16a34a" />
         </TouchableOpacity>
       )}
 

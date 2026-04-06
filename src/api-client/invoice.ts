@@ -82,8 +82,8 @@ export class InvoiceService {
     return response.data;
   }
 
-  async regenerateBoleto(installmentId: string): Promise<any> {
-    const response = await apiClient.post(`${this.basePath}/${installmentId}/boleto/regenerate`);
+  async regenerateBoleto(installmentId: string, newDueDate?: string): Promise<any> {
+    const response = await apiClient.post(`${this.basePath}/${installmentId}/boleto/regenerate`, newDueDate ? { newDueDate } : {});
     return response.data;
   }
 
@@ -98,12 +98,22 @@ export class InvoiceService {
   }
 
   async cancelNfse(invoiceId: string, nfseDocumentId: string, data: { reason: string; reasonCode?: number }): Promise<any> {
-    const response = await apiClient.put(`${this.basePath}/${invoiceId}/nfse/${nfseDocumentId}/cancel`, data);
+    const response = await apiClient.put(`${this.basePath}/${invoiceId}/nfse/cancel`, { ...data, nfseDocumentId });
     return response.data;
   }
 
   async changeBankSlipDueDate(installmentId: string, newDueDate: string): Promise<any> {
     const response = await apiClient.put(`${this.basePath}/${installmentId}/boleto/due-date`, { newDueDate });
+    return response.data;
+  }
+
+  async markBoletoPaid(installmentId: string, data: { paymentMethod: string; receiptFileId?: string }): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${installmentId}/boleto/mark-paid`, data);
+    return response.data;
+  }
+
+  async updateInstallmentReceipt(installmentId: string, receiptFileId: string): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${installmentId}/receipt`, { receiptFileId });
     return response.data;
   }
 }
@@ -125,8 +135,10 @@ export const getInvoiceById = (id: string) => invoiceService.getById(id);
 export const getBoletoPdf = (installmentId: string) => invoiceService.getBoletoPdf(installmentId);
 export const getNfsePdf = (invoiceId: string) => invoiceService.getNfsePdf(invoiceId);
 export const cancelInvoice = (id: string, data?: any) => invoiceService.cancel(id, data);
-export const regenerateBoleto = (installmentId: string) => invoiceService.regenerateBoleto(installmentId);
+export const regenerateBoleto = (installmentId: string, newDueDate?: string) => invoiceService.regenerateBoleto(installmentId, newDueDate);
 export const cancelBoleto = (installmentId: string, data?: any) => invoiceService.cancelBoleto(installmentId, data);
 export const emitNfse = (invoiceId: string) => invoiceService.emitNfse(invoiceId);
 export const cancelNfse = (invoiceId: string, nfseDocumentId: string, data: { reason: string; reasonCode?: number }) => invoiceService.cancelNfse(invoiceId, nfseDocumentId, data);
 export const changeBankSlipDueDate = (installmentId: string, newDueDate: string) => invoiceService.changeBankSlipDueDate(installmentId, newDueDate);
+export const markBoletoPaid = (installmentId: string, data: { paymentMethod: string; receiptFileId?: string }) => invoiceService.markBoletoPaid(installmentId, data);
+export const updateInstallmentReceipt = (installmentId: string, receiptFileId: string) => invoiceService.updateInstallmentReceipt(installmentId, receiptFileId);

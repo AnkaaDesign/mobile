@@ -91,6 +91,8 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       ppeCA: apiData.ppeCA,
       ppeDeliveryMode: apiData.ppeDeliveryMode,
       ppeStandardQuantity: apiData.ppeStandardQuantity,
+      ppeSize: apiData.ppeSize,
+      monthlyConsumptionTrendPercent: apiData.monthlyConsumptionTrendPercent,
     };
   }, []);
 

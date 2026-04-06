@@ -126,13 +126,22 @@ export default function CheckinCheckoutScreen() {
     }
   }, [task, initialized])
 
-  const isCompleted = task?.status === TASK_STATUS.COMPLETED
+  const taskStatus = task?.status as string | undefined
+  const isWaitingProduction = taskStatus === TASK_STATUS.WAITING_PRODUCTION
+  const isInProduction = taskStatus === TASK_STATUS.IN_PRODUCTION
+  const isCompleted = taskStatus === TASK_STATUS.COMPLETED
 
   // Steps based on task status:
-  // Not completed → Check-in + Overview
-  // Completed → Check-out + Overview
+  // WAITING_PRODUCTION → Check-in + Overview (must add checkin before starting)
+  // IN_PRODUCTION → Check-out + Overview (must add checkout before finishing)
+  // COMPLETED → Read-only overview
   const steps: FormStep[] = useMemo(() => {
     if (isCompleted) {
+      return [
+        { id: 1, name: 'Resumo', description: 'Visão geral (somente leitura)' },
+      ]
+    }
+    if (isInProduction) {
       return [
         { id: 1, name: 'Check-out', description: 'Fotos de saída' },
         { id: 2, name: 'Resumo', description: 'Visão geral' },
@@ -142,7 +151,7 @@ export default function CheckinCheckoutScreen() {
       { id: 1, name: 'Check-in', description: 'Fotos de entrada' },
       { id: 2, name: 'Resumo', description: 'Visão geral' },
     ]
-  }, [isCompleted])
+  }, [isCompleted, isInProduction])
 
   const totalSteps = steps.length
 
@@ -236,7 +245,6 @@ export default function CheckinCheckoutScreen() {
           return {
             id: so.id,
             description: so.description,
-            status: so.status || 'PENDING',
             type: so.type,
             checkinFileIds: [...existingCheckinIds, ...uploadedCheckinIds.filter(Boolean)],
             checkoutFileIds: [...existingCheckoutIds, ...uploadedCheckoutIds.filter(Boolean)],
@@ -244,8 +252,23 @@ export default function CheckinCheckoutScreen() {
         })
       )
 
+      // Build update payload with service orders and optional status transition
+      const updateData: any = { serviceOrders }
+
+      // When saving checkin files from WAITING_PRODUCTION, also start the task
+      if (isWaitingProduction) {
+        updateData.status = TASK_STATUS.IN_PRODUCTION
+        updateData.startedAt = new Date().toISOString()
+      }
+
+      // When saving checkout files from IN_PRODUCTION, also finish the task
+      if (isInProduction) {
+        updateData.status = TASK_STATUS.COMPLETED
+        updateData.finishedAt = new Date().toISOString()
+      }
+
       // Always send as JSON - files are already uploaded with proper IDs
-      const result = await updateAsync({ id, data: { serviceOrders } })
+      const result = await updateAsync({ id, data: updateData })
 
       if (result.success) {
         handleNavigateBack()
@@ -311,8 +334,8 @@ export default function CheckinCheckoutScreen() {
   const isOverviewStep = currentStep === totalSteps
 
   // Determine what step 1 shows based on task status
-  const isCheckinStep = !isCompleted && currentStep === 1
-  const isCheckoutStep = isCompleted && currentStep === 1
+  const isCheckinStep = isWaitingProduction && currentStep === 1
+  const isCheckoutStep = isInProduction && currentStep === 1
 
   return (
     <ThemedView style={styles.container}>
@@ -333,8 +356,8 @@ export default function CheckinCheckoutScreen() {
         onCancel={handleNavigateBack}
         isSubmitting={isSaving}
         canProceed={true}
-        canSubmit={hasChanges}
-        submitLabel="Salvar"
+        canSubmit={hasChanges && !isCompleted}
+        submitLabel={isWaitingProduction ? 'Salvar e Iniciar' : isInProduction ? 'Salvar e Finalizar' : 'Salvar'}
         cancelLabel="Cancelar"
       >
         {/* Check-in step (only when task NOT completed) */}
@@ -489,7 +512,7 @@ export default function CheckinCheckoutScreen() {
                       )}
 
                       {/* Check-out summary */}
-                      {isCompleted && (
+                      {(isInProduction || isCompleted) && (
                         <>
                           <View style={styles.overviewRow}>
                             <ThemedText style={[styles.overviewLabel, { color: colors.mutedForeground }]}>Check-out:</ThemedText>
@@ -519,7 +542,7 @@ export default function CheckinCheckoutScreen() {
                     <ThemedText style={styles.overviewTotalLabel}>Total check-in:</ThemedText>
                     <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckin} foto(s)</ThemedText>
                   </View>
-                  {isCompleted && (
+                  {(isInProduction || isCompleted) && (
                     <View style={styles.overviewRow}>
                       <ThemedText style={styles.overviewTotalLabel}>Total check-out:</ThemedText>
                       <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckout} foto(s)</ThemedText>

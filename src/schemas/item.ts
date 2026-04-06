@@ -2112,6 +2112,10 @@ export const itemCreateSchemaBase = z.object({
 
   // PPE fields (when item is a PPE)
   ppeType: z.nativeEnum(PPE_TYPE).nullable().optional(),
+  ppeSize: z
+    .enum(Object.values(PPE_SIZE) as [string, ...string[]])
+    .nullable()
+    .optional(),
   ppeCA: z.string().nullable().optional(),
   ppeDeliveryMode: z.nativeEnum(PPE_DELIVERY_MODE).nullable().optional(),
   ppeStandardQuantity: z.number().int().positive().nullable().optional(),
@@ -2183,6 +2187,10 @@ export const itemUpdateSchemaBase = z.object({
 
   // PPE fields (when item is a PPE)
   ppeType: z.nativeEnum(PPE_TYPE).nullable().optional(),
+  ppeSize: z
+    .enum(Object.values(PPE_SIZE) as [string, ...string[]])
+    .nullable()
+    .optional(),
   ppeCA: z.string().nullable().optional(),
   ppeDeliveryMode: z.nativeEnum(PPE_DELIVERY_MODE).nullable().optional(),
   ppeStandardQuantity: z.number().int().positive().nullable().optional(),
@@ -2493,6 +2501,7 @@ export const mapItemToFormData = createMapToFormDataHelper<Item, ItemUpdateFormD
   })),
   // PPE fields
   ppeType: item.ppeType || undefined,
+  ppeSize: item.ppeSize || undefined,
   ppeCA: item.ppeCA || undefined,
   ppeDeliveryMode: item.ppeDeliveryMode || undefined,
   ppeStandardQuantity: item.ppeStandardQuantity || undefined,

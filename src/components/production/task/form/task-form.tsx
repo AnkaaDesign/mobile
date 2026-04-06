@@ -372,15 +372,15 @@ export function TaskForm({
         initialLogoPaints={task?.logoPaints}
       />
 
-      {/* Quote (navigation link to separate screen) */}
-      <Suspense fallback={<SectionPlaceholder title="Carregando..." />}>
-        {canViewQuote && (
+      {/* Quote (navigation link to separate screen) - only in edit mode */}
+      {mode === 'edit' && canViewQuote && (
+        <Suspense fallback={<SectionPlaceholder title="Carregando..." />}>
           <PricingSection
             isSubmitting={isSubmitting}
             taskId={task?.id}
           />
-        )}
-      </Suspense>
+        </Suspense>
+      )}
 
       {/* Truck Layout (Medidas do Caminhão) */}
       <Suspense fallback={<SectionPlaceholder title="Carregando medidas..." />}>

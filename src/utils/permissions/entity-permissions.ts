@@ -455,11 +455,10 @@ export function canLeaderManageTask(user: User | null, taskSectorId: string | nu
   // ADMIN can manage any task
   if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
 
-  // Team leaders can manage tasks in their LED sector OR tasks without a sector
+  // Team leaders can only manage tasks assigned to their LED sector
+  // Leaders cannot manage unassigned tasks — PM/COMMERCIAL/ADMIN must assign a sector first
   if (isTeamLeader(user)) {
-    // Task has no sector - leader can manage it (will assign to their led sector on start)
-    if (!taskSectorId) return true;
-    // Task sector matches leader's LED sector (not their own sector)
+    if (!taskSectorId) return false;
     return user.ledSector?.id === taskSectorId;
   }
 

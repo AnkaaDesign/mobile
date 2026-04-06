@@ -94,14 +94,12 @@ export const NAVIGATION_MENU: MenuItem[] = [
   },
 
   // CATALOGO - View-only for Designers, Team Leaders, Warehouse, Commercial, Logistic (NOT ADMIN - admin accesses via Pintura menu)
-  // sortOrder: 15 places it alphabetically between Barracões (10) and Cronograma (20) for PRODUCTION + TEAM_LEADER users
   {
     id: "catalogo",
     title: "Catalogo",
     icon: "palette",
     path: "/catalogo",
     requiredPrivilege: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.DESIGNER, TEAM_LEADER, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
-    sortOrder: 15,
     children: [{ id: "catalogo-detalhes", title: "Detalhes", icon: "eye", path: "/catalogo/detalhes/:id", isDynamic: true }],
   },
 
@@ -672,7 +670,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Financeiro",
     icon: "currency-dollar",
     path: "/financeiro",
-    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
+    requiredPrivilege: [SECTOR_PRIVILEGES.COMMERCIAL, SECTOR_PRIVILEGES.ADMIN],
     children: [
       {
         id: "faturamento",
@@ -789,9 +787,44 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Clientes",
     icon: "users",
     path: "/administracao/clientes",
-    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.COMMERCIAL],
+    requiredPrivilege: [SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER],
   },
 
+  // Faturamento - Direct access for FINANCIAL (matches web)
+  {
+    id: "faturamento-direct",
+    title: "Faturamento",
+    icon: "receipt",
+    path: "/financeiro/faturamento",
+    requiredPrivilege: SECTOR_PRIVILEGES.FINANCIAL,
+    children: [
+      { id: "faturamento-detalhes-direct", title: "Detalhes", icon: "eye", path: "/financeiro/faturamento/detalhes/:id", isDynamic: true },
+    ],
+  },
+
+  // Notas Fiscais - Direct access for FINANCIAL (matches web)
+  {
+    id: "notas-fiscais-direct",
+    title: "Notas Fiscais",
+    icon: "fileInvoice",
+    path: "/financeiro/notas-fiscais",
+    requiredPrivilege: SECTOR_PRIVILEGES.FINANCIAL,
+    children: [
+      { id: "notas-fiscais-detalhes-direct", title: "Detalhes", icon: "eye", path: "/financeiro/notas-fiscais/detalhes/:id", isDynamic: true },
+    ],
+  },
+
+  // Orçamentos - Direct access for FINANCIAL (matches web)
+  {
+    id: "orcamentos-direct",
+    title: "Orçamentos",
+    icon: "calculator",
+    path: "/financeiro/orcamento",
+    requiredPrivilege: SECTOR_PRIVILEGES.FINANCIAL,
+    children: [
+      { id: "orcamento-detalhes-direct", title: "Detalhes", icon: "eye", path: "/financeiro/orcamento/detalhes/:taskId", isDynamic: true },
+    ],
+  },
 
   // Cronograma - Direct access for DESIGNER, LOGISTIC, PRODUCTION_MANAGER, COMMERCIAL, PLOTTING
   {
@@ -808,7 +841,7 @@ export const NAVIGATION_MENU: MenuItem[] = [
     title: "Agenda",
     icon: "clipboard-list",
     path: "/producao/agenda",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.FINANCIAL, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.COMMERCIAL],
+    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.COMMERCIAL],
   },
 
   // Gerenciador de Arquivos - Direct access for COMMERCIAL (ADMIN accesses via Servidor)

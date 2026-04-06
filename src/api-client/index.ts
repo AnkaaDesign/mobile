@@ -133,3 +133,7 @@ export * from "./platform-utils";
 export * from "./responsible";
 export * from "./push-notifications";
 export * from "./invoice";
+export * from "./item-brand";
+export * from "./nfse";
+export * from "./select-patterns";
+export * from "./task-quote";

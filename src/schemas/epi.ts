@@ -69,6 +69,7 @@ export const ppeSizeOrderBySchema = z
         shirts: orderByDirectionSchema.optional(),
         boots: orderByDirectionSchema.optional(),
         pants: orderByDirectionSchema.optional(),
+        shorts: orderByDirectionSchema.optional(),
         sleeves: orderByDirectionSchema.optional(),
         mask: orderByDirectionSchema.optional(),
         gloves: orderByDirectionSchema.optional(),
@@ -94,6 +95,7 @@ export const ppeSizeOrderBySchema = z
           shirts: orderByDirectionSchema.optional(),
           boots: orderByDirectionSchema.optional(),
           pants: orderByDirectionSchema.optional(),
+          shorts: orderByDirectionSchema.optional(),
           sleeves: orderByDirectionSchema.optional(),
           mask: orderByDirectionSchema.optional(),
           userId: orderByDirectionSchema.optional(),
@@ -169,6 +171,22 @@ export const ppeSizeWhereSchema: z.ZodType<any> = z
       .optional(),
 
     pants: z
+      .union([
+        z.string().nullable(),
+        z.object({
+          equals: z.string().nullable().optional(),
+          not: z.string().nullable().optional(),
+          in: z.array(z.string()).optional(),
+          notIn: z.array(z.string()).optional(),
+          contains: z.string().optional(),
+          startsWith: z.string().optional(),
+          endsWith: z.string().optional(),
+          mode: z.enum(["default", "insensitive"]).optional(),
+        }),
+      ])
+      .optional(),
+
+    shorts: z
       .union([
         z.string().nullable(),
         z.object({
