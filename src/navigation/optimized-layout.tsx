@@ -265,7 +265,7 @@ export function OptimizedDrawerLayout() {
         headerLeft: () => (
           canGoBack() ? (
             <Pressable
-              onPress={goBack}
+              onPress={() => goBack()}
               style={({ pressed }) => [
                 styles.headerButton,
                 pressed && styles.headerButtonPressed

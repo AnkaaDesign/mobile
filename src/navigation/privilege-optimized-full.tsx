@@ -529,7 +529,7 @@ export function PrivilegeOptimizedFullLayout() {
             canGoBack() ? (
               <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
                 <Pressable
-                  onPress={goBack}
+                  onPress={() => goBack()}
                   style={({ pressed }) => [
                     styles.headerButton,
                     pressed && { backgroundColor: buttonPressed }
