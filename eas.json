@@ -29,8 +29,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.0.12:3030",
-        "EXPO_PUBLIC_FALLBACK_API_URL": "http://192.168.0.12:3030"
+        "EXPO_PUBLIC_API_URL": "http://192.168.0.18:3030",
+        "EXPO_PUBLIC_FALLBACK_API_URL": "http://192.168.0.18:3030"
       }
     },
     "production": {

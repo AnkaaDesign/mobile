@@ -53,14 +53,11 @@ const canAccessAdvancedMenu = (user: any) => {
 };
 
 const canViewLayout = (user: any) => {
-  // Layout: ADMIN, LOGISTIC, PRODUCTION_MANAGER, PRODUCTION, DESIGNER, or Team Leaders
+  // Layout: ADMIN, LOGISTIC, PRODUCTION_MANAGER only
   const privilege = user?.sector?.privileges;
   return privilege === SECTOR_PRIVILEGES.ADMIN ||
          privilege === SECTOR_PRIVILEGES.LOGISTIC ||
-         privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER ||
-         privilege === SECTOR_PRIVILEGES.PRODUCTION ||
-         privilege === SECTOR_PRIVILEGES.DESIGNER ||
-         isTeamLeader(user);
+         privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 };
 
 const TaskTableRowSwipeComponent = ({

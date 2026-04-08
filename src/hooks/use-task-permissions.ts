@@ -67,6 +67,7 @@ export function useTaskPermissions() {
   const canViewBaseFiles = !isWarehouse && !isFinancial;
   const canViewProjectFiles = !isWarehouse && !isFinancial;
   const canViewCheckinCheckout = isAdmin || isLogistic || isProductionManager;
+  const canViewDossie = isAdmin || isLogistic || isProductionManager || isCommercial;
   const canViewReimbursement = !isWarehouse && !isFinancial && !isLogistic && !isProductionManager;
   const canViewObservation = !isWarehouse && !isFinancial && !isDesigner && !isLogistic && !isProductionManager && !isCommercial;
   const canViewArtworkBadges = isAdmin || isCommercial || isFinancial || isLogistic || isProductionManager || isDesigner;
@@ -96,7 +97,7 @@ export function useTaskPermissions() {
     canViewDates, canViewServices, canViewLayout, canViewTruckSpot,
     canViewPaint, canViewLogoPaint, canViewCuts,
     canViewAirbrushing, canViewBaseFiles, canViewProjectFiles,
-    canViewCheckinCheckout, canViewReimbursement, canViewObservation,
+    canViewCheckinCheckout, canViewDossie, canViewReimbursement, canViewObservation,
     canViewArtworkBadges, canViewDocuments,
     canViewArtworks, canApproveArtworks, canViewTruckDetails,
     canEditIdentity, canEditSector, canEditCommission,

@@ -502,28 +502,20 @@ export function isLeader(user: User | null): boolean {
 
 /**
  * Can user edit truck layouts?
- * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can edit truck layouts
- * Team leaders can also edit layouts
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER can edit truck layouts
  */
 export function canEditLayouts(user: User | null): boolean {
   if (!user) return false;
-  // PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can always edit layouts
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.ADMIN])) return true;
-  // Team leaders can also edit layouts
-  return isTeamLeader(user);
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
 /**
  * Can user view truck layouts?
- * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can view truck layouts
- * Team leaders can also view layouts
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER can view truck layouts
  */
 export function canViewLayouts(user: User | null): boolean {
   if (!user) return false;
-  // PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can always view layouts
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER, SECTOR_PRIVILEGES.ADMIN])) return true;
-  // Team leaders can also view layouts
-  return isTeamLeader(user);
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
 /**
@@ -533,52 +525,25 @@ export function canViewLayouts(user: User | null): boolean {
  */
 export function canEditLayoutsOnly(user: User | null): boolean {
   if (!user) return false;
-  // PRODUCTION, DESIGNER, LOGISTIC, and PRODUCTION_MANAGER can edit layouts only
-  if (hasAnyPrivilege(user, [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.DESIGNER, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER])) return true;
-  // Team leaders can also edit layouts only
-  return isTeamLeader(user);
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
 /**
  * Can user edit layout for a specific task?
- * PRODUCTION, DESIGNER, LOGISTIC, PRODUCTION_MANAGER, and ADMIN can edit any task's layout
- * Team leaders can only edit layouts for tasks in their LED sector or tasks with null sector
- * Uses ledSector.id (the sector they lead), NOT their own sectorId
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER can edit any task's layout
  */
-export function canEditLayoutForTask(user: User | null, taskSectorId: string | null | undefined): boolean {
+export function canEditLayoutForTask(user: User | null, _taskSectorId: string | null | undefined): boolean {
   if (!user) return false;
-
-  // ADMIN can edit any task's layout
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.ADMIN) return true;
-
-  // PRODUCTION, DESIGNER, LOGISTIC, and PRODUCTION_MANAGER can edit any task's layout
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION) return true;
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.DESIGNER) return true;
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.LOGISTIC) return true;
-  if (user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return true;
-
-  // Team leaders need to check sector
-  if (!isTeamLeader(user)) return false;
-
-  // Task has no sector - team leader can edit
-  if (!taskSectorId) return true;
-
-  // Check if task is in user's LED sector (not their own sector)
-  // ledSector.id is the sector they supervise/lead
-  return user.ledSector?.id === taskSectorId;
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
 /**
  * Can user delete layouts?
- * API allows PRODUCTION, DESIGNER, and ADMIN to delete layouts
+ * ADMIN, LOGISTIC, PRODUCTION_MANAGER can delete layouts
  */
 export function canDeleteLayouts(user: User | null): boolean {
   if (!user) return false;
-  return hasAnyPrivilege(user, [
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.DESIGNER,
-    SECTOR_PRIVILEGES.ADMIN,
-  ]);
+  return hasAnyPrivilege(user, [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 }
 
 // =====================
