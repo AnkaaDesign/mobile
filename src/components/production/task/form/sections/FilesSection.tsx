@@ -12,10 +12,13 @@
  *   - Check-in/Check-out: visible to ADMIN, COMMERCIAL, FINANCIAL, LOGISTIC; editable by ADMIN, LOGISTIC
  */
 
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, Image, ScrollView } from 'react-native';
+import React, { useState, useCallback, useRef } from 'react';
+import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { IconCamera, IconX } from '@tabler/icons-react-native';
 import { FormCard } from '@/components/ui/form-section';
 import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker';
+import { FullCamera } from '@/components/ui/full-camera';
+import { ImagePreviewModal } from '@/components/ui/image-preview-modal';
 import { FileSuggestions } from '@/components/ui/file-suggestions';
 import { ArtworkFileUploadField, type ArtworkFileItem } from '../artwork-file-upload-field';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -23,7 +26,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFormContext } from 'react-hook-form';
 import { SECTOR_PRIVILEGES, TASK_STATUS } from '@/constants';
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums';
-import { spacing, fontSize } from '@/constants/design-system';
+import { spacing, fontSize, borderRadius } from '@/constants/design-system';
 import { useTheme } from '@/lib/theme';
 import type { File as AnkaaFile } from '@/types';
 import { getApiBaseUrl } from '@/utils/file';
@@ -106,6 +109,104 @@ export default function FilesSection({
     return map;
   });
 
+  // Camera state for checkin/checkout
+  const [cameraTarget, setCameraTarget] = useState<{
+    serviceOrderId: string;
+    phase: 'checkin' | 'checkout';
+  } | null>(null);
+  const sessionPhotoCount = useRef(0);
+
+  const handleOpenCamera = useCallback((serviceOrderId: string, phase: 'checkin' | 'checkout') => {
+    sessionPhotoCount.current = 0;
+    setCameraTarget({ serviceOrderId, phase });
+  }, []);
+
+  const handleCameraCapture = useCallback(
+    (uri: string) => {
+      if (!cameraTarget) return;
+      const newFile: FilePickerItem = {
+        uri,
+        name: `${cameraTarget.phase}_${Date.now()}.jpg`,
+        type: 'image/jpeg',
+        mimeType: 'image/jpeg',
+      };
+      if (cameraTarget.phase === 'checkin') {
+        setCheckinFilesByServiceOrder((prev) => {
+          const updated = { ...prev, [cameraTarget.serviceOrderId]: [...(prev[cameraTarget.serviceOrderId] || []), newFile] };
+          setValue(`_checkinFilesByServiceOrder.${cameraTarget.serviceOrderId}`, updated[cameraTarget.serviceOrderId], { shouldDirty: true });
+          return updated;
+        });
+      } else {
+        setCheckoutFilesByServiceOrder((prev) => {
+          const updated = { ...prev, [cameraTarget.serviceOrderId]: [...(prev[cameraTarget.serviceOrderId] || []), newFile] };
+          setValue(`_checkoutFilesByServiceOrder.${cameraTarget.serviceOrderId}`, updated[cameraTarget.serviceOrderId], { shouldDirty: true });
+          return updated;
+        });
+      }
+      sessionPhotoCount.current += 1;
+    },
+    [cameraTarget, setValue]
+  );
+
+  // Concluído — keep photos
+  const handleCameraClose = useCallback(() => {
+    setCameraTarget(null);
+  }, []);
+
+  // X button — discard photos taken in this session
+  const handleCameraDiscard = useCallback(() => {
+    if (cameraTarget && sessionPhotoCount.current > 0) {
+      const count = sessionPhotoCount.current;
+      if (cameraTarget.phase === 'checkin') {
+        setCheckinFilesByServiceOrder((prev) => {
+          const updated = { ...prev, [cameraTarget.serviceOrderId]: (prev[cameraTarget.serviceOrderId] || []).slice(0, -count) };
+          setValue(`_checkinFilesByServiceOrder.${cameraTarget.serviceOrderId}`, updated[cameraTarget.serviceOrderId], { shouldDirty: true });
+          return updated;
+        });
+      } else {
+        setCheckoutFilesByServiceOrder((prev) => {
+          const updated = { ...prev, [cameraTarget.serviceOrderId]: (prev[cameraTarget.serviceOrderId] || []).slice(0, -count) };
+          setValue(`_checkoutFilesByServiceOrder.${cameraTarget.serviceOrderId}`, updated[cameraTarget.serviceOrderId], { shouldDirty: true });
+          return updated;
+        });
+      }
+    }
+    setCameraTarget(null);
+  }, [cameraTarget, setValue]);
+
+  // Image preview state
+  const [previewImages, setPreviewImages] = useState<{ uri: string }[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewVisible, setPreviewVisible] = useState(false);
+
+  const handlePreviewImage = useCallback((images: { uri: string }[], index: number) => {
+    setPreviewImages(images);
+    setPreviewIndex(index);
+    setPreviewVisible(true);
+  }, []);
+
+  const handleRemoveCheckinFile = useCallback(
+    (serviceOrderId: string, index: number) => {
+      setCheckinFilesByServiceOrder((prev) => {
+        const updated = { ...prev, [serviceOrderId]: (prev[serviceOrderId] || []).filter((_, i) => i !== index) };
+        setValue(`_checkinFilesByServiceOrder.${serviceOrderId}`, updated[serviceOrderId], { shouldDirty: true });
+        return updated;
+      });
+    },
+    [setValue]
+  );
+
+  const handleRemoveCheckoutFile = useCallback(
+    (serviceOrderId: string, index: number) => {
+      setCheckoutFilesByServiceOrder((prev) => {
+        const updated = { ...prev, [serviceOrderId]: (prev[serviceOrderId] || []).filter((_, i) => i !== index) };
+        setValue(`_checkoutFilesByServiceOrder.${serviceOrderId}`, updated[serviceOrderId], { shouldDirty: true });
+        return updated;
+      });
+    },
+    [setValue]
+  );
+
   // Check user sector privileges
   const userPrivilege = user?.sector?.privileges;
   const isAdmin = userPrivilege === SECTOR_PRIVILEGES.ADMIN;
@@ -153,21 +254,6 @@ export default function FilesSection({
     setProjectFiles(files);
     setValue('projectFileIds', extractFileIds(files), { shouldDirty: true });
     setValue('_projectFiles', files);
-  }, [setValue]);
-
-  const handleCheckinFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
-    setCheckinFilesByServiceOrder(prev => ({ ...prev, [serviceOrderId]: files }));
-    // Store per-SO checkin files for submission
-    setValue(`_checkinFilesByServiceOrder.${serviceOrderId}`, files, { shouldDirty: true });
-    // Also store raw files for new file upload
-    setValue('_checkinFiles', files.filter((f: any) => !f.id && !f.fileId && f.uri));
-  }, [setValue]);
-
-  const handleCheckoutFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
-    setCheckoutFilesByServiceOrder(prev => ({ ...prev, [serviceOrderId]: files }));
-    // Store per-SO checkout files for submission
-    setValue(`_checkoutFilesByServiceOrder.${serviceOrderId}`, files, { shouldDirty: true });
-    setValue('_checkoutFiles', files.filter((f: any) => !f.id && !f.fileId && f.uri));
   }, [setValue]);
 
   const getThumbnailUri = (file: FilePickerItem) => {
@@ -290,20 +376,51 @@ export default function FilesSection({
               <View key={`checkin-${so.id}`} style={styles.serviceOrderGroup}>
                 <View style={styles.serviceOrderHeader}>
                   <ThemedText style={styles.serviceOrderLabel}>{so.description}</ThemedText>
-                  <ThemedText style={styles.fileCount}>{soFiles.filter((f: any) => f.uploaded || f.id).length} foto(s)</ThemedText>
+                  <ThemedText style={styles.fileCount}>{soFiles.length} foto(s)</ThemedText>
                 </View>
-                <FilePicker
-                  value={soFiles}
-                  onChange={(files) => handleCheckinFilesChange(so.id, files)}
-                  maxFiles={20}
-                  placeholder="Adicionar fotos de check-in"
-                  showCamera={true}
-                  showVideoCamera={false}
-                  showGallery={true}
-                  showFilePicker={false}
-                  disabled={isSubmitting || !canEditCheckinCheckout}
-                  previewSize={56}
-                />
+                {/* Thumbnails */}
+                {soFiles.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
+                    {soFiles.map((file, index) => (
+                      <View key={file.id || file.uri || `ci-${index}`} style={styles.thumbnailWrapper}>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() => handlePreviewImage(
+                            soFiles.map((f) => ({ uri: f.uploaded && f.thumbnailUrl ? getThumbnailUri(f) : f.uri })),
+                            index
+                          )}
+                        >
+                          <Image
+                            source={{ uri: file.uploaded && file.thumbnailUrl ? getThumbnailUri(file) : file.uri }}
+                            style={[styles.thumbnailImage, { borderColor: colors.border }]}
+                          />
+                        </TouchableOpacity>
+                        {!isSubmitting && canEditCheckinCheckout && (
+                          <TouchableOpacity
+                            onPress={() => handleRemoveCheckinFile(so.id, index)}
+                            style={[styles.thumbnailRemove, { backgroundColor: colors.destructive }]}
+                          >
+                            <IconX size={10} color="#fff" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+                {/* Open camera button */}
+                {canEditCheckinCheckout && (
+                  <TouchableOpacity
+                    onPress={() => handleOpenCamera(so.id, 'checkin')}
+                    disabled={isSubmitting}
+                    style={[styles.cameraButton, { borderColor: colors.border, backgroundColor: colors.muted, opacity: isSubmitting ? 0.5 : 1 }]}
+                    activeOpacity={0.7}
+                  >
+                    <IconCamera size={20} color={colors.foreground} />
+                    <ThemedText style={[styles.cameraButtonText, { color: colors.foreground }]}>
+                      Tirar foto
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
@@ -316,56 +433,91 @@ export default function FilesSection({
           {activeServiceOrders.map((so: any) => {
             const soCheckinFiles = checkinFilesByServiceOrder[so.id] || [];
             const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || [];
-            const checkinCount = soCheckinFiles.filter((f: any) => f.uploaded || f.id).length;
-            const checkoutCount = soCheckoutFiles.filter((f: any) => f.uploaded || f.id).length;
-            const needsMore = checkinCount > 0 && checkoutCount < checkinCount;
             return (
               <View key={`checkout-${so.id}`} style={styles.serviceOrderGroup}>
                 <View style={styles.serviceOrderHeader}>
                   <ThemedText style={styles.serviceOrderLabel}>{so.description}</ThemedText>
-                  {needsMore && (
-                    <ThemedText style={[styles.fileCount, { color: '#d97706' }]}>
-                      falta {checkinCount - checkoutCount}
-                    </ThemedText>
-                  )}
+                  <ThemedText style={styles.fileCount}>{soCheckoutFiles.length} foto(s)</ThemedText>
                 </View>
-                {/* Checkin reference images - small horizontal row */}
+                {/* Checkin reference images */}
                 {soCheckinFiles.length > 0 && (
-                  <View style={styles.referenceRow}>
-                    <ThemedText style={styles.referenceLabel}>Ref:</ThemedText>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceScroll}>
-                      {soCheckinFiles.map((file) => {
-                        const src = getThumbnailUri(file);
-                        return (
-                          <View key={file.id || file.uri} style={[styles.referenceThumbnail, { borderColor: colors.border }]}>
-                            {src ? (
-                              <Image source={{ uri: src }} style={styles.referenceImage} />
-                            ) : (
-                              <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />
-                            )}
-                          </View>
-                        );
-                      })}
-                    </ScrollView>
-                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceScroll}>
+                    {soCheckinFiles.map((file) => {
+                      const src = getThumbnailUri(file);
+                      return (
+                        <View key={file.id || file.uri} style={[styles.referenceThumbnail, { borderColor: colors.border }]}>
+                          {src ? (
+                            <Image source={{ uri: src }} style={styles.referenceImage} />
+                          ) : (
+                            <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />
+                          )}
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
                 )}
-                <FilePicker
-                  value={soCheckoutFiles}
-                  onChange={(files) => handleCheckoutFilesChange(so.id, files)}
-                  maxFiles={20}
-                  placeholder="Adicionar fotos de check-out"
-                  showCamera={true}
-                  showVideoCamera={false}
-                  showGallery={true}
-                  showFilePicker={false}
-                  disabled={isSubmitting || !canEditCheckinCheckout}
-                  previewSize={56}
-                />
+                {/* Checkout thumbnails */}
+                {soCheckoutFiles.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
+                    {soCheckoutFiles.map((file, index) => (
+                      <View key={file.id || file.uri || `co-${index}`} style={styles.thumbnailWrapper}>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() => handlePreviewImage(
+                            soCheckoutFiles.map((f) => ({ uri: f.uploaded && f.thumbnailUrl ? getThumbnailUri(f) : f.uri })),
+                            index
+                          )}
+                        >
+                          <Image
+                            source={{ uri: file.uploaded && file.thumbnailUrl ? getThumbnailUri(file) : file.uri }}
+                            style={[styles.thumbnailImage, { borderColor: colors.border }]}
+                          />
+                        </TouchableOpacity>
+                        {!isSubmitting && canEditCheckinCheckout && (
+                          <TouchableOpacity
+                            onPress={() => handleRemoveCheckoutFile(so.id, index)}
+                            style={[styles.thumbnailRemove, { backgroundColor: colors.destructive }]}
+                          >
+                            <IconX size={10} color="#fff" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+                {/* Open camera button */}
+                {canEditCheckinCheckout && (
+                  <TouchableOpacity
+                    onPress={() => handleOpenCamera(so.id, 'checkout')}
+                    disabled={isSubmitting}
+                    style={[styles.cameraButton, { borderColor: colors.border, backgroundColor: colors.muted, opacity: isSubmitting ? 0.5 : 1 }]}
+                    activeOpacity={0.7}
+                  >
+                    <IconCamera size={20} color={colors.foreground} />
+                    <ThemedText style={[styles.cameraButtonText, { color: colors.foreground }]}>
+                      Tirar foto
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
         </FormCard>
       )}
+
+      <FullCamera
+        visible={!!cameraTarget}
+        onCapture={handleCameraCapture}
+        onClose={handleCameraClose}
+        onDiscard={handleCameraDiscard}
+      />
+
+      <ImagePreviewModal
+        visible={previewVisible}
+        images={previewImages}
+        initialIndex={previewIndex}
+        onClose={() => setPreviewVisible(false)}
+      />
     </>
   );
 }
@@ -388,18 +540,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     opacity: 0.6,
   },
-  referenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-    gap: spacing.xs,
-  },
-  referenceLabel: {
-    fontSize: 10,
-    opacity: 0.5,
-  },
   referenceScroll: {
     flexDirection: 'row',
+    marginBottom: spacing.sm,
   },
   referenceThumbnail: {
     width: 40,
@@ -418,5 +561,45 @@ const styles = StyleSheet.create({
   referencePlaceholder: {
     width: '100%',
     height: '100%',
+  },
+  cameraButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
+  cameraButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  thumbnailScroll: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+    marginRight: spacing.xs,
+    padding: 4,
+  },
+  thumbnailImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  thumbnailRemove: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -240,6 +240,7 @@ export function BudgetCreateWizard() {
         paymentCondition: null,
         customPaymentText: null,
         generateInvoice: true,
+        orderNumber: null,
         responsibleId: null,
         customerData: {
           corporateName: customerData?.corporateName || "",
@@ -520,6 +521,7 @@ export function BudgetCreateWizard() {
             customPaymentText: c.customPaymentText || null,
             generateInvoice: c.generateInvoice ?? true,
             responsibleId: c.responsibleId || null,
+            orderNumber: c.orderNumber || null,
           })),
           services: servicesValid.map((s: any) => ({
             description: s.description,
@@ -593,6 +595,7 @@ export function BudgetCreateWizard() {
                   paymentCondition: null,
                   customPaymentText: null,
                   generateInvoice: true,
+                  orderNumber: null,
                   responsibleId: null,
                 };
               });
@@ -879,6 +882,19 @@ export function BudgetCreateWizard() {
                 }}
               />
               <Label>Gerar Fatura</Label>
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Label>N° do Pedido</Label>
+              <Input
+                placeholder="Ex: PED-001"
+                value={config.orderNumber || ""}
+                onChangeText={(t) => {
+                  const configs = [...(getValues("customerConfigs") || [])];
+                  configs[configIndex] = { ...configs[configIndex], orderNumber: t || null };
+                  setValue("customerConfigs", configs, { shouldDirty: true });
+                }}
+              />
             </View>
 
             <Combobox

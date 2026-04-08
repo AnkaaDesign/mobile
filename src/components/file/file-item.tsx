@@ -28,39 +28,26 @@ export interface FileItemProps {
 const getThumbnailUrl = (file: AnkaaFile, size: "small" | "medium" | "large" = "medium", baseUrl?: string): string => {
   const apiUrl = baseUrl || getCurrentApiUrl();
 
-  console.log('🔍 [getThumbnailUrl] Called with:', {
-    filename: file.filename,
-    baseUrl,
-    apiUrl,
-    fileThumbnailUrl: file.thumbnailUrl
-  });
-
-  // If file has thumbnailUrl property
+  // If file has a stored thumbnailUrl, use it
   if (file.thumbnailUrl) {
-    // If already a complete URL, rewrite CDN URLs when on LAN
+    // Complete URL — rewrite CDN URLs when on LAN
     if (file.thumbnailUrl.startsWith("http://") || file.thumbnailUrl.startsWith("https://")) {
-      const rewrittenUrl = rewriteCdnUrl(file.thumbnailUrl);
-      console.log('🔍 [FileItem] Rewritten thumbnailUrl:', {
-        original: file.thumbnailUrl,
-        rewritten: rewrittenUrl,
-        size: size
-      });
-      return rewrittenUrl;
+      return rewriteCdnUrl(file.thumbnailUrl);
     }
-    // Otherwise construct URL - NOTE: No /api prefix!
-    const url = `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
-    console.log('🔍 [FileItem] Constructed thumbnail URL:', { filename: file.filename, url });
-    return url;
+    // Relative path starting with /api — prefix with base URL
+    if (file.thumbnailUrl.startsWith("/api")) {
+      return `${apiUrl}${file.thumbnailUrl.replace(/^\/api/, "")}`;
+    }
+    // Otherwise use the thumbnail endpoint
+    return `${apiUrl}/files/thumbnail/${file.id}?size=${size}`;
   }
 
-  // For images without thumbnails, use the serve endpoint
+  // For images without a stored thumbnail, use the serve endpoint directly
+  // (avoids a guaranteed 404 on /files/thumbnail when no thumbnail has been generated)
   if (isImageFile(file)) {
-    const url = `${apiUrl}/files/serve/${file.id}`;
-    console.log('🔍 [FileItem] Using serve URL for image:', { filename: file.filename, url });
-    return url;
+    return `${apiUrl}/files/serve/${file.id}`;
   }
 
-  console.log('⚠️ [FileItem] No thumbnail URL for file:', { filename: file.filename, mimetype: file.mimetype });
   return "";
 };
 
@@ -122,9 +109,7 @@ const FileItemGrid: React.FC<FileItemProps> = ({
               style={styles.thumbnailImage}
               onLoad={handleThumbnailLoad}
               onError={handleThumbnailError}
-              onLoadStart={() => {
-                console.log('🔄 [FileItemGrid] Thumbnail load started:', file.filename);
-              }}
+              onLoadStart={() => {}}
               resizeMode="cover"
             />
             {thumbnailLoading && (
@@ -222,9 +207,7 @@ const FileItemList: React.FC<FileItemProps> = ({
               style={styles.listThumbnailImage}
               onLoad={handleThumbnailLoad}
               onError={handleThumbnailError}
-              onLoadStart={() => {
-                console.log('🔄 [FileItemList] Thumbnail load started:', file.filename);
-              }}
+              onLoadStart={() => {}}
               resizeMode="cover"
             />
             {thumbnailLoading && (

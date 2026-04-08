@@ -113,6 +113,7 @@ export const taskQuoteCustomerConfigSchema = z.object({
   responsibleId: z.string().uuid().optional().nullable(),
   customerSignatureId: z.string().uuid().optional().nullable(),
   generateInvoice: z.boolean().optional().default(true),
+  orderNumber: z.string().max(100).optional().nullable(),
   installments: z.array(z.object({
     id: z.string().uuid().optional(),
     number: z.number().int(),

@@ -136,7 +136,7 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
             <IconExternalLink size={14} color={quote.id ? colors.foreground : colors.mutedForeground} />
             <ThemedText style={[styles.headerButtonText, { color: quote.id ? colors.foreground : colors.mutedForeground }]}>Ver</ThemedText>
           </Button>
-          <Badge variant={statusConfig.variant} size="lg">
+          <Badge variant={statusConfig.variant} size="sm" style={styles.statusBadge}>
             {statusConfig.label}
           </Badge>
         </View>
@@ -272,6 +272,16 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
           </View>
         ) : null}
 
+        {/* Order Number */}
+        {activeConfig?.orderNumber ? (
+          <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
+            <View style={styles.summaryRow}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>N° do Pedido</ThemedText>
+              <ThemedText style={styles.summaryValue}>{activeConfig.orderNumber}</ThemedText>
+            </View>
+          </View>
+        ) : null}
+
         {/* Guarantee */}
         {guaranteeText ? (
           <View style={[styles.infoSection, { backgroundColor: colors.muted + "30" }]}>
@@ -325,14 +335,19 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    flexWrap: "wrap",
+    gap: spacing.xs,
+    flexShrink: 1,
+  },
+  statusBadge: {
+    height: 33,
+    alignSelf: "stretch",
+    justifyContent: "center",
   },
   headerButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     minWidth: 0,
   },
   headerButtonText: {
@@ -340,8 +355,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
   },
   content: {
-    padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   infoRow: {
     flexDirection: "row",
@@ -369,8 +383,8 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: "row",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
   tableHeaderText: {
     fontSize: fontSize.sm,
@@ -387,8 +401,8 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   tableRowLast: {
@@ -432,8 +446,8 @@ const styles = StyleSheet.create({
   summaryContainer: {
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
+    padding: spacing.sm,
+    gap: spacing.sm,
   },
   summaryRow: {
     flexDirection: "row",

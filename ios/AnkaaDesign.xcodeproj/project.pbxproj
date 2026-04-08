@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		060EF0F60DA3756FE7D817A4 /* libPods-AnkaaDesign.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F4B38C2CBF19B64669C2DBDA /* libPods-AnkaaDesign.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		585A03A2EC59D44E7A3D0462 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CF89F3012CEFCF36C28B8C6 /* ExpoModulesProvider.swift */; };
-		6EA8D019DF318CCAF3F9DB6E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AC9A821306B1018B38767E7A /* PrivacyInfo.xcprivacy */; };
-		B117FA231EF9DE04200CF85A /* libPods-AnkaaDesign.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C2539128DFE876E1030E482 /* libPods-AnkaaDesign.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		CA5ABD6D00FF53F443EFDCC7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0058F9E69DA3FEF08E46F662 /* PrivacyInfo.xcprivacy */; };
+		CE50C630EEC2382750C84512 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0FFC1F7F0C0A27FF15CB02 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0CF89F3012CEFCF36C28B8C6 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-AnkaaDesign/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		0058F9E69DA3FEF08E46F662 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = AnkaaDesign/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* AnkaaDesign.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnkaaDesign.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = AnkaaDesign/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = AnkaaDesign/Info.plist; sourceTree = "<group>"; };
-		2C2539128DFE876E1030E482 /* libPods-AnkaaDesign.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AnkaaDesign.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A7AA5E8DA94F0EEA39CA40A4 /* Pods-AnkaaDesign.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AnkaaDesign.debug.xcconfig"; path = "Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign.debug.xcconfig"; sourceTree = "<group>"; };
+		6C0FFC1F7F0C0A27FF15CB02 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-AnkaaDesign/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		995D084592BABF68BE1E13F9 /* Pods-AnkaaDesign.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AnkaaDesign.debug.xcconfig"; path = "Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = AnkaaDesign/SplashScreen.storyboard; sourceTree = "<group>"; };
-		AC9A821306B1018B38767E7A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = AnkaaDesign/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		AD2BA88C12AC53EA31FB79C2 /* Pods-AnkaaDesign.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AnkaaDesign.release.xcconfig"; path = "Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C0F5405E730ACF38BA0688F5 /* Pods-AnkaaDesign.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AnkaaDesign.release.xcconfig"; path = "Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = AnkaaDesign/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* AnkaaDesign-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "AnkaaDesign-Bridging-Header.h"; path = "AnkaaDesign/AnkaaDesign-Bridging-Header.h"; sourceTree = "<group>"; };
+		F4B38C2CBF19B64669C2DBDA /* libPods-AnkaaDesign.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AnkaaDesign.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,19 +37,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B117FA231EF9DE04200CF85A /* libPods-AnkaaDesign.a in Frameworks */,
+				060EF0F60DA3756FE7D817A4 /* libPods-AnkaaDesign.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1290193B7EA25EC640779892 /* AnkaaDesign */ = {
+		03DD3F031E10704585F2A284 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				0CF89F3012CEFCF36C28B8C6 /* ExpoModulesProvider.swift */,
+				995D084592BABF68BE1E13F9 /* Pods-AnkaaDesign.debug.xcconfig */,
+				C0F5405E730ACF38BA0688F5 /* Pods-AnkaaDesign.release.xcconfig */,
 			);
-			name = AnkaaDesign;
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		13B07FAE1A68108700A75B9A /* AnkaaDesign */ = {
@@ -61,7 +63,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				AC9A821306B1018B38767E7A /* PrivacyInfo.xcprivacy */,
+				0058F9E69DA3FEF08E46F662 /* PrivacyInfo.xcprivacy */,
 			);
 			name = AnkaaDesign;
 			sourceTree = "<group>";
@@ -70,27 +72,9 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				2C2539128DFE876E1030E482 /* libPods-AnkaaDesign.a */,
+				F4B38C2CBF19B64669C2DBDA /* libPods-AnkaaDesign.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		3BA350CD5CB146F801DF2316 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				A7AA5E8DA94F0EEA39CA40A4 /* Pods-AnkaaDesign.debug.xcconfig */,
-				AD2BA88C12AC53EA31FB79C2 /* Pods-AnkaaDesign.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		4C1406AA6A2EE23E04E14CA5 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				1290193B7EA25EC640779892 /* AnkaaDesign */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -107,8 +91,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				3BA350CD5CB146F801DF2316 /* Pods */,
-				4C1406AA6A2EE23E04E14CA5 /* ExpoModulesProviders */,
+				03DD3F031E10704585F2A284 /* Pods */,
+				8676DE4DAAE8D5A7964EFCDD /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -121,6 +105,22 @@
 				13B07F961A680F5B00A75B9A /* AnkaaDesign.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8676DE4DAAE8D5A7964EFCDD /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				A620CDB3B7A1878A5AAEBC80 /* AnkaaDesign */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
+		A620CDB3B7A1878A5AAEBC80 /* AnkaaDesign */ = {
+			isa = PBXGroup;
+			children = (
+				6C0FFC1F7F0C0A27FF15CB02 /* ExpoModulesProvider.swift */,
+			);
+			name = AnkaaDesign;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "AnkaaDesign" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				92AFAD472A7B1398D9D28C79 /* [Expo] Configure project */,
+				C0E39B3C39DC1B8AACE05E9C /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				6C54F69BC49DB09BC86D2C50 /* [CP] Embed Pods Frameworks */,
+				056D36481A9741190CA550E9 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -166,9 +166,7 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = VDN4DBVKPJ;
 						LastSwiftMigration = 1250;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -198,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				6EA8D019DF318CCAF3F9DB6E /* PrivacyInfo.xcprivacy in Resources */,
+				CA5ABD6D00FF53F443EFDCC7 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -222,6 +220,28 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
+		056D36481A9741190CA550E9 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -242,28 +262,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		6C54F69BC49DB09BC86D2C50 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
@@ -316,7 +314,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AnkaaDesign/Pods-AnkaaDesign-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		92AFAD472A7B1398D9D28C79 /* [Expo] Configure project */ = {
+		C0E39B3C39DC1B8AACE05E9C /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -348,7 +346,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				585A03A2EC59D44E7A3D0462 /* ExpoModulesProvider.swift in Sources */,
+				CE50C630EEC2382750C84512 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,12 +355,11 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A7AA5E8DA94F0EEA39CA40A4 /* Pods-AnkaaDesign.debug.xcconfig */;
+			baseConfigurationReference = 995D084592BABF68BE1E13F9 /* Pods-AnkaaDesign.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AnkaaDesign/AnkaaDesign.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VDN4DBVKPJ;
@@ -377,7 +374,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -385,7 +382,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ankaadesign.management;
-				PRODUCT_NAME = AnkaaDesign;
+				PRODUCT_NAME = "AnkaaDesign";
 				SWIFT_OBJC_BRIDGING_HEADER = "AnkaaDesign/AnkaaDesign-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -396,12 +393,11 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AD2BA88C12AC53EA31FB79C2 /* Pods-AnkaaDesign.release.xcconfig */;
+			baseConfigurationReference = C0F5405E730ACF38BA0688F5 /* Pods-AnkaaDesign.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AnkaaDesign/AnkaaDesign.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VDN4DBVKPJ;
@@ -411,7 +407,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -419,7 +415,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ankaadesign.management;
-				PRODUCT_NAME = AnkaaDesign;
+				PRODUCT_NAME = "AnkaaDesign";
 				SWIFT_OBJC_BRIDGING_HEADER = "AnkaaDesign/AnkaaDesign-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -482,7 +478,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/.pnpm/react-native@0.81.5_patch_hash=vmvowqk2ct3u2m7d7nyeqz3mlq_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
@@ -537,7 +533,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/.pnpm/react-native@0.81.5_patch_hash=vmvowqk2ct3u2m7d7nyeqz3mlq_@babel+core@7.28.5_@types+react@19.1.17_react@19.1.0/node_modules/react-native";
+				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 				USE_HERMES = true;

@@ -52,9 +52,7 @@ import {
   IconFolderCheck,
   IconCamera,
   IconPhotoCheck,
-  IconShare,
 } from "@tabler/icons-react-native";
-import { exportDossie } from "@/utils/dossie-export";
 
 export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -776,28 +774,9 @@ export default function ScheduleDetailsScreen() {
                   <View style={styles.sectionHeaderLeft}>
                     <IconFolderCheck size={20} color={colors.mutedForeground} />
                     <ThemedText style={styles.sectionTitle}>Dossiê</ThemedText>
-                    <Badge variant="secondary">
-                      {totalDossieFiles} {totalDossieFiles === 1 ? 'foto' : 'fotos'}
+                    <Badge variant="secondary" size="sm">
+                      {`${totalDossieFiles} ${totalDossieFiles === 1 ? 'foto' : 'fotos'}`}
                     </Badge>
-                    {canViewCheckinCheckout && (
-                      <TouchableOpacity
-                        onPress={() => router.push(`/(tabs)/producao/cronograma/checkin-checkout/${task.id}` as any)}
-                        style={{ paddingVertical: 2, paddingHorizontal: spacing.sm }}
-                      >
-                        <ThemedText style={{ fontSize: fontSize.xs, color: '#3b82f6', fontWeight: '500' }}>
-                          {task.status === TASK_STATUS.COMPLETED ? 'Adicionar Check-out' : 'Adicionar Check-in'}
-                        </ThemedText>
-                      </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                      onPress={() => exportDossie(task)}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: spacing.sm }}
-                    >
-                      <IconShare size={14} color="#0a5c1e" />
-                      <ThemedText style={{ fontSize: fontSize.xs, color: '#0a5c1e', fontWeight: '500' }}>
-                        Exportar
-                      </ThemedText>
-                    </TouchableOpacity>
                   </View>
                 </View>
                 <View style={styles.sectionContent}>
@@ -877,6 +856,7 @@ export default function ScheduleDetailsScreen() {
               </Card>
             );
           })()}
+
 
           {/* Documents Section - Only for Admin and Financial, hidden when no documents */}
           {canViewDocuments && (

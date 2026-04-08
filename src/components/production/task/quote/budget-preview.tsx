@@ -35,6 +35,7 @@ interface CustomerConfig {
   customPaymentText?: string | null;
   responsibleId?: string | null;
   generateInvoice?: boolean;
+  orderNumber?: string | null;
 }
 
 interface BudgetPreviewProps {
@@ -361,6 +362,13 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
                     <ThemedText style={[styles.bodyText, { opacity: 0.6 }]}>{configPaymentText}</ThemedText>
                   </View>
                 ) : null}
+
+                {config.orderNumber ? (
+                  <View style={[styles.configRow, { marginTop: spacing.xs }]}>
+                    <ThemedText style={[styles.bodyText, { opacity: 0.6 }]}>N° do Pedido</ThemedText>
+                    <ThemedText style={styles.bodyText}>{config.orderNumber}</ThemedText>
+                  </View>
+                ) : null}
               </View>
             );
           })}
@@ -377,13 +385,23 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
           paymentCondition: config.paymentCondition,
           total: configTotal,
         });
-        if (!paymentText) return null;
+        if (!paymentText && !config.orderNumber) return null;
         return (
           <View style={styles.section}>
-            <ThemedText style={styles.sectionTitle}>
-              Condições de pagamento
-            </ThemedText>
-            <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
+            {paymentText ? (
+              <>
+                <ThemedText style={styles.sectionTitle}>
+                  Condições de pagamento
+                </ThemedText>
+                <ThemedText style={styles.bodyText}>{paymentText}</ThemedText>
+              </>
+            ) : null}
+            {config.orderNumber ? (
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: paymentText ? spacing.xs : 0 }}>
+                <ThemedText style={[styles.bodyText, { opacity: 0.6 }]}>N° do Pedido</ThemedText>
+                <ThemedText style={styles.bodyText}>{config.orderNumber}</ThemedText>
+              </View>
+            ) : null}
           </View>
         );
       })()}

@@ -27,7 +27,8 @@
         "UIBackgroundModes": ["remote-notification", "fetch"],
         "LSApplicationQueriesSchemes": ["whatsapp"],
         "NSFaceIDUsageDescription": "Necessário para autenticação biométrica na confirmação de entrega de EPI",
-        "NSLocationWhenInUseUsageDescription": "Necessário para registrar a localização no momento da assinatura de entrega de EPI"
+        "NSLocationWhenInUseUsageDescription": "Necessário para registrar a localização no momento da assinatura de entrega de EPI",
+        "NSCameraUsageDescription": "Necessário para tirar fotos de check-in e check-out"
       }
     },
     "android": {
@@ -149,6 +150,12 @@
         {
           "locationWhenInUsePermission": "Necessário para registrar a localização no momento da assinatura de entrega de EPI"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Necessário para tirar fotos de check-in e check-out"
+        }
       ]
     ],
     "experiments": {
@@ -157,10 +164,7 @@
     },
     "newArchEnabled": true,
     "updates": {
-      "enabled": false,
-      "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/f8f06f52-853f-4ab6-a783-181208687fa7"
+      "enabled": false
     },
     "extra": {
       "router": {},

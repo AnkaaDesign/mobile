@@ -244,6 +244,7 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
           customPaymentText: null,
           responsibleId: null,
           discountReference: null,
+          orderNumber: null,
         };
       });
       setValue("quote.customerConfigs", newConfigs);
@@ -1098,6 +1099,27 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
                       />
                     </View>
                   )}
+
+                  {/* Order Number */}
+                  <View>
+                    <ThemedText style={[styles.label, { color: colors.foreground, fontSize: 12 }]}>N° do Pedido</ThemedText>
+                    <TextInput
+                      value={config?.orderNumber || ""}
+                      onChangeText={(text) => setValue(`quote.customerConfigs.${i}.orderNumber`, text || null)}
+                      placeholder="Ex: PED-001"
+                      placeholderTextColor={colors.mutedForeground}
+                      editable={!disabled}
+                      style={[
+                        styles.textArea,
+                        {
+                          backgroundColor: colors.input,
+                          borderColor: colors.border,
+                          color: colors.foreground,
+                          minHeight: 40,
+                        },
+                      ]}
+                    />
+                  </View>
 
                   {/* Discount Type & Value */}
                   <View style={styles.row}>

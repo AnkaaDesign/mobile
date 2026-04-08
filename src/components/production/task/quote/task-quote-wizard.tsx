@@ -257,6 +257,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       customPaymentText: c.customPaymentText ?? null,
       responsibleId: c.responsibleId ?? null,
       generateInvoice: c.generateInvoice ?? true,
+      orderNumber: c.orderNumber ?? null,
     })) || []);
 
     if (p.services && p.services.length > 0) {
@@ -906,6 +907,7 @@ function Step1Info({
         customPaymentText: null,
         responsibleId: null,
         generateInvoice: true,
+        orderNumber: null,
       };
     });
     setValue("quote.customerConfigs", newConfigs);
@@ -1641,6 +1643,21 @@ function StepCustomerPayment({ control, configIndex, customer, taskResponsibles 
           <ThemedText style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
             {config?.generateInvoice !== false ? "Sim" : "Não"}
           </ThemedText>
+        </View>
+      </View>
+
+      {/* Order Number */}
+      <View style={[styles.fieldSection, { marginTop: spacing.md }]}>
+        <ThemedText style={[styles.label, { color: colors.foreground }]} numberOfLines={1} ellipsizeMode="tail">N° do Pedido</ThemedText>
+        <View onLayout={keyboardContext ? (e) => keyboardContext.onFieldLayout(`pricing-order-number-${configIndex}`, e) : undefined}>
+          <TextInput
+            value={config?.orderNumber || ""}
+            onChangeText={(t) => setValue(`quote.customerConfigs.${configIndex}.orderNumber`, t || null)}
+            placeholder="Ex: PED-001"
+            placeholderTextColor={colors.mutedForeground}
+            style={[styles.textArea, { backgroundColor: colors.input, borderColor: colors.border, color: colors.foreground, minHeight: undefined }]}
+            onFocus={() => keyboardContext?.onFieldFocus(`pricing-order-number-${configIndex}`)}
+          />
         </View>
       </View>
 

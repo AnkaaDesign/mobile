@@ -85,10 +85,10 @@ export default function CatalogoDetailsScreen() {
           density: true,
           pricePerLiter: true,
           createdAt: true,
-          // Only count components, don't fetch full data
-          _count: {
+          // Fetch only component IDs so we can count them without loading full component data
+          components: {
             select: {
-              components: true,
+              id: true,
             },
           },
         },

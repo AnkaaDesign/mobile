@@ -128,7 +128,7 @@ export function DetailCard({
               color={iconColor || colors.primary}
             />
           )}
-          <ThemedText style={styles.cardTitle} numberOfLines={1}>{title}</ThemedText>
+          <ThemedText style={styles.cardTitle}>{title}</ThemedText>
         </View>
         {badge}
       </View>
@@ -341,7 +341,8 @@ const styles = StyleSheet.create({
 
   // Card
   card: {
-    padding: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
   },
   cardHeader: {
     flexDirection: "row",
@@ -354,9 +355,10 @@ const styles = StyleSheet.create({
   cardHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.xs,
     flex: 1,
     marginRight: spacing.sm,
+    flexShrink: 1,
   },
   cardTitle: {
     fontSize: fontSize.lg,

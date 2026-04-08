@@ -1,12 +1,16 @@
-import React, { useState, useCallback, useMemo } from 'react'
-import { View, StyleSheet, Alert, Image, ScrollView } from 'react-native'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
+import { View, StyleSheet, Alert, Image, ScrollView, TouchableOpacity } from 'react-native'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { useNavigation } from '@react-navigation/native'
+import { IconCamera, IconX } from '@tabler/icons-react-native'
 import { ThemedView } from '@/components/ui/themed-view'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormCard } from '@/components/ui/form-section'
-import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker'
+import type { FilePickerItem } from '@/components/ui/file-picker'
+import { FullCamera } from '@/components/ui/full-camera'
+import { ImagePreviewModal } from '@/components/ui/image-preview-modal'
 import { FormSkeleton } from '@/components/ui/form-skeleton'
 import { MultiStepFormContainer } from '@/components/forms'
 import { useTaskMutations, useTaskDetail, useScreenReady } from '@/hooks'
@@ -15,7 +19,7 @@ import { navigationTracker } from '@/utils/navigation-tracker'
 import { useTheme } from '@/lib/theme'
 import { TASK_STATUS } from '@/constants'
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums'
-import { spacing, fontSize } from '@/constants/design-system'
+import { spacing, fontSize, borderRadius } from '@/constants/design-system'
 import { canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { getApiBaseUrl } from '@/utils/file'
 import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
@@ -44,9 +48,11 @@ export default function CheckinCheckoutScreen() {
   const { colors } = useTheme()
   const { updateAsync, isLoading: isSaving } = useTaskMutations()
 
+  const navigation = useNavigation()
   const [checkingPermission, setCheckingPermission] = useState(true)
   const [hasChanges, setHasChanges] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const savedSuccessfully = useRef(false)
 
   // Permission check
   const canAccess = canViewCheckinCheckout(user)
@@ -60,6 +66,27 @@ export default function CheckinCheckoutScreen() {
       }
     }
   }, [user, canAccess, router])
+
+  // Prevent accidental back navigation when there are unsaved changes
+  React.useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (!hasChanges || savedSuccessfully.current) return
+      e.preventDefault()
+      Alert.alert(
+        'Alterações não salvas',
+        'Você tem fotos não salvas. Deseja sair sem salvar?',
+        [
+          { text: 'Continuar editando', style: 'cancel' },
+          {
+            text: 'Sair sem salvar',
+            style: 'destructive',
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+        ]
+      )
+    })
+    return unsubscribe
+  }, [navigation, hasChanges])
 
   // Fetch task with service orders + checkin/checkout files
   const {
@@ -109,6 +136,98 @@ export default function CheckinCheckoutScreen() {
   >({})
   const [initialized, setInitialized] = useState(false)
 
+  // Image preview state
+  const [previewImages, setPreviewImages] = useState<{ uri: string }[]>([])
+  const [previewIndex, setPreviewIndex] = useState(0)
+  const [previewVisible, setPreviewVisible] = useState(false)
+
+  const handlePreviewImage = useCallback((images: { uri: string }[], index: number) => {
+    setPreviewImages(images)
+    setPreviewIndex(index)
+    setPreviewVisible(true)
+  }, [])
+
+  // Camera state: which service order is being photographed and for which phase
+  const [cameraTarget, setCameraTarget] = useState<{
+    serviceOrderId: string
+    phase: 'checkin' | 'checkout'
+  } | null>(null)
+  // Track how many photos were added in the current camera session (for discard)
+  const sessionPhotoCount = useRef(0)
+
+  const handleOpenCamera = useCallback((serviceOrderId: string, phase: 'checkin' | 'checkout') => {
+    sessionPhotoCount.current = 0
+    setCameraTarget({ serviceOrderId, phase })
+  }, [])
+
+  const handleCameraCapture = useCallback(
+    (uri: string) => {
+      if (!cameraTarget) return
+      const newFile: FilePickerItem = {
+        uri,
+        name: `${cameraTarget.phase}_${Date.now()}.jpg`,
+        type: 'image/jpeg',
+        mimeType: 'image/jpeg',
+      }
+      if (cameraTarget.phase === 'checkin') {
+        setCheckinFilesByServiceOrder((prev) => ({
+          ...prev,
+          [cameraTarget.serviceOrderId]: [...(prev[cameraTarget.serviceOrderId] || []), newFile],
+        }))
+      } else {
+        setCheckoutFilesByServiceOrder((prev) => ({
+          ...prev,
+          [cameraTarget.serviceOrderId]: [...(prev[cameraTarget.serviceOrderId] || []), newFile],
+        }))
+      }
+      sessionPhotoCount.current += 1
+      setHasChanges(true)
+    },
+    [cameraTarget]
+  )
+
+  // Concluído — keep photos and close camera
+  const handleCameraClose = useCallback(() => {
+    setCameraTarget(null)
+  }, [])
+
+  // X button — discard photos taken in this session
+  const handleCameraDiscard = useCallback(() => {
+    if (cameraTarget && sessionPhotoCount.current > 0) {
+      const count = sessionPhotoCount.current
+      if (cameraTarget.phase === 'checkin') {
+        setCheckinFilesByServiceOrder((prev) => ({
+          ...prev,
+          [cameraTarget.serviceOrderId]: (prev[cameraTarget.serviceOrderId] || []).slice(0, -count),
+        }))
+      } else {
+        setCheckoutFilesByServiceOrder((prev) => ({
+          ...prev,
+          [cameraTarget.serviceOrderId]: (prev[cameraTarget.serviceOrderId] || []).slice(0, -count),
+        }))
+      }
+    }
+    setCameraTarget(null)
+  }, [cameraTarget])
+
+  const handleRemoveFile = useCallback(
+    (serviceOrderId: string, phase: 'checkin' | 'checkout', index: number) => {
+      if (phase === 'checkin') {
+        setCheckinFilesByServiceOrder((prev) => ({
+          ...prev,
+          [serviceOrderId]: (prev[serviceOrderId] || []).filter((_, i) => i !== index),
+        }))
+      } else {
+        setCheckoutFilesByServiceOrder((prev) => ({
+          ...prev,
+          [serviceOrderId]: (prev[serviceOrderId] || []).filter((_, i) => i !== index),
+        }))
+      }
+      setHasChanges(true)
+    },
+    []
+  )
+
   // Initialize file state from task data once loaded
   React.useEffect(() => {
     if (task && !initialized) {
@@ -127,43 +246,26 @@ export default function CheckinCheckoutScreen() {
   }, [task, initialized])
 
   const taskStatus = task?.status as string | undefined
-  const isWaitingProduction = taskStatus === TASK_STATUS.WAITING_PRODUCTION
-  const isInProduction = taskStatus === TASK_STATUS.IN_PRODUCTION
   const isCompleted = taskStatus === TASK_STATUS.COMPLETED
 
   // Steps based on task status:
-  // WAITING_PRODUCTION → Check-in + Overview (must add checkin before starting)
-  // IN_PRODUCTION → Check-out + Overview (must add checkout before finishing)
-  // COMPLETED → Read-only overview
+  // Not completed (WAITING_PRODUCTION / IN_PRODUCTION) → Check-in + Resumo
+  // COMPLETED → Check-in + Check-out + Resumo (read-only)
   const steps: FormStep[] = useMemo(() => {
     if (isCompleted) {
       return [
-        { id: 1, name: 'Resumo', description: 'Visão geral (somente leitura)' },
-      ]
-    }
-    if (isInProduction) {
-      return [
-        { id: 1, name: 'Check-out', description: 'Fotos de saída' },
-        { id: 2, name: 'Resumo', description: 'Visão geral' },
+        { id: 1, name: 'Check-in', description: 'Fotos de entrada' },
+        { id: 2, name: 'Check-out', description: 'Fotos de saída' },
+        { id: 3, name: 'Resumo', description: 'Visão geral (somente leitura)' },
       ]
     }
     return [
       { id: 1, name: 'Check-in', description: 'Fotos de entrada' },
       { id: 2, name: 'Resumo', description: 'Visão geral' },
     ]
-  }, [isCompleted, isInProduction])
+  }, [isCompleted])
 
   const totalSteps = steps.length
-
-  const handleCheckinFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
-    setCheckinFilesByServiceOrder((prev) => ({ ...prev, [serviceOrderId]: files }))
-    setHasChanges(true)
-  }, [])
-
-  const handleCheckoutFilesChange = useCallback((serviceOrderId: string, files: FilePickerItem[]) => {
-    setCheckoutFilesByServiceOrder((prev) => ({ ...prev, [serviceOrderId]: files }))
-    setHasChanges(true)
-  }, [])
 
   const getThumbnailUri = useCallback((file: FilePickerItem) => {
     const apiBase = getApiBaseUrl()
@@ -252,25 +354,14 @@ export default function CheckinCheckoutScreen() {
         })
       )
 
-      // Build update payload with service orders and optional status transition
+      // Build update payload with service orders only — no status transition
       const updateData: any = { serviceOrders }
-
-      // When saving checkin files from WAITING_PRODUCTION, also start the task
-      if (isWaitingProduction) {
-        updateData.status = TASK_STATUS.IN_PRODUCTION
-        updateData.startedAt = new Date().toISOString()
-      }
-
-      // When saving checkout files from IN_PRODUCTION, also finish the task
-      if (isInProduction) {
-        updateData.status = TASK_STATUS.COMPLETED
-        updateData.finishedAt = new Date().toISOString()
-      }
 
       // Always send as JSON - files are already uploaded with proper IDs
       const result = await updateAsync({ id, data: updateData })
 
       if (result.success) {
+        savedSuccessfully.current = true
         handleNavigateBack()
       } else {
         Alert.alert(
@@ -333,9 +424,9 @@ export default function CheckinCheckoutScreen() {
 
   const isOverviewStep = currentStep === totalSteps
 
-  // Determine what step 1 shows based on task status
-  const isCheckinStep = isWaitingProduction && currentStep === 1
-  const isCheckoutStep = isInProduction && currentStep === 1
+  // Check-in is always step 1; check-out is step 2 only when completed
+  const isCheckinStep = currentStep === 1
+  const isCheckoutStep = isCompleted && currentStep === 2
 
   return (
     <ThemedView style={styles.container}>
@@ -357,7 +448,7 @@ export default function CheckinCheckoutScreen() {
         isSubmitting={isSaving}
         canProceed={true}
         canSubmit={hasChanges && !isCompleted}
-        submitLabel={isWaitingProduction ? 'Salvar e Iniciar' : isInProduction ? 'Salvar e Finalizar' : 'Salvar'}
+        submitLabel="Salvar"
         cancelLabel="Cancelar"
       >
         {/* Check-in step (only when task NOT completed) */}
@@ -375,18 +466,47 @@ export default function CheckinCheckoutScreen() {
                           {soFiles.length} foto(s)
                         </ThemedText>
                       </View>
-                      <FilePicker
-                        value={soFiles}
-                        onChange={(files) => handleCheckinFilesChange(so.id, files)}
-                        maxFiles={20}
-                        placeholder="Adicionar fotos de check-in"
-                        showCamera={true}
-                        showVideoCamera={false}
-                        showGallery={true}
-                        showFilePicker={false}
+                      {/* Thumbnails */}
+                      {soFiles.length > 0 && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
+                          {soFiles.map((file, index) => (
+                            <View key={file.id || file.uri || `ci-${index}`} style={[styles.thumbnailWrapper]}>
+                              <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => handlePreviewImage(
+                                  soFiles.map((f) => ({ uri: f.uploaded && f.thumbnailUrl ? getThumbnailUri(f) : f.uri })),
+                                  index
+                                )}
+                              >
+                                <Image
+                                  source={{ uri: file.uploaded && file.thumbnailUrl ? getThumbnailUri(file) : file.uri }}
+                                  style={[styles.thumbnailImage, { borderColor: colors.border }]}
+                                />
+                              </TouchableOpacity>
+                              {!isSaving && (
+                                <TouchableOpacity
+                                  onPress={() => handleRemoveFile(so.id, 'checkin', index)}
+                                  style={[styles.thumbnailRemove, { backgroundColor: colors.destructive }]}
+                                >
+                                  <IconX size={10} color="#fff" />
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          ))}
+                        </ScrollView>
+                      )}
+                      {/* Open camera button */}
+                      <TouchableOpacity
+                        onPress={() => handleOpenCamera(so.id, 'checkin')}
                         disabled={isSaving}
-                        previewSize={56}
-                      />
+                        style={[styles.cameraButton, { borderColor: colors.border, backgroundColor: colors.muted, opacity: isSaving ? 0.5 : 1 }]}
+                        activeOpacity={0.7}
+                      >
+                        <IconCamera size={20} color={colors.foreground} />
+                        <ThemedText style={[styles.cameraButtonText, { color: colors.foreground }]}>
+                          Tirar foto
+                        </ThemedText>
+                      </TouchableOpacity>
                     </View>
                   )
                 })}
@@ -409,20 +529,15 @@ export default function CheckinCheckoutScreen() {
                 {activeServiceOrders.map((so: any) => {
                   const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
                   const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
-                  const checkinCount = soCheckinFiles.length
-                  const checkoutCount = soCheckoutFiles.length
-                  const needsMore = checkinCount > 0 && checkoutCount < checkinCount
                   return (
                     <View key={`checkout-${so.id}`} style={styles.serviceOrderGroup}>
                       <View style={styles.serviceOrderHeader}>
                         <ThemedText style={styles.serviceOrderLabel}>{so.description}</ThemedText>
-                        {needsMore && (
-                          <ThemedText style={[styles.fileCount, { color: '#d97706' }]}>
-                            falta {checkinCount - checkoutCount}
-                          </ThemedText>
-                        )}
+                        <ThemedText style={[styles.fileCount, { color: colors.mutedForeground }]}>
+                          {soCheckoutFiles.length} foto(s)
+                        </ThemedText>
                       </View>
-                      {/* Checkin reference thumbnails (like web - above the checkout picker) */}
+                      {/* Checkin reference thumbnails */}
                       {soCheckinFiles.length > 0 && (
                         <ScrollView
                           horizontal
@@ -446,18 +561,47 @@ export default function CheckinCheckoutScreen() {
                           })}
                         </ScrollView>
                       )}
-                      <FilePicker
-                        value={soCheckoutFiles}
-                        onChange={(files) => handleCheckoutFilesChange(so.id, files)}
-                        maxFiles={20}
-                        placeholder="Adicionar fotos de check-out"
-                        showCamera={true}
-                        showVideoCamera={false}
-                        showGallery={true}
-                        showFilePicker={false}
+                      {/* Checkout thumbnails */}
+                      {soCheckoutFiles.length > 0 && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
+                          {soCheckoutFiles.map((file, index) => (
+                            <View key={file.id || file.uri || `co-${index}`} style={[styles.thumbnailWrapper]}>
+                              <TouchableOpacity
+                                activeOpacity={0.8}
+                                onPress={() => handlePreviewImage(
+                                  soCheckoutFiles.map((f) => ({ uri: f.uploaded && f.thumbnailUrl ? getThumbnailUri(f) : f.uri })),
+                                  index
+                                )}
+                              >
+                                <Image
+                                  source={{ uri: file.uploaded && file.thumbnailUrl ? getThumbnailUri(file) : file.uri }}
+                                  style={[styles.thumbnailImage, { borderColor: colors.border }]}
+                                />
+                              </TouchableOpacity>
+                              {!isSaving && (
+                                <TouchableOpacity
+                                  onPress={() => handleRemoveFile(so.id, 'checkout', index)}
+                                  style={[styles.thumbnailRemove, { backgroundColor: colors.destructive }]}
+                                >
+                                  <IconX size={10} color="#fff" />
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          ))}
+                        </ScrollView>
+                      )}
+                      {/* Open camera button */}
+                      <TouchableOpacity
+                        onPress={() => handleOpenCamera(so.id, 'checkout')}
                         disabled={isSaving}
-                        previewSize={56}
-                      />
+                        style={[styles.cameraButton, { borderColor: colors.border, backgroundColor: colors.muted, opacity: isSaving ? 0.5 : 1 }]}
+                        activeOpacity={0.7}
+                      >
+                        <IconCamera size={20} color={colors.foreground} />
+                        <ThemedText style={[styles.cameraButtonText, { color: colors.foreground }]}>
+                          Tirar foto
+                        </ThemedText>
+                      </TouchableOpacity>
                     </View>
                   )
                 })}
@@ -512,7 +656,7 @@ export default function CheckinCheckoutScreen() {
                       )}
 
                       {/* Check-out summary */}
-                      {(isInProduction || isCompleted) && (
+                      {isCompleted && (
                         <>
                           <View style={styles.overviewRow}>
                             <ThemedText style={[styles.overviewLabel, { color: colors.mutedForeground }]}>Check-out:</ThemedText>
@@ -542,7 +686,7 @@ export default function CheckinCheckoutScreen() {
                     <ThemedText style={styles.overviewTotalLabel}>Total check-in:</ThemedText>
                     <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckin} foto(s)</ThemedText>
                   </View>
-                  {(isInProduction || isCompleted) && (
+                  {isCompleted && (
                     <View style={styles.overviewRow}>
                       <ThemedText style={styles.overviewTotalLabel}>Total check-out:</ThemedText>
                       <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckout} foto(s)</ThemedText>
@@ -554,6 +698,20 @@ export default function CheckinCheckoutScreen() {
           </View>
         )}
       </MultiStepFormContainer>
+
+      <FullCamera
+        visible={!!cameraTarget}
+        onCapture={handleCameraCapture}
+        onClose={handleCameraClose}
+        onDiscard={handleCameraDiscard}
+      />
+
+      <ImagePreviewModal
+        visible={previewVisible}
+        images={previewImages}
+        initialIndex={previewIndex}
+        onClose={() => setPreviewVisible(false)}
+      />
     </ThemedView>
   )
 }
@@ -694,5 +852,45 @@ const styles = StyleSheet.create({
   overviewTotalValue: {
     fontSize: fontSize.md,
     fontWeight: '700',
+  },
+  cameraButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+  },
+  cameraButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  thumbnailScroll: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+    marginRight: spacing.xs,
+    padding: 4,
+  },
+  thumbnailImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  thumbnailRemove: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 })

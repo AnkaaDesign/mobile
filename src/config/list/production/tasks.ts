@@ -444,28 +444,17 @@ export const tasksListConfig: ListConfig<Task> = {
           if (!task.sectorId) return false
           return canLeaderManageTask(user, task.sectorId)
         },
+        confirm: {
+          title: 'Iniciar Tarefa',
+          message: (task: Task) => `Deseja iniciar a tarefa "${task.name}"?`,
+        },
         onPress: async (task: Task) => {
-          Alert.alert(
-            'Iniciar Tarefa',
-            `Deseja iniciar a tarefa "${task.name}"?`,
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              {
-                text: 'Iniciar',
-                onPress: async () => {
-                  try {
-                    await updateTask(task.id, {
-                      status: TASK_STATUS.IN_PRODUCTION,
-                      startedAt: new Date(),
-                    } as any)
-                    queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-                  } catch (_error) {
-                    Alert.alert('Erro', 'Não foi possível iniciar a tarefa.')
-                  }
-                },
-              },
-            ]
-          )
+          try {
+            await updateTask(task.id, { status: TASK_STATUS.IN_PRODUCTION })
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+          } catch (_error) {
+            // API client already shows error alert
+          }
         },
       },
       {
@@ -497,6 +486,12 @@ export const tasksListConfig: ListConfig<Task> = {
         variant: 'default',
         // ADMIN, LOGISTIC, PRODUCTION_MANAGER can view/edit layouts
         canPerform: canViewLayouts,
+        visible: (task: Task, user: any) => {
+          const privilege = user?.sector?.privileges
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER) return false
+          if (privilege === SECTOR_PRIVILEGES.PRODUCTION) return false
+          return canEditLayoutForTask(user, task.sectorId)
+        },
         onPress: (task, router, context) => {
           // Store navigation source for proper back navigation
           const currentPath = context?.route || '/(tabs)/producao/cronograma'
