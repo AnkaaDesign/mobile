@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { View, StyleSheet, Alert, Image, ScrollView, TouchableOpacity } from 'react-native'
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { Stack, useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { useNavigation } from '@react-navigation/native'
 import { IconCamera, IconX } from '@tabler/icons-react-native'
 import { ThemedView } from '@/components/ui/themed-view'
@@ -23,7 +23,6 @@ import { spacing, fontSize, borderRadius } from '@/constants/design-system'
 import { canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { getApiBaseUrl } from '@/utils/file'
 import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
-import { uploadSingleFile } from '@/api-client'
 import type { File as AnkaaFile } from '@/types'
 import type { FormStep } from '@/components/ui/form-steps'
 
@@ -43,6 +42,7 @@ function fileToPickerItem(file: AnkaaFile): FilePickerItem {
 
 export default function CheckinCheckoutScreen() {
   const router = useRouter()
+  const pathname = usePathname()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { user } = useAuth()
   const { colors } = useTheme()
@@ -247,23 +247,24 @@ export default function CheckinCheckoutScreen() {
 
   const taskStatus = task?.status as string | undefined
   const isCompleted = taskStatus === TASK_STATUS.COMPLETED
+  const showCheckout = isCompleted
 
   // Steps based on task status:
-  // Not completed (WAITING_PRODUCTION / IN_PRODUCTION) → Check-in + Resumo
-  // COMPLETED → Check-in + Check-out + Resumo (read-only)
+  // Not completed → Check-in + Resumo
+  // COMPLETED → Check-in + Check-out + Resumo
   const steps: FormStep[] = useMemo(() => {
-    if (isCompleted) {
+    if (showCheckout) {
       return [
         { id: 1, name: 'Check-in', description: 'Fotos de entrada' },
         { id: 2, name: 'Check-out', description: 'Fotos de saída' },
-        { id: 3, name: 'Resumo', description: 'Visão geral (somente leitura)' },
+        { id: 3, name: 'Resumo', description: 'Visão geral' },
       ]
     }
     return [
       { id: 1, name: 'Check-in', description: 'Fotos de entrada' },
       { id: 2, name: 'Resumo', description: 'Visão geral' },
     ]
-  }, [isCompleted])
+  }, [showCheckout])
 
   const totalSteps = steps.length
 
@@ -284,9 +285,13 @@ export default function CheckinCheckoutScreen() {
     if (source) {
       router.replace(source as any)
     } else {
-      router.replace(`/(tabs)/producao/cronograma/detalhes/${id}` as any)
+      // Infer the section from the current pathname for proper fallback
+      let section = 'cronograma'
+      if (pathname.includes('/agenda')) section = 'agenda'
+      else if (pathname.includes('/historico')) section = 'historico'
+      router.replace(`/(tabs)/producao/${section}/detalhes/${id}` as any)
     }
-  }, [router, id])
+  }, [router, id, pathname])
 
   const goNext = useCallback(() => {
     if (currentStep < totalSteps) setCurrentStep((s) => s + 1)
@@ -300,65 +305,76 @@ export default function CheckinCheckoutScreen() {
     if (!id || !task) return
 
     try {
-      const customerName = task.customer?.fantasyName || ''
+      // Build FormData with new files in flat arrays + mapping metadata.
+      // Using serviceOrderFiles (separate from serviceOrders) avoids triggering the
+      // backend's service order deletion logic when only updating file associations.
+      const formData = new FormData()
+      const soFileMapping: { soId: string; type: 'checkin' | 'checkout'; count: number }[] = []
+      const serviceOrderFiles: Record<string, { checkinFileIds?: string[]; checkoutFileIds?: string[] }> = {}
 
-      // Pre-upload new files per service order, then build JSON-only payload
-      // This ensures file IDs are properly associated with their service orders
-      const serviceOrders = await Promise.all(
-        activeServiceOrders.map(async (so: any) => {
-          const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
-          const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
+      for (const so of activeServiceOrders) {
+        const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
+        const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
 
-          // Separate existing files from new files
-          const existingCheckinIds = soCheckinFiles
-            .filter((f: any) => f.id || f.fileId)
-            .map((f: any) => f.fileId || f.file?.id || f.id)
-            .filter(Boolean)
-          const existingCheckoutIds = soCheckoutFiles
-            .filter((f: any) => f.id || f.fileId)
-            .map((f: any) => f.fileId || f.file?.id || f.id)
-            .filter(Boolean)
+        // Separate existing files (have ID) from new files (only have URI)
+        const existingCheckinIds = soCheckinFiles
+          .filter((f: any) => f.id || f.fileId)
+          .map((f: any) => f.fileId || f.file?.id || f.id)
+          .filter(Boolean)
+        const existingCheckoutIds = soCheckoutFiles
+          .filter((f: any) => f.id || f.fileId)
+          .map((f: any) => f.fileId || f.file?.id || f.id)
+          .filter(Boolean)
 
-          const newCheckinFiles = soCheckinFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
-          const newCheckoutFiles = soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
+        const newCheckinFiles = soCheckinFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
+        const newCheckoutFiles = soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
 
-          // Pre-upload new checkin files
-          const uploadedCheckinIds = await Promise.all(
-            newCheckinFiles.map(async (file: FilePickerItem) => {
-              const res = await uploadSingleFile(
-                { uri: file.uri, name: file.name || `checkin_${Date.now()}.jpg`, type: file.type || file.mimeType || 'image/jpeg' },
-                { entityType: 'task', entityId: id, fileContext: 'serviceOrderCheckinFiles', customerName }
-              )
-              return res?.data?.id || res?.id
-            })
-          )
-
-          // Pre-upload new checkout files
-          const uploadedCheckoutIds = await Promise.all(
-            newCheckoutFiles.map(async (file: FilePickerItem) => {
-              const res = await uploadSingleFile(
-                { uri: file.uri, name: file.name || `checkout_${Date.now()}.jpg`, type: file.type || file.mimeType || 'image/jpeg' },
-                { entityType: 'task', entityId: id, fileContext: 'serviceOrderCheckoutFiles', customerName }
-              )
-              return res?.data?.id || res?.id
-            })
-          )
-
-          return {
-            id: so.id,
-            description: so.description,
-            type: so.type,
-            checkinFileIds: [...existingCheckinIds, ...uploadedCheckinIds.filter(Boolean)],
-            checkoutFileIds: [...existingCheckoutIds, ...uploadedCheckoutIds.filter(Boolean)],
+        // Append new checkin files to the flat FormData array
+        if (newCheckinFiles.length > 0) {
+          for (const file of newCheckinFiles) {
+            formData.append('soCheckinFiles', {
+              uri: file.uri,
+              name: file.name || `checkin_${Date.now()}.jpg`,
+              type: file.type || file.mimeType || 'image/jpeg',
+            } as any)
           }
-        })
-      )
+          soFileMapping.push({ soId: so.id, type: 'checkin', count: newCheckinFiles.length })
+        }
 
-      // Build update payload with service orders only — no status transition
-      const updateData: any = { serviceOrders }
+        // Append new checkout files to the flat FormData array
+        if (newCheckoutFiles.length > 0) {
+          for (const file of newCheckoutFiles) {
+            formData.append('soCheckoutFiles', {
+              uri: file.uri,
+              name: file.name || `checkout_${Date.now()}.jpg`,
+              type: file.type || file.mimeType || 'image/jpeg',
+            } as any)
+          }
+          soFileMapping.push({ soId: so.id, type: 'checkout', count: newCheckoutFiles.length })
+        }
 
-      // Always send as JSON - files are already uploaded with proper IDs
-      const result = await updateAsync({ id, data: updateData })
+        // Track existing file IDs to keep (or empty arrays to clear removed files)
+        // Check if SO originally had files — if so, we must always send the entry
+        // even when empty, so the API clears the association via { set: [] }
+        const origCheckin = ((so as any).checkinFiles || []).length > 0
+        const origCheckout = ((so as any).checkoutFiles || []).length > 0
+        const hasExisting = existingCheckinIds.length > 0 || existingCheckoutIds.length > 0
+        const hasNew = newCheckinFiles.length > 0 || newCheckoutFiles.length > 0
+        const hadFiles = origCheckin || origCheckout
+
+        if (hasExisting || hasNew || hadFiles) {
+          serviceOrderFiles[so.id] = {
+            checkinFileIds: existingCheckinIds,
+            checkoutFileIds: existingCheckoutIds,
+          }
+        }
+      }
+
+      // Append metadata as JSON strings
+      formData.append('_soFileMapping', JSON.stringify(soFileMapping))
+      formData.append('serviceOrderFiles', JSON.stringify(serviceOrderFiles))
+
+      const result = await updateAsync({ id, data: formData })
 
       if (result.success) {
         savedSuccessfully.current = true
@@ -424,9 +440,9 @@ export default function CheckinCheckoutScreen() {
 
   const isOverviewStep = currentStep === totalSteps
 
-  // Check-in is always step 1; check-out is step 2 only when completed
+  // Check-in is always step 1; check-out is step 2 when IN_PRODUCTION or COMPLETED
   const isCheckinStep = currentStep === 1
-  const isCheckoutStep = isCompleted && currentStep === 2
+  const isCheckoutStep = showCheckout && currentStep === 2
 
   return (
     <ThemedView style={styles.container}>
@@ -447,7 +463,7 @@ export default function CheckinCheckoutScreen() {
         onCancel={handleNavigateBack}
         isSubmitting={isSaving}
         canProceed={true}
-        canSubmit={hasChanges && !isCompleted}
+        canSubmit={hasChanges}
         submitLabel="Salvar"
         cancelLabel="Cancelar"
       >
@@ -542,20 +558,28 @@ export default function CheckinCheckoutScreen() {
                         <ScrollView
                           horizontal
                           showsHorizontalScrollIndicator={false}
-                          style={styles.referenceScroll}
+                          style={styles.thumbnailScroll}
                         >
                           {soCheckinFiles.map((file, index) => {
                             const src = getThumbnailUri(file)
                             return (
                               <View
                                 key={file.id || file.uri || `ref-${index}`}
-                                style={[styles.referenceThumbnail, { borderColor: colors.border }]}
+                                style={styles.thumbnailWrapper}
                               >
-                                {src ? (
-                                  <Image source={{ uri: src }} style={styles.referenceImage} />
-                                ) : (
-                                  <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />
-                                )}
+                                <TouchableOpacity
+                                  activeOpacity={0.8}
+                                  onPress={() => handlePreviewImage(
+                                    soCheckinFiles.map((f) => ({ uri: getThumbnailUri(f) })),
+                                    index
+                                  )}
+                                >
+                                  {src ? (
+                                    <Image source={{ uri: src }} style={[styles.thumbnailImage, { borderColor: colors.border }]} />
+                                  ) : (
+                                    <View style={[styles.thumbnailImage, { borderColor: colors.border, backgroundColor: colors.border }]} />
+                                  )}
+                                </TouchableOpacity>
                               </View>
                             )
                           })}
@@ -647,9 +671,17 @@ export default function CheckinCheckoutScreen() {
                           {soCheckinFiles.map((file, index) => {
                             const src = getThumbnailUri(file)
                             return (
-                              <View key={file.id || file.uri || `ci-${index}`} style={[styles.overviewThumb, { borderColor: colors.border }]}>
+                              <TouchableOpacity
+                                key={file.id || file.uri || `ci-${index}`}
+                                activeOpacity={0.8}
+                                onPress={() => handlePreviewImage(
+                                  soCheckinFiles.map((f) => ({ uri: getThumbnailUri(f) })),
+                                  index
+                                )}
+                                style={[styles.overviewThumb, { borderColor: colors.border }]}
+                              >
                                 {src ? <Image source={{ uri: src }} style={styles.overviewThumbImage} /> : <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />}
-                              </View>
+                              </TouchableOpacity>
                             )
                           })}
                         </ScrollView>
@@ -667,9 +699,17 @@ export default function CheckinCheckoutScreen() {
                               {soCheckoutFiles.map((file, index) => {
                                 const src = getThumbnailUri(file)
                                 return (
-                                  <View key={file.id || file.uri || `co-${index}`} style={[styles.overviewThumb, { borderColor: colors.border }]}>
+                                  <TouchableOpacity
+                                    key={file.id || file.uri || `co-${index}`}
+                                    activeOpacity={0.8}
+                                    onPress={() => handlePreviewImage(
+                                      soCheckoutFiles.map((f) => ({ uri: getThumbnailUri(f) })),
+                                      index
+                                    )}
+                                    style={[styles.overviewThumb, { borderColor: colors.border }]}
+                                  >
                                     {src ? <Image source={{ uri: src }} style={styles.overviewThumbImage} /> : <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />}
-                                  </View>
+                                  </TouchableOpacity>
                                 )
                               })}
                             </ScrollView>
@@ -739,24 +779,6 @@ const styles = StyleSheet.create({
   },
   fileCount: {
     fontSize: fontSize.xs,
-  },
-  referenceScroll: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  referenceThumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: 6,
-    overflow: 'hidden',
-    borderWidth: 1,
-    opacity: 0.6,
-    marginRight: spacing.xs,
-  },
-  referenceImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
   },
   referencePlaceholder: {
     width: '100%',

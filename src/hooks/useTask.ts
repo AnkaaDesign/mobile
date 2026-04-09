@@ -236,7 +236,7 @@ export function useTaskMutations() {
 
   // UPDATE
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: TaskUpdateFormData }) => updateTask(id, data),
+    mutationFn: ({ id, data }: { id: string; data: TaskUpdateFormData | FormData }) => updateTask(id, data),
     onSuccess: (response, variables) => {
       // Invalidate task LIST queries only (not detail queries — those are handled below).
       // Using taskKeys.lists() prefix instead of taskKeys.all avoids invalidating detail

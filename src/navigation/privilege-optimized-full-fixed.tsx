@@ -181,6 +181,8 @@ const ALL_ROUTES = [
   { name: "producao/cronograma/editar/[id]", title: "Editar Cronograma" },
   { name: "producao/cronograma/layout/[id]", title: "Layout do Caminhao" },
   { name: "producao/cronograma/checkin-checkout/[id]", title: "Check-in / Check-out" },
+  { name: "producao/agenda/checkin-checkout/[id]", title: "Check-in / Check-out" },
+  { name: "producao/historico/checkin-checkout/[id]", title: "Check-in / Check-out" },
   { name: "producao/aerografia/index", title: "Aerografia" },
   { name: "producao/aerografia/cadastrar", title: "Cadastrar Aerografia" },
   { name: "producao/aerografia/listar", title: "Aerografias" },

@@ -4,7 +4,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
-import { computeServiceDiscount, computeServiceNet } from "@/utils/task-quote-calculations";
+import { computeConfigDiscount } from "@/utils/task-quote-calculations";
 import { DISCOUNT_TYPE_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
@@ -21,9 +21,6 @@ interface ServiceItem {
   description: string;
   observation?: string | null;
   amount: number;
-  discountType?: string;
-  discountValue?: number | null;
-  discountReference?: string | null;
   invoiceToCustomerId?: string | null;
 }
 
@@ -31,6 +28,9 @@ interface CustomerConfig {
   customerId: string;
   subtotal: number;
   total: number;
+  discountType?: string;
+  discountValue?: number | null;
+  discountReference?: string | null;
   paymentCondition?: string | null;
   customPaymentText?: string | null;
   responsibleId?: string | null;
@@ -102,10 +102,10 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
 
   const termDate = task?.term ? formatDate(task.term as any) : "";
 
-  // Compute total discount from per-service discounts
-  const totalDiscountAmount = (quote.services || []).reduce((sum, svc) => {
-    const amount = Number(svc.amount) || 0;
-    return sum + computeServiceDiscount(amount, svc.discountType, svc.discountValue);
+  // Compute total discount from customer config discounts
+  const totalDiscountAmount = (quote.customerConfigs || []).reduce((sum, config) => {
+    const configSubtotal = Number(config.subtotal) || 0;
+    return sum + computeConfigDiscount(configSubtotal, config.discountType, config.discountValue);
   }, 0);
   const hasDiscount = totalDiscountAmount > 0;
 
@@ -138,11 +138,9 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
       ? getFileUrl(quote.layoutFile as any)
       : null;
 
-  // Render a single service row with discount details
+  // Render a single service row
   const renderServiceRow = (item: ServiceItem, index: number) => {
     const amount = Number(item.amount) || 0;
-    const discount = computeServiceDiscount(amount, item.discountType, item.discountValue);
-    const net = computeServiceNet({ amount, discountType: item.discountType, discountValue: item.discountValue });
     const isOutrosWithObservation = item.description === "Outros" && !!item.observation;
     const displayDescription = isOutrosWithObservation
       ? toTitleCase(item.observation!)
@@ -160,32 +158,10 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
               <ThemedText style={{ opacity: 0.6, fontStyle: "italic" }}> — {observation}</ThemedText>
             ) : null}
           </ThemedText>
-          <View style={{ alignItems: "flex-end" }}>
-            {discount > 0 ? (
-              <>
-                <ThemedText style={styles.strikethroughAmount}>
-                  {formatCurrency(amount)}
-                </ThemedText>
-                <ThemedText style={styles.serviceAmount}>
-                  {formatCurrency(net)}
-                </ThemedText>
-              </>
-            ) : (
-              <ThemedText style={styles.serviceAmount}>
-                {formatCurrency(amount)}
-              </ThemedText>
-            )}
-          </View>
+          <ThemedText style={styles.serviceAmount}>
+            {formatCurrency(amount)}
+          </ThemedText>
         </View>
-        {discount > 0 && (
-          <View style={{ paddingLeft: spacing.lg, marginTop: 2 }}>
-            <ThemedText style={styles.discountText}>
-              Desc: {item.discountType === "PERCENTAGE" ? `${item.discountValue}%` : formatCurrency(discount)}
-              {" "}({DISCOUNT_TYPE_LABELS[item.discountType as keyof typeof DISCOUNT_TYPE_LABELS] || item.discountType})
-              {item.discountReference ? ` — ${item.discountReference}` : ""}
-            </ThemedText>
-          </View>
-        )}
       </View>
     );
   };
@@ -286,7 +262,7 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
             </View>
             <View style={styles.totalRow}>
               <ThemedText style={styles.discountText}>
-                Desconto (serviços)
+                Desconto
               </ThemedText>
               <ThemedText style={styles.discountText}>
                 - {formatCurrency(totalDiscountAmount)}
@@ -318,7 +294,7 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
             const customer = selectedCustomers?.get(config.customerId);
             const configSubtotal = Number(config.subtotal) || 0;
             const configTotal = Number(config.total) || 0;
-            const configDiscountAmount = Math.max(0, configSubtotal - configTotal);
+            const configDiscountAmount = computeConfigDiscount(configSubtotal, config.discountType, config.discountValue);
             const configPaymentText = generatePaymentText({
               customPaymentText: config.customPaymentText || null,
               paymentCondition: config.paymentCondition,
@@ -342,7 +318,11 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
 
                 {configDiscountAmount > 0 && (
                   <View style={styles.configRow}>
-                    <ThemedText style={styles.discountText}>Desconto (serviços)</ThemedText>
+                    <ThemedText style={styles.discountText}>
+                      Desconto{" "}
+                      {config.discountType === "PERCENTAGE" ? `(${config.discountValue}%)` : ""}
+                      {config.discountReference ? ` — ${config.discountReference}` : ""}
+                    </ThemedText>
                     <ThemedText style={styles.discountText}>- {formatCurrency(configDiscountAmount)}</ThemedText>
                   </View>
                 )}

@@ -182,13 +182,13 @@ export function useBudgetApproveTaskQuote() {
 }
 
 /**
- * Verify quote mutation (BUDGET_APPROVED -> VERIFIED_BY_FINANCIAL)
+ * Commercial approve quote mutation (BUDGET_APPROVED -> COMMERCIAL_APPROVED)
  */
-export function useVerifyTaskQuote() {
+export function useCommercialApproveTaskQuote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => taskQuoteService.verify(id),
+    mutationFn: (id: string) => taskQuoteService.commercialApprove(id),
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: taskQuoteKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: taskQuoteKeys.lists() });
@@ -198,7 +198,7 @@ export function useVerifyTaskQuote() {
 }
 
 /**
- * Internal approve quote mutation (VERIFIED_BY_FINANCIAL -> BILLING_APPROVED, triggers invoice generation)
+ * Internal approve quote mutation (COMMERCIAL_APPROVED -> BILLING_APPROVED, triggers invoice generation)
  */
 export function useInternalApproveTaskQuote() {
   const queryClient = useQueryClient();

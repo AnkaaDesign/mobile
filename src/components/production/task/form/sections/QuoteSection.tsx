@@ -25,7 +25,7 @@ interface PricingSectionProps {
 const QUOTE_STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
   BUDGET_APPROVED: 'Orçamento Aprovado',
-  VERIFIED_BY_FINANCIAL: 'Verificado pelo Financeiro',
+  COMMERCIAL_APPROVED: 'Aprovado pelo Comercial',
   BILLING_APPROVED: 'Faturamento Aprovado',
   UPCOMING: 'A Vencer',
   PARTIAL: 'Parcial',
@@ -36,7 +36,7 @@ const QUOTE_STATUS_LABELS: Record<string, string> = {
 const QUOTE_STATUS_VARIANTS: Record<string, 'secondary' | 'approved' | 'rejected' | 'cancelled'> = {
   PENDING: 'secondary',
   BUDGET_APPROVED: 'approved',
-  VERIFIED_BY_FINANCIAL: 'approved',
+  COMMERCIAL_APPROVED: 'approved',
   BILLING_APPROVED: 'approved',
   UPCOMING: 'secondary',
   PARTIAL: 'secondary',

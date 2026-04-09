@@ -24,7 +24,6 @@ import DatesSection from './sections/DatesSection';
 import ServicesSection from './sections/ServicesSection';
 
 // Lazy load heavy sections
-const PricingSection = lazy(() => import('./sections/QuoteSection'));
 const TruckLayoutSection = lazy(() => import('./sections/TruckLayoutSection'));
 const SpotSelector = lazy(() => import('./spot-selector'));
 const FilesSection = lazy(() => import('./sections/FilesSection'));
@@ -123,7 +122,6 @@ export function TaskForm({
   const isWarehouseUser = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE;
   const isDesignerUser = userPrivilege === SECTOR_PRIVILEGES.DESIGNER;
 
-  const canViewQuote = isAdminUser || isFinancialUser || isCommercialUser;
   const canViewTruckLayout = isAdminUser || isLogisticUser || isProductionManagerUser || (user?.ledSector && user?.sector?.privileges === 'PRODUCTION');
   const canViewTruckSpot = isAdminUser || isLogisticUser || isProductionManagerUser;
   const canViewFiles = !isWarehouseUser;
@@ -371,16 +369,6 @@ export function TaskForm({
         initialGeneralPaint={task?.generalPainting}
         initialLogoPaints={task?.logoPaints}
       />
-
-      {/* Quote (navigation link to separate screen) - only in edit mode */}
-      {mode === 'edit' && canViewQuote && (
-        <Suspense fallback={<SectionPlaceholder title="Carregando..." />}>
-          <PricingSection
-            isSubmitting={isSubmitting}
-            taskId={task?.id}
-          />
-        </Suspense>
-      )}
 
       {/* Truck Layout (Medidas do Caminhão) */}
       <Suspense fallback={<SectionPlaceholder title="Carregando medidas..." />}>

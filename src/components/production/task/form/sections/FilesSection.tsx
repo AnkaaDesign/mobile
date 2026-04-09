@@ -441,16 +441,24 @@ export default function FilesSection({
                 </View>
                 {/* Checkin reference images */}
                 {soCheckinFiles.length > 0 && (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.referenceScroll}>
-                    {soCheckinFiles.map((file) => {
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailScroll}>
+                    {soCheckinFiles.map((file, index) => {
                       const src = getThumbnailUri(file);
                       return (
-                        <View key={file.id || file.uri} style={[styles.referenceThumbnail, { borderColor: colors.border }]}>
-                          {src ? (
-                            <Image source={{ uri: src }} style={styles.referenceImage} />
-                          ) : (
-                            <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />
-                          )}
+                        <View key={file.id || file.uri} style={styles.thumbnailWrapper}>
+                          <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => handlePreviewImage(
+                              soCheckinFiles.map((f) => ({ uri: getThumbnailUri(f) })),
+                              index
+                            )}
+                          >
+                            {src ? (
+                              <Image source={{ uri: src }} style={[styles.thumbnailImage, { borderColor: colors.border }]} />
+                            ) : (
+                              <View style={[styles.thumbnailImage, { borderColor: colors.border, backgroundColor: colors.border }]} />
+                            )}
+                          </TouchableOpacity>
                         </View>
                       );
                     })}
@@ -539,28 +547,6 @@ const styles = StyleSheet.create({
   fileCount: {
     fontSize: fontSize.xs,
     opacity: 0.6,
-  },
-  referenceScroll: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  referenceThumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
-    overflow: 'hidden',
-    borderWidth: 1,
-    opacity: 0.6,
-    marginRight: spacing.xs,
-  },
-  referenceImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  referencePlaceholder: {
-    width: '100%',
-    height: '100%',
   },
   cameraButton: {
     flexDirection: 'row',

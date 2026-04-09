@@ -467,10 +467,17 @@ export const tasksListConfig: ListConfig<Task> = {
           if (task.status !== TASK_STATUS.IN_PRODUCTION) return false
           return canFinishTask(user)
         },
-        onPress: async (task: Task, router: any, context?) => {
-          // Navigate to checkout screen first — API requires checkout files to finish
-          navigationTracker.setSource(context?.route || '/(tabs)/producao/cronograma')
-          router.push(`/producao/cronograma/checkin-checkout/${task.id}`)
+        confirm: {
+          title: 'Finalizar Tarefa',
+          message: (task: Task) => `Deseja finalizar a tarefa "${task.name}"?`,
+        },
+        onPress: async (task: Task) => {
+          try {
+            await updateTask(task.id, { status: TASK_STATUS.COMPLETED })
+            queryClient.invalidateQueries({ queryKey: taskKeys.all })
+          } catch (_error) {
+            // API client already shows error alert
+          }
         },
       },
       // Order from left to right: Medidas, Adicionar Layouts, Copiar de Outra, Definir Setor, Editar, Deletar
@@ -511,7 +518,11 @@ export const tasksListConfig: ListConfig<Task> = {
         onPress: (task, router, context) => {
           const currentPath = context?.route || '/(tabs)/producao/cronograma'
           navigationTracker.setSource(currentPath)
-          router.push(`/producao/cronograma/checkin-checkout/${task.id}`)
+          // Route under the correct section so the menu highlights properly
+          let section = 'cronograma'
+          if (currentPath.includes('/agenda')) section = 'agenda'
+          else if (currentPath.includes('/historico')) section = 'historico'
+          router.push(`/producao/${section}/checkin-checkout/${task.id}`)
         },
       },
       {

@@ -1,5 +1,6 @@
 import { View, StyleSheet } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
+import type { Customer } from '@/types'
 import {
   TASK_QUOTE_STATUS,
   TASK_QUOTE_STATUS_LABELS,
@@ -18,7 +19,7 @@ function getQuoteStatusBadge(status: string | undefined | null): { variant: stri
       return { variant: 'secondary' }
     case TASK_QUOTE_STATUS.BUDGET_APPROVED:
       return { variant: 'approved' }
-    case TASK_QUOTE_STATUS.VERIFIED_BY_FINANCIAL:
+    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
       return { variant: 'processing' }
     case TASK_QUOTE_STATUS.BILLING_APPROVED:
       return { variant: 'approved' }
@@ -80,6 +81,12 @@ export const billingListConfig: ListConfig<BillingTask> = {
     hook: 'useTasksInfiniteMobile',
     defaultSort: { field: 'quote.statusOrder', direction: 'desc' },
     pageSize: 25,
+    sortOptions: [
+      { field: 'quote.statusOrder', label: 'Status do Faturamento' },
+      { field: 'name', label: 'Logomarca' },
+      { field: 'finishedAt', label: 'Data de Finalização' },
+      { field: 'quote.total', label: 'Valor' },
+    ],
     forcedParams: {
       shouldDisplayForFinancial: true,
     },
@@ -213,12 +220,12 @@ export const billingListConfig: ListConfig<BillingTask> = {
         badge: (task: BillingTask) => getQuoteStatusBadge(task.quote?.status),
       },
     ],
-    defaultVisible: ['name', 'identificador', 'quote.statusOrder'],
+    defaultVisible: ['name', 'invoiceToCustomers', 'quoteTotal', 'quote.statusOrder'],
     rowHeight: 52,
     actions: [
       {
         key: 'view',
-        label: 'Ver Orcamento',
+        label: 'Ver Detalhes',
         icon: 'eye',
         variant: 'default',
         onPress: (task, router) => {
@@ -237,7 +244,7 @@ export const billingListConfig: ListConfig<BillingTask> = {
         multiple: false,
         options: [
           { label: 'Orc. Aprovado', value: TASK_QUOTE_STATUS.BUDGET_APPROVED },
-          { label: 'Verif. Financeiro', value: TASK_QUOTE_STATUS.VERIFIED_BY_FINANCIAL },
+          { label: 'Aprov. Comercial', value: TASK_QUOTE_STATUS.COMMERCIAL_APPROVED },
           { label: 'Fat. Aprovado', value: TASK_QUOTE_STATUS.BILLING_APPROVED },
           { label: 'A Vencer', value: TASK_QUOTE_STATUS.UPCOMING },
           { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },
@@ -251,6 +258,38 @@ export const billingListConfig: ListConfig<BillingTask> = {
         label: 'Finalizado Em',
         type: 'date-range',
         placeholder: 'Data de finalizacao',
+      },
+      {
+        key: 'customerIds',
+        label: 'Clientes',
+        type: 'select',
+        multiple: true,
+        async: true,
+        queryKey: ['customers', 'filter'],
+        queryFn: async (searchTerm: string, page: number = 1) => {
+          try {
+            const { getCustomers } = await import('@/api-client')
+            const pageSize = 20
+            const response = await getCustomers({
+              where: searchTerm ? { fantasyName: { contains: searchTerm, mode: 'insensitive' } } : undefined,
+              orderBy: { fantasyName: 'asc' },
+              limit: pageSize,
+              page: page,
+            })
+            return {
+              data: (response.data || []).map((customer: Customer) => ({
+                label: customer.fantasyName,
+                value: customer.id,
+              })),
+              hasMore: response.meta?.hasNextPage ?? false,
+              total: response.meta?.totalRecords,
+            }
+          } catch (error) {
+            console.error('[Customer Filter] Error:', error)
+            return { data: [], hasMore: false }
+          }
+        },
+        placeholder: 'Selecione os clientes',
       },
     ],
   },

@@ -212,6 +212,31 @@ const DEFAULT_CONFIG: ApiClientConfig = {
 // Utility Functions
 // =====================
 
+/**
+ * Recursively fix React Native array serialization issue where arrays
+ * become objects with numeric string keys (e.g., {"0": "a", "1": "b"} instead of ["a", "b"]).
+ */
+const deepFixArraySerialization = (value: unknown): unknown => {
+  if (value === null || value === undefined || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(deepFixArraySerialization);
+
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj);
+  if (keys.length > 0 && keys.every((k) => /^\d+$/.test(k))) {
+    // Object with all-numeric keys → convert to array
+    return keys
+      .sort((a, b) => Number(a) - Number(b))
+      .map((k) => deepFixArraySerialization(obj[k]));
+  }
+
+  // Regular object — recurse into values
+  const fixed: Record<string, unknown> = {};
+  for (const key of keys) {
+    fixed[key] = deepFixArraySerialization(obj[key]);
+  }
+  return fixed;
+};
+
 const isWriteMethod = (method?: string): boolean =>
   ["post", "patch", "put", "delete"].includes(method?.toLowerCase() || "");
 
@@ -584,59 +609,16 @@ const createApiClient = (
         config.headers["X-Request-ID"] = requestId;
       }
 
-      // Fix array serialization for batch operations
+      // Fix React Native array serialization issue where arrays become objects
+      // with numeric string keys (e.g., {"0": "a", "1": "b"} → ["a", "b"]).
+      // Applied to all write methods to prevent this class of bugs globally.
       if (
-        config.url?.includes("/batch") &&
-        config.method?.toLowerCase() === "put"
+        isWriteMethod(config.method) &&
+        config.data &&
+        typeof config.data === "object" &&
+        !(config.data instanceof FormData)
       ) {
-        if (
-          config.data &&
-          typeof config.data === "object" &&
-          !Array.isArray(config.data)
-        ) {
-          const fixedData: any = {};
-          for (const key in config.data) {
-            const value = config.data[key];
-            if (value && typeof value === "object" && !Array.isArray(value)) {
-              const keys = Object.keys(value);
-              const isNumericKeys = keys.every((k) => /^\d+$/.test(k));
-              if (isNumericKeys) {
-                fixedData[key] = Object.values(value);
-              } else {
-                fixedData[key] = value;
-              }
-            } else {
-              fixedData[key] = value;
-            }
-          }
-          config.data = JSON.parse(JSON.stringify(fixedData));
-        }
-      }
-
-      // Fix array serialization issue for external-withdrawals
-      if (
-        config.url?.includes("/external-withdrawals") &&
-        config.method?.toLowerCase() === "post"
-      ) {
-        if (
-          config.data &&
-          typeof config.data === "object" &&
-          !Array.isArray(config.data)
-        ) {
-          if (
-            config.data.items &&
-            typeof config.data.items === "object" &&
-            !Array.isArray(config.data.items)
-          ) {
-            config.data = {
-              ...config.data,
-              items: Object.values(config.data.items),
-            };
-          }
-          if (config.data.items && Array.isArray(config.data.items)) {
-            config.data = JSON.parse(JSON.stringify(config.data));
-          }
-        }
+        config.data = deepFixArraySerialization(config.data);
       }
 
       // Handle FormData - let axios set the correct Content-Type for multipart/form-data

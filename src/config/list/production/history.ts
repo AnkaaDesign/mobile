@@ -10,7 +10,7 @@ import {
   COMMISSION_STATUS,
   COMMISSION_STATUS_LABELS,
 } from '@/constants'
-import { canEditTasks, canDeleteTasks } from '@/utils/permissions/entity-permissions'
+import { canEditTasks, canDeleteTasks, canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { navigationTracker } from '@/utils/navigation-tracker'
 
@@ -268,6 +268,17 @@ export const historyListConfig: ListConfig<Task> = {
         onPress: (task, router) => {
           navigationTracker.setSource('/(tabs)/producao/historico')
           router.push(`/producao/historico/detalhes/${task.id}`)
+        },
+      },
+      {
+        key: 'checkin-checkout',
+        label: 'Check-in/out',
+        icon: 'camera',
+        variant: 'default',
+        canPerform: canViewCheckinCheckout,
+        onPress: (task, router) => {
+          navigationTracker.setSource('/(tabs)/producao/historico')
+          router.push(`/producao/historico/checkin-checkout/${task.id}`)
         },
       },
       {

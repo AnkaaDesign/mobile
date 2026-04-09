@@ -1,11 +1,37 @@
 import { View, StyleSheet } from 'react-native'
 import type { ListConfig } from '@/components/list/types'
 import type { TaskQuote } from '@/types/task-quote'
-import { TASK_QUOTE_STATUS } from '@/constants'
+import { TASK_QUOTE_STATUS, TASK_QUOTE_STATUS_LABELS } from '@/constants'
 import { canEditQuote } from '@/utils/permissions/quote-permissions'
 import { formatCurrency } from '@/utils/formatters'
 import { ThemedText } from '@/components/ui/themed-text'
 import { Badge } from '@/components/ui/badge'
+
+/**
+ * Map TASK_QUOTE_STATUS to badge variant for consistent color coding
+ */
+function getQuoteStatusBadge(status: string | undefined | null): { variant: string } {
+  switch (status) {
+    case TASK_QUOTE_STATUS.PENDING:
+      return { variant: 'secondary' }
+    case TASK_QUOTE_STATUS.BUDGET_APPROVED:
+      return { variant: 'approved' }
+    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
+      return { variant: 'processing' }
+    case TASK_QUOTE_STATUS.BILLING_APPROVED:
+      return { variant: 'approved' }
+    case TASK_QUOTE_STATUS.UPCOMING:
+      return { variant: 'pending' }
+    case TASK_QUOTE_STATUS.DUE:
+      return { variant: 'destructive' }
+    case TASK_QUOTE_STATUS.PARTIAL:
+      return { variant: 'inProgress' }
+    case TASK_QUOTE_STATUS.SETTLED:
+      return { variant: 'completed' }
+    default:
+      return { variant: 'secondary' }
+  }
+}
 
 const styles = StyleSheet.create({
   nameText: {
@@ -34,9 +60,6 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
     hook: 'useTaskQuotesInfiniteMobile',
     defaultSort: { field: 'budgetNumber', direction: 'desc' },
     pageSize: 25,
-    where: {
-      status: TASK_QUOTE_STATUS.PENDING,
-    },
     include: {
       task: {
         select: {
@@ -68,6 +91,18 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
 
   table: {
     columns: [
+      {
+        key: 'budgetNumber',
+        label: 'N.',
+        sortable: true,
+        width: 0.8,
+        align: 'left',
+        render: (quote: TaskQuote) => (
+          <ThemedText style={[styles.cellText, { fontFamily: 'monospace' }]} numberOfLines={1}>
+            {quote.budgetNumber ? `#${quote.budgetNumber.toString().padStart(4, '0')}` : '-'}
+          </ThemedText>
+        ),
+      },
       {
         key: 'task.name',
         label: 'LOGOMARCA',
@@ -159,8 +194,21 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         render: (quote: TaskQuote) => quote.createdAt,
         format: 'date',
       },
+      {
+        key: 'status',
+        label: 'STATUS',
+        sortable: true,
+        width: 1.8,
+        align: 'center',
+        render: (quote: TaskQuote) => {
+          if (!quote.status) return '-'
+          return TASK_QUOTE_STATUS_LABELS[quote.status as TASK_QUOTE_STATUS] || quote.status
+        },
+        format: 'badge',
+        badge: (quote: TaskQuote) => getQuoteStatusBadge(quote.status),
+      },
     ],
-    defaultVisible: ['task.name', 'identificador', 'task.term'],
+    defaultVisible: ['task.name', 'customerConfigs', 'total', 'task.term'],
     rowHeight: 52,
     actions: [
       {
@@ -192,6 +240,23 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
   filters: {
     fields: [
       {
+        key: 'status',
+        label: 'Status',
+        type: 'select',
+        multiple: false,
+        options: [
+          { label: 'Pendente', value: TASK_QUOTE_STATUS.PENDING },
+          { label: 'Orc. Aprovado', value: TASK_QUOTE_STATUS.BUDGET_APPROVED },
+          { label: 'Aprov. Comercial', value: TASK_QUOTE_STATUS.COMMERCIAL_APPROVED },
+          { label: 'Fat. Aprovado', value: TASK_QUOTE_STATUS.BILLING_APPROVED },
+          { label: 'A Vencer', value: TASK_QUOTE_STATUS.UPCOMING },
+          { label: 'Vencido', value: TASK_QUOTE_STATUS.DUE },
+          { label: 'Parcial', value: TASK_QUOTE_STATUS.PARTIAL },
+          { label: 'Liquidado', value: TASK_QUOTE_STATUS.SETTLED },
+        ],
+        placeholder: 'Todos os status',
+      },
+      {
         key: 'expiresAt',
         label: 'Data de Validade',
         type: 'date-range',
@@ -204,6 +269,9 @@ export const budgetListConfig: ListConfig<TaskQuote> = {
         placeholder: 'Data de Criacao',
       },
     ],
+    defaultValues: {
+      status: TASK_QUOTE_STATUS.PENDING,
+    },
   },
 
   search: {

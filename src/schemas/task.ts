@@ -1311,7 +1311,7 @@ export const taskCreateSchema = z
       }
     }
 
-    if (data.startedAt && data.finishedAt && data.finishedAt <= data.startedAt) {
+    if (data.startedAt && data.finishedAt && data.finishedAt < data.startedAt) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Data de finalização deve ser posterior à data de início",
@@ -1403,6 +1403,18 @@ export const taskUpdateSchema = z
     cuts: z.array(cutCreateNestedSchema).optional(), // Support for multiple cuts
     airbrushings: z.array(airbrushingCreateNestedSchema).optional(), // Support for multiple airbrushings
     quote: taskQuoteCreateNestedSchema.optional(), // One-to-one quote with status and items
+
+    // Service order file updates (checkin/checkout) - independent of serviceOrders to avoid triggering SO deletion
+    // Maps { [serviceOrderId]: { checkinFileIds?: string[], checkoutFileIds?: string[] } }
+    serviceOrderFiles: z
+      .record(
+        z.string().uuid(),
+        z.object({
+          checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),
+          checkoutFileIds: z.array(z.string().uuid('Arquivo de checkout inválido')).optional(),
+        }),
+      )
+      .optional(),
   })
   // Auto-fill dates based on status changes (before validation)
   .transform((data) => {
@@ -1445,7 +1457,7 @@ export const taskUpdateSchema = z
       }
     }
 
-    if (data.startedAt && data.finishedAt && data.finishedAt <= data.startedAt) {
+    if (data.startedAt && data.finishedAt && data.finishedAt < data.startedAt) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Data de finalização deve ser posterior à data de início",

@@ -12,6 +12,7 @@ import { DISCOUNT_TYPE, PAYMENT_CONDITION, TASK_QUOTE_STATUS } from "@/constants
 import { getServiceDescriptionsByType } from "@/constants/service-descriptions";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formatCurrency } from "@/utils";
+import { computeConfigDiscount } from "@/utils/task-quote-calculations";
 import { IconNote, IconTrash, IconPlus, IconCalendar, IconCurrencyReal, IconPhoto, IconFileInvoice, IconFileSearch, IconUpload, IconArrowLeft, IconX } from "@tabler/icons-react-native";
 import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -341,21 +342,9 @@ export const QuoteSelector = forwardRef<QuoteSelectorRef, QuoteSelectorProps>(
 
         const roundedSubtotal = Math.round(customerSubtotal * 100) / 100;
 
-        // Calculate per-customer total from service-level discounts
-        const customerTotal = services.reduce((sum: number, svc: any) => {
-          if (svc.invoiceToCustomerId === customerId) {
-            const amount = typeof svc.amount === 'number' ? svc.amount : Number(svc.amount) || 0;
-            let discount = 0;
-            if (svc.discountType === 'PERCENTAGE' && svc.discountValue) {
-              discount = Math.round((amount * svc.discountValue / 100) * 100) / 100;
-            } else if (svc.discountType === 'FIXED_VALUE' && svc.discountValue) {
-              discount = Math.min(svc.discountValue, amount);
-            }
-            return sum + Math.max(0, amount - discount);
-          }
-          return sum;
-        }, 0);
-        const roundedTotal = Math.max(0, Math.round(customerTotal * 100) / 100);
+        // Calculate per-customer total from config-level discount
+        const configDiscount = computeConfigDiscount(roundedSubtotal, config.discountType, config.discountValue);
+        const roundedTotal = Math.max(0, Math.round((roundedSubtotal - configDiscount) * 100) / 100);
 
         if (config.subtotal !== roundedSubtotal || config.total !== roundedTotal) {
           updated = true;

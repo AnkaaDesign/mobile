@@ -10,8 +10,8 @@ import { useFileViewer } from "@/components/file";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
-import { computeServiceDiscount } from "@/utils/task-quote-calculations";
-import type { TaskQuote, TaskQuoteService } from "@/types/task-quote";
+import { computeConfigDiscount } from "@/utils/task-quote-calculations";
+import type { TaskQuote } from "@/types/task-quote";
 import { WEB_BASE_URL } from "@/config/urls";
 import {
   IconExternalLink,
@@ -37,12 +37,12 @@ interface TaskQuoteCardProps {
   chassisNumber?: string | null;
 }
 
-type QuoteStatus = "PENDING" | "BUDGET_APPROVED" | "VERIFIED_BY_FINANCIAL" | "BILLING_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED" | "DUE";
+type QuoteStatus = "PENDING" | "BUDGET_APPROVED" | "COMMERCIAL_APPROVED" | "BILLING_APPROVED" | "UPCOMING" | "PARTIAL" | "SETTLED" | "DUE";
 
 const STATUS_CONFIG: Record<QuoteStatus, { label: string; variant: "secondary" | "approved" | "rejected" | "cancelled" }> = {
   PENDING: { label: "Pendente", variant: "secondary" },
   BUDGET_APPROVED: { label: "Orçamento Aprovado", variant: "approved" },
-  VERIFIED_BY_FINANCIAL: { label: "Verificado pelo Financeiro", variant: "approved" },
+  COMMERCIAL_APPROVED: { label: "Aprovado pelo Comercial", variant: "approved" },
   BILLING_APPROVED: { label: "Faturamento Aprovado", variant: "approved" },
   UPCOMING: { label: "A Vencer", variant: "secondary" },
   PARTIAL: { label: "Parcial", variant: "secondary" },
@@ -111,12 +111,12 @@ export function TaskQuoteCard({ quote, customerId, customerName, contactName, te
     }
   };
 
-  // Calculate total discount amount from per-service discounts
-  const totalDiscountAmount = (quote.services || []).reduce((sum, svc: TaskQuoteService) => {
-    return sum + computeServiceDiscount(
-      typeof svc.amount === 'number' ? svc.amount : Number(svc.amount) || 0,
-      svc.discountType,
-      svc.discountValue,
+  // Calculate total discount amount from customer config discounts
+  const totalDiscountAmount = (quote.customerConfigs || []).reduce((sum, config) => {
+    return sum + computeConfigDiscount(
+      typeof config.subtotal === 'number' ? config.subtotal : Number(config.subtotal) || 0,
+      config.discountType,
+      config.discountValue
     );
   }, 0);
 

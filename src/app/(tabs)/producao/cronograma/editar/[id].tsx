@@ -316,6 +316,7 @@ export default function EditScheduleScreen() {
   const buildFormDataPayload = (
     taskData: Record<string, any>,
     newFiles: Record<string, FilePickerItem[]>,
+    soFileMappingParam?: { soId: string; type: 'checkin' | 'checkout'; count: number }[],
   ): FormData => {
     const formData = new FormData();
 
@@ -366,6 +367,11 @@ export default function EditScheduleScreen() {
       });
     }
 
+    // Add per-SO file mapping so the API can associate flat file arrays with SOs
+    if (soFileMappingParam && soFileMappingParam.length > 0) {
+      formData.append('_soFileMapping', JSON.stringify(soFileMappingParam));
+    }
+
     return formData;
   };
 
@@ -401,38 +407,74 @@ export default function EditScheduleScreen() {
       }
 
       // Handle per-service-order checkin/checkout files
-      // New files from camera go into FormData; existing file IDs are injected into service orders
+      // New files from camera go into FormData; existing file IDs go into serviceOrderFiles
+      // Using serviceOrderFiles (separate from serviceOrders) avoids triggering the
+      // backend's service order deletion logic when only updating file associations.
       const checkinBySOData = data._checkinFilesByServiceOrder || {};
       const checkoutBySOData = data._checkoutFilesByServiceOrder || {};
-      const checkinNewFiles: FilePickerItem[] = data._checkinFiles || [];
-      const checkoutNewFiles: FilePickerItem[] = data._checkoutFiles || [];
 
-      if (checkinNewFiles.length > 0) {
-        newFilesForUpload['checkinFiles'] = checkinNewFiles;
-        hasNewFiles = true;
-      }
-      if (checkoutNewFiles.length > 0) {
-        newFilesForUpload['checkoutFiles'] = checkoutNewFiles;
-        hasNewFiles = true;
-      }
-
-      // Inject file IDs into service orders
+      // Build serviceOrderFiles map for existing file IDs + collect NEW files per SO
+      const serviceOrderFiles: Record<string, { checkinFileIds?: string[]; checkoutFileIds?: string[] }> = {};
+      const soCheckinNewFiles: FilePickerItem[] = [];
+      const soCheckoutNewFiles: FilePickerItem[] = [];
+      const soFileMapping: { soId: string; type: 'checkin' | 'checkout'; count: number }[] = [];
       const serviceOrders = data.serviceOrders || [];
+
       for (const so of serviceOrders) {
         if (so.id) {
           const soCheckinFiles: FilePickerItem[] = checkinBySOData[so.id] || [];
           const soCheckoutFiles: FilePickerItem[] = checkoutBySOData[so.id] || [];
-          if (soCheckinFiles.length > 0) {
-            so.checkinFileIds = soCheckinFiles
-              .map((f: any) => f.fileId || f.file?.id || f.id)
-              .filter(Boolean);
+
+          // Separate existing (have ID) from new (have uri, no ID)
+          const checkinIds = soCheckinFiles
+            .map((f: any) => f.fileId || f.file?.id || f.id)
+            .filter(Boolean);
+          const checkoutIds = soCheckoutFiles
+            .map((f: any) => f.fileId || f.file?.id || f.id)
+            .filter(Boolean);
+
+          const checkinNew = soCheckinFiles.filter((f: any) => !f.id && !f.fileId && !f.file?.id && f.uri);
+          const checkoutNew = soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && !f.file?.id && f.uri);
+
+          // Collect existing file IDs for serviceOrderFiles
+          // Check if SO originally had files — send empty arrays to clear removed files
+          const origSO = (task?.serviceOrders || []).find((s: any) => s.id === so.id);
+          const hadFiles = ((origSO as any)?.checkinFiles || []).length > 0 || ((origSO as any)?.checkoutFiles || []).length > 0;
+          const hasExisting = checkinIds.length > 0 || checkoutIds.length > 0;
+          const hasNew = checkinNew.length > 0 || checkoutNew.length > 0;
+
+          if (hasExisting || hasNew || hadFiles) {
+            serviceOrderFiles[so.id] = {
+              checkinFileIds: checkinIds,
+              checkoutFileIds: checkoutIds,
+            };
           }
-          if (soCheckoutFiles.length > 0) {
-            so.checkoutFileIds = soCheckoutFiles
-              .map((f: any) => f.fileId || f.file?.id || f.id)
-              .filter(Boolean);
+
+          // Collect new files into flat arrays + build mapping
+          if (checkinNew.length > 0) {
+            soCheckinNewFiles.push(...checkinNew);
+            soFileMapping.push({ soId: so.id, type: 'checkin', count: checkinNew.length });
+            hasNewFiles = true;
+          }
+          if (checkoutNew.length > 0) {
+            soCheckoutNewFiles.push(...checkoutNew);
+            soFileMapping.push({ soId: so.id, type: 'checkout', count: checkoutNew.length });
+            hasNewFiles = true;
           }
         }
+      }
+
+      // Attach per-SO new files for FormData building
+      if (soCheckinNewFiles.length > 0) {
+        newFilesForUpload['soCheckinFiles'] = soCheckinNewFiles;
+      }
+      if (soCheckoutNewFiles.length > 0) {
+        newFilesForUpload['soCheckoutFiles'] = soCheckoutNewFiles;
+      }
+
+      // Attach serviceOrderFiles to data so processFormDataForSubmission can include it
+      if (Object.keys(serviceOrderFiles).length > 0) {
+        data.serviceOrderFiles = serviceOrderFiles;
       }
 
       // Clean up internal fields
@@ -465,7 +507,7 @@ export default function EditScheduleScreen() {
 
       if (hasNewFiles) {
         // Send as FormData (task data + files in a single request, matching web pattern)
-        const formData = buildFormDataPayload(safeData, newFilesForUpload);
+        const formData = buildFormDataPayload(safeData, newFilesForUpload, soFileMapping.length > 0 ? soFileMapping : undefined);
         result = await updateAsync({ id, data: formData as any });
       } else {
         // No new files — send as plain JSON (more efficient)
@@ -778,6 +820,12 @@ export default function EditScheduleScreen() {
     }
     if (formData.newResponsibles !== undefined && formData.newResponsibles.length > 0) {
       processed.newResponsibles = formData.newResponsibles;
+    }
+
+    // Pass through serviceOrderFiles (checkin/checkout file IDs per service order)
+    // This field is prepared by handleSubmit and should be sent as-is to the API
+    if (formData.serviceOrderFiles && Object.keys(formData.serviceOrderFiles).length > 0) {
+      processed.serviceOrderFiles = formData.serviceOrderFiles;
     }
 
     console.log('[processFormData] Changed fields:', Object.keys(processed));
