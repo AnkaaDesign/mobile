@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
 import { NOTIFICATION_IMPORTANCE, NOTIFICATION_IMPORTANCE_LABELS, NOTIFICATION_TYPE_LABELS } from "@/constants";
@@ -169,7 +169,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
@@ -203,17 +203,13 @@ export const NotificationTable = React.memo<NotificationTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -367,23 +363,23 @@ export const NotificationTable = React.memo<NotificationTableProps>(
 
         if (enableSwipeActions && onNotificationDelete) {
           return (
-            <NotificationTableRowSwipe key={item.id} notificationId={item.id} notificationTitle={item.title} onDelete={onNotificationDelete} disabled={showSelection}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                scrollEnabled={tableWidth > availableWidth}
-                style={StyleSheet.flatten([
-                  styles.row,
-                  {
-                    backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                  },
-                  isSelected && { backgroundColor: colors.primary + "20" },
-                ])}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
-              >
+            <NotificationTableRowSwipe
+              key={item.id}
+              notificationId={item.id}
+              notificationTitle={item.title}
+              onDelete={onNotificationDelete}
+              disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
                 <Pressable
-                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                   onPress={() => onNotificationPress?.(item.id)}
                   onLongPress={() => showSelection && handleSelectNotification(item.id)}
                   android_ripple={{ color: colors.primary + "20" }}
@@ -402,17 +398,13 @@ export const NotificationTable = React.memo<NotificationTableProps>(
                     </View>
                   ))}
                 </Pressable>
-              </ScrollView>
             </NotificationTableRowSwipe>
           );
         }
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -421,10 +413,9 @@ export const NotificationTable = React.memo<NotificationTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onNotificationPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectNotification(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -443,7 +434,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -457,8 +448,6 @@ export const NotificationTable = React.memo<NotificationTableProps>(
         renderColumnValue,
         enableSwipeActions,
         onNotificationDelete,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

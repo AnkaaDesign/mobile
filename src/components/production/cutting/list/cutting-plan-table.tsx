@@ -6,7 +6,7 @@ import type { Cut } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { CuttingPlanTableRowSwipe } from "./cutting-plan-table-row-swipe";
 import { getBadgeVariant } from "@/constants/badge-colors";
@@ -219,7 +219,7 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const flatListRef = useRef<FlatList>(null);
 
     // Column visibility - use prop if provided, otherwise use default
@@ -264,17 +264,13 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -391,23 +387,17 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
               onDelete={onCutDelete}
               onStatusChange={onCutStatusChange}
               disabled={false}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: rowColor,
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+              ])}
             >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: rowColor,
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onCutPress?.(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
                   >
@@ -420,7 +410,6 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </CuttingPlanTableRowSwipe>
           );
@@ -428,10 +417,7 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -439,10 +425,9 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onCutPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -455,7 +440,7 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -468,8 +453,6 @@ export const CuttingPlanTable = React.memo<CuttingPlanTableProps>(
         onCutEdit,
         onCutDelete,
         onCutStatusChange,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

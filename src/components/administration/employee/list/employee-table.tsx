@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import type { BadgeVariant } from "@/constants/badge-colors";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { EmployeeTableRowSwipe } from "./employee-table-row-swipe";
 import { formatCPF, formatBrazilianPhone, formatDate, formatDateTime } from "@/utils";
@@ -446,7 +446,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
@@ -505,17 +505,13 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -659,40 +655,34 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
 
         if (enableSwipeActions && (onEmployeeEdit || onEmployeeDelete || onEmployeeView)) {
           return (
-            <EmployeeTableRowSwipe key={employee.id} employeeId={employee.id} employeeName={employee.name} onEdit={onEmployeeEdit} onDelete={onEmployeeDelete} onView={onEmployeeView} disabled={showSelection}>
+            <EmployeeTableRowSwipe key={employee.id} employeeId={employee.id} employeeName={employee.name} onEdit={onEmployeeEdit} onDelete={onEmployeeDelete} onView={onEmployeeView} disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onEmployeePress?.(employee.id)}
+                  onLongPress={() => showSelection && handleSelectEmployee(employee.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onEmployeePress?.(employee.id)}
-                    onLongPress={() => showSelection && handleSelectEmployee(employee.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectEmployee(employee.id)} />
-                      </View>
-                    )}
-                    {displayColumns.map((column) => (
-                      <View key={column.key} style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}>
-                        {renderColumnValue(employee, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {showSelection && (
+                    <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => handleSelectEmployee(employee.id)} />
+                    </View>
+                  )}
+                  {displayColumns.map((column) => (
+                    <View key={column.key} style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}>
+                      {renderColumnValue(employee, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </EmployeeTableRowSwipe>
           );
@@ -700,10 +690,7 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -712,10 +699,9 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onEmployeePress?.(employee.id)}
               onLongPress={() => showSelection && handleSelectEmployee(employee.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -731,10 +717,10 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
-      [colors, tableWidth, displayColumns, showSelection, selectedEmployees, onEmployeePress, handleSelectEmployee, renderColumnValue, enableSwipeActions, onEmployeeEdit, onEmployeeDelete, onEmployeeView, activeRowId, closeActiveRow, isDark],
+      [colors, tableWidth, displayColumns, showSelection, selectedEmployees, onEmployeePress, handleSelectEmployee, renderColumnValue, enableSwipeActions, onEmployeeEdit, onEmployeeDelete, onEmployeeView, isDark],
     );
 
     // Loading footer component

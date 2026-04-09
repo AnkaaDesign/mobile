@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ReanimatedSwipeableRow } from "@/components/ui/reanimated-swipeable-row";
 import { FileTypeIcon } from "@/components/ui/file-type-icon";
@@ -126,7 +126,7 @@ export const FileTable = React.memo<FileTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
@@ -156,17 +156,13 @@ export const FileTable = React.memo<FileTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -312,10 +308,7 @@ export const FileTable = React.memo<FileTableProps>(
         const isEven = index % 2 === 0;
 
         const rowContent = (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -324,10 +317,9 @@ export const FileTable = React.memo<FileTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onFilePress?.(file.id)}
               onLongPress={() => showSelection && handleSelectFile(file.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -346,7 +338,7 @@ export const FileTable = React.memo<FileTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
 
         if (enableSwipeActions && (onFilePreview || onFileDelete || onFileShare)) {
@@ -420,8 +412,6 @@ export const FileTable = React.memo<FileTableProps>(
         onFilePreview,
         onFileDelete,
         onFileShare,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

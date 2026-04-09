@@ -5,7 +5,7 @@ import type { Activity } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamActivityTableRowSwipe } from "./team-activity-table-row-swipe";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
@@ -200,7 +200,7 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
@@ -234,17 +234,13 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -382,22 +378,16 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
               activityDescription={item.item?.name || "Atividade"}
               onEdit={onActivityEdit}
               onDelete={onActivityDelete}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                },
+              ])}
             >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onActivityPress?.(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
                   >
@@ -415,7 +405,6 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </TeamActivityTableRowSwipe>
           );
@@ -423,20 +412,16 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
                 backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onActivityPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -454,7 +439,7 @@ export const TeamActivityTable = React.memo<TeamActivityTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

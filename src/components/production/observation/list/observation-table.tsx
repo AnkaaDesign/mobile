@@ -6,7 +6,7 @@ import type { Observation } from "@/types";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate, formatRelativeTime } from "@/utils";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -154,7 +154,7 @@ export const ObservationTable = React.memo<ObservationTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -196,17 +196,13 @@ export const ObservationTable = React.memo<ObservationTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -352,10 +348,7 @@ export const ObservationTable = React.memo<ObservationTableProps>(
         const isEven = index % 2 === 0;
 
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -364,10 +357,9 @@ export const ObservationTable = React.memo<ObservationTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onObservationPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectObservation(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -391,7 +383,7 @@ export const ObservationTable = React.memo<ObservationTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

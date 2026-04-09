@@ -5,7 +5,7 @@ import type { Vacation } from '../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TeamVacationTableRowSwipe } from "./team-vacation-table-row-swipe";
 import { formatDate, getDifferenceInDays, isDateInRange } from "@/utils";
@@ -195,7 +195,7 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
@@ -229,17 +229,13 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -379,23 +375,17 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
               vacationUserName={item.user?.name || "Desconhecido"}
               onEdit={onVacationEdit}
               onDelete={onVacationDelete}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                },
+                isOnVacation && { backgroundColor: colors.success + "10" },
+              ])}
             >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    },
-                    isOnVacation && { backgroundColor: colors.success + "10" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onVacationPress?.(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
                   >
@@ -413,7 +403,6 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </TeamVacationTableRowSwipe>
           );
@@ -421,10 +410,7 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -432,10 +418,9 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
               },
               isOnVacation && { backgroundColor: colors.success + "10" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onVacationPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -453,7 +438,7 @@ export const TeamVacationTable = React.memo<TeamVacationTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

@@ -4,7 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { paintFormulaComponentService } from "@/api-client/paint";
+import { paintFormulaComponentService, notify } from "@/api-client";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
@@ -63,23 +63,23 @@ export default function CreatePaintScreen() {
         }
       }
 
-      // Deduct stock for all formula components after successful creation
-      if (formulas && formulas.length > 0) {
-        for (const formula of formulas) {
-          const validComponents = formula.components?.filter((c) => c.itemId && c.weight && c.weight > 0) || [];
-          for (const component of validComponents) {
-            if (component.weight && component.weight > 0 && component.itemId) {
-              try {
-                await paintFormulaComponentService.deductForFormulationTest({
-                  itemId: component.itemId,
-                  weight: component.weight,
-                });
-              } catch {
-                // Stock deduction is best-effort
-              }
-            }
-          }
-        }
+      // Deduct stock for all formula components — run in parallel, one summary toast at the end
+      const allDeductComponents = (formulas || []).flatMap((formula) =>
+        (formula.components || [])
+          .filter((c) => c.itemId && c.weight && c.weight > 0)
+          .map((c) => ({ itemId: c.itemId, weight: c.weight! }))
+      );
+
+      if (allDeductComponents.length > 0) {
+        await Promise.allSettled(
+          allDeductComponents.map((c) =>
+            paintFormulaComponentService.deductForFormulationTest(
+              { itemId: c.itemId, weight: c.weight },
+              { suppressToast: true },
+            )
+          )
+        );
+        notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
       }
 
       goBack();

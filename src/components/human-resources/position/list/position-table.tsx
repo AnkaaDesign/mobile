@@ -133,9 +133,10 @@ interface PositionTableRowSwipeProps {
   onDelete?: (positionId: string) => void;
   children: (isActive: boolean) => React.ReactNode;
   disabled?: boolean;
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
 }
 
-function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, children, disabled = false }: PositionTableRowSwipeProps) {
+function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, children, disabled = false, style }: PositionTableRowSwipeProps) {
   const { colors } = useTheme();
   const { activeRowId, setActiveRowId } = useSwipeRow();
   const isActive = activeRowId === positionId;
@@ -193,6 +194,7 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
     <ReanimatedSwipeableRow
       rightActions={rightActions}
       onWillOpen={handleSwipeableWillOpen}
+      style={style}
     >
       {children(isActive)}
     </ReanimatedSwipeableRow>
@@ -374,22 +376,23 @@ export const PositionTable = React.memo<PositionTableProps>(
 
         if (enableSwipeActions && (onPositionEdit || onPositionDelete)) {
           return (
-            <PositionTableRowSwipe key={item.id} positionId={item.id} positionName={item.name} onEdit={onPositionEdit} onDelete={onPositionDelete} disabled={false}>
+            <PositionTableRowSwipe
+              key={item.id}
+              positionId={item.id}
+              positionName={item.name}
+              onEdit={onPositionEdit}
+              onDelete={onPositionDelete}
+              disabled={false}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+              ])}
+            >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
-                  <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])} onPress={() => onPositionPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
+                  <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])} onPress={() => onPositionPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
                     {displayColumns.map((column) => (
                       <View
                         key={column.key}
@@ -399,7 +402,6 @@ export const PositionTable = React.memo<PositionTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </PositionTableRowSwipe>
           );
@@ -407,10 +409,7 @@ export const PositionTable = React.memo<PositionTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -418,9 +417,8 @@ export const PositionTable = React.memo<PositionTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
-            <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])} onPress={() => onPositionPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
+            <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])} onPress={() => onPositionPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
               {displayColumns.map((column) => (
                 <View
                   key={column.key}
@@ -430,7 +428,7 @@ export const PositionTable = React.memo<PositionTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [colors, tableWidth, displayColumns, onPositionPress, renderColumnValue, enableSwipeActions, onPositionEdit, onPositionDelete, activeRowId, closeActiveRow, isDark],

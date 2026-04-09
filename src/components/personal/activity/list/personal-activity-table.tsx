@@ -342,20 +342,16 @@ export const PersonalActivityTable = React.memo<PersonalActivityTableProps>(
         const isEven = index % 2 === 0;
 
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
                 backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onActivityPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -373,7 +369,7 @@ export const PersonalActivityTable = React.memo<PersonalActivityTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useCallback } from "react";
+import { useEffect, useMemo, useRef, useCallback, useState } from "react";
 import { View, TouchableOpacity, StyleSheet, useWindowDimensions, TextInput } from "react-native";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { IconTrash, IconPlus } from "@tabler/icons-react-native";
@@ -80,6 +80,9 @@ export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponen
     });
   };
 
+  // Track which newly-appended row index should auto-open its combobox
+  const [pendingAutoOpenIndex, setPendingAutoOpenIndex] = useState<number | null>(null);
+
   // Refs for weight inputs to auto-focus after component selection
   const weightInputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -91,12 +94,28 @@ export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponen
     }, 100);
   }, [setValue]);
 
-  // Add initial empty row if no components exist
+  // Combined: initial row append + clear item pre-selection.
+  // Case A – availableItems already loaded on mount: append pre-filled with clear item.
+  // Case B – availableItems arrive after empty row exists: fill the empty first row.
   useEffect(() => {
+    const clearItem = availableItems.find((item) =>
+      item.name.toLowerCase().startsWith("clear ")
+    );
+
     if (fields.length === 0) {
-      append({ itemId: "", rawInput: "" });
+      append({ itemId: clearItem?.id || "", rawInput: "" });
+      if (clearItem) {
+        setTimeout(() => { weightInputRefs.current[0]?.focus(); }, 150);
+      }
+      return;
     }
-  }, [fields.length, append]);
+
+    const firstComponent = allComponents[0];
+    if (firstComponent && !firstComponent.itemId && clearItem) {
+      setValue("components.0.itemId", clearItem.id);
+      setTimeout(() => { weightInputRefs.current[0]?.focus(); }, 150);
+    }
+  }, [fields.length, availableItems]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAmountChange = (index: number, value: string | number | null) => {
     // Allow empty string or null for clearing
@@ -196,6 +215,8 @@ export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponen
           placeholder="Selecione um componente"
           emptyText="Nenhum item disponível"
           searchPlaceholder="Buscar componente..."
+          defaultOpen={pendingAutoOpenIndex === index}
+          autoFocusSearch={pendingAutoOpenIndex === index}
         />
       </View>
 
@@ -249,6 +270,8 @@ export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponen
               placeholder="Selecione um componente"
               emptyText="Nenhum item disponível"
               searchPlaceholder="Buscar componente..."
+              defaultOpen={pendingAutoOpenIndex === index}
+              autoFocusSearch={pendingAutoOpenIndex === index}
             />
           </View>
 
@@ -304,7 +327,10 @@ export function FormulaComponentsEditor({ availableItems = [] }: FormulaComponen
       {/* Add Component Button */}
       <Button
         variant="outline"
-        onPress={() => append({ itemId: "", rawInput: "" })}
+        onPress={() => {
+          setPendingAutoOpenIndex(fields.length);
+          append({ itemId: "", rawInput: "" });
+        }}
         style={styles.addButton}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>

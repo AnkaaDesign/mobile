@@ -205,20 +205,16 @@ export function FormulaProductionsTable({
     const rowBgColor = isEven ? colors.background : colors.card;
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEnabled={tableWidth > availableWidth}
+      <View
         style={StyleSheet.flatten([
           styles.tableRow,
           {
             backgroundColor: rowBgColor,
           },
         ])}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <Pressable
-          style={StyleSheet.flatten([styles.tableRowContent, { width: tableWidth }])}
+          style={StyleSheet.flatten([styles.tableRowContent, { width: tableWidth, paddingHorizontal: 16 }])}
           onPress={() => handleProductionPress(production.id)}
           android_ripple={{ color: colors.primary + "20" }}
         >
@@ -236,7 +232,7 @@ export function FormulaProductionsTable({
             </View>
           ))}
         </Pressable>
-      </ScrollView>
+      </View>
     );
   }, [displayColumns, tableWidth, colors, isDark]);
 

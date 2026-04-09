@@ -116,6 +116,11 @@ interface ComboboxProps<TData = ComboboxOption> {
   // Callback with the full selected item (not just the value string).
   // Useful when the parent needs the full item data without maintaining a separate cache.
   onSelect?: (item: TData | null) => void;
+
+  // Open on mount (for auto-opening newly added rows)
+  defaultOpen?: boolean;
+  // Auto-focus the search input even when shown as a positioned dropdown
+  autoFocusSearch?: boolean;
 }
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -175,6 +180,8 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
   onOpen,
   onClose: onCloseProp,
   onSelect,
+  defaultOpen = false,
+  autoFocusSearch = false,
 }: ComboboxProps<TData>) {
   const { colors } = useTheme();
   const keyboardContext = useKeyboardAwareForm();
@@ -531,6 +538,16 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
     Keyboard.dismiss();
     effectiveOnClose?.();
   }, [effectiveOnClose]);
+
+  // Auto-open on mount when defaultOpen=true (for newly appended rows)
+  const defaultOpenRef = useRef(defaultOpen);
+  useEffect(() => {
+    if (!defaultOpenRef.current) return;
+    const timer = setTimeout(() => {
+      handleOpen();
+    }, 80);
+    return () => clearTimeout(timer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = useCallback(
     (optionValue: string) => {
@@ -980,7 +997,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
-                  autoFocus={inputLayout.width === 0}
+                  autoFocus={inputLayout.width === 0 || autoFocusSearch}
                   accessibilityLabel="Campo de pesquisa"
                 />
               </View>
@@ -1141,7 +1158,7 @@ const ComboboxComponent = function Combobox<TData = ComboboxOption>({
                   placeholderTextColor={colors.mutedForeground}
                   value={search}
                   onChangeText={setSearch}
-                  autoFocus={inputLayout.width === 0}
+                  autoFocus={inputLayout.width === 0 || autoFocusSearch}
                   accessibilityLabel="Campo de pesquisa"
                 />
               </View>

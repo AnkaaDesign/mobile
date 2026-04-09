@@ -279,10 +279,7 @@ export const PpeSizeTable = React.memo<PpeSizeTableProps>(({ ppeSizes, onSizePre
       const isEven = index % 2 === 0;
 
       return (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          scrollEnabled={tableWidth > availableWidth}
+        <View
           style={StyleSheet.flatten([
             styles.row,
             {
@@ -290,16 +287,15 @@ export const PpeSizeTable = React.memo<PpeSizeTableProps>(({ ppeSizes, onSizePre
               borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
             },
           ])}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
         >
-          <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])} onPress={() => onSizePress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
+          <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])} onPress={() => onSizePress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
             {displayColumns.map((column) => (
               <View key={column.key} style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}>
                 {renderColumnValue(item, column)}
               </View>
             ))}
           </Pressable>
-        </ScrollView>
+        </View>
       );
     },
     [colors, tableWidth, displayColumns, onSizePress, renderColumnValue, isDark],

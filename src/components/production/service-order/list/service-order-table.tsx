@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { ServiceOrderTableRowSwipe } from "./service-order-table-row-swipe";
 import { formatDate, formatDateTime } from "@/utils";
@@ -213,7 +213,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -256,17 +256,13 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -420,24 +416,18 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
               onEdit={onServiceOrderEdit}
               onDelete={onServiceOrderDelete}
               disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : colors.card,
+                  borderBottomColor: "rgba(0,0,0,0.05)",
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
             >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : colors.card,
-                      borderBottomColor: "rgba(0,0,0,0.05)",
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onServiceOrderPress?.(item.id)}
                     onLongPress={() => showSelection && handleSelectServiceOrder(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
@@ -456,7 +446,6 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </ServiceOrderTableRowSwipe>
           );
@@ -464,10 +453,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -476,10 +462,9 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onServiceOrderPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectServiceOrder(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -498,7 +483,7 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -513,8 +498,6 @@ export const ServiceOrderTable = React.memo<ServiceOrderTableProps>(
         enableSwipeActions,
         onServiceOrderEdit,
         onServiceOrderDelete,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

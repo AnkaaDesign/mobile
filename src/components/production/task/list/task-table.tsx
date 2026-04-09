@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, ScrollView, StyleSheet } from "react-native";
+import { FlatList, View, TouchableOpacity, Pressable, RefreshControl, ActivityIndicator, Dimensions, StyleSheet } from "react-native";
 import { Icon } from "@/components/ui/icon";
 import { IconSelector } from "@tabler/icons-react-native";
 import type { Task } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { TaskTableRowSwipe } from "./task-table-row-swipe";
 import { TaskStatusBadge } from "./task-status-badge";
@@ -348,7 +348,9 @@ export const TaskTable = React.memo<TaskTableProps>(
     disableVirtualization = false,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    // useSwipeRowActions returns STABLE functions — subscribing here does NOT
+    // cause TaskTable to re-render when rows open/close (no activeRowId dep).
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -411,19 +413,16 @@ export const TaskTable = React.memo<TaskTableProps>(
       });
     }, [allColumns, visibleColumns]);
 
-    // Handle taps outside of active row to close swipe actions
+    // Handle taps outside of active row to close swipe actions.
+    // closeActiveRow is a no-op when nothing is open, so no guard needed.
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -514,66 +513,56 @@ export const TaskTable = React.memo<TaskTableProps>(
       return column.accessor(task);
     }, []);
 
-    // Header component
+    // Header component — no inner ScrollView; the outer table scroll handles it
     const renderHeader = useCallback(
       () => (
-        <View style={styles.headerWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
-            style={StyleSheet.flatten([
-              styles.headerContainer,
-              {
-                backgroundColor: colors.card,
-                borderBottomColor: colors.border,
-              },
-            ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
-          >
-            <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
-              {displayColumns.map((column) => {
-                const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
-
-                return (
-                  <TouchableOpacity
-                    key={column.key}
-                    style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
-                    onPress={() => column.sortable && handleSort(column.key)}
-                    disabled={!column.sortable}
-                    activeOpacity={column.sortable ? 0.7 : 1}
-                  >
-                    <View style={styles.headerCellContent}>
-                      <View style={styles.headerTextContainer}>
-                        <ThemedText
-                          style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {column.header}
-                        </ThemedText>
-                      </View>
-                      {column.sortable && (
-                        <View style={styles.sortIconWrapper}>
-                          {sortConfig ? (
-                            <View style={styles.sortIconContainer}>
-                              {sortConfig.direction === "asc" ? (
-                                <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                              ) : (
-                                <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
-                              )}
-                            </View>
-                          ) : (
-                            <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
-                          )}
-                        </View>
-                      )}
+        <View
+          style={StyleSheet.flatten([
+            styles.headerContainer,
+            { backgroundColor: colors.card, borderBottomColor: colors.border, paddingHorizontal: 16 },
+          ])}
+        >
+          <View style={StyleSheet.flatten([styles.headerRow, { width: tableWidth }])}>
+            {displayColumns.map((column) => {
+              const sortConfig = sortConfigs?.find((config) => config.columnKey === column.key);
+              return (
+                <TouchableOpacity
+                  key={column.key}
+                  style={StyleSheet.flatten([styles.headerCell, { width: column.width }])}
+                  onPress={() => column.sortable && handleSort(column.key)}
+                  disabled={!column.sortable}
+                  activeOpacity={column.sortable ? 0.7 : 1}
+                >
+                  <View style={styles.headerCellContent}>
+                    <View style={styles.headerTextContainer}>
+                      <ThemedText
+                        style={StyleSheet.flatten([styles.headerText, { color: isDark ? extendedColors.neutral[200] : "#000000" }])}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {column.header}
+                      </ThemedText>
                     </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
+                    {column.sortable && (
+                      <View style={styles.sortIconWrapper}>
+                        {sortConfig ? (
+                          <View style={styles.sortIconContainer}>
+                            {sortConfig.direction === "asc" ? (
+                              <Icon name="chevron-up" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                            ) : (
+                              <Icon name="chevron-down" size="sm" color={isDark ? extendedColors.neutral[100] : extendedColors.neutral[900]} />
+                            )}
+                          </View>
+                        ) : (
+                          <IconSelector size={16} color={isDark ? extendedColors.neutral[400] : extendedColors.neutral[600]} />
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       ),
       [colors, isDark, tableWidth, displayColumns, sortConfigs, handleSort],
@@ -599,36 +588,26 @@ export const TaskTable = React.memo<TaskTableProps>(
               onSetSector={onTaskSectorChange ? handleSetSector : undefined}
               onSetStatus={onTaskStatusChange ? handleSetStatus : undefined}
               disabled={false}
+              style={StyleSheet.flatten([
+                styles.row,
+                { backgroundColor: rowColor, borderBottomColor: "rgba(0,0,0,0.05)" },
+              ])}
             >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: rowColor,
-                      borderBottomColor: "rgba(0,0,0,0.05)",
-                    },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onTaskPress?.(item.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onTaskPress?.(item.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {displayColumns.map((column) => (
-                      <View
-                        key={column.key}
-                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
-                      >
-                        {renderColumnValue(item, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {displayColumns.map((column) => (
+                    <View
+                      key={column.key}
+                      style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                    >
+                      {renderColumnValue(item, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </TaskTableRowSwipe>
           );
@@ -636,21 +615,14 @@ export const TaskTable = React.memo<TaskTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
-              {
-                backgroundColor: rowColor,
-                borderBottomColor: "rgba(0,0,0,0.05)",
-              },
+              { backgroundColor: rowColor, borderBottomColor: "rgba(0,0,0,0.05)" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onTaskPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -663,7 +635,7 @@ export const TaskTable = React.memo<TaskTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

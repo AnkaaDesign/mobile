@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { PpeTableRowSwipe } from "./ppe-table-row-swipe";
 import { formatCurrency, formatQuantity } from "@/utils";
@@ -410,7 +410,7 @@ export const PpeTable = React.memo<PpeTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -465,17 +465,13 @@ export const PpeTable = React.memo<PpeTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -618,24 +614,19 @@ export const PpeTable = React.memo<PpeTableProps>(
 
         if (enableSwipeActions && (onPpeEdit || onPpeDelete)) {
           return (
-            <PpeTableRowSwipe key={item.id} ppeId={item.id} ppeName={item.name} onEdit={onPpeEdit} onDelete={onPpeDelete} disabled={showSelection}>
+            <PpeTableRowSwipe key={item.id} ppeId={item.id} ppeName={item.name} onEdit={onPpeEdit} onDelete={onPpeDelete} disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onPpePress?.(item.id)}
                     onLongPress={() => showSelection && handleSelectItem(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
@@ -654,7 +645,6 @@ export const PpeTable = React.memo<PpeTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </PpeTableRowSwipe>
           );
@@ -662,10 +652,7 @@ export const PpeTable = React.memo<PpeTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -674,10 +661,9 @@ export const PpeTable = React.memo<PpeTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onPpePress?.(item.id)}
               onLongPress={() => showSelection && handleSelectItem(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -696,7 +682,7 @@ export const PpeTable = React.memo<PpeTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -711,8 +697,6 @@ export const PpeTable = React.memo<PpeTableProps>(
         enableSwipeActions,
         onPpeEdit,
         onPpeDelete,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

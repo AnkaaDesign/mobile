@@ -353,10 +353,7 @@ export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
         const isEven = index % 2 === 0;
 
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -364,10 +361,9 @@ export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onUserPress?.(user.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -380,7 +376,7 @@ export const PerformanceLevelTable = React.memo<PerformanceLevelTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [colors, tableWidth, displayColumns, onUserPress, renderColumnValue, isDark],

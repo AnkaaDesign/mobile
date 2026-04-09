@@ -12,7 +12,7 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
-import { paintFormulaComponentService } from "@/api-client/paint";
+import { paintFormulaComponentService, notify } from "@/api-client";
 
 export default function EditPaintScreen() {
   const router = useRouter();
@@ -95,23 +95,23 @@ export default function EditPaintScreen() {
         }
       }
 
-      // Deduct stock for new formula components after successful update
-      if (newFormulas && newFormulas.length > 0) {
-        for (const formula of newFormulas) {
-          const validComponents = formula.components?.filter((c) => c.itemId && c.weight && c.weight > 0) || [];
-          for (const component of validComponents) {
-            if (component.weight && component.weight > 0 && component.itemId) {
-              try {
-                await paintFormulaComponentService.deductForFormulationTest({
-                  itemId: component.itemId,
-                  weight: component.weight,
-                });
-              } catch {
-                // Stock deduction is best-effort
-              }
-            }
-          }
-        }
+      // Deduct stock for new formula components — run in parallel, one summary toast at the end
+      const allDeductComponents = (newFormulas || []).flatMap((formula) =>
+        (formula.components || [])
+          .filter((c) => c.itemId && c.weight && c.weight > 0)
+          .map((c) => ({ itemId: c.itemId, weight: c.weight! }))
+      );
+
+      if (allDeductComponents.length > 0) {
+        await Promise.allSettled(
+          allDeductComponents.map((c) =>
+            paintFormulaComponentService.deductForFormulationTest(
+              { itemId: c.itemId, weight: c.weight },
+              { suppressToast: true },
+            )
+          )
+        );
+        notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
       }
 
       goBack();

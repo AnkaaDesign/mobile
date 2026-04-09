@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { UserTableRowSwipe } from "./user-table-row-swipe";
 import { formatBrazilianPhone, formatDateTime } from "@/utils";
@@ -223,7 +223,7 @@ export const UserTable = React.memo<UserTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const [_headerHeight, _setHeaderHeight] = useState(50);
     const flatListRef = useRef<FlatList>(null);
 
@@ -263,17 +263,13 @@ export const UserTable = React.memo<UserTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -412,40 +408,34 @@ export const UserTable = React.memo<UserTableProps>(
 
         if (enableSwipeActions && (onUserEdit || onUserDelete || onUserView)) {
           return (
-            <UserTableRowSwipe key={user.id} userId={user.id} userName={user.name} onEdit={onUserEdit} onDelete={onUserDelete} onView={onUserView} disabled={showSelection}>
+            <UserTableRowSwipe key={user.id} userId={user.id} userName={user.name} onEdit={onUserEdit} onDelete={onUserDelete} onView={onUserView} disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : colors.card,
+                  borderBottomColor: "rgba(0,0,0,0.05)",
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : colors.card,
-                      borderBottomColor: "rgba(0,0,0,0.05)",
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onUserPress?.(user.id)}
+                  onLongPress={() => showSelection && handleSelectUser(user.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onUserPress?.(user.id)}
-                    onLongPress={() => showSelection && handleSelectUser(user.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectUser(user.id)} />
-                      </View>
-                    )}
-                    {displayColumns.map((column) => (
-                      <View key={column.key} style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}>
-                        {renderColumnValue(user, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {showSelection && (
+                    <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => handleSelectUser(user.id)} />
+                    </View>
+                  )}
+                  {displayColumns.map((column) => (
+                    <View key={column.key} style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}>
+                      {renderColumnValue(user, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </UserTableRowSwipe>
           );
@@ -453,10 +443,7 @@ export const UserTable = React.memo<UserTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -465,10 +452,9 @@ export const UserTable = React.memo<UserTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onUserPress?.(user.id)}
               onLongPress={() => showSelection && handleSelectUser(user.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -484,10 +470,10 @@ export const UserTable = React.memo<UserTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
-      [colors, tableWidth, displayColumns, showSelection, selectedUsers, onUserPress, handleSelectUser, renderColumnValue, enableSwipeActions, onUserEdit, onUserDelete, onUserView, activeRowId, closeActiveRow, isDark],
+      [colors, tableWidth, displayColumns, showSelection, selectedUsers, onUserPress, handleSelectUser, renderColumnValue, enableSwipeActions, onUserEdit, onUserDelete, onUserView, isDark],
     );
 
     // Loading footer component

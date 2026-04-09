@@ -276,10 +276,7 @@ export const PpeTable = React.memo<PpeTableProps>(
         const isEven = index % 2 === 0;
 
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -287,9 +284,8 @@ export const PpeTable = React.memo<PpeTableProps>(
                 borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
-            <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])} onPress={() => onItemPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
+            <Pressable style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])} onPress={() => onItemPress?.(item.id)} android_ripple={{ color: colors.primary + "20" }}>
               {displayColumns.map((column) => (
                 <View
                   key={column.key}
@@ -299,7 +295,7 @@ export const PpeTable = React.memo<PpeTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [colors, tableWidth, displayColumns, onItemPress, renderColumnValue, isDark],

@@ -264,30 +264,28 @@ export const MyPpeDeliveryTable = React.memo<MyPpeDeliveryTableProps>(
 
       return (
         <View style={[styles.rowContainer, { opacity: activeRow === item.id ? 0.5 : 1 }]}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={totalWidth > availableWidth}>
-            <Pressable
-              onPress={() => onDeliveryPress?.(item.id)}
-              style={({ pressed }) => [
-                styles.row,
-                {
-                  width: totalWidth,
-                  backgroundColor: isEven ? colors.background : colors.muted + "20",
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              {displayColumns.map((column) => {
-                const align = column.align || "left";
-                const justifyContent = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
+          <Pressable
+            onPress={() => onDeliveryPress?.(item.id)}
+            style={({ pressed }) => [
+              styles.row,
+              {
+                width: totalWidth,
+                backgroundColor: isEven ? colors.background : colors.muted + "20",
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+          >
+            {displayColumns.map((column) => {
+              const align = column.align || "left";
+              const justifyContent = align === "center" ? "center" : align === "right" ? "flex-end" : "flex-start";
 
-                return (
-                  <View key={`${item.id}-${column.key}`} style={[styles.cell, { width: column.width, justifyContent }]}>
-                    {column.accessor(item)}
-                  </View>
-                );
-              })}
-            </Pressable>
-          </ScrollView>
+              return (
+                <View key={`${item.id}-${column.key}`} style={[styles.cell, { width: column.width, justifyContent }]}>
+                  {column.accessor(item)}
+                </View>
+              );
+            })}
+          </Pressable>
         </View>
       );
     };

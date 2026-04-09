@@ -5,7 +5,7 @@ import type { Task } from '../../../../types';
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { HistoryTableRowSwipe } from "./history-table-row-swipe";
 import { formatDate, formatChassis } from "@/utils";
@@ -327,7 +327,7 @@ export const HistoryTable = React.memo<HistoryTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
 
     // Modal state
     const [sectorModalVisible, setSectorModalVisible] = useState(false);
@@ -381,17 +381,13 @@ export const HistoryTable = React.memo<HistoryTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -551,40 +547,33 @@ export const HistoryTable = React.memo<HistoryTableProps>(
               onDelete={onTaskDelete}
               onSetSector={onTaskSectorChange ? handleSetSector : undefined}
               onSetStatus={onTaskStatusChange ? handleSetStatus : undefined}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                },
+              ])}
             >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onTaskPress?.(item.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onTaskPress?.(item.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {displayColumns.map((column) => (
-                      <View
-                        key={column.key}
-                        style={StyleSheet.flatten([
-                          styles.cell,
-                          { width: column.width },
-                          column.align === "center" && styles.centerAlign,
-                          column.align === "right" && styles.rightAlign,
-                        ])}
-                      >
-                        {renderColumnValue(item, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {displayColumns.map((column) => (
+                    <View
+                      key={column.key}
+                      style={StyleSheet.flatten([
+                        styles.cell,
+                        { width: column.width },
+                        column.align === "center" && styles.centerAlign,
+                        column.align === "right" && styles.rightAlign,
+                      ])}
+                    >
+                      {renderColumnValue(item, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </HistoryTableRowSwipe>
           );
@@ -592,20 +581,16 @@ export const HistoryTable = React.memo<HistoryTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
                 backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
               },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onTaskPress?.(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
             >
@@ -623,7 +608,7 @@ export const HistoryTable = React.memo<HistoryTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

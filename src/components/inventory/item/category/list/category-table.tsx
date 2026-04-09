@@ -303,10 +303,7 @@ export function CategoryTable({
       const isEven = index % 2 === 0;
 
       const row = (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          scrollEnabled={tableWidth > availableWidth}
+        <View
           style={StyleSheet.flatten([
             styles.row,
             {
@@ -320,10 +317,9 @@ export function CategoryTable({
               borderBottomColor: theme.isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
             },
           ])}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
         >
           <Pressable
-            style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+            style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
             onPress={() => onCategoryPress?.(category.id)}
             onLongPress={() => showSelection && handleCategorySelect(category.id)}
             android_ripple={{ color: theme.colors.primary + "20" }}
@@ -339,7 +335,7 @@ export function CategoryTable({
               </View>
             ))}
           </Pressable>
-        </ScrollView>
+        </View>
       );
 
       // Wrap with swipe actions if enabled

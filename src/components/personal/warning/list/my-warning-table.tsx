@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyWarningTableRowSwipe } from "./my-warning-table-row-swipe";
 import { formatDateTime } from "@/utils";
@@ -214,7 +214,7 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
@@ -250,17 +250,13 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -439,23 +435,17 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
               onEdit={onWarningEdit}
               onDelete={onWarningDelete}
               disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
             >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onWarningPress?.(item.id)}
                     onLongPress={() => showSelection && handleSelectWarning(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
@@ -479,7 +469,6 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </MyWarningTableRowSwipe>
           );
@@ -487,10 +476,7 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -498,10 +484,9 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onWarningPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectWarning(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -525,7 +510,7 @@ export const MyWarningTable = React.memo<MyWarningTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

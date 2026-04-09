@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { MyVacationTableRowSwipe } from "./my-vacation-table-row-swipe";
 import { formatDate } from "@/utils";
@@ -198,7 +198,7 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
     enableSwipeActions = true,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
@@ -233,17 +233,13 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -422,23 +418,17 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
               onEdit={onVacationEdit}
               onDelete={onVacationDelete}
               disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
             >
               {(_isActive) => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onVacationPress?.(item.id)}
                     onLongPress={() => showSelection && handleSelectVacation(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
@@ -462,7 +452,6 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </MyVacationTableRowSwipe>
           );
@@ -470,10 +459,7 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -481,10 +467,9 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onVacationPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectVacation(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -508,7 +493,7 @@ export const MyVacationTable = React.memo<MyVacationTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [

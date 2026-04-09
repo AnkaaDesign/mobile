@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { BorrowTableRowSwipe } from "./borrow-table-row-swipe";
 import { getDefaultVisibleColumns } from "./borrow-column-visibility-manager";
@@ -292,7 +292,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
     ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -339,17 +339,13 @@ export const BorrowTable = React.memo<BorrowTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -502,43 +498,36 @@ export const BorrowTable = React.memo<BorrowTableProps>(
               onReturn={onReturn}
               onMarkAsLost={onMarkAsLost}
               disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : colors.card,
+                  borderBottomColor: "rgba(0,0,0,0.05)",
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
             >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : colors.card,
-                      borderBottomColor: "rgba(0,0,0,0.05)",
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onBorrowPress?.(item.id)}
+                  onLongPress={() => showSelection && handleSelectBorrow(item.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onBorrowPress?.(item.id)}
-                    onLongPress={() => showSelection && handleSelectBorrow(item.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectBorrow(item.id)} />
-                      </View>
-                    )}
-                    {displayColumns.map((column) => (
-                      <View
-                        key={column.key}
-                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
-                      >
-                        {renderColumnValue(item, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {showSelection && (
+                    <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => handleSelectBorrow(item.id)} />
+                    </View>
+                  )}
+                  {displayColumns.map((column) => (
+                    <View
+                      key={column.key}
+                      style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                    >
+                      {renderColumnValue(item, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </BorrowTableRowSwipe>
           );
@@ -546,10 +535,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -558,10 +544,9 @@ export const BorrowTable = React.memo<BorrowTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onBorrowPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectBorrow(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -580,7 +565,7 @@ export const BorrowTable = React.memo<BorrowTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -597,8 +582,6 @@ export const BorrowTable = React.memo<BorrowTableProps>(
         onBorrowDelete,
         onReturn,
         onMarkAsLost,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

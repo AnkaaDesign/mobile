@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { OrderTableRowSwipe } from "./order-table-row-swipe";
 import { OrderStatusBadge } from "./order-status-badge";
@@ -244,7 +244,7 @@ export const OrderTable = React.memo<OrderTableProps>(
     ListFooterComponent,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -289,17 +289,13 @@ export const OrderTable = React.memo<OrderTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -455,43 +451,37 @@ export const OrderTable = React.memo<OrderTableProps>(
 
         if (enableSwipeActions && (onOrderEdit || onOrderDelete)) {
           return (
-            <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} disabled={showSelection}>
+            <OrderTableRowSwipe key={item.id} orderId={item.id} orderName={item.description} onEdit={onOrderEdit} onDelete={onOrderDelete} disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : colors.card,
+                  borderBottomColor: "rgba(0,0,0,0.05)",
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : colors.card,
-                      borderBottomColor: "rgba(0,0,0,0.05)",
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
+                <Pressable
+                  style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
+                  onPress={() => onOrderPress?.(item.id)}
+                  onLongPress={() => showSelection && handleSelectOrder(item.id)}
+                  android_ripple={{ color: colors.primary + "20" }}
                 >
-                  <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
-                    onPress={() => onOrderPress?.(item.id)}
-                    onLongPress={() => showSelection && handleSelectOrder(item.id)}
-                    android_ripple={{ color: colors.primary + "20" }}
-                  >
-                    {showSelection && (
-                      <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
-                        <Checkbox checked={isSelected} onCheckedChange={() => handleSelectOrder(item.id)} />
-                      </View>
-                    )}
-                    {displayColumns.map((column) => (
-                      <View
-                        key={column.key}
-                        style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
-                      >
-                        {renderColumnValue(item, column)}
-                      </View>
-                    ))}
-                  </Pressable>
-                </ScrollView>
+                  {showSelection && (
+                    <View style={StyleSheet.flatten([styles.cell, styles.checkboxCell])}>
+                      <Checkbox checked={isSelected} onCheckedChange={() => handleSelectOrder(item.id)} />
+                    </View>
+                  )}
+                  {displayColumns.map((column) => (
+                    <View
+                      key={column.key}
+                      style={StyleSheet.flatten([styles.cell, { width: column.width }, column.align === "center" && styles.centerAlign, column.align === "right" && styles.rightAlign])}
+                    >
+                      {renderColumnValue(item, column)}
+                    </View>
+                  ))}
+                </Pressable>
               )}
             </OrderTableRowSwipe>
           );
@@ -499,10 +489,7 @@ export const OrderTable = React.memo<OrderTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -511,10 +498,9 @@ export const OrderTable = React.memo<OrderTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onOrderPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectOrder(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -533,7 +519,7 @@ export const OrderTable = React.memo<OrderTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -549,8 +535,6 @@ export const OrderTable = React.memo<OrderTableProps>(
         onOrderEdit,
         onOrderDelete,
         onOrderDuplicate,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

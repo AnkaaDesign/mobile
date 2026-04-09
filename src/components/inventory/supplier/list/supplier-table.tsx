@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { SupplierTableRowSwipe } from "./supplier-table-row-swipe";
 import { getDefaultVisibleColumns } from "./column-visibility-manager";
@@ -280,7 +280,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
     visibleColumnKeys,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     // headerHeight removed as unused
     const flatListRef = useRef<FlatList>(null);
 
@@ -331,17 +331,13 @@ export const SupplierTable = React.memo<SupplierTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -484,24 +480,19 @@ export const SupplierTable = React.memo<SupplierTableProps>(
 
         if (enableSwipeActions && (onSupplierEdit || onSupplierDelete)) {
           return (
-            <SupplierTableRowSwipe key={item.id} supplierId={item.id} supplierName={item.fantasyName} onEdit={onSupplierEdit} onDelete={onSupplierDelete} disabled={showSelection}>
+            <SupplierTableRowSwipe key={item.id} supplierId={item.id} supplierName={item.fantasyName} onEdit={onSupplierEdit} onDelete={onSupplierDelete} disabled={showSelection}
+              style={StyleSheet.flatten([
+                styles.row,
+                {
+                  backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
+                  borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
+                },
+                isSelected && { backgroundColor: colors.primary + "20" },
+              ])}
+            >
               {() => (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  scrollEnabled={tableWidth > availableWidth}
-                  style={StyleSheet.flatten([
-                    styles.row,
-                    {
-                      backgroundColor: isEven ? colors.background : isDark ? extendedColors.neutral[900] : extendedColors.neutral[50],
-                      borderBottomColor: isDark ? extendedColors.neutral[700] : extendedColors.neutral[200],
-                    },
-                    isSelected && { backgroundColor: colors.primary + "20" },
-                  ])}
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                >
                   <Pressable
-                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+                    style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
                     onPress={() => onSupplierPress?.(item.id)}
                     onLongPress={() => showSelection && handleSelectSupplier(item.id)}
                     android_ripple={{ color: colors.primary + "20" }}
@@ -520,7 +511,6 @@ export const SupplierTable = React.memo<SupplierTableProps>(
                       </View>
                     ))}
                   </Pressable>
-                </ScrollView>
               )}
             </SupplierTableRowSwipe>
           );
@@ -528,10 +518,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
 
         // Non-swipeable version
         return (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={tableWidth > availableWidth}
+          <View
             style={StyleSheet.flatten([
               styles.row,
               {
@@ -540,10 +527,9 @@ export const SupplierTable = React.memo<SupplierTableProps>(
               },
               isSelected && { backgroundColor: colors.primary + "20" },
             ])}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           >
             <Pressable
-              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth }])}
+              style={StyleSheet.flatten([styles.rowContent, { width: tableWidth, paddingHorizontal: 16 }])}
               onPress={() => onSupplierPress?.(item.id)}
               onLongPress={() => showSelection && handleSelectSupplier(item.id)}
               android_ripple={{ color: colors.primary + "20" }}
@@ -562,7 +548,7 @@ export const SupplierTable = React.memo<SupplierTableProps>(
                 </View>
               ))}
             </Pressable>
-          </ScrollView>
+          </View>
         );
       },
       [
@@ -577,8 +563,6 @@ export const SupplierTable = React.memo<SupplierTableProps>(
         enableSwipeActions,
         onSupplierEdit,
         onSupplierDelete,
-        activeRowId,
-        closeActiveRow,
         isDark,
       ],
     );

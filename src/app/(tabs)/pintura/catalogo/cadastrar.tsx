@@ -9,7 +9,7 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 import { routes } from "@/constants";
 import type { PaintFormula } from "@/types";
 import type { PaintCreateFormData, PaintFormulaCreateFormData } from "@/schemas";
-import { paintFormulaComponentService } from "@/api-client/paint";
+import { paintFormulaComponentService, notify } from "@/api-client";
 
 export default function CreateCatalogScreen() {
   const router = useRouter();
@@ -79,23 +79,23 @@ export default function CreateCatalogScreen() {
           }
         }
 
-        // Deduct stock for all formula components after successful creation
-        if (formulas && formulas.length > 0) {
-          for (const formula of formulas) {
-            const validComponents = formula.components?.filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0) || [];
-            for (const component of validComponents) {
-              if (component.weightInGrams && component.weightInGrams > 0 && component.itemId) {
-                try {
-                  await paintFormulaComponentService.deductForFormulationTest({
-                    itemId: component.itemId,
-                    weight: component.weightInGrams,
-                  });
-                } catch {
-                  // Stock deduction is best-effort
-                }
-              }
-            }
-          }
+        // Deduct stock for all formula components — run in parallel, one summary toast at the end
+        const allDeductComponents = (formulas || []).flatMap((formula) =>
+          (formula.components || [])
+            .filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0)
+            .map((c) => ({ itemId: c.itemId, weight: c.weightInGrams! }))
+        );
+
+        if (allDeductComponents.length > 0) {
+          await Promise.allSettled(
+            allDeductComponents.map((c) =>
+              paintFormulaComponentService.deductForFormulationTest(
+                { itemId: c.itemId, weight: c.weight },
+                { suppressToast: true },
+              )
+            )
+          );
+          notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
         }
 
         router.replace(routeToMobilePath(routes.painting.catalog.details(paintId)) as any);

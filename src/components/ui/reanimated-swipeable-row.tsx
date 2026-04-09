@@ -7,8 +7,6 @@ import Animated, {
   interpolate,
   useSharedValue,
   withSpring,
-  withTiming,
-  runOnJS,
 } from "react-native-reanimated";
 
 // Type alias for backwards compatibility
@@ -45,6 +43,19 @@ export interface ReanimatedSwipeableRowProps {
   actionWidth?: number;
   enableTrackpadTwoFingerGesture?: boolean;
   renderOverlay?: (progress: SharedValue<number>, side: "left" | "right") => React.ReactNode;
+  /** Override the snap spring config. Defaults are heavily overdamped (mass=2,
+   *  damping=1000, stiffness=700) which feels slow. Use this to get a snappier
+   *  open/close. Recommended: { mass: 1, damping: 40, stiffness: 400 }. */
+  animationOptions?: Record<string, unknown>;
+  /** Pixels of rightward drag before the gesture activates. Set to a very large
+   *  number (e.g. 999) when only right actions exist, so rightward gestures
+   *  (table horizontal scroll) never accidentally trigger the swipeable. */
+  dragOffsetFromLeftEdge?: number;
+  /** Pixels of leftward drag before the gesture activates. Default is 10. */
+  dragOffsetFromRightEdge?: number;
+  /** Fires on the JS thread the moment RNGH recognises a drag-to-open gesture
+   *  has started (before the finger lifts). Use for timing diagnostics. */
+  onDragStart?: (direction: "left" | "right") => void;
 }
 
 export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwipeableRowProps>(
@@ -54,7 +65,7 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
       leftActions = [],
       rightActions = [],
       enabled = true,
-      friction = 2,
+      friction = 1,
       leftThreshold = 40,
       rightThreshold = 40,
       overshootLeft = false,
@@ -68,6 +79,10 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
       actionWidth = 80,
       enableTrackpadTwoFingerGesture = false,
       renderOverlay: _renderOverlay,
+      animationOptions,
+      dragOffsetFromLeftEdge,
+      dragOffsetFromRightEdge,
+      onDragStart,
     },
     ref,
   ) => {
@@ -177,6 +192,10 @@ export const ReanimatedSwipeableRow = React.forwardRef<Swipeable, ReanimatedSwip
         containerStyle={containerStyle}
         childrenContainerStyle={childrenContainerStyle}
         enableTrackpadTwoFingerGesture={enableTrackpadTwoFingerGesture}
+        animationOptions={animationOptions}
+        dragOffsetFromLeftEdge={dragOffsetFromLeftEdge}
+        dragOffsetFromRightEdge={dragOffsetFromRightEdge}
+        onSwipeableOpenStartDrag={onDragStart}
       >
         {children}
       </ReanimatedSwipeable>
@@ -218,17 +237,15 @@ const ActionItem: React.FC<ActionItemProps> = ({ action, progress, backgroundCol
   }, [action, swipeableRef]);
 
   const handlePressIn = useCallback(() => {
-    "worklet";
     isPressed.value = withSpring(1, { damping: 15, stiffness: 400 });
   }, [isPressed]);
 
   const handlePressOut = useCallback(() => {
-    "worklet";
     isPressed.value = withSpring(0, { damping: 15, stiffness: 400 });
   }, [isPressed]);
 
   const handlePress = useCallback(() => {
-    runOnJS(executePress)();
+    executePress();
   }, [executePress]);
 
   const animatedStyle = useAnimatedStyle(() => {

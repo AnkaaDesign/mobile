@@ -727,7 +727,8 @@ const createApiClient = (
           !isBatchOperation &&
           !isAuthOperation &&
           !isBackgroundOperation &&
-          isSuccess
+          isSuccess &&
+          !metadata?.suppressToast
         ) {
           const message =
             response.data?.message || getSuccessMessage(config.method);

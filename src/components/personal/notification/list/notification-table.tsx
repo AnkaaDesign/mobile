@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
-import { useSwipeRow } from "@/contexts/swipe-row-context";
+import { useSwipeRowActions } from "@/contexts/swipe-row-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { NotificationTableRowSwipe } from "./notification-table-row-swipe";
 import { formatDate, formatDateTime } from "@/utils";
@@ -254,7 +254,7 @@ export const NotificationTable = React.memo<NotificationTableProps>(
     currentUserId,
   }) => {
     const { colors, isDark } = useTheme();
-    const { activeRowId, closeActiveRow } = useSwipeRow();
+    const { closeActiveRow } = useSwipeRowActions();
     const prefetchTriggeredRef = React.useRef(false);
 
     // Get all column definitions
@@ -288,17 +288,13 @@ export const NotificationTable = React.memo<NotificationTableProps>(
 
     // Handle taps outside of active row to close swipe actions
     const handleContainerPress = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Handle scroll events to close active row
     const handleScroll = useCallback(() => {
-      if (activeRowId) {
-        closeActiveRow();
-      }
-    }, [activeRowId, closeActiveRow]);
+      closeActiveRow();
+    }, [closeActiveRow]);
 
     // Calculate total table width
     const tableWidth = useMemo(() => {
@@ -415,29 +411,27 @@ export const NotificationTable = React.memo<NotificationTableProps>(
                 <Checkbox checked={isSelected} onCheckedChange={() => handleSelectNotification(item.id)} />
               </View>
             )}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled={tableWidth > availableWidth}>
-              <Pressable
-                style={[styles.rowInner, { minWidth: tableWidth - (showSelection ? 50 : 0) }]}
-                onPress={() => {
-                  closeActiveRow();
-                  onNotificationPress?.(item.id);
-                }}
-              >
-                {displayColumns.map((column) => (
-                  <View
-                    key={column.key}
-                    style={[
-                      styles.cell,
-                      { width: column.width },
-                      column.align === "center" && styles.centerAlign,
-                      column.align === "right" && styles.rightAlign,
-                    ]}
-                  >
-                    {column.accessor(item)}
-                  </View>
-                ))}
-              </Pressable>
-            </ScrollView>
+            <Pressable
+              style={[styles.rowInner, { minWidth: tableWidth - (showSelection ? 50 : 0) }]}
+              onPress={() => {
+                closeActiveRow();
+                onNotificationPress?.(item.id);
+              }}
+            >
+              {displayColumns.map((column) => (
+                <View
+                  key={column.key}
+                  style={[
+                    styles.cell,
+                    { width: column.width },
+                    column.align === "center" && styles.centerAlign,
+                    column.align === "right" && styles.rightAlign,
+                  ]}
+                >
+                  {column.accessor(item)}
+                </View>
+              ))}
+            </Pressable>
           </View>
         );
 
