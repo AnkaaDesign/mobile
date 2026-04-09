@@ -305,9 +305,6 @@ export default function CheckinCheckoutScreen() {
     if (!id || !task) return
 
     try {
-      // Build FormData with new files in flat arrays + mapping metadata.
-      // Using serviceOrderFiles (separate from serviceOrders) avoids triggering the
-      // backend's service order deletion logic when only updating file associations.
       const formData = new FormData()
       const soFileMapping: { soId: string; type: 'checkin' | 'checkout'; count: number }[] = []
       const serviceOrderFiles: Record<string, { checkinFileIds?: string[]; checkoutFileIds?: string[] }> = {}
@@ -316,7 +313,6 @@ export default function CheckinCheckoutScreen() {
         const soCheckinFiles = checkinFilesByServiceOrder[so.id] || []
         const soCheckoutFiles = checkoutFilesByServiceOrder[so.id] || []
 
-        // Separate existing files (have ID) from new files (only have URI)
         const existingCheckinIds = soCheckinFiles
           .filter((f: any) => f.id || f.fileId)
           .map((f: any) => f.fileId || f.file?.id || f.id)
@@ -329,7 +325,6 @@ export default function CheckinCheckoutScreen() {
         const newCheckinFiles = soCheckinFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
         const newCheckoutFiles = soCheckoutFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
 
-        // Append new checkin files to the flat FormData array
         if (newCheckinFiles.length > 0) {
           for (const file of newCheckinFiles) {
             formData.append('soCheckinFiles', {
@@ -341,7 +336,6 @@ export default function CheckinCheckoutScreen() {
           soFileMapping.push({ soId: so.id, type: 'checkin', count: newCheckinFiles.length })
         }
 
-        // Append new checkout files to the flat FormData array
         if (newCheckoutFiles.length > 0) {
           for (const file of newCheckoutFiles) {
             formData.append('soCheckoutFiles', {
@@ -353,9 +347,6 @@ export default function CheckinCheckoutScreen() {
           soFileMapping.push({ soId: so.id, type: 'checkout', count: newCheckoutFiles.length })
         }
 
-        // Track existing file IDs to keep (or empty arrays to clear removed files)
-        // Check if SO originally had files — if so, we must always send the entry
-        // even when empty, so the API clears the association via { set: [] }
         const origCheckin = ((so as any).checkinFiles || []).length > 0
         const origCheckout = ((so as any).checkoutFiles || []).length > 0
         const hasExisting = existingCheckinIds.length > 0 || existingCheckoutIds.length > 0
@@ -370,7 +361,6 @@ export default function CheckinCheckoutScreen() {
         }
       }
 
-      // Append metadata as JSON strings
       formData.append('_soFileMapping', JSON.stringify(soFileMapping))
       formData.append('serviceOrderFiles', JSON.stringify(serviceOrderFiles))
 

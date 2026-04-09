@@ -621,11 +621,12 @@ const createApiClient = (
         config.data = deepFixArraySerialization(config.data);
       }
 
-      // Handle FormData - let axios set the correct Content-Type for multipart/form-data
-      // This is critical for file uploads in React Native
+      // Handle FormData - set correct Content-Type for multipart/form-data
+      // React Native's NetworkingModule requires an explicit multipart Content-Type;
+      // deleting it causes axios to fall back to application/x-www-form-urlencoded
+      // which OkHttp rejects for multipart bodies.
       if (config.data instanceof FormData) {
-        // Remove Content-Type header so axios/React Native can set the correct boundary
-        delete config.headers["Content-Type"];
+        config.headers["Content-Type"] = "multipart/form-data";
       }
 
       // Add cache-busting for GET requests (but not for cached responses)
