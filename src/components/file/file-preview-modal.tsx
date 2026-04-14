@@ -13,6 +13,7 @@ import {
   Alert,
   Pressable,
   Platform,
+  PixelRatio,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureDetector, Gesture, GestureHandlerRootView } from "react-native-gesture-handler";
@@ -40,7 +41,128 @@ import {
   IconMaximize,
   IconDeviceMobile,
   IconDeviceMobileRotated,
+  IconColorPicker,
+  IconCopy,
+  IconCheck,
 } from "@tabler/icons-react-native";
+import { useQuery } from "@tanstack/react-query";
+import { getPaints } from "@/api-client";
+
+import { captureScreen } from 'react-native-view-shot';
+
+// Decode a base64 string to Uint8Array (atob is available in Hermes)
+function base64ToUint8Array(b64: string): Uint8Array {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Decode a PNG (as Uint8Array) and return the pixel colour at physical pixel (px, py).
+// Processes row-by-row and stops at the target row for efficiency.
+async function decodePngPixel(
+  bytes: Uint8Array,
+  px: number,
+  py: number,
+): Promise<{ r: number; g: number; b: number } | null> {
+  try {
+    if (typeof (globalThis as any).DecompressionStream === 'undefined') return null;
+    if (bytes[0] !== 137 || bytes[1] !== 80 || bytes[2] !== 78 || bytes[3] !== 71) return null;
+
+    let pos = 8;
+    const ihdrLen = (bytes[pos] << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
+    pos += 4;
+    if (String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]) !== 'IHDR') return null;
+    pos += 4;
+
+    const width   = (bytes[pos]   << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
+    const height  = (bytes[pos+4] << 24 | bytes[pos+5] << 16 | bytes[pos+6] << 8 | bytes[pos+7]) >>> 0;
+    const bitDepth  = bytes[pos+8];
+    const colorType = bytes[pos+9];
+    pos += ihdrLen + 4;
+
+    if (bitDepth !== 8 || ![2, 6].includes(colorType)) return null;
+    const bpp = colorType === 6 ? 4 : 3;
+
+    const targetX = Math.max(0, Math.min(width  - 1, Math.round(px)));
+    const targetY = Math.max(0, Math.min(height - 1, Math.round(py)));
+
+    const idatParts: Uint8Array[] = [];
+    while (pos < bytes.length - 4) {
+      const cLen  = (bytes[pos] << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
+      pos += 4;
+      const cType = String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]);
+      pos += 4;
+      if (cType === 'IDAT') idatParts.push(bytes.slice(pos, pos + cLen));
+      else if (cType === 'IEND') break;
+      pos += cLen + 4;
+    }
+
+    const totalLen = idatParts.reduce((s, c) => s + c.length, 0);
+    const idatData = new Uint8Array(totalLen);
+    let off = 0;
+    for (const p of idatParts) { idatData.set(p, off); off += p.length; }
+
+    const ds = new (globalThis as any).DecompressionStream('deflate');
+    const writer = ds.writable.getWriter();
+    const reader = ds.readable.getReader();
+    writer.write(idatData);
+    writer.close();
+
+    const rawChunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      rawChunks.push(value);
+    }
+    const rawLen = rawChunks.reduce((s, c) => s + c.length, 0);
+    const raw = new Uint8Array(rawLen);
+    let rawOff = 0;
+    for (const c of rawChunks) { raw.set(c, rawOff); rawOff += c.length; }
+
+    // Reconstruct pixel data row-by-row; stop after the target row
+    const stride = width * bpp;
+    let prevRow = new Uint8Array(stride);
+    let curRow  = new Uint8Array(stride);
+
+    for (let y = 0; y <= targetY; y++) {
+      const rowStart = y * (stride + 1);
+      const filter   = raw[rowStart];
+
+      for (let x = 0; x < stride; x++) {
+        const rawByte = raw[rowStart + 1 + x];
+        const a = x >= bpp ? curRow[x - bpp] : 0;
+        const b = prevRow[x];
+        const c = (x >= bpp) ? prevRow[x - bpp] : 0;
+        let recon: number;
+        switch (filter) {
+          case 0: recon = rawByte; break;
+          case 1: recon = (rawByte + a) & 0xFF; break;
+          case 2: recon = (rawByte + b) & 0xFF; break;
+          case 3: recon = (rawByte + Math.floor((a + b) / 2)) & 0xFF; break;
+          case 4: {
+            const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c);
+            recon = (rawByte + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c)) & 0xFF;
+            break;
+          }
+          default: recon = rawByte;
+        }
+        curRow[x] = recon;
+      }
+
+      if (y === targetY) {
+        const idx = targetX * bpp;
+        return { r: curRow[idx], g: curRow[idx + 1], b: curRow[idx + 2] };
+      }
+
+      // Swap rows
+      const tmp = prevRow; prevRow = curRow; curRow = tmp;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { SvgUri } from "react-native-svg";
 import { useTheme } from "@/lib/theme";
@@ -395,6 +517,29 @@ export function FilePreviewModal({
   const [_rotation, _setRotation] = useState(0);
   const [isControlsVisible, setIsControlsVisible] = useState(true);
   const [isOrientationLocked, setIsOrientationLocked] = useState(false);
+
+  // Color picker state
+  const [isColorPickerActive, setIsColorPickerActive] = useState(false);
+  const isColorPickerActiveShared = useSharedValue(false); // shared value so worklets can read it
+  const [pickedColor, setPickedColor] = useState<{ r: number; g: number; b: number } | null>(null);
+  const [isColorSampling, setIsColorSampling] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  // Crosshair position in screen-space (center of screen by default)
+  const [crosshairPos, setCrosshairPos] = useState({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2 });
+
+  // Best paint match query
+  const pickedColorHex = pickedColor
+    ? `#${pickedColor.r.toString(16).padStart(2, '0')}${pickedColor.g.toString(16).padStart(2, '0')}${pickedColor.b.toString(16).padStart(2, '0')}`.toUpperCase()
+    : null;
+  const { data: paintMatchData, isLoading: isPaintMatchLoading } = useQuery({
+    queryKey: ['paint-match', pickedColorHex],
+    queryFn: () => getPaints({ similarColor: pickedColorHex!, limit: 1 }),
+    enabled: !!pickedColorHex,
+    staleTime: 1000 * 60 * 5,
+  });
+  const bestPaintMatch = paintMatchData?.data?.[0] ?? null;
+
   const isOrientationLockedRef = useRef(false);
   const [currentOrientation, setCurrentOrientation] = useState<ScreenOrientation.Orientation>(
     ScreenOrientation.Orientation.PORTRAIT_UP
@@ -647,6 +792,65 @@ export function FilePreviewModal({
     }, isLandscapeOrientation ? 400 : 0);
   }, [onClose, isLandscapeOrientation]);
 
+  // Attempt to sample pixel color from a PNG image using pure-JS PNG parsing.
+  // Requires DecompressionStream (available in Hermes 0.14+ / RN 0.76+).
+  // Handle color picker tap — takes a screenshot and samples the pixel at the tapped position.
+  // Works for all content types: images (any format), PDFs, SVGs, etc.
+  const handleColorPickerTap = useCallback(
+    async (screenAbsX: number, screenAbsY: number) => {
+      setCrosshairPos({ x: screenAbsX, y: screenAbsY });
+      showControls();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      setPickedColor(null);
+      setIsColorSampling(true);
+      setShowColorModal(true);
+
+      try {
+        // Capture at logical-pixel resolution (1× density) so coordinates map 1:1
+        const base64 = await captureScreen({
+          format: 'png',
+          result: 'base64',
+          width: Math.round(SCREEN_WIDTH),
+          height: Math.round(SCREEN_HEIGHT),
+        });
+
+        const bytes = base64ToUint8Array(base64);
+        const color = await decodePngPixel(bytes, Math.round(screenAbsX), Math.round(screenAbsY));
+        setPickedColor(color);
+      } catch {
+        setPickedColor(null);
+      } finally {
+        setIsColorSampling(false);
+      }
+    },
+    [showControls],
+  );
+
+  // Copy color value to clipboard
+  const handleCopyColor = useCallback((label: string, value: string) => {
+    import('expo-clipboard').then(({ setStringAsync }) => {
+      setStringAsync(value).then(() => {
+        setCopiedField(label);
+        setTimeout(() => setCopiedField(null), 1500);
+      });
+    });
+  }, []);
+
+  // Keep shared value in sync with state so Reanimated worklets can read it
+  useEffect(() => {
+    isColorPickerActiveShared.value = isColorPickerActive;
+  }, [isColorPickerActive]);
+
+  // Reset color picker when file changes
+  useEffect(() => {
+    setIsColorPickerActive(false);
+    isColorPickerActiveShared.value = false;
+    setPickedColor(null);
+    setIsColorSampling(false);
+    setShowColorModal(false);
+  }, [currentIndex]);
+
   // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
     if (!currentFile) return;
@@ -841,7 +1045,13 @@ export function FilePreviewModal({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [showControls]);
 
-  const handleAndroidTap = useCallback((x: number, y: number) => {
+  const handleAndroidTap = useCallback((x: number, y: number, absX: number, absY: number) => {
+    // Color picker mode: single tap picks color — use absolute screen coords for screenshot
+    if (isColorPickerActiveShared.value) {
+      handleColorPickerTap(absX, absY);
+      return;
+    }
+
     const now = Date.now();
     const elapsed = now - lastTapTimeRef.current;
     const lastPos = lastTapPositionRef.current;
@@ -867,7 +1077,7 @@ export function FilePreviewModal({
         pendingTapTimerRef.current = null;
       }, 300);
     }
-  }, [toggleControls, handleDoubleTapZoom]);
+  }, [toggleControls, handleDoubleTapZoom, handleColorPickerTap]);
 
   // Android: single Tap(1) gesture — fires immediately, double-tap detected in JS
   const androidTapGesture = Gesture.Tap()
@@ -875,7 +1085,7 @@ export function FilePreviewModal({
     .maxDistance(25)
     .onEnd((event) => {
       'worklet';
-      runOnJS(handleAndroidTap)(event.x, event.y);
+      runOnJS(handleAndroidTap)(event.x, event.y, event.absoluteX, event.absoluteY);
     });
 
   // === iOS: Native RNGH double-tap / single-tap coordination ===
@@ -884,9 +1094,13 @@ export function FilePreviewModal({
 
   const singleTapGesture = Gesture.Tap()
     .numberOfTaps(1)
-    .onEnd(() => {
+    .onEnd((event) => {
       'worklet';
-      runOnJS(toggleControls)();
+      if (isColorPickerActiveShared.value) {
+        runOnJS(handleColorPickerTap)(event.absoluteX, event.absoluteY);
+      } else {
+        runOnJS(toggleControls)();
+      }
     });
 
   const doubleTapGesture = Gesture.Tap()
@@ -1086,6 +1300,35 @@ export function FilePreviewModal({
             </View>
 
             <View style={styles.headerRight}>
+              {/* Color swatch — shown when a color has been picked */}
+              {pickedColor && !isVideo && (
+                <TouchableOpacity
+                  style={[
+                    styles.headerButton,
+                    {
+                      backgroundColor: `rgb(${pickedColor.r}, ${pickedColor.g}, ${pickedColor.b})`,
+                      borderWidth: 2,
+                      borderColor: 'rgba(255,255,255,0.5)',
+                      borderRadius: 8,
+                    },
+                  ]}
+                  onPress={() => setShowColorModal(true)}
+                  activeOpacity={0.7}
+                />
+              )}
+              {/* Color picker toggle */}
+              {!isVideo && (
+                <TouchableOpacity
+                  style={[
+                    styles.headerButton,
+                    isColorPickerActive && styles.headerButtonActive,
+                  ]}
+                  onPress={() => setIsColorPickerActive((prev) => !prev)}
+                  activeOpacity={0.7}
+                >
+                  <IconColorPicker size={20} color={isColorPickerActive ? "#fde047" : "#ffffff"} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 style={[styles.headerButton, isOrientationLocked && styles.headerButtonActive]}
                 onPress={handleToggleOrientation}
@@ -1097,10 +1340,10 @@ export function FilePreviewModal({
                   <IconDeviceMobile size={20} color="#ffffff" />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleShare} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.headerButton} onPress={handleShare} activeOpacity={0.7}>
                 <IconExternalLink size={22} color="#ffffff" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.headerButton, { marginLeft: 8 }]} onPress={handleClose} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.headerButton} onPress={handleClose} activeOpacity={0.7}>
                 <IconX size={24} color="#ffffff" />
               </TouchableOpacity>
             </View>
@@ -1185,6 +1428,15 @@ export function FilePreviewModal({
                       </>
                     )}
                   </View>
+                )}
+
+                {/* Transparent tap-capture overlay for PDFs when color picker is active.
+                    react-native-pdf consumes gestures, so we overlay a Pressable on top. */}
+                {isColorPickerActive && isPDF && (
+                  <Pressable
+                    style={StyleSheet.absoluteFillObject}
+                    onPress={(e) => handleColorPickerTap(e.nativeEvent.pageX, e.nativeEvent.pageY)}
+                  />
                 )}
 
                 {/* Video Player - Inline playback with controls */}
@@ -1384,6 +1636,211 @@ export function FilePreviewModal({
               </ScrollView>
             </Animated.View>
           )}
+          {/* Crosshair overlay — shown when color picker is active */}
+          {isColorPickerActive && !isVideo && (
+            <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+              {/* Horizontal line */}
+              <View
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: crosshairPos.y,
+                  height: 1,
+                  backgroundColor: 'rgba(253, 224, 71, 0.8)',
+                }}
+              />
+              {/* Vertical line */}
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: crosshairPos.x,
+                  width: 1,
+                  backgroundColor: 'rgba(253, 224, 71, 0.8)',
+                }}
+              />
+              {/* Center dot */}
+              <View
+                style={{
+                  position: 'absolute',
+                  left: crosshairPos.x - 6,
+                  top: crosshairPos.y - 6,
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  borderWidth: 2,
+                  borderColor: '#fde047',
+                  backgroundColor: 'transparent',
+                }}
+              />
+              {/* Hint label */}
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 120,
+                  alignSelf: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.7)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                }}
+              >
+                <Text style={{ color: '#fde047', fontSize: 12, fontWeight: '600' }}>
+                  Toque para capturar a cor
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Color Info Modal */}
+          {showColorModal && (
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 300,
+              }}
+            >
+              <TouchableOpacity
+                style={StyleSheet.absoluteFillObject}
+                onPress={() => setShowColorModal(false)}
+                activeOpacity={1}
+              />
+              <View
+                style={{
+                  backgroundColor: isDark ? '#18181b' : '#ffffff',
+                  borderRadius: 20,
+                  padding: 20,
+                  width: 300,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 12,
+                  elevation: 10,
+                }}
+              >
+                {/* Header */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: isDark ? '#f4f4f5' : '#18181b' }}>
+                    Cor selecionada
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowColorModal(false)} activeOpacity={0.7}>
+                    <IconX size={20} color={isDark ? '#a1a1aa' : '#71717a'} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Color swatch or loading/no-data message */}
+                {isColorSampling ? (
+                  <View style={{ alignItems: 'center', paddingVertical: 24, gap: 12 }}>
+                    <ActivityIndicator size="large" color={isDark ? '#a1a1aa' : '#71717a'} />
+                    <Text style={{ fontSize: 13, color: isDark ? '#71717a' : '#a1a1aa' }}>
+                      Lendo cor...
+                    </Text>
+                  </View>
+                ) : pickedColor ? (
+                  <>
+                    <View
+                      style={{
+                        width: '100%',
+                        height: 100,
+                        borderRadius: 12,
+                        marginBottom: 16,
+                        backgroundColor: `rgb(${pickedColor.r}, ${pickedColor.g}, ${pickedColor.b})`,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                      }}
+                    />
+                    {/* Color code rows */}
+                    {(() => {
+                      const hex = `#${pickedColor.r.toString(16).padStart(2, '0').toUpperCase()}${pickedColor.g.toString(16).padStart(2, '0').toUpperCase()}${pickedColor.b.toString(16).padStart(2, '0').toUpperCase()}`;
+                      const rgb = `${pickedColor.r}, ${pickedColor.g}, ${pickedColor.b}`;
+                      const k = 1 - Math.max(pickedColor.r, pickedColor.g, pickedColor.b) / 255;
+                      const kScale = k < 1 ? 1 - k : 1;
+                      const c = Math.round((k < 1 ? (1 - pickedColor.r / 255 - k) / kScale : 0) * 100);
+                      const m = Math.round((k < 1 ? (1 - pickedColor.g / 255 - k) / kScale : 0) * 100);
+                      const y2 = Math.round((k < 1 ? (1 - pickedColor.b / 255 - k) / kScale : 0) * 100);
+                      const cmyk = `${c}%, ${m}%, ${y2}%, ${Math.round(k * 100)}%`;
+
+                      return [
+                        { label: 'HEX', value: hex },
+                        { label: 'RGB', value: rgb },
+                        { label: 'CMYK', value: cmyk },
+                      ].map(({ label, value }) => (
+                        <View
+                          key={label}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: isDark ? '#27272a' : '#f4f4f5',
+                            borderRadius: 10,
+                            paddingHorizontal: 12,
+                            paddingVertical: 10,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#71717a' : '#a1a1aa', width: 34 }}>
+                            {label}
+                          </Text>
+                          <Text style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: isDark ? '#e4e4e7' : '#18181b', marginLeft: 4 }}>
+                            {value}
+                          </Text>
+                          <TouchableOpacity onPress={() => handleCopyColor(label, value)} activeOpacity={0.7}>
+                            {copiedField === label ? (
+                              <IconCheck size={16} color="#22c55e" />
+                            ) : (
+                              <IconCopy size={16} color={isDark ? '#71717a' : '#a1a1aa'} />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      ));
+                    })()}
+
+                    {/* Best paint match */}
+                    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: isDark ? '#27272a' : '#e4e4e7' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#71717a' : '#a1a1aa', marginBottom: 8 }}>
+                        TINTA MAIS PRÓXIMA
+                      </Text>
+                      {isPaintMatchLoading ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <ActivityIndicator size="small" color={isDark ? '#71717a' : '#a1a1aa'} />
+                          <Text style={{ fontSize: 13, color: isDark ? '#71717a' : '#a1a1aa' }}>Buscando...</Text>
+                        </View>
+                      ) : bestPaintMatch ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? '#27272a' : '#f4f4f5', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 10 }}>
+                          <View style={{ width: 32, height: 32, borderRadius: 6, backgroundColor: bestPaintMatch.hex || '#888', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', flexShrink: 0 }} />
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#e4e4e7' : '#18181b' }} numberOfLines={1}>{bestPaintMatch.name}</Text>
+                            {bestPaintMatch.code ? (
+                              <Text style={{ fontSize: 11, color: isDark ? '#71717a' : '#a1a1aa' }} numberOfLines={1}>{bestPaintMatch.code}</Text>
+                            ) : null}
+                          </View>
+                          <Text style={{ fontSize: 11, fontFamily: 'monospace', color: isDark ? '#71717a' : '#a1a1aa', flexShrink: 0 }}>{bestPaintMatch.hex}</Text>
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: 12, color: isDark ? '#71717a' : '#a1a1aa' }}>Nenhuma tinta similar encontrada.</Text>
+                      )}
+                    </View>
+                  </>
+                ) : (
+                  <View style={{ alignItems: 'center', paddingVertical: 16, gap: 8 }}>
+                    <Text style={{ fontSize: 24 }}>🎨</Text>
+                    <Text style={{ fontSize: 13, color: isDark ? '#71717a' : '#a1a1aa', textAlign: 'center', lineHeight: 20 }}>
+                      Não foi possível capturar a cor.{'\n'}
+                      Tente tocar em outra área.
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
         </View>
       </View>
       </GestureHandlerRootView>
@@ -1423,6 +1880,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   fileInfo: {
     flexDirection: "row",
