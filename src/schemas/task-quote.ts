@@ -52,6 +52,18 @@ export const paymentConditionSchema = z.enum([
   'CUSTOM',
 ]);
 
+// New structured payment config (replaces paymentCondition going forward)
+export const paymentConfigSchema = z.object({
+  type: z.enum(['CASH', 'INSTALLMENTS']),
+  cashDays: z.union([z.literal(5), z.literal(10), z.literal(20), z.literal(40)]).optional(),
+  installmentCount: z.number().int().min(2).max(6).optional(),
+  installmentStep: z.number().int().min(1).max(365).optional(),
+  entryDays: z.number().int().min(1).max(365).optional(),
+  specificDate: z.string().optional(),
+});
+
+export type PaymentConfig = z.infer<typeof paymentConfigSchema>;
+
 export const guaranteeYearsSchema = z.number().refine(
   (val) => [5, 10, 15].includes(val),
   { message: 'Período de garantia inválido' }
@@ -105,6 +117,7 @@ export const taskQuoteCustomerConfigSchema = z.object({
     (val) => (val === null || val === undefined || val === '' ? null : String(val)),
     paymentConditionSchema.optional().nullable()
   ),
+  paymentConfig: paymentConfigSchema.optional().nullable(),
   customPaymentText: z.string().max(2000).optional().nullable(),
   responsibleId: z.string().uuid().optional().nullable(),
   customerSignatureId: z.string().uuid().optional().nullable(),

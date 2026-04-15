@@ -428,7 +428,8 @@ export const ENTITY_BADGE_CONFIG = {
   // Service Order Status
   SERVICE_ORDER: {
     [SERVICE_ORDER_STATUS.PENDING]: "gray" as BadgeVariant,      // Gray - not started
-    [SERVICE_ORDER_STATUS.IN_PROGRESS]: "blue" as BadgeVariant,  // Blue - in progress
+    [SERVICE_ORDER_STATUS.IN_PROGRESS]: "blue" as BadgeVariant,   // Blue - in progress
+    [SERVICE_ORDER_STATUS.PAUSED]: "yellow" as BadgeVariant,     // Yellow - paused
     [SERVICE_ORDER_STATUS.COMPLETED]: "green" as BadgeVariant,   // Green - completed
     [SERVICE_ORDER_STATUS.CANCELLED]: "red" as BadgeVariant,     // Red - cancelled
   },

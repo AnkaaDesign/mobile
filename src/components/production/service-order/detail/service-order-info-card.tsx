@@ -1,4 +1,4 @@
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
@@ -8,10 +8,13 @@ import {
   IconClock,
   IconLoader,
   IconX,
+  IconPlayerPause,
+  IconPlayerPlay,
 } from "@tabler/icons-react-native";
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
 import type { ServiceOrder } from "@/types";
 import { formatDateTime } from "@/utils";
+import { useUpdateServiceOrder } from "@/hooks/useServiceOrder";
 
 interface ServiceOrderInfoCardProps {
   serviceOrder: ServiceOrder;
@@ -40,19 +43,61 @@ const SERVICE_ORDER_STATUS_CONFIG: Record<
     color: "#15803d",
     bgColor: "#f0fdf4",
   },
+  [SERVICE_ORDER_STATUS.PAUSED]: {
+    icon: IconPlayerPause,
+    color: "#d97706",
+    bgColor: "#fffbeb",
+  },
   [SERVICE_ORDER_STATUS.CANCELLED]: {
     icon: IconX,
     color: "#b91c1c",
     bgColor: "#fef2f2",
   },
+  [SERVICE_ORDER_STATUS.WAITING_APPROVE]: {
+    icon: IconClock,
+    color: "#9333ea",
+    bgColor: "#faf5ff",
+  },
 };
+
+function formatActiveTime(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "0min";
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  return `${minutes}min`;
+}
 
 export function ServiceOrderInfoCard({ serviceOrder }: ServiceOrderInfoCardProps) {
   const { colors, isDark } = useTheme();
+  const { mutate: updateServiceOrder } = useUpdateServiceOrder(serviceOrder.id);
 
   const status = serviceOrder.status || SERVICE_ORDER_STATUS.PENDING;
-  const config = SERVICE_ORDER_STATUS_CONFIG[status];
+  const config = SERVICE_ORDER_STATUS_CONFIG[status] || SERVICE_ORDER_STATUS_CONFIG[SERVICE_ORDER_STATUS.PENDING];
   const StatusIcon = config.icon;
+
+  const canPause = status === SERVICE_ORDER_STATUS.IN_PROGRESS;
+  const canResume = status === SERVICE_ORDER_STATUS.PAUSED;
+
+  const handlePause = () => {
+    Alert.alert("Pausar Ordem", "Deseja pausar esta ordem de serviço?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Pausar",
+        onPress: () => updateServiceOrder({ status: SERVICE_ORDER_STATUS.PAUSED }),
+      },
+    ]);
+  };
+
+  const handleResume = () => {
+    Alert.alert("Retomar Ordem", "Deseja retomar esta ordem de serviço?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Retomar",
+        onPress: () => updateServiceOrder({ status: SERVICE_ORDER_STATUS.IN_PROGRESS }),
+      },
+    ]);
+  };
 
   return (
     <DetailCard title="Informações da Ordem" icon="clipboard-list">
@@ -97,6 +142,14 @@ export function ServiceOrderInfoCard({ serviceOrder }: ServiceOrderInfoCardProps
         />
       )}
 
+      {serviceOrder.pausedAt && (
+        <DetailField
+          label="Pausado em"
+          icon="calendar"
+          value={formatDateTime(serviceOrder.pausedAt)}
+        />
+      )}
+
       {serviceOrder.finishedAt && (
         <DetailField
           label="Data de Finalização"
@@ -105,11 +158,44 @@ export function ServiceOrderInfoCard({ serviceOrder }: ServiceOrderInfoCardProps
         />
       )}
 
+      {(serviceOrder.totalActiveTimeSeconds ?? 0) > 0 && (
+        <DetailField
+          label="Tempo Ativo"
+          icon="clock"
+          value={formatActiveTime(serviceOrder.totalActiveTimeSeconds ?? 0)}
+        />
+      )}
+
       <DetailField
         label="Última Atualização"
         icon="clock"
         value={formatDateTime(serviceOrder.updatedAt)}
       />
+
+      {(canPause || canResume) && (
+        <View style={styles.actionRow}>
+          {canPause && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#d97706" }]}
+              onPress={handlePause}
+              activeOpacity={0.7}
+            >
+              <IconPlayerPause size={16} color="#fff" />
+              <ThemedText style={styles.actionButtonText}>Pausar</ThemedText>
+            </TouchableOpacity>
+          )}
+          {canResume && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#3b82f6" }]}
+              onPress={handleResume}
+              activeOpacity={0.7}
+            >
+              <IconPlayerPlay size={16} color="#fff" />
+              <ThemedText style={styles.actionButtonText}>Retomar</ThemedText>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
     </DetailCard>
   );
 }
@@ -128,5 +214,23 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: fontSize.sm,
     fontWeight: "600",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  actionButtonText: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+    color: "#fff",
   },
 });

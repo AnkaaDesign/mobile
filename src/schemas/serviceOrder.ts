@@ -40,6 +40,7 @@ export const serviceOrderIncludeSchema = z
     startedBy: z.boolean().optional(),
     approvedBy: z.boolean().optional(),
     completedBy: z.boolean().optional(),
+    pausedBy: z.boolean().optional(),
     checkinFiles: z.boolean().optional(),
     checkoutFiles: z.boolean().optional(),
   })
@@ -496,6 +497,9 @@ export const serviceOrderCreateSchema = z.object({
   startedAt: nullableDate.optional(),
   approvedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
+  pausedAt: nullableDate.optional(),
+  lastStartedAt: nullableDate.optional(),
+  totalActiveTimeSeconds: z.number().int().min(0).optional(),
   checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),
   checkoutFileIds: z.array(z.string().uuid('Arquivo de checkout inválido')).optional(),
 });
@@ -519,6 +523,9 @@ export const serviceOrderUpdateSchema = z.object({
   startedAt: nullableDate.optional(),
   approvedAt: nullableDate.optional(),
   finishedAt: nullableDate.optional(),
+  pausedAt: nullableDate.optional(),
+  lastStartedAt: nullableDate.optional(),
+  totalActiveTimeSeconds: z.number().int().min(0).optional(),
   checkinFileIds: z.array(z.string().uuid('Arquivo de checkin inválido')).optional(),
   checkoutFileIds: z.array(z.string().uuid('Arquivo de checkout inválido')).optional(),
 });
@@ -601,6 +608,9 @@ export const mapServiceOrderToFormData = createMapToFormDataHelper<ServiceOrder,
   startedAt: serviceOrder.startedAt,
   approvedAt: serviceOrder.approvedAt,
   finishedAt: serviceOrder.finishedAt,
+  pausedAt: serviceOrder.pausedAt,
+  lastStartedAt: serviceOrder.lastStartedAt,
+  totalActiveTimeSeconds: serviceOrder.totalActiveTimeSeconds || 0,
   checkinFileIds: (serviceOrder as any).checkinFiles?.map((f: any) => f.id),
   checkoutFileIds: (serviceOrder as any).checkoutFiles?.map((f: any) => f.id),
 }));

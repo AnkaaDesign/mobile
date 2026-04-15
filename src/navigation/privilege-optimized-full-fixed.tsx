@@ -517,6 +517,19 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
     if (userPrivileges.includes(SECTOR_PRIVILEGES.HUMAN_RESOURCES) && path.startsWith('recursos-humanos/')) {
       return true;
     }
+    // PRODUCTION_MANAGER gets read access to specific HR sections
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION_MANAGER)) {
+      const pmAllowedHRPaths = [
+        'recursos-humanos/advertencias/',
+        'recursos-humanos/calculos',
+        'recursos-humanos/feriados/',
+        'recursos-humanos/ferias/',
+        'recursos-humanos/horarios/',
+      ];
+      if (pmAllowedHRPaths.some(allowed => path.startsWith(allowed) || path === allowed.replace(/\/$/, ''))) {
+        return true;
+      }
+    }
     if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION) && path.startsWith('producao/')) {
       // Production sector has limited access - exclude aerografia and garagens
       const restrictedPaths = ['producao/aerografia/', 'producao/garagens/'];
@@ -539,6 +552,10 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
       path.startsWith('administracao/responsaveis/') ||
       path.startsWith('administracao/clientes/')
     )) {
+      return true;
+    }
+    // PRODUCTION_MANAGER can manage messages in mobile
+    if (userPrivileges.includes(SECTOR_PRIVILEGES.PRODUCTION_MANAGER) && path.startsWith('administracao/mensagens')) {
       return true;
     }
     // NOTE: Team leader routes (meu-pessoal/) are now filtered at component level

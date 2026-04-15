@@ -860,6 +860,10 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     startedAt: "Iniciado em",
     approvedAt: "Aprovado em",
     finishedAt: "Finalizado em",
+    pausedAt: "Pausado em",
+    pausedById: "Pausado por",
+    lastStartedAt: "Último início",
+    totalActiveTimeSeconds: "Tempo ativo (seg)",
     // Nested relationship fields
     "task.name": "Nome da Tarefa",
     "task.serialNumber": "Número de Série da Tarefa",
@@ -1220,6 +1224,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     const serviceOrderStatusLabels: Record<string, string> = {
       PENDING: "Pendente",
       IN_PROGRESS: "Em Andamento",
+      PAUSED: "Pausado",
       WAITING_APPROVE: "Aguardando Aprovação",
       COMPLETED: "Concluído",
       CANCELLED: "Cancelado",
@@ -2233,7 +2238,7 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
     }
 
     // Special handling for assignedTo field in SERVICE_ORDER - format as human readable
-    if ((field === "assignedTo" || field === "startedBy" || field === "approvedBy" || field === "completedBy") && entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
+    if ((field === "assignedTo" || field === "startedBy" || field === "approvedBy" || field === "completedBy" || field === "pausedBy") && entityType === CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER) {
       const data = value as { name?: string };
       if (!data) return "Nenhum";
       if (data.name) return data.name;

@@ -43,3 +43,37 @@ export const canFinishServiceOrder = (serviceOrder: Pick<ServiceOrder, "startedA
 export function getServiceOrderStatusLabel(status: SERVICE_ORDER_STATUS): string {
   return SERVICE_ORDER_STATUS_LABELS[status] || status;
 }
+
+export const isServiceOrderPaused = (serviceOrder: Pick<ServiceOrder, "status">): boolean => {
+  return serviceOrder.status === SERVICE_ORDER_STATUS.PAUSED;
+};
+
+export const canPauseServiceOrder = (serviceOrder: Pick<ServiceOrder, "status">): boolean => {
+  return serviceOrder.status === SERVICE_ORDER_STATUS.IN_PROGRESS;
+};
+
+export const canResumeServiceOrder = (serviceOrder: Pick<ServiceOrder, "status">): boolean => {
+  return serviceOrder.status === SERVICE_ORDER_STATUS.PAUSED;
+};
+
+export const getServiceOrderTotalActiveTimeSeconds = (
+  serviceOrder: Pick<ServiceOrder, "status" | "lastStartedAt" | "totalActiveTimeSeconds">
+): number => {
+  const accumulated = serviceOrder.totalActiveTimeSeconds || 0;
+  if (serviceOrder.status === SERVICE_ORDER_STATUS.IN_PROGRESS && serviceOrder.lastStartedAt) {
+    const now = new Date();
+    const sessionSeconds = Math.floor(
+      (now.getTime() - new Date(serviceOrder.lastStartedAt).getTime()) / 1000
+    );
+    return accumulated + sessionSeconds;
+  }
+  return accumulated;
+};
+
+export const formatActiveTime = (totalSeconds: number): string => {
+  if (totalSeconds <= 0) return '0min';
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  return `${minutes}min`;
+};

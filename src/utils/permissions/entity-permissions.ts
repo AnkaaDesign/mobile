@@ -247,7 +247,7 @@ export function getAllowedServiceOrderStatuses(
   }
 
   // PRODUCTION, COMMERCIAL, LOGISTIC: Simple workflow without WAITING_APPROVE
-  const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
+  const simpleStatuses = ['PENDING', 'IN_PROGRESS', 'PAUSED', 'COMPLETED'];
 
   // Users who can cancel get CANCELLED status option
   if (canCancel) {
