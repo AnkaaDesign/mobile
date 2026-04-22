@@ -48,6 +48,11 @@ export const isServiceOrderPaused = (serviceOrder: Pick<ServiceOrder, "status">)
   return serviceOrder.status === SERVICE_ORDER_STATUS.PAUSED;
 };
 
+/**
+ * Check if a service order's status allows pausing (status-only check).
+ * Note: does NOT check user permissions — use canUserPauseServiceOrder from
+ * utils/permissions/service-order-permissions for the full permission check.
+ */
 export const canPauseServiceOrder = (serviceOrder: Pick<ServiceOrder, "status">): boolean => {
   return serviceOrder.status === SERVICE_ORDER_STATUS.IN_PROGRESS;
 };

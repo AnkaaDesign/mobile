@@ -439,7 +439,10 @@ export default function CurrentBonusScreen() {
               const hasPercentage = percentageValue > 0;
               return (
                 <View key={discount.id || index} style={styles.detailRow}>
-                  <ThemedText style={[styles.detailLabel, { color: colors.destructive }]}>
+                  <ThemedText
+                    style={[styles.detailLabel, { color: colors.destructive, flex: 1, paddingRight: 8 }]}
+                    numberOfLines={3}
+                  >
                     {discount.reference || `Desconto ${index + 1}`}:
                   </ThemedText>
                   <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>

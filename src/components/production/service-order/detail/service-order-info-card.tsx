@@ -11,10 +11,12 @@ import {
   IconPlayerPause,
   IconPlayerPlay,
 } from "@tabler/icons-react-native";
-import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS } from "@/constants";
+import { SERVICE_ORDER_STATUS, SERVICE_ORDER_STATUS_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 import type { ServiceOrder } from "@/types";
 import { formatDateTime } from "@/utils";
 import { useUpdateServiceOrder } from "@/hooks/useServiceOrder";
+import { useCurrentUser } from "@/hooks/useAuth";
+import { canUserPauseServiceOrder } from "@/utils/permissions/service-order-permissions";
 
 interface ServiceOrderInfoCardProps {
   serviceOrder: ServiceOrder;
@@ -71,12 +73,15 @@ function formatActiveTime(totalSeconds: number): string {
 export function ServiceOrderInfoCard({ serviceOrder }: ServiceOrderInfoCardProps) {
   const { colors, isDark } = useTheme();
   const { mutate: updateServiceOrder } = useUpdateServiceOrder(serviceOrder.id);
+  const { data: currentUser } = useCurrentUser();
 
   const status = serviceOrder.status || SERVICE_ORDER_STATUS.PENDING;
   const config = SERVICE_ORDER_STATUS_CONFIG[status] || SERVICE_ORDER_STATUS_CONFIG[SERVICE_ORDER_STATUS.PENDING];
   const StatusIcon = config.icon;
 
-  const canPause = status === SERVICE_ORDER_STATUS.IN_PROGRESS;
+  const sectorPrivilege = currentUser?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
+  const isTeamLeader = currentUser?.ledSector !== null && currentUser?.ledSector !== undefined;
+  const canPause = status === SERVICE_ORDER_STATUS.IN_PROGRESS && canUserPauseServiceOrder(sectorPrivilege, isTeamLeader);
   const canResume = status === SERVICE_ORDER_STATUS.PAUSED;
 
   const handlePause = () => {

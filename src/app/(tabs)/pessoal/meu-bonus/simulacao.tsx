@@ -1,13 +1,15 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Alert } from "react-native";
 import { IconChevronDown, IconChevronUp, IconRefresh } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ThemedView, ThemedText, EmptyState } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { usePositions, useUsers, useScreenReady } from "@/hooks";
+import { bonusKeys } from "@/hooks/queryKeys";
 import { formatCurrency, getCurrentPayrollPeriod } from "@/utils";
 import { calculateBonusForPosition } from "@/utils/bonus";
 import { USER_STATUS } from "@/constants";
@@ -24,36 +26,109 @@ export default function BonusSimulationScreen() {
   const [selectedPerformanceLevel, setSelectedPerformanceLevel] = useState<number>(3);
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
 
-  // Get current user
+  // Get current user (Stage 1 — instant from cache)
   const { data: currentUser, isLoading: userLoading, refetch: refetchUser } = useCurrentUser();
+
+  const queryClient = useQueryClient();
 
   // Get current bonus period
   const { year: periodYear, month: periodMonth } = getCurrentPayrollPeriod();
-  // Fetch period task stats from lightweight endpoint (no Secullum)
-  const [taskStatsLoading, setTaskStatsLoading] = useState(false);
-  const [periodTaskStats, setPeriodTaskStats] = useState<{ rawCount: number; weightedCount: number; suspendedCount: number; eligibleUsers: number } | null>(null);
 
-  const fetchPeriodStats = useCallback(async () => {
-    setTaskStatsLoading(true);
-    try {
+  // Period label for Stage 1 header (derived, no fetch required)
+  const periodLabel = useMemo(() => {
+    const monthNames = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    ];
+    return `${monthNames[periodMonth - 1]} / ${periodYear}`;
+  }, [periodYear, periodMonth]);
+
+  // Stage 2a — fire period task stats in parallel with other Stage 2/3 queries
+  const periodStatsQuery = useQuery({
+    queryKey: [...bonusKeys.all, 'my-period-stats', periodYear, periodMonth],
+    queryFn: async () => {
       const response = await bonusService.getMyPeriodTaskStats(periodYear, periodMonth);
       const data = (response.data as any)?.data ?? response.data;
-      setPeriodTaskStats({
+      return {
         rawCount: Number(data.totalRawTaskCount) || 0,
         weightedCount: Number(data.totalWeightedTasks) || 0,
         suspendedCount: Number(data.totalSuspendedTasks) || 0,
         eligibleUsers: Number(data.eligibleUsers) || 0,
-      });
-    } catch (err) {
-      console.error('[BonusSimulation] Failed to fetch period task stats:', err);
-    } finally {
-      setTaskStatsLoading(false);
-    }
-  }, [periodYear, periodMonth]);
+      };
+    },
+    staleTime: 1000 * 60, // 1 minute
+  });
 
-  useEffect(() => {
-    fetchPeriodStats();
-  }, [fetchPeriodStats]);
+  const periodTaskStats = periodStatsQuery.data ?? null;
+  const taskStatsLoading = periodStatsQuery.isLoading;
+
+  // Stage 2b — first page of historical bonuses (parallel with stats)
+  const historicalBonusesQuery = useQuery({
+    queryKey: [...bonusKeys.all, 'my-bonuses-first-page', currentUser?.id, periodYear, periodMonth],
+    queryFn: async () => {
+      const response = await bonusService.getMyBonuses({
+        page: 1,
+        take: 25,
+        include: {
+          user: { include: { position: true, sector: true } },
+          bonusDiscounts: true,
+          bonusExtras: true,
+        },
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      });
+      return response.data;
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Stage 3 — live bonus (expensive, Secullum) in parallel with Stage 2
+  const liveBonusQuery = useQuery({
+    queryKey: [...bonusKeys.all, 'my-live-bonus', periodYear, periodMonth],
+    queryFn: async () => {
+      const response = await bonusService.getMyLiveBonus({
+        year: periodYear.toString(),
+        month: periodMonth.toString(),
+      });
+      return response.data;
+    },
+    enabled: !!currentUser?.id,
+    staleTime: 1000 * 30,
+    refetchInterval: 60_000,
+  });
+
+  const liveBonusData = liveBonusQuery.data?.data ?? null;
+  const isLiveStale = Boolean(liveBonusData?.isStale);
+
+  // Injected list: live bonus at the top (if present) + historical
+  const combinedList = useMemo(() => {
+    const historical = historicalBonusesQuery.data?.data ?? [];
+    const hasCurrentPeriodSaved = historical.some(
+      (b: any) => b.year === periodYear && b.month === periodMonth,
+    );
+
+    if (liveBonusData && !hasCurrentPeriodSaved && currentUser?.id) {
+      const liveEntry = {
+        id: `live-${currentUser.id}-${periodYear}-${periodMonth}`,
+        userId: currentUser.id,
+        year: periodYear,
+        month: periodMonth,
+        performanceLevel: liveBonusData.level || currentUser.performanceLevel || 3,
+        baseBonus: liveBonusData.baseBonus || 0,
+        netBonus: liveBonusData.netBonus || 0,
+        weightedTasks: liveBonusData.weightedTasks || 0,
+        averageTaskPerUser: liveBonusData.averageTaskPerUser || 0,
+        bonusDiscounts: liveBonusData.bonusDiscounts || [],
+        bonusExtras: liveBonusData.bonusExtras || [],
+        isLive: true as const,
+        lastCalculatedAt: liveBonusData.lastCalculatedAt,
+        isStale: liveBonusData.isStale,
+      };
+      return [liveEntry, ...historical];
+    }
+
+    return historical;
+  }, [liveBonusData, historicalBonusesQuery.data, currentUser, periodYear, periodMonth]);
 
   // Fetch all positions to determine hierarchy
   const { data: positionsData, isLoading: positionsLoading } = usePositions({
@@ -162,11 +237,23 @@ export default function BonusSimulationScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchPeriodStats(), refetchUser()]);
+      // Invalidate all three staged queries so they re-fire in parallel
+      await Promise.all([
+        refetchUser(),
+        queryClient.invalidateQueries({
+          queryKey: [...bonusKeys.all, 'my-period-stats', periodYear, periodMonth],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...bonusKeys.all, 'my-bonuses-first-page'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...bonusKeys.all, 'my-live-bonus', periodYear, periodMonth],
+        }),
+      ]);
     } finally {
       setRefreshing(false);
     }
-  }, [fetchPeriodStats, refetchUser]);
+  }, [queryClient, refetchUser, periodYear, periodMonth]);
 
   const handlePerformanceLevelChange = useCallback((direction: "up" | "down") => {
     setSelectedPerformanceLevel((prev) => {
@@ -211,14 +298,25 @@ export default function BonusSimulationScreen() {
     }
   }, [maxTaskQuantity]);
 
-  const isLoading = userLoading || taskStatsLoading || positionsLoading;
+  // Stage-specific loading flags (full-screen gating only uses userLoading below).
+  void taskStatsLoading;
+  void positionsLoading;
+  const isLiveLoading = liveBonusQuery.isLoading;
+  const isHistoricalLoading = historicalBonusesQuery.isLoading;
 
-  useScreenReady(!isLoading || refreshing);
+  useScreenReady(!!currentUser || refreshing);
 
-  if (isLoading && !refreshing) {
+  // Only show the full-screen skeleton when we don't yet have the cached user
+  // (Stage 1 requirement: render identity + period label instantly when user is cached).
+  if (!currentUser && userLoading && !refreshing) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
         <ScrollView style={styles.scrollView} scrollEnabled={false}>
+          {/* Compact header skeleton (Stage 1 fallback) */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 8 }]}>
+            <Skeleton style={{ height: 18, width: '55%', borderRadius: 4 }} />
+            <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
+          </View>
           {/* Simulation Controls Card skeleton */}
           <View style={[styles.card, { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, gap: 16 }]}>
             <Skeleton style={{ height: 20, width: '40%', borderRadius: 4 }} />
@@ -290,6 +388,60 @@ export default function BonusSimulationScreen() {
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
       <ScrollView style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
+        {/* Stage 1 — instant header (user identity + period label) */}
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, gap: 4 }]}>
+          <ThemedText style={styles.sectionTitle}>{currentUser.name}</ThemedText>
+          <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+            Período: {periodLabel}
+          </ThemedText>
+        </Card>
+
+        {/* Stage 3 — Live bonus card (skeleton while pending, stale pill when stale) */}
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <ThemedText style={styles.sectionTitle}>Bônus Atual (ao vivo)</ThemedText>
+            {isLiveStale && !isLiveLoading && (
+              <View style={[styles.stalePill, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+                <ThemedText style={[styles.stalePillText, { color: colors.mutedForeground }]}>
+                  atualizando…
+                </ThemedText>
+              </View>
+            )}
+          </View>
+
+          {isLiveLoading ? (
+            <View style={{ gap: 10 }}>
+              <Skeleton style={{ height: 40, width: '55%', borderRadius: 4, alignSelf: 'center' }} />
+              <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
+            </View>
+          ) : liveBonusData ? (
+            <>
+              <ThemedText style={[styles.resultAmount, { color: colors.primary }]}>
+                {formatCurrency(Number(liveBonusData.netBonus ?? liveBonusData.baseBonus ?? 0))}
+              </ThemedText>
+              <View style={styles.resultDetails}>
+                <View style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Desempenho:</ThemedText>
+                  <ThemedText style={styles.detailValue}>Nível {liveBonusData.level ?? currentUser.performanceLevel ?? 3}</ThemedText>
+                </View>
+                <View style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Tarefas ponderadas:</ThemedText>
+                  <ThemedText style={styles.detailValue}>{Number(liveBonusData.weightedTasks ?? 0).toFixed(1)}</ThemedText>
+                </View>
+                <View style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>Média por colaborador:</ThemedText>
+                  <ThemedText style={styles.detailValue}>{Number(liveBonusData.averageTaskPerUser ?? 0).toFixed(2)}</ThemedText>
+                </View>
+              </View>
+            </>
+          ) : (
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Sem cálculo ao vivo disponível.
+            </ThemedText>
+          )}
+        </Card>
+
         {/* Simulation Controls Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Simular Bônus</ThemedText>
@@ -404,6 +556,43 @@ export default function BonusSimulationScreen() {
               <ThemedText style={styles.detailValue}>{simulatedAverage.toFixed(2)}</ThemedText>
             </View>
           </View>
+        </Card>
+
+        {/* Stage 2 — Historical bonuses (live entry injected at top when present) */}
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 16 }]}>
+          <ThemedText style={styles.sectionTitle}>Histórico</ThemedText>
+          {isHistoricalLoading ? (
+            <View style={{ gap: 10 }}>
+              {[0, 1, 2].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
+                  <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
+                </View>
+              ))}
+            </View>
+          ) : combinedList.length === 0 ? (
+            <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+              Nenhum bônus encontrado.
+            </ThemedText>
+          ) : (
+            <View style={{ gap: 8 }}>
+              {combinedList.map((b: any) => (
+                <View key={b.id} style={styles.detailRow}>
+                  <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+                    {String(b.month).padStart(2, '0')}/{b.year}
+                    {b.isLive ? ' • ao vivo' : ''}
+                  </ThemedText>
+                  <ThemedText style={styles.detailValue}>
+                    {formatCurrency(Number(
+                      typeof b.netBonus === 'object' && b.netBonus?.toNumber
+                        ? b.netBonus.toNumber()
+                        : b.netBonus ?? b.baseBonus ?? 0,
+                    ))}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
         </Card>
       </ScrollView>
     </ThemedView>
@@ -528,5 +717,15 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  stalePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  stalePillText: {
+    fontSize: 11,
+    fontWeight: "500",
   },
 });

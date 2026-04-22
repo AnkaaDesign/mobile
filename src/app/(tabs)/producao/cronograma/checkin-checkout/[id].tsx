@@ -8,7 +8,7 @@ import { ThemedText } from '@/components/ui/themed-text'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormCard } from '@/components/ui/form-section'
-import type { FilePickerItem } from '@/components/ui/file-picker'
+import { FilePicker, type FilePickerItem } from '@/components/ui/file-picker'
 import { FullCamera } from '@/components/ui/full-camera'
 import { ImagePreviewModal } from '@/components/ui/image-preview-modal'
 import { FormSkeleton } from '@/components/ui/form-skeleton'
@@ -98,6 +98,9 @@ export default function CheckinCheckoutScreen() {
       customer: {
         select: { id: true, fantasyName: true },
       },
+      baseFiles: {
+        select: { id: true, filename: true, mimetype: true, size: true, thumbnailUrl: true },
+      },
       serviceOrders: {
         select: {
           id: true,
@@ -134,6 +137,8 @@ export default function CheckinCheckoutScreen() {
   const [checkoutFilesByServiceOrder, setCheckoutFilesByServiceOrder] = useState<
     Record<string, FilePickerItem[]>
   >({})
+  // Task-level base files (not tied to a service order)
+  const [baseFiles, setBaseFiles] = useState<FilePickerItem[]>([])
   const [initialized, setInitialized] = useState(false)
 
   // Image preview state
@@ -241,9 +246,15 @@ export default function CheckinCheckoutScreen() {
       }
       setCheckinFilesByServiceOrder(checkinMap)
       setCheckoutFilesByServiceOrder(checkoutMap)
+      setBaseFiles(((task as any).baseFiles || []).map((f: any) => fileToPickerItem(f)))
       setInitialized(true)
     }
   }, [task, initialized])
+
+  const handleBaseFilesChange = useCallback((next: FilePickerItem[]) => {
+    setBaseFiles(next)
+    setHasChanges(true)
+  }, [])
 
   const taskStatus = task?.status as string | undefined
   const isCompleted = taskStatus === TASK_STATUS.COMPLETED
@@ -364,6 +375,32 @@ export default function CheckinCheckoutScreen() {
       formData.append('_soFileMapping', JSON.stringify(soFileMapping))
       formData.append('serviceOrderFiles', JSON.stringify(serviceOrderFiles))
 
+      // Task-level base files: keep existing by ID + upload new ones
+      const existingBaseFileIds = baseFiles
+        .filter((f: any) => f.id || f.fileId)
+        .map((f: any) => f.fileId || f.file?.id || f.id)
+        .filter(Boolean)
+      const newBaseFiles = baseFiles.filter((f: any) => !f.id && !f.fileId && f.uri)
+      for (const file of newBaseFiles) {
+        formData.append('baseFiles', {
+          uri: file.uri,
+          name: file.name || `base_${Date.now()}`,
+          type: file.type || file.mimeType || 'application/octet-stream',
+        } as any)
+      }
+      // Always send baseFileIds when we touched this section, so the API knows
+      // which existing files to keep (and which to drop).
+      const origBaseIds = ((task as any).baseFiles || [])
+        .map((f: any) => f.fileId || f.file?.id || f.id)
+        .filter(Boolean)
+      const baseFilesChanged =
+        newBaseFiles.length > 0 ||
+        existingBaseFileIds.length !== origBaseIds.length ||
+        existingBaseFileIds.some((id) => !origBaseIds.includes(id))
+      if (baseFilesChanged) {
+        formData.append('baseFileIds', JSON.stringify(existingBaseFileIds))
+      }
+
       const result = await updateAsync({ id, data: formData })
 
       if (result.success) {
@@ -379,7 +416,7 @@ export default function CheckinCheckoutScreen() {
       console.error('[CheckinCheckout] Error saving:', error)
       Alert.alert('Erro', 'Ocorreu um erro ao salvar. Tente novamente.')
     }
-  }, [id, task, activeServiceOrders, checkinFilesByServiceOrder, checkoutFilesByServiceOrder, updateAsync, handleNavigateBack])
+  }, [id, task, activeServiceOrders, checkinFilesByServiceOrder, checkoutFilesByServiceOrder, baseFiles, updateAsync, handleNavigateBack])
 
   // Compute totals for overview
   const totals = useMemo(() => {
@@ -524,6 +561,27 @@ export default function CheckinCheckoutScreen() {
                 </ThemedText>
               </View>
             )}
+
+            {/* Task-level base files — extra images/documents not tied to a service order */}
+            <FormCard
+              title="Outros"
+              icon="IconFiles"
+              subtitle="Fotos e arquivos extras associados à tarefa (não vinculados a uma OS)"
+            >
+              <FilePicker
+                value={baseFiles}
+                onChange={handleBaseFilesChange}
+                maxFiles={20}
+                placeholder="Adicionar fotos ou arquivos"
+                helperText="Toque para capturar uma foto, escolher da galeria ou anexar um arquivo"
+                showCamera
+                showGallery
+                showFilePicker
+                showVideoCamera={false}
+                disabled={isSaving}
+                multiple
+              />
+            </FormCard>
           </View>
         )}
 
@@ -710,6 +768,35 @@ export default function CheckinCheckoutScreen() {
                   )
                 })}
 
+                {/* Base files summary */}
+                {baseFiles.length > 0 && (
+                  <View style={[styles.overviewSection, { borderColor: colors.border }]}>
+                    <ThemedText style={styles.overviewSoLabel}>Outros</ThemedText>
+                    <View style={styles.overviewRow}>
+                      <ThemedText style={[styles.overviewLabel, { color: colors.mutedForeground }]}>Total:</ThemedText>
+                      <ThemedText style={styles.overviewValue}>{baseFiles.length} arquivo(s)</ThemedText>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.overviewThumbnails}>
+                      {baseFiles.map((file, index) => {
+                        const src = getThumbnailUri(file)
+                        return (
+                          <TouchableOpacity
+                            key={file.id || file.uri || `base-${index}`}
+                            activeOpacity={0.8}
+                            onPress={() => handlePreviewImage(
+                              baseFiles.map((f) => ({ uri: getThumbnailUri(f) })),
+                              index,
+                            )}
+                            style={[styles.overviewThumb, { borderColor: colors.border }]}
+                          >
+                            {src ? <Image source={{ uri: src }} style={styles.overviewThumbImage} /> : <View style={[styles.referencePlaceholder, { backgroundColor: colors.border }]} />}
+                          </TouchableOpacity>
+                        )
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
+
                 {/* Totals */}
                 <View style={[styles.overviewTotals, { borderColor: colors.border }]}>
                   <View style={styles.overviewRow}>
@@ -720,6 +807,12 @@ export default function CheckinCheckoutScreen() {
                     <View style={styles.overviewRow}>
                       <ThemedText style={styles.overviewTotalLabel}>Total check-out:</ThemedText>
                       <ThemedText style={styles.overviewTotalValue}>{totals.totalCheckout} foto(s)</ThemedText>
+                    </View>
+                  )}
+                  {baseFiles.length > 0 && (
+                    <View style={styles.overviewRow}>
+                      <ThemedText style={styles.overviewTotalLabel}>Total outros:</ThemedText>
+                      <ThemedText style={styles.overviewTotalValue}>{baseFiles.length} arquivo(s)</ThemedText>
                     </View>
                   )}
                 </View>
