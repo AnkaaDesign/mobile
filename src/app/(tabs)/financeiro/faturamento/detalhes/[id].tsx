@@ -15,7 +15,8 @@ export default function BillingDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          headerShown: false,
+          title: "Fatura",
+          headerShown: true,
         }}
       />
       <TaskQuoteWizard taskId={id} mode="billing" />

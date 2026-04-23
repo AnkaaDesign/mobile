@@ -10,7 +10,8 @@ export default function BudgetDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          headerShown: false,
+          title: "Orçamento",
+          headerShown: true,
         }}
       />
       <TaskQuoteWizard taskId={taskId} />

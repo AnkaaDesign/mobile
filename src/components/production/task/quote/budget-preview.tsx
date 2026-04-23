@@ -1,6 +1,5 @@
 import { View, StyleSheet, Image } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
-import { ThemedView } from "@/components/ui/themed-view";
 import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
@@ -154,9 +153,7 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
         <View style={styles.serviceRow}>
           <ThemedText style={styles.serviceDescription} numberOfLines={2}>
             {index + 1} - {displayDescription}
-            {observation ? (
-              <ThemedText style={{ opacity: 0.6, fontStyle: "italic" }}> — {observation}</ThemedText>
-            ) : null}
+            {observation ? ` ${observation}` : ""}
           </ThemedText>
           <ThemedText style={styles.serviceAmount}>
             {formatCurrency(amount)}
@@ -167,7 +164,7 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       {/* Header - budget only */}
       {mode === 'budget' && (
         <>
@@ -470,14 +467,14 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
           </View>
         </>
       )}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 8,
-    padding: spacing.lg,
+    // Flat container — no background or border, so it blends cleanly when
+    // rendered inside a FormCard (no "nested card" visual).
     gap: spacing.md,
   },
   header: {

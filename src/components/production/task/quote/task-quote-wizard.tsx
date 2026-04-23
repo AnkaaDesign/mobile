@@ -200,6 +200,37 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
     }
   }, [existingQuote, setValue]);
 
+  // Auto-populate default billing customer from task.customer when no configs exist.
+  // Matches web behavior: the task's cliente becomes the default billing cliente,
+  // removing the step where users must manually re-select the same customer.
+  const autoSetDefaultBillingRef = useRef(false);
+  useEffect(() => {
+    if (autoSetDefaultBillingRef.current) return;
+    if (taskLoading || quoteLoading) return;
+    if (!task?.customer?.id) return;
+    const currentConfigs = getValues("quote.customerConfigs");
+    if (Array.isArray(currentConfigs) && currentConfigs.length > 0) return;
+
+    autoSetDefaultBillingRef.current = true;
+    const customer = task.customer;
+    const defaultConfig = {
+      customerId: customer.id,
+      subtotal: 0,
+      total: 0,
+      discountType: "NONE" as const,
+      discountValue: null,
+      discountReference: null,
+      paymentCondition: null,
+      customPaymentText: null,
+      responsibleId: null,
+      generateInvoice: true,
+      orderNumber: null,
+    };
+    setValue("quote.customerConfigs", [defaultConfig], { shouldDirty: false });
+    customersCache.current.set(customer.id, customer);
+    setSelectedCustomers(new Map([[customer.id, customer]]));
+  }, [task, taskLoading, quoteLoading, getValues, setValue]);
+
   // Dynamic steps based on customer count
   const customerConfigs = watch("quote.customerConfigs");
   const steps = useMemo(() => {
@@ -427,6 +458,16 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
     goBack();
   }, [goBack]);
 
+  // Full wizard reset: step + local pickers/caches. react-hook-form fields
+  // are reset automatically by MultiStepFormContainer via useFormContext.
+  // Runs on cancel and after a successful submit.
+  const handleReset = useCallback(() => {
+    setCurrentStep(1);
+    setLayoutFiles([]);
+    setSelectedCustomers(new Map());
+    customersCache.current = new Map();
+  }, []);
+
   // Loading state
   if (taskLoading || quoteLoading) {
     return (
@@ -457,6 +498,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
         onNextStep={goNext}
         onSubmit={onSave}
         onCancel={handleCancel}
+        onReset={handleReset}
         isSubmitting={isSaving}
         canProceed={canProceed}
         canSubmit={canSubmit}
@@ -470,7 +512,6 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
             control={control}
             task={task}
             mode={mode === 'billing' ? 'billing' : 'edit'}
-            canEditStatus={canEditStatus}
             layoutFiles={layoutFiles}
             onLayoutFilesChange={setLayoutFiles}
             artworks={(task?.artworks || []).map((artwork: any) => {
@@ -531,6 +572,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
             existingQuote={existingQuote}
             selectedCustomers={selectedCustomers}
             layoutFiles={layoutFiles}
+            canEditStatus={canEditStatus}
             fieldPrefix="quote."
           />
         )}

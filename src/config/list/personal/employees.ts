@@ -4,8 +4,8 @@ import { USER_STATUS } from '@/constants/enums'
 
 
 const STATUS_LABELS: Record<string, string> = {
-  EXPERIENCE_PERIOD_1: 'Experiência 1/2 (45 dias)',
-  EXPERIENCE_PERIOD_2: 'Experiência 2/2 (45 dias)',
+  EXPERIENCE_PERIOD_1: 'Experiência 1/2 (30 dias)',
+  EXPERIENCE_PERIOD_2: 'Experiência 2/2 (50 dias)',
   EFFECTED: 'Efetivado',
   DISMISSED: 'Desligado',
 }

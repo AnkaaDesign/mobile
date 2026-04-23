@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   StyleSheet,
   KeyboardAvoidingView,
@@ -6,6 +6,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFormContext, type UseFormReturn } from "react-hook-form";
 
 import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
@@ -52,8 +53,8 @@ export interface FormContainerProps {
   subtitle?: string;
   /** Called when cancel button is pressed */
   onCancel: () => void;
-  /** Called when submit button is pressed */
-  onSubmit: () => void;
+  /** Called when submit button is pressed (may return a Promise) */
+  onSubmit: () => void | Promise<void>;
   /** Whether the form is currently submitting */
   isSubmitting?: boolean;
   /** Whether the form can be submitted */
@@ -72,6 +73,20 @@ export interface FormContainerProps {
   children: React.ReactNode;
   /** Optional test ID for testing */
   testID?: string;
+  /**
+   * Optional react-hook-form instance. Used to auto-reset fields on
+   * cancel/submit. If omitted, the container falls back to `useFormContext()`
+   * so forms wrapped in `<FormProvider>` are handled automatically.
+   */
+  form?: UseFormReturn<any>;
+  /**
+   * Extra cleanup to run alongside form reset (local state, file pickers, etc.)
+   */
+  onReset?: () => void | Promise<void>;
+  /** Reset form fields + run onReset when cancel is pressed. Default: true */
+  resetOnCancel?: boolean;
+  /** Reset form fields + run onReset after a successful submit. Default: true */
+  resetOnSubmitSuccess?: boolean;
 }
 
 export function FormContainer({
@@ -88,10 +103,55 @@ export function FormContainer({
   showCancel = true,
   children,
   testID,
+  form,
+  onReset,
+  resetOnCancel = true,
+  resetOnSubmitSuccess = true,
 }: FormContainerProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
+
+  // When actions render in the FormHeader (not FormActionBar), the container
+  // must wrap onCancel/onSubmit itself because FormHeader has no reset
+  // awareness. Otherwise the wrapping is delegated to FormActionBar — the
+  // props below (form, onReset, resetOnCancel, resetOnSubmitSuccess) are
+  // forwarded to it so there is a single place that owns the reset logic.
+  const formContext = useFormContext();
+  const activeForm = form ?? formContext ?? null;
+
+  const performReset = useCallback(async () => {
+    activeForm?.reset();
+    if (onReset) {
+      await onReset();
+    }
+  }, [activeForm, onReset]);
+
+  const headerHandleCancel = useCallback(async () => {
+    if (resetOnCancel) {
+      await performReset();
+    }
+    onCancel();
+  }, [resetOnCancel, performReset, onCancel]);
+
+  const headerHandleSubmit = useCallback(async () => {
+    try {
+      await onSubmit();
+      if (!resetOnSubmitSuccess) return;
+      // See FormActionBar for rationale: react-hook-form's handleSubmit does
+      // not throw on validation failure, so rely on isSubmitSuccessful when
+      // a form is available.
+      if (activeForm) {
+        if (activeForm.formState.isSubmitSuccessful) {
+          await performReset();
+        }
+      } else {
+        await performReset();
+      }
+    } catch {
+      // Parent handles the error. Don't reset on failure.
+    }
+  }, [onSubmit, activeForm, resetOnSubmitSuccess, performReset]);
 
   // Memoize context value to prevent unnecessary re-renders
   const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
@@ -117,8 +177,8 @@ export function FormContainer({
           <FormHeader
             title={title}
             subtitle={subtitle}
-            onCancel={onCancel}
-            onSave={onSubmit}
+            onCancel={headerHandleCancel}
+            onSave={headerHandleSubmit}
             saveLabel={submitLabel}
             cancelLabel={cancelLabel}
             isSaving={isSubmitting}
@@ -154,7 +214,8 @@ export function FormContainer({
           </ScrollView>
         </KeyboardAwareFormProvider>
 
-        {/* Bottom Action Bar (if not in header) */}
+        {/* Bottom Action Bar (if not in header). Reset props are forwarded
+            to FormActionBar, which owns the reset logic — avoids double-wrap. */}
         {!actionsInHeader && (
           <FormActionBar
             onCancel={onCancel}
@@ -165,6 +226,10 @@ export function FormContainer({
             submitLabel={submitLabel}
             submittingLabel={submittingLabel}
             showCancel={showCancel}
+            form={activeForm ?? undefined}
+            onReset={onReset}
+            resetOnCancel={resetOnCancel}
+            resetOnSubmitSuccess={resetOnSubmitSuccess}
           />
         )}
       </KeyboardAvoidingView>

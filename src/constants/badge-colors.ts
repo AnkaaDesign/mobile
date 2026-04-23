@@ -52,7 +52,8 @@ import {
   VALIDATION_SEVERITY,
   VERIFICATION_ERROR_SEVERITY,
   SECTOR_PRIVILEGES,
-  COMMISSION_STATUS,} from "./enums";
+  COMMISSION_STATUS,
+  TASK_QUOTE_STATUS,} from "./enums";
 
 /**
  * Badge Variant Types
@@ -380,6 +381,18 @@ export const ENTITY_BADGE_CONFIG = {
     [TASK_STATUS.IN_PRODUCTION]: "blue" as BadgeVariant,            // Blue - in progress
     [TASK_STATUS.COMPLETED]: "green" as BadgeVariant,               // Green - finished
     [TASK_STATUS.CANCELLED]: "red" as BadgeVariant,                 // Red - cancelled
+  },
+
+  // Task Quote Status (mirrors web/quote-status-badge.tsx)
+  TASK_QUOTE: {
+    [TASK_QUOTE_STATUS.PENDING]: "secondary" as BadgeVariant,              // Neutral - awaiting action
+    [TASK_QUOTE_STATUS.BUDGET_APPROVED]: "approved" as BadgeVariant,       // Green - budget approved
+    [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: "processing" as BadgeVariant, // Blue - commercial approved
+    [TASK_QUOTE_STATUS.BILLING_APPROVED]: "approved" as BadgeVariant,      // Green - billing approved
+    [TASK_QUOTE_STATUS.UPCOMING]: "pending" as BadgeVariant,               // Amber - payment upcoming
+    [TASK_QUOTE_STATUS.DUE]: "destructive" as BadgeVariant,                // Red - payment overdue
+    [TASK_QUOTE_STATUS.PARTIAL]: "inProgress" as BadgeVariant,             // Blue - partial payment
+    [TASK_QUOTE_STATUS.SETTLED]: "completed" as BadgeVariant,              // Green - fully paid
   },
 
   // Maintenance Status

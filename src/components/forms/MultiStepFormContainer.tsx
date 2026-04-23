@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFormContext, type UseFormReturn } from "react-hook-form";
 
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
@@ -59,8 +60,8 @@ export interface MultiStepFormContainerProps {
   onPrevStep?: () => void;
   /** Called when next button is pressed */
   onNextStep?: () => Promise<boolean> | boolean | void;
-  /** Called when submit button is pressed */
-  onSubmit?: () => void;
+  /** Called when submit button is pressed (may return a Promise) */
+  onSubmit?: () => void | Promise<void>;
   /** Called when cancel button is pressed */
   onCancel?: () => void;
   /** Whether the form is currently submitting */
@@ -91,6 +92,22 @@ export interface MultiStepFormContainerProps {
   header?: React.ReactNode;
   /** Footer component to show above the action bar */
   footer?: React.ReactNode;
+  /**
+   * Optional react-hook-form instance. Used to auto-reset fields on
+   * cancel/submit. If omitted, falls back to `useFormContext()` so forms
+   * wrapped in `<FormProvider>` are handled automatically.
+   */
+  form?: UseFormReturn<any>;
+  /**
+   * Extra cleanup to run alongside the form reset. Wizards should use this
+   * to reset `currentStep` to 1 and clear any local state (selections,
+   * pickers, `useMultiStepForm.resetForm()`, etc.).
+   */
+  onReset?: () => void | Promise<void>;
+  /** Reset form + run onReset when cancel is pressed. Default: true */
+  resetOnCancel?: boolean;
+  /** Reset form + run onReset after a successful submit. Default: true */
+  resetOnSubmitSuccess?: boolean;
 }
 
 
@@ -116,6 +133,10 @@ export function MultiStepFormContainer({
   actionBarProps,
   header,
   footer,
+  form,
+  onReset,
+  resetOnCancel = true,
+  resetOnSubmitSuccess = true,
 }: MultiStepFormContainerProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -124,6 +145,12 @@ export function MultiStepFormContainer({
 
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === steps.length;
+
+  // Auto-detect a form from FormProvider if no explicit instance was passed.
+  // Reset logic itself is owned by FormActionBar (single source of truth) —
+  // we just forward the relevant props below.
+  const formContext = useFormContext();
+  const activeForm = form ?? formContext ?? null;
 
   // Intelligent keyboard handling
   const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
@@ -206,7 +233,8 @@ export function MultiStepFormContainer({
         {/* Footer */}
         {footer}
 
-        {/* Action Bar */}
+        {/* Action Bar. Reset props are forwarded to FormActionBar, which
+            owns reset logic — avoids double-wrap if both layers tried. */}
         <FormActionBar
           onPrev={!isFirstStep ? onPrevStep : undefined}
           onNext={!isLastStep ? handleNext : undefined}
@@ -221,6 +249,10 @@ export function MultiStepFormContainer({
           cancelLabel={cancelLabel}
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}
+          form={activeForm ?? undefined}
+          onReset={onReset}
+          resetOnCancel={resetOnCancel}
+          resetOnSubmitSuccess={resetOnSubmitSuccess}
           {...actionBarProps}
         />
       </KeyboardAvoidingView>

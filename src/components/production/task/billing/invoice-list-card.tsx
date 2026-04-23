@@ -12,11 +12,14 @@ import { InstallmentList } from "./installment-list";
 import { InvoiceDetailModal } from "./invoice-detail-modal";
 import { NfseStatusBadge } from "./nfse-status-badge";
 import { NfseActions } from "./nfse-actions";
-import { NfseEnrichedInfo } from "./nfse-enriched-info";
-import { IconChevronDown, IconChevronUp, IconFileInvoice } from "@tabler/icons-react-native";
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconFileInvoice,
+  IconReceipt,
+} from "@tabler/icons-react-native";
 import type { Invoice } from "@/types/invoice";
-import type { INVOICE_STATUS } from "@/constants/enums";
-import { NFSE_STATUS } from "@/constants/enums";
+import { INVOICE_STATUS, NFSE_STATUS } from "@/constants/enums";
 
 interface InvoiceListCardProps {
   taskId: string;
@@ -83,18 +86,52 @@ export function InvoiceListCard({ taskId }: InvoiceListCardProps) {
     );
   }
 
+  const totalAmount = invoices.reduce((sum: number, inv: Invoice) => sum + (inv.totalAmount || 0), 0);
+  const totalPaid = invoices.reduce((sum: number, inv: Invoice) => sum + (inv.paidAmount || 0), 0);
+  const totalPending = totalAmount - totalPaid;
+  const isSingleInvoice = invoices.length === 1;
+
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Faturas ({invoices.length})</CardTitle>
+          <CardTitle>Financeiro</CardTitle>
         </CardHeader>
         <CardContent style={styles.cardContent}>
+          {/* Summary Bar */}
+          <View style={[styles.summaryBar, { backgroundColor: colors.muted + "30" }]}>
+            <View style={styles.summaryCell}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                Total
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: colors.foreground }]}>
+                {formatCurrency(totalAmount)}
+              </ThemedText>
+            </View>
+            <View style={styles.summaryCell}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                Pago
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: "#15803d" }]}>
+                {formatCurrency(totalPaid)}
+              </ThemedText>
+            </View>
+            <View style={styles.summaryCell}>
+              <ThemedText style={[styles.summaryLabel, { color: colors.mutedForeground }]}>
+                Pendente
+              </ThemedText>
+              <ThemedText style={[styles.summaryValue, { color: "#d97706" }]}>
+                {formatCurrency(totalPending)}
+              </ThemedText>
+            </View>
+          </View>
+
           {invoices.map((invoice: Invoice, index: number) => (
             <InvoiceRow
               key={invoice.id}
               invoice={invoice}
               isLast={index === invoices.length - 1}
+              alwaysExpanded={isSingleInvoice}
               onOpenDetail={handleOpenDetail}
             />
           ))}
@@ -110,79 +147,118 @@ export function InvoiceListCard({ taskId }: InvoiceListCardProps) {
   );
 }
 
-// ---- Invoice Row (expandable) ----
+// ---- Invoice Row (expandable, or always-open when single) ----
 
 interface InvoiceRowProps {
   invoice: Invoice;
   isLast: boolean;
+  /** When true, the row is always open and the chevron is hidden. */
+  alwaysExpanded?: boolean;
   onOpenDetail: (invoice: Invoice) => void;
 }
 
-function InvoiceRow({ invoice, isLast, onOpenDetail }: InvoiceRowProps) {
+function InvoiceRow({ invoice, isLast, alwaysExpanded = false, onOpenDetail }: InvoiceRowProps) {
   const { colors } = useTheme();
-  const [expanded, setExpanded] = useState(false);
+  const [userExpanded, setUserExpanded] = useState(false);
+  const expanded = alwaysExpanded || userExpanded;
 
   const hasInstallments = invoice.installments && invoice.installments.length > 0;
-  const ChevronIcon = expanded ? IconChevronUp : IconChevronDown;
+  const installments = hasInstallments
+    ? [...invoice.installments!].sort((a, b) => a.number - b.number)
+    : [];
+  const ChevronIcon = expanded ? IconChevronDown : IconChevronRight;
+
+  // The top-level summary bar already shows Total/Pago/Pendente, and the
+  // invoice badge reflects fully-paid/pending state. So instead of repeating
+  // "Pago: R$ X" here, we just tint the amount green when fully paid and
+  // amber when partially paid.
+  const isFullyPaid =
+    invoice.paidAmount > 0 && invoice.paidAmount >= invoice.totalAmount;
+  const isPartiallyPaid =
+    invoice.paidAmount > 0 && invoice.paidAmount < invoice.totalAmount;
+  const amountColor = isFullyPaid
+    ? "#15803d"
+    : isPartiallyPaid
+      ? "#d97706"
+      : colors.foreground;
 
   return (
     <View
       style={[
         styles.invoiceRow,
-        { borderBottomColor: colors.border },
-        isLast && styles.invoiceRowLast,
+        { borderColor: colors.border },
+        !isLast && { marginBottom: spacing.sm },
       ]}
     >
       <TouchableOpacity
-        onPress={() => setExpanded(!expanded)}
+        onPress={alwaysExpanded ? () => onOpenDetail(invoice) : () => setUserExpanded((v) => !v)}
         onLongPress={() => onOpenDetail(invoice)}
         activeOpacity={0.7}
         style={styles.invoiceHeader}
       >
+        {/* Leading chevron (matches web) — omitted when always-expanded */}
+        {!alwaysExpanded && (
+          <ChevronIcon size={16} color={colors.mutedForeground} />
+        )}
+
         <TouchableOpacity
           onPress={() => onOpenDetail(invoice)}
           activeOpacity={0.7}
-          style={styles.invoiceIconContainer}
+          style={[styles.invoiceIconContainer, { backgroundColor: colors.primary + "15" }]}
         >
-          <IconFileInvoice size={18} color={colors.primary} />
+          <IconFileInvoice size={16} color={colors.primary} />
         </TouchableOpacity>
 
         <View style={styles.invoiceInfo}>
-          <ThemedText style={[styles.customerName, { color: colors.foreground }]} numberOfLines={1}>
-            {invoice.customer?.fantasyName ?? "Cliente"}
-          </ThemedText>
-
-          <View style={styles.invoiceMeta}>
-            <ThemedText style={[styles.totalAmount, { color: colors.foreground }]}>
+          {/* Row 1: amount + status badge */}
+          <View style={styles.amountStatusRow}>
+            <ThemedText style={[styles.totalAmount, { color: amountColor }]}>
               {formatCurrency(invoice.totalAmount)}
             </ThemedText>
+            <InvoiceStatusBadge status={invoice.status as INVOICE_STATUS} />
           </View>
-        </View>
-
-        <View style={styles.invoiceRight}>
-          <InvoiceStatusBadge status={invoice.status as INVOICE_STATUS} />
-          <ChevronIcon size={16} color={colors.mutedForeground} />
+          {/* Row 2: customer name */}
+          <ThemedText
+            style={[styles.customerName, { color: colors.mutedForeground }]}
+            numberOfLines={2}
+          >
+            {invoice.customer?.fantasyName ?? "Cliente"}
+          </ThemedText>
         </View>
       </TouchableOpacity>
 
       {expanded && hasInstallments && (
-        <View style={[styles.installmentsContainer, { backgroundColor: colors.muted + "20" }]}>
-          <InstallmentList installments={invoice.installments!} />
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={[styles.sectionHeader, { backgroundColor: colors.muted + "30" }]}>
+            <IconReceipt size={13} color={colors.mutedForeground} />
+            <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
+              Parcelas
+            </ThemedText>
+          </View>
+          <View style={styles.sectionBody}>
+            <InstallmentList installments={installments} />
+          </View>
         </View>
       )}
 
       {expanded && (() => {
         const nfseDocuments = invoice.nfseDocuments ?? [];
-        const activeNfse = nfseDocuments.find((d) => d.status === "AUTHORIZED") ?? nfseDocuments[nfseDocuments.length - 1] ?? null;
+        const activeNfse =
+          nfseDocuments.find((d) => d.status === "AUTHORIZED") ??
+          nfseDocuments[nfseDocuments.length - 1] ??
+          null;
+        // Condensed NFS-e section — just the status and actions. Details
+        // (número, emissão, ISS, etc.) live in the NFS-e detail page and the
+        // invoice detail modal so we don't duplicate them here.
         return (
-          <View style={[styles.nfseSection, { backgroundColor: colors.muted + "20" }]}>
-            <View style={styles.nfseSectionHeader}>
-              <IconFileInvoice size={14} color={colors.mutedForeground} />
-              <ThemedText style={[styles.nfseSectionTitle, { color: colors.mutedForeground }]}>
+          <View style={[styles.section, { borderTopColor: colors.border }]}>
+            <View style={[styles.sectionHeader, { backgroundColor: colors.muted + "30" }]}>
+              <IconFileInvoice size={13} color={colors.mutedForeground} />
+              <ThemedText style={[styles.sectionTitle, { color: colors.mutedForeground }]}>
                 NFS-e
               </ThemedText>
             </View>
-            <View style={styles.nfseContent}>
+            <View style={styles.sectionBody}>
               <View style={styles.nfseRow}>
                 <View style={styles.nfseStatusRow}>
                   {activeNfse ? (
@@ -193,16 +269,13 @@ function InvoiceRow({ invoice, isLast, onOpenDetail }: InvoiceRowProps) {
                     </ThemedText>
                   )}
                   {nfseDocuments.length > 1 && (
-                    <ThemedText style={[styles.nfseCount, { color: colors.mutedForeground }]}>
-                      ({nfseDocuments.length} emissoes)
+                    <ThemedText style={[styles.nfseMeta, { color: colors.mutedForeground }]}>
+                      ({nfseDocuments.length} emissões)
                     </ThemedText>
                   )}
                 </View>
                 <NfseActions invoiceId={invoice.id} nfseDocuments={nfseDocuments} />
               </View>
-              {activeNfse?.elotechNfseId && (
-                <NfseEnrichedInfo elotechNfseId={activeNfse.elotechNfseId} />
-              )}
             </View>
           </View>
         );
@@ -231,20 +304,40 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   cardContent: {
-    gap: 0,
-    paddingVertical: 0,
+    gap: spacing.md,
   },
+  // Summary bar at top of card
+  summaryBar: {
+    flexDirection: "row",
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+  },
+  summaryCell: {
+    flex: 1,
+    alignItems: "center",
+    gap: 2,
+  },
+  summaryLabel: {
+    fontSize: 10,
+    fontWeight: fontWeight.medium,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  summaryValue: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+  },
+  // Invoice card
   invoiceRow: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  invoiceRowLast: {
-    borderBottomWidth: 0,
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
   },
   invoiceHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   invoiceIconContainer: {
     width: 32,
@@ -255,68 +348,60 @@ const styles = StyleSheet.create({
   },
   invoiceInfo: {
     flex: 1,
-    gap: 4,
+    gap: 2,
+    minWidth: 0,
+  },
+  amountStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   customerName: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-  },
-  invoiceMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
+    fontSize: fontSize.xs,
   },
   totalAmount: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
   },
-  invoiceRight: {
-    alignItems: "flex-end",
-    gap: spacing.xs,
+  // Sections inside the invoice (Parcelas / NFS-e)
+  section: {
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  installmentsContainer: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-  },
-  nfseSection: {
-    borderRadius: borderRadius.md,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    overflow: "hidden",
-  },
-  nfseSectionHeader: {
+  sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs + 2,
   },
-  nfseSectionTitle: {
-    fontSize: fontSize.xs,
+  sectionTitle: {
+    fontSize: 10,
     fontWeight: fontWeight.semibold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  nfseContent: {
+  sectionBody: {
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.sm,
   },
+  // NFS-e specific
   nfseRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.sm,
   },
   nfseStatusRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexShrink: 1,
   },
   nfseNotIssued: {
     fontSize: fontSize.sm,
   },
-  nfseCount: {
+  nfseMeta: {
     fontSize: fontSize.xs,
+    flexShrink: 1,
   },
 });

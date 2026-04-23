@@ -2,11 +2,41 @@ import { View, StyleSheet } from "react-native";
 import { useFormContext, useWatch } from "react-hook-form";
 import { ThemedText } from "@/components/ui/themed-text";
 import { FormCard } from "@/components/ui/form-section";
+import { Combobox } from "@/components/ui/combobox";
 import { BudgetPreview } from "@/components/production/task/quote/budget-preview";
 import { InvoiceListCard } from "@/components/production/task/billing/invoice-list-card";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import {
+  TASK_QUOTE_STATUS,
+  TASK_QUOTE_STATUS_LABELS,
+} from "@/constants";
 import type { FilePickerItem } from "@/components/ui/file-picker";
+
+interface StatusOption {
+  value: TASK_QUOTE_STATUS;
+  label: string;
+}
+
+const STATUS_OPTIONS: StatusOption[] = Object.values(TASK_QUOTE_STATUS).map(
+  (value) => ({
+    value,
+    label: TASK_QUOTE_STATUS_LABELS[value],
+  }),
+);
+
+// Solid status colors — used to paint the whole Combobox trigger, mirroring
+// the service-order status control on the task detail page.
+const STATUS_TRIGGER_COLORS: Record<TASK_QUOTE_STATUS, { bg: string; border: string }> = {
+  [TASK_QUOTE_STATUS.PENDING]: { bg: "#737373", border: "#525252" },            // neutral-500
+  [TASK_QUOTE_STATUS.BUDGET_APPROVED]: { bg: "#15803d", border: "#166534" },    // green-700
+  [TASK_QUOTE_STATUS.COMMERCIAL_APPROVED]: { bg: "#1d4ed8", border: "#1e40af" }, // blue-700
+  [TASK_QUOTE_STATUS.BILLING_APPROVED]: { bg: "#15803d", border: "#166534" },   // green-700
+  [TASK_QUOTE_STATUS.UPCOMING]: { bg: "#d97706", border: "#b45309" },           // amber-600
+  [TASK_QUOTE_STATUS.DUE]: { bg: "#b91c1c", border: "#991b1b" },                // red-700
+  [TASK_QUOTE_STATUS.PARTIAL]: { bg: "#1d4ed8", border: "#1e40af" },            // blue-700
+  [TASK_QUOTE_STATUS.SETTLED]: { bg: "#15803d", border: "#166534" },            // green-700
+};
 
 interface StepReviewProps {
   mode: "create" | "edit" | "billing";
@@ -14,6 +44,8 @@ interface StepReviewProps {
   existingQuote?: any;
   selectedCustomers: Map<string, any>;
   layoutFiles: FilePickerItem[];
+  /** When true, render the status as an editable combobox. Otherwise, read-only badge. */
+  canEditStatus?: boolean;
   fieldPrefix?: string; // '' for create, 'quote.' for edit
 }
 
@@ -23,10 +55,21 @@ export function StepReview({
   existingQuote,
   selectedCustomers,
   layoutFiles,
+  canEditStatus = false,
   fieldPrefix = "",
 }: StepReviewProps) {
   const { colors } = useTheme();
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
+
+  // Quote status lives at `quote.status` (edit/billing) or `budgetStatus` (create).
+  // New budgets are always PENDING at creation time, so we never expose editing in create mode.
+  const statusFieldName = fieldPrefix ? `${fieldPrefix}status` : "budgetStatus";
+  const watchedStatus = useWatch({ control, name: statusFieldName }) as
+    | TASK_QUOTE_STATUS
+    | undefined;
+  const currentStatus: TASK_QUOTE_STATUS =
+    watchedStatus || TASK_QUOTE_STATUS.PENDING;
+  const statusEditable = mode !== "create" && canEditStatus;
 
   // Watch all quote-related form values
   const formQuoteValues = useWatch({
@@ -71,14 +114,38 @@ export function StepReview({
   // Map BudgetPreview mode prop
   const previewMode = mode === "billing" ? "billing" : "budget";
 
-  const subtitle =
-    mode === "edit" || mode === "billing"
-      ? "Revise antes de salvar"
-      : "Revise antes de criar";
-
   return (
     <View style={styles.container}>
-      <FormCard title="Resumo" icon="IconClipboardCheck" subtitle={subtitle}>
+      {/* Status card — full-width solid-color combobox matching the service
+          order status control on the task detail page. The trigger IS the
+          status display; options in the dropdown render as pill badges. */}
+      <FormCard title="Status" icon="IconFlag">
+        <Combobox<StatusOption>
+          value={currentStatus}
+          onValueChange={(value) => {
+            if (!statusEditable) return;
+            const next = typeof value === "string" ? value : "";
+            if (next) setValue(statusFieldName, next as TASK_QUOTE_STATUS);
+          }}
+          options={STATUS_OPTIONS}
+          getOptionValue={(o) => o.value}
+          getOptionLabel={(o) => o.label}
+          triggerStyle={{
+            backgroundColor: STATUS_TRIGGER_COLORS[currentStatus].bg,
+            borderColor: STATUS_TRIGGER_COLORS[currentStatus].border,
+            textColor: "#ffffff",
+          }}
+          placeholder="Selecione o status"
+          searchable={false}
+          clearable={false}
+          disabled={!statusEditable}
+          avoidKeyboard={false}
+          onOpen={() => {}}
+          onClose={() => {}}
+        />
+      </FormCard>
+
+      <FormCard title="Resumo" icon="IconClipboardCheck">
         {/* Task summary - create mode only */}
         {mode === "create" && (
           <View style={styles.taskSummary}>
@@ -109,7 +176,7 @@ export function StepReview({
                 <ThemedText
                   style={[styles.summaryLabel, { color: colors.mutedForeground }]}
                 >
-                  Nos de Serie
+                  Nºs de Série
                 </ThemedText>
                 <ThemedText style={styles.summaryValue}>
                   {serialNumbers.join(", ")}

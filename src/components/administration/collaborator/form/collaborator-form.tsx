@@ -252,18 +252,18 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
     const normalizedStart = new Date(startDate);
     normalizedStart.setHours(0, 0, 0, 0);
 
-    // Calculate exp1 end date (45 days from start)
+    // Calculate exp1 end date (30 days from start)
     const rawExp1EndAt = new Date(normalizedStart);
-    rawExp1EndAt.setDate(rawExp1EndAt.getDate() + 45);
+    rawExp1EndAt.setDate(rawExp1EndAt.getDate() + 30);
     const exp1EndAt = adjustToFridayIfWeekend(rawExp1EndAt);
 
     // exp2 starts the day after exp1 ends
     const exp2StartAt = new Date(exp1EndAt);
     exp2StartAt.setDate(exp2StartAt.getDate() + 1);
 
-    // Calculate exp2 end date (45 days)
+    // Calculate exp2 end date (50 days)
     const rawExp2EndAt = new Date(exp2StartAt);
-    rawExp2EndAt.setDate(rawExp2EndAt.getDate() + 45);
+    rawExp2EndAt.setDate(rawExp2EndAt.getDate() + 50);
     const exp2EndAt = adjustToFridayIfWeekend(rawExp2EndAt);
 
     // Effective hire date is 1 day after exp2 ends

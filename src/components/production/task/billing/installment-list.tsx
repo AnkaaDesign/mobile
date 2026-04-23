@@ -2,15 +2,44 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { InstallmentStatusBadge } from "./installment-status-badge";
 import { BankSlipStatusBadge } from "./bank-slip-status-badge";
 import type { Installment } from "@/types/invoice";
-import type { INSTALLMENT_STATUS, BANK_SLIP_STATUS } from "@/constants/enums";
+import {
+  INSTALLMENT_STATUS,
+  BANK_SLIP_STATUS,
+} from "@/constants/enums";
 
 interface InstallmentListProps {
   installments: Installment[];
+}
+
+/**
+ * When the installment itself is already PAID and the bank slip is also PAID
+ * (or the installment is CANCELLED and the slip is CANCELLED), the bank-slip
+ * badge just repeats the installment state. Suppress it to reduce noise; keep
+ * it when it carries different information (OVERDUE, REJECTED, ERROR, ACTIVE
+ * while installment still pending, etc.).
+ */
+function shouldShowBankSlipBadge(
+  installmentStatus: string,
+  bankSlipStatus: string,
+): boolean {
+  if (
+    installmentStatus === INSTALLMENT_STATUS.PAID &&
+    bankSlipStatus === BANK_SLIP_STATUS.PAID
+  ) {
+    return false;
+  }
+  if (
+    installmentStatus === INSTALLMENT_STATUS.CANCELLED &&
+    bankSlipStatus === BANK_SLIP_STATUS.CANCELLED
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function InstallmentList({ installments }: InstallmentListProps) {
@@ -28,39 +57,74 @@ export function InstallmentList({ installments }: InstallmentListProps) {
 
   return (
     <View style={styles.container}>
-      {installments.map((installment, index) => (
-        <View
-          key={installment.id}
-          style={[
-            styles.row,
-            { borderBottomColor: colors.border },
-            index === installments.length - 1 && styles.lastRow,
-          ]}
-        >
-          <View style={styles.rowHeader}>
-            <View style={styles.rowLeft}>
-              <ThemedText style={[styles.installmentNumber, { color: colors.foreground }]}>
-                Parcela {installment.number}
+      {installments.map((installment, index) => {
+        const installmentStatus = installment.status as string;
+        const bankSlipStatus = installment.bankSlip?.status as string | undefined;
+
+        // Paid/cancelled installments are the happy path — the invoice-level
+        // badge already communicates the overall state, so don't repeat the
+        // same signal on every row. Only surface a badge when it carries
+        // actionable information (pending/overdue/processing/etc).
+        const showInstallmentBadge =
+          installmentStatus !== INSTALLMENT_STATUS.PAID &&
+          installmentStatus !== INSTALLMENT_STATUS.CANCELLED;
+
+        const showBankSlipBadge =
+          bankSlipStatus !== undefined &&
+          shouldShowBankSlipBadge(installmentStatus, bankSlipStatus);
+
+        const hasAnyBadge = showInstallmentBadge || showBankSlipBadge;
+        const paidColor = "#15803d";
+        const amountColor =
+          installmentStatus === INSTALLMENT_STATUS.PAID
+            ? paidColor
+            : colors.foreground;
+
+        return (
+          <View
+            key={installment.id}
+            style={[
+              styles.row,
+              { borderBottomColor: colors.border },
+              index === installments.length - 1 && styles.lastRow,
+            ]}
+          >
+            <View style={styles.topRow}>
+              <ThemedText
+                style={[styles.installmentNumber, { color: colors.mutedForeground }]}
+              >
+                #{installment.number}
               </ThemedText>
-              <ThemedText style={[styles.dueDate, { color: colors.mutedForeground }]}>
-                Venc.: {formatDate(installment.dueDate)}
+              <ThemedText
+                style={[styles.dueDate, { color: colors.mutedForeground }]}
+              >
+                {formatDate(installment.dueDate)}
               </ThemedText>
-            </View>
-            <View style={styles.rowRight}>
-              <ThemedText style={[styles.amount, { color: colors.foreground }]}>
+              <ThemedText
+                style={[styles.amount, { color: amountColor }]}
+                numberOfLines={1}
+              >
                 {formatCurrency(installment.amount)}
               </ThemedText>
             </View>
-          </View>
 
-          <View style={styles.badgesRow}>
-            <InstallmentStatusBadge status={installment.status as INSTALLMENT_STATUS} />
-            {installment.bankSlip && (
-              <BankSlipStatusBadge status={installment.bankSlip.status as BANK_SLIP_STATUS} />
+            {hasAnyBadge && (
+              <View style={styles.badgesRow}>
+                {showInstallmentBadge && (
+                  <InstallmentStatusBadge
+                    status={installmentStatus as INSTALLMENT_STATUS}
+                  />
+                )}
+                {showBankSlipBadge && (
+                  <BankSlipStatusBadge
+                    status={bankSlipStatus as BANK_SLIP_STATUS}
+                  />
+                )}
+              </View>
             )}
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -70,31 +134,26 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   row: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   lastRow: {
     borderBottomWidth: 0,
   },
-  rowHeader: {
+  topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-  rowLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  rowRight: {
-    alignItems: "flex-end",
+    gap: spacing.sm,
   },
   installmentNumber: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
+    fontWeight: fontWeight.semibold,
+    width: 32,
   },
   dueDate: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
+    flex: 1,
   },
   amount: {
     fontSize: fontSize.sm,
@@ -102,7 +161,7 @@ const styles = StyleSheet.create({
   },
   badgesRow: {
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: spacing.xs,
     flexWrap: "wrap",
   },
   emptyContainer: {

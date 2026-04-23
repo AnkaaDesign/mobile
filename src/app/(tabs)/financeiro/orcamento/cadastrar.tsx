@@ -25,7 +25,7 @@ export default function BudgetCreateScreen() {
       if (!canCreate) {
         Alert.alert(
           "Acesso negado",
-          "Voce nao tem permissao para criar orcamentos"
+          "Você não tem permissão para criar orçamentos"
         );
         router.replace("/(tabs)/financeiro/orcamento/listar" as any);
       }
@@ -38,7 +38,12 @@ export default function BudgetCreateScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen
+        options={{
+          title: "Novo Orçamento",
+          headerShown: true,
+        }}
+      />
       <BudgetCreateWizard />
     </>
   );

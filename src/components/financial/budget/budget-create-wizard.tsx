@@ -115,12 +115,12 @@ export function BudgetCreateWizard() {
       paintId: null as string | null,
       paintIds: [] as string[],
       serviceOrders: [
-        { description: "Em Negociacao", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
+        { description: "Em Negociação", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Elaborar Layout", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Elaborar Projeto", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Preparar Arquivos para Plotagem", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Checklist Entrada", type: SERVICE_ORDER_TYPE.LOGISTIC, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
-        { description: "Checklist Saida", type: SERVICE_ORDER_TYPE.LOGISTIC, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
+        { description: "Checklist Saída", type: SERVICE_ORDER_TYPE.LOGISTIC, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
       ] as any[],
       responsibles: [] as any[],
       artworkIds: [] as string[],
@@ -226,8 +226,8 @@ export function BudgetCreateWizard() {
   const steps = useMemo<FormStep[]>(() => {
     const base: FormStep[] = [
       { id: 1, name: "Tarefa", description: "Dados da tarefa" },
-      { id: 2, name: "Informacoes", description: "Prazos e clientes" },
-      { id: 3, name: "Servicos", description: "Itens e valores" },
+      { id: 2, name: "Informações", description: "Prazos e clientes" },
+      { id: 3, name: "Serviços", description: "Itens e valores" },
     ];
     (customerConfigs || []).forEach((config: any, i: number) => {
       const customer = customersCache.current.get(config?.customerId);
@@ -240,7 +240,7 @@ export function BudgetCreateWizard() {
     base.push({
       id: base.length + 1,
       name: "Resumo",
-      description: "Revisao final",
+      description: "Revisão final",
     });
     return base;
   }, [customerConfigs]);
@@ -261,7 +261,7 @@ export function BudgetCreateWizard() {
       const data = getValues();
       if (step === 1) {
         if (!data.name && !data.customerId && (!data.plates || data.plates.length === 0) && (!data.serialNumbers || data.serialNumbers.length === 0)) {
-          return "Preencha: Nome, Cliente, Placas ou N de serie.";
+          return "Preencha: Nome, Cliente, Placas ou Nº de série.";
         }
       }
       if (step === 2) {
@@ -269,13 +269,13 @@ export function BudgetCreateWizard() {
           return "Selecione pelo menos um cliente para faturamento.";
         }
         if (!data.expiresAt) {
-          return "A data de validade e obrigatoria.";
+          return "A data de validade é obrigatória.";
         }
       }
       if (step === 3) {
         const validServices = (data.services || []).filter((s: any) => s.description?.trim());
         if (validServices.length === 0) {
-          return "Adicione pelo menos um servico.";
+          return "Adicione pelo menos um serviço.";
         }
       }
       return null;
@@ -304,6 +304,18 @@ export function BudgetCreateWizard() {
   const handleCancel = useCallback(() => {
     goBack();
   }, [goBack]);
+
+  // Full wizard reset: step, local pickers/caches, and file selections.
+  // react-hook-form fields are reset automatically by MultiStepFormContainer
+  // (via useFormContext). Called on cancel and after a successful submit so
+  // re-opening the wizard shows a fresh form at step 1.
+  const handleReset = useCallback(() => {
+    setCurrentStep(1);
+    setLayoutFiles([]);
+    setSelectedCustomers(new Map());
+    customersCache.current = new Map();
+    autoSetBillingRef.current = null;
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Recalculate totals when services change
@@ -350,11 +362,11 @@ export function BudgetCreateWizard() {
     // Final validation
     const servicesValid = (data.services || []).filter((s: any) => s.description?.trim());
     if (servicesValid.length === 0) {
-      Alert.alert("Erro", "Adicione pelo menos um servico ao orcamento.");
+      Alert.alert("Erro", "Adicione pelo menos um serviço ao orçamento.");
       return;
     }
     if (!data.expiresAt) {
-      Alert.alert("Erro", "A data de validade e obrigatoria.");
+      Alert.alert("Erro", "A data de validade é obrigatória.");
       return;
     }
 
@@ -498,8 +510,8 @@ export function BudgetCreateWizard() {
         Alert.alert(
           "Sucesso",
           successCount === 1
-            ? "Orcamento criado com sucesso!"
-            : `${successCount} orcamentos criados com sucesso!`,
+            ? "Orçamento criado com sucesso!"
+            : `${successCount} orçamentos criados com sucesso!`,
         );
         if (firstCreatedTaskId) {
           router.replace(`/(tabs)/financeiro/orcamento/detalhes/${firstCreatedTaskId}` as any);
@@ -509,7 +521,7 @@ export function BudgetCreateWizard() {
       }
     } catch (error: any) {
       console.error("[BudgetCreate] Error:", error);
-      Alert.alert("Erro", error?.message || "Erro ao criar orcamento.");
+      Alert.alert("Erro", error?.message || "Erro ao criar orçamento.");
     } finally {
       setIsSubmitting(false);
     }
@@ -535,7 +547,6 @@ export function BudgetCreateWizard() {
         <StepQuoteInfo
           control={control}
           mode="create"
-          canEditStatus={false}
           layoutFiles={layoutFiles}
           onLayoutFilesChange={setLayoutFiles}
           customersCache={customersCache}
@@ -596,10 +607,11 @@ export function BudgetCreateWizard() {
         onNextStep={goNext}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
+        onReset={handleReset}
         isSubmitting={isSubmitting}
         canProceed={canProceed}
         canSubmit={isLastStep && canProceed}
-        submitLabel="Criar Orcamento"
+        submitLabel="Criar Orçamento"
         cancelLabel="Cancelar"
         scrollable
       >

@@ -193,18 +193,30 @@ export function StepCustomerPayment({
         </FormFieldGroup>
       )}
 
-      {/* Generate Invoice Toggle */}
-      <FormFieldGroup label="Emitir Nota Fiscal">
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-          <Switch
-            checked={config?.generateInvoice !== false}
-            onCheckedChange={(v) => setValue(`${basePath}.generateInvoice`, v)}
-          />
-          <ThemedText style={{ fontSize: fontSize.sm, color: colors.mutedForeground }}>
-            {config?.generateInvoice !== false ? "Sim" : "Não"}
+      {/* Generate Invoice Toggle — label + helper on the left, switch on the right */}
+      <View
+        style={[
+          styles.toggleRow,
+          { borderColor: colors.border, backgroundColor: colors.muted + "20" },
+        ]}
+      >
+        <View style={styles.toggleTextColumn}>
+          <ThemedText style={[styles.toggleTitle, { color: colors.foreground }]}>
+            Emitir Nota Fiscal
+          </ThemedText>
+          <ThemedText
+            style={[styles.toggleHelper, { color: colors.mutedForeground }]}
+          >
+            {config?.generateInvoice !== false
+              ? "Será gerada uma nota fiscal para este cliente."
+              : "Nenhuma nota fiscal será gerada para este cliente."}
           </ThemedText>
         </View>
-      </FormFieldGroup>
+        <Switch
+          checked={config?.generateInvoice !== false}
+          onCheckedChange={(v) => setValue(`${basePath}.generateInvoice`, v)}
+        />
+      </View>
 
       {/* Order Number */}
       <FormFieldGroup label="Nº do Pedido">
@@ -384,5 +396,28 @@ const styles = StyleSheet.create({
   subLabel: {
     fontSize: fontSize.xs,
     marginBottom: 4,
+  },
+  // Emitir Nota Fiscal toggle row (label/helper + switch on the right)
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+  },
+  toggleTextColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  toggleTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: "600",
+  },
+  toggleHelper: {
+    fontSize: 11,
+    marginTop: 2,
   },
 });

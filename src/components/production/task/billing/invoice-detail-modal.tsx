@@ -127,26 +127,30 @@ export function InvoiceDetailModal({ invoice, visible, onClose }: InvoiceDetailM
           {/* NFS-e Section */}
           {((invoice.nfseDocuments && invoice.nfseDocuments.length > 0) || invoice.status === "ACTIVE" || invoice.status === "PAID") && (
             <View style={[styles.nfseSection, { borderBottomColor: colors.border }]}>
-              <View style={styles.nfseInfo}>
-                <ThemedText style={[styles.sectionLabel, { color: colors.foreground }]}>
+              {/* Header row: label + status/actions */}
+              <View style={styles.nfseHeaderRow}>
+                <ThemedText style={[styles.sectionLabel, { color: colors.foreground, marginBottom: 0 }]}>
                   NFS-e
                 </ThemedText>
-                {invoice.nfseDocuments && invoice.nfseDocuments.length > 0 ? (
-                  <View style={styles.nfseBadgeRow}>
+                <View style={styles.nfseHeaderRight}>
+                  {invoice.nfseDocuments && invoice.nfseDocuments.length > 0 ? (
                     <NfseStatusBadge status={invoice.nfseDocuments[invoice.nfseDocuments.length - 1].status as NFSE_STATUS} />
-                  </View>
-                ) : (
-                  <ThemedText style={[styles.nfseNotIssued, { color: colors.mutedForeground }]}>
-                    Nao emitida
-                  </ThemedText>
-                )}
+                  ) : (
+                    <ThemedText style={[styles.nfseNotIssued, { color: colors.mutedForeground }]}>
+                      Nao emitida
+                    </ThemedText>
+                  )}
+                  <NfseActions invoiceId={invoice.id} nfseDocuments={invoice.nfseDocuments ?? []} />
+                </View>
               </View>
-              <NfseActions invoiceId={invoice.id} nfseDocuments={invoice.nfseDocuments ?? []} />
+              {/* Enriched info (full width, below header) */}
               {(() => {
                 const nfseDocuments = invoice.nfseDocuments ?? [];
                 const activeNfse = nfseDocuments.find((d) => d.status === 'AUTHORIZED') ?? nfseDocuments[nfseDocuments.length - 1] ?? null;
                 return activeNfse?.elotechNfseId ? (
-                  <NfseEnrichedInfo elotechNfseId={activeNfse.elotechNfseId} showPdfLink />
+                  <View style={{ marginTop: spacing.sm }}>
+                    <NfseEnrichedInfo elotechNfseId={activeNfse.elotechNfseId} showPdfLink />
+                  </View>
                 ) : null;
               })()}
             </View>
@@ -250,11 +254,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
   summaryItem: {
     flex: 1,
     gap: 4,
+    minWidth: 0,
   },
   summaryLabel: {
     fontSize: fontSize.xs,
@@ -262,23 +267,20 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   summaryValue: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
   },
   nfseSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  nfseInfo: {
+  nfseHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm,
-    flex: 1,
   },
-  nfseBadgeRow: {
+  nfseHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,

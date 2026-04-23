@@ -26,7 +26,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { FormCard } from "@/components/ui/form-section";
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { formSpacing } from "@/constants/form-styles";
@@ -158,7 +158,7 @@ function ServiceItemCard({
             setValue(`${servicesPath}.${index}.description`, v || "")
           }
           options={descriptionOptions}
-          placeholder="Selecione o servico..."
+          placeholder="Selecione o serviço..."
           searchable
           clearable={false}
         />
@@ -259,7 +259,7 @@ function ServiceItemCard({
               <ThemedText
                 style={[styles.modalTitle, { color: colors.foreground }]}
               >
-                Observacao
+                Observação
               </ThemedText>
             </View>
             <TextInput
@@ -524,7 +524,7 @@ export function StepServices({
       <ThemedText
         style={[styles.stepDescription, { color: colors.mutedForeground }]}
       >
-        Adicione os servicos e defina os valores de cada item.
+        Adicione os serviços e defina os valores de cada item.
       </ThemedText>
 
       {/* Add Service Button */}
@@ -542,7 +542,7 @@ export function StepServices({
             color: colors.foreground,
           }}
         >
-          Adicionar Servico
+          Adicionar Serviço
         </ThemedText>
       </Button>
 
@@ -617,70 +617,92 @@ export function StepServices({
             </View>
 
             {/* Discount controls */}
-            <View style={styles.row}>
-              <View style={styles.halfField}>
-                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>
-                  Desconto
-                </ThemedText>
-                <Combobox
-                  value={discountType}
-                  onValueChange={(v) => {
-                    const safeType = v || "NONE";
-                    setDiscountField("discountType", safeType);
-                    if (safeType === "NONE") {
-                      setDiscountField("discountValue", null);
-                      setDiscountField("discountReference", null);
+            <View style={styles.discountBlock}>
+              <View style={styles.row}>
+                <View style={styles.halfField}>
+                  <FormFieldGroup label="Desconto">
+                    <Combobox
+                      value={discountType}
+                      onValueChange={(v) => {
+                        const safeType = v || "NONE";
+                        setDiscountField("discountType", safeType);
+                        if (safeType === "NONE") {
+                          setDiscountField("discountValue", null);
+                          setDiscountField("discountReference", null);
+                        }
+                      }}
+                      options={Object.values(DISCOUNT_TYPE).map((type) => ({
+                        value: type,
+                        label: DISCOUNT_TYPE_LABELS[type],
+                      }))}
+                      placeholder="Nenhum"
+                      searchable={false}
+                    />
+                  </FormFieldGroup>
+                </View>
+                <View style={styles.halfField}>
+                  <FormFieldGroup
+                    label={
+                      discountType === "PERCENTAGE"
+                        ? "Valor (%)"
+                        : discountType === "FIXED_VALUE"
+                          ? "Valor (R$)"
+                          : "Valor"
                     }
-                  }}
-                  options={Object.values(DISCOUNT_TYPE).map((type) => ({
-                    value: type,
-                    label: DISCOUNT_TYPE_LABELS[type],
-                  }))}
-                  placeholder="Nenhum"
-                  searchable={false}
-                />
+                  >
+                    <Input
+                      type={discountType === "FIXED_VALUE" ? "currency" : "number"}
+                      value={config?.discountValue ?? ""}
+                      onChange={(v) =>
+                        setDiscountField(
+                          "discountValue",
+                          v === "" || v == null ? null : Number(v),
+                        )
+                      }
+                      disabled={discountType === "NONE"}
+                      placeholder={
+                        discountType === "NONE"
+                          ? "-"
+                          : discountType === "FIXED_VALUE"
+                            ? "R$ 0,00"
+                            : "0"
+                      }
+                      fieldKey={`config-${configIndex}-discount`}
+                    />
+                  </FormFieldGroup>
+                </View>
               </View>
-              <View style={styles.halfField}>
-                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>
-                  Vlr. Desc.{" "}
-                  {discountType === "PERCENTAGE" && "(%)"}
-                  {discountType === "FIXED_VALUE" && "(R$)"}
-                </ThemedText>
-                <Input
-                  type={discountType === "FIXED_VALUE" ? "currency" : "number"}
-                  value={config?.discountValue ?? ""}
-                  onChange={(v) =>
-                    setDiscountField("discountValue", v === "" || v == null ? null : Number(v))
-                  }
-                  disabled={discountType === "NONE"}
-                  placeholder={discountType === "NONE" ? "-" : discountType === "FIXED_VALUE" ? "R$ 0,00" : "0"}
-                  fieldKey={`config-${configIndex}-discount`}
-                />
-              </View>
+
+              {discountType !== "NONE" && (
+                <FormFieldGroup label="Referência do Desconto">
+                  <Input
+                    value={config?.discountReference || ""}
+                    onChange={(v) => setDiscountField("discountReference", v || null)}
+                    placeholder="Justificativa..."
+                    fieldKey={`config-${configIndex}-discount-ref`}
+                  />
+                </FormFieldGroup>
+              )}
+
+              {discountAmount > 0 && (
+                <View style={styles.discountAmountRow}>
+                  <ThemedText
+                    style={{ fontSize: fontSize.sm, color: colors.destructive }}
+                  >
+                    Desconto aplicado
+                  </ThemedText>
+                  <ThemedText
+                    style={{
+                      fontSize: fontSize.sm,
+                      fontWeight: "600",
+                      color: colors.destructive,
+                    }}
+                  >
+                    - {formatCurrency(discountAmount)}
+                  </ThemedText>
+                </View>
+              )}
             </View>
-
-            {discountType !== "NONE" && (
-              <View style={{ marginTop: spacing.xs }}>
-                <ThemedText style={{ fontSize: 11, color: colors.mutedForeground, marginBottom: 2 }}>
-                  Referência do Desconto
-                </ThemedText>
-                <Input
-                  value={config?.discountReference || ""}
-                  onChange={(v) => setDiscountField("discountReference", v || null)}
-                  placeholder="Justificativa..."
-                  fieldKey={`config-${configIndex}-discount-ref`}
-                />
-              </View>
-            )}
-
-            {discountAmount > 0 && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: spacing.xs }}>
-                <ThemedText style={{ fontSize: fontSize.sm, color: colors.destructive }}>Desconto</ThemedText>
-                <ThemedText style={{ fontSize: fontSize.sm, fontWeight: "500", color: colors.destructive }}>
-                  - {formatCurrency(discountAmount)}
-                </ThemedText>
-              </View>
-            )}
           </View>
         );
       })}
@@ -754,6 +776,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingTop: spacing.md,
     marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  discountBlock: {
+    gap: spacing.xs,
+  },
+  discountAmountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: spacing.xs,
   },
   // Modal styles
   modalOverlay: {

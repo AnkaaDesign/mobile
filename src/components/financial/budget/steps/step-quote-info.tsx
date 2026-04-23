@@ -50,7 +50,6 @@ export interface StepQuoteInfoProps {
   control: any;
   task?: any;
   mode: "create" | "edit" | "billing";
-  canEditStatus: boolean;
   layoutFiles: FilePickerItem[];
   onLayoutFilesChange: (files: FilePickerItem[]) => void;
   artworks?: ArtworkOption[];
@@ -77,17 +76,6 @@ const VALIDITY_PERIOD_OPTIONS = [
   { value: "30", label: "30 dias" },
   { value: "60", label: "60 dias" },
   { value: "90", label: "90 dias" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "PENDING", label: "Pendente" },
-  { value: "BUDGET_APPROVED", label: "Orcamento Aprovado" },
-  { value: "COMMERCIAL_APPROVED", label: "Aprovado pelo Comercial" },
-  { value: "BILLING_APPROVED", label: "Faturamento Aprovado" },
-  { value: "UPCOMING", label: "A Vencer" },
-  { value: "DUE", label: "Vencido" },
-  { value: "PARTIAL", label: "Parcial" },
-  { value: "SETTLED", label: "Liquidado" },
 ];
 
 const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
@@ -122,7 +110,6 @@ export function StepQuoteInfo({
   control,
   task,
   mode,
-  canEditStatus,
   layoutFiles,
   onLayoutFilesChange,
   artworks,
@@ -147,8 +134,6 @@ export function StepQuoteInfo({
   );
 
   // Watched values
-  const quoteStatus =
-    useWatch({ control, name: f("status") }) || "PENDING";
   const guaranteeYears = useWatch({ control, name: f("guaranteeYears") });
   const customGuaranteeText = useWatch({
     control,
@@ -496,7 +481,7 @@ export function StepQuoteInfo({
                     { color: colors.mutedForeground },
                   ]}
                 >
-                  N Serie
+                  Nº Série
                 </ThemedText>
                 <ThemedText style={styles.taskInfoValue}>
                   {task.serialNumber}
@@ -544,7 +529,7 @@ export function StepQuoteInfo({
                     { color: colors.mutedForeground },
                   ]}
                 >
-                  Finalizacao
+                  Finalização
                 </ThemedText>
                 <ThemedText style={styles.taskInfoValue}>
                   {new Date(task.finishedAt).toLocaleDateString("pt-BR")}
@@ -577,6 +562,9 @@ export function StepQuoteInfo({
             minSearchLength={0}
             debounceMs={500}
           />
+          <ThemedText style={styles.helperText}>
+            Por padrão, o cliente da tarefa é pré-selecionado. Adicione outros clientes se a fatura for dividida.
+          </ThemedText>
         </FormFieldGroup>
 
         {/* Selected Customer Cards */}
@@ -682,38 +670,26 @@ export function StepQuoteInfo({
       {/* 3. Quote Configuration Card (hidden in billing) */}
       {/* ----------------------------------------------------------------- */}
       {!isBilling && (
-        <FormCard title="Configuracoes do Orcamento" icon="IconSettings">
-          {/* Status + Validity (side by side) */}
-          <FormRow>
-            <FormFieldGroup label="Status">
-              <Combobox
-                value={quoteStatus || "PENDING"}
-                onValueChange={(v) => setValue(f("status"), v)}
-                disabled={!canEditStatus}
-                options={STATUS_OPTIONS}
-                placeholder="Selecione"
-                searchable={false}
-                avoidKeyboard={false}
-                onOpen={() => {}}
-                onClose={() => {}}
-              />
-            </FormFieldGroup>
-            <FormFieldGroup label="Validade" required>
-              <Combobox
-                value={validityPeriod}
-                onValueChange={handleValidityChange}
-                options={VALIDITY_PERIOD_OPTIONS}
-                placeholder="Periodo"
-                searchable={false}
-                avoidKeyboard={false}
-                onOpen={() => {}}
-                onClose={() => {}}
-              />
-            </FormFieldGroup>
-          </FormRow>
+        <FormCard title="Configurações do Orçamento" icon="IconSettings">
+          {/* Validity */}
+          <FormFieldGroup label="Validade" required>
+            <Combobox
+              value={validityPeriod}
+              onValueChange={handleValidityChange}
+              options={VALIDITY_PERIOD_OPTIONS}
+              placeholder="Período"
+              searchable={false}
+              avoidKeyboard={false}
+              onOpen={() => {}}
+              onClose={() => {}}
+            />
+            <ThemedText style={styles.helperText}>
+              Prazo em dias que este orçamento permanece válido.
+            </ThemedText>
+          </FormFieldGroup>
 
           {/* Guarantee */}
-          <FormFieldGroup label="Periodo de Garantia">
+          <FormFieldGroup label="Período de Garantia">
             <Combobox
               value={currentGuaranteeOption}
               onValueChange={handleGuaranteeChange}
@@ -727,6 +703,9 @@ export function StepQuoteInfo({
               onOpen={() => {}}
               onClose={() => {}}
             />
+            <ThemedText style={styles.helperText}>
+              Garantia oferecida ao cliente após a entrega do serviço.
+            </ThemedText>
           </FormFieldGroup>
 
           {/* Custom Guarantee Text */}
@@ -748,7 +727,7 @@ export function StepQuoteInfo({
                   onChangeText={(t) =>
                     setValue(f("customGuaranteeText"), t || null)
                   }
-                  placeholder="Descreva as condicoes de garantia..."
+                  placeholder="Descreva as condições de garantia..."
                   placeholderTextColor={colors.mutedForeground}
                   multiline
                   numberOfLines={3}
@@ -772,7 +751,7 @@ export function StepQuoteInfo({
 
           {/* Simultaneous Tasks + Forecast Days (side by side) */}
           <FormRow>
-            <FormFieldGroup label="Tarefas Simultaneas">
+            <FormFieldGroup label="Tarefas Simultâneas">
               <Input
                 type="number"
                 value={simultaneousTasks ?? null}
@@ -803,25 +782,9 @@ export function StepQuoteInfo({
               />
             </FormFieldGroup>
           </FormRow>
-        </FormCard>
-      )}
-
-      {/* In billing mode, show only status */}
-      {isBilling && (
-        <FormCard title="Status" icon="IconSettings">
-          <FormFieldGroup label="Status">
-            <Combobox
-              value={quoteStatus || "PENDING"}
-              onValueChange={(v) => setValue(f("status"), v)}
-              disabled={!canEditStatus}
-              options={STATUS_OPTIONS}
-              placeholder="Selecione"
-              searchable={false}
-              avoidKeyboard={false}
-              onOpen={() => {}}
-              onClose={() => {}}
-            />
-          </FormFieldGroup>
+          <ThemedText style={styles.helperText}>
+            Prazo sobrescreve o cálculo automático de entrega. Tarefas simultâneas ajusta paralelismo na produção.
+          </ThemedText>
         </FormCard>
       )}
 
@@ -936,7 +899,7 @@ export function StepQuoteInfo({
                       color: colors.mutedForeground,
                     }}
                   >
-                    Voltar para selecao de artes
+                    Voltar para seleção de artes
                   </ThemedText>
                 </TouchableOpacity>
               )}
@@ -971,6 +934,13 @@ export function StepQuoteInfo({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.sm,
+  },
+
+  // Helper text shown under form fields (matches Pedido pattern)
+  helperText: {
+    fontSize: 11,
+    color: "#9ca3af",
+    marginTop: spacing.xs,
   },
 
   // Task Info grid

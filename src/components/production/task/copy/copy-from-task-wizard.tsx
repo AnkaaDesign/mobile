@@ -469,6 +469,16 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
     goBack();
   }, [goBack]);
 
+  // Full wizard reset: step, field selection, source task, search. Runs on
+  // cancel and after a successful submit so re-opening returns to step 1.
+  const handleReset = useCallback(() => {
+    setCurrentStep(1);
+    setSelectedFields(new Set());
+    setSourceTask(null);
+    setSearchQuery("");
+    setIsRefetchingSource(false);
+  }, []);
+
   const handleConfirm = useCallback(async () => {
     if (!sourceTask || selectedFields.size === 0) return;
 
@@ -517,6 +527,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
       onNextStep={goNext}
       onSubmit={handleConfirm}
       onCancel={handleCancel}
+      onReset={handleReset}
       isSubmitting={copyMutation.isPending}
       canProceed={canProceed}
       canSubmit={!!sourceTask && selectedFields.size > 0}
