@@ -102,7 +102,7 @@ function ListItem({ item, index, ordered, depth, onLinkPress }: ListItemProps) {
 export function ListBlockComponent({ block, onLinkPress }: ListBlockProps) {
   const styles = StyleSheet.create({
     container: {
-      marginVertical: spacing.sm,
+      marginVertical: 0,
     },
   });
 

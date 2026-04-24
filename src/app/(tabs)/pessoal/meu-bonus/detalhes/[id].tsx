@@ -12,6 +12,7 @@ import { bonusKeys, useCurrentUser, useScreenReady} from '@/hooks';
 import { formatCurrency, formatPercentage } from "@/utils";
 import { COMMISSION_STATUS, COMMISSION_STATUS_LABELS, getBadgeVariant } from "@/constants";
 import { TasksModal } from "@/components/bonus/TasksModal";
+import { BonusRulesModal } from "@/components/bonus/BonusRulesModal";
 import { Icon } from "@/components/ui/icon";
 import { spacing, fontSize } from "@/constants/design-system";
 import type { Bonus, Task } from "@/types";
@@ -43,6 +44,14 @@ const getNumericValue = (value: any): number => {
   if (value?.toNumber) return value.toNumber();
   return 0;
 };
+
+// Parses "Label (total) — dd/mm (hh:mm), dd/mm (hh:mm)" into { label, dates }
+function parseDiscountReference(reference: string): { label: string; dates: string[] } {
+  const parts = reference.split(" — ");
+  if (parts.length < 2) return { label: reference, dates: [] };
+  const dates = parts[1].split(", ").map((d) => d.trim()).filter(Boolean);
+  return { label: parts[0], dates };
+}
 
 // Helper to format bonus amount
 const formatBonusAmount = (amount: any): string => {
@@ -86,6 +95,13 @@ export default function BonusDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
   const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
+  const [rulesModalVisible, setRulesModalVisible] = useState(false);
+  const [rulesHighlightRef, setRulesHighlightRef] = useState<string | undefined>();
+
+  const openRulesModal = (reference?: string) => {
+    setRulesHighlightRef(reference);
+    setRulesModalVisible(true);
+  };
 
   // Get current user to check bonifiable status
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
@@ -380,6 +396,15 @@ export default function BonusDetailScreen() {
           </View>
         </Card>
 
+        {/* Rules Button */}
+        <TouchableOpacity
+          style={[styles.rulesButton, { backgroundColor: colors.primary }]}
+          onPress={() => openRulesModal()}
+          activeOpacity={0.8}
+        >
+          <ThemedText style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Regras do Bônus</ThemedText>
+        </TouchableOpacity>
+
         {/* Bonus Amount Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -402,35 +427,47 @@ export default function BonusDetailScreen() {
                 const percentageValue = toNumber(extra.percentage);
                 const hasPercentage = percentageValue > 0;
                 return (
-                  <View key={extra.id || `extra-${index}`} style={styles.detailRow}>
-                    <ThemedText style={[styles.detailLabel, { color: '#059669' }]}>
-                      {extra.reference || `Extra ${index + 1}`}:
+                  <TouchableOpacity key={extra.id || `extra-${index}`} style={styles.detailRow} onPress={() => openRulesModal(extra.reference)} activeOpacity={0.7}>
+                    <ThemedText style={[styles.detailLabel, { color: '#059669', flex: 1, paddingRight: 8 }]} numberOfLines={3}>
+                      {extra.reference || `Extra ${index + 1}`}: <Icon name="IconInfoCircle" size={12} color="#059669" />
                     </ThemedText>
                     <ThemedText style={[styles.detailValue, { color: '#059669' }]}>
                       +{hasPercentage
                         ? formatPercentage(percentageValue, 2)
                         : formatCurrency(toNumber(extra.value))}
                     </ThemedText>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
               {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => {
                 const percentageValue = toNumber(discount.percentage);
                 const hasPercentage = percentageValue > 0;
+                const { label, dates } = parseDiscountReference(discount.reference || `Desconto ${index + 1}`);
                 return (
-                  <View key={discount.id || index} style={styles.detailRow}>
-                    <ThemedText
-                      style={[styles.detailLabel, { color: colors.destructive, flex: 1, paddingRight: 8 }]}
-                      numberOfLines={3}
-                    >
-                      {discount.reference || `Desconto ${index + 1}`}:
-                    </ThemedText>
-                    <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
-                      -{hasPercentage
-                        ? formatPercentage(percentageValue, 2)
-                        : formatCurrency(toNumber(discount.value))}
-                    </ThemedText>
-                  </View>
+                  <TouchableOpacity key={discount.id || index} onPress={() => openRulesModal(discount.reference)} activeOpacity={0.7}>
+                    <View style={styles.detailRow}>
+                      <View style={{ flex: 1, paddingRight: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <ThemedText style={[styles.detailLabel, { color: colors.destructive, flexShrink: 1 }]}>
+                          {label}
+                        </ThemedText>
+                        <Icon name="IconInfoCircle" size={12} color={colors.destructive} />
+                      </View>
+                      <ThemedText style={[styles.detailValue, { color: colors.destructive }]}>
+                        -{hasPercentage
+                          ? formatPercentage(percentageValue, 2)
+                          : formatCurrency(toNumber(discount.value))}
+                      </ThemedText>
+                    </View>
+                    {dates.length > 0 && (
+                      <View style={{ marginTop: 3, gap: 1 }}>
+                        {dates.map((date, i) => (
+                          <ThemedText key={i} style={[styles.detailLabel, { color: colors.mutedForeground, fontSize: 12, fontWeight: '400' }]}>
+                            {date}
+                          </ThemedText>
+                        ))}
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 );
               })}
               <View style={[styles.detailRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.border }]}>
@@ -601,6 +638,13 @@ export default function BonusDetailScreen() {
         tasks={filteredTasksForModal}
         title={selectedCommissionStatus ? COMMISSION_STATUS_LABELS[selectedCommissionStatus as keyof typeof COMMISSION_STATUS_LABELS] || 'Tarefas' : 'Tarefas'}
       />
+
+      {/* Bonus Rules Modal */}
+      <BonusRulesModal
+        visible={rulesModalVisible}
+        onClose={() => setRulesModalVisible(false)}
+        highlightReference={rulesHighlightRef}
+      />
     </ThemedView>
   );
 }
@@ -708,5 +752,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  rulesButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: 13,
+    borderRadius: 12,
   },
 });

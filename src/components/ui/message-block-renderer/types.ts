@@ -9,6 +9,7 @@ export interface InlineText {
   text: string;
   styles?: InlineStyle[];
   href?: string;
+  color?: string; // hex color string
 }
 
 export type FontSize = "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl";
@@ -119,6 +120,20 @@ export interface RowBlock {
   id?: string;
 }
 
+export interface DecoratorBlock {
+  type: "decorator";
+  variant: string; // DecoratorVariant values
+  id?: string;
+}
+
+export interface CompanyAssetBlock {
+  type: "company-asset";
+  asset: "logo" | "icon";
+  alignment?: "left" | "center" | "right";
+  size?: string; // e.g. '75%', '50%'
+  id?: string;
+}
+
 export type MessageBlock =
   | HeadingBlock
   | ParagraphBlock
@@ -129,7 +144,9 @@ export type MessageBlock =
   | ListBlock
   | QuoteBlock
   | IconBlock
-  | RowBlock;
+  | RowBlock
+  | DecoratorBlock
+  | CompanyAssetBlock;
 
 export interface MessageBlockRendererProps {
   blocks: MessageBlock[];

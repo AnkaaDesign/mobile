@@ -6,14 +6,14 @@ import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
 import { ThemedText } from '@/components/ui/themed-text';
 import {
   IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
-  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar, IconColumns,
+  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar, IconColumns, IconPalette, IconBuilding,
 } from '@tabler/icons-react-native';
 import { BLOCK_TYPE_CONFIG } from './block-utils';
 import type { BlockType } from './types';
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; color?: string }>> = {
   IconH1, IconH2, IconH3, IconTextSize, IconPhoto, IconClick,
-  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar, IconColumns,
+  IconMinus, IconSpacingVertical, IconList, IconQuote, IconStar, IconColumns, IconPalette, IconBuilding,
 };
 
 interface BlockTypeSelectorProps {

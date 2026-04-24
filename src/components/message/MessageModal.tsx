@@ -147,6 +147,13 @@ export function MessageModal({
     ? extractPlainTextFromContent(messageContent)
     : null;
 
+  // If the last block is a decorator, pin it to the bottom of the scroll area
+  const lastBlock = transformedBlocks[transformedBlocks.length - 1];
+  const hasFooterDecorator = lastBlock?.type === "decorator";
+  const mainBlocks = hasFooterDecorator
+    ? transformedBlocks.slice(0, -1)
+    : transformedBlocks;
+
   return (
     <Modal
       visible={visible}
@@ -232,12 +239,20 @@ export function MessageModal({
             {/* Message Body */}
             <ScrollView
               style={styles.body}
-              contentContainerStyle={styles.bodyContent}
+              contentContainerStyle={[styles.bodyContent, hasFooterDecorator && { paddingBottom: 0 }]}
               showsVerticalScrollIndicator={true}
             >
               {/* Render structured content blocks like web does (direct approach) */}
               {transformedBlocks.length > 0 ? (
-                <MessageBlockRenderer blocks={transformedBlocks} />
+                <>
+                  <MessageBlockRenderer blocks={mainBlocks} style={styles.blockRenderer} />
+                  {hasFooterDecorator && (
+                    <MessageBlockRenderer
+                      blocks={[lastBlock]}
+                      style={styles.footerDecoratorRenderer}
+                    />
+                  )}
+                </>
               ) : currentMessage.body ? (
                 <ThemedText style={styles.bodyText}>
                   {currentMessage.body}
@@ -368,14 +383,23 @@ const styles = StyleSheet.create({
   },
   body: {
     minHeight: 150,
-    paddingHorizontal: spacing.lg,
+    // No horizontal padding here — the MessageBlockRenderer applies per-block padding
+    // so decorators can be edge-to-edge while other blocks get 14px padding
   },
   bodyContent: {
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.md,
   },
   bodyText: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  blockRenderer: {
+    paddingVertical: 0,
+  },
+  footerDecoratorRenderer: {
+    paddingVertical: 0,
   },
   footer: {
     paddingHorizontal: spacing.lg,

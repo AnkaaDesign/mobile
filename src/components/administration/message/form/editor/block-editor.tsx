@@ -14,6 +14,8 @@ import { DividerBlockEditor } from './blocks/divider-block-editor';
 import { SpacerBlockEditor } from './blocks/spacer-block-editor';
 import { IconBlockEditor } from './blocks/icon-block-editor';
 import { RowBlockEditor } from './blocks/row-block-editor';
+import { DecoratorBlockEditor } from './blocks/decorator-block-editor';
+import { CompanyAssetBlockEditor } from './blocks/company-asset-block-editor';
 import { BLOCK_TYPE_CONFIG } from './block-utils';
 import type { ContentBlock } from './types';
 
@@ -55,6 +57,10 @@ export function BlockEditor({ block, onUpdate, onDelete, drag, isActive, disable
         return <IconBlockEditor block={block} onUpdate={onUpdate} disabled={disabled} />;
       case 'row':
         return <RowBlockEditor block={block} onUpdate={onUpdate} disabled={disabled} />;
+      case 'decorator':
+        return <DecoratorBlockEditor block={block} onUpdate={onUpdate} disabled={disabled} />;
+      case 'company-asset':
+        return <CompanyAssetBlockEditor block={block} onUpdate={onUpdate} disabled={disabled} />;
       default:
         return (
           <ThemedText style={{ color: colors.mutedForeground }}>

@@ -4,9 +4,10 @@ import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
 import { ThemedText } from '@/components/ui/themed-text';
-import { IconPlus } from '@tabler/icons-react-native';
+import { IconPlus, IconLayoutGrid } from '@tabler/icons-react-native';
 import { BlockEditor } from './block-editor';
 import { BlockTypeSelector } from './block-type-selector';
+import { MessageTemplatesModal } from './message-templates-modal';
 import { createEmptyBlock } from './block-utils';
 import type { ContentBlock, BlockType } from './types';
 
@@ -19,6 +20,7 @@ interface BlockEditorCanvasProps {
 export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEditorCanvasProps) {
   const { colors } = useTheme();
   const [showSelector, setShowSelector] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const handleAddBlock = useCallback(
     (type: BlockType) => {
@@ -83,9 +85,23 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
           <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
             Nenhum bloco adicionado ainda
           </ThemedText>
-          <View style={[styles.addFirstButton, { backgroundColor: colors.primary }]}>
-            <IconPlus size={16} color="#FFFFFF" />
-            <ThemedText style={styles.addFirstText}>Adicionar Primeiro Bloco</ThemedText>
+          <View style={styles.emptyActions}>
+            <View style={[styles.addFirstButton, { backgroundColor: colors.primary }]}>
+              <IconPlus size={16} color="#FFFFFF" />
+              <ThemedText style={styles.addFirstText}>Adicionar Primeiro Bloco</ThemedText>
+            </View>
+            <TouchableOpacity
+              style={[styles.templatesButton, { borderColor: colors.border }]}
+              onPress={() => {
+                setShowTemplates(true);
+              }}
+              disabled={disabled}
+            >
+              <IconLayoutGrid size={16} color={colors.foreground} />
+              <ThemedText style={[styles.templatesButtonText, { color: colors.foreground }]}>
+                Exemplos
+              </ThemedText>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
 
@@ -93,6 +109,16 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
           open={showSelector}
           onClose={() => setShowSelector(false)}
           onSelect={handleAddBlock}
+        />
+
+        <MessageTemplatesModal
+          visible={showTemplates}
+          onClose={() => setShowTemplates(false)}
+          onSelect={(newBlocks) => {
+            onBlocksChange(newBlocks);
+            setShowTemplates(false);
+          }}
+          hasExistingBlocks={blocks.length > 0}
         />
       </View>
     );
@@ -109,21 +135,44 @@ export function BlockEditorCanvas({ blocks, onBlocksChange, disabled }: BlockEdi
         onDragEnd={handleDragEnd}
       />
 
-      <TouchableOpacity
-        style={[styles.addButton, { borderColor: colors.border }]}
-        onPress={() => setShowSelector(true)}
-        disabled={disabled}
-      >
-        <IconPlus size={16} color={colors.primary} />
-        <ThemedText style={[styles.addButtonText, { color: colors.primary }]}>
-          Adicionar Bloco
-        </ThemedText>
-      </TouchableOpacity>
+      <View style={styles.bottomActions}>
+        <TouchableOpacity
+          style={[styles.addButton, { borderColor: colors.border, flex: 1 }]}
+          onPress={() => setShowSelector(true)}
+          disabled={disabled}
+        >
+          <IconPlus size={16} color={colors.primary} />
+          <ThemedText style={[styles.addButtonText, { color: colors.primary }]}>
+            Adicionar Bloco
+          </ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.addButton, { borderColor: colors.border }]}
+          onPress={() => setShowTemplates(true)}
+          disabled={disabled}
+        >
+          <IconLayoutGrid size={16} color={colors.foreground} />
+          <ThemedText style={[styles.addButtonText, { color: colors.foreground }]}>
+            Exemplos
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
 
       <BlockTypeSelector
         open={showSelector}
         onClose={() => setShowSelector(false)}
         onSelect={handleAddBlock}
+      />
+
+      <MessageTemplatesModal
+        visible={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onSelect={(newBlocks) => {
+          onBlocksChange(newBlocks);
+          setShowTemplates(false);
+        }}
+        hasExistingBlocks={blocks.length > 0}
       />
     </View>
   );
@@ -142,6 +191,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
+  emptyActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
   addFirstButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -155,6 +209,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  templatesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  templatesButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -164,7 +236,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dashed',
     borderRadius: borderRadius.md,
-    marginTop: spacing.sm,
   },
   addButtonText: {
     fontSize: 14,

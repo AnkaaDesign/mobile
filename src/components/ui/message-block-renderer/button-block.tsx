@@ -14,10 +14,13 @@ interface ButtonBlockProps {
  */
 export function ButtonBlockComponent({ block, onButtonPress }: ButtonBlockProps) {
   const handlePress = () => {
-    if (onButtonPress && block.action) {
-      onButtonPress(block.action, block.url);
+    if (onButtonPress) {
+      // Use action if set, otherwise fall back to url as the action identifier
+      onButtonPress(block.action || block.url || "", block.url);
     }
   };
+
+  const isDisabled = !block.action && !block.url && !onButtonPress;
 
   const getAlignmentStyle = () => {
     switch (block.alignment) {
@@ -44,7 +47,7 @@ export function ButtonBlockComponent({ block, onButtonPress }: ButtonBlockProps)
       <Button
         variant={block.variant || "default"}
         onPress={handlePress}
-        disabled={!block.action && !onButtonPress}
+        disabled={isDisabled}
       >
         {block.text}
       </Button>

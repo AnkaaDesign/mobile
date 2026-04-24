@@ -10,13 +10,25 @@ export type BlockType =
   | 'quote'
   | 'spacer'
   | 'icon'
-  | 'row';
+  | 'row'
+  | 'decorator'
+  | 'company-asset';
+
+export type DecoratorVariant =
+  | 'header-logo'
+  | 'header-logo-stripes'
+  | 'footer-wave-dark'
+  | 'footer-wave-logo'
+  | 'footer-diagonal-stripes'
+  | 'footer-wave-gold'
+  | 'footer-geometric';
 
 export interface TextStyle {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
   link?: string;
+  color?: string; // hex color string, e.g. '#ff0000'
 }
 
 export interface BaseBlock {
@@ -85,4 +97,16 @@ export interface RowBlock extends BaseBlock {
   verticalAlign?: 'top' | 'center' | 'bottom';
 }
 
-export type ContentBlock = TextBlock | ImageBlock | ButtonBlock | DividerBlock | SpacerBlock | ListBlock | IconBlock | RowBlock;
+export interface DecoratorBlock extends BaseBlock {
+  type: 'decorator';
+  variant: DecoratorVariant;
+}
+
+export interface CompanyAssetBlock extends BaseBlock {
+  type: 'company-asset';
+  asset: 'logo' | 'icon';
+  size?: ImageSizePreset;
+  alignment?: 'left' | 'center' | 'right';
+}
+
+export type ContentBlock = TextBlock | ImageBlock | ButtonBlock | DividerBlock | SpacerBlock | ListBlock | IconBlock | RowBlock | DecoratorBlock | CompanyAssetBlock;

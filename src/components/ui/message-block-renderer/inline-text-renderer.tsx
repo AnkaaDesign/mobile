@@ -32,6 +32,9 @@ export function InlineTextRenderer({
     italic: {
       fontStyle: "italic",
     },
+    underline: {
+      textDecorationLine: "underline",
+    },
     code: {
       fontFamily: "monospace",
       backgroundColor: colors.muted,
@@ -56,8 +59,14 @@ export function InlineTextRenderer({
           inline.styles.forEach((style) => {
             if (style === "bold") textStyles.push(styles.bold);
             if (style === "italic") textStyles.push(styles.italic);
+            if (style === "underline") textStyles.push(styles.underline);
             if (style === "code") textStyles.push(styles.code);
           });
+        }
+
+        // Apply color
+        if (inline.color) {
+          textStyles.push({ color: inline.color });
         }
 
         // Apply link style

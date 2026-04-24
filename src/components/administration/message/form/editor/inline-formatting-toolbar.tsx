@@ -2,14 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
-import { IconBold, IconItalic, IconUnderline, IconLink } from '@tabler/icons-react-native';
+import { IconBold, IconItalic, IconUnderline, IconLink, IconPalette } from '@tabler/icons-react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import {
   toggleSelectionFormat,
   insertLink,
   detectActiveFormats,
-  type FormatType,
+  applyColorFormat,
+  removeColorFormat,
+  detectColorAtSelection,
 } from '@/utils/markdown-formatting';
+
+const COLOR_PRESETS = [
+  '#000000', '#374151', '#ef4444', '#f97316', '#eab308',
+  '#22c55e', '#3bc914', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899',
+];
 
 interface InlineFormattingToolbarProps {
   text: string;
@@ -27,13 +34,19 @@ export function InlineFormattingToolbar({
   const { colors } = useTheme();
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   const activeFormats = useMemo(
     () => detectActiveFormats(text, selection),
     [text, selection]
   );
 
-  const handleFormat = (format: FormatType) => {
+  const activeColor = useMemo(
+    () => detectColorAtSelection(text, selection),
+    [text, selection]
+  );
+
+  const handleFormat = (format: 'bold' | 'italic' | 'underline') => {
     const result = toggleSelectionFormat(text, selection, format);
     onApply(result.text, result.selection);
   };
@@ -59,10 +72,27 @@ export function InlineFormattingToolbar({
     setShowLinkInput(false);
   };
 
-  const formatButtons = [
-    { format: 'bold' as FormatType, Icon: IconBold },
-    { format: 'italic' as FormatType, Icon: IconItalic },
-    { format: 'underline' as FormatType, Icon: IconUnderline },
+  const handleColorPress = () => {
+    setShowLinkInput(false);
+    setShowColorPicker((v) => !v);
+  };
+
+  const handleColorSelect = (color: string) => {
+    const result = applyColorFormat(text, selection, color);
+    onApply(result.text, result.selection);
+    setShowColorPicker(false);
+  };
+
+  const handleRemoveColor = () => {
+    const result = removeColorFormat(text, selection);
+    onApply(result.text, result.selection);
+    setShowColorPicker(false);
+  };
+
+  const formatButtons: Array<{ format: 'bold' | 'italic' | 'underline'; Icon: React.ComponentType<{ size?: number; color?: string }> }> = [
+    { format: 'bold', Icon: IconBold },
+    { format: 'italic', Icon: IconItalic },
+    { format: 'underline', Icon: IconUnderline },
   ];
 
   return (
@@ -99,6 +129,20 @@ export function InlineFormattingToolbar({
             color={hasSelection ? colors.foreground : colors.mutedForeground}
           />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleColorPress}
+          style={[
+            styles.button,
+            showColorPicker && { backgroundColor: colors.primary },
+            activeColor ? { backgroundColor: activeColor + '33' } : undefined,
+          ]}
+        >
+          <IconPalette
+            size={18}
+            color={showColorPicker ? '#FFFFFF' : (activeColor ?? colors.foreground)}
+          />
+        </TouchableOpacity>
       </View>
 
       {showLinkInput && (
@@ -120,6 +164,30 @@ export function InlineFormattingToolbar({
           <TouchableOpacity onPress={handleLinkCancel} style={styles.linkCancelButton}>
             <ThemedText style={[styles.linkCancelText, { color: colors.mutedForeground }]}>Cancelar</ThemedText>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {showColorPicker && (
+        <View style={[styles.colorRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+          {COLOR_PRESETS.map((color) => (
+            <TouchableOpacity
+              key={color}
+              onPress={() => handleColorSelect(color)}
+              style={[
+                styles.colorSwatch,
+                { backgroundColor: color },
+                activeColor === color && styles.colorSwatchActive,
+              ]}
+            />
+          ))}
+          {activeColor && (
+            <TouchableOpacity
+              onPress={handleRemoveColor}
+              style={[styles.removeColorButton, { borderColor: colors.border }]}
+            >
+              <ThemedText style={[styles.removeColorText, { color: colors.mutedForeground }]}>✕</ThemedText>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -185,5 +253,40 @@ const styles = StyleSheet.create({
   },
   linkCancelText: {
     fontSize: 13,
+  },
+  colorRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    padding: 6,
+    gap: 6,
+  },
+  colorSwatch: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  colorSwatchActive: {
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  removeColorButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeColorText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

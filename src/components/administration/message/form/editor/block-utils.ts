@@ -32,6 +32,10 @@ export function createEmptyBlock(type: BlockType): ContentBlock {
       return { id, type, icon: 'IconCheck', size: 'md', color: 'text-foreground', alignment: 'center' };
     case 'row':
       return { id, type, blocks: [], columns: 2, gap: 'md', verticalAlign: 'top' };
+    case 'decorator':
+      return { id, type: 'decorator', variant: 'footer-wave-dark' };
+    case 'company-asset':
+      return { id, type: 'company-asset', asset: 'logo', size: '75%', alignment: 'center' };
     default:
       return { id, type: 'paragraph', content: '', fontSize: 'base', fontWeight: 'normal' };
   }
@@ -55,4 +59,6 @@ export const BLOCK_TYPE_CONFIG: Array<{
   { type: 'quote', label: 'Citação', iconName: 'IconQuote', description: 'Bloco de citação' },
   { type: 'icon', label: 'Ícone', iconName: 'IconStar', description: 'Ícone decorativo' },
   { type: 'row', label: 'Linha', iconName: 'IconColumns', description: 'Componentes lado a lado' },
+  { type: 'decorator', label: 'Decorativo', iconName: 'IconPalette', description: 'Elemento decorativo' },
+  { type: 'company-asset', label: 'Ativos', iconName: 'IconBuilding', description: 'Logo e ícone da empresa' },
 ];

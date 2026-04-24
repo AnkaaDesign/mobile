@@ -53,6 +53,8 @@ const messageFormSchema = z.object({
   targetSectors: z.array(z.string()).optional(),
   targetPositions: z.array(z.string()).optional(),
   isActive: z.boolean(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
 });
 
 interface MessageFormData {
@@ -63,6 +65,8 @@ interface MessageFormData {
   targetSectors?: string[];
   targetPositions?: string[];
   isActive: boolean;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 // =====================
@@ -181,6 +185,13 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
     return "specific";
   }, [message]);
 
+  const defaultScheduling = useMemo(() => {
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 7);
+    return { startDate: today, endDate };
+  }, []);
+
   const form = useForm<MessageFormData>({
     resolver: zodResolver(messageFormSchema),
     defaultValues: {
@@ -191,6 +202,8 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       targetSectors: [],
       targetPositions: [],
       isActive: message?.status === 'ACTIVE' || mode === 'create',
+      startDate: message?.startsAt ? new Date(message.startsAt) : defaultScheduling.startDate,
+      endDate: message?.endsAt ? new Date(message.endsAt) : defaultScheduling.endDate,
     },
     mode: "onTouched",
   });
@@ -592,7 +605,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
           onCancel={isFirstStep ? handleCancel : prevStep}
           onSubmit={isLastStep ? form.handleSubmit(handleSubmit) : nextStep}
           isSubmitting={isSubmitting}
-          canSubmit={isLastStep ? true : undefined}
+          canSubmit={isLastStep ? true : (currentStep !== 1 || (title.trim().length > 0 && isTargetingValid))}
           cancelLabel={isFirstStep ? "Cancelar" : "Voltar"}
           submitLabel={isLastStep ? (mode === "create" ? "Criar Mensagem" : "Salvar Alterações") : "Próximo"}
           showCancel={true}

@@ -1,6 +1,5 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import { spacing } from "@/constants/design-system";
 import type { SpacerBlock } from "./types";
 
 interface SpacerBlockProps {
@@ -14,11 +13,12 @@ interface SpacerBlockProps {
 export function SpacerBlockComponent({ block }: SpacerBlockProps) {
   const { height = "md" } = block;
 
+  // Match web spacer heights: sm=h-4(16px), md=h-8(32px), lg=h-12(48px), xl=h-16(64px)
   const heights = {
-    sm: spacing.md, // 16px
-    md: spacing.xl, // 32px
-    lg: spacing.xl * 1.5, // 48px
-    xl: spacing.xl * 2, // 64px
+    sm: 16,
+    md: 32,
+    lg: 48,
+    xl: 64,
   };
 
   const styles = StyleSheet.create({

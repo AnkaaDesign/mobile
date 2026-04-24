@@ -17,13 +17,15 @@ import type {
   QuoteBlock,
   IconBlock,
   RowBlock,
+  DecoratorBlock,
+  CompanyAssetBlock,
   InlineText,
   ListItemBlock,
 } from "@/components/ui/message-block-renderer/types";
 
 /**
  * Parses markdown-style formatting into InlineText array
- * Supports: **bold**, *italic*, __underline__, and [link](url)
+ * Supports: {c:#hex}text{/c} color, **bold**, *italic*, __underline__, and [link](url)
  */
 function parseMarkdownToInlineText(text: string): InlineText[] {
   if (!text) return [];
@@ -32,8 +34,9 @@ function parseMarkdownToInlineText(text: string): InlineText[] {
   let currentIndex = 0;
 
   // Combined regex to match all formatting patterns
-  // Order matters: links first, then bold/underline, then italic
-  const formatRegex = /(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+?)\*\*)|(__([^_]+?)__)|(\*([^*]+?)\*)/g;
+  // Order matters: color first (avoid conflicts), then links (most specific), then bold/underline, then italic
+  // Using [\s\S] instead of . to match any character including newlines
+  const formatRegex = /(\{c:#([0-9a-fA-F]{3,6})\}([\s\S]*?)\{\/c\})|(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+?)\*\*)|(__([^_]+?)__)|(\*([^*]+?)\*)/g;
 
   let match: RegExpExecArray | null;
 
@@ -48,33 +51,42 @@ function parseMarkdownToInlineText(text: string): InlineText[] {
 
     // Determine which pattern matched
     if (match[1]) {
+      // Color: {c:#RRGGBB}text{/c}
+      const colorHex = `#${match[2]}`;
+      const colorContent = match[3];
+      if (colorContent.trim()) {
+        result.push({ text: colorContent, color: colorHex });
+      } else {
+        result.push({ text: match[0] });
+      }
+    } else if (match[4]) {
       // Link: [text](url)
-      const linkText = match[2].trim();
-      const linkUrl = match[3].trim();
+      const linkText = match[5].trim();
+      const linkUrl = match[6].trim();
       if (linkText && linkUrl) {
         result.push({ text: linkText, href: linkUrl });
       } else {
         result.push({ text: match[0] });
       }
-    } else if (match[4]) {
+    } else if (match[7]) {
       // Bold: **text**
-      const boldText = match[5];
+      const boldText = match[8];
       if (boldText.trim()) {
         result.push({ text: boldText, styles: ["bold"] });
       } else {
         result.push({ text: match[0] });
       }
-    } else if (match[6]) {
-      // Underline: __text__ (treated as bold)
-      const underlineText = match[7];
+    } else if (match[9]) {
+      // Underline: __text__
+      const underlineText = match[10];
       if (underlineText.trim()) {
-        result.push({ text: underlineText, styles: ["bold"] });
+        result.push({ text: underlineText, styles: ["underline"] });
       } else {
         result.push({ text: match[0] });
       }
-    } else if (match[8]) {
+    } else if (match[11]) {
       // Italic: *text*
-      const italicText = match[9];
+      const italicText = match[12];
       if (italicText.trim()) {
         result.push({ text: italicText, styles: ["italic"] });
       } else {
@@ -137,7 +149,7 @@ function convertInlineFormatToInlineText(
       return { text: item };
     }
 
-    // Handle web InlineFormat: { type: 'text' | 'bold' | 'italic' | 'link', content: string }
+    // Handle web InlineFormat: { type: 'text' | 'bold' | 'italic' | 'underline' | 'link' | 'color', content: string }
     if (item.type) {
       switch (item.type) {
         case "text":
@@ -146,8 +158,12 @@ function convertInlineFormatToInlineText(
           return { text: item.content || "", styles: ["bold"] };
         case "italic":
           return { text: item.content || "", styles: ["italic"] };
+        case "underline":
+          return { text: item.content || "", styles: ["underline"] };
         case "link":
           return { text: item.content || "", href: item.url };
+        case "color":
+          return { text: item.content || "", color: item.color };
         default:
           return { text: item.content || item.text || "" };
       }
@@ -189,12 +205,29 @@ function convertListItems(items: any[]): ListItemBlock[] {
 }
 
 /**
+ * Strips all markdown formatting markers from a raw string, leaving plain text.
+ * Used by extractPlainTextFromContent to clean up string-content blocks.
+ */
+function stripMarkdownFormatting(text: string): string {
+  if (!text) return "";
+  return text
+    // Remove color {c:#hex}text{/c} -> text
+    .replace(/\{c:#[0-9a-fA-F]{3,6}\}([\s\S]*?)\{\/c\}/g, "$1")
+    // Remove links [text](url) -> text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Remove bold **text** -> text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    // Remove underline __text__ -> text
+    .replace(/__([^_]+)__/g, "$1")
+    // Remove italic *text* -> text
+    .replace(/\*([^*]+)\*/g, "$1");
+}
+
+/**
  * Transforms a single block from API format to mobile renderer format
  */
 function transformBlock(block: any): MessageBlock | null {
-  console.log('[transformBlock] Processing block:', block?.type, block);
   if (!block || !block.type) {
-    console.log('[transformBlock] Block is null or missing type');
     return null;
   }
 
@@ -342,6 +375,24 @@ function transformBlock(block: any): MessageBlock | null {
       } as RowBlock;
     }
 
+    case "decorator": {
+      return {
+        type: "decorator",
+        variant: block.variant || "footer-wave-dark",
+        id: block.id,
+      } as DecoratorBlock;
+    }
+
+    case "company-asset": {
+      return {
+        type: "company-asset",
+        asset: block.asset || "logo",
+        alignment: block.alignment,
+        size: block.size,
+        id: block.id,
+      } as CompanyAssetBlock;
+    }
+
     default:
       console.warn("[message-transformer] Unknown block type:", block.type);
       return null;
@@ -353,14 +404,7 @@ function transformBlock(block: any): MessageBlock | null {
  * Handles both old format (content.blocks) and new format (content as array)
  */
 export function transformMessageContent(content: any): MessageBlock[] {
-  // Debug logging - remove after fixing
-  console.log('[transformMessageContent] Input content:', JSON.stringify(content, null, 2));
-  console.log('[transformMessageContent] content type:', typeof content);
-  console.log('[transformMessageContent] content.blocks:', content?.blocks);
-  console.log('[transformMessageContent] Array.isArray(content):', Array.isArray(content));
-
   if (!content) {
-    console.log('[transformMessageContent] Content is null/undefined, returning []');
     return [];
   }
 
@@ -369,19 +413,15 @@ export function transformMessageContent(content: any): MessageBlock[] {
   // Handle different content formats
   if (content.blocks && Array.isArray(content.blocks)) {
     // New format: content is an object with blocks array
-    console.log('[transformMessageContent] Using content.blocks format');
     blocks = content.blocks;
   } else if (Array.isArray(content)) {
     // Old format: content is directly an array
-    console.log('[transformMessageContent] Using array format');
     blocks = content;
   } else {
     // Unknown content format
-    console.warn("[message-transformer] Unknown content format:", typeof content, content);
+    console.warn("[message-transformer] Unknown content format:", typeof content);
     return [];
   }
-
-  console.log('[transformMessageContent] Blocks to transform:', blocks.length, blocks);
 
   // Transform each block
   const result: MessageBlock[] = [];
@@ -430,7 +470,8 @@ export function extractPlainTextFromContent(content: any): string {
     // Extract text from various block types
     if (block.content) {
       if (typeof block.content === "string") {
-        textParts.push(block.content);
+        // Strip markdown formatting markers so they don't leak into plain text
+        textParts.push(stripMarkdownFormatting(block.content));
       } else if (Array.isArray(block.content)) {
         // Handle InlineFormat array
         const inlineText = block.content

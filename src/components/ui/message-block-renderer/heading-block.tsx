@@ -17,48 +17,50 @@ export function HeadingBlockComponent({ block, onLinkPress }: HeadingBlockProps)
   const { colors } = useTheme();
 
   const getHeadingStyle = (level: number) => {
+    // Font sizes match the web preview dialog:
+    //   heading1 → 28px bold, heading2 → 22px semibold, heading3 → 18px medium
     const headingStyles = {
       1: {
-        fontSize: fontSize["3xl"],
-        lineHeight: lineHeight["3xl"],
+        fontSize: 28,
+        lineHeight: 36,
         fontWeight: fontWeight.bold,
-        marginTop: spacing.lg,
-        marginBottom: spacing.md,
+        marginTop: 0,
+        marginBottom: 0,
       },
       2: {
-        fontSize: fontSize["2xl"],
-        lineHeight: lineHeight["2xl"],
-        fontWeight: fontWeight.bold,
-        marginTop: spacing.lg,
-        marginBottom: spacing.sm,
+        fontSize: 22,
+        lineHeight: 30,
+        fontWeight: fontWeight.semibold,
+        marginTop: 0,
+        marginBottom: 0,
       },
       3: {
-        fontSize: fontSize.xl,
-        lineHeight: lineHeight.xl,
-        fontWeight: fontWeight.semibold,
-        marginTop: spacing.md,
-        marginBottom: spacing.sm,
+        fontSize: 18,
+        lineHeight: 26,
+        fontWeight: fontWeight.medium,
+        marginTop: 0,
+        marginBottom: 0,
       },
       4: {
         fontSize: fontSize.lg,
         lineHeight: lineHeight.lg,
         fontWeight: fontWeight.semibold,
-        marginTop: spacing.md,
-        marginBottom: spacing.xs,
+        marginTop: 0,
+        marginBottom: 0,
       },
       5: {
         fontSize: fontSize.base,
         lineHeight: lineHeight.base,
         fontWeight: fontWeight.semibold,
-        marginTop: spacing.sm,
-        marginBottom: spacing.xs,
+        marginTop: 0,
+        marginBottom: 0,
       },
       6: {
         fontSize: fontSize.sm,
         lineHeight: lineHeight.sm,
         fontWeight: fontWeight.semibold,
-        marginTop: spacing.sm,
-        marginBottom: spacing.xs,
+        marginTop: 0,
+        marginBottom: 0,
       },
     };
 
@@ -66,6 +68,30 @@ export function HeadingBlockComponent({ block, onLinkPress }: HeadingBlockProps)
   };
 
   const headingStyle = getHeadingStyle(block.level);
+
+  // Allow per-block fontSize/fontWeight overrides (set in editor)
+  const fontSizeMap: Record<string, number> = {
+    xs: fontSize.xs,
+    sm: fontSize.sm,
+    base: fontSize.base,
+    lg: fontSize.lg,
+    xl: fontSize.xl,
+    "2xl": fontSize["2xl"],
+    "3xl": fontSize["3xl"],
+  };
+  const fontWeightMap: Record<string, string> = {
+    normal: fontWeight.normal,
+    medium: fontWeight.medium,
+    semibold: fontWeight.semibold,
+    bold: fontWeight.bold,
+  };
+
+  const resolvedFontSize = block.fontSize
+    ? fontSizeMap[block.fontSize] ?? headingStyle.fontSize
+    : headingStyle.fontSize;
+  const resolvedFontWeight = block.fontWeight
+    ? fontWeightMap[block.fontWeight] ?? headingStyle.fontWeight
+    : headingStyle.fontWeight;
 
   const styles = StyleSheet.create({
     container: {
@@ -80,9 +106,9 @@ export function HeadingBlockComponent({ block, onLinkPress }: HeadingBlockProps)
         content={block.content}
         onLinkPress={onLinkPress}
         baseStyle={{
-          fontSize: headingStyle.fontSize,
+          fontSize: resolvedFontSize,
           lineHeight: headingStyle.lineHeight,
-          fontWeight: headingStyle.fontWeight as any,
+          fontWeight: resolvedFontWeight as any,
           color: colors.foreground,
         }}
       />

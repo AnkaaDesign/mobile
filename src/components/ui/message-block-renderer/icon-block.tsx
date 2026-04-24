@@ -32,6 +32,15 @@ function getTailwindColor(colorClass: string | undefined, themeColors: any): str
     "text-primary": themeColors.primary,
     "text-secondary": themeColors.secondary,
     "text-muted-foreground": themeColors.mutedForeground,
+    // -500 variants (used by editor)
+    "text-red-500": "#ef4444",
+    "text-green-500": "#22c55e",
+    "text-blue-500": "#3b82f6",
+    "text-yellow-500": "#eab308",
+    "text-purple-500": "#a855f7",
+    "text-orange-500": "#f97316",
+    "text-pink-500": "#ec4899",
+    // -600 variants (kept for backwards compatibility)
     "text-green-600": "#16a34a",
     "text-blue-600": "#2563eb",
     "text-yellow-600": "#ca8a04",

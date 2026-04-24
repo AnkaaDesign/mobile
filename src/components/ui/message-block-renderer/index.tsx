@@ -13,6 +13,8 @@ import { QuoteBlockComponent } from "./quote-block";
 import { SpacerBlockComponent } from "./spacer-block";
 import { IconBlockComponent } from "./icon-block";
 import { RowBlockComponent } from "./row-block";
+import { DecoratorBlockComponent } from "./decorator-block";
+import { CompanyAssetBlockComponent } from "./company-asset-block";
 import type { MessageBlock, MessageBlockRendererProps } from "./types";
 
 /**
@@ -128,14 +130,13 @@ export function MessageBlockRenderer({
   );
 
   /**
-   * Renders individual block based on its type
+   * Renders the inner content for a single block (no wrapper padding).
    */
-  const renderBlock = (block: MessageBlock, index: number) => {
+  const renderBlockInner = (block: MessageBlock, index: number) => {
     switch (block.type) {
       case "heading":
         return (
           <HeadingBlockComponent
-            key={index}
             block={block}
             onLinkPress={handleLinkPress}
           />
@@ -144,31 +145,28 @@ export function MessageBlockRenderer({
       case "paragraph":
         return (
           <ParagraphBlockComponent
-            key={index}
             block={block}
             onLinkPress={handleLinkPress}
           />
         );
 
       case "image":
-        return <ImageBlockComponent key={index} block={block} />;
+        return <ImageBlockComponent block={block} />;
 
       case "button":
         return (
           <ButtonBlockComponent
-            key={index}
             block={block}
             onButtonPress={handleButtonPress}
           />
         );
 
       case "divider":
-        return <DividerBlockComponent key={index} block={block} />;
+        return <DividerBlockComponent block={block} />;
 
       case "list":
         return (
           <ListBlockComponent
-            key={index}
             block={block}
             onLinkPress={handleLinkPress}
           />
@@ -177,27 +175,31 @@ export function MessageBlockRenderer({
       case "quote":
         return (
           <QuoteBlockComponent
-            key={index}
             block={block}
             onLinkPress={handleLinkPress}
           />
         );
 
       case "spacer":
-        return <SpacerBlockComponent key={index} block={block} />;
+        return <SpacerBlockComponent block={block} />;
 
       case "icon":
-        return <IconBlockComponent key={index} block={block} />;
+        return <IconBlockComponent block={block} />;
 
       case "row":
         return (
           <RowBlockComponent
-            key={index}
             block={block}
             onLinkPress={handleLinkPress}
             onButtonPress={handleButtonPress}
           />
         );
+
+      case "decorator":
+        return <DecoratorBlockComponent block={block} />;
+
+      case "company-asset":
+        return <CompanyAssetBlockComponent block={block} />;
 
       default:
         // Type guard to ensure all cases are handled
@@ -206,6 +208,67 @@ export function MessageBlockRenderer({
         return null;
     }
   };
+
+  /**
+   * Wraps each block with appropriate padding:
+   * - decorator  → edge-to-edge (no padding)
+   * - company-asset → paddingVertical: 20, paddingHorizontal: 14
+   * - all others → paddingVertical: 8,  paddingHorizontal: 14
+   */
+  const renderBlock = (block: MessageBlock, index: number) => {
+    const inner = renderBlockInner(block, index);
+    if (!inner) return null;
+
+    if (block.type === "decorator") {
+      return (
+        <View key={index} style={blockStyles.decoratorWrapper}>
+          {inner}
+        </View>
+      );
+    }
+
+    if (block.type === "company-asset") {
+      return (
+        <View key={index} style={blockStyles.companyAssetWrapper}>
+          {inner}
+        </View>
+      );
+    }
+
+    if (block.type === "divider") {
+      return (
+        <View key={index} style={blockStyles.dividerWrapper}>
+          {inner}
+        </View>
+      );
+    }
+
+    return (
+      <View key={index} style={blockStyles.defaultWrapper}>
+        {inner}
+      </View>
+    );
+  };
+
+  const blockStyles = StyleSheet.create({
+    decoratorWrapper: {
+      width: "100%",
+      marginHorizontal: 0,
+      paddingHorizontal: 0,
+    },
+    companyAssetWrapper: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+    dividerWrapper: {
+      paddingVertical: 2,
+      paddingHorizontal: 14,
+    },
+    defaultWrapper: {
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+  });
 
   const styles = StyleSheet.create({
     container: {
@@ -241,4 +304,6 @@ export type {
   ListItemBlock,
   FontSize,
   FontWeight,
+  DecoratorBlock,
+  CompanyAssetBlock,
 } from "./types";

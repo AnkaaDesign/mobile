@@ -13,6 +13,8 @@ import { ListBlockComponent } from "./list-block";
 import { QuoteBlockComponent } from "./quote-block";
 import { SpacerBlockComponent } from "./spacer-block";
 import { IconBlockComponent } from "./icon-block";
+import { DecoratorBlockComponent } from "./decorator-block";
+import { CompanyAssetBlockComponent } from "./company-asset-block";
 
 interface RowBlockProps {
   block: RowBlock;
@@ -150,6 +152,10 @@ export function RowBlockComponent({
             onButtonPress={onButtonPress}
           />
         );
+      case "decorator":
+        return <DecoratorBlockComponent block={nestedBlock} />;
+      case "company-asset":
+        return <CompanyAssetBlockComponent block={nestedBlock} />;
       default:
         return null;
     }
