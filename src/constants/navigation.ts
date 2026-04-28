@@ -382,6 +382,21 @@ export const NAVIGATION_MENU: MenuItem[] = [
     ],
   },
 
+  // FERRAMENTAS - Available to all users (no privilege restriction)
+  // Hub for utility tools: paint palette, time calculator, overtime cost, paint mix, etc.
+  {
+    id: "ferramentas",
+    title: "Ferramentas",
+    icon: "tools",
+    path: "/tools",
+    children: [
+      { id: "tools-color-palette", title: "Paleta de Cores", icon: "palette", path: "/tools/color-palette" },
+      { id: "tools-time-calculator", title: "Calculadora de Horas", icon: "clock", path: "/tools/time-calculator" },
+      { id: "tools-overtime-cost-calculator", title: "Custo de Horas Extras", icon: "calendarDollar", path: "/tools/overtime-cost-calculator" },
+      { id: "tools-paint-mix-calculator", title: "Calculadora de Mistura", icon: "flask", path: "/tools/paint-mix-calculator" },
+    ],
+  },
+
   // PINTURA - Not available to LEADER or DESIGNER (they use the separate Catalogo menu)
   {
     id: "pintura",

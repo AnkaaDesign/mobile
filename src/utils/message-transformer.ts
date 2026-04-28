@@ -376,9 +376,15 @@ function transformBlock(block: any): MessageBlock | null {
     }
 
     case "decorator": {
+      const LEGACY_VARIANT_MAP: Record<string, string> = {
+        "header-main": "header-logo",
+        "footer-main": "footer-wave-dark",
+      };
+      const rawVariant = block.variant || "footer-wave-dark";
+      const variant = LEGACY_VARIANT_MAP[rawVariant] ?? rawVariant;
       return {
         type: "decorator",
-        variant: block.variant || "footer-wave-dark",
+        variant,
         id: block.id,
       } as DecoratorBlock;
     }

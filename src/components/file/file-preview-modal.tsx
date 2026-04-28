@@ -48,7 +48,21 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { getPaints } from "@/api-client";
 
-import { captureScreen } from 'react-native-view-shot';
+import { captureScreen, captureRef } from 'react-native-view-shot';
+import { unzlibSync } from 'fflate';
+
+// Read just the IHDR width/height from a PNG byte stream, without doing the full decode.
+// We use this to normalise sample coordinates: react-native-view-shot may produce a PNG
+// at native pixel resolution (logical * device pixel ratio) on some platforms, so screen
+// coordinates need to be scaled into PNG coordinates before sampling.
+function getPngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 24) return null;
+  if (bytes[0] !== 137 || bytes[1] !== 80 || bytes[2] !== 78 || bytes[3] !== 71) return null;
+  const width  = (bytes[16] << 24 | bytes[17] << 16 | bytes[18] << 8 | bytes[19]) >>> 0;
+  const height = (bytes[20] << 24 | bytes[21] << 16 | bytes[22] << 8 | bytes[23]) >>> 0;
+  if (!width || !height) return null;
+  return { width, height };
+}
 
 // Decode a base64 string to Uint8Array (atob is available in Hermes)
 function base64ToUint8Array(b64: string): Uint8Array {
@@ -60,28 +74,42 @@ function base64ToUint8Array(b64: string): Uint8Array {
 
 // Decode a PNG (as Uint8Array) and return the pixel colour at physical pixel (px, py).
 // Processes row-by-row and stops at the target row for efficiency.
+//
+// Inflates IDAT via fflate. We deliberately do NOT use the WHATWG DecompressionStream
+// here — Hermes (the JS engine in React Native) does not implement Compression Streams,
+// so DecompressionStream is undefined on-device and any code path that uses it silently
+// fails. fflate is a pure-JS zlib implementation that works in any RN runtime.
 async function decodePngPixel(
   bytes: Uint8Array,
   px: number,
   py: number,
 ): Promise<{ r: number; g: number; b: number } | null> {
   try {
-    if (typeof (globalThis as any).DecompressionStream === 'undefined') return null;
-    if (bytes[0] !== 137 || bytes[1] !== 80 || bytes[2] !== 78 || bytes[3] !== 71) return null;
+    if (bytes[0] !== 137 || bytes[1] !== 80 || bytes[2] !== 78 || bytes[3] !== 71) {
+      console.warn('[ColorPicker.decode] not a PNG signature');
+      return null;
+    }
 
     let pos = 8;
     const ihdrLen = (bytes[pos] << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
     pos += 4;
-    if (String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]) !== 'IHDR') return null;
+    if (String.fromCharCode(bytes[pos], bytes[pos+1], bytes[pos+2], bytes[pos+3]) !== 'IHDR') {
+      console.warn('[ColorPicker.decode] missing IHDR');
+      return null;
+    }
     pos += 4;
 
-    const width   = (bytes[pos]   << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
-    const height  = (bytes[pos+4] << 24 | bytes[pos+5] << 16 | bytes[pos+6] << 8 | bytes[pos+7]) >>> 0;
+    const width    = (bytes[pos]   << 24 | bytes[pos+1] << 16 | bytes[pos+2] << 8 | bytes[pos+3]) >>> 0;
+    const height   = (bytes[pos+4] << 24 | bytes[pos+5] << 16 | bytes[pos+6] << 8 | bytes[pos+7]) >>> 0;
     const bitDepth  = bytes[pos+8];
     const colorType = bytes[pos+9];
+    const interlace = bytes[pos+12];
     pos += ihdrLen + 4;
 
-    if (bitDepth !== 8 || ![2, 6].includes(colorType)) return null;
+    if (bitDepth !== 8 || ![2, 6].includes(colorType) || interlace !== 0) {
+      console.warn('[ColorPicker.decode] unsupported PNG variant', { bitDepth, colorType, interlace });
+      return null;
+    }
     const bpp = colorType === 6 ? 4 : 3;
 
     const targetX = Math.max(0, Math.min(width  - 1, Math.round(px)));
@@ -98,27 +126,23 @@ async function decodePngPixel(
       pos += cLen + 4;
     }
 
+    if (idatParts.length === 0) {
+      console.warn('[ColorPicker.decode] no IDAT chunks found');
+      return null;
+    }
+
     const totalLen = idatParts.reduce((s, c) => s + c.length, 0);
     const idatData = new Uint8Array(totalLen);
     let off = 0;
     for (const p of idatParts) { idatData.set(p, off); off += p.length; }
 
-    const ds = new (globalThis as any).DecompressionStream('deflate');
-    const writer = ds.writable.getWriter();
-    const reader = ds.readable.getReader();
-    writer.write(idatData);
-    writer.close();
-
-    const rawChunks: Uint8Array[] = [];
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      rawChunks.push(value);
+    let raw: Uint8Array;
+    try {
+      raw = unzlibSync(idatData);
+    } catch (err) {
+      console.warn('[ColorPicker.decode] fflate inflate failed:', err);
+      return null;
     }
-    const rawLen = rawChunks.reduce((s, c) => s + c.length, 0);
-    const raw = new Uint8Array(rawLen);
-    let rawOff = 0;
-    for (const c of rawChunks) { raw.set(c, rawOff); rawOff += c.length; }
 
     // Reconstruct pixel data row-by-row; stop after the target row
     const stride = width * bpp;
@@ -202,6 +226,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 const SWIPE_THRESHOLD = 50;
+const LOUPE_SIZE = 92;
 
 // EPS file detection
 const isEpsFile = (file: AnkaaFile): boolean => {
@@ -525,8 +550,13 @@ export function FilePreviewModal({
   const [isColorSampling, setIsColorSampling] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  // Crosshair position in screen-space (center of screen by default)
-  const [crosshairPos, setCrosshairPos] = useState({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2 });
+  // Hide loupe + button briefly during screenshot so they don't pollute the captured pixel
+  const [isCapturing, setIsCapturing] = useState(false);
+  // Picker (loupe) center position in logical screen pixels — drives both UI and the sample point
+  const pickerX = useSharedValue(SCREEN_WIDTH / 2);
+  const pickerY = useSharedValue(SCREEN_HEIGHT / 2);
+  const savedPickerX = useSharedValue(SCREEN_WIDTH / 2);
+  const savedPickerY = useSharedValue(SCREEN_HEIGHT / 2);
 
   // Best paint match query
   const pickedColorHex = pickedColor
@@ -560,6 +590,10 @@ export function FilePreviewModal({
 
   // Refs
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref to the modal's content View — used by react-native-view-shot's captureRef.
+  // captureScreen on iOS may capture the root UIWindow which excludes RN Modal contents
+  // (modals render in a sibling window), so we capture this ref instead.
+  const captureRootRef = useRef<View>(null);
 
   // Android tap detection refs (manual double-tap detection because RNGH's
   // Exclusive(doubleTap, singleTap) fails on Android — the single tap gesture
@@ -792,40 +826,106 @@ export function FilePreviewModal({
     }, isLandscapeOrientation ? 400 : 0);
   }, [onClose, isLandscapeOrientation]);
 
-  // Attempt to sample pixel color from a PNG image using pure-JS PNG parsing.
-  // Requires DecompressionStream (available in Hermes 0.14+ / RN 0.76+).
-  // Handle color picker tap — takes a screenshot and samples the pixel at the tapped position.
-  // Works for all content types: images (any format), PDFs, SVGs, etc.
-  const handleColorPickerTap = useCallback(
-    async (screenAbsX: number, screenAbsY: number) => {
-      setCrosshairPos({ x: screenAbsX, y: screenAbsY });
-      showControls();
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Move the loupe to a tapped position (does NOT capture — capture is a separate explicit action).
+  const movePickerTo = useCallback((x: number, y: number) => {
+    const cx = Math.max(0, Math.min(SCREEN_WIDTH, x));
+    const cy = Math.max(0, Math.min(SCREEN_HEIGHT, y));
+    pickerX.value = cx;
+    pickerY.value = cy;
+    savedPickerX.value = cx;
+    savedPickerY.value = cy;
+  }, []);
 
-      setPickedColor(null);
-      setIsColorSampling(true);
-      setShowColorModal(true);
+  // Capture the color under the loupe. Hides every overlay first so the screenshot
+  // reflects the actual file content, not our crosshair / hint / modal scrim. We try
+  // captureRef on the modal's content View first (works for RN Modals + PDFs reliably),
+  // and fall back to captureScreen if that fails.
+  const handleCaptureColor = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    const sampleScreenX = pickerX.value;
+    const sampleScreenY = pickerY.value;
+
+    setPickedColor(null);
+    setIsColorSampling(true);
+    setIsCapturing(true);
+
+    // Safety: if anything below hangs, force the overlay back on after 5s so the user
+    // is never stuck looking at a screen with no buttons.
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[ColorPicker] capture safety timeout fired — restoring overlay');
+      setIsCapturing(false);
+      setIsColorSampling(false);
+    }, 5000);
+
+    // Wait for React to commit the overlay hide. Two frames + a settle delay so neither
+    // the loupe nor the yellow crosshair lines bleed into the captured pixel.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => setTimeout(resolve, 120));
+
+    const tryCapture = async (): Promise<string | null> => {
+      // Primary: captureRef on the modal-internal View. This is the reliable path for
+      // PDFs (react-native-pdf renders into a UIView/Android view that captureRef can
+      // snapshot) and for RN Modals on iOS.
       try {
-        // Capture at logical-pixel resolution (1× density) so coordinates map 1:1
-        const base64 = await captureScreen({
+        if (captureRootRef.current) {
+          return (await captureRef(captureRootRef, {
+            format: 'png',
+            result: 'base64',
+            width: Math.round(SCREEN_WIDTH),
+            height: Math.round(SCREEN_HEIGHT),
+          })) as string;
+        }
+      } catch (err) {
+        console.warn('[ColorPicker] captureRef failed, falling back to captureScreen:', err);
+      }
+      // Fallback: captureScreen for the old code path / unsupported view trees.
+      try {
+        return (await captureScreen({
           format: 'png',
           result: 'base64',
           width: Math.round(SCREEN_WIDTH),
           height: Math.round(SCREEN_HEIGHT),
-        });
-
-        const bytes = base64ToUint8Array(base64);
-        const color = await decodePngPixel(bytes, Math.round(screenAbsX), Math.round(screenAbsY));
-        setPickedColor(color);
-      } catch {
-        setPickedColor(null);
-      } finally {
-        setIsColorSampling(false);
+        })) as string;
+      } catch (err) {
+        console.warn('[ColorPicker] captureScreen failed:', err);
+        return null;
       }
-    },
-    [showControls],
-  );
+    };
+
+    let color: { r: number; g: number; b: number } | null = null;
+    try {
+      const base64 = await tryCapture();
+      if (!base64) {
+        console.warn('[ColorPicker] no screenshot bytes returned');
+      } else {
+        const bytes = base64ToUint8Array(base64);
+        const dims = getPngDimensions(bytes);
+        if (!dims) {
+          console.warn('[ColorPicker] PNG header invalid; received', bytes.length, 'bytes');
+        } else {
+          // Map logical screen coords → PNG pixel coords. view-shot's `width/height` is
+          // a hint, not a guarantee; some platforms return a PNG at native resolution.
+          const sx = Math.round((sampleScreenX / SCREEN_WIDTH)  * dims.width);
+          const sy = Math.round((sampleScreenY / SCREEN_HEIGHT) * dims.height);
+          color = await decodePngPixel(bytes, sx, sy);
+          if (!color) {
+            console.warn('[ColorPicker] decoder returned null. PNG dims:', dims, ' sampled at:', sx, sy);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[ColorPicker] capture/decode pipeline error:', err);
+      color = null;
+    }
+
+    clearTimeout(safetyTimeout);
+    setIsCapturing(false);
+    setPickedColor(color);
+    setIsColorSampling(false);
+    setShowColorModal(true);
+  }, []);
 
   // Copy color value to clipboard
   const handleCopyColor = useCallback((label: string, value: string) => {
@@ -849,7 +949,24 @@ export function FilePreviewModal({
     setPickedColor(null);
     setIsColorSampling(false);
     setShowColorModal(false);
+    setIsCapturing(false);
   }, [currentIndex]);
+
+  // Re-center the loupe each time picker mode is (re)activated; tear down modal when deactivated.
+  // Header visibility while picker is active is handled by `animatedHeaderStyle`
+  // (it stays opaque whenever isColorPickerActive is true) — the bottom thumbnail strip
+  // keeps its normal auto-hide behavior so it doesn't get in the user's way.
+  useEffect(() => {
+    if (isColorPickerActive) {
+      pickerX.value = SCREEN_WIDTH / 2;
+      pickerY.value = SCREEN_HEIGHT / 2;
+      savedPickerX.value = SCREEN_WIDTH / 2;
+      savedPickerY.value = SCREEN_HEIGHT / 2;
+    } else {
+      setShowColorModal(false);
+      setPickedColor(null);
+    }
+  }, [isColorPickerActive]);
 
   // Share/Open function - opens native share sheet for download, save, share, etc.
   const handleShare = useCallback(async () => {
@@ -1046,9 +1163,10 @@ export function FilePreviewModal({
   }, [showControls]);
 
   const handleAndroidTap = useCallback((x: number, y: number, absX: number, absY: number) => {
-    // Color picker mode: single tap picks color — use absolute screen coords for screenshot
+    // Color picker mode: single tap teleports the loupe — capture is a separate explicit step.
     if (isColorPickerActiveShared.value) {
-      handleColorPickerTap(absX, absY);
+      movePickerTo(absX, absY);
+      Haptics.selectionAsync();
       return;
     }
 
@@ -1077,7 +1195,7 @@ export function FilePreviewModal({
         pendingTapTimerRef.current = null;
       }, 300);
     }
-  }, [toggleControls, handleDoubleTapZoom, handleColorPickerTap]);
+  }, [toggleControls, handleDoubleTapZoom, movePickerTo]);
 
   // Android: single Tap(1) gesture — fires immediately, double-tap detected in JS
   const androidTapGesture = Gesture.Tap()
@@ -1097,7 +1215,8 @@ export function FilePreviewModal({
     .onEnd((event) => {
       'worklet';
       if (isColorPickerActiveShared.value) {
-        runOnJS(handleColorPickerTap)(event.absoluteX, event.absoluteY);
+        // Teleport the loupe to the tap; user confirms with the dedicated button.
+        runOnJS(movePickerTo)(event.absoluteX, event.absoluteY);
       } else {
         runOnJS(toggleControls)();
       }
@@ -1144,6 +1263,34 @@ export function FilePreviewModal({
       : Gesture.Race(Gesture.Exclusive(doubleTapGesture, singleTapGesture), panGesture)
   );
 
+  // Pan gesture for the loupe — moves the picker center. minDistance(0) so the loupe
+  // tracks the finger immediately (no dead zone).
+  const loupePanGesture = Gesture.Pan()
+    .minDistance(0)
+    .onStart(() => {
+      'worklet';
+      savedPickerX.value = pickerX.value;
+      savedPickerY.value = pickerY.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      pickerX.value = clamp(savedPickerX.value + event.translationX, 0, SCREEN_WIDTH);
+      pickerY.value = clamp(savedPickerY.value + event.translationY, 0, SCREEN_HEIGHT);
+    })
+    .onEnd(() => {
+      'worklet';
+      savedPickerX.value = pickerX.value;
+      savedPickerY.value = pickerY.value;
+    });
+
+  // Loupe positioning — drives the circle and the full-screen crosshair lines.
+  const animatedLoupeStyle = useAnimatedStyle(() => ({
+    top: pickerY.value - LOUPE_SIZE / 2,
+    left: pickerX.value - LOUPE_SIZE / 2,
+  }));
+  const animatedHLineStyle = useAnimatedStyle(() => ({ top: pickerY.value }));
+  const animatedVLineStyle = useAnimatedStyle(() => ({ left: pickerX.value }));
+
   // Animated styles (pinch/pan zoom only, no rotation)
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
@@ -1159,6 +1306,15 @@ export function FilePreviewModal({
   const animatedControlsStyle = useAnimatedStyle(() => {
     return {
       opacity: withTiming(isControlsVisible ? 1 : 0, { duration: 300 }),
+    };
+  });
+
+  // Header stays visible whenever the color picker is active, even after the auto-hide
+  // timer would normally fire — otherwise the user has no way to tap the picker icon
+  // to exit picker mode. Bottom thumbnail strip keeps the original auto-hide behavior.
+  const animatedHeaderStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming((isControlsVisible || isColorPickerActive) ? 1 : 0, { duration: 300 }),
     };
   });
 
@@ -1270,7 +1426,11 @@ export function FilePreviewModal({
       <GestureHandlerRootView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={isDark ? '#1a1a1a' : '#e5e5e5'} translucent />
 
-      <View style={[styles.container, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}>
+      <View
+        ref={captureRootRef}
+        collapsable={false}
+        style={[styles.container, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }]}
+      >
         {/* Background - respects dark mode */}
         <View style={StyleSheet.flatten([StyleSheet.absoluteFillObject, { backgroundColor: isDark ? '#1a1a1a' : '#e5e5e5' }])} />
 
@@ -1280,10 +1440,10 @@ export function FilePreviewModal({
           <Animated.View
             style={[
               styles.header,
-              animatedControlsStyle,
+              animatedHeaderStyle,
               { paddingTop: insets.top + 12 }
             ]}
-            pointerEvents={isControlsVisible ? 'auto' : 'none'}
+            pointerEvents={(isControlsVisible || isColorPickerActive) ? 'auto' : 'none'}
           >
             <View style={styles.headerLeft}>
               <View style={styles.fileInfo}>
@@ -1430,12 +1590,13 @@ export function FilePreviewModal({
                   </View>
                 )}
 
-                {/* Transparent tap-capture overlay for PDFs when color picker is active.
-                    react-native-pdf consumes gestures, so we overlay a Pressable on top. */}
-                {isColorPickerActive && isPDF && (
+                {/* Transparent tap-teleport overlay for PDFs when color picker is active.
+                    react-native-pdf consumes gestures, so we overlay a Pressable on top to
+                    let the user tap-to-position the loupe. */}
+                {isColorPickerActive && isPDF && !isCapturing && (
                   <Pressable
                     style={StyleSheet.absoluteFillObject}
-                    onPress={(e) => handleColorPickerTap(e.nativeEvent.pageX, e.nativeEvent.pageY)}
+                    onPress={(e) => movePickerTo(e.nativeEvent.pageX, e.nativeEvent.pageY)}
                   />
                 )}
 
@@ -1636,62 +1797,155 @@ export function FilePreviewModal({
               </ScrollView>
             </Animated.View>
           )}
-          {/* Crosshair overlay — shown when color picker is active */}
-          {isColorPickerActive && !isVideo && (
-            <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-              {/* Horizontal line */}
+          {/* Color picker overlay — full-screen crosshair, draggable loupe, and capture button.
+              Hidden during the screenshot capture so the sampled pixel reflects the underlying image. */}
+          {isColorPickerActive && !isVideo && !isCapturing && (
+            <>
+              {/* Full-screen crosshair guide lines (non-interactive) */}
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  {
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    height: 1,
+                    backgroundColor: 'rgba(253, 224, 71, 0.45)',
+                  },
+                  animatedHLineStyle,
+                ]}
+              />
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  {
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    width: 1,
+                    backgroundColor: 'rgba(253, 224, 71, 0.45)',
+                  },
+                  animatedVLineStyle,
+                ]}
+              />
+
+              {/* Draggable loupe — circular target, transparent center so user sees the pixel under it */}
+              <GestureDetector gesture={loupePanGesture}>
+                <Animated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      width: LOUPE_SIZE,
+                      height: LOUPE_SIZE,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
+                    animatedLoupeStyle,
+                  ]}
+                >
+                  {/* Outer ring */}
+                  <View
+                    style={{
+                      width: LOUPE_SIZE,
+                      height: LOUPE_SIZE,
+                      borderRadius: LOUPE_SIZE / 2,
+                      borderWidth: 3,
+                      borderColor: '#fde047',
+                      backgroundColor: 'transparent',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.5,
+                      shadowRadius: 6,
+                      elevation: 6,
+                    }}
+                  />
+                  {/* Inner crosshair (vertical) */}
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      width: 1,
+                      top: 12,
+                      bottom: 12,
+                      backgroundColor: 'rgba(253, 224, 71, 0.9)',
+                    }}
+                  />
+                  {/* Inner crosshair (horizontal) */}
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      height: 1,
+                      left: 12,
+                      right: 12,
+                      backgroundColor: 'rgba(253, 224, 71, 0.9)',
+                    }}
+                  />
+                  {/* Precise center dot */}
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: 'absolute',
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      borderWidth: 1.5,
+                      borderColor: '#ffffff',
+                      backgroundColor: '#fde047',
+                    }}
+                  />
+                </Animated.View>
+              </GestureDetector>
+
+              {/* Bottom: helper text + the single Capturar cor button. Uses safe-area inset
+                  so the button never falls under the home indicator on iPhone X-class devices. */}
               <View
+                pointerEvents="box-none"
                 style={{
                   position: 'absolute',
                   left: 0,
                   right: 0,
-                  top: crosshairPos.y,
-                  height: 1,
-                  backgroundColor: 'rgba(253, 224, 71, 0.8)',
-                }}
-              />
-              {/* Vertical line */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: crosshairPos.x,
-                  width: 1,
-                  backgroundColor: 'rgba(253, 224, 71, 0.8)',
-                }}
-              />
-              {/* Center dot */}
-              <View
-                style={{
-                  position: 'absolute',
-                  left: crosshairPos.x - 6,
-                  top: crosshairPos.y - 6,
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  borderWidth: 2,
-                  borderColor: '#fde047',
-                  backgroundColor: 'transparent',
-                }}
-              />
-              {/* Hint label */}
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: 120,
-                  alignSelf: 'center',
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 20,
+                  bottom: Math.max(insets.bottom, 16) + 24,
+                  alignItems: 'center',
                 }}
               >
-                <Text style={{ color: '#fde047', fontSize: 12, fontWeight: '600' }}>
-                  Toque para capturar a cor
-                </Text>
+                <View
+                  style={{
+                    backgroundColor: 'rgba(0,0,0,0.65)',
+                    paddingHorizontal: 14,
+                    paddingVertical: 5,
+                    borderRadius: 14,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: '500' }}>
+                    Arraste o círculo · toque para reposicionar
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleCaptureColor}
+                  activeOpacity={0.85}
+                  style={{
+                    backgroundColor: '#fde047',
+                    paddingHorizontal: 32,
+                    paddingVertical: 14,
+                    borderRadius: 28,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 8,
+                    elevation: 10,
+                  }}
+                >
+                  <IconColorPicker size={18} color="#18181b" />
+                  <Text style={{ color: '#18181b', fontSize: 14, fontWeight: '700', marginLeft: 8 }}>
+                    Capturar cor
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </View>
+            </>
           )}
 
           {/* Color Info Modal */}
@@ -1762,6 +2016,8 @@ export function FilePreviewModal({
                     {(() => {
                       const hex = `#${pickedColor.r.toString(16).padStart(2, '0').toUpperCase()}${pickedColor.g.toString(16).padStart(2, '0').toUpperCase()}${pickedColor.b.toString(16).padStart(2, '0').toUpperCase()}`;
                       const rgb = `${pickedColor.r}, ${pickedColor.g}, ${pickedColor.b}`;
+
+                      // Canonical CMYK
                       const k = 1 - Math.max(pickedColor.r, pickedColor.g, pickedColor.b) / 255;
                       const kScale = k < 1 ? 1 - k : 1;
                       const c = Math.round((k < 1 ? (1 - pickedColor.r / 255 - k) / kScale : 0) * 100);
@@ -1769,10 +2025,32 @@ export function FilePreviewModal({
                       const y2 = Math.round((k < 1 ? (1 - pickedColor.b / 255 - k) / kScale : 0) * 100);
                       const cmyk = `${c}%, ${m}%, ${y2}%, ${Math.round(k * 100)}%`;
 
+                      // CMYK with K capped at 55% — when canonical K > 55%, the excess
+                      // "blackness" is redistributed into CMY so plates that can't run
+                      // heavy black coverage still reproduce the colour. Mirrors web's
+                      // rgbToCmykCap55 in true-color-system/cmyk-utils.ts.
+                      const R = pickedColor.r / 255;
+                      const G = pickedColor.g / 255;
+                      const B = pickedColor.b / 255;
+                      const kCanonical = 1 - Math.max(R, G, B);
+                      const kCapped = Math.min(kCanonical, 0.55);
+                      const denom = 1 - kCapped;
+                      let c55: number, m55: number, y55: number, k55: number;
+                      if (denom < 0.001) {
+                        c55 = 100; m55 = 100; y55 = 100; k55 = 55;
+                      } else {
+                        c55 = Math.max(0, Math.min(100, Math.round(((1 - R - kCapped) / denom) * 100)));
+                        m55 = Math.max(0, Math.min(100, Math.round(((1 - G - kCapped) / denom) * 100)));
+                        y55 = Math.max(0, Math.min(100, Math.round(((1 - B - kCapped) / denom) * 100)));
+                        k55 = Math.round(kCapped * 100);
+                      }
+                      const cmyk55 = `${c55}%, ${m55}%, ${y55}%, ${k55}%`;
+
                       return [
                         { label: 'HEX', value: hex },
                         { label: 'RGB', value: rgb },
                         { label: 'CMYK', value: cmyk },
+                        { label: 'CMYK 55K', value: cmyk55 },
                       ].map(({ label, value }) => (
                         <View
                           key={label}
@@ -1786,7 +2064,7 @@ export function FilePreviewModal({
                             marginBottom: 8,
                           }}
                         >
-                          <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#71717a' : '#a1a1aa', width: 34 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: isDark ? '#71717a' : '#a1a1aa', width: 60 }}>
                             {label}
                           </Text>
                           <Text style={{ flex: 1, fontSize: 13, fontFamily: 'monospace', color: isDark ? '#e4e4e7' : '#18181b', marginLeft: 4 }}>
@@ -1843,6 +2121,48 @@ export function FilePreviewModal({
           )}
         </View>
       </View>
+
+      {/* Capture-in-progress overlay. Sibling of captureRootRef (NOT a descendant) so
+          react-native-view-shot does not include it in the snapshot. Gives the user
+          feedback during the brief window where the loupe + buttons are hidden and
+          the screenshot/decode is in flight. */}
+      {isCapturing && (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 500,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: 'rgba(24,24,27,0.95)',
+              paddingHorizontal: 28,
+              paddingVertical: 22,
+              borderRadius: 16,
+              alignItems: 'center',
+              gap: 12,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              elevation: 12,
+            }}
+          >
+            <ActivityIndicator size="large" color="#fde047" />
+            <Text style={{ color: '#fafafa', fontSize: 14, fontWeight: '600' }}>
+              Capturando cor...
+            </Text>
+          </View>
+        </View>
+      )}
       </GestureHandlerRootView>
     </Modal>
   );

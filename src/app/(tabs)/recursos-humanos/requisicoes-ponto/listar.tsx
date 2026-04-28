@@ -12,6 +12,15 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Header } from "@/components/ui/header";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { IconUser, IconCalendar, IconRefresh, IconCircleCheck, IconCircleX } from "@tabler/icons-react-native";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,6 +28,34 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
+
+// Raw Secullum solicitação payload — only the fields this screen reads/forwards.
+// Keeping this lightweight on purpose; service-side DTO has the full shape.
+interface SecullumSolicitacaoRaw {
+  Id: number;
+  Versao: string;
+  Tipo: number;
+  TipoDescricao?: string;
+  Estado: number;
+  FuncionarioNome?: string;
+  SolicitanteNome?: string | null;
+  Data: string;
+  DataSolicitacao?: string;
+  Justificativa?: string | null;
+  Observacoes?: string | null;
+  MotivoDescarte?: string | null;
+  Entrada1?: string | null;
+  Saida1?: string | null;
+  Entrada1Original?: string | null;
+  Saida1Original?: string | null;
+  AlteracoesFonteDados?: Array<{
+    Tipo: number;
+    Coluna: string;
+    ColunaTroca: string | null;
+    Motivo: string | null;
+    DescarteBatidaMovida: boolean;
+  }>;
+}
 
 interface TimeAdjustmentRequest {
   id: string;
@@ -32,6 +69,7 @@ interface TimeAdjustmentRequest {
   status: "pending" | "approved" | "rejected";
   createdAt: string;
   type?: string;
+  raw: SecullumSolicitacaoRaw;
 }
 
 export default function TimeAdjustmentRequestsListScreen() {
@@ -41,6 +79,8 @@ export default function TimeAdjustmentRequestsListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);
   const [showPending, setShowPending] = useState(true);
+  const [rejectTarget, setRejectTarget] = useState<TimeAdjustmentRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   // Fetch time adjustment requests
   const {
@@ -57,22 +97,35 @@ export default function TimeAdjustmentRequestsListScreen() {
   const rejectMutation = useSecullumRejectRequest();
 
   // Transform and filter requests
-  const requests = useMemo(() => {
+  const requests = useMemo<TimeAdjustmentRequest[]>(() => {
     if (!requestsData?.data || !Array.isArray(requestsData.data)) return [];
 
-    let items = requestsData.data.map((request: any, index: number) => ({
-      id: request.id || `request-${index}`,
-      employeeName: request.employeeName || request.NomeFuncionario || "Funcionário não identificado",
-      date: request.date || request.Data || "",
-      originalEntry: request.originalEntry || request.EntradaOriginal,
-      requestedEntry: request.requestedEntry || request.EntradaSolicitada,
-      originalExit: request.originalExit || request.SaidaOriginal,
-      requestedExit: request.requestedExit || request.SaidaSolicitada,
-      justification: request.justification || request.Justificativa || "",
-      status: request.status || request.Status || "pending",
-      createdAt: request.createdAt || request.DataCriacao || "",
-      type: request.type || request.Tipo || "adjustment",
-    }));
+    // Map Secullum's `Estado` to our UI status. 0=pending, 1=approved, 2=rejected.
+    const estadoToStatus = (estado: number): TimeAdjustmentRequest["status"] => {
+      if (estado === 1) return "approved";
+      if (estado === 2) return "rejected";
+      return "pending";
+    };
+
+    let items: TimeAdjustmentRequest[] = (requestsData.data as SecullumSolicitacaoRaw[]).map(
+      (request, index) => ({
+        id: request.Id != null ? String(request.Id) : `request-${index}`,
+        employeeName:
+          request.FuncionarioNome || request.SolicitanteNome || "Funcionário não identificado",
+        date: request.Data || "",
+        // Secullum exposes Entrada1Original (the recorded clock-in) and Entrada1 (the
+        // employee's requested change). Same pattern for Saida1.
+        originalEntry: request.Entrada1Original ?? undefined,
+        requestedEntry: request.Entrada1 ?? undefined,
+        originalExit: request.Saida1Original ?? undefined,
+        requestedExit: request.Saida1 ?? undefined,
+        justification: request.Justificativa || request.Observacoes || "",
+        status: estadoToStatus(request.Estado),
+        createdAt: request.DataSolicitacao || "",
+        type: request.TipoDescricao,
+        raw: request,
+      })
+    );
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -99,16 +152,17 @@ export default function TimeAdjustmentRequestsListScreen() {
     }
   }, [refetch]);
 
-  // Handle approve request
+  // Handle approve request — sends the Secullum-required Versao + AlteracoesFonteDados
+  // + TipoSolicitacao (mirrors `Tipo` on the request payload).
+  // Success/error feedback comes from the axios client's write-method
+  // auto-toast (see api-client/axiosClient.ts), so we don't show our own
+  // Alert here to avoid a duplicate notification.
   const handleApprove = useCallback((request: TimeAdjustmentRequest) => {
     Alert.alert(
       "Aprovar Requisição",
       `Deseja aprovar a requisição de ${request.employeeName}?`,
       [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
+        { text: "Cancelar", style: "cancel" },
         {
           text: "Aprovar",
           style: "default",
@@ -116,12 +170,15 @@ export default function TimeAdjustmentRequestsListScreen() {
             try {
               await approveMutation.mutateAsync({
                 requestId: request.id,
-                data: {},
+                data: {
+                  Versao: request.raw.Versao,
+                  AlteracoesFonteDados: request.raw.AlteracoesFonteDados ?? [],
+                  TipoSolicitacao: request.raw.Tipo ?? 0,
+                },
               });
-              Alert.alert("Sucesso", "Requisição aprovada com sucesso!");
               setSelectedRequest(null);
             } catch (_error) {
-              Alert.alert("Erro", "Não foi possível aprovar a requisição. Tente novamente.");
+              // Error toast is shown by axios interceptor — nothing to do here.
             }
           },
         },
@@ -129,35 +186,39 @@ export default function TimeAdjustmentRequestsListScreen() {
     );
   }, [approveMutation]);
 
-  // Handle reject request
+  // Open the reject dialog — Secullum requires a Motivo (free text).
   const handleReject = useCallback((request: TimeAdjustmentRequest) => {
-    Alert.alert(
-      "Rejeitar Requisição",
-      `Deseja rejeitar a requisição de ${request.employeeName}?`,
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
+    setRejectTarget(request);
+    setRejectReason("");
+  }, []);
+
+  // Confirm reject — sends Versao + Motivo + TipoSolicitacao.
+  // Success/error feedback is owned by the axios interceptor (see
+  // api-client/axiosClient.ts). The local Alert that previously fired here
+  // duplicated the toast.
+  const confirmReject = useCallback(async () => {
+    if (!rejectTarget) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      Alert.alert("Motivo obrigatório", "Informe o motivo da rejeição.");
+      return;
+    }
+    try {
+      await rejectMutation.mutateAsync({
+        requestId: rejectTarget.id,
+        data: {
+          Versao: rejectTarget.raw.Versao,
+          Motivo: reason,
+          TipoSolicitacao: rejectTarget.raw.Tipo ?? 0,
         },
-        {
-          text: "Rejeitar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await rejectMutation.mutateAsync({
-                requestId: request.id,
-                data: {},
-              });
-              Alert.alert("Sucesso", "Requisição rejeitada com sucesso!");
-              setSelectedRequest(null);
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível rejeitar a requisição. Tente novamente.");
-            }
-          },
-        },
-      ]
-    );
-  }, [rejectMutation]);
+      });
+      setRejectTarget(null);
+      setRejectReason("");
+      setSelectedRequest(null);
+    } catch (_error) {
+      // Error toast is shown by axios interceptor — nothing to do here.
+    }
+  }, [rejectMutation, rejectTarget, rejectReason]);
 
   // Format date display
   const formatDateDisplay = (dateStr: string) => {
@@ -389,6 +450,55 @@ export default function TimeAdjustmentRequestsListScreen() {
           showsVerticalScrollIndicator={false}
         />
       </View>
+
+      <Dialog
+        open={!!rejectTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectTarget(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar Requisição</DialogTitle>
+            <DialogDescription>
+              {rejectTarget
+                ? `Informe o motivo da rejeição para a requisição de ${rejectTarget.employeeName}.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <View style={{ paddingVertical: spacing.sm }}>
+            <Textarea
+              value={rejectReason}
+              onChangeText={setRejectReason}
+              placeholder="Motivo da rejeição..."
+              numberOfLines={4}
+            />
+          </View>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onPress={() => {
+                setRejectTarget(null);
+                setRejectReason("");
+              }}
+            >
+              <ThemedText>Cancelar</ThemedText>
+            </Button>
+            <Button
+              variant="destructive"
+              onPress={confirmReject}
+              disabled={rejectMutation.isPending}
+            >
+              <ThemedText style={{ color: "#fff" }}>
+                {rejectMutation.isPending ? "Rejeitando..." : "Rejeitar"}
+              </ThemedText>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ThemedView>
   );
 }

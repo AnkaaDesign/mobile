@@ -274,6 +274,16 @@ export const useSecullumRejectRequest = () => {
   });
 };
 
+// Justifications dropdown source for the time-card cell context menu.
+// Cached for 1 hour — codes change rarely.
+export const useSecullumJustifications = () => {
+  return useQuery({
+    queryKey: [...secullumKeys.all, "justifications"],
+    queryFn: () => secullumService.getJustifications(),
+    staleTime: 60 * 60 * 1000,
+  });
+};
+
 // Sync Management hooks
 export const useSecullumSyncStatus = () => {
   return useQuery({

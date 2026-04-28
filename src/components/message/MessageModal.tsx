@@ -238,7 +238,7 @@ export function MessageModal({
 
             {/* Message Body */}
             <ScrollView
-              style={styles.body}
+              style={[styles.body, { backgroundColor: colors.background }]}
               contentContainerStyle={[styles.bodyContent, hasFooterDecorator && { paddingBottom: 0 }]}
               showsVerticalScrollIndicator={true}
             >

@@ -1,37 +1,64 @@
 import React from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image, StyleSheet, useWindowDimensions, type ImageSourcePropType } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Rect, Text as SvgText, Polygon } from "react-native-svg";
+import { spacing } from "@/constants/design-system";
 import type { DecoratorBlock } from "./types";
 
-// Aspect ratios from original image dimensions
+// Aspect ratios from current image dimensions (synced with web/public/*.webp).
+// header-logo is cropped to its logo region for a balanced banner on narrow widths.
 const ASPECTS = {
-  'header-logo': 2481 / 458,
-  'header-logo-stripes': 2481 / 252,
+  'header-logo': 575 / 226,
+  'header-logo-stripes': 2482 / 226,
   'footer-wave-dark': 2488 / 412,
   'footer-wave-logo': 2480 / 502,
   'footer-diagonal-stripes': 2481 / 252,
   'footer-wave-gold': 2481 / 550,
-  'footer-geometric': 2480 / 545,
+  'footer-geometric': 2474 / 484,
 };
 
 function DecoratorImage({ variant }: { variant: keyof typeof ASPECTS }) {
-  const sources: Record<string, ReturnType<typeof require>> = {
-    'header-logo': require("../../../../assets/header-logo.webp"),
-    'header-logo-stripes': require("../../../../assets/header-logo-stripes.webp"),
-    'footer-wave-dark': require("../../../../assets/footer-wave-dark.webp"),
-    'footer-wave-logo': require("../../../../assets/footer-wave-logo.webp"),
-    'footer-diagonal-stripes': require("../../../../assets/footer-diagonal-stripes.webp"),
-    'footer-wave-gold': require("../../../../assets/footer-wave-gold.webp"),
-    'footer-geometric': require("../../../../assets/footer-geometric.webp"),
+  const { width: screenWidth } = useWindowDimensions();
+  // PNG (converted from webp via dwebp). PNG goes through iOS ImageIO which
+  // reliably preserves the alpha channel, unlike libwebp via expo-image which
+  // pre-multiplies alpha on iOS+New Architecture and collapses transparent
+  // designs to solid colors. The PNG keeps full transparency identical to web.
+  const sources: Record<string, ImageSourcePropType> = {
+    'header-logo': require("../../../../assets/header-logo.png"),
+    'header-logo-stripes': require("../../../../assets/header-logo-stripes.png"),
+    'footer-wave-dark': require("../../../../assets/footer-wave-dark.png"),
+    'footer-wave-logo': require("../../../../assets/footer-wave-logo.png"),
+    'footer-diagonal-stripes': require("../../../../assets/footer-diagonal-stripes.png"),
+    'footer-wave-gold': require("../../../../assets/footer-wave-gold.png"),
+    'footer-geometric': require("../../../../assets/footer-geometric.png"),
   };
+
+  // MessageModal contentContainer adds spacing.md (16px) padding on each side.
+  // The card spans (screenWidth - 32px) and the body has no horizontal padding,
+  // so decorators render edge-to-edge inside the card.
+  const cardWidth = screenWidth - spacing.md * 2;
+  const aspect = ASPECTS[variant];
+  const isHeader = variant.startsWith('header-');
+  // Headers are short banners — cap height so the logo doesn't dominate the card
+  // on narrow screens. Footers stretch to full width like web.
+  const HEADER_MAX_HEIGHT = 75;
+  const naturalHeight = cardWidth / aspect;
+  let imageWidth = cardWidth;
+  let imageHeight = naturalHeight;
+  if (isHeader && naturalHeight > HEADER_MAX_HEIGHT) {
+    imageHeight = HEADER_MAX_HEIGHT;
+    imageWidth = imageHeight * aspect;
+  }
+
+  // No white backing — match web exactly. The image's transparent areas show
+  // the body background. For headers we use 'contain' so the logo keeps its
+  // proportion when capped; for footers 'stretch' fills the full card width.
   return (
-    <View style={[styles.imageContainer, { aspectRatio: ASPECTS[variant] }]}>
-      <Image
-        source={sources[variant]}
-        style={styles.fullWidthImage}
-        resizeMode="cover"
-      />
-    </View>
+    <Image
+      source={sources[variant]}
+      style={{ width: imageWidth, height: imageHeight }}
+      resizeMode={isHeader ? "contain" : "stretch"}
+      fadeDuration={0}
+    />
   );
 }
 
@@ -276,7 +303,9 @@ export function DecoratorBlockComponent({ block }: DecoratorBlockComponentProps)
     case 'side-right-corner':
       return <SideRightCorner />;
     default:
-      return <View style={styles.fallbackDecorator} />;
+      // Match web behavior: render nothing for unknown variants
+      // rather than showing a fallback color rectangle.
+      return null;
   }
 }
 
@@ -293,18 +322,5 @@ const styles = StyleSheet.create({
     width: '100%',
     minHeight: 80,
     overflow: 'hidden',
-  },
-  imageContainer: {
-    width: '100%',
-    overflow: 'hidden',
-  },
-  fullWidthImage: {
-    width: '100%',
-    height: '100%',
-  },
-  fallbackDecorator: {
-    width: '100%',
-    height: 40,
-    backgroundColor: '#0c884e',
   },
 });
