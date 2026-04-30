@@ -28,6 +28,7 @@ import { useTheme } from "@/lib/theme";
 import { useFileViewer } from "@/components/file";
 import { useKeyboardAwareForm } from "@/contexts/KeyboardAwareFormContext";
 import { getCustomers } from "@/api-client/customer";
+import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { ONLINE_API_URL } from "@/constants/api";
 
@@ -517,6 +518,38 @@ export function StepQuoteInfo({
                 </ThemedText>
                 <ThemedText style={styles.taskInfoValue}>
                   {task.truck.chassisNumber}
+                </ThemedText>
+              </View>
+            )}
+
+            {task.truck?.category && (
+              <View style={styles.taskInfoField}>
+                <ThemedText
+                  style={[
+                    styles.taskInfoLabel,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  Categoria
+                </ThemedText>
+                <ThemedText style={styles.taskInfoValue}>
+                  {TRUCK_CATEGORY_LABELS[task.truck.category as keyof typeof TRUCK_CATEGORY_LABELS] || task.truck.category}
+                </ThemedText>
+              </View>
+            )}
+
+            {task.truck?.implementType && (
+              <View style={styles.taskInfoField}>
+                <ThemedText
+                  style={[
+                    styles.taskInfoLabel,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  Implemento
+                </ThemedText>
+                <ThemedText style={styles.taskInfoValue}>
+                  {IMPLEMENT_TYPE_LABELS[task.truck.implementType as keyof typeof IMPLEMENT_TYPE_LABELS] || task.truck.implementType}
                 </ThemedText>
               </View>
             )}

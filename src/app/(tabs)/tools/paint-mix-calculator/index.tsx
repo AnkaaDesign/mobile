@@ -104,12 +104,14 @@ export default function PaintMixCalculatorScreen() {
   useScreenReady();
   const { colors } = useTheme();
 
-  // Fetch paint types with component items + price (virtual).
+  // Fetch paint types with component items + price (virtual) + category so we
+  // can filter each slot's combobox to its own category (Endurecedor, Diluente,
+  // Verniz). Paint type filtering is already implicit via componentItems.
   const paintTypesQuery = usePaintTypes({
     orderBy: { name: "asc" },
     include: {
       componentItems: {
-        include: { price: true },
+        include: { price: true, category: true },
       },
     },
   } as any);
@@ -220,16 +222,28 @@ export default function PaintMixCalculatorScreen() {
     [totalCost, totalLiters],
   );
 
-  // Combobox option lists (sorted: keyword matches first).
+  // Combobox option lists. Items are filtered by the slot's categoryNames
+  // (mirroring the paint formula form's category filter, on top of the
+  // paint-type intersection already applied by componentItems) and then sorted
+  // with keyword matches first.
   const slotOptions = useMemo(() => {
+    const presetSlots = findPresetForPaintType(selectedPaintType?.name).slots;
     return watchedSlots.map((slot) => {
-      const slotKeywords = slot.id
-        ? findPresetForPaintType(selectedPaintType?.name).slots.find(
-            (s) => s.id === slot.id,
-          )?.itemNameKeywords ?? []
-        : [];
+      const presetSlot = presetSlots.find((s) => s.id === slot.id);
+      const slotKeywords = presetSlot?.itemNameKeywords ?? [];
+      const slotCategoryNames =
+        presetSlot?.categoryNames?.map((c) => c.toLowerCase()) ?? [];
 
-      const sorted = [...componentItems].sort((a, b) => {
+      const filtered =
+        slotCategoryNames.length === 0
+          ? componentItems
+          : componentItems.filter((it) => {
+              const cat = (it as any).category?.name;
+              if (!cat) return false;
+              return slotCategoryNames.includes(cat.toLowerCase());
+            });
+
+      const sorted = [...filtered].sort((a, b) => {
         const aMatch = slotKeywords.some((k) =>
           a.name.toLowerCase().includes(k),
         );

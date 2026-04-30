@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from "@/utils";
 import { generatePaymentText, generateGuaranteeText } from "@/utils/quote-text-generators";
 import { getFileUrl } from "@/utils/file-utils";
 import { computeConfigDiscount } from "@/utils/task-quote-calculations";
-import { DISCOUNT_TYPE_LABELS } from "@/constants/enum-labels";
+import { DISCOUNT_TYPE_LABELS, TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import { COMPANY_INFO, DIRECTOR_INFO, BRAND_COLORS } from "@/config/company";
@@ -63,6 +63,12 @@ interface BudgetPreviewProps {
       corporateName?: string;
       fantasyName?: string;
     };
+    truck?: {
+      plate?: string | null;
+      chassisNumber?: string | null;
+      category?: string | null;
+      implementType?: string | null;
+    } | null;
     responsibles?: { id: string; name?: string; role?: string }[];
   };
   selectedCustomers?: Map<string, any>;
@@ -71,18 +77,12 @@ interface BudgetPreviewProps {
 export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' }: BudgetPreviewProps) {
   const { colors } = useTheme();
 
-  const corporateName =
-    task?.customer?.corporateName ||
-    task?.customer?.fantasyName ||
-    "Cliente";
-  // Prefer the explicitly selected budget responsible from first customer config
+  // Prefer the explicitly selected budget responsible; otherwise default to the first task responsible
   const activeConfig = quote.customerConfigs?.[0];
   const selectedResponsible = activeConfig?.responsibleId
     ? task?.responsibles?.find((r: any) => r.id === activeConfig.responsibleId)
     : null;
-  const commercialRep = task?.responsibles?.find((r: any) => r.role === "COMMERCIAL");
   const contactName = selectedResponsible?.name
-    || commercialRep?.name
     || task?.responsibles?.[0]?.name
     || "";
   const budgetNumber = quote.budgetNumber
@@ -193,17 +193,29 @@ export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' 
 
           {/* Customer Info */}
           <View style={styles.section}>
-            <ThemedText style={styles.customerName}>
-              À {corporateName}
-            </ThemedText>
             {contactName ? (
-              <ThemedText style={styles.bodyText}>
-                Caro {contactName}
+              <ThemedText style={styles.customerName}>
+                À {contactName}
               </ThemedText>
             ) : null}
             <ThemedText style={styles.bodyText}>
-              Conforme solicitado, apresentamos nossa proposta de preço para
-              execução dos serviços abaixo descriminados.
+              Conforme solicitado, apresentamos nossa proposta de preço para execução dos serviços abaixo descriminados
+              {(() => {
+                const truckCategoryLabel = task?.truck?.category
+                  ? (TRUCK_CATEGORY_LABELS[task.truck.category as keyof typeof TRUCK_CATEGORY_LABELS] || task.truck.category)
+                  : null;
+                const truckImplementLabel = task?.truck?.implementType
+                  ? (IMPLEMENT_TYPE_LABELS[task.truck.implementType as keyof typeof IMPLEMENT_TYPE_LABELS] || task.truck.implementType)
+                  : null;
+                const parts: string[] = [];
+                if (task?.serialNumber) parts.push(` nº de série: ${task.serialNumber}`);
+                if (task?.truck?.plate) parts.push(` placa: ${task.truck.plate}`);
+                if (task?.truck?.chassisNumber) parts.push(` chassi: ${task.truck.chassisNumber}`);
+                if (truckCategoryLabel) parts.push(` categoria: ${truckCategoryLabel}`);
+                if (truckImplementLabel) parts.push(` implemento: ${truckImplementLabel}`);
+                return parts.length ? ` no veículo${parts.join(',')}` : '';
+              })()}
+              .
             </ThemedText>
           </View>
         </>

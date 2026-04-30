@@ -77,13 +77,19 @@ function maskHHMM(raw: string): string {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
+// Convert a multiplier (1.5) to a "+50%" label for display.
+function formatBonusPercent(multiplier: number): string {
+  const pct = Math.round((multiplier - 1) * 100);
+  return `+${pct}%`;
+}
+
 const DAY_TYPE_OPTIONS: ComboboxOption[] = (
   Object.keys(OVERTIME_DAY_TYPE_LABELS) as OvertimeDayType[]
 ).map((key) => ({
   value: key,
-  label: `${OVERTIME_DAY_TYPE_LABELS[key]} (${OVERTIME_MULTIPLIERS[key]
-    .toFixed(2)
-    .replace(".", ",")}×)`,
+  label: `${OVERTIME_DAY_TYPE_LABELS[key]} (${formatBonusPercent(
+    OVERTIME_MULTIPLIERS[key],
+  )})`,
 }));
 
 export default function OvertimeCostCalculatorScreen() {
@@ -512,9 +518,9 @@ export default function OvertimeCostCalculatorScreen() {
                               style={[styles.rowTotalSub, { color: colors.mutedForeground }]}
                             >
                               {formatDecimalHoursToHHMM(hoursDecimal)} ·{" "}
-                              {OVERTIME_MULTIPLIERS[row.dayType]
-                                .toFixed(2)
-                                .replace(".", ",")}×
+                              {formatBonusPercent(
+                                OVERTIME_MULTIPLIERS[row.dayType],
+                              )}
                             </ThemedText>
                           )}
                         </View>

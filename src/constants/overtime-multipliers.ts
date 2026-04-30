@@ -16,9 +16,9 @@ export const OVERTIME_DAY_TYPE = {
 export type OvertimeDayType = (typeof OVERTIME_DAY_TYPE)[keyof typeof OVERTIME_DAY_TYPE];
 
 export const OVERTIME_MULTIPLIERS: Record<OvertimeDayType, number> = {
-  WEEKDAY: 1.6,
+  WEEKDAY: 1.5,
   SATURDAY: 2.0,
-  SUNDAY_HOLIDAY: 2.0,
+  SUNDAY_HOLIDAY: 2.5,
 };
 
 export const OVERTIME_DAY_TYPE_LABELS: Record<OvertimeDayType, string> = {

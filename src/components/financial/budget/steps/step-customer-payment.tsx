@@ -74,7 +74,9 @@ export function StepCustomerPayment({
   const paymentType = paymentConfig?.type ?? null;
   const useSpecificDate = !!paymentConfig?.specificDate;
 
-  // Default budget responsible to the first non-temp task responsible on mount
+  // Default budget responsible to the first non-temp task responsible on mount.
+  // shouldDirty: true so the default is persisted on save (otherwise edit forms
+  // with a previously-null responsibleId would never write the default back).
   const hasAutoDefaulted = useRef(false);
   useEffect(() => {
     if (hasAutoDefaulted.current) return;
@@ -82,7 +84,7 @@ export function StepCustomerPayment({
       hasAutoDefaulted.current = true;
       const firstValid = taskResponsibles.find((r) => !r.id.startsWith("temp-"));
       if (firstValid) {
-        setValue(`${basePath}.responsibleId`, firstValid.id, { shouldDirty: false });
+        setValue(`${basePath}.responsibleId`, firstValid.id, { shouldDirty: true });
       }
     }
   }, [taskResponsibles, config?.responsibleId, setValue, basePath]);
