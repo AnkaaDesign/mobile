@@ -62,7 +62,6 @@ const ROUTE_MODULES = {
     { name: "recursos-humanos/avisos/index", title: "Advertências" },
     { name: "recursos-humanos/cargos/index", title: "Cargos" },
     { name: "recursos-humanos/feriados/index", title: "Feriados" },
-    { name: "recursos-humanos/ferias/index", title: "Férias" },
   ],
 
   admin: () => [
@@ -78,7 +77,6 @@ const ROUTE_MODULES = {
     { name: "meu-pessoal/index", title: "Meu Pessoal" },
     { name: "meu-pessoal/advertencias", title: "Avisos" },
     { name: "meu-pessoal/emprestimos", title: "Empréstimos" },
-    { name: "meu-pessoal/ferias", title: "Férias" },
   ],
 };
 

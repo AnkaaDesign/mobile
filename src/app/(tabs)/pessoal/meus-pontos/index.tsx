@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint } from "@tabler/icons-react-native";
+import { router } from "expo-router";
+import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -252,6 +253,17 @@ export default function MeusPontosScreen() {
               <IconChevronRight size={20} color={colors.foreground} />
             </TouchableOpacity>
           </View>
+
+          {/* Justificar Ausência shortcut */}
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() =>
+              router.push("/(tabs)/pessoal/meus-pontos/justificar-ausencia" as any)
+            }
+            accessibilityLabel="Justificar Ausência"
+          >
+            <IconCalendarOff size={20} color={colors.foreground} />
+          </TouchableOpacity>
 
           {/* Column Visibility Button - matches month selector height */}
           <TouchableOpacity

@@ -34,13 +34,6 @@ export class TeamStaffService {
     return response.data;
   }
 
-  async getTeamStaffVacations(params?: any): Promise<any> {
-    const response = await apiClient.get<any>(`${this.basePath}/vacations`, {
-      params,
-    });
-    return response.data;
-  }
-
   async getTeamStaffEpis(params?: any): Promise<any> {
     const response = await apiClient.get<any>(`${this.basePath}/epis`, {
       params,
@@ -76,7 +69,6 @@ export const teamStaffService = new TeamStaffService();
 export const getTeamStaffUsers = (params?: any) => teamStaffService.getTeamStaffUsers(params);
 export const getTeamStaffCalculations = (params?: any) => teamStaffService.getTeamStaffCalculations(params);
 export const getTeamStaffBorrows = (params?: any) => teamStaffService.getTeamStaffBorrows(params);
-export const getTeamStaffVacations = (params?: any) => teamStaffService.getTeamStaffVacations(params);
 export const getTeamStaffEpis = (params?: any) => teamStaffService.getTeamStaffEpis(params);
 export const getTeamStaffActivities = (params?: any) => teamStaffService.getTeamStaffActivities(params);
 export const getTeamStaffWarnings = (params?: any) => teamStaffService.getTeamStaffWarnings(params);

@@ -29,7 +29,6 @@ import { routeToMobilePath } from '@/utils/route-mapper';
 // import { showToast } from "@/components/ui/toast";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 import {
-  VacationsTable,
   WarningsTable,
   BorrowsTable,
   PpeDeliveriesTable,
@@ -559,7 +558,6 @@ export default function EmployeeDetailScreen() {
         </Card>
 
         {/* Relation Tables */}
-        <VacationsTable employee={employee} maxHeight={400} />
         <WarningsTable employee={employee} maxHeight={400} />
         <BorrowsTable employee={employee} maxHeight={400} />
         <PpeDeliveriesTable employee={employee} maxHeight={400} />

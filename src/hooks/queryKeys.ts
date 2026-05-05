@@ -37,7 +37,6 @@ import type {
   SupplierGetManyFormData,
   TaskGetManyFormData,
   UserGetManyFormData,
-  VacationGetManyFormData,
   NotificationGetManyFormData,
   SeenNotificationGetManyFormData,
   AirbrushingGetManyFormData,
@@ -737,27 +736,6 @@ export const holidayKeys = {
   byYear: (year: number, filters?: any) => (filters ? (["holidays", "byYear", year, filters] as const) : (["holidays", "byYear", year] as const)),
   byType: (type: string, filters?: any) => (filters ? (["holidays", "byType", type, filters] as const) : (["holidays", "byType", type] as const)),
   upcoming: (filters?: any) => (filters ? (["holidays", "upcoming", filters] as const) : (["holidays", "upcoming"] as const)),
-};
-
-// =====================================================
-// Vacation Query Keys
-// =====================================================
-
-export const vacationKeys = {
-  all: ["vacations"] as const,
-  lists: () => ["vacations", "list"] as const,
-  list: (filters?: Partial<VacationGetManyFormData>) => (filters ? (["vacations", "list", filters] as const) : (["vacations", "list"] as const)),
-  details: () => ["vacations", "detail"] as const,
-  detail: (id: string, include?: any) => (include ? (["vacations", "detail", id, include] as const) : (["vacations", "detail", id] as const)),
-  byIds: (ids: string[]) => ["vacations", "byIds", ids] as const,
-
-  // Specialized queries
-  byUser: (userId: string, filters?: Partial<VacationGetManyFormData>) =>
-    filters ? (["vacations", "byUser", userId, filters] as const) : (["vacations", "byUser", userId] as const),
-
-  // Status queries
-  active: (filters?: Partial<VacationGetManyFormData>) => (filters ? (["vacations", "active", filters] as const) : (["vacations", "active"] as const)),
-  upcoming: (filters?: Partial<VacationGetManyFormData>) => (filters ? (["vacations", "upcoming", filters] as const) : (["vacations", "upcoming"] as const)),
 };
 
 // =====================================================

@@ -304,7 +304,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     children: [
       { id: "membros-equipe", title: "Membros", icon: "users", path: "/meu-pessoal/usuarios" },
       { id: "emprestimos-equipe", title: "Empréstimos", icon: "loan", path: "/meu-pessoal/emprestimos" },
-      { id: "ferias-equipe", title: "Férias", icon: "calendarWeek", path: "/meu-pessoal/ferias" },
       { id: "advertencias-equipe", title: "Advertências", icon: "alertTriangle", path: "/meu-pessoal/advertencias" },
       { id: "epis-equipe", title: "Entregas de EPI", icon: "helmet", path: "/meu-pessoal/epis" },
       { id: "movimentacoes-equipe", title: "Movimentações", icon: "activity", path: "/meu-pessoal/movimentacoes" },
@@ -363,13 +362,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         path: "/pessoal/minhas-advertencias",
         requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.PLOTTING], // NOT for DESIGNER (matches web)
         children: [{ id: "minhas-advertencias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
-      },
-      {
-        id: "minhas-ferias",
-        title: "Minhas Férias",
-        icon: "calendarWeek",
-        path: "/pessoal/minhas-ferias",
-        children: [{ id: "minhas-ferias-detalhes", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
       },
       {
         id: "minhas-movimentacoes",
@@ -603,16 +595,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         children: [
           { id: "feriados-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/feriados/cadastrar" },
           { id: "feriados-editar", title: "Editar", icon: "edit", path: "/recursos-humanos/feriados/editar/:id", isDynamic: true },
-        ],
-      },
-      {
-        id: "ferias",
-        title: "Ferias",
-        icon: "calendarWeek",
-        path: "/recursos-humanos/ferias",
-        children: [
-          { id: "ferias-cadastrar", title: "Cadastrar", icon: "plus", path: "/recursos-humanos/ferias/cadastrar" },
-          { id: "ferias-detalhes", title: "Detalhes", icon: "eye", path: "/recursos-humanos/ferias/detalhes/:id", isDynamic: true },
         ],
       },
       // { id: "folha-de-pagamento", title: "Folha de Pagamento", icon: "payroll", path: "/recursos-humanos/folha-de-pagamento" }, // Temporarily hidden for testing
@@ -891,15 +873,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
     requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
   },
 
-  // Minhas Férias - Direct access for DESIGNER only (at root level like web)
-  {
-    id: "minhas-ferias-direct",
-    title: "Minhas Férias",
-    icon: "calendarWeek",
-    path: "/pessoal/minhas-ferias",
-    requiredPrivilege: [SECTOR_PRIVILEGES.DESIGNER],
-    children: [{ id: "minhas-ferias-detalhes-direct", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
-  },
 
   // Minhas Mensagens - Direct access for DESIGNER only (at root level like web)
   {

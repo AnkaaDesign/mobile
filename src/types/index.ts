@@ -39,7 +39,6 @@ export * from "./truck";
 export * from "./layout";
 export * from "./layoutSection";
 export * from "./user";
-export * from "./vacation";
 export * from "./dashboard";
 export * from "./auth";
 export * from "./bonus";

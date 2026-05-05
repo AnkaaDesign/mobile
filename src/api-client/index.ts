@@ -77,7 +77,6 @@ export * from "./truck";
 export * from "./layout";
 export * from "./services/layoutSection";
 export * from "./user";
-export * from "./vacation";
 export * from "./dashboard";
 export * from "./server";
 export * from "./services/bonus";

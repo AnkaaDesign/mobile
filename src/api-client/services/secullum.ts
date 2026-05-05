@@ -275,4 +275,64 @@ export const secullumService = {
 
   // User mapping sync
   syncUserMapping: (params?: { dryRun?: boolean }) => apiClient.post<{ success: boolean; summary: any; details: any }>("/integrations/secullum/sync-user-mapping", params),
+
+  // =====================
+  // Solicitação de Ausência (employee self-service)
+  // Routes live under /personal because they're scoped to the authenticated user.
+  // =====================
+
+  getMyMissingDays: (params: { startDate: string; endDate: string }) =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data?: Array<{
+        date: string;
+        weekdayPt: string;
+        saldo?: string | null;
+        totalFaltas?: string | null;
+        existePeriodoEncerrado: boolean;
+      }>;
+    }>("/personal/my-missing-days", { params }),
+
+  getMyJustificativas: () =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data: Array<{
+        id: number;
+        nomeCompleto: string;
+        exigirFotoAtestado: boolean;
+        naoPermitirFuncionariosUtilizar: boolean;
+      }>;
+    }>("/personal/my-secullum-justificativas"),
+
+  getMySolicitacaoByDate: (date: string) =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data?: {
+        data: string;
+        funcionarioId: number;
+        justificativaId: number | null;
+        tipo: number;
+        observacoes: string | null;
+        temFoto: boolean;
+        registroPendente: boolean;
+        existePeriodoEncerrado: boolean;
+        tipoAusencia: number;
+        dataSolicitacao: string | null;
+      } | null;
+    }>(`/personal/my-secullum-solicitacoes/${date}`),
+
+  createMyJustifyAbsence: (body: {
+    date: string;
+    justificativaId: number;
+    observacoes?: string;
+    photoBase64?: string;
+  }) =>
+    apiClient.post<{
+      success: boolean;
+      message: string;
+      validationErrors?: Array<{ property: string; message: string; data: unknown }>;
+    }>("/personal/my-secullum-solicitacoes/ausencia", body),
 };

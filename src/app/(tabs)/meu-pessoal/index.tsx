@@ -65,14 +65,6 @@ export default function MeuPessoalScreen() {
       available: true,
     },
     {
-      id: "vacations",
-      title: "Férias",
-      description: "Visualize as férias da equipe",
-      icon: <IconCalendar size={24} color={colors.primary} />,
-      route: "/(tabs)/meu-pessoal/ferias",
-      available: true,
-    },
-    {
       id: "warnings",
       title: "Advertências",
       description: "Advertências dos colaboradores",

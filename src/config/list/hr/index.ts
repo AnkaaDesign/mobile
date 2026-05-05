@@ -1,7 +1,6 @@
 export { bonusesListConfig } from './bonuses'
 export { employeesListConfig } from './employees'
 export { warningsListConfig } from './warnings'
-export { vacationsListConfig } from './vacations'
 export { positionsListConfig } from './positions'
 export { ppeDeliveriesListConfig } from './ppe-deliveries'
 export { ppeSchedulesListConfig } from './ppe-schedules'

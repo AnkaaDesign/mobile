@@ -66,8 +66,6 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
         return routes.humanResources.positions.details(entityId);
       case CHANGE_LOG_ENTITY_TYPE.WARNING:
         return routes.humanResources.warnings.details(entityId);
-      case CHANGE_LOG_ENTITY_TYPE.VACATION:
-        return routes.humanResources.vacations.details(entityId);
 
       // Production
       case CHANGE_LOG_ENTITY_TYPE.TASK:

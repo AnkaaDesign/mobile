@@ -88,7 +88,6 @@ export * from "./task";
 export * from "./truck";
 export * from "./layout";
 export * from "./user";
-export * from "./vacation";
 export * from "./dashboard";
 export * from "./auth";
 export * from "./server";

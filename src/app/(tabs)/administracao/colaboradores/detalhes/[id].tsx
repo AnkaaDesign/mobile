@@ -21,7 +21,6 @@ import {
   PpeSizesCard,
   LoginInfoCard,
   ProfessionalInfoCard,
-  VacationsTable,
   WarningsTable,
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
@@ -208,7 +207,6 @@ export default function EmployeeDetailsScreen() {
           <PpeSizesCard employee={employee} />
 
           {/* Relation Tables */}
-          <VacationsTable employee={employee} maxHeight={400} />
           <WarningsTable employee={employee} maxHeight={400} />
           <PpeDeliveriesTable employee={employee} maxHeight={400} />
 

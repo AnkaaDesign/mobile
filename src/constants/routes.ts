@@ -235,13 +235,6 @@ export const routes = {
     timeClock: {
       root: "/recursos-humanos/controle-ponto",
     },
-    vacations: {
-      calendar: "/recursos-humanos/ferias/calendario",
-      create: "/recursos-humanos/ferias/cadastrar",
-      details: (id: string) => `/recursos-humanos/ferias/detalhes/${id}`,
-      edit: (id: string) => `/recursos-humanos/ferias/editar/${id}`,
-      root: "/recursos-humanos/ferias",
-    },
     warnings: {
       create: "/recursos-humanos/advertencias/cadastrar",
       details: (id: string) => `/recursos-humanos/advertencias/detalhes/${id}`,
@@ -418,10 +411,6 @@ export const routes = {
       details: (sectorId: string, id: string) => `/meu-pessoal/emprestimos/${sectorId}/detalhes/${id}`,
       root: (sectorId: string) => `/meu-pessoal/emprestimos/${sectorId}`,
     },
-    ferias: {
-      details: (sectorId: string, id: string) => `/meu-pessoal/ferias/${sectorId}/detalhes/${id}`,
-      root: (sectorId: string) => `/meu-pessoal/ferias/${sectorId}`,
-    },
     root: "/meu-pessoal",
   },
 
@@ -429,7 +418,6 @@ export const routes = {
   myTeam: {
     borrows: "/meu-pessoal/emprestimos",
     root: "/meu-pessoal",
-    vacations: "/meu-pessoal/ferias",
     warnings: "/meu-pessoal/avisos",
   },
 
@@ -529,10 +517,6 @@ export const routes = {
       notifications: "/pessoal/preferencias/notificacoes",
       privacy: "/pessoal/preferencias/privacidade",
       theme: "/pessoal/preferencias/tema",
-    },
-    myVacations: {
-      details: (id: string) => `/pessoal/ferias/detalhes/${id}`,
-      root: "/pessoal/ferias",
     },
     myPpes: {
       details: (id: string) => `/pessoal/meus-epis/detalhes/${id}`,

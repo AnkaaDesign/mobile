@@ -557,3 +557,62 @@ export const useSecullumHorarioById = (id: number | string, options?: { enabled?
     enabled: options?.enabled !== false && !!id,
   });
 };
+
+// =====================
+// Justificar Ausência (Solicitação de Ausência)
+// =====================
+
+const myAbsenceKeys = {
+  missingDays: (params: { startDate: string; endDate: string }) =>
+    [...secullumKeys.all, "my-missing-days", params] as const,
+  justificativas: () => [...secullumKeys.all, "my-justificativas"] as const,
+  existing: (date: string) => [...secullumKeys.all, "my-solicitacao", date] as const,
+};
+
+export const useMyMissingDays = (
+  params: { startDate: string; endDate: string },
+  options?: { enabled?: boolean },
+) => {
+  return useQuery({
+    queryKey: myAbsenceKeys.missingDays(params),
+    queryFn: () => secullumService.getMyMissingDays(params),
+    enabled: options?.enabled !== false && !!params.startDate && !!params.endDate,
+    staleTime: 60 * 1000, // 1 minute — batidas can change frequently
+  });
+};
+
+export const useMyJustificativas = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: myAbsenceKeys.justificativas(),
+    queryFn: () => secullumService.getMyJustificativas(),
+    enabled: options?.enabled !== false,
+    staleTime: 30 * 60 * 1000, // 30 minutes — justification list barely changes
+  });
+};
+
+export const useMyExistingSolicitacao = (date: string, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: myAbsenceKeys.existing(date),
+    queryFn: () => secullumService.getMySolicitacaoByDate(date),
+    enabled: options?.enabled !== false && !!date,
+    staleTime: 30 * 1000,
+  });
+};
+
+export const useCreateMyJustifyAbsence = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      date: string;
+      justificativaId: number;
+      observacoes?: string;
+      photoBase64?: string;
+    }) => secullumService.createMyJustifyAbsence(body),
+    onSuccess: (_data, variables) => {
+      // Refresh missing-days list, the just-submitted date, and any calculations cache.
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-missing-days"] });
+      queryClient.invalidateQueries({ queryKey: myAbsenceKeys.existing(variables.date) });
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-calculations"] });
+    },
+  });
+};

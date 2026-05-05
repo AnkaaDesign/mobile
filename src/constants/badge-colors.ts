@@ -20,7 +20,6 @@ import {
   USER_STATUS,
   EXTERNAL_WITHDRAWAL_STATUS,
   EXTERNAL_WITHDRAWAL_TYPE,
-  VACATION_STATUS,
   SERVICE_ORDER_STATUS,
   AIRBRUSHING_STATUS,
   CUT_STATUS,
@@ -426,17 +425,6 @@ export const ENTITY_BADGE_CONFIG = {
     [EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE]: "default" as BadgeVariant, // Neutral - returnable
     [EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE]: "red" as BadgeVariant,     // Entity-specific: use red
   },
-
-  // Vacation Status
-  VACATION: {
-    [VACATION_STATUS.PENDING]: "pending" as BadgeVariant,
-    [VACATION_STATUS.APPROVED]: "approved" as BadgeVariant,
-    [VACATION_STATUS.REJECTED]: "rejected" as BadgeVariant,
-    [VACATION_STATUS.CANCELLED]: "cancelled" as BadgeVariant,
-    [VACATION_STATUS.IN_PROGRESS]: "inProgress" as BadgeVariant,
-    [VACATION_STATUS.COMPLETED]: "completed" as BadgeVariant,
-  },
-
 
   // Service Order Status
   SERVICE_ORDER: {

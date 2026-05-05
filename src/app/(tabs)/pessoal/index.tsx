@@ -53,14 +53,6 @@ export default function PessoalScreen() {
       available: true,
     },
     {
-      id: "vacations",
-      title: "Minhas Férias",
-      description: "Acompanhe suas férias",
-      icon: <IconCalendar size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/minhas-ferias/listar",
-      available: true,
-    },
-    {
       id: "ppes",
       title: "Meus EPIs",
       description: "Equipamentos de proteção",

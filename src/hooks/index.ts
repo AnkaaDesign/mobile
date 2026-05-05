@@ -76,7 +76,6 @@ export {
   usePayrollComparison
 } from "./payrollDetails";
 export * from "./useHoliday";
-export * from "./useVacation";
 export * from "./useWarning";
 export * from "./useBorrow";
 export * from "./usePpe";
@@ -167,11 +166,9 @@ export * from "./use-suppliers-infinite-mobile";
 export * from "./use-tasks-infinite-mobile";
 export * from "./use-tasks-for-sector-leader";
 export * from "./use-users-infinite-mobile";
-export * from "./use-vacations-infinite-mobile";
 export * from "./use-warnings-infinite-mobile";
 export * from "./use-my-warnings-infinite-mobile";
 export * from "./use-team-warnings-infinite-mobile";
-export * from "./use-team-vacations-infinite-mobile";
 export * from "./use-order-schedules-infinite-mobile";
 export * from "./use-cuts-infinite-mobile";
 export * from "./use-airbrushings-infinite-mobile";
@@ -193,7 +190,6 @@ export * from "./useNfse";
 export * from "./use-team-staff-users";
 export * from "./use-team-staff-calculations";
 export * from "./use-team-staff-borrows-infinite-mobile";
-export * from "./use-team-staff-vacations-infinite-mobile";
 export * from "./use-team-staff-epis-infinite-mobile";
 export * from "./use-team-staff-activities-infinite-mobile";
 export * from "./use-team-staff-warnings-infinite-mobile";
