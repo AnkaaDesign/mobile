@@ -6,6 +6,10 @@
  * 2. Evidence collection (device, location, network)
  * 3. SHA-256 hash computation
  * 4. POST to backend /ppe/deliveries/:id/sign
+ *
+ * Each lifecycle event (BIOMETRIC_PROMPTED, BIOMETRIC_SUCCEEDED,
+ * BIOMETRIC_FAILED) is sent best-effort to /ppe/deliveries/:id/track for the
+ * server-side audit trail. Logging failures are intentionally swallowed.
  */
 
 import {
@@ -19,6 +23,29 @@ import { PpeDeliveryService } from '@/api-client/ppe';
 export interface SignDeliveryResult {
   signatureId: string;
   hmac: string;
+}
+
+type TrackedEvent =
+  | 'DOCUMENT_VIEWED'
+  | 'BIOMETRIC_PROMPTED'
+  | 'BIOMETRIC_SUCCEEDED'
+  | 'BIOMETRIC_FAILED'
+  | 'PDF_DOWNLOADED';
+
+/**
+ * Best-effort audit event logging. Never throws — audit failures must not
+ * block or surface to the user.
+ */
+export async function trackPpeDeliveryEvent(
+  deliveryId: string,
+  event: TrackedEvent,
+  metadata?: Record<string, any>,
+): Promise<void> {
+  try {
+    await PpeDeliveryService.trackDeliveryEvent(deliveryId, { event, metadata });
+  } catch {
+    // intentionally silent
+  }
 }
 
 /**
@@ -36,11 +63,21 @@ export async function signPpeDelivery(
   try {
     // Step 1: Biometric authentication
     onStep?.('requesting_biometric');
+    void trackPpeDeliveryEvent(deliveryId, 'BIOMETRIC_PROMPTED');
+
     const biometricResult = await authenticateWithBiometric();
 
     if (!biometricResult.success) {
+      void trackPpeDeliveryEvent(deliveryId, 'BIOMETRIC_FAILED', {
+        method: biometricResult.method,
+        reason: 'cancelled_or_failed',
+      });
       throw new Error('Autenticação biométrica cancelada ou falhou. Tente novamente.');
     }
+
+    void trackPpeDeliveryEvent(deliveryId, 'BIOMETRIC_SUCCEEDED', {
+      method: biometricResult.method,
+    });
 
     // Step 2: Collect evidence (device, location, network — in parallel)
     onStep?.('collecting_evidence');

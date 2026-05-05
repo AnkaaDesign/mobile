@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -48,7 +48,10 @@ import {
 } from "@tabler/icons-react-native";
 
 
-import { Skeleton } from "@/components/ui/skeleton";export default function PPEDeliveryDetailsScreen() {
+import { Skeleton } from "@/components/ui/skeleton";
+import { trackPpeDeliveryEvent } from "@/services/ppe-signing";
+
+export default function PPEDeliveryDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
@@ -56,6 +59,16 @@ import { Skeleton } from "@/components/ui/skeleton";export default function PPED
   const { update, delete: deleteAsync } = usePpeDeliveryMutations();
   const markAsDelivered = useMarkPpeDeliveryAsDelivered();
   const [refreshing, setRefreshing] = useState(false);
+  const viewTrackedRef = useRef<string | null>(null);
+
+  // Best-effort: log DOCUMENT_VIEWED once per (delivery × screen mount).
+  // The audit trail uses this to record when the colaborador opened the doc.
+  useEffect(() => {
+    const deliveryId = typeof id === "string" ? id : Array.isArray(id) ? id[0] : null;
+    if (!deliveryId || viewTrackedRef.current === deliveryId) return;
+    viewTrackedRef.current = deliveryId;
+    void trackPpeDeliveryEvent(deliveryId, "DOCUMENT_VIEWED");
+  }, [id]);
 
   // Check permissions
   const canManageWarehouse = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);

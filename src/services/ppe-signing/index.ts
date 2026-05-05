@@ -1,4 +1,4 @@
-export { signPpeDelivery } from './ppe-signing-service';
+export { signPpeDelivery, trackPpeDeliveryEvent } from './ppe-signing-service';
 export type { SignDeliveryResult } from './ppe-signing-service';
 export {
   authenticateWithBiometric,

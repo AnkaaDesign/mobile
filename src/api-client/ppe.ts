@@ -369,6 +369,34 @@ export class PpeDeliveryService {
     return response.data;
   }
 
+  /**
+   * Log a lifecycle event for the audit trail (DOCUMENT_VIEWED, BIOMETRIC_*, etc).
+   * Best-effort — fire-and-forget. Errors are swallowed by the caller.
+   */
+  static async trackDeliveryEvent(
+    deliveryId: string,
+    body: {
+      event:
+        | 'DOCUMENT_VIEWED'
+        | 'BIOMETRIC_PROMPTED'
+        | 'BIOMETRIC_SUCCEEDED'
+        | 'BIOMETRIC_FAILED'
+        | 'PDF_DOWNLOADED';
+      metadata?: Record<string, any> | null;
+    },
+  ): Promise<void> {
+    await apiClient.post(`/ppe/deliveries/${deliveryId}/track`, body);
+  }
+
+  static async getDeliveryAuditTrail(
+    deliveryId: string,
+  ): Promise<{ success: boolean; data: any[] }> {
+    const response = await apiClient.get<{ success: boolean; data: any[] }>(
+      `/ppe/deliveries/${deliveryId}/audit-trail`,
+    );
+    return response.data;
+  }
+
 }
 
 // =====================
