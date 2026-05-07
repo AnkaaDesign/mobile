@@ -86,6 +86,7 @@ export default function BonusSimulationScreen() {
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useUsers({
     where: {
       status: USER_STATUS.EFFECTED,
+      secullumEmployeeId: { not: null },
     },
     include: {
       position: true,

@@ -203,20 +203,6 @@ export const createColumnDefinitions = (): TableColumn[] => [
     ),
   },
   {
-    key: "vacationsCount",
-    header: "Férias",
-    align: "center",
-    sortable: false,
-    width: 0,
-    accessor: (employee: User) => (
-      <View style={styles.centerAlign}>
-        <Badge variant="success" size="sm">
-          {employee._count?.vacations || 0}
-        </Badge>
-      </View>
-    ),
-  },
-  {
     key: "birth",
     header: "Data de Nascimento",
     align: "left",
@@ -467,7 +453,6 @@ export const EmployeeTable = React.memo<EmployeeTableProps>(
         "position.hierarchy": 1.5,
         "sector.name": 1.7,
         tasksCount: 1.0,
-        vacationsCount: 1.0,
         exp1StartAt: 1.4,
         birth: 1.4,
         dismissedAt: 1.4,

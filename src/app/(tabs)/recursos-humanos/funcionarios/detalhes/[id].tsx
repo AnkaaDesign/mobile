@@ -16,7 +16,6 @@ import {
   IconRefresh,
   IconEdit,
   IconBriefcase,
-  IconCalendarCheck,
   IconAlertTriangle,
   IconClipboardList,
   IconShield,
@@ -123,17 +122,6 @@ export default function EmployeeDetailScreen() {
         },
       },
       ppeSize: true, // Full PPE size for detail display
-      vacations: {
-        select: {
-          id: true,
-          startDate: true,
-          endDate: true,
-          status: true,
-          createdAt: true,
-        },
-        orderBy: { startDate: "desc" },
-        take: 5,
-      },
       warningsCollaborator: {
         select: {
           id: true,
@@ -181,7 +169,6 @@ export default function EmployeeDetailScreen() {
         select: {
           tasks: true,
           createdTasks: true,
-          vacations: true,
           warningsCollaborator: true,
           borrows: true,
           ppeDeliveries: true,
@@ -345,32 +332,6 @@ export default function EmployeeDetailScreen() {
                 </ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
                   tarefas
-                </ThemedText>
-              </View>
-            </CardContent>
-          </Card>
-
-          <Card style={styles.statCard}>
-            <CardContent style={styles.statContent}>
-              <View
-                style={[
-                  styles.statIcon,
-                  {
-                    backgroundColor: isDark ? extendedColors.green[900] + "40" : extendedColors.green[100],
-                  },
-                ]}
-              >
-                <IconCalendarCheck
-                  size={20}
-                  color={isDark ? extendedColors.green[400] : extendedColors.green[600]}
-                />
-              </View>
-              <View style={styles.statInfo}>
-                <ThemedText style={StyleSheet.flatten([styles.statValue, { color: colors.foreground }])}>
-                  {employee._count?.vacations || 0}
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.statLabel, { color: colors.mutedForeground }])}>
-                  férias
                 </ThemedText>
               </View>
             </CardContent>

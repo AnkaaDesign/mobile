@@ -75,7 +75,6 @@ export const employeesListConfig: ListConfig<User> = {
         select: {
           activities: true,
           createdTasks: true,
-          vacations: true,
           warningsCollaborator: true,
           borrows: true,
           ppeDeliveries: true,
@@ -197,15 +196,6 @@ export const employeesListConfig: ListConfig<User> = {
         width: 1.0,
         align: 'center',
         render: (employee) => String((employee as any)._count?.createdTasks || 0),
-        format: 'badge',
-      },
-      {
-        key: 'vacationsCount',
-        label: 'FÉRIAS',
-        sortable: false,
-        width: 1.0,
-        align: 'center',
-        render: (employee) => String((employee as any)._count?.vacations || 0),
         format: 'badge',
       },
       {

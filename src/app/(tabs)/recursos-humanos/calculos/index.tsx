@@ -76,7 +76,8 @@ export default function CalculationsListScreen() {
           USER_STATUS.EXPERIENCE_PERIOD_2,
           USER_STATUS.EFFECTED
         ]
-      }
+      },
+      secullumEmployeeId: { not: null },
     },
     orderBy: { name: "asc" },
     take: 100,

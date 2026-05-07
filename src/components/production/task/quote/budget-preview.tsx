@@ -34,6 +34,7 @@ interface CustomerConfig {
   customPaymentText?: string | null;
   responsibleId?: string | null;
   generateInvoice?: boolean;
+  generateBankSlip?: boolean;
   orderNumber?: string | null;
 }
 

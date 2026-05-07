@@ -49,7 +49,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
   const { createAsync, updateAsync, createMutation, updateMutation } = useBonusMutations();
 
   const { data: users } = useUsers({
-    where: { status: USER_STATUS.EFFECTED },
+    where: { status: USER_STATUS.EFFECTED, secullumEmployeeId: { not: null } },
     orderBy: { name: "asc" },
     include: { position: true },
   });

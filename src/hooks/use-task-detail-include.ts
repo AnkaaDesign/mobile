@@ -210,6 +210,7 @@ export function useTaskDetailFullInclude(user: any) {
               customPaymentText: true,
               paymentCondition: true,
               generateInvoice: true,
+              generateBankSlip: true,
               orderNumber: true,
               responsibleId: true,
               customerSignatureId: true,

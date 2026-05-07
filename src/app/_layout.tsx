@@ -23,6 +23,7 @@ import { FileViewerProvider } from "@/components/file";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PortalHost } from "@rn-primitives/portal";
 import { PushNotificationsProvider } from "@/contexts/push-notifications-context-wrapper";
+import { TourProvider, TourOverlay, TourFirstLaunchTrigger } from "@/components/guided-tour";
 import { useEffect, useState } from "react";
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { View, Text, ActivityIndicator, LogBox } from "react-native";
@@ -254,6 +255,9 @@ function AppContent() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack>
       <PortalHost />
+      {/* Guided tour for production users */}
+      <TourFirstLaunchTrigger />
+      <TourOverlay />
       {/* System Messages Modal - shows unviewed messages on app load and focus */}
       <AuthAwareMessageModal />
     </FileViewerProvider>
@@ -289,8 +293,10 @@ export default function RootLayout() {
                         <NavigationHistoryProvider>
                           <NavigationLoadingProvider>
                             <SwipeRowProvider>
-                              {/* FileViewerProvider moved to AppContent to use dynamic currentBaseUrl from NetworkContext */}
-                              <AppContent />
+                              <TourProvider>
+                                {/* FileViewerProvider moved to AppContent to use dynamic currentBaseUrl from NetworkContext */}
+                                <AppContent />
+                              </TourProvider>
                             </SwipeRowProvider>
                           </NavigationLoadingProvider>
                         </NavigationHistoryProvider>

@@ -70,7 +70,6 @@ export const collaboratorsListConfig: ListConfig<User> = {
       _count: {
         select: {
           createdTasks: true,
-          vacations: true,
         },
       },
     },
@@ -287,15 +286,6 @@ export const collaboratorsListConfig: ListConfig<User> = {
         width: 1.0,
         align: 'left',
         render: (user) => String(user._count?.createdTasks || 0),
-        format: 'number',
-      },
-      {
-        key: 'vacationsCount',
-        label: 'FÉRIAS',
-        sortable: false,
-        width: 1.0,
-        align: 'left',
-        render: (user) => String(user._count?.vacations || 0),
         format: 'number',
       },
       {

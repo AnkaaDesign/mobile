@@ -181,6 +181,7 @@ export function BudgetCreateWizard() {
         paymentCondition: null,
         customPaymentText: null,
         generateInvoice: true,
+        generateBankSlip: true,
         orderNumber: null,
         responsibleId: null,
         customerData: {
@@ -486,6 +487,7 @@ export function BudgetCreateWizard() {
             paymentCondition: c.paymentCondition || null,
             customPaymentText: c.customPaymentText || null,
             generateInvoice: c.generateInvoice ?? true,
+            generateBankSlip: c.generateBankSlip ?? true,
             responsibleId: c.responsibleId || null,
             orderNumber: c.orderNumber || null,
           })),

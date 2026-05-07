@@ -417,6 +417,7 @@ export function StepQuoteInfo({
           customPaymentText: null,
           responsibleId: null,
           generateInvoice: true,
+          generateBankSlip: true,
           orderNumber: null,
         };
       });

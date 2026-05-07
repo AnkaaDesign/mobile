@@ -161,6 +161,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       customPaymentText: c.customPaymentText ?? null,
       responsibleId: c.responsibleId ?? null,
       generateInvoice: c.generateInvoice ?? true,
+      generateBankSlip: c.generateBankSlip ?? true,
       orderNumber: c.orderNumber ?? null,
     })) || []);
 
@@ -224,6 +225,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       customPaymentText: null,
       responsibleId: null,
       generateInvoice: true,
+      generateBankSlip: true,
       orderNumber: null,
     };
     setValue("quote.customerConfigs", [defaultConfig], { shouldDirty: false });

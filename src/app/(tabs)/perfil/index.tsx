@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
 import { IconCamera, IconTrash } from "@tabler/icons-react-native";
+import { ReplayTourButton } from "@/components/guided-tour";
 import {
   SHIRT_SIZE_LABELS,
   PANTS_SIZE_LABELS,
@@ -670,6 +671,8 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
+
+        <ReplayTourButton />
         </KeyboardAwareFormProvider>
         </ScrollView>
 

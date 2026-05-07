@@ -220,6 +220,31 @@ export function StepCustomerPayment({
         />
       </View>
 
+      {/* Generate Bank Slip Toggle — independent of NFSe; controls Sicredi boleto auto-creation */}
+      <View
+        style={[
+          styles.toggleRow,
+          { borderColor: colors.border, backgroundColor: colors.muted + "20" },
+        ]}
+      >
+        <View style={styles.toggleTextColumn}>
+          <ThemedText style={[styles.toggleTitle, { color: colors.foreground }]}>
+            Gerar Boleto
+          </ThemedText>
+          <ThemedText
+            style={[styles.toggleHelper, { color: colors.mutedForeground }]}
+          >
+            {config?.generateBankSlip !== false
+              ? "Boletos serão gerados automaticamente para cada parcela."
+              : "Nenhum boleto será gerado (cliente paga via PIX/transferência)."}
+          </ThemedText>
+        </View>
+        <Switch
+          checked={config?.generateBankSlip !== false}
+          onCheckedChange={(v) => setValue(`${basePath}.generateBankSlip`, v)}
+        />
+      </View>
+
       {/* Order Number */}
       <FormFieldGroup label="Nº do Pedido">
         <View

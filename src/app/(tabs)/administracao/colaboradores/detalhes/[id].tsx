@@ -115,21 +115,11 @@ export default function EmployeeDetailsScreen() {
         },
       },
       ppeSize: true, // Full PPE size data for detail display
-      vacations: {
-        select: {
-          id: true,
-          startDate: true,
-          endDate: true,
-          status: true,
-          createdAt: true,
-        },
-      },
       _count: {
         select: {
           tasks: true,
           activities: true,
           borrows: true,
-          vacations: true,
           changeLogs: true,
         },
       },
