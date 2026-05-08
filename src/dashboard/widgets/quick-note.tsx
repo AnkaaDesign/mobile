@@ -75,7 +75,7 @@ function useDebouncedAsyncStorage(key: string) {
   return [value, setValue, loaded] as const;
 }
 
-function Render({ instanceId, config }: WidgetRenderProps<Config>) {
+function Render({ instanceId, config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -84,12 +84,17 @@ function Render({ instanceId, config }: WidgetRenderProps<Config>) {
   const Icon = accent.Icon;
   const storageKey = useMemo(() => `${STORAGE_PREFIX}${instanceId}`, [instanceId]);
   const [text, setText] = useDebouncedAsyncStorage(storageKey);
+  // At narrower spans, drop the min-height so the widget hugs its content
+  // (a tall empty note next to a span-1 favorites tile looks unbalanced).
+  const span = size?.span ?? 3;
+  const minHeight = span === 1 ? 64 : span === 2 ? 96 : 120;
 
   return (
     <WidgetCard
       title={config.title || "Anotações"}
       icon={<Icon size={16} color={accent.hex} />}
       showHeader={config.showHeader}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
     >
       <View style={{ padding: 12 }}>
@@ -100,7 +105,7 @@ function Render({ instanceId, config }: WidgetRenderProps<Config>) {
           value={text}
           onChangeText={setText}
           style={{
-            minHeight: 120,
+            minHeight,
             color: colors.foreground,
             fontSize: 13,
             fontFamily: config.monospace ? "monospace" : undefined,
@@ -142,8 +147,6 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           checked={config.monospace}
           onCheckedChange={(v) => set("monospace", v)}
         />
-      </Section>
-      <Section title="Visibilidade">
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.showHeader}
@@ -163,9 +166,11 @@ export const quickNoteWidget: WidgetDefinition<Config> = {
   category: "other",
   // Personal scratchpad — same content visibility as web's quick-note.
   allowedSectors: "*",
-  defaultSize: { cols: 1, rows: 2 },
-  minSize: { cols: 1, rows: 1 },
-  maxSize: { cols: 1, rows: 4 },
+  // Quick scratchpad — works at any width. Mobile preset starts at 2/3.
+  allowedSpans: [1, 2, 3],
+  defaultSpan: 2,
+  allowedHeights: [1, 2, 3],
+  defaultRows: 2,
   configSchema,
   defaultConfig: {
     title: "Anotações",

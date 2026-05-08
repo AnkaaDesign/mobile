@@ -268,9 +268,11 @@ export const dailyPontoWidget: WidgetDefinition<Config> = {
     SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
     SECTOR_PRIVILEGES.ADMIN,
   ],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  // HR summary with progress bar + grouped categories — full width only.
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Ponto do Dia",

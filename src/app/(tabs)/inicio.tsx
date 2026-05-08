@@ -15,7 +15,7 @@ import {
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/contexts/auth-context";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useHomeDashboard } from "@/hooks/dashboard";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import {
@@ -30,9 +30,15 @@ import {
 // Side-effect import: registers all widgets with the registry on first load.
 // Must come before useDashboardLayout so the registry is populated.
 import "@/dashboard";
-import { useDashboardLayout, DashboardList } from "@/dashboard";
+import { useDashboardLayout, DashboardGrid } from "@/dashboard";
+import { ConfigureWidgetModal } from "@/dashboard/components/configure-widget-modal";
 import { AddWidgetSheet } from "@/dashboard/components/add-widget-sheet";
-import { IconPlus } from "@tabler/icons-react-native";
+import {
+  IconPlus,
+  IconPencil,
+  IconX,
+  IconCheck,
+} from "@tabler/icons-react-native";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -67,41 +73,102 @@ export default function HomeScreen() {
     removeWidget,
     addWidget,
     reorderItems,
+    configureWidget,
+    resizeWidget,
   } = useDashboardLayout();
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  // Active configure-modal target. When non-null, the ConfigureWidgetModal
+  // opens for that instance. Lifting this state here (rather than to context)
+  // keeps the modal scoped to the home screen — the only place it can open.
+  const [configureInstanceId, setConfigureInstanceId] = useState<string | null>(null);
+  const configureInstance = useMemo(
+    () =>
+      configureInstanceId
+        ? layout.items.find((it) => it.instanceId === configureInstanceId) ?? null
+        : null,
+    [configureInstanceId, layout.items],
+  );
 
   const onRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  // Tutorial spotlights for the widget-first home.
+  // Tutorial spotlights for the widget-first home. Interactive `tap` steps
+  // also pass `onAction` so the overlay can drive the underlying behavior
+  // even when the dim layer would otherwise swallow the tap.
   const greetingTarget = useTutorialTarget(TUTORIAL_TARGETS.homeGreeting);
   const widgetListTarget = useTutorialTarget(TUTORIAL_TARGETS.homeWidgetList);
-  const editButtonTarget = useTutorialTarget(TUTORIAL_TARGETS.homeEditPanelButton);
+  const editButtonTarget = useTutorialTarget(TUTORIAL_TARGETS.homeEditPanelButton, {
+    onAction: () => enterEdit(),
+  });
   const editToolbarTarget = useTutorialTarget(TUTORIAL_TARGETS.homeEditToolbar);
-  const addWidgetTarget = useTutorialTarget(TUTORIAL_TARGETS.homeAddWidgetButton);
-  const cancelEditTarget = useTutorialTarget(TUTORIAL_TARGETS.homeCancelEditButton);
+  const addWidgetTarget = useTutorialTarget(TUTORIAL_TARGETS.homeAddWidgetButton, {
+    onAction: () => setAddSheetOpen(true),
+  });
+  const cancelEditTarget = useTutorialTarget(TUTORIAL_TARGETS.homeCancelEditButton, {
+    onAction: () => discardAndExit(),
+  });
   const saveEditTarget = useTutorialTarget(TUTORIAL_TARGETS.homeSaveEditButton);
 
   const tutorial = useOptionalTutorial();
   const tutorialStepId = tutorial?.currentStep?.id;
   const tutorialActive = tutorial?.isActive ?? false;
 
+  // Scroll management for tutorial steps. The "+ Adicionar widget" tile sits
+  // below the widget grid and is off-screen when there are several widgets;
+  // scroll it into view so the spotlight is visible. Other steps target
+  // elements at the top — make sure we're scrolled there for those.
+  const scrollRef = useRef<ScrollView | null>(null);
+  useEffect(() => {
+    if (!tutorialActive || !tutorialStepId) return;
+    if (tutorialStepId === "home-add-widget") {
+      // Defer one frame so layout from `isEditing` flip has settled, then
+      // scroll synchronously (no animation) so the rect re-measure 200ms later
+      // captures the post-scroll window position.
+      requestAnimationFrame(() =>
+        scrollRef.current?.scrollToEnd({ animated: false }),
+      );
+      return;
+    }
+    if (
+      tutorialStepId === "home-greeting" ||
+      tutorialStepId === "home-widgets-intro" ||
+      tutorialStepId === "home-edit-panel" ||
+      tutorialStepId === "home-edit-toolbar" ||
+      tutorialStepId === "home-cancel-edit" ||
+      tutorialStepId === "drawer-intro"
+    ) {
+      requestAnimationFrame(() =>
+        scrollRef.current?.scrollTo({ y: 0, animated: false }),
+      );
+    }
+  }, [tutorialActive, tutorialStepId]);
+
   // Tutorial flow management for the widget walkthrough:
   //  - "home-edit-toolbar" / "home-add-widget" / "home-widget-catalog" / "home-cancel-edit"
   //    require edit mode to be on and (where relevant) the catalog sheet to be open.
-  //  - When the tutorial leaves these steps, restore clean state.
+  //  - When the tutorial *transitions* from active → inactive, restore clean state.
+  //
+  // We track the previous tutorial-active state with a ref so the cleanup only
+  // fires on that transition. Without this, the effect would run on every
+  // render where tutorialActive is false (the normal case), and entering edit
+  // mode by tapping "Editar painel" would immediately get cancelled by
+  // discardAndExit() — the bug that made the toolbar blink and disappear.
+  const prevTutorialActiveRef = useRef(tutorialActive);
   useEffect(() => {
-    if (!tutorialActive) {
-      // Tutorial ended — make sure we don't leave the user stranded in edit mode.
-      if (isEditing) {
-        discardAndExit();
-      }
-      if (addSheetOpen) {
-        setAddSheetOpen(false);
-      }
+    const wasActive = prevTutorialActiveRef.current;
+    prevTutorialActiveRef.current = tutorialActive;
+
+    if (wasActive && !tutorialActive) {
+      // Tutorial just ended — clean up edit mode and the add-widget sheet so
+      // the user isn't stranded with a half-open UI.
+      if (isEditing) discardAndExit();
+      if (addSheetOpen) setAddSheetOpen(false);
       return;
     }
+
+    if (!tutorialActive) return;
+
     // Auto-close the catalog sheet once the tutorial moves past it.
     if (
       addSheetOpen &&
@@ -121,6 +188,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ paddingBottom: 32 }}
       refreshControl={
@@ -133,156 +201,223 @@ export default function HomeScreen() {
       }
     >
       <View style={{ padding: 16, gap: 16 }}>
-        {/* Greeting + edit-painel toggle. We keep the greeting at the top of
-            its own card; the widget list below uses individual card chrome
-            per tile. */}
+        {/* Greeting card — name, date, running clock. The edit affordance
+            does NOT live here; it sits in the dashboard section header below
+            so it's contextually next to the widgets it controls. */}
         <View
+          ref={greetingTarget.ref}
+          onLayout={greetingTarget.onLayout}
           style={{
             backgroundColor: colors.card,
             borderRadius: 12,
             padding: 16,
+            flexDirection: "row",
+            alignItems: "flex-start",
             gap: 12,
           }}
         >
-          <View
-            ref={greetingTarget.ref}
-            onLayout={greetingTarget.onLayout}
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}
-              >
-                {getGreeting()}, {user?.name?.split(" ")[0] || "Usuário"}!
-              </Text>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: colors.mutedForeground,
-                  marginTop: 2,
-                }}
-              >
-                {currentTime.toLocaleDateString("pt-BR", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </Text>
-            </View>
-            <Text style={{ fontSize: 14, color: colors.foreground }}>
-              {currentTime.toLocaleTimeString("pt-BR", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}
+            >
+              {getGreeting()}, {user?.name?.split(" ")[0] || "Usuário"}!
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                marginTop: 2,
+              }}
+            >
+              {currentTime.toLocaleDateString("pt-BR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
               })}
             </Text>
           </View>
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.foreground,
+              fontVariant: ["tabular-nums"],
+            }}
+          >
+            {currentTime.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+          </Text>
+        </View>
 
-          {/* Edit-mode toolbar. Shown as a small button row beneath the
-              greeting so users can discover it without entering edit mode by
-              accident (no long-press confusion). */}
-          {!isEditing ? (
-            <View ref={editButtonTarget.ref} onLayout={editButtonTarget.onLayout} style={{ alignSelf: "flex-start" }}>
+        {/* Dashboard section header — sits above the grid as a discrete row.
+            Idle state shows "Meu Painel" with a small "Editar" link on the
+            right. Editing state replaces the link with a Cancelar/Salvar
+            toolbar at the same row height so the layout below doesn't jump. */}
+        {!isEditing ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              minHeight: 44,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "700",
+                color: colors.foreground,
+              }}
+            >
+              Meu Painel
+            </Text>
+            <View ref={editButtonTarget.ref} onLayout={editButtonTarget.onLayout}>
               <Pressable
                 onPress={() => {
                   editButtonTarget.onPress();
                   enterEdit();
                 }}
+                hitSlop={8}
+                accessibilityLabel="Editar painel"
                 style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                  paddingVertical: 6,
-                  paddingHorizontal: 10,
-                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 999,
                   backgroundColor: colors.muted,
+                  borderWidth: 1,
+                  borderColor: colors.border,
                   opacity: pressed ? 0.6 : 1,
                 })}
               >
-                <Icon name="settings" size="sm" color={colors.mutedForeground} />
-                <Text style={{ fontSize: 12, color: colors.mutedForeground }}>
-                  Editar painel
-                </Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <IconPencil size={14} color={colors.foreground} />
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: colors.foreground,
+                      marginLeft: 6,
+                    }}
+                  >
+                    Editar
+                  </Text>
+                </View>
               </Pressable>
             </View>
-          ) : (
+          </View>
+        ) : (
+          <View
+            ref={editToolbarTarget.ref}
+            onLayout={editToolbarTarget.onLayout}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              minHeight: 44,
+            }}
+          >
             <View
-              ref={editToolbarTarget.ref}
-              onLayout={editToolbarTarget.onLayout}
-              style={{ flexDirection: "row", gap: 8 }}
+              ref={cancelEditTarget.ref}
+              onLayout={cancelEditTarget.onLayout}
             >
-              <View ref={cancelEditTarget.ref} onLayout={cancelEditTarget.onLayout} style={{ flex: 1 }}>
-                <Pressable
-                  disabled={isSaving}
-                  onPress={() => {
-                    cancelEditTarget.onPress();
-                    discardAndExit();
-                  }}
-                  style={({ pressed }) => ({
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    alignItems: "center",
-                    opacity: pressed ? 0.6 : 1,
-                  })}
-                >
-                  <Text style={{ fontSize: 13, color: colors.foreground }}>
+              <Pressable
+                disabled={isSaving}
+                onPress={() => {
+                  cancelEditTarget.onPress();
+                  discardAndExit();
+                }}
+                hitSlop={8}
+                accessibilityLabel="Cancelar edição"
+                style={({ pressed }) => ({
+                  height: 44,
+                  paddingHorizontal: 12,
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  justifyContent: "center",
+                  backgroundColor: pressed ? colors.muted : "transparent",
+                  opacity: isSaving ? 0.5 : 1,
+                })}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <IconX size={16} color={colors.foreground} />
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: colors.foreground,
+                      marginLeft: 4,
+                    }}
+                  >
                     Cancelar
                   </Text>
-                </Pressable>
-              </View>
-              <View ref={saveEditTarget.ref} onLayout={saveEditTarget.onLayout} style={{ flex: 1 }}>
-                <Pressable
-                  disabled={isSaving || !isDirty}
-                  onPress={() => {
-                    saveEditTarget.onPress();
-                    saveAndExit().catch(() => {
-                      // toast wrapper is a Phase 4 deliverable; for now swallow.
-                    });
-                  }}
-                  style={({ pressed }) => ({
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                    backgroundColor: colors.primary,
-                    alignItems: "center",
-                    opacity: pressed || !isDirty || isSaving ? 0.5 : 1,
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    gap: 6,
-                  })}
-                >
-                  {isSaving && <ActivityIndicator size="small" color="#fff" />}
-                  <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: colors.primaryForeground,
-                  }}
-                >
-                  {isSaving ? "Salvando..." : "Salvar"}
-                </Text>
+                </View>
               </Pressable>
-              </View>
             </View>
-          )}
-        </View>
+            <Text
+              numberOfLines={1}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                fontSize: 12,
+                color: colors.mutedForeground,
+              }}
+            >
+              Editando painel
+            </Text>
+            <View ref={saveEditTarget.ref} onLayout={saveEditTarget.onLayout}>
+              <Pressable
+                disabled={isSaving || !isDirty}
+                onPress={() => {
+                  saveEditTarget.onPress();
+                  saveAndExit().catch(() => {
+                    // Toast surface handled by the layout hook.
+                  });
+                }}
+                style={({ pressed }) => ({
+                  height: 44,
+                  paddingHorizontal: 14,
+                  borderRadius: 999,
+                  justifyContent: "center",
+                  backgroundColor: colors.primary,
+                  opacity: pressed || !isDirty || isSaving ? 0.5 : 1,
+                })}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color={colors.primaryForeground} />
+                  ) : (
+                    <IconCheck size={16} color={colors.primaryForeground} />
+                  )}
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: colors.primaryForeground,
+                      marginLeft: 6,
+                    }}
+                  >
+                    {isSaving ? "Salvando" : "Salvar"}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
-        {/* New widget system — renders the user's current layout (which is
-            the sector preset on first run). */}
+        {/* Widget grid — renders the user's current layout. */}
         <View ref={widgetListTarget.ref} onLayout={widgetListTarget.onLayout}>
-          <DashboardList
+          <DashboardGrid
             items={layout.items}
             isEditing={isEditing}
             onRemove={removeWidget}
             onReorder={reorderItems}
+            onConfigure={(instanceId) => setConfigureInstanceId(instanceId)}
           />
         </View>
 
@@ -319,6 +454,13 @@ export default function HomeScreen() {
           open={addSheetOpen}
           onOpenChange={setAddSheetOpen}
           onAdd={(widgetId) => addWidget(widgetId)}
+        />
+
+        <ConfigureWidgetModal
+          instance={configureInstance}
+          onClose={() => setConfigureInstanceId(null)}
+          onApplyConfig={configureWidget}
+          onApplySize={resizeWidget}
         />
 
         {/* Legacy hardcoded sections (sector-gated lists that haven't been

@@ -31,8 +31,8 @@ const ROUTES = {
   pessoalPontos: "/(tabs)/pessoal/meus-pontos",
   pessoalFeriados: "/(tabs)/pessoal/meus-feriados",
   pessoalEpis: "/(tabs)/pessoal/meus-epis",
-  tools: "/(tabs)/tools",
   configuracoes: "/(tabs)/configuracoes",
+  preferencias: "/(tabs)/pessoal/preferencias",
   perfil: "/(tabs)/perfil",
 } as const;
 
@@ -49,7 +49,7 @@ export function buildTutorialSteps(): TutorialStep[] {
     kind: "narration",
     title: "Bem-vindo à Ankaa! 👋",
     description:
-      "Vamos fazer um tour rápido pelo aplicativo para você aprender a usá-lo. Você pode refazer este tutorial a qualquer momento na sua página de Perfil.",
+      "Vamos fazer um tour rápido pelo aplicativo para você aprender a usá-lo. Você pode refazer este tutorial a qualquer momento na página de Preferências.",
     placement: "center",
     ctaLabel: "Começar",
     expectedAction: "continue",
@@ -87,9 +87,9 @@ export function buildTutorialSteps(): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.homeEditPanelButton,
     title: "Personalizar o Painel",
     description:
-      "Toque em 'Editar painel' para começar a personalizar — adicionar, remover ou reordenar widgets.",
+      "Toque em 'Editar' para personalizar seu painel — adicionar, remover ou reordenar widgets.",
     placement: "bottom",
-    ctaLabel: "Toque em Editar painel",
+    ctaLabel: "Toque em Editar",
     expectedAction: "tap",
     pulseTarget: true,
   });
@@ -101,7 +101,7 @@ export function buildTutorialSteps(): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.homeEditToolbar,
     title: "Modo Edição",
     description:
-      "Agora você está no modo edição. 'Salvar' confirma suas mudanças, 'Cancelar' descarta. Enquanto edita, você pode arrastar widgets para reordenar e tocar no × para remover.",
+      "Agora você está no modo edição. 'Salvar' confirma suas mudanças e 'Cancelar' descarta. Em cada widget, use a alça (≡) para arrastar e o ícone de lixeira para remover.",
     placement: "bottom",
     autoAdvanceMs: SHOWCASE_DURATION,
   });
@@ -519,23 +519,7 @@ export function buildTutorialSteps(): TutorialStep[] {
   });
 
   // ============================================================
-  // ACT 10 — Ferramentas (tools)
-  // ============================================================
-  steps.push({
-    id: "tools-intro",
-    kind: "showcase",
-    screen: ROUTES.tools,
-    targetId: TUTORIAL_TARGETS.toolsList,
-    title: "Ferramentas 🧰",
-    description:
-      "Utilitários do dia a dia: paleta de cores, calculadora de horas, custo de horas extras e calculadora de mistura de tintas. Acesse pelo menu Ferramentas.",
-    placement: "center",
-    autoAdvanceMs: SHOWCASE_DURATION + 1000,
-    navigateOnEnter: ROUTES.tools,
-  });
-
-  // ============================================================
-  // ACT 11 — Configurações
+  // ACT 10 — Configurações
   // ============================================================
   steps.push({
     id: "configuracoes",
@@ -550,8 +534,21 @@ export function buildTutorialSteps(): TutorialStep[] {
     navigateOnEnter: ROUTES.configuracoes,
   });
 
+  steps.push({
+    id: "preferences-replay",
+    kind: "showcase",
+    screen: ROUTES.preferencias,
+    targetId: TUTORIAL_TARGETS.preferencesReplayButton,
+    title: "Refazer este Tutorial",
+    description:
+      "Sempre que quiser, volte em Preferências e toque em 'Repetir Tutorial' para refazer este passo a passo.",
+    placement: "top",
+    autoAdvanceMs: SHOWCASE_DURATION,
+    navigateOnEnter: ROUTES.preferencias,
+  });
+
   // ============================================================
-  // ACT 12 — Perfil
+  // ACT 11 — Perfil
   // ============================================================
   steps.push({
     id: "perfil-intro",
@@ -589,27 +586,15 @@ export function buildTutorialSteps(): TutorialStep[] {
     autoAdvanceMs: SHOWCASE_DURATION + 1000,
   });
 
-  steps.push({
-    id: "perfil-replay",
-    kind: "showcase",
-    screen: ROUTES.perfil,
-    targetId: TUTORIAL_TARGETS.perfilReplayButton,
-    title: "Refazer este Tutorial",
-    description:
-      "Sempre que quiser, volte aqui e toque em 'Repetir Tutorial' para refazer este passo a passo.",
-    placement: "top",
-    autoAdvanceMs: SHOWCASE_DURATION,
-  });
-
   // ============================================================
-  // ACT 13 — Conclusion
+  // ACT 12 — Conclusion
   // ============================================================
   steps.push({
     id: "completion",
     kind: "narration",
     title: "Você está pronto! 🚀",
     description:
-      "Esses são os principais módulos que você vai usar no dia a dia: Cronograma, Recorte, Histórico, Observações, Ordens de Serviço, Notificações, sua área Pessoal e as Ferramentas. Bom trabalho!",
+      "Esses são os principais módulos que você vai usar no dia a dia: Cronograma, Recorte, Histórico, Observações, Ordens de Serviço, Notificações e sua área Pessoal. Bom trabalho!",
     placement: "center",
     ctaLabel: "Concluir",
     expectedAction: "continue",

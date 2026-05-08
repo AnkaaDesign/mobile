@@ -2,8 +2,21 @@
 // JSON parses identically), but rendered with native primitives.
 // Exposes: WidgetAccentColor / WidgetAccentIcon / WidgetBorderColor types,
 // makeAccentSchema, resolveAccent, AccentPicker.
+//
+// Design contract (matches app conventions, see screenshot bug-report):
+//   - Three "summary" cards in a row (Cor / Ícone / Borda) with identical
+//     paddings, swatch sizes, and typography. No more mixed sizing models.
+//   - Each card opens a Sheet snapped at 80% height. Sheets share a header
+//     style (title row + close X), a Selecionado preview row at the top, and
+//     a uniform option grid below.
+//   - Option grids: 3 columns for colors and borders (label-bearing), 4 columns
+//     for icons (icon-only). All cells are square-ish, same border radius,
+//     same selected outline thickness.
+//   - All paddings, gaps, and corners pull from the design-system constants
+//     so the picker blends with the rest of the app instead of looking like
+//     a one-off form.
 
-import { type ComponentType, useState } from "react";
+import { type ComponentType, type ReactNode, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { z } from "zod";
 import {
@@ -38,7 +51,7 @@ import {
   IconChartBar,
   IconX,
 } from "@tabler/icons-react-native";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { Sheet } from "@/components/ui/sheet";
 import { useTheme } from "@/lib/theme";
 
 // ---------- Color tokens ----------
@@ -139,6 +152,17 @@ const ICON_COMPONENTS: Record<
   ChartBar: IconChartBar,
 };
 
+const ACCENT_ICON_LABEL: Record<WidgetAccentIcon, string> = {
+  ClipboardText: "Lista", ClipboardList: "Itens", ClipboardCheck: "Conferido",
+  Calendar: "Calendário", CalendarDue: "Prazo", Clock: "Relógio",
+  Clock24: "24 horas", Hourglass: "Tempo", Check: "OK", CircleCheck: "Aprovado",
+  AlertTriangle: "Alerta", Flag: "Sinalizar", Star: "Estrela", Bolt: "Ação",
+  Truck: "Caminhão", Package: "Pacote", Brush: "Pincel", Palette: "Paleta",
+  Receipt: "Recibo", FileText: "Documento", Tools: "Ferramentas",
+  Users: "Usuários", Factory: "Fábrica", Message: "Mensagem", Bell: "Sino",
+  Home: "Início", Heart: "Coração", Bookmark: "Marcador", ChartBar: "Gráfico",
+};
+
 const ACCENT_ICON_TUPLE = Object.keys(ICON_COMPONENTS) as [
   WidgetAccentIcon,
   ...WidgetAccentIcon[],
@@ -207,14 +231,12 @@ interface AccentPickerProps {
 }
 
 export function AccentPicker({ value, onChange }: AccentPickerProps) {
-  const { colors } = useTheme();
   const [colorOpen, setColorOpen] = useState(false);
   const [iconOpen, setIconOpen] = useState(false);
   const [borderOpen, setBorderOpen] = useState(false);
 
   const borderColor: WidgetBorderColor = value.borderColor ?? "none";
   const accent = resolveAccent(value);
-  const Icon = accent.Icon;
 
   const change = (
     patch: Partial<{
@@ -230,86 +252,51 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
       ...patch,
     });
 
-  const summaryButton = (
-    label: string,
-    swatch: React.ReactNode,
-    sub: string,
-    onPress: () => void,
-  ) => (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: pressed ? colors.primary : colors.border,
-        borderRadius: 8,
-        backgroundColor: colors.card,
-        minWidth: 0,
-      })}
-    >
-      {swatch}
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ fontSize: 10, color: colors.mutedForeground }}>
-          {label}
-        </Text>
-        <Text
-          numberOfLines={1}
-          style={{ fontSize: 12, fontWeight: "600", color: colors.foreground }}
-        >
-          {sub}
-        </Text>
-      </View>
-    </Pressable>
-  );
-
   return (
     <>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        {summaryButton(
-          "Cor",
-          <View
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 6,
-              backgroundColor: accent.hex,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          />,
-          ACCENT_LABEL[value.color],
-          () => setColorOpen(true),
-        )}
-        {summaryButton(
-          "Ícone",
-          <Icon size={18} color={accent.hex} />,
-          value.icon,
-          () => setIconOpen(true),
-        )}
-        {summaryButton(
-          "Borda",
-          <View
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 6,
-              borderWidth: 2,
-              borderColor:
-                borderColor === "none" ? colors.border : ACCENT_HEX[borderColor],
-              backgroundColor: "transparent",
-            }}
-          />,
-          borderColor === "none" ? "Nenhuma" : ACCENT_LABEL[borderColor],
-          () => setBorderOpen(true),
-        )}
+        <SummaryCard
+          label="Cor"
+          value={ACCENT_LABEL[value.color]}
+          onPress={() => setColorOpen(true)}
+          swatch={
+            <Swatch backgroundColor={accent.hex} />
+          }
+        />
+        <SummaryCard
+          label="Ícone"
+          value={ACCENT_ICON_LABEL[value.icon] ?? value.icon}
+          onPress={() => setIconOpen(true)}
+          swatch={
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                backgroundColor: `${accent.hex}1f`,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <accent.Icon size={16} color={accent.hex} />
+            </View>
+          }
+        />
+        <SummaryCard
+          label="Borda"
+          value={borderColor === "none" ? "Nenhuma" : ACCENT_LABEL[borderColor]}
+          onPress={() => setBorderOpen(true)}
+          swatch={
+            <BorderSwatch
+              hex={borderColor === "none" ? undefined : ACCENT_HEX[borderColor]}
+            />
+          }
+        />
       </View>
 
       <ColorPickerSheet
         title="Selecione uma cor"
+        subtitle="Define o ícone, a bolinha e a tonalidade do acento."
         open={colorOpen}
         onOpenChange={setColorOpen}
         selected={value.color}
@@ -327,10 +314,10 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
 
       <ColorPickerSheet
         title="Selecione a cor da borda"
+        subtitle="Aplica uma borda colorida à volta do widget. Use “Nenhuma” para desativar."
         open={borderOpen}
         onOpenChange={setBorderOpen}
         selected={borderColor}
-        // "none" plus all accent colors
         options={[
           { value: "none", label: "Nenhuma" },
           ...ACCENT_COLOR_TUPLE.map((c) => ({ value: c, label: ACCENT_LABEL[c] })),
@@ -341,8 +328,184 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Summary card — one of the three triggers above the picker. Identical
+// padding, height, and typography for all three so the row reads as one.
+// ---------------------------------------------------------------------------
+
+function SummaryCard({
+  label,
+  value,
+  swatch,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  swatch: ReactNode;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        gap: 6,
+        padding: 12,
+        minHeight: 84,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: pressed ? colors.primary : colors.border,
+        backgroundColor: colors.card,
+      })}
+    >
+      <Text
+        style={{
+          fontSize: 10,
+          fontWeight: "700",
+          color: colors.mutedForeground,
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+        }}
+      >
+        {label}
+      </Text>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          minWidth: 0,
+        }}
+      >
+        {swatch}
+        <Text
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: "600",
+            color: colors.foreground,
+          }}
+        >
+          {value}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function Swatch({ backgroundColor }: { backgroundColor: string }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        backgroundColor,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    />
+  );
+}
+
+function BorderSwatch({ hex }: { hex?: string }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: hex ?? colors.border,
+        borderStyle: hex ? "solid" : "dashed",
+        backgroundColor: "transparent",
+      }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Picker sheets — colors/border share one component (label-bearing 3-column
+// grid), icons get their own (icon-only 4-column grid).
+//
+// snapPoints uses the percentage form expected by Sheet (NOT decimal) — the
+// previous code passed `[0.6]` which evaluated to ~6px height and made the
+// sheets functionally invisible on launch.
+// ---------------------------------------------------------------------------
+
+interface PickerHeaderProps {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+}
+
+function PickerHeader({ title, subtitle, onClose }: PickerHeaderProps) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        paddingHorizontal: 16,
+        paddingTop: 4,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            fontSize: 16,
+            fontWeight: "700",
+            color: colors.foreground,
+          }}
+        >
+          {title}
+        </Text>
+        <Pressable
+          onPress={onClose}
+          hitSlop={10}
+          accessibilityLabel="Fechar"
+          style={({ pressed }) => ({
+            padding: 6,
+            borderRadius: 8,
+            backgroundColor: pressed ? colors.muted : "transparent",
+          })}
+        >
+          <IconX size={20} color={colors.mutedForeground} />
+        </Pressable>
+      </View>
+      {subtitle && (
+        <Text
+          style={{
+            marginTop: 2,
+            fontSize: 12,
+            color: colors.mutedForeground,
+          }}
+        >
+          {subtitle}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 interface ColorPickerSheetProps {
   title: string;
+  subtitle?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selected: string;
@@ -352,6 +515,7 @@ interface ColorPickerSheetProps {
 
 function ColorPickerSheet({
   title,
+  subtitle,
   open,
   onOpenChange,
   selected,
@@ -360,78 +524,66 @@ function ColorPickerSheet({
 }: ColorPickerSheetProps) {
   const { colors } = useTheme();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[0.6]} dragIndicator>
-      <SheetContent>
-        <SheetHeader>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: 8,
-            }}
-          >
-            <Text
-              style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}
-            >
-              {title}
-            </Text>
-            <Pressable
-              onPress={() => onOpenChange(false)}
-              hitSlop={8}
-              style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
-            >
-              <IconX size={20} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
-        </SheetHeader>
-        <ScrollView contentContainerStyle={{ padding: 4, gap: 8, paddingBottom: 24 }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {options.map((opt) => {
-              const isSelected = opt.value === selected;
-              const hex = opt.value === "none" ? undefined : ACCENT_HEX[opt.value as WidgetAccentColor];
-              return (
-                <Pressable
-                  key={opt.value}
-                  onPress={() => {
-                    onSelect(opt.value);
-                    onOpenChange(false);
-                  }}
-                  style={({ pressed }) => ({
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                    backgroundColor: pressed ? colors.muted : colors.card,
-                    width: "48%",
-                  })}
+    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[80]}>
+      <PickerHeader
+        title={title}
+        subtitle={subtitle}
+        onClose={() => onOpenChange(false)}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === selected;
+            const isNone = opt.value === "none";
+            const hex = isNone ? undefined : ACCENT_HEX[opt.value as WidgetAccentColor];
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => {
+                  onSelect(opt.value);
+                  onOpenChange(false);
+                }}
+                style={({ pressed }) => ({
+                  // Three columns inside a 16-padded sheet with 8 gap.
+                  width: "31.5%",
+                  minHeight: 84,
+                  paddingVertical: 12,
+                  paddingHorizontal: 8,
+                  borderRadius: 10,
+                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                  backgroundColor: pressed ? colors.muted : colors.card,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                })}
+              >
+                {isNone ? (
+                  <BorderSwatch hex={undefined} />
+                ) : (
+                  <Swatch backgroundColor={hex as string} />
+                )}
+                <Text
+                  numberOfLines={1}
+                  style={{ fontSize: 11, fontWeight: "600", color: colors.foreground }}
                 >
-                  <View
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 4,
-                      borderWidth: hex ? 1 : 2,
-                      borderColor: hex ?? colors.border,
-                      backgroundColor: hex ?? "transparent",
-                    }}
-                  />
-                  <Text
-                    style={{ fontSize: 12, color: colors.foreground }}
-                    numberOfLines={1}
-                  >
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </SheetContent>
+                  {opt.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </Sheet>
   );
 }
@@ -453,59 +605,60 @@ function IconPickerSheet({
 }: IconPickerSheetProps) {
   const { colors } = useTheme();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[0.7]} dragIndicator>
-      <SheetContent>
-        <SheetHeader>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: 8,
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>
-              Selecione um ícone
-            </Text>
-            <Pressable
-              onPress={() => onOpenChange(false)}
-              hitSlop={8}
-              style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
-            >
-              <IconX size={20} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
-        </SheetHeader>
-        <ScrollView contentContainerStyle={{ padding: 4, paddingBottom: 24 }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {ACCENT_ICON_TUPLE.map((iconKey) => {
-              const Comp = ICON_COMPONENTS[iconKey];
-              const isSelected = iconKey === selected;
-              return (
-                <Pressable
-                  key={iconKey}
-                  onPress={() => {
-                    onSelect(iconKey);
-                    onOpenChange(false);
+    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[80]}>
+      <PickerHeader
+        title="Selecione um ícone"
+        subtitle="Aparece no canto superior do widget, ao lado do título."
+        onClose={() => onOpenChange(false)}
+      />
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {ACCENT_ICON_TUPLE.map((iconKey) => {
+            const Comp = ICON_COMPONENTS[iconKey];
+            const isSelected = iconKey === selected;
+            return (
+              <Pressable
+                key={iconKey}
+                onPress={() => {
+                  onSelect(iconKey);
+                  onOpenChange(false);
+                }}
+                style={({ pressed }) => ({
+                  // Four columns inside a 16-padded sheet with 8 gap.
+                  width: "23%",
+                  aspectRatio: 1,
+                  borderRadius: 10,
+                  borderWidth: isSelected ? 2 : 1,
+                  borderColor: isSelected ? colors.primary : colors.border,
+                  backgroundColor: pressed ? colors.muted : colors.card,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 4,
+                  paddingVertical: 8,
+                })}
+              >
+                <Comp size={22} color={accentHex} />
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    fontSize: 9,
+                    fontWeight: "600",
+                    color: colors.mutedForeground,
+                    textAlign: "center",
+                    paddingHorizontal: 2,
                   }}
-                  style={({ pressed }) => ({
-                    width: 56,
-                    height: 56,
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                    backgroundColor: pressed ? colors.muted : colors.card,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  })}
                 >
-                  <Comp size={22} color={accentHex} />
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </SheetContent>
+                  {ACCENT_ICON_LABEL[iconKey] ?? iconKey}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </Sheet>
   );
 }

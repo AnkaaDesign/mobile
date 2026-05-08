@@ -10,6 +10,7 @@
 // are written as NativeWind class strings.
 
 import { type ReactNode } from "react";
+import { z } from "zod";
 import { View, Text, Pressable } from "react-native";
 import Animated, {
   useSharedValue,
@@ -105,6 +106,43 @@ export function Section({
         >
           {children}
         </View>
+      )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// LabeledField — label + control + optional helper text. Standardises the
+// label/input/helper rhythm across every widget's ConfigComponent so the
+// config modal reads like one form rather than ten different ones.
+// ---------------------------------------------------------------------------
+
+export function LabeledField({
+  label,
+  helper,
+  children,
+}: {
+  label: string;
+  helper?: string;
+  children: ReactNode;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ gap: 6 }}>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "600",
+          color: colors.foreground,
+        }}
+      >
+        {label}
+      </Text>
+      {children}
+      {helper && (
+        <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+          {helper}
+        </Text>
       )}
     </View>
   );
@@ -258,3 +296,205 @@ export function LimitInput({
 // Re-export Combobox to keep the same import surface as the web _shared file
 // for widgets that use a select control.
 export { Combobox };
+
+// ---------------------------------------------------------------------------
+// Shared schema helpers — produce standard config sub-objects so every table
+// widget exposes the same display/sort fields. Mirrors web's per-widget
+// pattern: the schema fields exist even if a particular control is currently
+// a no-op on mobile (e.g., `stickyHeader` doesn't apply to non-virtualized
+// lists). Keeping the field present means saved configs round-trip cleanly.
+// ---------------------------------------------------------------------------
+
+/** Shape produced by `makeTableDisplaySchema()`. */
+export interface TableDisplay {
+  density: Density;
+  striping: boolean;
+  gridLines: boolean;
+  hoverHighlight: boolean;
+  stickyHeader: boolean;
+  showSearchBox: boolean;
+  showRowDot: boolean;
+  showColumnHeaders: boolean;
+  emptyStateMessage: string;
+}
+
+export const TABLE_DISPLAY_DEFAULTS: TableDisplay = {
+  density: "comfortable",
+  striping: true,
+  gridLines: true,
+  hoverHighlight: true,
+  stickyHeader: false,
+  showSearchBox: true,
+  showRowDot: true,
+  showColumnHeaders: true,
+  emptyStateMessage: "",
+};
+
+export function makeTableDisplaySchema(
+  overrides?: Partial<TableDisplay>,
+): z.ZodType<TableDisplay> {
+  const merged = { ...TABLE_DISPLAY_DEFAULTS, ...(overrides ?? {}) };
+  return z
+    .object({
+      density: z.enum(DENSITY_VALUES).default(merged.density),
+      striping: z.boolean().default(merged.striping),
+      gridLines: z.boolean().default(merged.gridLines),
+      hoverHighlight: z.boolean().default(merged.hoverHighlight),
+      stickyHeader: z.boolean().default(merged.stickyHeader),
+      showSearchBox: z.boolean().default(merged.showSearchBox),
+      showRowDot: z.boolean().default(merged.showRowDot),
+      showColumnHeaders: z.boolean().default(merged.showColumnHeaders),
+      emptyStateMessage: z.string().max(160).default(merged.emptyStateMessage),
+    })
+    .default(merged) as z.ZodType<TableDisplay>;
+}
+
+/** Sort schema: `key` is widget-specific, `direction` is universal. */
+export function makeTableSortSchema<T extends string>(
+  keys: readonly [T, ...T[]],
+  defaultKey: T,
+  defaultDir: "asc" | "desc" = "asc",
+) {
+  return z
+    .object({
+      key: z.enum(keys).default(defaultKey as any),
+      direction: z.enum(["asc", "desc"]).default(defaultDir),
+    })
+    .default({ key: defaultKey as any, direction: defaultDir });
+}
+
+// ---------------------------------------------------------------------------
+// Shared config UI sections — render a single block of toggles so every
+// table widget's config form looks identical. Reduces drift across widgets
+// and makes future cross-widget changes one-file edits.
+// ---------------------------------------------------------------------------
+
+interface TableDisplayConfigSectionProps {
+  value: TableDisplay;
+  onChange: (next: TableDisplay) => void;
+  /** When set, hide irrelevant toggles. e.g., a widget without a search
+   *  input passes `showSearchBox={false}` to omit that toggle. */
+  features?: {
+    showSearchBox?: boolean;
+    showRowDot?: boolean;
+  };
+}
+
+export function TableDisplayConfigSection({
+  value,
+  onChange,
+  features = {},
+}: TableDisplayConfigSectionProps) {
+  const { colors } = useTheme();
+  const { showSearchBox = true, showRowDot = true } = features;
+  const set = <K extends keyof TableDisplay>(k: K, v: TableDisplay[K]) =>
+    onChange({ ...value, [k]: v });
+
+  return (
+    <Section title="Aparência da tabela" defaultOpen>
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.foreground }}>Densidade</Text>
+        <Combobox
+          value={value.density}
+          onValueChange={(v: any) =>
+            set("density", (typeof v === "string" ? v : "comfortable") as Density)
+          }
+          options={DENSITY_OPTIONS}
+        />
+      </View>
+      <ToggleRow
+        label="Listras zebra"
+        hint="Alterna o fundo das linhas para facilitar a leitura."
+        checked={value.striping}
+        onCheckedChange={(v) => set("striping", v)}
+      />
+      <ToggleRow
+        label="Linhas divisórias"
+        checked={value.gridLines}
+        onCheckedChange={(v) => set("gridLines", v)}
+      />
+      <ToggleRow
+        label="Cabeçalho de colunas"
+        hint="Linha com rótulos das colunas no topo da tabela."
+        checked={value.showColumnHeaders}
+        onCheckedChange={(v) => set("showColumnHeaders", v)}
+      />
+      {showSearchBox && (
+        <ToggleRow
+          label="Caixa de busca"
+          checked={value.showSearchBox}
+          onCheckedChange={(v) => set("showSearchBox", v)}
+        />
+      )}
+      {showRowDot && (
+        <ToggleRow
+          label="Bolinha colorida"
+          hint="Marca cada linha com a cor de acento."
+          checked={value.showRowDot}
+          onCheckedChange={(v) => set("showRowDot", v)}
+        />
+      )}
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.foreground }}>
+          Mensagem quando vazio
+        </Text>
+        <Input
+          placeholder="Nenhum item encontrado"
+          value={value.emptyStateMessage}
+          onChangeText={(v: string) => set("emptyStateMessage", v.slice(0, 160))}
+        />
+        <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+          Texto exibido quando os filtros não retornam nenhuma linha. Deixe
+          em branco para usar o padrão.
+        </Text>
+      </View>
+    </Section>
+  );
+}
+
+interface TableSortConfigSectionProps {
+  value: { key: string; direction: "asc" | "desc" };
+  onChange: (next: { key: string; direction: "asc" | "desc" }) => void;
+  /** Sort key options as Combobox-compatible {value, label} pairs. */
+  keyOptions: { value: string; label: string }[];
+}
+
+export function TableSortConfigSection({
+  value,
+  onChange,
+  keyOptions,
+}: TableSortConfigSectionProps) {
+  const { colors } = useTheme();
+  return (
+    <Section title="Ordenação">
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.foreground }}>
+          Ordenar por
+        </Text>
+        <Combobox
+          value={value.key}
+          onValueChange={(v: any) =>
+            onChange({
+              ...value,
+              key: typeof v === "string" ? v : keyOptions[0]?.value ?? "",
+            })
+          }
+          options={keyOptions}
+        />
+      </View>
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.foreground }}>Direção</Text>
+        <Combobox
+          value={value.direction}
+          onValueChange={(v: any) =>
+            onChange({
+              ...value,
+              direction: (typeof v === "string" ? v : "asc") as "asc" | "desc",
+            })
+          }
+          options={SORT_DIRECTION_OPTIONS}
+        />
+      </View>
+    </Section>
+  );
+}

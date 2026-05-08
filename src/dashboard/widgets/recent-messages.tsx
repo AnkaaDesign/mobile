@@ -9,7 +9,7 @@ import { IconMessage } from "@tabler/icons-react-native";
 import { useHomeDashboard } from "@/hooks/dashboard";
 import { RecentMessagesList } from "@/components/home-dashboard/recent-messages-list";
 import { useTheme } from "@/lib/theme";
-import { Section, ToggleRow } from "./_shared";
+import { Section, ToggleRow, LabeledField } from "./_shared";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -75,19 +75,17 @@ function Render({ config }: WidgetRenderProps<Config>) {
 }
 
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
-  const { colors } = useTheme();
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
     onChange({ ...config, [key]: value });
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
+      <LabeledField label="Título">
         <Input
           value={config.title}
           onChangeText={(v: string) => set("title", v)}
           placeholder="Mensagens Recentes"
         />
-      </View>
+      </LabeledField>
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -97,8 +95,6 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           }}
           onChange={(next) => set("accent", next as Config["accent"])}
         />
-      </Section>
-      <Section title="Visibilidade">
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.showHeader}
@@ -117,9 +113,12 @@ export const recentMessagesWidget: WidgetDefinition<Config> = {
   icon: IconMessage,
   category: "other",
   allowedSectors: "*",
-  defaultSize: { cols: 1, rows: 2 },
-  minSize: { cols: 1, rows: 1 },
-  maxSize: { cols: 1, rows: 4 },
+  // Message list with multi-line preview blocks — needs at least 2/3 width
+  // to keep titles readable.
+  allowedSpans: [2, 3],
+  defaultSpan: 2,
+  allowedHeights: [2, 3, 4],
+  defaultRows: 2,
   configSchema,
   defaultConfig: {
     title: "Mensagens Recentes",

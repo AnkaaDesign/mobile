@@ -58,6 +58,9 @@ export interface TutorialActions {
   setPendingStart: (pending: boolean) => void;
   registerTarget: (id: string, rect: TutorialTargetRect) => void;
   unregisterTarget: (id: string) => void;
+  registerAction: (id: string, fn: () => void) => void;
+  unregisterAction: (id: string) => void;
+  invokeTargetAction: (id: string) => void;
   notifyAction: (action: TutorialActionType, payload?: { targetId?: string; eventId?: string }) => void;
 }
 

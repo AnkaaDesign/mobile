@@ -33,6 +33,8 @@ export function TutorialOverlay() {
     awaitingAction,
     next,
     skip,
+    notifyAction,
+    invokeTargetAction,
   } = tutorial;
 
   const cx = useSharedValue(SCREEN_W / 2);
@@ -170,6 +172,32 @@ export function TutorialOverlay() {
 
       {/* Pulsing yellow ring around interactive targets */}
       <Animated.View pointerEvents="none" style={pulseStyle} />
+
+      {/* Tap-capture for interactive `tap` steps. Sits inside the spotlight
+          rect and drives BOTH the tutorial advance and (if registered) the
+          underlying screen's action — so the tutorial never depends on the
+          touch passing through the dim layer to the real button. */}
+      {currentStep.kind === "interactive" &&
+      currentStep.expectedAction === "tap" &&
+      currentStep.targetId &&
+      currentTargetRect ? (
+        <Pressable
+          onPress={() => {
+            const stepTargetId = currentStep.targetId;
+            if (!stepTargetId) return;
+            invokeTargetAction(stepTargetId);
+            notifyAction("tap", { targetId: stepTargetId });
+          }}
+          style={{
+            position: "absolute",
+            left: currentTargetRect.x - SPOTLIGHT_PADDING,
+            top: currentTargetRect.y - SPOTLIGHT_PADDING,
+            width: currentTargetRect.width + SPOTLIGHT_PADDING * 2,
+            height: currentTargetRect.height + SPOTLIGHT_PADDING * 2,
+            borderRadius: SPOTLIGHT_RADIUS,
+          }}
+        />
+      ) : null}
 
       {/* Ghost interactive layer: 4 strips around the spotlight that swallow
           stray taps and nudge the pulsing ring. The spotlight rect itself is

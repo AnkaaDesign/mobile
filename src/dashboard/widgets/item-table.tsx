@@ -15,7 +15,26 @@ import {
 import { STOCK_LEVEL_LABELS } from "@/constants/enum-labels";
 import { useItems } from "@/hooks/useItem";
 import { determineStockLevel } from "@/utils/stock-level";
-import { Section, ToggleRow, LimitInput } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  LimitInput,
+  type Density,
+  makeTableDisplaySchema,
+  makeTableSortSchema,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  TableSortConfigSection,
+  type TableDisplay,
+} from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableSearch,
+  WidgetTableRow,
+  WidgetTableHeader,
+  WidgetTableMessage,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -48,6 +67,18 @@ const STOCK_OPTIONS = Object.values(STOCK_LEVEL).map((s) => ({
   label: STOCK_LEVEL_LABELS[s],
 }));
 
+const ITEM_COLUMNS: WidgetTableColumn[] = [
+  { key: "name", label: "Item", flex: 1 },
+  { key: "qty", label: "Qtd", width: 70, align: "right" },
+  { key: "stock", label: "Estoque", width: 80, align: "right" },
+];
+
+const ITEM_SORT_OPTIONS = [
+  { value: "name", label: "Nome" },
+  { value: "quantity", label: "Quantidade" },
+  { value: "monthlyConsumption", label: "Consumo mensal" },
+];
+
 const configSchema = z.object({
   title: z.string().min(1).max(80).default("Itens"),
   showHeader: z.boolean().default(true),
@@ -63,6 +94,15 @@ const configSchema = z.object({
       onlyActive: true,
     }),
   limit: z.number().int().min(5).max(50).default(20),
+  sort: makeTableSortSchema(
+    ["name", "quantity", "monthlyConsumption"] as const,
+    "name",
+    "asc",
+  ),
+  display: makeTableDisplaySchema({
+    density: "comfortable",
+    showRowDot: true,
+  }),
   accent: makeAccentSchema({ color: "yellow", icon: "Package", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
@@ -80,19 +120,22 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
 
   const [search, setSearch] = useState("");
 
   const queryParams = useMemo(() => {
     const where: any = {};
     if (config.filters.onlyActive) where.isActive = true;
+    const orderBy: any = { [config.sort.key]: config.sort.direction };
     return {
       where,
-      orderBy: { name: "asc" as const },
+      orderBy,
       take: config.limit * 2, // fetch some extra so client-side stock filter has room
       include: { brand: true, category: true },
     };
-  }, [config.filters.onlyActive, config.limit]);
+  }, [config.filters.onlyActive, config.limit, config.sort.key, config.sort.direction]);
 
   const { data, isLoading, isError, refetch, isRefetching } = useItems(
     queryParams as any,
@@ -133,6 +176,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/estoque/produtos"
       showHeader={config.showHeader}
+      density={density}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -148,63 +193,69 @@ function Render({ config }: WidgetRenderProps<Config>) {
       }
       count={filtered.length}
     >
-      <View style={{ paddingTop: 8 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Input
-            placeholder="Buscar item, marca ou código..."
-            value={search}
-            onChangeText={setSearch}
+      <WidgetTableContainer density={density}>
+        {display.showSearchBox && (
+          <WidgetTableSearch>
+            <Input
+              placeholder="Buscar item, marca ou código..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </WidgetTableSearch>
+        )}
+
+        {display.showColumnHeaders && (
+          <WidgetTableHeader
+            columns={ITEM_COLUMNS}
           />
-        </View>
+        )}
 
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
+          <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
-          </View>
+          </WidgetTableMessage>
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar itens.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Erro ao carregar itens.
+            </Text>
+          </WidgetTableMessage>
         ) : filtered.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Nenhum item encontrado.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              {display.emptyStateMessage || "Nenhum item encontrado."}
+            </Text>
+          </WidgetTableMessage>
         ) : (
-          filtered.map((item) => {
+          filtered.map((item, idx) => {
             const tone = STOCK_TONES[item._stockLevel as STOCK_LEVEL] ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
             };
             return (
-              <Pressable
+              <WidgetTableRow
                 key={item.id}
+                density={density}
+                index={idx}
+                striping={display.striping}
+                gridLines={display.gridLines}
+                hoverHighlight={display.hoverHighlight}
+                rowDotColor={display.showRowDot ? accent.hex : undefined}
                 onPress={() =>
                   router.push(`/(tabs)/estoque/produtos/detalhes/${item.id}` as any)
                 }
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: pressed ? colors.muted : "transparent",
-                })}
               >
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text
@@ -226,16 +277,25 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     </Text>
                   )}
                 </View>
-                <View style={{ alignItems: "flex-end", gap: 4 }}>
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: colors.foreground,
-                    }}
-                  >
-                    {formatQty(item.quantity)}
-                  </Text>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    width: 70,
+                    textAlign: "right",
+                    fontSize: 13,
+                    fontWeight: "700",
+                    color: colors.foreground,
+                    fontVariant: ["tabular-nums"],
+                  }}
+                >
+                  {formatQty(item.quantity)}
+                </Text>
+                <View
+                  style={{
+                    width: 80,
+                    alignItems: "flex-end",
+                  }}
+                >
                   <View
                     style={{
                       backgroundColor: tone.bg,
@@ -245,17 +305,18 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     }}
                   >
                     <Text
+                      numberOfLines={1}
                       style={{ fontSize: 9, fontWeight: "700", color: tone.fg }}
                     >
                       {STOCK_LEVEL_LABELS[item._stockLevel as STOCK_LEVEL]}
                     </Text>
                   </View>
                 </View>
-              </Pressable>
+              </WidgetTableRow>
             );
           })
         )}
-      </View>
+      </WidgetTableContainer>
     </WidgetCard>
   );
 }
@@ -294,6 +355,10 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showHeader", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as any)}
+      />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, color: colors.foreground }}>
@@ -321,6 +386,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           max={50}
         />
       </Section>
+      <TableSortConfigSection
+        value={config.sort}
+        onChange={(next) => set("sort", next as any)}
+        keyOptions={ITEM_SORT_OPTIONS}
+      />
     </View>
   );
 }
@@ -334,9 +404,12 @@ export const itemTableWidget: WidgetDefinition<Config> = {
   category: "inventory",
   // Mirror /estoque/produtos page (parent /estoque is [WAREHOUSE, ADMIN]).
   allowedSectors: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  // Tables only render well at full row width — narrow columns can't fit
+  // the search box + multi-column rows.
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Itens",
@@ -346,6 +419,8 @@ export const itemTableWidget: WidgetDefinition<Config> = {
       onlyActive: true,
     },
     limit: 20,
+    sort: { key: "name", direction: "asc" },
+    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "yellow", icon: "Package", borderColor: "none" },
   },
   RenderComponent: Render,

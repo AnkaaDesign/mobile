@@ -30,7 +30,26 @@ import {
 } from "@/constants/enums";
 import { INSTALLMENT_STATUS_LABELS } from "@/constants/enum-labels";
 import { useTasks } from "@/hooks/useTask";
-import { Section, ToggleRow, LimitInput } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  LimitInput,
+  type Density,
+  makeTableDisplaySchema,
+  makeTableSortSchema,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  TableSortConfigSection,
+  type TableDisplay,
+} from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableSearch,
+  WidgetTableRow,
+  WidgetTableHeader,
+  WidgetTableMessage,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -106,6 +125,8 @@ const configSchema = z.object({
     })
     .default({ defaultBucket: "next-30-days", hideFullyPaid: false }),
   limit: z.number().int().min(5).max(50).default(20),
+  sort: makeTableSortSchema(["dueDate", "amount"] as const, "dueDate", "asc"),
+  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({ color: "cyan", icon: "Receipt", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
@@ -241,6 +262,16 @@ const TASK_INCLUDE = {
   },
 };
 
+const INSTALLMENT_COLUMNS: WidgetTableColumn[] = [
+  { key: "customer", label: "Cliente / Tarefa", flex: 1 },
+  { key: "amount", label: "Valor", width: 90, align: "right" },
+];
+
+const INSTALLMENT_SORT_OPTIONS = [
+  { value: "dueDate", label: "Vencimento" },
+  { value: "amount", label: "Valor" },
+];
+
 // ---------- Render ----------
 
 function Render({ config }: WidgetRenderProps<Config>) {
@@ -251,6 +282,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
 
   const [search, setSearch] = useState("");
   const [bucket, setBucket] = useState<Bucket>(config.filters.defaultBucket);
@@ -306,13 +339,15 @@ function Render({ config }: WidgetRenderProps<Config>) {
     });
   }, [allRows, bucket, search, config.filters.hideFullyPaid]);
 
-  const sorted = useMemo(
-    () =>
-      [...filtered].sort(
-        (a, b) => a.dueDate.getTime() - b.dueDate.getTime(),
-      ),
-    [filtered],
-  );
+  const sorted = useMemo(() => {
+    const dir = config.sort.direction === "desc" ? -1 : 1;
+    const cmp =
+      config.sort.key === "amount"
+        ? (a: FlatInstallment, b: FlatInstallment) => (a.amount - b.amount) * dir
+        : (a: FlatInstallment, b: FlatInstallment) =>
+            (a.dueDate.getTime() - b.dueDate.getTime()) * dir;
+    return [...filtered].sort(cmp);
+  }, [filtered, config.sort.key, config.sort.direction]);
   const visible = sorted.slice(0, config.limit);
 
   const bucketCounts = useMemo(() => {
@@ -341,6 +376,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/financeiro/boletos"
       showHeader={config.showHeader}
+      density={density}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -356,20 +393,22 @@ function Render({ config }: WidgetRenderProps<Config>) {
       }
       count={visible.length}
     >
-      <View style={{ paddingTop: 8 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Input
-            placeholder="Buscar cliente ou tarefa..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+      <WidgetTableContainer density={density}>
+        {display.showSearchBox && (
+          <WidgetTableSearch>
+            <Input
+              placeholder="Buscar cliente ou tarefa..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </WidgetTableSearch>
+        )}
 
         {config.showBucketChips && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 6, paddingHorizontal: 12, paddingBottom: 8 }}
+            contentContainerStyle={{ gap: 6, paddingBottom: 8 }}
           >
             {BUCKETS.map((b) => {
               const active = b === bucket;
@@ -421,52 +460,58 @@ function Render({ config }: WidgetRenderProps<Config>) {
           </ScrollView>
         )}
 
+        {display.showColumnHeaders && (
+          <WidgetTableHeader columns={INSTALLMENT_COLUMNS} />
+        )}
+
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
+          <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
-          </View>
+          </WidgetTableMessage>
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar parcelas.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Erro ao carregar parcelas.
+            </Text>
+          </WidgetTableMessage>
         ) : visible.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Nenhuma parcela neste filtro.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              {display.emptyStateMessage || "Nenhuma parcela neste filtro."}
+            </Text>
+          </WidgetTableMessage>
         ) : (
-          visible.map((r) => {
+          visible.map((r, idx) => {
             const cdColor = countdownColor(r.daysUntilDue, r.installmentStatus);
             const isPaid = r.installmentStatus === INSTALLMENT_STATUS.PAID;
             return (
-              <Pressable
+              <WidgetTableRow
                 key={r.id}
+                density={density}
+                index={idx}
+                striping={display.striping}
+                gridLines={display.gridLines}
+                hoverHighlight={display.hoverHighlight}
+                rowDotColor={display.showRowDot ? accent.hex : undefined}
                 onPress={() =>
                   router.push(`/(tabs)/financeiro/orcamento/detalhes/${r.taskId}` as any)
                 }
-                style={({ pressed }) => ({
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: pressed ? colors.muted : "transparent",
-                })}
               >
                 <View
                   style={{
+                    flex: 1,
                     flexDirection: "row",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
@@ -510,11 +555,11 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     </View>
                   </View>
                 </View>
-              </Pressable>
+              </WidgetTableRow>
             );
           })
         )}
-      </View>
+      </WidgetTableContainer>
     </WidgetCard>
   );
 }
@@ -561,6 +606,10 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showBucketChips", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as any)}
+      />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, color: colors.foreground }}>
@@ -586,6 +635,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           max={50}
         />
       </Section>
+      <TableSortConfigSection
+        value={config.sort}
+        onChange={(next) => set("sort", next as any)}
+        keyOptions={INSTALLMENT_SORT_OPTIONS}
+      />
     </View>
   );
 }
@@ -603,9 +657,10 @@ export const installmentTableWidget: WidgetDefinition<Config> = {
     SECTOR_PRIVILEGES.COMMERCIAL,
     SECTOR_PRIVILEGES.FINANCIAL,
   ],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Boletos / Parcelas",
@@ -613,6 +668,8 @@ export const installmentTableWidget: WidgetDefinition<Config> = {
     showBucketChips: true,
     filters: { defaultBucket: "next-30-days", hideFullyPaid: false },
     limit: 20,
+    sort: { key: "dueDate", direction: "asc" },
+    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "cyan", icon: "Receipt", borderColor: "none" },
   },
   RenderComponent: Render,

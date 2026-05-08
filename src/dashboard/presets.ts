@@ -1,23 +1,39 @@
 // Sector-default home dashboard layouts for mobile. Each sector gets a
 // hand-picked set of widgets in a sensible order. Users can edit, add,
 // remove, or reorder freely after first run.
+//
+// Sizing notes:
+//  - Personal/quick widgets (favorites, time-entries, quick-note) start at
+//    span 1 (1/3) and pair into 3-slot rows.
+//  - Recent messages defaults to span 2 (2/3) so it pairs with span-1 tiles.
+//  - Data tables always sit at span 3 (full row).
+//  - rows defaults to each widget's defaultRows.
 
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { DASHBOARD_LAYOUT_VERSION } from "./types";
-import type { DashboardLayout, WidgetInstance } from "./types";
+import type {
+  DashboardLayout,
+  WidgetInstance,
+  WidgetRows,
+  WidgetSpan,
+} from "./types";
+import { widgetRegistry } from "./registry";
 
 let presetCounter = 0;
 
 function makeInstance(
   widgetId: string,
-  size: WidgetInstance["size"],
+  span: WidgetSpan,
+  rowsOverride?: WidgetRows,
   config: unknown = {},
 ): WidgetInstance {
   presetCounter += 1;
+  const def = widgetRegistry.get(widgetId);
+  const rows = rowsOverride ?? (def?.defaultRows ?? 2);
   return {
     instanceId: `preset-${widgetId}-${presetCounter}`,
     widgetId,
-    size,
+    size: { span, rows },
     config,
   };
 }
@@ -25,11 +41,9 @@ function makeInstance(
 // ---------- Per-sector builders ----------
 
 function commonWidgets(): WidgetInstance[] {
-  // Every layout gets favoritos + recent messages near the top — they are
-  // personal, low-friction, and useful for everyone.
   return [
-    makeInstance("home.favorites", { cols: 1, rows: 1 }),
-    makeInstance("home.recent-messages", { cols: 1, rows: 2 }),
+    makeInstance("home.favorites", 1),
+    makeInstance("home.recent-messages", 2),
   ];
 }
 
@@ -40,8 +54,8 @@ function productionLayout(): DashboardLayout {
     updatedAt: new Date().toISOString(),
     items: [
       ...commonWidgets(),
-      makeInstance("table.tasks", { cols: 1, rows: 3 }),
-      makeInstance("home.time-entries", { cols: 1, rows: 2 }),
+      makeInstance("home.time-entries", 3),
+      makeInstance("table.tasks", 3),
     ],
   };
 }
@@ -53,9 +67,9 @@ function warehouseLayout(): DashboardLayout {
     updatedAt: new Date().toISOString(),
     items: [
       ...commonWidgets(),
-      makeInstance("table.items", { cols: 1, rows: 3 }),
-      makeInstance("table.borrows", { cols: 1, rows: 3 }),
-      makeInstance("table.ppe-deliveries", { cols: 1, rows: 3 }),
+      makeInstance("table.items", 3),
+      makeInstance("table.borrows", 3),
+      makeInstance("table.ppe-deliveries", 3),
     ],
   };
 }
@@ -67,8 +81,8 @@ function hrLayout(): DashboardLayout {
     updatedAt: new Date().toISOString(),
     items: [
       ...commonWidgets(),
-      makeInstance("home.daily-ponto", { cols: 1, rows: 3 }),
-      makeInstance("table.ppe-deliveries", { cols: 1, rows: 3 }),
+      makeInstance("home.daily-ponto", 3),
+      makeInstance("table.ppe-deliveries", 3),
     ],
   };
 }
@@ -80,33 +94,25 @@ function financialLayout(): DashboardLayout {
     updatedAt: new Date().toISOString(),
     items: [
       ...commonWidgets(),
-      makeInstance("financial.installments", { cols: 1, rows: 3 }),
-      makeInstance("table.tasks", { cols: 1, rows: 3 }),
+      makeInstance("financial.installments", 3),
+      makeInstance("table.tasks", 3),
     ],
   };
 }
 
 function defaultLayout(): DashboardLayout {
-  // Catch-all for sectors without a dedicated builder.
   presetCounter = 0;
   return {
     version: DASHBOARD_LAYOUT_VERSION,
     updatedAt: new Date().toISOString(),
     items: [
       ...commonWidgets(),
-      makeInstance("home.time-entries", { cols: 1, rows: 2 }),
-      makeInstance("home.quick-note", { cols: 1, rows: 2 }),
+      makeInstance("home.time-entries", 3),
+      makeInstance("home.quick-note", 3),
     ],
   };
 }
 
-/**
- * Resolve a sector-specific default layout. Used by useDashboardLayout when
- * the user has no persisted dashboardLayoutMobile yet (first sign-in or after
- * a reset). Defensive layout sanitisation later strips any widget the sector
- * is not authorised for, so it's safe for all of these to include widgets
- * that are sector-restricted — registry filtering takes care of the rest.
- */
 export function getDefaultLayoutForSector(
   sector: SECTOR_PRIVILEGES | null | undefined,
 ): DashboardLayout {
@@ -126,8 +132,6 @@ export function getDefaultLayoutForSector(
     case SECTOR_PRIVILEGES.COMMERCIAL:
       return financialLayout();
     case SECTOR_PRIVILEGES.ADMIN:
-      // Admin gets the production layout as a useful default; they can
-      // customise to taste.
       return productionLayout();
     default:
       return defaultLayout();

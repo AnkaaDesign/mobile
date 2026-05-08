@@ -303,9 +303,13 @@ export const timeEntriesWidget: WidgetDefinition<Config> = {
   // Personal data only — the API filters by the current user. Granting "*"
   // is safe because users without Secullum see "Sem cadastro" and not data.
   allowedSectors: "*",
-  defaultSize: { cols: 1, rows: 2 },
-  minSize: { cols: 1, rows: 1 },
-  maxSize: { cols: 1, rows: 4 },
+  // Each row maps to one day with 4 punch columns; works at any width but
+  // the 4-column inner layout cramps below ~140px. Allow 2/3 (about 240px
+  // on most phones) and full width.
+  allowedSpans: [2, 3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 2,
   configSchema,
   defaultConfig: {
     title: "Meu Ponto",

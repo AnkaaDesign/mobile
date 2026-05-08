@@ -71,6 +71,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   });
 
   const targetsRef = useRef<Map<string, TutorialTargetRect>>(new Map());
+  const actionsRef = useRef<Map<string, () => void>>(new Map());
   const [, forceTick] = useState(0);
   const triggerRerender = useCallback(() => forceTick((n) => n + 1), []);
 
@@ -207,6 +208,23 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     },
     [triggerRerender]
   );
+
+  const registerAction = useCallback((id: string, fn: () => void) => {
+    actionsRef.current.set(id, fn);
+  }, []);
+
+  const unregisterAction = useCallback((id: string) => {
+    actionsRef.current.delete(id);
+  }, []);
+
+  const invokeTargetAction = useCallback((id: string) => {
+    const fn = actionsRef.current.get(id);
+    if (fn) {
+      try {
+        fn();
+      } catch {}
+    }
+  }, []);
 
   const notifyAction = useCallback(
     (
@@ -393,6 +411,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       setPendingStart,
       registerTarget,
       unregisterTarget,
+      registerAction,
+      unregisterAction,
+      invokeTargetAction,
       notifyAction,
     }),
     [
@@ -408,6 +429,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       setPendingStart,
       registerTarget,
       unregisterTarget,
+      registerAction,
+      unregisterAction,
+      invokeTargetAction,
       notifyAction,
     ]
   );

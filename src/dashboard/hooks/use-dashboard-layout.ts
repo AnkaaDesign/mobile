@@ -1,12 +1,19 @@
 // Edit-mode state machine + persistence for the mobile home dashboard.
-// Mirrors web/src/dashboard/hooks/use-dashboard-layout.ts but persists to
-// `preferences.dashboardLayoutMobile` instead of `dashboardLayoutWeb`.
 //
-// Read flow: preferences.dashboardLayoutMobile (JSON) → parsed via
-// dashboardLayoutSchema → fall back to sector preset if absent or invalid.
+// Independent from web: persists to Preferences.dashboardLayoutMobile and
+// uses the mobile-only `{span}` size shape. A web layout JSON cannot be parsed
+// here (different schema) — that's intentional, the two platforms keep their
+// own state.
+//
+// Read flow:
+//   preferences.dashboardLayoutMobile (JSON)
+//     → parseLayout (current schema) → use directly
+//     → fall back to parseLegacyLayout (v1 with {cols, rows})
+//        → re-attach each instance's size from widget.defaultSpan
+//     → fall back to sector preset if absent or unrecognizable
 //
 // Edit flow: enterEdit() snapshots the working layout. Mutations
-// (add/remove/reorder/configure) update local state and mark dirty.
+// (add/remove/reorder/configure/resize) update local state and mark dirty.
 // saveAndExit() PUTs to /preferences/:id; discardAndExit() restores snapshot.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -15,23 +22,46 @@ import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { notify } from "@/api-client";
 import { useMyPreferences } from "./use-my-preferences";
 import { widgetRegistry } from "../registry";
-import { parseLayout } from "../schemas";
+import { parseLayout, parseLegacyLayout } from "../schemas";
 import { DASHBOARD_LAYOUT_VERSION } from "../types";
-import type { DashboardLayout, WidgetInstance, WidgetSize } from "../types";
+import type {
+  DashboardLayout,
+  WidgetInstance,
+  WidgetSize,
+  WidgetSpan,
+  WidgetRows,
+} from "../types";
+import { WIDGET_ROW_VALUES } from "../types";
 import { getDefaultLayoutForSector } from "../presets";
 
-function clampSize(widgetId: string, requested: WidgetSize): WidgetSize {
+function clampSpan(widgetId: string, requested: WidgetSpan): WidgetSpan {
   const def = widgetRegistry.get(widgetId);
   if (!def) return requested;
-  const cols = Math.max(
-    def.minSize.cols,
-    Math.min(def.maxSize.cols, requested.cols),
-  ) as WidgetSize["cols"];
-  const rows = Math.max(
-    def.minSize.rows,
-    Math.min(def.maxSize.rows, requested.rows),
-  ) as WidgetSize["rows"];
-  return { cols, rows };
+  if (def.allowedSpans.includes(requested)) return requested;
+  const sorted = [...def.allowedSpans].sort((a, b) => a - b);
+  if (sorted.length === 0) return def.defaultSpan;
+  if (requested < sorted[0]) return sorted[0];
+  if (requested > sorted[sorted.length - 1]) return sorted[sorted.length - 1];
+  return def.defaultSpan;
+}
+
+function clampRows(widgetId: string, requested: WidgetRows): WidgetRows {
+  const def = widgetRegistry.get(widgetId);
+  if (!def) return requested;
+  const allowed = def.allowedHeights ?? WIDGET_ROW_VALUES;
+  if (allowed.includes(requested)) return requested;
+  const sorted = [...allowed].sort((a, b) => a - b);
+  if (sorted.length === 0) return def.defaultRows;
+  if (requested < sorted[0]) return sorted[0];
+  if (requested > sorted[sorted.length - 1]) return sorted[sorted.length - 1];
+  return def.defaultRows;
+}
+
+function clampSize(widgetId: string, requested: WidgetSize): WidgetSize {
+  return {
+    span: clampSpan(widgetId, requested.span),
+    rows: clampRows(widgetId, requested.rows),
+  };
 }
 
 function newInstanceId(): string {
@@ -44,7 +74,8 @@ function newInstanceId(): string {
 
 /**
  * Strip widgets the user is no longer allowed to use (sector changed, widget
- * removed). Also clamps each instance's size to the current widget's min/max.
+ * removed). Also clamps each instance's size to the current widget's allowed
+ * spans.
  */
 function sanitizeLayout(
   layout: DashboardLayout,
@@ -56,6 +87,45 @@ function sanitizeLayout(
     return [{ ...item, size: clampSize(item.widgetId, item.size) }];
   });
   return { ...layout, items };
+}
+
+/**
+ * Read raw preference value, deciding between current-schema, legacy-v1, and
+ * preset fallback. Returns a layout that's safe to render — sizes already
+ * filled in for any legacy items.
+ */
+function loadLayoutFromPreferences(
+  raw: unknown,
+  userSector: SECTOR_PRIVILEGES | null | undefined,
+): DashboardLayout {
+  // Path 1: current schema parses cleanly.
+  const current = parseLayout(raw);
+  if (current) return current;
+
+  // Path 2: legacy v1 layout — re-attach each instance's defaultSpan from its
+  // widget definition. Unknown widgets get dropped (they'll be re-stripped by
+  // sanitizeLayout anyway).
+  const legacy = parseLegacyLayout(raw);
+  if (legacy) {
+    return {
+      version: DASHBOARD_LAYOUT_VERSION,
+      updatedAt: legacy.updatedAt,
+      items: legacy.items.map((it) => {
+        const def = widgetRegistry.get(it.widgetId);
+        const span = (def?.defaultSpan ?? 3) as WidgetSpan;
+        const rows = (def?.defaultRows ?? 2) as WidgetRows;
+        return {
+          instanceId: it.instanceId,
+          widgetId: it.widgetId,
+          size: { span, rows },
+          config: it.config,
+        };
+      }),
+    };
+  }
+
+  // Path 3: nothing usable — sector preset.
+  return getDefaultLayoutForSector(userSector);
 }
 
 export interface UseDashboardLayoutReturn {
@@ -82,10 +152,8 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   const { preferences, isLoading, isUpdating, updateMine } = useMyPreferences();
 
   const persisted = useMemo<DashboardLayout>(() => {
-    const parsed = preferences
-      ? parseLayout((preferences as any).dashboardLayoutMobile)
-      : null;
-    const base = parsed ?? getDefaultLayoutForSector(currentPrivilege);
+    const raw = preferences ? (preferences as any).dashboardLayoutMobile : null;
+    const base = loadLayoutFromPreferences(raw, currentPrivilege);
     return sanitizeLayout(base, currentPrivilege);
   }, [preferences, currentPrivilege]);
 
@@ -144,7 +212,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
           {
             instanceId: newInstanceId(),
             widgetId,
-            size: def.defaultSize,
+            size: { span: def.defaultSpan, rows: def.defaultRows },
             config: config ?? def.defaultConfig,
           },
         ],

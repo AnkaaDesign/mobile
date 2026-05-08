@@ -28,7 +28,7 @@ export default function GaragesScreen() {
   const userIsTeamLeader = isTeamLeader(user);
   const canEditGaragePositions = isAdmin || userIsTeamLeader || canAccess([SECTOR_PRIVILEGES.LOGISTIC, SECTOR_PRIVILEGES.PRODUCTION_MANAGER]);
 
-  // OR logic: include tasks where truck has a spot (any status), OR not completed with forecastDate <= today
+  // OR logic: include tasks where truck has a spot (any status), OR cleared, OR not completed with forecastDate <= today
   const todayStr = useMemo(() => {
     const d = new Date();
     d.setHours(23, 59, 59, 999);
@@ -46,15 +46,15 @@ export default function GaragesScreen() {
       OR: [
         // Trucks with a garage spot assigned (any status, including completed)
         { truck: { spot: { not: null } } },
+        // Cleared trucks with no spot yet (will show in yard for today)
+        {
+          cleared: true,
+          status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
+        },
         // Non-completed trucks with forecastDate <= today (for patio display)
         {
           status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
           forecastDate: { lte: todayStr },
-        },
-        // Non-completed trucks that already arrived (have entryDate) but may not have forecastDate
-        {
-          status: { in: [TASK_STATUS.PREPARATION, TASK_STATUS.WAITING_PRODUCTION, TASK_STATUS.IN_PRODUCTION] },
-          entryDate: { lte: todayStr },
         },
       ],
     },
@@ -67,6 +67,7 @@ export default function GaragesScreen() {
       finishedAt: true,
       entryDate: true,
       term: true,
+      cleared: true,
       truck: {
         select: {
           id: true,
@@ -152,50 +153,22 @@ export default function GaragesScreen() {
         return true;
       }
 
-      // YARD_WAIT trucks still need date/status checks below
+      // For trucks with YARD_WAIT spot (cleared trucks) — always include unless COMPLETED
+      if (spot === 'YARD_WAIT') {
+        if (task.status === TASK_STATUS.COMPLETED) return false;
+        return true;
+      }
 
-      const layout = truck?.leftSideLayout || truck?.rightSideLayout;
-      const layoutSections = layout?.layoutSections || [];
-      // Trucks without layout can still appear in yard with default length
-
-      // Yard trucks: only include if forecastDate <= today OR entryDate <= today, AND status is not COMPLETED
-      const forecastDate = (task as any).forecastDate;
-      const entryDate = (task as any).entryDate;
-      if (!forecastDate && !entryDate) return false;
-
-      // Must not have COMPLETED status for yard display
+      // For trucks with null spot — include in virtual patio if not completed
+      // and forecastDate <= today (forecasted to arrive today or earlier)
       if (task.status === TASK_STATUS.COMPLETED) return false;
 
-      // Hide trucks whose term (deadline) has already passed (matches web calendar filter)
-      const term = (task as any).term;
-      if (term) {
-        const termDate = new Date(term);
-        termDate.setHours(0, 0, 0, 0);
-        if (today > termDate) return false;
-      }
+      const forecastDate = (task as any).forecastDate;
+      if (!forecastDate) return false;
 
-      // Hide trucks that were already finished before today
-      const finishedAt = (task as any).finishedAt;
-      if (finishedAt) {
-        const finished = new Date(finishedAt);
-        finished.setHours(0, 0, 0, 0);
-        if (finished < today) return false;
-      }
-
-      // Show if truck already arrived (entryDate) or is expected (forecastDate)
-      if (entryDate) {
-        const entry = new Date(entryDate);
-        entry.setHours(0, 0, 0, 0);
-        if (entry <= today) return true;
-      }
-
-      if (forecastDate) {
-        const forecast = new Date(forecastDate);
-        forecast.setHours(0, 0, 0, 0);
-        return forecast <= today;
-      }
-
-      return false;
+      const forecast = new Date(forecastDate);
+      forecast.setHours(0, 0, 0, 0);
+      return forecast <= today;
     });
 
     // Deduplicate: when multiple trucks share the same spot (stale data from old logic),

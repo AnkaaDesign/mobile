@@ -18,7 +18,6 @@ export {
 } from "./tutorial-context";
 export { TutorialOverlay } from "./tutorial-overlay";
 export { TutorialFirstLaunchTrigger } from "./tutorial-trigger";
-export { ReplayTutorialButton } from "./replay-tutorial-button";
 export { useTutorialTarget } from "./use-tutorial-target";
 export { TUTORIAL_TARGETS } from "./target-ids";
 export type { TutorialTargetId } from "./target-ids";

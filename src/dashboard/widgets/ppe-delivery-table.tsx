@@ -23,7 +23,25 @@ import {
   useBatchApprovePpeDeliveries,
   useBatchRejectPpeDeliveries,
 } from "@/hooks/usePpe";
-import { Section, ToggleRow, LimitInput } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  LimitInput,
+  type Density,
+  makeTableDisplaySchema,
+  makeTableSortSchema,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  TableSortConfigSection,
+  type TableDisplay,
+} from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableRow,
+  WidgetTableHeader,
+  WidgetTableMessage,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Modal, ModalContent, ModalHeader } from "@/components/ui/modal";
@@ -56,6 +74,17 @@ const STATUS_TONES: Record<PPE_DELIVERY_STATUS, { bg: string; fg: string }> = {
   [PPE_DELIVERY_STATUS.CANCELLED]: { bg: "#6b7280", fg: "#ffffff" },
 };
 
+const PPE_COLUMNS: WidgetTableColumn[] = [
+  { key: "item", label: "Item / Colaborador", flex: 1 },
+  { key: "status", label: "Status", width: 110, align: "right" },
+];
+
+const PPE_SORT_OPTIONS = [
+  { value: "createdAt", label: "Data" },
+  { value: "status", label: "Status" },
+  { value: "quantity", label: "Quantidade" },
+];
+
 const STATUS_OPTIONS = Object.values(PPE_DELIVERY_STATUS).map((s) => ({
   value: s,
   label: PPE_DELIVERY_STATUS_LABELS[s],
@@ -83,6 +112,12 @@ const configSchema = z.object({
       onlyActionable: false,
     }),
   limit: z.number().int().min(5).max(50).default(15),
+  sort: makeTableSortSchema(
+    ["createdAt", "status", "quantity"] as const,
+    "createdAt",
+    "desc",
+  ),
+  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({ color: "blue", icon: "ClipboardCheck", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
@@ -101,6 +136,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
 
   const queryParams = useMemo(
     () => ({
@@ -109,11 +146,16 @@ function Render({ config }: WidgetRenderProps<Config>) {
           ? { in: config.filters.statuses }
           : undefined,
       },
-      orderBy: { createdAt: "desc" as const },
+      orderBy: { [config.sort.key]: config.sort.direction } as any,
       take: config.limit,
       include: { item: true, user: true, ppeSchedule: true },
     }),
-    [config.filters.statuses, config.limit],
+    [
+      config.filters.statuses,
+      config.limit,
+      config.sort.key,
+      config.sort.direction,
+    ],
   );
 
   const { data, isLoading, isError, refetch, isRefetching } = usePpeDeliveries(
@@ -165,6 +207,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/estoque/epi/entregas"
       showHeader={config.showHeader}
+      density={density}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -180,35 +224,38 @@ function Render({ config }: WidgetRenderProps<Config>) {
       }
       count={visible.length}
     >
-      <View style={{ paddingVertical: 4 }}>
+      <WidgetTableContainer density={density}>
+        {display.showColumnHeaders && <WidgetTableHeader columns={PPE_COLUMNS} />}
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
+          <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
-          </View>
+          </WidgetTableMessage>
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar entregas.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Erro ao carregar entregas.
+            </Text>
+          </WidgetTableMessage>
         ) : visible.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Nenhuma entrega encontrada.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              {display.emptyStateMessage || "Nenhuma entrega encontrada."}
+            </Text>
+          </WidgetTableMessage>
         ) : (
-          visible.map((d) => {
+          visible.map((d, idx) => {
             const tone = STATUS_TONES[d.status as PPE_DELIVERY_STATUS] ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
@@ -219,19 +266,21 @@ function Render({ config }: WidgetRenderProps<Config>) {
             const showActions = config.showActionButtons && canApprove && isPending;
 
             return (
-              <Pressable
+              <WidgetTableRow
                 key={d.id}
+                density={density}
+                index={idx}
+                striping={display.striping}
+                gridLines={display.gridLines}
+                hoverHighlight={display.hoverHighlight}
+                rowDotColor={display.showRowDot ? accent.hex : undefined}
                 onPress={() =>
                   router.push(`/(tabs)/estoque/epi/entregas/editar/${d.id}` as any)
                 }
-                style={({ pressed }) => ({
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: pressed ? colors.muted : "transparent",
-                })}
               >
+                {/* Inner column wraps both the data row and the action buttons,
+                    since WidgetTableRow itself is flexDirection:row. */}
+                <View style={{ flex: 1, gap: 0 }}>
                 <View
                   style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}
                 >
@@ -322,11 +371,12 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     </Pressable>
                   </View>
                 )}
-              </Pressable>
+                </View>
+              </WidgetTableRow>
             );
           })
         )}
-      </View>
+      </WidgetTableContainer>
 
       {/* Reject dialog. The Modal primitive gives us a styled native dialog
           without the AlertDialog button-typing constraints. */}
@@ -434,6 +484,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showActionButtons", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as any)}
+        features={{ showSearchBox: false }}
+      />
 
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
@@ -461,6 +516,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           max={50}
         />
       </Section>
+      <TableSortConfigSection
+        value={config.sort}
+        onChange={(next) => set("sort", next as any)}
+        keyOptions={PPE_SORT_OPTIONS}
+      />
     </View>
   );
 }
@@ -478,9 +538,10 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
     SECTOR_PRIVILEGES.ADMIN,
     SECTOR_PRIVILEGES.WAREHOUSE,
   ],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Entregas de EPI",
@@ -494,6 +555,12 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
       onlyActionable: false,
     },
     limit: 15,
+    sort: { key: "createdAt", direction: "desc" },
+    display: {
+      ...TABLE_DISPLAY_DEFAULTS,
+      density: "comfortable",
+      showSearchBox: false,
+    },
     accent: { color: "blue", icon: "ClipboardCheck", borderColor: "none" },
   },
   RenderComponent: Render,

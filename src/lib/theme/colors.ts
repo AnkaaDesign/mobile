@@ -51,7 +51,11 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     destructive: "#ef4444", // red-500 - better visibility in dark mode
     destructiveForeground: "#ffffff", // white - matching web
     border: "#383838", // HSL: 0 0% 22% - subtle but visible, matching web
-    input: "#262626", // Same as card - distinct from background for visibility
+    // Slightly lighter than card (#262626) so inputs are visually distinct
+    // when rendered ON cards — dashboard widgets (configure modal, search
+    // boxes inside table widgets) put inputs on cards and previously the
+    // input merged with the card background.
+    input: "#2f2f2f",
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
     error: "#ef4444", // alias for destructive

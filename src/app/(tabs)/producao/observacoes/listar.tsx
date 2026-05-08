@@ -36,7 +36,9 @@ export default function ObservationListScreen() {
   const tutorial = useOptionalTutorial()
 
   const listTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesList)
-  const fabTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFab)
+  const fabTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFab, {
+    onAction: () => router.push('/producao/observacoes/cadastrar' as any),
+  })
 
   const isTutorialActive = !!tutorial?.isActive
   const isFabStep =

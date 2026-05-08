@@ -1,4 +1,4 @@
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -6,36 +6,102 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconChevronRight } from "@tabler/icons-react-native";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPrivilege } from "@/utils/user";
+import {
+  TUTORIAL_TARGETS,
+  useOptionalTutorial,
+  useTutorialTarget,
+} from "@/components/tutorial";
+
+type PreferenceItem = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  onPress: () => void;
+  ref?: any;
+  onLayout?: () => void;
+};
 
 export default function PreferencesIndexScreen() {
   useScreenReady();
   const { colors } = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
+  const tutorial = useOptionalTutorial();
 
-  const preferences = [
+  // Show the replay row to PRODUCTION sector users, PRODUCTION_MANAGER (team
+  // leaders), and ADMIN (which `hasPrivilege` auto-allows). Same gate as the
+  // rest of the tutorial system.
+  const canReplayTutorial =
+    !!user &&
+    (hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
+      user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER);
+  const replayTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesReplayButton);
+
+  const handleReplayTutorial = () => {
+    if (!tutorial) return;
+    Alert.alert(
+      "Repetir Tutorial",
+      "Deseja refazer o tutorial guiado pelo aplicativo?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Começar",
+          onPress: async () => {
+            await tutorial.reset();
+            // Send the user to the home screen so the first showcase steps
+            // (greeting, widget panel, edit-painel button) have something to
+            // spotlight. Without this the tutorial would launch on top of
+            // Preferências and the early targets would never measure.
+            router.push("/(tabs)/inicio" as any);
+            tutorial.start();
+          },
+        },
+      ],
+    );
+  };
+
+  const preferences: PreferenceItem[] = [
     {
       id: "tema",
       title: "Tema",
       description: "Aparência do aplicativo",
       icon: "palette",
-      path: "/pessoal/preferencias/tema",
+      onPress: () => router.push("/pessoal/preferencias/tema" as any),
     },
     {
       id: "notificacoes",
       title: "Notificações",
       description: "Configurar notificações",
       icon: "bell",
-      path: "/(tabs)/perfil/notification-preferences",
+      onPress: () => router.push("/(tabs)/perfil/notification-preferences" as any),
     },
   ];
+
+  if (canReplayTutorial) {
+    preferences.push({
+      id: "replay-tutorial",
+      title: "Repetir Tutorial",
+      description: "Refaça a apresentação guiada do aplicativo",
+      icon: "repeat",
+      onPress: handleReplayTutorial,
+      ref: replayTarget.ref,
+      onLayout: replayTarget.onLayout,
+    });
+  }
 
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.title}>Preferências</ThemedText>
-        <ThemedText style={styles.subtitle}>Configure suas preferências do aplicativo</ThemedText>
+        <ThemedText style={styles.subtitle}>
+          Configure suas preferências do aplicativo
+        </ThemedText>
       </View>
 
       {/* Preference Items */}
@@ -43,19 +109,23 @@ export default function PreferencesIndexScreen() {
         {preferences.map((pref, index) => (
           <TouchableOpacity
             key={pref.id}
+            ref={pref.ref}
+            onLayout={pref.onLayout}
             style={[
               styles.preferenceCard,
               { backgroundColor: colors.card, borderColor: colors.border },
-              index < preferences.length - 1 && styles.preferenceCardBorder
+              index < preferences.length - 1 && styles.preferenceCardBorder,
             ]}
-            onPress={() => router.push(pref.path as any)}
+            onPress={pref.onPress}
             activeOpacity={0.7}
           >
             <View style={styles.preferenceLeft}>
               <Icon name={pref.icon} size="md" color={colors.primary} />
               <View style={styles.preferenceText}>
                 <ThemedText style={styles.preferenceTitle}>{pref.title}</ThemedText>
-                <ThemedText style={styles.preferenceDescription}>{pref.description}</ThemedText>
+                <ThemedText style={styles.preferenceDescription}>
+                  {pref.description}
+                </ThemedText>
               </View>
             </View>
             <IconChevronRight size={20} color={colors.mutedForeground} />

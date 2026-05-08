@@ -7,9 +7,11 @@ export { widgetRegistry } from "./registry";
 export type { WidgetRegistry } from "./registry";
 export { useDashboardLayout } from "./hooks/use-dashboard-layout";
 export { useMyPreferences } from "./hooks/use-my-preferences";
-export { DashboardList } from "./components/dashboard-list";
+export { DashboardGrid } from "./components/dashboard-grid";
 export { WidgetTile } from "./components/widget-tile";
 export { WidgetCard } from "./components/widget-card";
+export { ConfigureWidgetModal } from "./components/configure-widget-modal";
+export { SizeSelector } from "./components/size-selector";
 export { getDefaultLayoutForSector } from "./presets";
 
 // Side-effect: register all widgets with the registry on import.

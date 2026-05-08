@@ -17,7 +17,26 @@ import { useTheme } from "@/lib/theme";
 import { BORROW_STATUS, SECTOR_PRIVILEGES } from "@/constants/enums";
 import { BORROW_STATUS_LABELS } from "@/constants/enum-labels";
 import { useBorrows } from "@/hooks/useBorrow";
-import { Section, ToggleRow, LimitInput } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  LimitInput,
+  type Density,
+  makeTableDisplaySchema,
+  makeTableSortSchema,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  TableSortConfigSection,
+  type TableDisplay,
+} from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableSearch,
+  WidgetTableRow,
+  WidgetTableHeader,
+  WidgetTableMessage,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -43,6 +62,18 @@ const STATUS_TONES: Record<BORROW_STATUS, { bg: string; fg: string }> = {
   [BORROW_STATUS.OVERDUE]: { bg: "#b91c1c", fg: "#ffffff" },
   [BORROW_STATUS.LOST]: { bg: "#7f1d1d", fg: "#ffffff" },
 };
+
+const BORROW_COLUMNS: WidgetTableColumn[] = [
+  { key: "item", label: "Item", flex: 1 },
+  { key: "status", label: "Status", width: 100, align: "right" },
+  { key: "days", label: "Tempo", width: 70, align: "right" },
+];
+
+const BORROW_SORT_OPTIONS = [
+  { value: "createdAt", label: "Data do empréstimo" },
+  { value: "status", label: "Status" },
+  { value: "quantity", label: "Quantidade" },
+];
 
 const STATUS_OPTIONS = Object.values(BORROW_STATUS).map((s) => ({
   value: s,
@@ -74,6 +105,12 @@ const configSchema = z.object({
       onlyOverdue: false,
     }),
   limit: z.number().int().min(5).max(50).default(20),
+  sort: makeTableSortSchema(
+    ["createdAt", "status", "quantity"] as const,
+    "createdAt",
+    "desc",
+  ),
+  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({ color: "violet", icon: "Package", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
@@ -117,6 +154,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
 
   const [search, setSearch] = useState("");
 
@@ -127,13 +166,20 @@ function Render({ config }: WidgetRenderProps<Config>) {
     }
     const periodFilter = periodWhere(config.filters.periodPreset);
     if (periodFilter) where.createdAt = periodFilter;
+    const orderBy: any = { [config.sort.key]: config.sort.direction };
     return {
       where,
-      orderBy: { createdAt: "desc" as const },
+      orderBy,
       take: config.limit,
       include: { item: true, user: true },
     };
-  }, [config.filters.statuses, config.filters.periodPreset, config.limit]);
+  }, [
+    config.filters.statuses,
+    config.filters.periodPreset,
+    config.limit,
+    config.sort.key,
+    config.sort.direction,
+  ]);
 
   const { data, isLoading, isError, refetch, isRefetching } = useBorrows(
     queryParams as any,
@@ -161,6 +207,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/estoque/emprestimos"
       showHeader={config.showHeader}
+      density={density}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -176,42 +224,47 @@ function Render({ config }: WidgetRenderProps<Config>) {
       }
       count={filtered.length}
     >
-      <View style={{ paddingTop: 8 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Input
-            placeholder="Buscar item ou colaborador..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+      <WidgetTableContainer density={density}>
+        {display.showSearchBox && (
+          <WidgetTableSearch>
+            <Input
+              placeholder="Buscar item ou colaborador..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </WidgetTableSearch>
+        )}
+        {display.showColumnHeaders && <WidgetTableHeader columns={BORROW_COLUMNS} />}
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
+          <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
-          </View>
+          </WidgetTableMessage>
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar empréstimos.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Erro ao carregar empréstimos.
+            </Text>
+          </WidgetTableMessage>
         ) : filtered.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Nenhum empréstimo encontrado.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              {display.emptyStateMessage || "Nenhum empréstimo encontrado."}
+            </Text>
+          </WidgetTableMessage>
         ) : (
-          filtered.map((b) => {
+          filtered.map((b, idx) => {
             const tone = STATUS_TONES[b.status as BORROW_STATUS] ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
@@ -219,21 +272,21 @@ function Render({ config }: WidgetRenderProps<Config>) {
             const days = b.status === BORROW_STATUS.ACTIVE ? daysSince(b.createdAt) : null;
             const overdue = days != null && days > 30;
             return (
-              <Pressable
+              <WidgetTableRow
                 key={b.id}
+                density={density}
+                index={idx}
+                striping={display.striping}
+                gridLines={display.gridLines}
+                hoverHighlight={display.hoverHighlight}
+                rowDotColor={display.showRowDot ? accent.hex : undefined}
                 onPress={() =>
                   router.push(`/(tabs)/estoque/emprestimos/detalhes/${b.id}` as any)
                 }
-                style={({ pressed }) => ({
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: pressed ? colors.muted : "transparent",
-                })}
               >
                 <View
                   style={{
+                    flex: 1,
                     flexDirection: "row",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
@@ -287,11 +340,11 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     )}
                   </View>
                 </View>
-              </Pressable>
+              </WidgetTableRow>
             );
           })
         )}
-      </View>
+      </WidgetTableContainer>
     </WidgetCard>
   );
 }
@@ -330,6 +383,10 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showHeader", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as any)}
+      />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, color: colors.foreground }}>Status</Text>
@@ -366,6 +423,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           max={50}
         />
       </Section>
+      <TableSortConfigSection
+        value={config.sort}
+        onChange={(next) => set("sort", next as any)}
+        keyOptions={BORROW_SORT_OPTIONS}
+      />
     </View>
   );
 }
@@ -379,9 +441,10 @@ export const borrowTableWidget: WidgetDefinition<Config> = {
   category: "inventory",
   // Mirror /estoque/emprestimos page (parent /estoque is [WAREHOUSE, ADMIN]).
   allowedSectors: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Empréstimos",
@@ -392,6 +455,8 @@ export const borrowTableWidget: WidgetDefinition<Config> = {
       onlyOverdue: false,
     },
     limit: 20,
+    sort: { key: "createdAt", direction: "desc" },
+    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "violet", icon: "Package", borderColor: "none" },
   },
   RenderComponent: Render,

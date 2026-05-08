@@ -1,11 +1,27 @@
-// Widget dashboard types — shared across the dashboard module.
-// Mirrors web/src/dashboard/types.ts so a layout JSON is interchangeable
-// between platforms (we don't migrate web → mobile automatically because
-// of size differences, but the wire format stays parseable).
+// Mobile dashboard types — INTENTIONALLY DIVERGENT from web.
 //
-// Layout model: an ordered list of widget instances. On mobile we always
-// render single-column (cols clamps to 1 at render time), but cols/rows
-// stay in the schema so the same persisted JSON can survive a web round-trip.
+// Mobile and web layouts are fully independent: separate persistence
+// (Preferences.dashboardLayoutMobile vs dashboardLayoutWeb), separate widget
+// catalogs (mobile/src/dashboard/widgets vs web/src/dashboard/widgets), and
+// separate size schemas. A web layout JSON cannot be parsed as a mobile
+// layout (different shape) — by design.
+//
+// Mobile layout model:
+//   - Width  → `span`  ∈ {1, 2, 3} — number of slots in a 3-slot row.
+//                Items are walked in order and packed into rows whose spans
+//                sum ≤ 3. Mirrors web's cols (1/4, 1/2, 3/4, full) clamped
+//                for phone real-estate.
+//   - Height → `rows`  ∈ {1, 2, 3, 4} — discrete maxHeight token. 1=240px,
+//                2=360px, 3=520px, 4=720px. Mirrors web's 1-4 row range so
+//                the user can pick the same vertical scale across platforms.
+//                Mobile uses pixel caps instead of a global grid-auto-rows
+//                since mobile has no CSS grid.
+//   - Each widget declares `allowedSpans` and `allowedHeights` so widgets
+//     that only make sense at certain sizes (data tables = full+tall) can
+//     constrain the picker.
+//   - Per-widget density (compact/comfortable/spacious) lives inside the
+//     widget's own config (display.density), matching web's per-widget
+//     pattern.
 
 import type { ComponentType } from "react";
 import type { z } from "zod";
@@ -13,16 +29,52 @@ import { SECTOR_PRIVILEGES } from "@/constants/enums";
 
 // ---------- Size ----------
 
-export type WidgetCols = 1 | 2 | 3 | 4;
+export type WidgetSpan = 1 | 2 | 3;
 export type WidgetRows = 1 | 2 | 3 | 4;
 
+export const WIDGET_SPAN_VALUES: readonly WidgetSpan[] = [1, 2, 3] as const;
+export const WIDGET_ROW_VALUES: readonly WidgetRows[] = [1, 2, 3, 4] as const;
+
 export interface WidgetSize {
-  cols: WidgetCols;
+  span: WidgetSpan;
   rows: WidgetRows;
 }
 
-export const WIDGET_COL_VALUES: readonly WidgetCols[] = [1, 2, 3, 4] as const;
-export const WIDGET_ROW_VALUES: readonly WidgetRows[] = [1, 2, 3, 4] as const;
+export const WIDGET_SPAN_LABELS: Record<WidgetSpan, string> = {
+  1: "1/3",
+  2: "2/3",
+  3: "Total",
+};
+
+export const WIDGET_SPAN_LONG_LABELS: Record<WidgetSpan, string> = {
+  1: "1/3 da linha",
+  2: "2/3 da linha",
+  3: "Largura total",
+};
+
+export const WIDGET_ROW_LABELS: Record<WidgetRows, string> = {
+  1: "1×",
+  2: "2×",
+  3: "3×",
+  4: "4×",
+};
+
+export const WIDGET_ROW_LONG_LABELS: Record<WidgetRows, string> = {
+  1: "Baixa",
+  2: "Normal",
+  3: "Alta",
+  4: "Muito alta",
+};
+
+/** Concrete max-height in pixels for each rows token. Used by WidgetTile to
+ *  clamp the rendered widget body height. Content that overflows scrolls
+ *  internally via the widget's own scroll surface. */
+export const WIDGET_ROW_MAX_HEIGHT: Record<WidgetRows, number> = {
+  1: 240,
+  2: 360,
+  3: 520,
+  4: 720,
+};
 
 // ---------- Categories ----------
 
@@ -56,50 +108,44 @@ export interface WidgetConfigProps<TConfig = unknown> {
 }
 
 export interface WidgetDefinition<TConfig = unknown> {
-  /** Stable identifier — used as FK from layout instances. Format: "namespace.name" */
   id: string;
-  /** Short display name shown in the picker and as widget header. */
   name: string;
-  /** One-line description for the picker. */
   description: string;
-  /** Icon component (tabler icons accept the same prop shape). */
   icon: ComponentType<{ size?: number; color?: string }>;
-  /** Category — used to group widgets in the picker. */
   category: WidgetCategory;
-  /** Sectors that can use this widget. Use `"*"` to allow everyone. ADMIN always bypasses. */
   allowedSectors: SECTOR_PRIVILEGES[] | "*";
-  /** Default size when first added. On mobile cols always renders as 1. */
-  defaultSize: WidgetSize;
-  /** Minimum size constraint. */
-  minSize: WidgetSize;
-  /** Maximum size constraint. */
-  maxSize: WidgetSize;
-  /** Zod schema validating the config payload. */
+  /** Spans this widget supports. Tables are typically [3] only; personal
+   *  widgets often allow [1, 2, 3]. The size picker shows only these values. */
+  allowedSpans: readonly WidgetSpan[];
+  /** Heights this widget supports. Defaults to [1, 2, 3] if omitted. Tables
+   *  with a fixed search input + ~10 rows usually want [2, 3]; KPI tiles
+   *  want [1, 2]; tall analytics-style widgets force [3]. */
+  allowedHeights?: readonly WidgetRows[];
+  /** Default span when the widget is first added or migrated. */
+  defaultSpan: WidgetSpan;
+  /** Default rows when the widget is first added or migrated. */
+  defaultRows: WidgetRows;
   configSchema: z.ZodType<TConfig, z.ZodTypeDef, any>;
-  /** Default config for new instances. */
   defaultConfig: TConfig;
-  /** Render component. */
   RenderComponent: ComponentType<WidgetRenderProps<TConfig>>;
-  /** Optional custom config component. If omitted, DynamicFormField auto-generates from schema. */
   ConfigComponent?: ComponentType<WidgetConfigProps<TConfig>>;
 }
 
 // ---------- Layout instance ----------
 
 export interface WidgetInstance {
-  /** UUID — unique per instance. */
   instanceId: string;
-  /** FK to WidgetDefinition.id */
   widgetId: string;
-  /** Discrete size. */
   size: WidgetSize;
-  /** Widget-specific config (validated against widget.configSchema). */
   config: unknown;
 }
 
 // ---------- Layout document ----------
 
-export const DASHBOARD_LAYOUT_VERSION = 1;
+/** Bumped from 1 → 2 when the size schema diverged from web. Older
+ *  v1 layouts (with {cols, rows} sizes) are auto-migrated on read by
+ *  use-dashboard-layout.ts. */
+export const DASHBOARD_LAYOUT_VERSION = 2;
 
 export interface DashboardLayout {
   version: number;

@@ -1,6 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import { IconUser, IconCalendar, IconPackage, IconActivity, IconChevronRight } from "@tabler/icons-react-native";
+import {
+  IconActivity,
+  IconChevronRight,
+  IconPackage,
+  IconUser,
+} from "@tabler/icons-react-native";
 import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
 import { useColorScheme } from "nativewind";
 import { routes } from "@/constants";
@@ -45,8 +50,15 @@ export default function SettingsScreen() {
           <Text className="text-2xl font-bold text-foreground">Configurações</Text>
         </View>
 
-        <ScrollView className="flex-1 px-4 py-4">
-          <View ref={configListTarget.ref} onLayout={configListTarget.onLayout} className="space-y-2">
+        <ScrollView
+          className="flex-1 px-4 py-4"
+          contentContainerStyle={{ paddingBottom: 32 }}
+        >
+          <View
+            ref={configListTarget.ref}
+            onLayout={configListTarget.onLayout}
+            className="space-y-2"
+          >
             {settingsItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
@@ -63,7 +75,9 @@ export default function SettingsScreen() {
                 <View
                   className="w-10 h-10 rounded-full items-center justify-center"
                   style={{
-                    backgroundColor: isDarkMode ? "rgba(34, 197, 94, 0.2)" : "rgba(34, 197, 94, 0.1)",
+                    backgroundColor: isDarkMode
+                      ? "rgba(34, 197, 94, 0.2)"
+                      : "rgba(34, 197, 94, 0.1)",
                   }}
                 >
                   {item.icon && <item.icon size={20} color="#22c55e" />}

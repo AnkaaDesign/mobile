@@ -25,7 +25,25 @@ import {
 } from "@/constants/enums";
 import { TASK_STATUS_LABELS } from "@/constants/enum-labels";
 import { useTasks } from "@/hooks/useTask";
-import { Section, ToggleRow, LimitInput } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  LimitInput,
+  type Density,
+  makeTableDisplaySchema,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  TableSortConfigSection,
+  type TableDisplay,
+} from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableSearch,
+  WidgetTableRow,
+  WidgetTableHeader,
+  WidgetTableMessage,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -52,6 +70,19 @@ const STATUS_TONES: Record<TASK_STATUS, { bg: string; fg: string }> = {
   [TASK_STATUS.COMPLETED]: { bg: "#15803d", fg: "#fff" },
   [TASK_STATUS.CANCELLED]: { bg: "#b91c1c", fg: "#fff" },
 };
+
+const TASK_COLUMNS: WidgetTableColumn[] = [
+  { key: "task", label: "Tarefa", flex: 1 },
+  { key: "status", label: "Status", width: 108, align: "right" },
+  { key: "term", label: "Prazo", width: 84, align: "right" },
+];
+
+const TASK_SORT_OPTIONS = [
+  { value: "term", label: "Prazo" },
+  { value: "name", label: "Nome" },
+  { value: "customerName", label: "Cliente" },
+  { value: "createdAt", label: "Criação" },
+];
 
 const STATUS_OPTIONS = Object.values(TASK_STATUS).map((s) => ({
   value: s,
@@ -80,6 +111,7 @@ const configSchema = z.object({
     })
     .default({ key: "term", direction: "asc" }),
   limit: z.number().int().min(5).max(50).default(20),
+  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({
     color: "teal",
     icon: "ClipboardText",
@@ -150,6 +182,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
 
   const [search, setSearch] = useState("");
 
@@ -197,6 +231,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/producao/cronograma"
       showHeader={config.showHeader}
+      density={density}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -212,43 +248,48 @@ function Render({ config }: WidgetRenderProps<Config>) {
       }
       count={filtered.length}
     >
-      <View style={{ paddingTop: 8 }}>
-        <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}>
-          <Input
-            placeholder="Buscar tarefa, cliente ou OS..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+      <WidgetTableContainer density={density}>
+        {display.showSearchBox && (
+          <WidgetTableSearch>
+            <Input
+              placeholder="Buscar tarefa, cliente ou OS..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </WidgetTableSearch>
+        )}
+        {display.showColumnHeaders && <WidgetTableHeader columns={TASK_COLUMNS} />}
 
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
+          <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
-          </View>
+          </WidgetTableMessage>
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar tarefas.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Erro ao carregar tarefas.
+            </Text>
+          </WidgetTableMessage>
         ) : filtered.length === 0 ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Nenhuma tarefa encontrada.
-          </Text>
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              {display.emptyStateMessage || "Nenhuma tarefa encontrada."}
+            </Text>
+          </WidgetTableMessage>
         ) : (
-          filtered.map((t) => {
+          filtered.map((t, idx) => {
             const tone = STATUS_TONES[t.status as TASK_STATUS] ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
@@ -261,21 +302,21 @@ function Render({ config }: WidgetRenderProps<Config>) {
               t.generalPainting?.paint?.hex ||
               null;
             return (
-              <Pressable
+              <WidgetTableRow
                 key={t.id}
+                density={density}
+                index={idx}
+                striping={display.striping}
+                gridLines={display.gridLines}
+                hoverHighlight={display.hoverHighlight}
+                rowDotColor={display.showRowDot ? accent.hex : undefined}
                 onPress={() =>
                   router.push(`/(tabs)/producao/cronograma/detalhes/${t.id}` as any)
                 }
-                style={({ pressed }) => ({
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: pressed ? colors.muted : "transparent",
-                })}
               >
                 <View
                   style={{
+                    flex: 1,
                     flexDirection: "row",
                     alignItems: "flex-start",
                     justifyContent: "space-between",
@@ -362,11 +403,11 @@ function Render({ config }: WidgetRenderProps<Config>) {
                     )}
                   </View>
                 </View>
-              </Pressable>
+              </WidgetTableRow>
             );
           })
         )}
-      </View>
+      </WidgetTableContainer>
     </WidgetCard>
   );
 }
@@ -415,6 +456,10 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showPaintDot", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as any)}
+      />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
           <Text style={{ fontSize: 12, color: colors.foreground }}>Status</Text>
@@ -434,37 +479,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => setFilter("onlyOverdue", v)}
         />
       </Section>
-      <Section title="Ordenação">
-        <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 12, color: colors.foreground }}>
-            Ordenar por
-          </Text>
-          <Combobox
-            value={config.sort.key}
-            onValueChange={(v: any) =>
-              setSort("key", (typeof v === "string" ? v : "term") as Config["sort"]["key"])
-            }
-            options={[
-              { value: "term", label: "Prazo" },
-              { value: "name", label: "Nome" },
-              { value: "customerName", label: "Cliente" },
-              { value: "createdAt", label: "Criação" },
-            ]}
-          />
-        </View>
-        <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 12, color: colors.foreground }}>Direção</Text>
-          <Combobox
-            value={config.sort.direction}
-            onValueChange={(v: any) =>
-              setSort("direction", (typeof v === "string" ? v : "asc") as "asc" | "desc")
-            }
-            options={[
-              { value: "asc", label: "Crescente" },
-              { value: "desc", label: "Decrescente" },
-            ]}
-          />
-        </View>
+      <Section title="Limite">
         <LimitInput
           value={config.limit}
           onChange={(v) => set("limit", v)}
@@ -472,6 +487,13 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           max={50}
         />
       </Section>
+      <TableSortConfigSection
+        value={config.sort}
+        onChange={(next) =>
+          onChange({ ...config, sort: next as Config["sort"] })
+        }
+        keyOptions={TASK_SORT_OPTIONS}
+      />
     </View>
   );
 }
@@ -495,9 +517,10 @@ export const taskTableWidget: WidgetDefinition<Config> = {
     SECTOR_PRIVILEGES.WAREHOUSE,
     SECTOR_PRIVILEGES.ADMIN,
   ],
-  defaultSize: { cols: 1, rows: 3 },
-  minSize: { cols: 1, rows: 2 },
-  maxSize: { cols: 1, rows: 4 },
+  allowedSpans: [3],
+  defaultSpan: 3,
+  allowedHeights: [2, 3],
+  defaultRows: 3,
   configSchema,
   defaultConfig: {
     title: "Tarefas",
@@ -509,6 +532,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
     },
     sort: { key: "term", direction: "asc" },
     limit: 20,
+    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "teal", icon: "ClipboardText", borderColor: "none" },
   },
   RenderComponent: Render,

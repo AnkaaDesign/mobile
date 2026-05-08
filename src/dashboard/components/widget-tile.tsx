@@ -7,7 +7,6 @@
 
 import { useMemo } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useRouter } from "expo-router";
 import {
   IconAlertTriangle,
   IconSettings,
@@ -16,12 +15,17 @@ import {
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { widgetRegistry } from "../registry";
-import type { WidgetInstance } from "../types";
+import { WIDGET_ROW_MAX_HEIGHT } from "../types";
+import type { WidgetInstance, WidgetRows } from "../types";
 
 interface WidgetTileProps {
   instance: WidgetInstance;
   isEditing: boolean;
   onRemove: () => void;
+  /** Open the configuration modal for this instance. Wired by the parent
+   *  screen which hosts the modal state — replaces the previous
+   *  router.push('/dashboard/configure/...') flow. */
+  onConfigure?: (instanceId: string) => void;
   /** Optional drag handle press handler — wired up by parent FlatList when
    *  draggable-flatlist support lands in Phase 4. Kept optional so Phase 1 can
    *  ship before reorder is wired. */
@@ -32,10 +36,10 @@ export function WidgetTile({
   instance,
   isEditing,
   onRemove,
+  onConfigure,
   onDragHandlePressIn,
 }: WidgetTileProps) {
   const { colors } = useTheme();
-  const router = useRouter();
   const def = widgetRegistry.get(instance.widgetId);
 
   // Parse config through the widget's schema so new fields with .default()
@@ -91,6 +95,12 @@ export function WidgetTile({
   }
 
   const Render = def.RenderComponent;
+  // Clamp the rendered widget body to the configured rows-height. Content
+  // beyond this scrolls inside its own surface (each widget owns its scroll).
+  // In edit mode we relax the cap so the user can see the whole widget while
+  // dragging — the cap re-applies on Save.
+  const rowsToken = (instance.size?.rows ?? def.defaultRows) as WidgetRows;
+  const maxHeight = isEditing ? undefined : WIDGET_ROW_MAX_HEIGHT[rowsToken];
 
   return (
     <View
@@ -101,12 +111,14 @@ export function WidgetTile({
         borderColor: isEditing ? colors.primary + "66" : "transparent",
       }}
     >
-      <Render
-        instanceId={instance.instanceId}
-        config={parsedConfig}
-        size={instance.size}
-        isEditing={isEditing}
-      />
+      <View style={{ maxHeight, overflow: "hidden", borderRadius: 12 }}>
+        <Render
+          instanceId={instance.instanceId}
+          config={parsedConfig}
+          size={instance.size}
+          isEditing={isEditing}
+        />
+      </View>
       {isEditing && (
         <View
           style={{
@@ -138,19 +150,19 @@ export function WidgetTile({
               <IconGripVertical size={16} color={colors.mutedForeground} />
             </Pressable>
           )}
-          <Pressable
-            onPress={() =>
-              router.push(`/dashboard/configure/${instance.instanceId}` as any)
-            }
-            accessibilityLabel="Configurar widget"
-            hitSlop={8}
-            style={({ pressed }) => ({
-              padding: 4,
-              opacity: pressed ? 0.5 : 1,
-            })}
-          >
-            <IconSettings size={16} color={colors.mutedForeground} />
-          </Pressable>
+          {onConfigure && (
+            <Pressable
+              onPress={() => onConfigure(instance.instanceId)}
+              accessibilityLabel="Configurar widget"
+              hitSlop={8}
+              style={({ pressed }) => ({
+                padding: 4,
+                opacity: pressed ? 0.5 : 1,
+              })}
+            >
+              <IconSettings size={16} color={colors.mutedForeground} />
+            </Pressable>
+          )}
           <Pressable
             onPress={onRemove}
             accessibilityLabel="Remover widget"

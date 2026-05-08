@@ -21,7 +21,6 @@ export const TUTORIAL_TARGETS = {
   drawerObservacoes: "drawer.observacoes",
   drawerHistorico: "drawer.historico",
   drawerPessoal: "drawer.pessoal",
-  drawerFerramentas: "drawer.ferramentas",
   drawerPerfil: "drawer.perfil",
   drawerConfiguracoes: "drawer.configuracoes",
 
@@ -74,17 +73,15 @@ export const TUTORIAL_TARGETS = {
   pessoalFeriados: "pessoal.feriados",
   pessoalEpis: "pessoal.epis",
 
-  // Ferramentas (tools tab)
-  toolsList: "tools.list",
-
   // Configurações
   configList: "config.list",
+
+  // Preferências (user dropdown → "Preferências")
+  preferencesReplayButton: "preferences.replayButton",
 
   // Perfil
   perfilPhoto: "perfil.photo",
   perfilSizes: "perfil.sizes",
-  perfilNotificationPrefs: "perfil.notificationPrefs",
-  perfilReplayButton: "perfil.replayButton",
 } as const;
 
 export type TutorialTargetId =

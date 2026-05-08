@@ -10,7 +10,7 @@ import { IconStar } from "@tabler/icons-react-native";
 import { useFavorites } from "@/contexts/favorites-context";
 import { getIconInfoByPath } from "@/utils/page-icons";
 import { useTheme } from "@/lib/theme";
-import { Section, ToggleRow } from "./_shared";
+import { Section, ToggleRow, LabeledField } from "./_shared";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -37,12 +37,17 @@ const configSchema = z.object({
 });
 type Config = z.infer<typeof configSchema>;
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const { favorites } = useFavorites();
-  const itemsPerRow = config.itemsPerRow;
-  const widthPercent = `${100 / itemsPerRow - 2}%` as const;
+  // At span 1 (1/3 row width) the grid math collapses — a 2-up grid would
+  // give 50px-wide cards. Force single-column there. At span 2/3 honour the
+  // user's itemsPerRow config.
+  const span = size?.span ?? 3;
+  const itemsPerRow = span === 1 ? 1 : config.itemsPerRow;
+  const widthPercent =
+    itemsPerRow === 1 ? ("100%" as const) : (`${100 / itemsPerRow - 2}%` as const);
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
     icon: config.accent?.icon as WidgetAccentIcon,
@@ -112,7 +117,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
                 <IconComponent size={14} color="#ffffff" />
               </View>
               <Text
-                numberOfLines={2}
+                numberOfLines={1}
+                ellipsizeMode="tail"
                 style={{
                   color: colors.foreground,
                   fontSize: 11,
@@ -136,14 +142,13 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
+      <LabeledField label="Título">
         <Input
           value={config.title}
           onChangeText={(v: string) => set("title", v)}
           placeholder="Favoritos"
         />
-      </View>
+      </LabeledField>
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -153,42 +158,45 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           }}
           onChange={(next) => set("accent", next as Config["accent"])}
         />
-        <Text style={{ fontSize: 12, color: colors.foreground, marginTop: 8 }}>
-          Cards por linha
-        </Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {[2, 3].map((n) => {
-            const active = config.itemsPerRow === n;
-            return (
-              <Pressable
-                key={n}
-                onPress={() => set("itemsPerRow", n)}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: active ? colors.primary : colors.border,
-                  backgroundColor: active ? colors.primary : colors.card,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: "600",
-                    color: active ? colors.primaryForeground : colors.foreground,
-                  }}
+        <LabeledField
+          label="Cards por linha"
+          helper="Quantos atalhos exibir lado a lado dentro do widget."
+        >
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {[2, 3].map((n) => {
+              const active = config.itemsPerRow === n;
+              return (
+                <Pressable
+                  key={n}
+                  onPress={() => set("itemsPerRow", n)}
+                  style={({ pressed }) => ({
+                    flex: 1,
+                    minHeight: 44,
+                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: active ? colors.primary : colors.border,
+                    backgroundColor: active ? colors.primary : colors.card,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: pressed ? 0.85 : 1,
+                  })}
                 >
-                  {n} por linha
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </Section>
-      <Section title="Visibilidade">
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: active ? colors.primaryForeground : colors.foreground,
+                    }}
+                  >
+                    {n} por linha
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </LabeledField>
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.showHeader}
@@ -207,9 +215,12 @@ export const favoritesWidget: WidgetDefinition<Config> = {
   icon: IconStar,
   category: "other",
   allowedSectors: "*",
-  defaultSize: { cols: 1, rows: 1 },
-  minSize: { cols: 1, rows: 1 },
-  maxSize: { cols: 1, rows: 3 },
+  // Personal/quick widget — works at any width. At 1/3 falls back to a
+  // single-column stack; at 2/3 and full width uses the user's grid setting.
+  allowedSpans: [1, 2, 3],
+  defaultSpan: 1,
+  allowedHeights: [1, 2, 3],
+  defaultRows: 2,
   configSchema,
   defaultConfig: {
     title: "Favoritos",

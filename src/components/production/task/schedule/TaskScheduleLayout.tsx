@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback, useState, useEffect } from 'react'
+import React, { memo, useMemo, useCallback, useState, useEffect, useRef } from 'react'
 import {
   View,
   SectionList,
@@ -66,8 +66,12 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Track page access for recents/most accessed
   usePageTracker({ title: config.title })
 
-  // Tutorial targets - only active for cronograma pathname (not agenda)
+  // Tutorial targets - only active for cronograma pathname (not agenda).
+  // The first-task target carries an `onAction` (via ref, since handleRowPress
+  // is declared further down) so the overlay's spotlight tap drives navigation
+  // even when the dim layer would otherwise block the tap.
   const isCronogramaPath = pathname?.includes('cronograma') ?? false
+  const firstTaskActionRef = useRef<(() => void) | null>(null)
   const cronogramaSearchTarget = useTutorialTarget(
     isCronogramaPath ? TUTORIAL_TARGETS.cronogramaSearch : 'cronograma.search.inactive'
   )
@@ -75,7 +79,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFilters : 'cronograma.filters.inactive'
   )
   const cronogramaFirstTaskTarget = useTutorialTarget(
-    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFirstTask : 'cronograma.firstTask.inactive'
+    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFirstTask : 'cronograma.firstTask.inactive',
+    { onAction: () => firstTaskActionRef.current?.() }
   )
 
   // ============================================================================
@@ -618,6 +623,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
   }, [refreshTasks])
 
+  // Keep the tutorial first-task action pointed at the latest first row + handler.
+  // (handleRowPress is defined right below; sections is defined further up.)
   const handleRowPress = useCallback((item: Task) => {
     // Prevent double-clicks while navigating
     if (isNavigatingRef.current) return
@@ -654,6 +661,13 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       pushWithLoading(route)
     }
   }, [config.table.actions, config.table.onRowPress, router, startNavigation, pushWithLoading])
+
+  // Tutorial: keep the registered first-task action in sync with the latest
+  // sections + handler so the overlay's spotlight tap navigates correctly.
+  firstTaskActionRef.current = () => {
+    const firstTask = sections[0]?.data?.[0] as Task | undefined
+    if (firstTask) handleRowPress(firstTask)
+  }
 
   const handleCreate = useCallback(() => {
     if (config.actions?.create?.route) {

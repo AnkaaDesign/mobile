@@ -82,14 +82,19 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   // Tutorial targets — declare up-front so hook order is stable across renders.
   // Scope: PRODUCTION sector users only. drawerProducao is registered for the
   // grouped admin menu; PRODUCTION users see direct items at root level.
+  // The Cronograma item is interactive in the tutorial; pass `onAction` so the
+  // overlay can drive navigation when the dim layer would block the touch.
+  const navigateToPathRef = useRef<((path: string) => void) | null>(null);
   const tInicio = useTutorialTarget(TUTORIAL_TARGETS.drawerInicio);
   const tProducao = useTutorialTarget(TUTORIAL_TARGETS.drawerProducao);
-  const tCronograma = useTutorialTarget(TUTORIAL_TARGETS.drawerCronograma);
+  const tCronograma = useTutorialTarget(TUTORIAL_TARGETS.drawerCronograma, {
+    onAction: () =>
+      navigateToPathRef.current?.("/producao/cronograma/listar"),
+  });
   const tRecorte = useTutorialTarget(TUTORIAL_TARGETS.drawerRecorte);
   const tObservacoes = useTutorialTarget(TUTORIAL_TARGETS.drawerObservacoes);
   const tHistorico = useTutorialTarget(TUTORIAL_TARGETS.drawerHistorico);
   const tPessoal = useTutorialTarget(TUTORIAL_TARGETS.drawerPessoal);
-  const tFerramentas = useTutorialTarget(TUTORIAL_TARGETS.drawerFerramentas);
   const tDrawerPerfil = useTutorialTarget(TUTORIAL_TARGETS.drawerPerfil);
   const tDrawerConfiguracoes = useTutorialTarget(TUTORIAL_TARGETS.drawerConfiguracoes);
 
@@ -117,9 +122,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     // Pessoal — top-level item (production variant exists at root)
     pessoal: tPessoal,
     "pessoal-production": tPessoal,
-    // Ferramentas (tools)
-    ferramentas: tFerramentas,
-  }), [tInicio, tProducao, tCronograma, tRecorte, tObservacoes, tHistorico, tPessoal, tFerramentas]);
+  }), [tInicio, tProducao, tCronograma, tRecorte, tObservacoes, tHistorico, tPessoal]);
 
   // State
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
@@ -341,6 +344,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     },
     [pushWithLoading, isNavigatingRef, props.navigation, closeUserMenu],
   );
+
+  // Expose navigateToPath to the tutorial onAction registered above.
+  navigateToPathRef.current = navigateToPath;
 
   // Get first submenu path for navigation
   const getFirstSubmenuPath = (item: MenuItem): string | null => {
@@ -791,7 +797,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                   <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
                     <IconSettings size={22} color={isDarkMode ? "#d4d4d4" : "#404040"} />
                     <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
-                      Configurações
+                      Preferências
                     </Text>
                   </View>
                 </Pressable>
