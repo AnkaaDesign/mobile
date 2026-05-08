@@ -33,7 +33,8 @@
 //   </WidgetCard>
 
 import { type ReactNode } from "react";
-import { View, Text, Pressable, type ViewStyle } from "react-native";
+import { View, Text, Pressable, TextInput, type ViewStyle } from "react-native";
+import { IconSearch } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { Density } from "./_shared";
 
@@ -59,11 +60,74 @@ export function WidgetTableContainer({
 
 interface WidgetTableSearchProps {
   bottomGap?: number;
-  children: ReactNode;
+  /** Wrap arbitrary children in the spacer (legacy mode — used when a
+   *  widget needs a custom search control). */
+  children?: ReactNode;
+  /** Inline slim-search mode: when `value`/`onChangeText` are passed,
+   *  WidgetTableSearch renders a compact 32-px-tall TextInput with a
+   *  leading magnifying-glass icon — mirrors web's `h-7 text-xs` search
+   *  field. Cuts ~10px off the previous default `<Input>` (42px) so the
+   *  table rows have more vertical real estate. */
+  value?: string;
+  onChangeText?: (next: string) => void;
+  placeholder?: string;
 }
 
-export function WidgetTableSearch({ bottomGap = 8, children }: WidgetTableSearchProps) {
-  return <View style={{ paddingBottom: bottomGap }}>{children}</View>;
+export function WidgetTableSearch({
+  bottomGap = 8,
+  children,
+  value,
+  onChangeText,
+  placeholder = "Buscar...",
+}: WidgetTableSearchProps) {
+  const { colors, isDark } = useTheme();
+  const inline = value !== undefined && onChangeText !== undefined;
+
+  return (
+    <View style={{ paddingBottom: bottomGap }}>
+      {inline ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            height: 32,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: isDark
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(0,0,0,0.03)",
+            paddingHorizontal: 8,
+            gap: 6,
+          }}
+        >
+          <IconSearch size={14} color={colors.mutedForeground} />
+          <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor={colors.mutedForeground}
+            style={{
+              flex: 1,
+              padding: 0,
+              fontSize: 13,
+              color: colors.foreground,
+              // RN on Android sometimes adds vertical padding to TextInput;
+              // explicit 0 keeps the input visually centered in 32px.
+              minHeight: 0,
+              textAlignVertical: "center",
+              includeFontPadding: false,
+            }}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
+          />
+        </View>
+      ) : (
+        children
+      )}
+    </View>
+  );
 }
 
 // ---------- Column header ----------
@@ -78,15 +142,74 @@ export interface WidgetTableColumn {
   align?: "left" | "right" | "center";
 }
 
+/**
+ * Builds the per-cell style that mirrors a column's header. Every row cell
+ * MUST pass through this helper instead of duplicating literal width/flex
+ * values — otherwise headers and rows silently desync if anyone tweaks the
+ * COLUMNS constant. Pairs with `<WidgetTableHeader columns={...}>`.
+ *
+ * Conditional spread for `flex`/`width`: a literal `flex: undefined` or
+ * `width: undefined` in a style can collide with React Native's flex
+ * resolution (Yoga sometimes treats undefined differently from "absent"
+ * when sibling flex children compete for space). Only emit each key when
+ * it has a real value.
+ */
+export function cellStyleForColumn(col: WidgetTableColumn): ViewStyle {
+  const align = col.align ?? "left";
+  return {
+    ...(col.flex !== undefined ? { flex: col.flex } : {}),
+    ...(col.width !== undefined ? { width: col.width } : {}),
+    minWidth: 0,
+    alignItems:
+      align === "right"
+        ? "flex-end"
+        : align === "center"
+          ? "center"
+          : "flex-start",
+    flexDirection: "row",
+    justifyContent:
+      align === "right"
+        ? "flex-end"
+        : align === "center"
+          ? "center"
+          : "flex-start",
+  };
+}
+
+/**
+ * Text-cell variant — same width/alignment as `cellStyleForColumn` but
+ * applied as a Text style (so `numberOfLines={1}` and `textAlign` work).
+ * Use this when the cell is a single Text element with no inner layout.
+ */
+export function textCellStyleForColumn(col: WidgetTableColumn): {
+  flex?: number;
+  width?: number;
+  textAlign: "left" | "right" | "center";
+} {
+  return {
+    ...(col.flex !== undefined ? { flex: col.flex } : {}),
+    ...(col.width !== undefined ? { width: col.width } : {}),
+    textAlign: col.align ?? "left",
+  };
+}
+
 interface WidgetTableHeaderProps {
   columns: WidgetTableColumn[];
+  /** When true, prepend a 12px spacer so column labels align with row cells
+   *  even when rows render an 8px `rowDot` (8 + 4 marginRight = 12). Pass
+   *  the same boolean as `WidgetTableRow.rowDotColor != null`. Without this,
+   *  every header label sits ~12px to the LEFT of its row cells. */
+  reserveRowDot?: boolean;
 }
 
 /**
  * Uppercase column-label row that sits at the top of the table — same look as
  * the legacy task-deadline-list's `LOGOMARCA / IDENTIF. / PRAZO` header.
  */
-export function WidgetTableHeader({ columns }: WidgetTableHeaderProps) {
+export function WidgetTableHeader({
+  columns,
+  reserveRowDot,
+}: WidgetTableHeaderProps) {
   const { colors, isDark } = useTheme();
   return (
     <View
@@ -105,14 +228,15 @@ export function WidgetTableHeader({ columns }: WidgetTableHeaderProps) {
         borderColor: dividerColor(isDark),
       }}
     >
-      {columns.map((col, i) => (
+      {reserveRowDot && (
+        <View style={{ width: 8, marginRight: 4 }} />
+      )}
+      {columns.map((col) => (
         <Text
           key={col.key}
           numberOfLines={1}
           style={{
-            flex: col.flex,
-            width: col.width,
-            textAlign: col.align ?? "left",
+            ...textCellStyleForColumn(col),
             fontSize: 9,
             fontWeight: "700",
             letterSpacing: 0.6,
@@ -182,17 +306,6 @@ export function WidgetTableRow({
   const padY = rowVerticalPad(density);
   const isOdd = index % 2 === 1;
   const baseBg = striping && isOdd ? zebraColor(isDark) : "transparent";
-  const baseStyle: ViewStyle = {
-    marginHorizontal: -HORIZONTAL_INSET,
-    paddingHorizontal: HORIZONTAL_INSET,
-    paddingVertical: padY,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: baseBg,
-    borderTopWidth: gridLines && index !== 0 ? 1 : 0,
-    borderTopColor: dividerColor(isDark),
-  };
 
   const dot = rowDotColor ? (
     <View
@@ -207,28 +320,79 @@ export function WidgetTableRow({
   ) : null;
 
   if (!onPress) {
+    // Same split as the Pressable branch — the outer wrapper handles edge
+    // extension + zebra; the inner View handles flex layout. Keeps cells
+    // resolving correctly even if a future widget renders rows without
+    // onPress.
     return (
-      <View style={[baseStyle, style]}>
-        {dot}
-        {children}
+      <View
+        style={{
+          marginHorizontal: -HORIZONTAL_INSET,
+          backgroundColor: baseBg,
+          borderTopWidth: gridLines && index !== 0 ? 1 : 0,
+          borderTopColor: dividerColor(isDark),
+        }}
+      >
+        <View
+          style={[
+            {
+              paddingHorizontal: HORIZONTAL_INSET,
+              paddingVertical: padY,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            },
+            style,
+          ]}
+        >
+          {dot}
+          {children}
+        </View>
       </View>
     );
   }
 
+  // The flex layout (row direction + gap + cell sizing) lives on an inner
+  // View, NOT directly on the Pressable. Reason: when complex flex children
+  // (like our `flex: 1` task cell competing with `width: 108` siblings) are
+  // direct children of a Pressable on iOS, the cell's flex resolution can
+  // collapse — siblings end up at content-size with no flex distribution,
+  // and the row appears to stack vertically. Wrapping in a View whose only
+  // job is the flex container fixes the resolution.
+  //
+  // We split baseStyle in two:
+  //   - outerStyle: edge-extending (negative margin) + zebra/press bg + the
+  //                 top divider — these belong on the Pressable itself so
+  //                 the press-feedback background spans the row's full
+  //                 visual width.
+  //   - flexStyle:  the actual flex container (paddingHorizontal, padY,
+  //                 flexDirection, alignItems, gap) — applied on the inner
+  //                 View where children's flex properties resolve cleanly.
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        baseStyle,
-        {
-          backgroundColor:
-            hoverHighlight && pressed ? colors.muted : baseBg,
-        },
-        style,
-      ]}
+      style={({ pressed }) => ({
+        marginHorizontal: -HORIZONTAL_INSET,
+        backgroundColor: hoverHighlight && pressed ? colors.muted : baseBg,
+        borderTopWidth: gridLines && index !== 0 ? 1 : 0,
+        borderTopColor: dividerColor(isDark),
+      })}
     >
-      {dot}
-      {children}
+      <View
+        style={[
+          {
+            paddingHorizontal: HORIZONTAL_INSET,
+            paddingVertical: padY,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          },
+          style,
+        ]}
+      >
+        {dot}
+        {children}
+      </View>
     </Pressable>
   );
 }

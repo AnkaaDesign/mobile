@@ -19,6 +19,10 @@ import {
   Section,
   ToggleRow,
   LimitInput,
+  ConfigTitleInput,
+  TableRefreshSection,
+  ColumnPickerSection,
+  computeBodyMaxHeight,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -33,6 +37,8 @@ import {
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
+  cellStyleForColumn,
+  textCellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
 import { Input } from "@/components/ui/input";
@@ -67,11 +73,19 @@ const STOCK_OPTIONS = Object.values(STOCK_LEVEL).map((s) => ({
   label: STOCK_LEVEL_LABELS[s],
 }));
 
-const ITEM_COLUMNS: WidgetTableColumn[] = [
-  { key: "name", label: "Item", flex: 1 },
-  { key: "qty", label: "Qtd", width: 70, align: "right" },
-  { key: "stock", label: "Estoque", width: 80, align: "right" },
-];
+const ITEM_COLUMN_KEYS = ["name", "qty", "stock"] as const;
+type ItemColumnKey = (typeof ITEM_COLUMN_KEYS)[number];
+
+const ITEM_COLUMN_DEFS: Record<ItemColumnKey, WidgetTableColumn> = {
+  name: { key: "name", label: "Item", flex: 1 },
+  qty: { key: "qty", label: "Qtd", width: 70, align: "right" },
+  stock: { key: "stock", label: "Estoque", width: 80, align: "right" },
+};
+
+const ITEM_COLUMN_OPTIONS = ITEM_COLUMN_KEYS.map((k) => ({
+  key: k,
+  label: ITEM_COLUMN_DEFS[k].label,
+}));
 
 const ITEM_SORT_OPTIONS = [
   { value: "name", label: "Nome" },
@@ -99,6 +113,10 @@ const configSchema = z.object({
     "name",
     "asc",
   ),
+  visibleColumns: z
+    .array(z.enum(ITEM_COLUMN_KEYS))
+    .default(["name", "qty", "stock"])
+    .transform((cols) => (cols.includes("name") ? cols : ["name", ...cols])),
   display: makeTableDisplaySchema({
     density: "comfortable",
     showRowDot: true,
@@ -112,7 +130,7 @@ function formatQty(n: number | null | undefined): string {
   return Number.isInteger(n) ? n.toLocaleString("pt-BR") : n.toFixed(2);
 }
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
@@ -137,9 +155,15 @@ function Render({ config }: WidgetRenderProps<Config>) {
     };
   }, [config.filters.onlyActive, config.limit, config.sort.key, config.sort.direction]);
 
+  const refetchMs = Number(display.refetchInterval ?? "0");
   const { data, isLoading, isError, refetch, isRefetching } = useItems(
     queryParams as any,
+    refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
+
+  const visibleCols: ItemColumnKey[] = (config.visibleColumns?.length
+    ? config.visibleColumns
+    : ["name", "qty", "stock"]) as ItemColumnKey[];
   const rows = (data?.data ?? []) as any[];
 
   const filtered = useMemo(() => {
@@ -178,6 +202,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
       showHeader={config.showHeader}
       density={density}
       bodyPadded={false}
+      bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -195,18 +220,17 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
-          <WidgetTableSearch>
-            <Input
-              placeholder="Buscar item, marca ou código..."
-              value={search}
-              onChangeText={setSearch}
-            />
-          </WidgetTableSearch>
+          <WidgetTableSearch
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar item, marca ou código..."
+          />
         )}
 
         {display.showColumnHeaders && (
           <WidgetTableHeader
-            columns={ITEM_COLUMNS}
+            columns={visibleCols.map((k) => ITEM_COLUMN_DEFS[k])}
+            reserveRowDot={display.showRowDot}
           />
         )}
 
@@ -257,61 +281,73 @@ function Render({ config }: WidgetRenderProps<Config>) {
                   router.push(`/(tabs)/estoque/produtos/detalhes/${item.id}` as any)
                 }
               >
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: colors.foreground,
-                    }}
-                  >
-                    {item.name ?? "—"}
-                  </Text>
-                  {item.brand?.name && (
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 11, color: colors.mutedForeground }}
-                    >
-                      {item.brand.name}
-                    </Text>
-                  )}
-                </View>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    width: 70,
-                    textAlign: "right",
-                    fontSize: 13,
-                    fontWeight: "700",
-                    color: colors.foreground,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {formatQty(item.quantity)}
-                </Text>
-                <View
-                  style={{
-                    width: 80,
-                    alignItems: "flex-end",
-                  }}
-                >
-                  <View
-                    style={{
-                      backgroundColor: tone.bg,
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: 10,
-                    }}
-                  >
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 9, fontWeight: "700", color: tone.fg }}
-                    >
-                      {STOCK_LEVEL_LABELS[item._stockLevel as STOCK_LEVEL]}
-                    </Text>
-                  </View>
-                </View>
+                {visibleCols.map((key) => {
+                  const def = ITEM_COLUMN_DEFS[key];
+                  if (key === "name") {
+                    return (
+                      <View
+                        key={key}
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "600",
+                            color: colors.foreground,
+                          }}
+                        >
+                          {item.name ?? "—"}
+                        </Text>
+                        {item.brand?.name && (
+                          <Text
+                            numberOfLines={1}
+                            style={{ fontSize: 11, color: colors.mutedForeground }}
+                          >
+                            {item.brand.name}
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  }
+                  if (key === "qty") {
+                    return (
+                      <Text
+                        key={key}
+                        numberOfLines={1}
+                        style={{
+                          ...textCellStyleForColumn(def),
+                          fontSize: 13,
+                          fontWeight: "700",
+                          color: colors.foreground,
+                          fontVariant: ["tabular-nums"],
+                        }}
+                      >
+                        {formatQty(item.quantity)}
+                      </Text>
+                    );
+                  }
+                  // stock
+                  return (
+                    <View key={key} style={cellStyleForColumn(def)}>
+                      <View
+                        style={{
+                          backgroundColor: tone.bg,
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                          borderRadius: 10,
+                        }}
+                      >
+                        <Text
+                          numberOfLines={1}
+                          style={{ fontSize: 9, fontWeight: "700", color: tone.fg }}
+                        >
+                          {STOCK_LEVEL_LABELS[item._stockLevel as STOCK_LEVEL]}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
               </WidgetTableRow>
             );
           })
@@ -332,14 +368,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
-        <Input
-          value={config.title}
-          onChangeText={(v: string) => set("title", v)}
-          placeholder="Itens"
-        />
-      </View>
+      <ConfigTitleInput
+        value={config.title}
+        onChange={(v) => set("title", v)}
+        placeholder="Itens"
+      />
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -358,6 +391,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
       <TableDisplayConfigSection
         value={config.display as TableDisplay}
         onChange={(next) => set("display", next as any)}
+      />
+      <ColumnPickerSection
+        available={ITEM_COLUMN_OPTIONS}
+        visible={config.visibleColumns ?? ["name", "qty", "stock"]}
+        onChange={(next) => set("visibleColumns", next as Config["visibleColumns"])}
       />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
@@ -391,6 +429,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         onChange={(next) => set("sort", next as any)}
         keyOptions={ITEM_SORT_OPTIONS}
       />
+      <TableRefreshSection
+        value={(config.display as TableDisplay).refetchInterval ?? "0"}
+        onChange={(v) =>
+          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
+        }
+      />
     </View>
   );
 }
@@ -420,6 +464,7 @@ export const itemTableWidget: WidgetDefinition<Config> = {
     },
     limit: 20,
     sort: { key: "name", direction: "asc" },
+    visibleColumns: ["name", "qty", "stock"],
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "yellow", icon: "Package", borderColor: "none" },
   },

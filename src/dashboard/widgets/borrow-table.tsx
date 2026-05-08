@@ -21,6 +21,10 @@ import {
   Section,
   ToggleRow,
   LimitInput,
+  ConfigTitleInput,
+  TableRefreshSection,
+  ColumnPickerSection,
+  computeBodyMaxHeight,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -35,6 +39,8 @@ import {
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
+  cellStyleForColumn,
+  textCellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
 import { Input } from "@/components/ui/input";
@@ -63,11 +69,19 @@ const STATUS_TONES: Record<BORROW_STATUS, { bg: string; fg: string }> = {
   [BORROW_STATUS.LOST]: { bg: "#7f1d1d", fg: "#ffffff" },
 };
 
-const BORROW_COLUMNS: WidgetTableColumn[] = [
-  { key: "item", label: "Item", flex: 1 },
-  { key: "status", label: "Status", width: 100, align: "right" },
-  { key: "days", label: "Tempo", width: 70, align: "right" },
-];
+const BORROW_COLUMN_KEYS = ["item", "status", "days"] as const;
+type BorrowColumnKey = (typeof BORROW_COLUMN_KEYS)[number];
+
+const BORROW_COLUMN_DEFS: Record<BorrowColumnKey, WidgetTableColumn> = {
+  item: { key: "item", label: "Item", flex: 1 },
+  status: { key: "status", label: "Status", width: 100, align: "right" },
+  days: { key: "days", label: "Tempo", width: 70, align: "right" },
+};
+
+const BORROW_COLUMN_OPTIONS = BORROW_COLUMN_KEYS.map((k) => ({
+  key: k,
+  label: BORROW_COLUMN_DEFS[k].label,
+}));
 
 const BORROW_SORT_OPTIONS = [
   { value: "createdAt", label: "Data do empréstimo" },
@@ -110,6 +124,10 @@ const configSchema = z.object({
     "createdAt",
     "desc",
   ),
+  visibleColumns: z
+    .array(z.enum(BORROW_COLUMN_KEYS))
+    .default(["item", "status", "days"])
+    .transform((cols) => (cols.includes("item") ? cols : ["item", ...cols])),
   display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({ color: "violet", icon: "Package", borderColor: "none" }),
 });
@@ -146,7 +164,7 @@ function daysSince(d: string | Date | null | undefined): number {
   return Math.floor(ms / 86_400_000);
 }
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
@@ -181,9 +199,15 @@ function Render({ config }: WidgetRenderProps<Config>) {
     config.sort.direction,
   ]);
 
+  const refetchMs = Number(display.refetchInterval ?? "0");
   const { data, isLoading, isError, refetch, isRefetching } = useBorrows(
     queryParams as any,
+    refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
+
+  const visibleCols: BorrowColumnKey[] = (config.visibleColumns?.length
+    ? config.visibleColumns
+    : ["item", "status", "days"]) as BorrowColumnKey[];
   const rows = (data?.data ?? []) as any[];
 
   const filtered = useMemo(() => {
@@ -209,6 +233,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
       showHeader={config.showHeader}
       density={density}
       bodyPadded={false}
+      bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -226,15 +251,18 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
-          <WidgetTableSearch>
-            <Input
-              placeholder="Buscar item ou colaborador..."
-              value={search}
-              onChangeText={setSearch}
-            />
-          </WidgetTableSearch>
+          <WidgetTableSearch
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar item ou colaborador..."
+          />
         )}
-        {display.showColumnHeaders && <WidgetTableHeader columns={BORROW_COLUMNS} />}
+        {display.showColumnHeaders && (
+          <WidgetTableHeader
+            columns={visibleCols.map((k) => BORROW_COLUMN_DEFS[k])}
+            reserveRowDot={display.showRowDot}
+          />
+        )}
         {isLoading ? (
           <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
@@ -284,62 +312,76 @@ function Render({ config }: WidgetRenderProps<Config>) {
                   router.push(`/(tabs)/estoque/emprestimos/detalhes/${b.id}` as any)
                 }
               >
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 8,
-                  }}
-                >
-                  <View style={{ flex: 1, minWidth: 0 }}>
+                {visibleCols.map((key) => {
+                  const def = BORROW_COLUMN_DEFS[key];
+                  if (key === "item") {
+                    return (
+                      <View
+                        key={key}
+                        style={{ flex: 1, minWidth: 0 }}
+                      >
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "600",
+                            color: colors.foreground,
+                          }}
+                        >
+                          {b.item?.name ?? "—"}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={{ fontSize: 11, color: colors.mutedForeground }}
+                        >
+                          {b.user?.name ?? "—"}
+                          {b.quantity != null ? ` · ${b.quantity} un.` : ""}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  if (key === "status") {
+                    return (
+                      <View key={key} style={cellStyleForColumn(def)}>
+                        <View
+                          style={{
+                            backgroundColor: tone.bg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 12,
+                          }}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
+                          >
+                            {BORROW_STATUS_LABELS[b.status as BORROW_STATUS] ?? b.status}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
+                  // days
+                  return (
                     <Text
+                      key={key}
                       numberOfLines={1}
                       style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: colors.foreground,
+                        ...textCellStyleForColumn(def),
+                        fontSize: 11,
+                        fontWeight: overdue ? "700" : "500",
+                        color: overdue
+                          ? "#b91c1c"
+                          : days != null
+                            ? colors.foreground
+                            : colors.mutedForeground,
+                        fontVariant: ["tabular-nums"],
                       }}
                     >
-                      {b.item?.name ?? "—"}
+                      {days == null ? "—" : days === 0 ? "hoje" : `${days}d`}
                     </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 11, color: colors.mutedForeground }}
-                    >
-                      {b.user?.name ?? "—"}
-                      {b.quantity != null ? ` · ${b.quantity} un.` : ""}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end", gap: 4 }}>
-                    <View
-                      style={{
-                        backgroundColor: tone.bg,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 12,
-                      }}
-                    >
-                      <Text
-                        style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
-                      >
-                        {BORROW_STATUS_LABELS[b.status as BORROW_STATUS] ?? b.status}
-                      </Text>
-                    </View>
-                    {days != null && (
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          fontWeight: overdue ? "700" : "500",
-                          color: overdue ? "#b91c1c" : colors.mutedForeground,
-                        }}
-                      >
-                        {days === 0 ? "hoje" : `${days}d em uso`}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+                  );
+                })}
               </WidgetTableRow>
             );
           })
@@ -360,14 +402,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
-        <Input
-          value={config.title}
-          onChangeText={(v: string) => set("title", v)}
-          placeholder="Empréstimos"
-        />
-      </View>
+      <ConfigTitleInput
+        value={config.title}
+        onChange={(v) => set("title", v)}
+        placeholder="Empréstimos"
+      />
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -386,6 +425,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
       <TableDisplayConfigSection
         value={config.display as TableDisplay}
         onChange={(next) => set("display", next as any)}
+      />
+      <ColumnPickerSection
+        available={BORROW_COLUMN_OPTIONS}
+        visible={config.visibleColumns ?? ["item", "status", "days"]}
+        onChange={(next) => set("visibleColumns", next as Config["visibleColumns"])}
       />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
@@ -428,6 +472,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         onChange={(next) => set("sort", next as any)}
         keyOptions={BORROW_SORT_OPTIONS}
       />
+      <TableRefreshSection
+        value={(config.display as TableDisplay).refetchInterval ?? "0"}
+        onChange={(v) =>
+          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
+        }
+      />
     </View>
   );
 }
@@ -456,6 +506,7 @@ export const borrowTableWidget: WidgetDefinition<Config> = {
     },
     limit: 20,
     sort: { key: "createdAt", direction: "desc" },
+    visibleColumns: ["item", "status", "days"],
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "violet", icon: "Package", borderColor: "none" },
   },

@@ -34,6 +34,9 @@ import {
   Section,
   ToggleRow,
   LimitInput,
+  ConfigTitleInput,
+  TableRefreshSection,
+  computeBodyMaxHeight,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -48,6 +51,7 @@ import {
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
+  cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
 import { Input } from "@/components/ui/input";
@@ -274,7 +278,7 @@ const INSTALLMENT_SORT_OPTIONS = [
 
 // ---------- Render ----------
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
@@ -299,8 +303,10 @@ function Render({ config }: WidgetRenderProps<Config>) {
     [],
   );
 
+  const refetchMs = Number(display.refetchInterval ?? "0");
   const { data, isLoading, isError, refetch, isRefetching } = useTasks(
     queryParams as any,
+    refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
   const allRows = useMemo(
     () => flattenTasksToInstallments(data?.data),
@@ -378,6 +384,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
       showHeader={config.showHeader}
       density={density}
       bodyPadded={false}
+      bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -395,13 +402,11 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
-          <WidgetTableSearch>
-            <Input
-              placeholder="Buscar cliente ou tarefa..."
-              value={search}
-              onChangeText={setSearch}
-            />
-          </WidgetTableSearch>
+          <WidgetTableSearch
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar cliente ou tarefa..."
+          />
         )}
 
         {config.showBucketChips && (
@@ -461,7 +466,10 @@ function Render({ config }: WidgetRenderProps<Config>) {
         )}
 
         {display.showColumnHeaders && (
-          <WidgetTableHeader columns={INSTALLMENT_COLUMNS} />
+          <WidgetTableHeader
+            columns={INSTALLMENT_COLUMNS}
+            reserveRowDot={display.showRowDot}
+          />
         )}
 
         {isLoading ? (
@@ -509,50 +517,50 @@ function Render({ config }: WidgetRenderProps<Config>) {
                   router.push(`/(tabs)/financeiro/orcamento/detalhes/${r.taskId}` as any)
                 }
               >
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    numberOfLines={1}
+                    style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}
+                  >
+                    {r.customerName}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{ fontSize: 11, color: colors.mutedForeground }}
+                  >
+                    {r.taskName}
+                    {r.total > 1 ? ` · ${r.number}/${r.total}` : ""}
+                  </Text>
+                </View>
                 <View
                   style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 8,
+                    ...cellStyleForColumn(INSTALLMENT_COLUMNS[1]),
+                    flexDirection: "column",
+                    alignItems: "flex-end",
                   }}
                 >
-                  <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: colors.foreground,
+                      fontVariant: ["tabular-nums"],
+                    }}
+                  >
+                    {formatBRL(r.amount)}
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    {isPaid ? (
+                      <IconCircleCheck size={11} color="#15803d" />
+                    ) : null}
                     <Text
+                      style={{ fontSize: 10, color: cdColor, fontWeight: "600" }}
                       numberOfLines={1}
-                      style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}
                     >
-                      {r.customerName}
+                      {isPaid
+                        ? INSTALLMENT_STATUS_LABELS[r.installmentStatus]
+                        : `${formatDate(r.dueDate)} · ${countdownText(r.daysUntilDue)}`}
                     </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 11, color: colors.mutedForeground }}
-                    >
-                      {r.taskName}
-                      {r.total > 1 ? ` · ${r.number}/${r.total}` : ""}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "700",
-                        color: colors.foreground,
-                      }}
-                    >
-                      {formatBRL(r.amount)}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      {isPaid ? (
-                        <IconCircleCheck size={11} color="#15803d" />
-                      ) : null}
-                      <Text style={{ fontSize: 10, color: cdColor, fontWeight: "600" }}>
-                        {isPaid
-                          ? INSTALLMENT_STATUS_LABELS[r.installmentStatus]
-                          : `${formatDate(r.dueDate)} · ${countdownText(r.daysUntilDue)}`}
-                      </Text>
-                    </View>
                   </View>
                 </View>
               </WidgetTableRow>
@@ -577,14 +585,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
-        <Input
-          value={config.title}
-          onChangeText={(v: string) => set("title", v)}
-          placeholder="Boletos / Parcelas"
-        />
-      </View>
+      <ConfigTitleInput
+        value={config.title}
+        onChange={(v) => set("title", v)}
+        placeholder="Boletos / Parcelas"
+      />
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -639,6 +644,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         value={config.sort}
         onChange={(next) => set("sort", next as any)}
         keyOptions={INSTALLMENT_SORT_OPTIONS}
+      />
+      <TableRefreshSection
+        value={(config.display as TableDisplay).refetchInterval ?? "0"}
+        onChange={(v) =>
+          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
+        }
       />
     </View>
   );

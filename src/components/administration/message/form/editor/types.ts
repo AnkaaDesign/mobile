@@ -56,6 +56,8 @@ export interface ImageBlock extends BaseBlock {
   size?: ImageSizePreset;
   customWidth?: string;
   alignment?: 'left' | 'center' | 'right';
+  mediaType?: 'image' | 'video';
+  mimeType?: string;
 }
 
 export interface ButtonBlock extends BaseBlock {

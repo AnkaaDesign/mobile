@@ -1,27 +1,33 @@
-// Mobile size selector — twin pill rows for Largura (span) and Altura (rows).
-// Mirrors web's SizeSelector popover but rendered inline because mobile users
-// don't have screen real-estate to spare on a hover popover.
+// Mobile size selector — matches web's `web/src/dashboard/components/
+// size-selector.tsx` button-grid pattern exactly. Spec source: agent audit
+// of the web file.
 //
-// Layout decisions:
-//   - All possible options render even when disabled (so the user can see what
-//     widths/heights exist conceptually) and out-of-allowance options come
-//     through with reduced opacity + non-pressable. Mirrors web's "disabled
-//     buttons inside the popover" pattern.
-//   - Pills use min-height 44 for touch-target compliance.
-//   - Active = primary background; inactive = card with border; disabled =
-//     card + opacity 0.4 + pointer-events none.
-//   - Section is always rendered even if a dimension has only one allowed
-//     value — we still show it so the user understands "this widget is locked
-//     to this size", which matches web behaviour and removes the hidden-UI
-//     surprise reported by the user ("I can't define width/height like web").
+// Anatomy (per web spec):
+//   - Section gap: 12 (web `space-y-3`)
+//   - Per-section: 6px gap between label and grid (`space-y-1.5`)
+//   - Label: fontSize 11, fontWeight "600", uppercase, letterSpacing 0.6,
+//            color mutedForeground
+//   - Grid: a flex row with 4px gap between buttons. Each button wrapped in
+//           a `<View flex:1>` so each Pressable gets its share of the row
+//           (without the wrapper, RN's flex resolution can collapse the
+//           Pressables on iOS — same bug class as the table-row issue).
+//   - Button (web `h-9 rounded-md text-xs font-medium border`):
+//             height 36 (FIXED, not minHeight), borderRadius 6, borderWidth 1,
+//             fontSize 12, fontWeight "500"
+//   - Active: bg primary, text primaryForeground, border primary, plus the
+//             absolute IconCheck overlay top-right (12px, 2px from edges)
+//   - Inactive: TRANSPARENT bg + border colors.border (web `bg-card border`).
+//             Mobile previously filled with `colors.card` which blended with
+//             the bottom-sheet surface — pills became visible only as text.
+//   - Disabled: opacity 0.3, no fill, border at 40% alpha
+//   - Footer: borderTop 1, paddingTop 6, fontSize 11, color mutedForeground,
+//             textAlign center, with tabular-nums.
 //
-// Inputs:
-//   value:           current size on the instance
-//   allowedSpans:    whitelist for span dimension
-//   allowedHeights:  whitelist for rows dimension (defaults to all)
-//   onChange:        called with full {span, rows} object on each change
+// Why we don't use IconCheck from lucide: tabler-icons-react-native is the
+// project standard (everywhere else uses Icon* from @tabler/icons-react-native).
 
 import { View, Text, Pressable } from "react-native";
+import { IconCheck } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import {
   WIDGET_SPAN_VALUES,
@@ -51,7 +57,7 @@ export function SizeSelector({
   const summaryRows = WIDGET_ROW_LABELS[value.rows];
 
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 12 }}>
       <Row
         label="Largura"
         options={WIDGET_SPAN_VALUES.map((span) => ({
@@ -90,11 +96,11 @@ interface RowProps {
 function Row({ label, options, onSelect }: RowProps) {
   const { colors } = useTheme();
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: 6 }}>
       <Text
         style={{
           fontSize: 11,
-          fontWeight: "700",
+          fontWeight: "600",
           color: colors.mutedForeground,
           textTransform: "uppercase",
           letterSpacing: 0.6,
@@ -102,15 +108,16 @@ function Row({ label, options, onSelect }: RowProps) {
       >
         {label}
       </Text>
-      <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flexDirection: "row", gap: 4 }}>
         {options.map((opt) => (
-          <Pill
-            key={opt.value}
-            label={opt.label}
-            active={opt.active}
-            disabled={!opt.enabled}
-            onPress={() => onSelect(opt.value)}
-          />
+          <View key={opt.value} style={{ flex: 1 }}>
+            <Pill
+              label={opt.label}
+              active={opt.active}
+              disabled={!opt.enabled}
+              onPress={() => onSelect(opt.value)}
+            />
+          </View>
         ))}
       </View>
     </View>
@@ -131,29 +138,46 @@ function Pill({ label, active, disabled, onPress }: PillProps) {
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
       style={({ pressed }) => ({
-        flex: 1,
-        minHeight: 44,
-        paddingHorizontal: 8,
-        paddingVertical: 10,
-        borderRadius: 8,
+        position: "relative",
+        height: 36,
+        borderRadius: 6,
         borderWidth: 1,
-        borderColor: active ? colors.primary : colors.border,
-        backgroundColor: active ? colors.primary : colors.card,
+        borderColor: active
+          ? colors.primary
+          : disabled
+            ? colors.border + "66"
+            : colors.border,
+        backgroundColor: active
+          ? colors.primary
+          : pressed && !disabled
+            ? colors.muted
+            : "transparent",
         alignItems: "center",
         justifyContent: "center",
-        opacity: disabled ? 0.35 : pressed ? 0.7 : 1,
+        opacity: disabled ? 0.3 : 1,
       })}
     >
       <Text
         numberOfLines={1}
         style={{
-          fontSize: 13,
-          fontWeight: "700",
+          fontSize: 12,
+          fontWeight: "500",
           color: active ? colors.primaryForeground : colors.foreground,
         }}
       >
         {label}
       </Text>
+      {active && (
+        <View
+          style={{
+            position: "absolute",
+            top: 2,
+            right: 2,
+          }}
+        >
+          <IconCheck size={12} color={colors.primaryForeground} />
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -163,12 +187,16 @@ function Summary({ span, rows }: { span: string; rows: string }) {
   return (
     <Text
       style={{
+        paddingTop: 6,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
         fontSize: 11,
         color: colors.mutedForeground,
         textAlign: "center",
+        fontVariant: ["tabular-nums"],
       }}
     >
-      {span} de largura • {rows} de altura
+      {span} largura • {rows} de altura
     </Text>
   );
 }

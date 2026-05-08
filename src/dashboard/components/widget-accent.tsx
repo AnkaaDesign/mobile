@@ -3,18 +3,16 @@
 // Exposes: WidgetAccentColor / WidgetAccentIcon / WidgetBorderColor types,
 // makeAccentSchema, resolveAccent, AccentPicker.
 //
-// Design contract (matches app conventions, see screenshot bug-report):
-//   - Three "summary" cards in a row (Cor / Ícone / Borda) with identical
-//     paddings, swatch sizes, and typography. No more mixed sizing models.
-//   - Each card opens a Sheet snapped at 80% height. Sheets share a header
-//     style (title row + close X), a Selecionado preview row at the top, and
-//     a uniform option grid below.
-//   - Option grids: 3 columns for colors and borders (label-bearing), 4 columns
-//     for icons (icon-only). All cells are square-ish, same border radius,
-//     same selected outline thickness.
-//   - All paddings, gaps, and corners pull from the design-system constants
-//     so the picker blends with the rest of the app instead of looking like
-//     a one-off form.
+// Design contract:
+//   - Three "summary" cards in a row (Cor / Ícone / Borda) act as the
+//     trigger. Tapping any of them opens ONE bottom sheet whose top has a
+//     three-tab strip (Cor / Ícone / Borda) so the user can change all three
+//     aspects without closing and reopening separate sheets — cuts taps from
+//     6 to 2 for a typical color+icon edit.
+//   - Tab content shares one scrollable grid layout: 3 columns for colors
+//     and borders (label-bearing), 4 columns for icons (icon-only). All
+//     cells are square-ish, same border radius, same selected outline.
+//   - Sheet snap height is 85% so all common color tokens fit in one screen.
 
 import { type ComponentType, type ReactNode, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
@@ -230,10 +228,11 @@ interface AccentPickerProps {
   }) => void;
 }
 
+type AccentTab = "color" | "icon" | "border";
+
 export function AccentPicker({ value, onChange }: AccentPickerProps) {
-  const [colorOpen, setColorOpen] = useState(false);
-  const [iconOpen, setIconOpen] = useState(false);
-  const [borderOpen, setBorderOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<AccentTab>("color");
 
   const borderColor: WidgetBorderColor = value.borderColor ?? "none";
   const accent = resolveAccent(value);
@@ -252,21 +251,24 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
       ...patch,
     });
 
+  const openOnTab = (next: AccentTab) => {
+    setTab(next);
+    setOpen(true);
+  };
+
   return (
     <>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <SummaryCard
           label="Cor"
           value={ACCENT_LABEL[value.color]}
-          onPress={() => setColorOpen(true)}
-          swatch={
-            <Swatch backgroundColor={accent.hex} />
-          }
+          onPress={() => openOnTab("color")}
+          swatch={<Swatch backgroundColor={accent.hex} />}
         />
         <SummaryCard
           label="Ícone"
           value={ACCENT_ICON_LABEL[value.icon] ?? value.icon}
-          onPress={() => setIconOpen(true)}
+          onPress={() => openOnTab("icon")}
           swatch={
             <View
               style={{
@@ -285,7 +287,7 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
         <SummaryCard
           label="Borda"
           value={borderColor === "none" ? "Nenhuma" : ACCENT_LABEL[borderColor]}
-          onPress={() => setBorderOpen(true)}
+          onPress={() => openOnTab("border")}
           swatch={
             <BorderSwatch
               hex={borderColor === "none" ? undefined : ACCENT_HEX[borderColor]}
@@ -294,35 +296,17 @@ export function AccentPicker({ value, onChange }: AccentPickerProps) {
         />
       </View>
 
-      <ColorPickerSheet
-        title="Selecione uma cor"
-        subtitle="Define o ícone, a bolinha e a tonalidade do acento."
-        open={colorOpen}
-        onOpenChange={setColorOpen}
-        selected={value.color}
-        options={ACCENT_COLOR_TUPLE.map((c) => ({ value: c, label: ACCENT_LABEL[c] }))}
-        onSelect={(c) => change({ color: c as WidgetAccentColor })}
-      />
-
-      <IconPickerSheet
-        open={iconOpen}
-        onOpenChange={setIconOpen}
-        selected={value.icon}
+      <AccentSheet
+        open={open}
+        onOpenChange={setOpen}
+        tab={tab}
+        onTabChange={setTab}
+        value={value}
         accentHex={accent.hex}
-        onSelect={(i) => change({ icon: i })}
-      />
-
-      <ColorPickerSheet
-        title="Selecione a cor da borda"
-        subtitle="Aplica uma borda colorida à volta do widget. Use “Nenhuma” para desativar."
-        open={borderOpen}
-        onOpenChange={setBorderOpen}
-        selected={borderColor}
-        options={[
-          { value: "none", label: "Nenhuma" },
-          ...ACCENT_COLOR_TUPLE.map((c) => ({ value: c, label: ACCENT_LABEL[c] })),
-        ]}
-        onSelect={(c) => change({ borderColor: c as WidgetBorderColor })}
+        borderColor={borderColor}
+        onColorSelect={(c) => change({ color: c })}
+        onIconSelect={(i) => change({ icon: i })}
+        onBorderSelect={(b) => change({ borderColor: b })}
       />
     </>
   );
@@ -430,13 +414,170 @@ function BorderSwatch({ hex }: { hex?: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Picker sheets — colors/border share one component (label-bearing 3-column
-// grid), icons get their own (icon-only 4-column grid).
+// Single tabbed sheet — Cor / Ícone / Borda. Replaces three separate sheets
+// so the user can change all three aspects without dismissing and reopening
+// triggers. Tab strip is sticky beneath the header.
 //
 // snapPoints uses the percentage form expected by Sheet (NOT decimal) — the
 // previous code passed `[0.6]` which evaluated to ~6px height and made the
 // sheets functionally invisible on launch.
 // ---------------------------------------------------------------------------
+
+interface AccentSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tab: AccentTab;
+  onTabChange: (tab: AccentTab) => void;
+  value: AccentPickerProps["value"];
+  accentHex: string;
+  borderColor: WidgetBorderColor;
+  onColorSelect: (c: WidgetAccentColor) => void;
+  onIconSelect: (i: WidgetAccentIcon) => void;
+  onBorderSelect: (b: WidgetBorderColor) => void;
+}
+
+const TAB_TITLES: Record<AccentTab, { title: string; subtitle: string }> = {
+  color: {
+    title: "Aparência do widget",
+    subtitle: "Define o ícone, a bolinha e a tonalidade do acento.",
+  },
+  icon: {
+    title: "Aparência do widget",
+    subtitle: "Aparece no canto superior do widget, ao lado do título.",
+  },
+  border: {
+    title: "Aparência do widget",
+    subtitle:
+      'Aplica uma borda colorida à volta do widget. Use "Nenhuma" para desativar.',
+  },
+};
+
+function AccentSheet({
+  open,
+  onOpenChange,
+  tab,
+  onTabChange,
+  value,
+  accentHex,
+  borderColor,
+  onColorSelect,
+  onIconSelect,
+  onBorderSelect,
+}: AccentSheetProps) {
+  const { colors } = useTheme();
+  const meta = TAB_TITLES[tab];
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[85]}>
+      <PickerHeader
+        title={meta.title}
+        subtitle={meta.subtitle}
+        onClose={() => onOpenChange(false)}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 4,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <AccentTabButton
+          active={tab === "color"}
+          onPress={() => onTabChange("color")}
+          label="Cor"
+        />
+        <AccentTabButton
+          active={tab === "icon"}
+          onPress={() => onTabChange("icon")}
+          label="Ícone"
+        />
+        <AccentTabButton
+          active={tab === "border"}
+          onPress={() => onTabChange("border")}
+          label="Borda"
+        />
+      </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {tab === "color" && (
+          <ColorGrid
+            selected={value.color}
+            options={ACCENT_COLOR_TUPLE.map((c) => ({
+              value: c,
+              label: ACCENT_LABEL[c],
+            }))}
+            onSelect={(c) => onColorSelect(c as WidgetAccentColor)}
+          />
+        )}
+        {tab === "icon" && (
+          <IconGrid
+            selected={value.icon}
+            accentHex={accentHex}
+            onSelect={(i) => onIconSelect(i)}
+          />
+        )}
+        {tab === "border" && (
+          <ColorGrid
+            selected={borderColor}
+            options={[
+              { value: "none", label: "Nenhuma" },
+              ...ACCENT_COLOR_TUPLE.map((c) => ({
+                value: c,
+                label: ACCENT_LABEL[c],
+              })),
+            ]}
+            onSelect={(c) => onBorderSelect(c as WidgetBorderColor)}
+          />
+        )}
+      </ScrollView>
+    </Sheet>
+  );
+}
+
+function AccentTabButton({
+  active,
+  onPress,
+  label,
+}: {
+  active: boolean;
+  onPress: () => void;
+  label: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: "center",
+        backgroundColor: active
+          ? colors.primary + "1f"
+          : pressed
+            ? colors.muted
+            : "transparent",
+      })}
+    >
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: active ? "700" : "500",
+          color: active ? colors.primary : colors.foreground,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 interface PickerHeaderProps {
   title: string;
@@ -503,162 +644,104 @@ function PickerHeader({ title, subtitle, onClose }: PickerHeaderProps) {
   );
 }
 
-interface ColorPickerSheetProps {
-  title: string;
-  subtitle?: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface ColorGridProps {
   selected: string;
   options: Array<{ value: string; label: string }>;
   onSelect: (value: string) => void;
 }
 
-function ColorPickerSheet({
-  title,
-  subtitle,
-  open,
-  onOpenChange,
-  selected,
-  options,
-  onSelect,
-}: ColorPickerSheetProps) {
+function ColorGrid({ selected, options, onSelect }: ColorGridProps) {
   const { colors } = useTheme();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[80]}>
-      <PickerHeader
-        title={title}
-        subtitle={subtitle}
-        onClose={() => onOpenChange(false)}
-      />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          {options.map((opt) => {
-            const isSelected = opt.value === selected;
-            const isNone = opt.value === "none";
-            const hex = isNone ? undefined : ACCENT_HEX[opt.value as WidgetAccentColor];
-            return (
-              <Pressable
-                key={opt.value}
-                onPress={() => {
-                  onSelect(opt.value);
-                  onOpenChange(false);
-                }}
-                style={({ pressed }) => ({
-                  // Three columns inside a 16-padded sheet with 8 gap.
-                  width: "31.5%",
-                  minHeight: 84,
-                  paddingVertical: 12,
-                  paddingHorizontal: 8,
-                  borderRadius: 10,
-                  borderWidth: isSelected ? 2 : 1,
-                  borderColor: isSelected ? colors.primary : colors.border,
-                  backgroundColor: pressed ? colors.muted : colors.card,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                })}
-              >
-                {isNone ? (
-                  <BorderSwatch hex={undefined} />
-                ) : (
-                  <Swatch backgroundColor={hex as string} />
-                )}
-                <Text
-                  numberOfLines={1}
-                  style={{ fontSize: 11, fontWeight: "600", color: colors.foreground }}
-                >
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </Sheet>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      {options.map((opt) => {
+        const isSelected = opt.value === selected;
+        const isNone = opt.value === "none";
+        const hex = isNone ? undefined : ACCENT_HEX[opt.value as WidgetAccentColor];
+        return (
+          <Pressable
+            key={opt.value}
+            onPress={() => onSelect(opt.value)}
+            style={({ pressed }) => ({
+              // Three columns inside a 16-padded sheet with 8 gap.
+              width: "31.5%",
+              minHeight: 84,
+              paddingVertical: 12,
+              paddingHorizontal: 8,
+              borderRadius: 10,
+              borderWidth: isSelected ? 2 : 1,
+              borderColor: isSelected ? colors.primary : colors.border,
+              backgroundColor: pressed ? colors.muted : colors.card,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            })}
+          >
+            {isNone ? (
+              <BorderSwatch hex={undefined} />
+            ) : (
+              <Swatch backgroundColor={hex as string} />
+            )}
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 11, fontWeight: "600", color: colors.foreground }}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
-interface IconPickerSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface IconGridProps {
   selected: WidgetAccentIcon;
   accentHex: string;
   onSelect: (icon: WidgetAccentIcon) => void;
 }
 
-function IconPickerSheet({
-  open,
-  onOpenChange,
-  selected,
-  accentHex,
-  onSelect,
-}: IconPickerSheetProps) {
+function IconGrid({ selected, accentHex, onSelect }: IconGridProps) {
   const { colors } = useTheme();
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} snapPoints={[80]}>
-      <PickerHeader
-        title="Selecione um ícone"
-        subtitle="Aparece no canto superior do widget, ao lado do título."
-        onClose={() => onOpenChange(false)}
-      />
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {ACCENT_ICON_TUPLE.map((iconKey) => {
-            const Comp = ICON_COMPONENTS[iconKey];
-            const isSelected = iconKey === selected;
-            return (
-              <Pressable
-                key={iconKey}
-                onPress={() => {
-                  onSelect(iconKey);
-                  onOpenChange(false);
-                }}
-                style={({ pressed }) => ({
-                  // Four columns inside a 16-padded sheet with 8 gap.
-                  width: "23%",
-                  aspectRatio: 1,
-                  borderRadius: 10,
-                  borderWidth: isSelected ? 2 : 1,
-                  borderColor: isSelected ? colors.primary : colors.border,
-                  backgroundColor: pressed ? colors.muted : colors.card,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 4,
-                  paddingVertical: 8,
-                })}
-              >
-                <Comp size={22} color={accentHex} />
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    fontSize: 9,
-                    fontWeight: "600",
-                    color: colors.mutedForeground,
-                    textAlign: "center",
-                    paddingHorizontal: 2,
-                  }}
-                >
-                  {ACCENT_ICON_LABEL[iconKey] ?? iconKey}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </ScrollView>
-    </Sheet>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      {ACCENT_ICON_TUPLE.map((iconKey) => {
+        const Comp = ICON_COMPONENTS[iconKey];
+        const isSelected = iconKey === selected;
+        return (
+          <Pressable
+            key={iconKey}
+            onPress={() => onSelect(iconKey)}
+            style={({ pressed }) => ({
+              // Four columns inside a 16-padded sheet with 8 gap.
+              width: "23%",
+              aspectRatio: 1,
+              borderRadius: 10,
+              borderWidth: isSelected ? 2 : 1,
+              borderColor: isSelected ? colors.primary : colors.border,
+              backgroundColor: pressed ? colors.muted : colors.card,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              paddingVertical: 8,
+            })}
+          >
+            <Comp size={22} color={accentHex} />
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 9,
+                fontWeight: "600",
+                color: colors.mutedForeground,
+                textAlign: "center",
+                paddingHorizontal: 2,
+              }}
+            >
+              {ACCENT_ICON_LABEL[iconKey] ?? iconKey}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }

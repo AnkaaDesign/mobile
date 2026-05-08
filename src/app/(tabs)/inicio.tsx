@@ -33,11 +33,17 @@ import "@/dashboard";
 import { useDashboardLayout, DashboardGrid } from "@/dashboard";
 import { ConfigureWidgetModal } from "@/dashboard/components/configure-widget-modal";
 import { AddWidgetSheet } from "@/dashboard/components/add-widget-sheet";
+import { SizeSelector } from "@/dashboard/components/size-selector";
+import { widgetRegistry } from "@/dashboard/registry";
+import { ActionSheet } from "@/components/ui/action-sheet";
+import { Sheet } from "@/components/ui/sheet";
 import {
   IconPlus,
   IconPencil,
   IconX,
   IconCheck,
+  IconArrowBackUp,
+  IconDeviceFloppy,
 } from "@tabler/icons-react-native";
 
 function getGreeting(): string {
@@ -88,6 +94,31 @@ export default function HomeScreen() {
         : null,
     [configureInstanceId, layout.items],
   );
+  // Active overflow-sheet target. The ActionSheet is hosted at the screen
+  // root (not on each tile) because RN <Modal> cannot portal cleanly out of
+  // the nested Reanimated transforms each tile lives inside (DraggableFlatList
+  // cell + jiggle Animated.View).
+  const [overflowInstanceId, setOverflowInstanceId] = useState<string | null>(null);
+  const overflowInstance = useMemo(
+    () =>
+      overflowInstanceId
+        ? layout.items.find((it) => it.instanceId === overflowInstanceId) ?? null
+        : null,
+    [overflowInstanceId, layout.items],
+  );
+  // Active resize-sheet target. Same Modal-portaling reason as the overflow
+  // sheet — must live at screen root, not inside the tile.
+  const [resizeInstanceId, setResizeInstanceId] = useState<string | null>(null);
+  const resizeInstance = useMemo(
+    () =>
+      resizeInstanceId
+        ? layout.items.find((it) => it.instanceId === resizeInstanceId) ?? null
+        : null,
+    [resizeInstanceId, layout.items],
+  );
+  const resizeDef = resizeInstance
+    ? widgetRegistry.get(resizeInstance.widgetId)
+    : null;
 
   const onRefresh = useCallback(() => {
     refetch();
@@ -316,11 +347,50 @@ export default function HomeScreen() {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              justifyContent: "space-between",
               gap: 8,
-              minHeight: 44,
+              minHeight: 36,
             }}
           >
+            {/* Adicionar widget — left-aligned, mirrors web's
+                edit-toolbar.tsx ([Adicionar] | divider | Descartar | Salvar).
+                Button styling matches web's `Button size="sm" variant="outline"`:
+                h-9 (36px) borderRadius 6 outlined neutral. */}
+            <View ref={addWidgetTarget.ref} onLayout={addWidgetTarget.onLayout}>
+              <Pressable
+                onPress={() => {
+                  addWidgetTarget.onPress();
+                  setAddSheetOpen(true);
+                }}
+                hitSlop={6}
+                accessibilityLabel="Adicionar widget"
+                style={({ pressed }) => ({
+                  height: 36,
+                  paddingHorizontal: 12,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  justifyContent: "center",
+                  backgroundColor: pressed ? colors.muted : "transparent",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                })}
+              >
+                <IconPlus size={14} color={colors.foreground} />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: colors.foreground,
+                  }}
+                >
+                  Adicionar
+                </Text>
+              </Pressable>
+            </View>
+            <View style={{ flex: 1 }} />
+            {/* Descartar — destructive variant. Mirrors web `variant="destructive"`
+                using the theme's destructive color. */}
             <View
               ref={cancelEditTarget.ref}
               onLayout={cancelEditTarget.onLayout}
@@ -331,45 +401,35 @@ export default function HomeScreen() {
                   cancelEditTarget.onPress();
                   discardAndExit();
                 }}
-                hitSlop={8}
-                accessibilityLabel="Cancelar edição"
+                hitSlop={6}
+                accessibilityLabel="Descartar alterações"
                 style={({ pressed }) => ({
-                  height: 44,
+                  height: 36,
                   paddingHorizontal: 12,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  borderColor: colors.border,
+                  borderRadius: 6,
                   justifyContent: "center",
-                  backgroundColor: pressed ? colors.muted : "transparent",
+                  backgroundColor: pressed
+                    ? colors.destructive + "cc"
+                    : colors.destructive,
                   opacity: isSaving ? 0.5 : 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
                 })}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <IconX size={16} color={colors.foreground} />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: colors.foreground,
-                      marginLeft: 4,
-                    }}
-                  >
-                    Cancelar
-                  </Text>
-                </View>
+                <IconArrowBackUp size={14} color="#fff" />
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "500",
+                    color: "#fff",
+                  }}
+                >
+                  Descartar
+                </Text>
               </Pressable>
             </View>
-            <Text
-              numberOfLines={1}
-              style={{
-                flex: 1,
-                textAlign: "center",
-                fontSize: 12,
-                color: colors.mutedForeground,
-              }}
-            >
-              Editando painel
-            </Text>
+            {/* Salvar — primary. Disabled when nothing changed. */}
             <View ref={saveEditTarget.ref} onLayout={saveEditTarget.onLayout}>
               <Pressable
                 disabled={isSaving || !isDirty}
@@ -379,32 +439,34 @@ export default function HomeScreen() {
                     // Toast surface handled by the layout hook.
                   });
                 }}
+                hitSlop={6}
+                accessibilityLabel="Salvar painel"
                 style={({ pressed }) => ({
-                  height: 44,
+                  height: 36,
                   paddingHorizontal: 14,
-                  borderRadius: 999,
+                  borderRadius: 6,
                   justifyContent: "center",
                   backgroundColor: colors.primary,
                   opacity: pressed || !isDirty || isSaving ? 0.5 : 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
                 })}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {isSaving ? (
-                    <ActivityIndicator size="small" color={colors.primaryForeground} />
-                  ) : (
-                    <IconCheck size={16} color={colors.primaryForeground} />
-                  )}
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "700",
-                      color: colors.primaryForeground,
-                      marginLeft: 6,
-                    }}
-                  >
-                    {isSaving ? "Salvando" : "Salvar"}
-                  </Text>
-                </View>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={colors.primaryForeground} />
+                ) : (
+                  <IconDeviceFloppy size={14} color={colors.primaryForeground} />
+                )}
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontWeight: "600",
+                    color: colors.primaryForeground,
+                  }}
+                >
+                  {isSaving ? "Salvando" : "Salvar"}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -418,37 +480,15 @@ export default function HomeScreen() {
             onRemove={removeWidget}
             onReorder={reorderItems}
             onConfigure={(instanceId) => setConfigureInstanceId(instanceId)}
+            onMoreActions={(instanceId) => setOverflowInstanceId(instanceId)}
+            onResize={(instanceId) => setResizeInstanceId(instanceId)}
+            onEnterEditMode={enterEdit}
           />
         </View>
 
-        {/* In-edit-mode "+" tile to open the add-widget sheet. */}
-        {isEditing && (
-          <View ref={addWidgetTarget.ref} onLayout={addWidgetTarget.onLayout}>
-            <Pressable
-              onPress={() => {
-                addWidgetTarget.onPress();
-                setAddSheetOpen(true);
-              }}
-              style={({ pressed }) => ({
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                paddingVertical: 14,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderStyle: "dashed",
-                borderColor: colors.border,
-                backgroundColor: pressed ? colors.muted : "transparent",
-              })}
-            >
-              <IconPlus size={18} color={colors.mutedForeground} />
-              <Text style={{ fontSize: 13, color: colors.mutedForeground, fontWeight: "600" }}>
-                Adicionar widget
-              </Text>
-            </Pressable>
-          </View>
-        )}
+        {/* The dashed "+" tile from the previous design has been retired —
+            "Adicionar widget" now lives in the edit toolbar (matching web's
+            edit-toolbar.tsx). One canonical entry point, no redundancy. */}
 
         <AddWidgetSheet
           open={addSheetOpen}
@@ -462,6 +502,91 @@ export default function HomeScreen() {
           onApplyConfig={configureWidget}
           onApplySize={resizeWidget}
         />
+
+        {/* Per-tile overflow ActionSheet, hosted at the screen root so
+            RN <Modal> can portal cleanly out of the nested Reanimated
+            transforms each tile lives inside (DraggableFlatList cell + tile
+            jiggle Animated.View). The widget-tile fires onMoreActions with
+            its instanceId; we look up the def + render the sheet. */}
+        <ActionSheet
+          visible={!!overflowInstance}
+          onClose={() => setOverflowInstanceId(null)}
+          title={
+            overflowInstance
+              ? widgetRegistry.get(overflowInstance.widgetId)?.name
+              : undefined
+          }
+          items={
+            overflowInstance
+              ? [
+                  {
+                    id: "configure",
+                    label: "Configurar widget",
+                    icon: "settings",
+                    onPress: () => {
+                      setConfigureInstanceId(overflowInstance.instanceId);
+                    },
+                  },
+                  {
+                    id: "remove",
+                    label: "Remover do painel",
+                    icon: "trash",
+                    destructive: true,
+                    onPress: () => removeWidget(overflowInstance.instanceId),
+                  },
+                ]
+              : []
+          }
+        />
+
+        {/* Inline resize sheet — hosted at screen root (Modal portaling
+            constraint). Tapping the size pill on a tile's edit toolbar
+            opens this; resize commits immediately on each tap. */}
+        <Sheet
+          open={!!resizeInstance}
+          onOpenChange={(o) => {
+            if (!o) setResizeInstanceId(null);
+          }}
+          snapPoints={[55]}
+          backdropOpacity={0.45}
+        >
+          {resizeInstance && resizeDef && (
+            <View
+              style={{
+                paddingHorizontal: 20,
+                paddingTop: 12,
+                paddingBottom: 24,
+                gap: 16,
+              }}
+            >
+              <View style={{ gap: 4 }}>
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "700",
+                    color: colors.foreground,
+                  }}
+                >
+                  Tamanho: {resizeDef.name}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                  }}
+                >
+                  Alterações são aplicadas imediatamente.
+                </Text>
+              </View>
+              <SizeSelector
+                value={resizeInstance.size}
+                allowedSpans={resizeDef.allowedSpans}
+                allowedHeights={resizeDef.allowedHeights}
+                onChange={(size) => resizeWidget(resizeInstance.instanceId, size)}
+              />
+            </View>
+          )}
+        </Sheet>
 
         {/* Legacy hardcoded sections (sector-gated lists that haven't been
             ported to widgets yet). Wrapped in its own card to keep visual

@@ -2,15 +2,23 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { Video, ResizeMode } from 'expo-av';
 import { useTheme } from '@/lib/theme';
 import { spacing, borderRadius } from '@/constants/design-system';
 import { Input } from '@/components/ui/input';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { ThemedText } from '@/components/ui/themed-text';
-import { IconCamera, IconPhoto, IconLink, IconRefresh } from '@tabler/icons-react-native';
+import { IconCamera, IconPhoto, IconVideo, IconLink, IconRefresh } from '@tabler/icons-react-native';
 import { uploadSingleFile } from '@/api-client/file';
 import { getCurrentApiUrl } from '@/api-client/axiosClient';
 import type { ImageBlock, ImageSizePreset } from '../types';
+
+const detectMediaType = (mimeType?: string, url?: string): 'image' | 'video' => {
+  if (mimeType?.startsWith('video/')) return 'video';
+  if (mimeType?.startsWith('image/')) return 'image';
+  if (url && /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)) return 'video';
+  return 'image';
+};
 
 interface ImageBlockEditorProps {
   block: ImageBlock;
@@ -51,6 +59,11 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
     return block.url;
   }, [block.url]);
 
+  const isVideoBlock = useMemo(
+    () => detectMediaType(block.mimeType, block.url) === 'video',
+    [block.mimeType, block.url]
+  );
+
   const handlePickCamera = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -72,25 +85,29 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
     }
   };
 
-  const handlePickGallery = async () => {
+  const handlePickGallery = async (mode: 'image' | 'video' = 'image') => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permissão Necessária', 'Precisamos de permissão para acessar suas fotos.');
+        Alert.alert('Permissão Necessária', 'Precisamos de permissão para acessar sua biblioteca.');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes:
+          mode === 'video'
+            ? ImagePicker.MediaTypeOptions.Videos
+            : ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.8,
+        videoMaxDuration: 120,
       });
 
       if (!result.canceled && result.assets?.[0]) {
         await handleUpload(result.assets[0]);
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao selecionar imagem');
+      Alert.alert('Erro', `Erro ao selecionar ${mode === 'video' ? 'vídeo' : 'imagem'}`);
     }
   };
 
@@ -98,10 +115,17 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
     try {
       setIsUploading(true);
 
+      const isVideoAsset =
+        asset.type === 'video' || (asset.mimeType?.startsWith('video/') ?? false);
+      const fallbackName = isVideoAsset
+        ? `video_${Date.now()}.mp4`
+        : `image_${Date.now()}.jpg`;
+      const fallbackMime = isVideoAsset ? 'video/mp4' : 'image/jpeg';
+
       const file = {
         uri: asset.uri,
-        name: asset.fileName || `image_${Date.now()}.jpg`,
-        type: asset.mimeType || 'image/jpeg',
+        name: asset.fileName || fallbackName,
+        type: asset.mimeType || fallbackMime,
       };
 
       const response = await uploadSingleFile(file, { fileContext: 'messageImages' });
@@ -109,10 +133,15 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
       if (response?.success && response?.data?.id) {
         // Match web pattern: store as relative path `/files/serve/<fileId>`
         // The renderer resolves this against the API base URL
-        onUpdate({ url: `/files/serve/${response.data.id}` });
+        const mimeType = file.type;
+        onUpdate({
+          url: `/files/serve/${response.data.id}`,
+          mediaType: detectMediaType(mimeType),
+          mimeType,
+        });
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao fazer upload da imagem');
+      Alert.alert('Erro', 'Erro ao fazer upload da mídia');
     } finally {
       setIsUploading(false);
     }
@@ -123,7 +152,7 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
       <View style={[styles.uploadingContainer, { borderColor: colors.border }]}>
         <ActivityIndicator color={colors.primary} />
         <ThemedText style={[styles.uploadingText, { color: colors.mutedForeground }]}>
-          Enviando imagem...
+          Enviando mídia...
         </ThemedText>
       </View>
     );
@@ -136,8 +165,10 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
           <View style={styles.urlInputContainer}>
             <Input
               value={block.url}
-              onChangeText={(val) => onUpdate({ url: val })}
-              placeholder="https://exemplo.com/imagem.jpg"
+              onChangeText={(val) => {
+                onUpdate({ url: val, mediaType: detectMediaType(undefined, val) });
+              }}
+              placeholder="https://exemplo.com/midia.mp4"
               autoCapitalize="none"
               keyboardType="url"
               editable={!disabled}
@@ -154,7 +185,7 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
         ) : (
           <View style={[styles.emptyState, { borderColor: colors.border }]}>
             <ThemedText style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Adicionar imagem
+              Adicionar imagem ou vídeo
             </ThemedText>
             <View style={styles.buttonGroup}>
               <TouchableOpacity
@@ -167,11 +198,19 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.pickButton, { backgroundColor: colors.primary }]}
-                onPress={handlePickGallery}
+                onPress={() => handlePickGallery('image')}
                 disabled={disabled}
               >
                 <IconPhoto size={18} color="#FFFFFF" />
-                <ThemedText style={styles.pickButtonText}>Galeria</ThemedText>
+                <ThemedText style={styles.pickButtonText}>Foto</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pickButton, { backgroundColor: colors.primary }]}
+                onPress={() => handlePickGallery('video')}
+                disabled={disabled}
+              >
+                <IconVideo size={18} color="#FFFFFF" />
+                <ThemedText style={styles.pickButtonText}>Vídeo</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.pickButton, { borderColor: colors.border, borderWidth: 1 }]}
@@ -190,16 +229,26 @@ export function ImageBlockEditor({ block, onUpdate, disabled }: ImageBlockEditor
 
   return (
     <View style={styles.container}>
-      {/* Image Preview */}
+      {/* Media Preview */}
       <View style={styles.previewContainer}>
-        <Image
-          source={{ uri: resolvedImageUrl }}
-          style={styles.imagePreview}
-          contentFit="contain"
-        />
+        {isVideoBlock ? (
+          <Video
+            source={{ uri: resolvedImageUrl as string }}
+            style={[styles.imagePreview, { backgroundColor: '#000' }]}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay={false}
+          />
+        ) : (
+          <Image
+            source={{ uri: resolvedImageUrl }}
+            style={styles.imagePreview}
+            contentFit="contain"
+          />
+        )}
         <TouchableOpacity
           style={[styles.changeButton, { backgroundColor: colors.muted }]}
-          onPress={() => onUpdate({ url: '' })}
+          onPress={() => onUpdate({ url: '', mediaType: undefined, mimeType: undefined })}
           disabled={disabled}
         >
           <IconRefresh size={14} color={colors.foreground} />

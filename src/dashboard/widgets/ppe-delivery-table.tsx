@@ -1,8 +1,10 @@
 // PPE delivery widget — surfaces pending PPE delivery requests so HR/Admin
 // can approve or reject them, and Warehouse can see what is queued for
 // physical delivery. Mirrors web's ppe-delivery-table widget but adapted to
-// mobile: card stack, bottom sheet for filters/sort, alert dialog for the
-// rejection reason, and inline approve/reject buttons on each card.
+// mobile: rows match the column layout (Item/Colaborador + Status badge),
+// and the approve/reprove actions move to a long-press action sheet so the
+// row stays a single tabular line — fixing the previous broken header
+// alignment where inline action buttons broke the column model.
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
@@ -10,8 +12,6 @@ import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import {
   IconShieldCheck,
-  IconCircleCheck,
-  IconX,
   IconRefresh,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -27,6 +27,9 @@ import {
   Section,
   ToggleRow,
   LimitInput,
+  ConfigTitleInput,
+  TableRefreshSection,
+  computeBodyMaxHeight,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -40,11 +43,13 @@ import {
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
+  cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { Modal, ModalContent, ModalHeader } from "@/components/ui/modal";
+import { Modal, ModalContent } from "@/components/ui/modal";
+import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 import { WidgetCard } from "../components/widget-card";
 import {
   AccentPicker,
@@ -93,6 +98,9 @@ const STATUS_OPTIONS = Object.values(PPE_DELIVERY_STATUS).map((s) => ({
 const configSchema = z.object({
   title: z.string().min(1).max(80).default("Entregas de EPI"),
   showHeader: z.boolean().default(true),
+  /** Long-press surfaces approve/reject when allowed. The toggle now
+   *  controls whether those actions appear in the long-press menu — the
+   *  old inline-buttons-on-every-row pattern broke the table layout. */
   showActionButtons: z.boolean().default(true),
   filters: z
     .object({
@@ -122,7 +130,13 @@ const configSchema = z.object({
 });
 type Config = z.infer<typeof configSchema>;
 
-function Render({ config }: WidgetRenderProps<Config>) {
+interface ActionTarget {
+  id: string;
+  label: string;
+  status: PPE_DELIVERY_STATUS;
+}
+
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
@@ -158,8 +172,10 @@ function Render({ config }: WidgetRenderProps<Config>) {
     ],
   );
 
+  const refetchMs = Number(display.refetchInterval ?? "0");
   const { data, isLoading, isError, refetch, isRefetching } = usePpeDeliveries(
     queryParams as any,
+    refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
   const rows = (data?.data ?? []) as any[];
   const visible = config.filters.onlyActionable
@@ -168,9 +184,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
 
   const approveMutation = useBatchApprovePpeDeliveries();
   const rejectMutation = useBatchRejectPpeDeliveries();
-  const [rejectTarget, setRejectTarget] = useState<{ id: string; label: string } | null>(
-    null,
-  );
+  const [actionTarget, setActionTarget] = useState<ActionTarget | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<ActionTarget | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const onApprove = (id: string) => {
@@ -201,6 +216,45 @@ function Render({ config }: WidgetRenderProps<Config>) {
     );
   };
 
+  // Build the long-press action sheet items lazily from the active target.
+  const actionItems: ActionSheetItem[] = useMemo(() => {
+    if (!actionTarget) return [];
+    const items: ActionSheetItem[] = [
+      {
+        id: "open",
+        label: "Abrir entrega",
+        icon: "external-link",
+        onPress: () =>
+          router.push(
+            `/(tabs)/estoque/epi/entregas/editar/${actionTarget.id}` as any,
+          ),
+      },
+    ];
+    if (
+      config.showActionButtons &&
+      canApprove &&
+      actionTarget.status === PPE_DELIVERY_STATUS.PENDING
+    ) {
+      items.push({
+        id: "approve",
+        label: "Aprovar",
+        icon: "circle-check",
+        onPress: () => onApprove(actionTarget.id),
+      });
+      items.push({
+        id: "reject",
+        label: "Reprovar",
+        icon: "x",
+        destructive: true,
+        onPress: () => {
+          setRejectTarget(actionTarget);
+          setRejectReason("");
+        },
+      });
+    }
+    return items;
+  }, [actionTarget, canApprove, config.showActionButtons, router]);
+
   return (
     <WidgetCard
       title={config.title || "Entregas de EPI"}
@@ -209,6 +263,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
       showHeader={config.showHeader}
       density={density}
       bodyPadded={false}
+      bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -225,7 +280,12 @@ function Render({ config }: WidgetRenderProps<Config>) {
       count={visible.length}
     >
       <WidgetTableContainer density={density}>
-        {display.showColumnHeaders && <WidgetTableHeader columns={PPE_COLUMNS} />}
+        {display.showColumnHeaders && (
+          <WidgetTableHeader
+            columns={PPE_COLUMNS}
+            reserveRowDot={display.showRowDot}
+          />
+        )}
         {isLoading ? (
           <WidgetTableMessage>
             <ActivityIndicator color={colors.primary} />
@@ -262,11 +322,9 @@ function Render({ config }: WidgetRenderProps<Config>) {
             };
             const itemLabel = d.item?.name ?? "Item";
             const userName = d.user?.name ?? "—";
-            const isPending = d.status === PPE_DELIVERY_STATUS.PENDING;
-            const showActions = config.showActionButtons && canApprove && isPending;
 
             return (
-              <WidgetTableRow
+              <PpeRow
                 key={d.id}
                 density={density}
                 index={idx}
@@ -274,112 +332,39 @@ function Render({ config }: WidgetRenderProps<Config>) {
                 gridLines={display.gridLines}
                 hoverHighlight={display.hoverHighlight}
                 rowDotColor={display.showRowDot ? accent.hex : undefined}
-                onPress={() =>
+                onTap={() =>
                   router.push(`/(tabs)/estoque/epi/entregas/editar/${d.id}` as any)
                 }
-              >
-                {/* Inner column wraps both the data row and the action buttons,
-                    since WidgetTableRow itself is flexDirection:row. */}
-                <View style={{ flex: 1, gap: 0 }}>
-                <View
-                  style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}
-                >
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}
-                    >
-                      {itemLabel}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 11, color: colors.mutedForeground }}
-                    >
-                      {userName}
-                      {d.quantity != null ? ` · ${d.quantity} un.` : ""}
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      backgroundColor: tone.bg,
-                      paddingHorizontal: 8,
-                      paddingVertical: 3,
-                      borderRadius: 12,
-                      alignSelf: "flex-start",
-                    }}
-                  >
-                    <Text style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}>
-                      {PPE_DELIVERY_STATUS_LABELS[d.status as PPE_DELIVERY_STATUS] ??
-                        d.status}
-                    </Text>
-                  </View>
-                </View>
-                {showActions && (
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                    <Pressable
-                      onPress={() => onApprove(d.id)}
-                      disabled={approveMutation.isPending || rejectMutation.isPending}
-                      style={({ pressed }) => ({
-                        flex: 1,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 4,
-                        paddingVertical: 8,
-                        borderRadius: 6,
-                        backgroundColor: "#15803d",
-                        opacity:
-                          pressed ||
-                          approveMutation.isPending ||
-                          rejectMutation.isPending
-                            ? 0.6
-                            : 1,
-                      })}
-                    >
-                      <IconCircleCheck size={14} color="#fff" />
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
-                        Aprovar
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        setRejectTarget({ id: d.id, label: itemLabel });
-                        setRejectReason("");
-                      }}
-                      disabled={approveMutation.isPending || rejectMutation.isPending}
-                      style={({ pressed }) => ({
-                        flex: 1,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 4,
-                        paddingVertical: 8,
-                        borderRadius: 6,
-                        backgroundColor: "#b91c1c",
-                        opacity:
-                          pressed ||
-                          approveMutation.isPending ||
-                          rejectMutation.isPending
-                            ? 0.6
-                            : 1,
-                      })}
-                    >
-                      <IconX size={14} color="#fff" />
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
-                        Reprovar
-                      </Text>
-                    </Pressable>
-                  </View>
-                )}
-                </View>
-              </WidgetTableRow>
+                onLongPress={() =>
+                  setActionTarget({
+                    id: d.id,
+                    label: itemLabel,
+                    status: d.status as PPE_DELIVERY_STATUS,
+                  })
+                }
+                itemLabel={itemLabel}
+                userName={userName}
+                quantity={d.quantity}
+                statusTone={tone}
+                statusLabel={
+                  PPE_DELIVERY_STATUS_LABELS[d.status as PPE_DELIVERY_STATUS] ??
+                  d.status
+                }
+              />
             );
           })
         )}
       </WidgetTableContainer>
 
-      {/* Reject dialog. The Modal primitive gives us a styled native dialog
-          without the AlertDialog button-typing constraints. */}
+      <ActionSheet
+        visible={!!actionTarget}
+        onClose={() => setActionTarget(null)}
+        title={actionTarget?.label}
+        items={actionItems}
+      />
+
+      {/* Reject reason dialog. Modal gives a styled native dialog without
+          the AlertDialog button-typing constraints. */}
       <Modal
         visible={!!rejectTarget}
         onClose={() => setRejectTarget(null)}
@@ -443,6 +428,77 @@ function Render({ config }: WidgetRenderProps<Config>) {
   );
 }
 
+interface PpeRowProps {
+  density: Density;
+  index: number;
+  striping: boolean;
+  gridLines: boolean;
+  hoverHighlight: boolean;
+  rowDotColor?: string;
+  onTap: () => void;
+  onLongPress: () => void;
+  itemLabel: string;
+  userName: string;
+  quantity: number | null | undefined;
+  statusTone: { bg: string; fg: string };
+  statusLabel: string;
+}
+
+/** Single-row presentation that mirrors PPE_COLUMNS exactly. Long-press
+ *  surfaces the action sheet; tap navigates to the detail page. */
+function PpeRow(props: PpeRowProps) {
+  const { colors } = useTheme();
+  return (
+    <WidgetTableRow
+      density={props.density}
+      index={props.index}
+      striping={props.striping}
+      gridLines={props.gridLines}
+      hoverHighlight={props.hoverHighlight}
+      rowDotColor={props.rowDotColor}
+      onPress={props.onTap}
+    >
+      <Pressable
+        onPress={props.onTap}
+        onLongPress={props.onLongPress}
+        delayLongPress={350}
+        style={{ flex: 1, minWidth: 0 }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}
+        >
+          {props.itemLabel}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: 11, color: colors.mutedForeground }}
+        >
+          {props.userName}
+          {props.quantity != null ? ` · ${props.quantity} un.` : ""}
+        </Text>
+      </Pressable>
+      <View style={cellStyleForColumn(PPE_COLUMNS[1])}>
+        <View
+          style={{
+            backgroundColor: props.statusTone.bg,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 12,
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{ fontSize: 10, fontWeight: "600", color: props.statusTone.fg }}
+          >
+            {props.statusLabel}
+          </Text>
+        </View>
+      </View>
+    </WidgetTableRow>
+  );
+}
+
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const { colors } = useTheme();
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
@@ -454,14 +510,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
-        <Input
-          value={config.title}
-          onChangeText={(v: string) => set("title", v)}
-          placeholder="Entregas de EPI"
-        />
-      </View>
+      <ConfigTitleInput
+        value={config.title}
+        onChange={(v) => set("title", v)}
+        placeholder="Entregas de EPI"
+      />
 
       <Section title="Aparência" defaultOpen>
         <AccentPicker
@@ -478,7 +531,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showHeader", v)}
         />
         <ToggleRow
-          label="Botões Aprovar/Reprovar"
+          label="Aprovar/Reprovar via toque-longo"
           hint="Apenas RH e Admin podem aprovar; o estoque vê em modo somente leitura."
           checked={config.showActionButtons}
           onCheckedChange={(v) => set("showActionButtons", v)}
@@ -521,6 +574,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         onChange={(next) => set("sort", next as any)}
         keyOptions={PPE_SORT_OPTIONS}
       />
+      <TableRefreshSection
+        value={(config.display as TableDisplay).refetchInterval ?? "0"}
+        onChange={(v) =>
+          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
+        }
+      />
     </View>
   );
 }
@@ -529,7 +588,7 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
   id: "table.ppe-deliveries",
   name: "Entregas de EPI",
   description:
-    "Aprove, reprove ou registre a entrega de EPIs. RH e Admin aprovam/reprovam; o estoque registra a entrega física.",
+    "Aprove, reprove ou registre a entrega de EPIs. RH e Admin aprovam/reprovam (toque-longo); o estoque registra a entrega física.",
   icon: IconShieldCheck,
   category: "hr",
   // Mirrors web: HR/Admin approve, Warehouse delivers. Both see the widget.

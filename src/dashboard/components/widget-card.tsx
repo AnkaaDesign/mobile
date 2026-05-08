@@ -13,7 +13,7 @@
 //    a tighter header to match its row spacing.
 
 import { type ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { IconChevronRight } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -41,6 +41,17 @@ export interface WidgetCardProps {
   bodyPadded?: boolean;
   /** Per-widget density — scales header padding/font sizes. Default "comfortable". */
   density?: Density;
+  /** When set, the body is wrapped in a ScrollView capped at this height
+   *  so children (e.g. table rows) scroll internally and the footer stays
+   *  visible. Without this, a body taller than the available space (the
+   *  WidgetTile's `maxHeight`) pushes the footer below the clip — which is
+   *  why the "Ver todos" link only appeared on widgets with little
+   *  content. Compute as `WIDGET_ROW_MAX_HEIGHT[rows] - HEADER_H - FOOTER_H`
+   *  on the consumer side. */
+  bodyMaxHeight?: number;
+  /** Hide the bottom horizontal padding inside the scrollable body — useful
+   *  for table widgets that already pad rows themselves. */
+  scrollPaddingBottom?: number;
   children: ReactNode;
 }
 
@@ -68,9 +79,11 @@ export function WidgetCard({
   borderColor,
   bodyPadded = true,
   density = "comfortable",
+  bodyMaxHeight,
+  scrollPaddingBottom,
   children,
 }: WidgetCardProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const renderHeader =
     showHeader && (title || icon || headerExtra || count != null);
@@ -82,10 +95,16 @@ export function WidgetCard({
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: borderColor ?? colors.border,
         overflow: "hidden",
+        // subtle elevation matching web's `shadow-sm`
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 2,
+        elevation: 1,
       }}
     >
       {renderHeader && (
@@ -130,12 +149,15 @@ export function WidgetCard({
             {count != null && (
               <View
                 style={{
-                  backgroundColor: colors.card,
+                  // Match web's `bg-muted/70` count pill — solid muted fill
+                  // (rgba) instead of card+border. The bordered version read
+                  // as anemic against the muted header strip.
+                  backgroundColor: isDark
+                    ? "rgba(255,255,255,0.10)"
+                    : "rgba(0,0,0,0.07)",
                   borderRadius: 6,
                   paddingHorizontal: 6,
                   paddingVertical: 2,
-                  borderWidth: 1,
-                  borderColor: colors.border,
                 }}
               >
                 <Text
@@ -143,6 +165,7 @@ export function WidgetCard({
                     fontSize: 10,
                     fontWeight: "500",
                     color: colors.mutedForeground,
+                    fontVariant: ["tabular-nums"],
                   }}
                 >
                   {count}
@@ -157,15 +180,38 @@ export function WidgetCard({
           )}
         </View>
       )}
-      <View
-        style={
-          bodyPadded
-            ? { paddingHorizontal: bodyPad.x, paddingVertical: bodyPad.y }
-            : undefined
-        }
-      >
-        {children}
-      </View>
+      {bodyMaxHeight != null ? (
+        <View style={{ maxHeight: bodyMaxHeight }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={
+              bodyPadded
+                ? {
+                    paddingHorizontal: bodyPad.x,
+                    paddingTop: bodyPad.y,
+                    paddingBottom: scrollPaddingBottom ?? bodyPad.y,
+                  }
+                : { paddingBottom: scrollPaddingBottom ?? 0 }
+            }
+            // Nested scroll inside the page ScrollView only matters on
+            // Android — turn it on so rows can scroll without stealing
+            // page swipes.
+            nestedScrollEnabled
+          >
+            {children}
+          </ScrollView>
+        </View>
+      ) : (
+        <View
+          style={
+            bodyPadded
+              ? { paddingHorizontal: bodyPad.x, paddingVertical: bodyPad.y }
+              : undefined
+          }
+        >
+          {children}
+        </View>
+      )}
       {renderFooter && (
         <View
           style={{

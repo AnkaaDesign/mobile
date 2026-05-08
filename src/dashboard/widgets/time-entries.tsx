@@ -15,6 +15,14 @@ import { IconClock } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useMySecullumCalculations } from "@/hooks/secullum";
 import { Section, ToggleRow } from "./_shared";
+import {
+  WidgetTableContainer,
+  WidgetTableHeader,
+  WidgetTableRow,
+  WidgetTableMessage,
+  textCellStyleForColumn,
+  type WidgetTableColumn,
+} from "./_table";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -84,6 +92,14 @@ function parseSecullumResponse(data: any): ParsedEntry[] {
   });
 }
 
+const TIME_ENTRY_COLUMNS: WidgetTableColumn[] = [
+  { key: "date", label: "Data", width: 64 },
+  { key: "e1", label: "E1", flex: 1, align: "center" },
+  { key: "s1", label: "S1", flex: 1, align: "center" },
+  { key: "e2", label: "E2", flex: 1, align: "center" },
+  { key: "s2", label: "S2", flex: 1, align: "center" },
+];
+
 // ---------- Schema ----------
 
 const configSchema = z.object({
@@ -119,140 +135,93 @@ function Render({ config }: WidgetRenderProps<Config>) {
       icon={<Icon size={16} color={accent.hex} />}
       viewAllHref="/(tabs)/pessoal/meus-pontos"
       showHeader={config.showHeader}
+      bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
     >
-      {isLoading ? (
-        <View style={{ padding: 24, alignItems: "center" }}>
-          <ActivityIndicator color={colors.primary} />
-        </View>
-      ) : notRegistered ? (
-        <View style={{ padding: 16, alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-            }}
-          >
-            Sem cadastro no sistema de ponto.
-          </Text>
-        </View>
-      ) : isError ? (
-        <View style={{ padding: 16, alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-            }}
-          >
-            Sem dados de ponto disponíveis.
-          </Text>
-        </View>
-      ) : entries.length === 0 ? (
-        <View style={{ padding: 16, alignItems: "center" }}>
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-            }}
-          >
-            Sem registros de ponto.
-          </Text>
-        </View>
-      ) : (
-        <View>
-          {/* Table header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              backgroundColor: colors.muted,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.border,
-            }}
-          >
+      <WidgetTableContainer>
+        {isLoading ? (
+          <WidgetTableMessage>
+            <ActivityIndicator color={colors.primary} />
+          </WidgetTableMessage>
+        ) : notRegistered ? (
+          <WidgetTableMessage>
             <Text
               style={{
-                width: 64,
-                fontSize: 10,
-                fontWeight: "700",
+                fontSize: 12,
                 color: colors.mutedForeground,
-                textTransform: "uppercase",
-                letterSpacing: 0.4,
+                textAlign: "center",
               }}
             >
-              Data
+              Sem cadastro no sistema de ponto.
             </Text>
-            {(["E1", "S1", "E2", "S2"] as const).map((label) => (
-              <Text
-                key={label}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  fontSize: 10,
-                  fontWeight: "700",
-                  color: colors.mutedForeground,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                }}
-              >
-                {label}
-              </Text>
-            ))}
-          </View>
-          {entries.map((e, i) => {
-            const weekendTone = e.isSunday || e.isSaturday;
-            return (
-              <View
-                key={`${e.date}-${i}`}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderTopWidth: i === 0 ? 0 : 1,
-                  borderTopColor: colors.border,
-                  backgroundColor: weekendTone ? colors.muted : "transparent",
-                }}
-              >
-                <Text
-                  style={{
-                    width: 64,
-                    fontSize: 11,
-                    color: weekendTone ? colors.mutedForeground : colors.foreground,
-                    fontWeight: "600",
-                  }}
-                  numberOfLines={1}
-                >
-                  {e.date || "—"}
-                </Text>
-                {([e.entrada1, e.saida1, e.entrada2, e.saida2] as const).map(
-                  (val, j) => (
+          </WidgetTableMessage>
+        ) : isError ? (
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Sem dados de ponto disponíveis.
+            </Text>
+          </WidgetTableMessage>
+        ) : entries.length === 0 ? (
+          <WidgetTableMessage>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.mutedForeground,
+                textAlign: "center",
+              }}
+            >
+              Sem registros de ponto.
+            </Text>
+          </WidgetTableMessage>
+        ) : (
+          <>
+            <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} />
+            {entries.map((e, i) => {
+              const weekendTone = e.isSunday || e.isSaturday;
+              const punches = [e.entrada1, e.saida1, e.entrada2, e.saida2];
+              return (
+                <WidgetTableRow key={`${e.date}-${i}`} index={i} density="comfortable">
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      ...textCellStyleForColumn(TIME_ENTRY_COLUMNS[0]),
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: weekendTone ? colors.mutedForeground : colors.foreground,
+                    }}
+                  >
+                    {e.date || "—"}
+                  </Text>
+                  {punches.map((val, j) => (
                     <Text
                       key={j}
+                      numberOfLines={1}
                       style={{
-                        flex: 1,
-                        textAlign: "center",
+                        ...textCellStyleForColumn(TIME_ENTRY_COLUMNS[j + 1]),
                         fontSize: 12,
                         fontFamily: "monospace",
                         color: val
-                          ? colors.foreground
+                          ? weekendTone
+                            ? colors.mutedForeground
+                            : colors.foreground
                           : colors.mutedForeground,
                       }}
                     >
                       {val || "—"}
                     </Text>
-                  ),
-                )}
-              </View>
-            );
-          })}
-        </View>
-      )}
+                  ))}
+                </WidgetTableRow>
+              );
+            })}
+          </>
+        )}
+      </WidgetTableContainer>
     </WidgetCard>
   );
 }

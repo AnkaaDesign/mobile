@@ -29,6 +29,10 @@ import {
   Section,
   ToggleRow,
   LimitInput,
+  ConfigTitleInput,
+  TableRefreshSection,
+  ColumnPickerSection,
+  computeBodyMaxHeight,
   type Density,
   makeTableDisplaySchema,
   TABLE_DISPLAY_DEFAULTS,
@@ -42,6 +46,7 @@ import {
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
+  cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
 import { Input } from "@/components/ui/input";
@@ -71,11 +76,23 @@ const STATUS_TONES: Record<TASK_STATUS, { bg: string; fg: string }> = {
   [TASK_STATUS.CANCELLED]: { bg: "#b91c1c", fg: "#fff" },
 };
 
-const TASK_COLUMNS: WidgetTableColumn[] = [
-  { key: "task", label: "Tarefa", flex: 1 },
-  { key: "status", label: "Status", width: 108, align: "right" },
-  { key: "term", label: "Prazo", width: 84, align: "right" },
-];
+// Column catalogue. The "task" key is always visible (it carries the row's
+// primary identity); status and term are user-toggleable via the column
+// picker. To add a new togglable column: add a record here and a render
+// branch in `renderTaskCell` below.
+const TASK_COLUMN_KEYS = ["task", "status", "term"] as const;
+type TaskColumnKey = (typeof TASK_COLUMN_KEYS)[number];
+
+const TASK_COLUMN_DEFS: Record<TaskColumnKey, WidgetTableColumn> = {
+  task: { key: "task", label: "Tarefa", flex: 1 },
+  status: { key: "status", label: "Status", width: 96, align: "right" },
+  term: { key: "term", label: "Prazo", width: 96, align: "right" },
+};
+
+const TASK_COLUMN_OPTIONS = TASK_COLUMN_KEYS.map((k) => ({
+  key: k,
+  label: TASK_COLUMN_DEFS[k].label,
+}));
 
 const TASK_SORT_OPTIONS = [
   { value: "term", label: "Prazo" },
@@ -111,6 +128,12 @@ const configSchema = z.object({
     })
     .default({ key: "term", direction: "asc" }),
   limit: z.number().int().min(5).max(50).default(20),
+  /** Columns the user has chosen to show, in display order. "task" is always
+   *  in the list — config validation rejects layouts where it's missing. */
+  visibleColumns: z
+    .array(z.enum(TASK_COLUMN_KEYS))
+    .default(["task", "status", "term"])
+    .transform((cols) => (cols.includes("task") ? cols : ["task", ...cols])),
   display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
   accent: makeAccentSchema({
     color: "teal",
@@ -126,40 +149,49 @@ function startOfToday(): Date {
   return d;
 }
 
-function diffDays(target: Date | string | null | undefined): number | null {
-  if (!target) return null;
-  const t = new Date(target);
-  if (Number.isNaN(t.getTime())) return null;
-  return Math.round(
-    (t.getTime() - startOfToday().getTime()) / 86_400_000,
-  );
-}
-
-function deadlineColor(days: number | null, status: TASK_STATUS): string {
-  if (status === TASK_STATUS.COMPLETED) return "#15803d";
+/**
+ * Hours-based deadline color rule, mirroring web's `termCriticalHours = 4`
+ * default in `web/src/dashboard/widgets/task-table.tsx`. Day-based bucketing
+ * was wrong here because tasks are scheduled with hour precision (e.g.
+ * "08/05 17:00" vs "08/05 18:00" matter for SLA on the same day).
+ */
+function deadlineColor(
+  termIso: string | Date | null | undefined,
+  status: TASK_STATUS,
+): string {
+  if (status === TASK_STATUS.COMPLETED) return "#16a34a";
   if (status === TASK_STATUS.CANCELLED) return "#737373";
-  if (days == null) return "#737373";
-  if (days < 0) return "#b91c1c";
-  if (days === 0) return "#ea580c";
-  if (days <= 3) return "#d97706";
-  if (days <= 7) return "#ca8a04";
-  return "#737373";
+  if (!termIso) return "#737373";
+  const t = new Date(termIso).getTime();
+  if (Number.isNaN(t)) return "#737373";
+  const ms = t - Date.now();
+  if (ms < 0) return "#dc2626"; // overdue → red-600
+  if (ms / 3_600_000 <= 4) return "#d97706"; // ≤4h → amber-600
+  return "#16a34a"; // green-600
 }
 
-function deadlineText(days: number | null): string {
-  if (days == null) return "—";
-  if (days < 0) return `${Math.abs(days)}d atrasado`;
-  if (days === 0) return "vence hoje";
-  if (days === 1) return "vence amanhã";
-  return `em ${days}d`;
+function isOverdue(
+  termIso: string | Date | null | undefined,
+  status: TASK_STATUS,
+): boolean {
+  if (status === TASK_STATUS.COMPLETED || status === TASK_STATUS.CANCELLED) {
+    return false;
+  }
+  if (!termIso) return false;
+  const t = new Date(termIso).getTime();
+  if (Number.isNaN(t)) return false;
+  return t - Date.now() < 0;
 }
 
-function formatDate(d: Date | string | null | undefined): string {
+function formatDateTime(d: Date | string | null | undefined): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return "—";
+  const dd = String(x.getDate()).padStart(2, "0");
+  const mm = String(x.getMonth() + 1).padStart(2, "0");
+  const hh = String(x.getHours()).padStart(2, "0");
+  const mi = String(x.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm} ${hh}:${mi}`;
 }
 
 function customerLabel(
@@ -174,7 +206,7 @@ const TASK_INCLUDE = {
   generalPainting: true,
 };
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
@@ -205,17 +237,27 @@ function Render({ config }: WidgetRenderProps<Config>) {
     };
   }, [config.filters.statuses, config.sort.key, config.sort.direction, config.limit]);
 
+  const refetchMs = Number(display.refetchInterval ?? "0");
   const { data, isLoading, isError, refetch, isRefetching } = useTasks(
     queryParams as any,
+    refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
   const rows = (data?.data ?? []) as any[];
+
+  // Visible columns in display order. The schema guarantees "task" is always
+  // included, so we never end up with a row that is just a chrome strip.
+  const visibleCols: TaskColumnKey[] = (config.visibleColumns?.length
+    ? config.visibleColumns
+    : ["task", "status", "term"]) as TaskColumnKey[];
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return rows.filter((t) => {
-      if (config.filters.onlyOverdue) {
-        const days = diffDays(t.term);
-        if (days == null || days >= 0) return false;
+      if (
+        config.filters.onlyOverdue &&
+        !isOverdue(t.term, t.status as TASK_STATUS)
+      ) {
+        return false;
       }
       if (term) {
         const haystack = `${t.name ?? ""} ${customerLabel(t.customer)} ${t.serialNumber ?? ""}`.toLowerCase();
@@ -233,6 +275,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
       showHeader={config.showHeader}
       density={density}
       bodyPadded={false}
+      bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
@@ -250,15 +293,18 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
-          <WidgetTableSearch>
-            <Input
-              placeholder="Buscar tarefa, cliente ou OS..."
-              value={search}
-              onChangeText={setSearch}
-            />
-          </WidgetTableSearch>
+          <WidgetTableSearch
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar tarefa, cliente ou OS..."
+          />
         )}
-        {display.showColumnHeaders && <WidgetTableHeader columns={TASK_COLUMNS} />}
+        {display.showColumnHeaders && (
+          <WidgetTableHeader
+            columns={visibleCols.map((k) => TASK_COLUMN_DEFS[k])}
+            reserveRowDot={display.showRowDot}
+          />
+        )}
 
         {isLoading ? (
           <WidgetTableMessage>
@@ -294,9 +340,8 @@ function Render({ config }: WidgetRenderProps<Config>) {
               bg: colors.muted,
               fg: colors.mutedForeground,
             };
-            const days = diffDays(t.term);
-            const dlColor = deadlineColor(days, t.status as TASK_STATUS);
-            const overdue = days != null && days < 0;
+            const dlColor = deadlineColor(t.term, t.status as TASK_STATUS);
+            const overdue = isOverdue(t.term, t.status as TASK_STATUS);
             const paintHex =
               t.generalPainting?.hex ||
               t.generalPainting?.paint?.hex ||
@@ -314,95 +359,104 @@ function Render({ config }: WidgetRenderProps<Config>) {
                   router.push(`/(tabs)/producao/cronograma/detalhes/${t.id}` as any)
                 }
               >
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 8,
-                  }}
-                >
-                  <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      {config.showPaintDot && paintHex && (
+                {visibleCols.map((key) => {
+                  const def = TASK_COLUMN_DEFS[key];
+                  if (key === "task") {
+                    // SINGLE LINE per row — matches web `task-table.tsx`'s
+                    // `name` column. Customer/serial are searchable via the
+                    // search box and visible on the detail page; stuffing
+                    // them into a subline breaks the table's row rhythm
+                    // (every other widget renders one line per row).
+                    return (
+                      <View
+                        key={key}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        {config.showPaintDot && paintHex && (
+                          <View
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: 5,
+                              backgroundColor: paintHex,
+                              borderWidth: 1,
+                              borderColor: colors.border,
+                            }}
+                          />
+                        )}
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "600",
+                            color: colors.foreground,
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          {t.name ?? "—"}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  if (key === "status") {
+                    return (
+                      <View key={key} style={cellStyleForColumn(def)}>
                         <View
                           style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 5,
-                            backgroundColor: paintHex,
-                            borderWidth: 1,
-                            borderColor: colors.border,
+                            backgroundColor: tone.bg,
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 12,
                           }}
-                        />
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
+                          >
+                            {TASK_STATUS_LABELS[t.status as TASK_STATUS] ?? t.status}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  }
+                  // term — single line "DD/MM HH:MM" colored by deadline
+                  // rule, mirroring web's DeadlineCountdown without the
+                  // separate "vence hoje / em Xd" countdown sub-line.
+                  return (
+                    <View
+                      key={key}
+                      style={{
+                        ...cellStyleForColumn(def),
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: 3,
+                      }}
+                    >
+                      {overdue && (
+                        <IconAlertTriangle size={11} color={dlColor} />
                       )}
                       <Text
                         numberOfLines={1}
                         style={{
-                          fontSize: 13,
-                          fontWeight: "600",
-                          color: colors.foreground,
-                          flex: 1,
-                          minWidth: 0,
+                          fontSize: 11,
+                          fontWeight: overdue ? "700" : "600",
+                          color: dlColor,
+                          fontVariant: ["tabular-nums"],
                         }}
                       >
-                        {t.name ?? "—"}
+                        {formatDateTime(t.term)}
                       </Text>
                     </View>
-                    <Text
-                      numberOfLines={1}
-                      style={{ fontSize: 11, color: colors.mutedForeground }}
-                    >
-                      {customerLabel(t.customer)}
-                      {t.serialNumber ? ` · ${t.serialNumber}` : ""}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: "flex-end", gap: 4 }}>
-                    <View
-                      style={{
-                        backgroundColor: tone.bg,
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 12,
-                      }}
-                    >
-                      <Text
-                        style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
-                      >
-                        {TASK_STATUS_LABELS[t.status as TASK_STATUS] ?? t.status}
-                      </Text>
-                    </View>
-                    {t.term && (
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 3,
-                        }}
-                      >
-                        {overdue && (
-                          <IconAlertTriangle size={11} color={dlColor} />
-                        )}
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            color: dlColor,
-                            fontWeight: overdue ? "700" : "500",
-                          }}
-                        >
-                          {formatDate(t.term)} · {deadlineText(days)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
+                  );
+                })}
               </WidgetTableRow>
             );
           })
@@ -427,14 +481,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
-        <Input
-          value={config.title}
-          onChangeText={(v: string) => set("title", v)}
-          placeholder="Tarefas"
-        />
-      </View>
+      <ConfigTitleInput
+        value={config.title}
+        onChange={(v) => set("title", v)}
+        placeholder="Tarefas"
+      />
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -459,6 +510,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
       <TableDisplayConfigSection
         value={config.display as TableDisplay}
         onChange={(next) => set("display", next as any)}
+      />
+      <ColumnPickerSection
+        available={TASK_COLUMN_OPTIONS}
+        visible={config.visibleColumns ?? ["task", "status", "term"]}
+        onChange={(next) => set("visibleColumns", next as Config["visibleColumns"])}
+        minVisible={1}
       />
       <Section title="Filtros" defaultOpen>
         <View style={{ gap: 4 }}>
@@ -493,6 +550,12 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onChange({ ...config, sort: next as Config["sort"] })
         }
         keyOptions={TASK_SORT_OPTIONS}
+      />
+      <TableRefreshSection
+        value={(config.display as TableDisplay).refetchInterval ?? "0"}
+        onChange={(v) =>
+          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
+        }
       />
     </View>
   );
@@ -532,6 +595,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
     },
     sort: { key: "term", direction: "asc" },
     limit: 20,
+    visibleColumns: ["task", "status", "term"],
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "teal", icon: "ClipboardText", borderColor: "none" },
   },

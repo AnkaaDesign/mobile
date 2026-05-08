@@ -21,7 +21,7 @@
 
 import { type ReactNode, useState } from "react";
 import { View, Text, Pressable, ScrollView, Platform, KeyboardAvoidingView } from "react-native";
-import { IconX, IconCheck } from "@tabler/icons-react-native";
+import { IconX, IconCheck, IconRestore } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { Sheet } from "@/components/ui/sheet";
 import { widgetRegistry } from "../registry";
@@ -114,15 +114,19 @@ function ModalBody({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1 }}
     >
-      {/* Sticky header */}
+      {/* Sticky header — taller padding so the title block has breathing
+          room and doesn't sit flush with the sheet edge. The Sheet
+          primitive itself renders the drag-indicator pill above this
+          header (default `dragIndicator={true}`), so we must NOT add a
+          second one here — that produced two visible grab handles. */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
           paddingHorizontal: 16,
-          paddingTop: 4,
-          paddingBottom: 12,
+          paddingTop: 12,
+          paddingBottom: 14,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
@@ -131,8 +135,8 @@ function ModalBody({
           <Text
             numberOfLines={1}
             style={{
-              fontSize: 16,
-              fontWeight: "700",
+              fontSize: 17,
+              fontWeight: "600",
               color: colors.foreground,
             }}
           >
@@ -140,11 +144,12 @@ function ModalBody({
           </Text>
           {def.description && (
             <Text
-              numberOfLines={1}
+              numberOfLines={2}
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 color: colors.mutedForeground,
-                marginTop: 2,
+                marginTop: 4,
+                lineHeight: 18,
               }}
             >
               {def.description}
@@ -156,8 +161,8 @@ function ModalBody({
           hitSlop={10}
           accessibilityLabel="Fechar"
           style={({ pressed }) => ({
-            padding: 6,
-            borderRadius: 8,
+            padding: 8,
+            borderRadius: 6,
             backgroundColor: pressed ? colors.muted : "transparent",
           })}
         >
@@ -172,7 +177,7 @@ function ModalBody({
           paddingHorizontal: 16,
           paddingTop: 16,
           paddingBottom: 24,
-          gap: 16,
+          gap: 12,
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -207,7 +212,7 @@ function ModalBody({
               borderWidth: 1,
               borderColor: "#ef4444",
               backgroundColor: "rgba(239,68,68,0.08)",
-              borderRadius: 8,
+              borderRadius: 6,
               padding: 10,
             }}
           >
@@ -216,7 +221,9 @@ function ModalBody({
         )}
       </ScrollView>
 
-      {/* Sticky footer */}
+      {/* Sticky footer — Restaurar / Cancelar / Aplicar.
+          Restaurar resets the in-flight draft to def.defaultConfig but keeps
+          the modal open so the user can review before committing. */}
       <View
         style={{
           flexDirection: "row",
@@ -230,12 +237,35 @@ function ModalBody({
         }}
       >
         <Pressable
+          onPress={() => {
+            setConfigDraft(def.defaultConfig ?? {});
+            setSizeDraft({
+              span: def.defaultSpan,
+              rows: def.defaultRows,
+            });
+            setError(null);
+          }}
+          accessibilityLabel="Restaurar padrões"
+          style={({ pressed }) => ({
+            minHeight: 44,
+            width: 44,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: pressed ? colors.muted : "transparent",
+            alignItems: "center",
+            justifyContent: "center",
+          })}
+        >
+          <IconRestore size={18} color={colors.mutedForeground} />
+        </Pressable>
+        <Pressable
           onPress={onClose}
           style={({ pressed }) => ({
             flex: 1,
             minHeight: 44,
             paddingVertical: 12,
-            borderRadius: 8,
+            borderRadius: 6,
             borderWidth: 1,
             borderColor: colors.border,
             backgroundColor: pressed ? colors.muted : "transparent",
@@ -253,7 +283,7 @@ function ModalBody({
             flex: 1,
             minHeight: 44,
             paddingVertical: 12,
-            borderRadius: 8,
+            borderRadius: 6,
             backgroundColor: colors.primary,
             opacity: pressed ? 0.85 : 1,
             flexDirection: "row",
@@ -275,9 +305,13 @@ function ModalBody({
 }
 
 // ---------------------------------------------------------------------------
-// ConfigCard — local card primitive matching the form-card pattern used
-// elsewhere in the app (see /components/ui/form-section.tsx). Kept local
-// because the global FormCard pulls in too many extras for this surface.
+// ConfigCard — non-collapsible sibling of `<Section>` (from `widgets/_shared`).
+// Kept here rather than imported because only this modal needs the
+// non-collapsible variant. Visual contract intentionally MATCHES Section so
+// both card systems read as a single form: same borderRadius, same border
+// tone, same title typography (no uppercase, no muted bg). The previous
+// uppercase + muted-background header made ConfigCards look like a
+// different control family from the inner Sections.
 // ---------------------------------------------------------------------------
 
 function ConfigCard({
@@ -293,33 +327,37 @@ function ConfigCard({
       style={{
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: 12,
+        borderRadius: 6,
         backgroundColor: colors.card,
         overflow: "hidden",
       }}
     >
       <View
         style={{
-          paddingHorizontal: 14,
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          backgroundColor: colors.muted,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
         }}
       >
         <Text
           style={{
-            fontSize: 13,
-            fontWeight: "700",
+            fontSize: 14,
+            fontWeight: "500",
             color: colors.foreground,
-            textTransform: "uppercase",
-            letterSpacing: 0.4,
           }}
         >
           {title}
         </Text>
       </View>
-      <View style={{ padding: 14, gap: 12 }}>{children}</View>
+      <View
+        style={{
+          paddingHorizontal: 12,
+          paddingBottom: 12,
+          paddingTop: 4,
+          gap: 12,
+        }}
+      >
+        {children}
+      </View>
     </View>
   );
 }

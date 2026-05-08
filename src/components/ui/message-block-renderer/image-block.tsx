@@ -7,10 +7,18 @@ import {
   useWindowDimensions,
   Text,
 } from "react-native";
+import { Video, ResizeMode } from "expo-av";
 import { useTheme } from "@/lib/theme";
 import { borderRadius, spacing, fontSize } from "@/constants/design-system";
 import { getCurrentApiUrl } from "@/api-client/axiosClient";
 import type { ImageBlock, ImageSizePreset } from "./types";
+
+const detectIsVideo = (mediaType?: string, mimeType?: string, url?: string): boolean => {
+  if (mediaType === "video") return true;
+  if (mimeType?.startsWith("video/")) return true;
+  if (url && /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)) return true;
+  return false;
+};
 
 interface ImageBlockProps {
   block: ImageBlock;
@@ -80,6 +88,11 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
     return rawSrc;
   }, [rawSrc]);
 
+  const isVideo = useMemo(
+    () => detectIsVideo(block.mediaType, block.mimeType, rawSrc),
+    [block.mediaType, block.mimeType, rawSrc]
+  );
+
   // Container width (screen width minus padding)
   const containerWidth = screenWidth - spacing.screenPadding * 2;
 
@@ -93,31 +106,40 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
   const maxWidth = Math.min(targetMaxWidth, containerWidth);
 
   React.useEffect(() => {
-    if (imageSrc) {
-      Image.getSize(
-        imageSrc,
-        (width, height) => {
-          // Calculate aspect ratio
-          const aspectRatio = width / height;
+    if (!imageSrc) return;
 
-          // Use the smaller of: original width, block.width, or maxWidth
-          let displayWidth = block.width || width;
-          if (displayWidth > maxWidth) {
-            displayWidth = maxWidth;
-          }
-
-          const displayHeight = displayWidth / aspectRatio;
-
-          setImageSize({ width: displayWidth, height: displayHeight });
-          setLoading(false);
-        },
-        () => {
-          setError(true);
-          setLoading(false);
-        }
-      );
+    if (isVideo) {
+      // Default 16:9 unless explicit dimensions provided.
+      const displayWidth = Math.min(block.width || maxWidth, maxWidth);
+      const aspectRatio = block.width && block.height ? block.width / block.height : 16 / 9;
+      setImageSize({ width: displayWidth, height: displayWidth / aspectRatio });
+      setLoading(false);
+      return;
     }
-  }, [imageSrc, block.width, block.height, maxWidth]);
+
+    Image.getSize(
+      imageSrc,
+      (width, height) => {
+        // Calculate aspect ratio
+        const aspectRatio = width / height;
+
+        // Use the smaller of: original width, block.width, or maxWidth
+        let displayWidth = block.width || width;
+        if (displayWidth > maxWidth) {
+          displayWidth = maxWidth;
+        }
+
+        const displayHeight = displayWidth / aspectRatio;
+
+        setImageSize({ width: displayWidth, height: displayHeight });
+        setLoading(false);
+      },
+      () => {
+        setError(true);
+        setLoading(false);
+      }
+    );
+  }, [imageSrc, block.width, block.height, maxWidth, isVideo]);
 
   // Get alignment style (matches web behavior)
   const getAlignmentStyle = () => {
@@ -184,7 +206,8 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
       <View style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Failed to load image{block.alt ? `: ${block.alt}` : ""}
+            {isVideo ? "Falha ao carregar vídeo" : "Falha ao carregar imagem"}
+            {block.alt ? `: ${block.alt}` : ""}
           </Text>
         </View>
       </View>
@@ -200,11 +223,22 @@ export function ImageBlockComponent({ block }: ImageBlockProps) {
       ) : (
         <>
           <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: imageSrc }}
-              style={styles.image}
-              accessibilityLabel={block.alt}
-            />
+            {isVideo ? (
+              <Video
+                source={{ uri: imageSrc as string }}
+                style={[styles.image, { backgroundColor: "#000" }]}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay={false}
+                onError={() => setError(true)}
+              />
+            ) : (
+              <Image
+                source={{ uri: imageSrc }}
+                style={styles.image}
+                accessibilityLabel={block.alt}
+              />
+            )}
           </View>
           {block.caption && <Text style={styles.caption}>{block.caption}</Text>}
         </>

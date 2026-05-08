@@ -87,7 +87,10 @@ export const useTasksInfinite = (params?: Partial<TaskGetManyFormData> & { enabl
 // -------------------------------------
 // STANDARD LIST HOOK
 // -------------------------------------
-export function useTasks(params?: UseTasksParams) {
+export function useTasks(
+  params?: UseTasksParams,
+  options?: { refetchInterval?: number },
+) {
   const queryClient = useQueryClient();
   const { enabled = true, ...restParams } = params ?? {};
 
@@ -107,6 +110,7 @@ export function useTasks(params?: UseTasksParams) {
     enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2,
+    refetchInterval: options?.refetchInterval,
   });
 
   const refresh = () => {

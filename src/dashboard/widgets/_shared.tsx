@@ -18,7 +18,13 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { IconChevronDown } from "@tabler/icons-react-native";
+import {
+  IconChevronDown,
+  IconArrowUp,
+  IconArrowDown,
+  IconEye,
+  IconEyeOff,
+} from "@tabler/icons-react-native";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -65,7 +71,7 @@ export function Section({
       style={{
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: 8,
+        borderRadius: 6,
         overflow: "hidden",
       }}
     >
@@ -76,15 +82,15 @@ export function Section({
           alignItems: "center",
           justifyContent: "space-between",
           paddingHorizontal: 12,
-          paddingVertical: 10,
+          paddingVertical: 8,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
           {icon}
           <Text
             style={{
-              fontSize: 13,
-              fontWeight: "600",
+              fontSize: 14,
+              fontWeight: "500",
               color: colors.foreground,
             }}
           >
@@ -298,6 +304,318 @@ export function LimitInput({
 export { Combobox };
 
 // ---------------------------------------------------------------------------
+// computeBodyMaxHeight — given a widget's `rows` token, return the height
+// budget for its scrollable body so the WidgetCard's footer ("Ver todos")
+// stays visible. WidgetTile clamps the whole tile to WIDGET_ROW_MAX_HEIGHT.
+// Subtracting the header and footer heights leaves the body budget.
+//
+// Header height: ~40 (paddingY 8 × 2 + content 24 in comfortable density).
+// Footer height: 28 (fixed in widget-card.tsx).
+// Margin: 4px slack so the bottom border doesn't get clipped.
+// ---------------------------------------------------------------------------
+
+import { WIDGET_ROW_MAX_HEIGHT, type WidgetRows } from "../types";
+
+export function computeBodyMaxHeight(rows: WidgetRows): number {
+  return WIDGET_ROW_MAX_HEIGHT[rows] - 40 - 28 - 4;
+}
+
+// ---------------------------------------------------------------------------
+// ConfigTitleInput — every widget's ConfigComponent opens with the same 4-line
+// "Título" input. Extracted here to remove ~7 copies of the same JSX block
+// across the widget tree.
+// ---------------------------------------------------------------------------
+
+export function ConfigTitleInput({
+  value,
+  onChange,
+  placeholder = "Título",
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ gap: 4 }}>
+      <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
+      <Input value={value} onChangeText={onChange} placeholder={placeholder} />
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ColumnPickerSection — mobile-friendly equivalent of the web column-picker.
+// Replaces drag-reorder (which is awkward inside a bottom sheet) with up/down
+// arrow buttons. Visibility is controlled by a checkbox/Switch per row.
+//
+// State model: `value` is an ordered array of visible-column keys. Hidden
+// columns appear below a divider and are added back to the visible list when
+// toggled on. Order within the visible list is the display order in the
+// rendered table.
+// ---------------------------------------------------------------------------
+
+interface ColumnPickerOption {
+  key: string;
+  label: string;
+}
+
+export function ColumnPickerSection({
+  available,
+  visible,
+  onChange,
+  minVisible = 1,
+}: {
+  available: ColumnPickerOption[];
+  visible: string[];
+  onChange: (next: string[]) => void;
+  /** Prevent removing all columns. The user must always see at least N. */
+  minVisible?: number;
+}) {
+  const { colors } = useTheme();
+
+  const visibleSet = new Set(visible);
+  const visibleOrdered = visible
+    .map((k) => available.find((a) => a.key === k))
+    .filter((a): a is ColumnPickerOption => !!a);
+  const hidden = available.filter((a) => !visibleSet.has(a.key));
+
+  const move = (key: string, direction: -1 | 1) => {
+    const idx = visible.indexOf(key);
+    if (idx < 0) return;
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= visible.length) return;
+    const next = visible.slice();
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    onChange(next);
+  };
+
+  const toggle = (key: string, makeVisible: boolean) => {
+    if (makeVisible) {
+      onChange([...visible, key]);
+    } else {
+      if (visible.length <= minVisible) return;
+      onChange(visible.filter((k) => k !== key));
+    }
+  };
+
+  return (
+    <Section title="Colunas" defaultOpen>
+      <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+        Mostre, oculte e reordene as colunas exibidas no widget. Use as setas
+        para mover uma coluna para cima ou para baixo.
+      </Text>
+      <View style={{ gap: 6 }}>
+        {visibleOrdered.map((opt, idx) => (
+          <ColumnPickerRow
+            key={opt.key}
+            label={opt.label}
+            visible
+            canMoveUp={idx > 0}
+            canMoveDown={idx < visibleOrdered.length - 1}
+            canHide={visible.length > minVisible}
+            onMoveUp={() => move(opt.key, -1)}
+            onMoveDown={() => move(opt.key, 1)}
+            onToggle={() => toggle(opt.key, false)}
+          />
+        ))}
+        {hidden.length > 0 && (
+          <View
+            style={{
+              marginTop: 4,
+              paddingTop: 8,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              gap: 6,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                color: colors.mutedForeground,
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+              }}
+            >
+              Ocultas
+            </Text>
+            {hidden.map((opt) => (
+              <ColumnPickerRow
+                key={opt.key}
+                label={opt.label}
+                visible={false}
+                canMoveUp={false}
+                canMoveDown={false}
+                canHide
+                onMoveUp={() => undefined}
+                onMoveDown={() => undefined}
+                onToggle={() => toggle(opt.key, true)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    </Section>
+  );
+}
+
+function ColumnPickerRow({
+  label,
+  visible,
+  canMoveUp,
+  canMoveDown,
+  canHide,
+  onMoveUp,
+  onMoveDown,
+  onToggle,
+}: {
+  label: string;
+  visible: boolean;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  canHide: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onToggle: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: visible ? colors.card : "transparent",
+      }}
+    >
+      {visible && (
+        <>
+          <ColumnArrowButton
+            disabled={!canMoveUp}
+            onPress={onMoveUp}
+            up
+          />
+          <ColumnArrowButton
+            disabled={!canMoveDown}
+            onPress={onMoveDown}
+          />
+        </>
+      )}
+      <Text
+        numberOfLines={1}
+        style={{
+          flex: 1,
+          fontSize: 13,
+          fontWeight: visible ? "600" : "400",
+          color: visible ? colors.foreground : colors.mutedForeground,
+        }}
+      >
+        {label}
+      </Text>
+      <Pressable
+        onPress={onToggle}
+        disabled={visible && !canHide}
+        accessibilityLabel={visible ? "Ocultar coluna" : "Mostrar coluna"}
+        hitSlop={6}
+        style={({ pressed }) => ({
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: pressed ? colors.muted : "transparent",
+          opacity: visible && !canHide ? 0.4 : 1,
+        })}
+      >
+        {visible ? (
+          <IconEye size={16} color={colors.foreground} />
+        ) : (
+          <IconEyeOff size={16} color={colors.mutedForeground} />
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+function ColumnArrowButton({
+  up,
+  disabled,
+  onPress,
+}: {
+  up?: boolean;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  const Icon = up ? IconArrowUp : IconArrowDown;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={4}
+      style={({ pressed }) => ({
+        width: 26,
+        height: 26,
+        borderRadius: 6,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: pressed ? colors.muted : "transparent",
+        opacity: disabled ? 0.3 : 1,
+      })}
+    >
+      <Icon size={14} color={colors.mutedForeground} />
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TableRefreshSection — wires REFETCH_INTERVAL_OPTIONS into a Combobox.
+// The schema field has been declared in `makeTableDisplaySchema()` (and on
+// every table widget by extension) for a long time but was never surfaced as
+// a control. This section is the single place to render it; widgets just
+// pass the current value + setter.
+// ---------------------------------------------------------------------------
+
+export function TableRefreshSection({
+  value,
+  onChange,
+}: {
+  /** Persisted as a string (matches the Combobox `value` type) — represents
+   *  milliseconds, with "0" meaning "no auto-refresh". */
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Section title="Atualização automática">
+      <View style={{ gap: 4 }}>
+        <Text style={{ fontSize: 12, color: colors.foreground }}>
+          Recarregar dados
+        </Text>
+        <Combobox
+          value={value}
+          onValueChange={(v: any) =>
+            onChange(typeof v === "string" ? v : "0")
+          }
+          options={REFETCH_INTERVAL_OPTIONS}
+        />
+        <Text style={{ fontSize: 11, color: colors.mutedForeground }}>
+          Define com que frequência o widget atualiza os dados em segundo
+          plano. Use "Desativado" para recarregar somente ao tocar no botão
+          de atualizar.
+        </Text>
+      </View>
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Shared schema helpers — produce standard config sub-objects so every table
 // widget exposes the same display/sort fields. Mirrors web's per-widget
 // pattern: the schema fields exist even if a particular control is currently
@@ -316,6 +634,11 @@ export interface TableDisplay {
   showRowDot: boolean;
   showColumnHeaders: boolean;
   emptyStateMessage: string;
+  /** Auto-refetch interval in milliseconds, persisted as string to match the
+   *  Combobox value type. "0" disables auto-refetch. The widget render is
+   *  responsible for translating this into useQuery's `refetchInterval`
+   *  option. */
+  refetchInterval: string;
 }
 
 export const TABLE_DISPLAY_DEFAULTS: TableDisplay = {
@@ -328,6 +651,7 @@ export const TABLE_DISPLAY_DEFAULTS: TableDisplay = {
   showRowDot: true,
   showColumnHeaders: true,
   emptyStateMessage: "",
+  refetchInterval: "0",
 };
 
 export function makeTableDisplaySchema(
@@ -345,6 +669,10 @@ export function makeTableDisplaySchema(
       showRowDot: z.boolean().default(merged.showRowDot),
       showColumnHeaders: z.boolean().default(merged.showColumnHeaders),
       emptyStateMessage: z.string().max(160).default(merged.emptyStateMessage),
+      refetchInterval: z
+        .string()
+        .regex(/^\d+$/, "Intervalo inválido")
+        .default(merged.refetchInterval),
     })
     .default(merged) as z.ZodType<TableDisplay>;
 }
