@@ -19,18 +19,12 @@ import {
 } from './collect-evidence';
 import type { PpeSigningStep } from './types';
 import { PpeDeliveryService } from '@/api-client/ppe';
+import type { PpeTrackableSignatureEventType } from '@/types/ppe';
 
 export interface SignDeliveryResult {
   signatureId: string;
   hmac: string;
 }
-
-type TrackedEvent =
-  | 'DOCUMENT_VIEWED'
-  | 'BIOMETRIC_PROMPTED'
-  | 'BIOMETRIC_SUCCEEDED'
-  | 'BIOMETRIC_FAILED'
-  | 'PDF_DOWNLOADED';
 
 /**
  * Best-effort audit event logging. Never throws — audit failures must not
@@ -38,7 +32,7 @@ type TrackedEvent =
  */
 export async function trackPpeDeliveryEvent(
   deliveryId: string,
-  event: TrackedEvent,
+  event: PpeTrackableSignatureEventType,
   metadata?: Record<string, any>,
 ): Promise<void> {
   try {

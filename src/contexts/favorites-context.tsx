@@ -27,6 +27,7 @@ interface FavoritesContextType {
   isFavorite: (path: string) => boolean;
   toggleFavorite: (item: Omit<FavoriteItem, "id" | "addedAt">) => Promise<void>;
   toggleShowFavorites: () => Promise<void>;
+  reloadFromStorage: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -38,6 +39,39 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [showFavorites, setShowFavorites] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const currentUserIdRef = useRef<string | undefined>(undefined);
+  // When this is true, the save-on-change effect skips the next write so
+  // values just read from storage aren't immediately written back. This
+  // protects against losing real data during async tutorial restore races.
+  const skipNextSaveRef = useRef<boolean>(false);
+
+  /**
+   * Re-read favorites from AsyncStorage for the current user. Used by the
+   * tutorial system after it injects/restores demo favorites.
+   */
+  const reloadFromStorage = useCallback(async () => {
+    const userId = currentUserIdRef.current;
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      const stored = await AsyncStorage.getItem(getStorageKey(userId));
+      skipNextSaveRef.current = true;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setFavorites(
+          parsed.map((item: any) => ({
+            ...item,
+            addedAt: new Date(item.addedAt),
+          }))
+        );
+      } else {
+        setFavorites([]);
+      }
+    } catch (error) {
+      console.error("Error reloading favorites:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Reload favorites when user changes (login/logout/switch account)
   useEffect(() => {
@@ -108,6 +142,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   // Save favorites to AsyncStorage whenever they change
   useEffect(() => {
     if (!isLoading && currentUserIdRef.current) {
+      if (skipNextSaveRef.current) {
+        skipNextSaveRef.current = false;
+        return;
+      }
       const saveFavorites = async () => {
         try {
           const storageKey = getStorageKey(currentUserIdRef.current);
@@ -184,9 +222,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       isFavorite,
       toggleFavorite,
       toggleShowFavorites,
+      reloadFromStorage,
       isLoading,
     }),
-    [favorites, showFavorites, addFavorite, removeFavorite, isFavorite, toggleFavorite, toggleShowFavorites, isLoading]
+    [favorites, showFavorites, addFavorite, removeFavorite, isFavorite, toggleFavorite, toggleShowFavorites, reloadFromStorage, isLoading]
   );
 
   return (

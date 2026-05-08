@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 interface ToolItem {
   id: string;
@@ -62,6 +63,7 @@ export default function ToolsHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = React.useState(false);
+  const toolsListTarget = useTutorialTarget(TUTORIAL_TARGETS.toolsList);
 
   useScreenReady();
 
@@ -110,7 +112,7 @@ export default function ToolsHubScreen() {
           </ThemedText>
         </View>
 
-        <View style={styles.grid}>
+        <View ref={toolsListTarget.ref} onLayout={toolsListTarget.onLayout} style={styles.grid}>
           {TOOLS.map((tool) => (
             <Pressable
               key={tool.id}

@@ -78,12 +78,14 @@ interface BudgetPreviewProps {
 export function BudgetPreview({ quote, task, selectedCustomers, mode = 'budget' }: BudgetPreviewProps) {
   const { colors } = useTheme();
 
-  // Prefer the explicitly selected budget responsible; otherwise default to the first task responsible
+  // Prefer the explicitly selected budget responsible; then OWNER-role task responsible; then the first
   const activeConfig = quote.customerConfigs?.[0];
   const selectedResponsible = activeConfig?.responsibleId
     ? task?.responsibles?.find((r: any) => r.id === activeConfig.responsibleId)
     : null;
+  const ownerResponsible = task?.responsibles?.find((r: any) => r?.role === "OWNER");
   const contactName = selectedResponsible?.name
+    || ownerResponsible?.name
     || task?.responsibles?.[0]?.name
     || "";
   const budgetNumber = quote.budgetNumber

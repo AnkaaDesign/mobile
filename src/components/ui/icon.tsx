@@ -481,7 +481,6 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   "list-details": IconListDetails,
   log: IconListDetails, // Alias
   beach: IconBeach,
-  vacation: IconBeach, // Alias
   "calendar-minus": IconCalendarMinus,
   "time-off": IconCalendarMinus, // Alias
   "calendar-time": IconCalendarTime,

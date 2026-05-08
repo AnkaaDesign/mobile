@@ -6,6 +6,15 @@ import type { Installment } from './invoice';
 export type TASK_QUOTE_STATUS = 'PENDING' | 'BUDGET_APPROVED' | 'COMMERCIAL_APPROVED' | 'BILLING_APPROVED' | 'UPCOMING' | 'DUE' | 'PARTIAL' | 'SETTLED';
 export type DISCOUNT_TYPE = 'NONE' | 'PERCENTAGE' | 'FIXED_VALUE';
 
+export interface PaymentConfig {
+  type: 'CASH' | 'INSTALLMENTS';
+  cashDays?: number;
+  installmentCount?: number;
+  installmentStep?: number;
+  entryDays?: number;
+  specificDate?: string; // YYYY-MM-DD
+}
+
 export interface TaskQuoteService extends BaseEntity {
   description: string;
   observation?: string | null;
@@ -27,6 +36,7 @@ export interface TaskQuoteCustomerConfig extends BaseEntity {
   customPaymentText: string | null;
   responsibleId?: string | null;
   paymentCondition?: string | null;
+  paymentConfig?: PaymentConfig | null;
   generateInvoice?: boolean;
   generateBankSlip?: boolean;
   orderNumber?: string | null;
@@ -44,6 +54,8 @@ export interface TaskQuote extends BaseEntity {
   expiresAt: Date;
   status: TASK_QUOTE_STATUS;
   statusOrder: number;
+  // Anchor for installment due date calculation; set when status transitions to BILLING_APPROVED
+  billingApprovedAt?: Date | null;
 
   // Guarantee Terms
   guaranteeYears: number | null;

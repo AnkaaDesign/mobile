@@ -11,11 +11,10 @@ export {
   deploymentsListConfig,
 } from './administration'
 
-// HR Module (9 configs)
+// HR Module (8 configs)
 export {
   employeesListConfig,
   warningsListConfig,
-  vacationsListConfig,
   positionsListConfig,
   ppeDeliveriesListConfig,
   ppeSchedulesListConfig,
@@ -57,11 +56,10 @@ export {
   productionsListConfig,
 } from './painting'
 
-// My Team Module (8 configs)
+// My Team Module (7 configs)
 export {
   teamMembersListConfig,
   teamActivitiesListConfig,
-  teamVacationsListConfig,
   myTeamWarningsListConfig,
   myTeamBorrowsListConfig,
   myTeamPpeDeliveriesListConfig,

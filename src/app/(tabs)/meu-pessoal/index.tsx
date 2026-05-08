@@ -122,7 +122,7 @@ export default function MeuPessoalScreen() {
                 • Gerenciar EPIs
               </ThemedText>
               <ThemedText style={[styles.featureItem, { color: colors.mutedForeground }]}>
-                • Controlar férias e advertências
+                • Controlar advertências
               </ThemedText>
             </View>
           </Card>

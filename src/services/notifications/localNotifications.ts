@@ -306,33 +306,6 @@ export async function schedulePPENotification(
 }
 
 /**
- * Schedule notifications for vacation requests
- */
-export async function scheduleVacationNotification(
-  vacationId: string,
-  title: string,
-  body: string,
-  triggerDate: Date,
-  data?: Partial<NotificationData>
-): Promise<string> {
-  return await scheduleLocalNotification(
-    {
-      title,
-      body,
-      categoryIdentifier: NOTIFICATION_CATEGORIES.VACATION_REQUEST,
-      data: {
-        screen: 'VacationDetail',
-        params: { vacationId },
-        entityType: 'vacation',
-        entityId: vacationId,
-        ...data,
-      },
-    },
-    triggerDate
-  );
-}
-
-/**
  * Schedule notifications for stock alerts
  */
 export async function scheduleStockAlertNotification(

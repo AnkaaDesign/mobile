@@ -105,8 +105,8 @@ export function StepCustomerPayment({
   );
 
   const handleTypeChange = useCallback(
-    (val: string | null) => {
-      if (!val) { setPaymentConfig(null); return; }
+    (val: string | string[] | null | undefined) => {
+      if (!val || Array.isArray(val)) { setPaymentConfig(null); return; }
       if (val === "CASH") {
         setPaymentConfig({ type: "CASH", cashDays: paymentConfig?.cashDays ?? 5 });
         return;

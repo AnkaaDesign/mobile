@@ -899,7 +899,16 @@ export const userCreateSchema = z
     phone: phoneSchema.nullable().optional(),
     positionId: z.string().uuid("Cargo inválido").nullable().optional(),
     pis: pisSchema.nullable().optional(),
-    cpf: cpfSchema.nullable().optional(),
+    // CPF — required at create time. Secullum requires it for funcionario
+    // creation and Brazilian payroll mandates it. userUpdateSchema keeps it
+    // nullable.optional so legacy rows aren't blocked.
+    cpf: z
+      .string({
+        required_error: "CPF é obrigatório",
+        invalid_type_error: "CPF é obrigatório",
+      })
+      .min(1, "CPF é obrigatório")
+      .pipe(cpfSchema),
     verified: z.boolean().default(false),
     isActive: z.boolean().default(true),
     performanceLevel: z.number().int().min(0).max(5).default(0),
@@ -919,7 +928,7 @@ export const userCreateSchema = z
     zipCode: z.string().nullable().optional(),
     site: z.string().url("URL inválida").nullable().optional(),
 
-    // Additional dates - birth is required, exp1StartAt is optional
+    // Additional dates - birth is required
     birth: z.coerce
       .date()
       .refine(
@@ -932,15 +941,29 @@ export const userCreateSchema = z
       ),
 
     // Status tracking dates
-    exp1StartAt: nullableDate.optional(),
+    // Admission date — required at create time. Drives CLT period
+    // auto-calculation and Secullum's Admissao field. userUpdateSchema keeps
+    // this nullable.optional so existing rows aren't blocked.
+    exp1StartAt: z.coerce.date({
+      required_error: "Data de admissão é obrigatória",
+      invalid_type_error: "Data de admissão inválida",
+    }),
     exp1EndAt: nullableDate.optional(),
     exp2StartAt: nullableDate.optional(),
     exp2EndAt: nullableDate.optional(),
     effectedAt: nullableDate.optional(),
     dismissedAt: nullableDate.optional(),
 
-    // Payroll info
-    payrollNumber: z.number().int().positive("Número da folha deve ser positivo").nullable().optional(),
+    // Payroll info — required at create time (Secullum NumeroFolha + payroll
+    // computations). userUpdateSchema keeps it nullable.optional for editing
+    // existing rows that pre-date this constraint.
+    payrollNumber: z
+      .number({
+        required_error: "Número da folha é obrigatório",
+        invalid_type_error: "Número da folha deve ser numérico",
+      })
+      .int()
+      .positive("Número da folha deve ser positivo"),
 
     // Nested PPE size creation for new users
     ppeSize: ppeSizeCreateNestedSchema.optional(),
@@ -1097,23 +1120,20 @@ export const userUpdateSchema = z
       path: ["dismissedAt"],
     }
   )
+  // NOTE: We intentionally allow DISMISSED → other statuses (un-dismissal).
+  // Operators frequently dismiss by mistake and need to undo it; the API and
+  // Secullum bridge clear Demissao symmetrically when dismissedAt becomes null.
+  // The transition refine below skips the check for DISMISSED → anything.
   .refine(
     (data) => {
-      // DISMISSED status cannot be changed to any other status
-      if (data.currentStatus === USER_STATUS.DISMISSED && data.status && data.status !== USER_STATUS.DISMISSED) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: "Colaboradores DEMITIDOS não podem ter o status alterado",
-      path: ["status"],
-    }
-  )
-  .refine(
-    (data) => {
-      // Validate status transition using helper function
-      if (data.currentStatus && data.status && data.currentStatus !== data.status) {
+      // Validate status transition using helper function — but allow
+      // DISMISSED → anything (mistake correction).
+      if (
+        data.currentStatus &&
+        data.status &&
+        data.currentStatus !== data.status &&
+        data.currentStatus !== USER_STATUS.DISMISSED
+      ) {
         return isValidStatusTransition(data.currentStatus, data.status);
       }
       return true;

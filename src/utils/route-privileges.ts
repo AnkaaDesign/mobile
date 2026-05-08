@@ -261,13 +261,6 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/recursos-humanos/feriados/detalhes/[id]': 'HUMAN_RESOURCES',
   '/(tabs)/recursos-humanos/feriados/editar/[id]': 'HUMAN_RESOURCES',
   
-  // Vacations
-  '/(tabs)/recursos-humanos/ferias': 'HUMAN_RESOURCES',
-  '/(tabs)/recursos-humanos/ferias/listar': 'HUMAN_RESOURCES',
-  '/(tabs)/recursos-humanos/ferias/cadastrar': 'HUMAN_RESOURCES',
-  '/(tabs)/recursos-humanos/ferias/detalhes/[id]': 'HUMAN_RESOURCES',
-  '/(tabs)/recursos-humanos/ferias/editar/[id]': 'HUMAN_RESOURCES',
-  
   // Warnings
   '/(tabs)/recursos-humanos/advertencias': 'HUMAN_RESOURCES',
   '/(tabs)/recursos-humanos/advertencias/listar': 'HUMAN_RESOURCES',
@@ -306,7 +299,6 @@ export const ROUTE_PRIVILEGES: Record<
   '/(tabs)/pessoal/my-borrows': 'BASIC',
   '/(tabs)/pessoal/my-notifications': 'BASIC',
   '/(tabs)/pessoal/my-ppes': 'BASIC',
-  '/(tabs)/pessoal/my-vacations': 'BASIC',
   '/(tabs)/pessoal/my-warnings': 'BASIC',
   '/(tabs)/pessoal/preferences': 'BASIC',
   
@@ -316,7 +308,6 @@ export const ROUTE_PRIVILEGES: Record<
 
   '/(tabs)/meu-pessoal': 'BASIC', // Access is controlled by isTeamLeader check, not privilege
   '/(tabs)/meu-pessoal/emprestimos': 'BASIC',
-  '/(tabs)/meu-pessoal/ferias': 'BASIC',
   '/(tabs)/meu-pessoal/advertencias': 'BASIC',
   
   // =====================

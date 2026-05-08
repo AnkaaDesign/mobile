@@ -36,6 +36,7 @@ import type {
   PpeSize,
   PpeDelivery,
   PpeDeliverySchedule,
+  PpeTrackableSignatureEventType,
   // PpeSize Interface types
   PpeSizeGetUniqueResponse,
   PpeSizeGetManyResponse,
@@ -376,12 +377,7 @@ export class PpeDeliveryService {
   static async trackDeliveryEvent(
     deliveryId: string,
     body: {
-      event:
-        | 'DOCUMENT_VIEWED'
-        | 'BIOMETRIC_PROMPTED'
-        | 'BIOMETRIC_SUCCEEDED'
-        | 'BIOMETRIC_FAILED'
-        | 'PDF_DOWNLOADED';
+      event: PpeTrackableSignatureEventType;
       metadata?: Record<string, any> | null;
     },
   ): Promise<void> {

@@ -14,6 +14,7 @@ import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
+import { useTutorialTarget, useOptionalTutorial, TUTORIAL_TARGETS } from "@/components/tutorial";
 import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
 
@@ -264,13 +265,6 @@ const ALL_ROUTES = [
   { name: "recursos-humanos/feriados/listar", title: "Feriados" },
   { name: "recursos-humanos/feriados/detalhes/[id]", title: "Detalhes do Feriado" },
   { name: "recursos-humanos/feriados/editar/[id]", title: "Editar Feriado" },
-  { name: "recursos-humanos/ferias/index", title: "Férias" },
-  { name: "recursos-humanos/ferias/cadastrar", title: "Cadastrar Férias" },
-  { name: "recursos-humanos/ferias/calendario", title: "Calendário de Férias" },
-  { name: "recursos-humanos/ferias/editar-em-lote", title: "Editar Férias em Lote" },
-  { name: "recursos-humanos/ferias/listar", title: "Férias" },
-  { name: "recursos-humanos/ferias/detalhes/[id]", title: "Detalhes das Férias" },
-  { name: "recursos-humanos/ferias/editar/[id]", title: "Editar Férias" },
   // { name: "recursos-humanos/folha-de-pagamento/index", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "recursos-humanos/folha-de-pagamento/[userId]", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "recursos-humanos/folha-de-pagamento/listar", title: "Folhas de Pagamento" }, // Temporarily hidden for testing
@@ -306,8 +300,6 @@ const ALL_ROUTES = [
   { name: "meu-pessoal/emprestimos", title: "Empréstimos da Equipe" },
   { name: "meu-pessoal/epis", title: "EPIs da Equipe" },
   { name: "meu-pessoal/epis/detalhes/[id]", title: "Detalhes do EPI" },
-  { name: "meu-pessoal/ferias", title: "Férias da Equipe" },
-  { name: "meu-pessoal/ferias/detalhes/[id]", title: "Detalhes das Férias" },
   { name: "meu-pessoal/usuarios", title: "Membros da Equipe" },
   { name: "meu-pessoal/calculos", title: "Controle de Ponto" },
 
@@ -320,8 +312,6 @@ const ALL_ROUTES = [
   { name: "pessoal/index", title: "Pessoal" },
   { name: "pessoal/meus-feriados/index", title: "Feriados" },
   { name: "pessoal/meus-feriados/detalhes/[id]", title: "Detalhes do Feriado" },
-  { name: "pessoal/minhas-ferias/index", title: "Férias" },
-  { name: "pessoal/minhas-ferias/detalhes/[id]", title: "Detalhes das Férias" },
   { name: "pessoal/meus-epis/index", title: "Meus EPIs" },
   { name: "pessoal/meus-epis/request", title: "Solicitar EPI" },
   { name: "pessoal/meus-epis/detalhes/[id]", title: "Detalhes do EPI" },
@@ -523,7 +513,6 @@ function getAccessibleRoutes(userPrivileges: SECTOR_PRIVILEGES[], user?: any): t
         'recursos-humanos/advertencias/',
         'recursos-humanos/calculos',
         'recursos-humanos/feriados/',
-        'recursos-humanos/ferias/',
         'recursos-humanos/horarios/',
       ];
       if (pmAllowedHRPaths.some(allowed => path.startsWith(allowed) || path === allowed.replace(/\/$/, ''))) {
@@ -657,15 +646,26 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
   // Use route.name from screenOptions — synchronously correct, not stale like pathname
   const showBackButton = routeName !== 'inicio';
 
+  const { ref: backRef, onLayout: backOnLayout, onPress: backOnPress } = useTutorialTarget(
+    TUTORIAL_TARGETS.chromeHeaderBack,
+  );
+
   if (!showBackButton) {
     // Add spacing even when there's no back button for consistency
     return <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />;
   }
 
   return (
-    <View style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}>
+    <View
+      ref={backRef}
+      onLayout={backOnLayout}
+      style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}
+    >
       <Pressable
         onPress={() => {
+          // Notify tutorial engine of tap on this target
+          backOnPress();
+
           // Haptic feedback for immediate tactile response
           if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -718,27 +718,53 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
   openMenuDrawer,
   navigation,
 }: HeaderRightButtonsProps) {
+  const { ref: drawerToggleRef, onLayout: drawerToggleOnLayout } = useTutorialTarget(
+    TUTORIAL_TARGETS.chromeDrawerToggle,
+  );
+  const { ref: notifBellRef, onLayout: notifBellOnLayout, onPress: notifBellOnPress } = useTutorialTarget(
+    TUTORIAL_TARGETS.chromeNotificationsBell,
+  );
+  // Use the optional tutorial hook so this header still works when the
+  // TutorialProvider is not mounted (e.g. login screen, error states).
+  const tutorial = useOptionalTutorial();
   return (
     <View style={styles.headerRight}>
-      <NotificationBell
-        color={headerText}
-        onPress={() => openNotificationsDrawer(navigation)}
-      />
-      <Pressable
-        onPress={() => openMenuDrawer(navigation)}
-        style={({ pressed }) => [
-          styles.headerButton,
-          pressed && { backgroundColor: buttonPressed }
-        ]}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Icon
-          name="menu"
-          size="md"
-          variant={isDark ? "default" : "default"}
+      <View ref={notifBellRef} onLayout={notifBellOnLayout}>
+        <NotificationBell
           color={headerText}
+          onPress={() => {
+            notifBellOnPress();
+            openNotificationsDrawer(navigation);
+          }}
         />
-      </Pressable>
+      </View>
+      <View ref={drawerToggleRef} onLayout={drawerToggleOnLayout}>
+        <Pressable
+          onPress={() => {
+            // Notify the tutorial engine that the menu drawer is being opened.
+            // The drawer is a react-navigation drawer (DrawerActions.openDrawer)
+            // so the engine's "state" listener should also fire — but we forward
+            // the action explicitly to be robust against the listener attaching
+            // to a navigator that doesn't see the drawer's state changes.
+            tutorial?.notifyAction("drawer-open", {
+              targetId: TUTORIAL_TARGETS.chromeDrawerToggle,
+            });
+            openMenuDrawer(navigation);
+          }}
+          style={({ pressed }) => [
+            styles.headerButton,
+            pressed && { backgroundColor: buttonPressed }
+          ]}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon
+            name="menu"
+            size="md"
+            variant={isDark ? "default" : "default"}
+            color={headerText}
+          />
+        </Pressable>
+      </View>
     </View>
   );
 });

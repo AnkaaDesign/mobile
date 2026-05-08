@@ -194,7 +194,7 @@ function PositionTableRowSwipe({ positionId, positionName, onEdit, onDelete, chi
     <ReanimatedSwipeableRow
       rightActions={rightActions}
       onWillOpen={handleSwipeableWillOpen}
-      style={style}
+      containerStyle={style as import("react-native").ViewStyle}
     >
       {children(isActive)}
     </ReanimatedSwipeableRow>

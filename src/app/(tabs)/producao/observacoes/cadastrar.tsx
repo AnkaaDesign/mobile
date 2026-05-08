@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { router, Stack, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,12 @@ import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { routeToMobilePath } from '@/utils/route-mapper';
+import {
+  TUTORIAL_TARGETS,
+  useOptionalTutorial,
+  useTutorialTarget,
+} from "@/components/tutorial";
+import { tutorialMocks } from "@/components/tutorial/tutorial-mocks";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +37,14 @@ function CreateObservationScreenInner() {
   const params = useLocalSearchParams<{ taskId?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useObservationMutations();
+
+  // Tutorial wiring — gate API calls and emit input/submit events.
+  const tutorial = useOptionalTutorial();
+  const isTutorialActive = !!tutorial?.isActive;
+
+  const taskSelectTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormTaskSelect);
+  const descriptionTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormDescription);
+  const saveTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormSave);
 
   // Permission check
   const canCreate = React.useMemo(() => {
@@ -68,11 +82,22 @@ function CreateObservationScreenInner() {
 
   useScreenReady(!isLoadingTasks);
 
-  const tasks = tasksResponse?.data || [];
+  // In tutorial mode, ensure the demo tasks always appear in the picker even
+  // if the real task query is empty/failing. This keeps the "do" step achievable.
+  const tasks = React.useMemo(() => {
+    const real = tasksResponse?.data || [];
+    if (!isTutorialActive) return real;
+    const seen = new Set(real.map((t: any) => t.id));
+    const demoTasks = tutorialMocks.tasks.filter((t) => !seen.has(t.id));
+    return [...demoTasks, ...real];
+  }, [tasksResponse?.data, isTutorialActive]);
 
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
+    getValues,
     formState: { errors, isValid },
   } = useForm<ObservationCreateFormData>({
     resolver: zodResolver(observationCreateSchema),
@@ -84,9 +109,90 @@ function CreateObservationScreenInner() {
     mode: "onChange",
   });
 
+  // Watch form values to fire tutorial events.
+  const watchedTaskId = watch("taskId");
+  const watchedDescription = watch("description");
+
+  // Defensive fallback for the preceding "tap the FAB" tutorial step:
+  // if the user managed to land on this screen while the engine is still
+  // waiting for `observacoesFab` (e.g. the overlay was bypassed or a deep
+  // link was used), notify the engine immediately on mount.
+  const fabFallbackFiredRef = useRef(false);
+  useEffect(() => {
+    if (!isTutorialActive) return;
+    if (fabFallbackFiredRef.current) return;
+    const stepTargetId = tutorial?.currentStep?.targetId;
+    if (stepTargetId === TUTORIAL_TARGETS.observacoesFab) {
+      fabFallbackFiredRef.current = true;
+      tutorial?.notifyAction("tap", {
+        targetId: TUTORIAL_TARGETS.observacoesFab,
+      });
+    }
+    // We only care about the moment of mount/step-entry; depending on
+    // currentStep's full identity is enough.
+  }, [isTutorialActive, tutorial?.currentStep?.targetId, tutorial]);
+
+  // In tutorial mode, seed any required field that we don't ask the user to
+  // fill so that zod validation can pass and the Save button stays enabled.
+  // The schema (observationCreateSchema) currently requires `taskId` (uuid)
+  // and `description`. The task picker is satisfied when the user picks a
+  // mock task — but mock task IDs are not real uuids, so zod's `.uuid()`
+  // would reject them. To keep the demo flow always-completable, we fall
+  // back to bypassing zod inside `handleSave` (see below) instead of
+  // forcing values here. We still pre-fill `fileIds` to an empty array so
+  // optional-but-present validators don't trip.
+  useEffect(() => {
+    if (!isTutorialActive) return;
+    const current = getValues();
+    if (!current.fileIds) {
+      setValue("fileIds", [], { shouldDirty: false, shouldValidate: false });
+    }
+  }, [isTutorialActive, getValues, setValue]);
+
+  // Fire `observacoes.taskSelected` once the task transitions empty → non-empty.
+  const taskNotifiedRef = useRef(false);
+  useEffect(() => {
+    if (!isTutorialActive) return;
+    if (taskNotifiedRef.current) return;
+    if (watchedTaskId && watchedTaskId.length > 0) {
+      taskNotifiedRef.current = true;
+      tutorial?.notifyAction("input", { eventId: "observacoes.taskSelected" });
+    }
+  }, [isTutorialActive, watchedTaskId, tutorial]);
+
+  // Fire `observacoes.descriptionTyped` once the description becomes non-empty.
+  const descriptionNotifiedRef = useRef(false);
+  useEffect(() => {
+    if (!isTutorialActive) return;
+    if (descriptionNotifiedRef.current) return;
+    if (watchedDescription && watchedDescription.trim().length > 0) {
+      descriptionNotifiedRef.current = true;
+      tutorial?.notifyAction("input", { eventId: "observacoes.descriptionTyped" });
+    }
+  }, [isTutorialActive, watchedDescription, tutorial]);
+
+  // Tracks whether `observacoes.saved` was emitted so the unmount cleanup
+  // (useFocusEffect) doesn't double-advance the engine.
+  const saveNotifiedRef = useRef(false);
+
   const onSubmit = async (data: ObservationCreateFormData) => {
     if (!canCreate) {
       Alert.alert("Erro", "Você não tem permissão para criar observações");
+      return;
+    }
+
+    // Tutorial mode — never hit the real API. Notify the engine and bail out.
+    if (isTutorialActive) {
+      saveNotifiedRef.current = true;
+      tutorial?.notifyAction("submit", { eventId: "observacoes.saved" });
+      // Give the engine a moment to advance the step before navigating back.
+      setTimeout(() => {
+        try {
+          router.back();
+        } catch {
+          router.replace(routeToMobilePath(routes.production.observations.list) as any);
+        }
+      }, 100);
       return;
     }
 
@@ -120,6 +226,53 @@ function CreateObservationScreenInner() {
     }
   };
 
+  /**
+   * Save button handler.
+   *
+   * In tutorial mode we DO NOT route through `handleSubmit(onSubmit)` because
+   * mock task IDs (e.g. `tut-00000001-aaaa-...`) are not real uuids and would
+   * fail `observationCreateSchema.taskId.uuid()`, leaving zod errors in place
+   * and silently swallowing the submit. Instead we bypass zod and call
+   * `onSubmit` directly with whatever the form currently holds — `onSubmit`
+   * already short-circuits to `notifyAction("submit", ...)` and does NOT hit
+   * the API in tutorial mode, so any "invalid" values are inert.
+   *
+   * Outside tutorial mode this stays the standard zod-validated path.
+   */
+  const handleSave = isTutorialActive
+    ? () => {
+        void onSubmit(getValues() as ObservationCreateFormData);
+      }
+    : handleSubmit(onSubmit);
+
+  // If the user navigates away from the cadastrar screen while the tutorial
+  // is still expecting `observacoes.saved`, advance the engine ourselves so
+  // it doesn't get stuck waiting forever for a Save tap that will never come.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (!isTutorialActive) return;
+        if (saveNotifiedRef.current) return;
+        const step = tutorial?.currentStep;
+        if (!step) return;
+        if (
+          step.targetId === TUTORIAL_TARGETS.observacoesFormSave ||
+          step.targetId === TUTORIAL_TARGETS.observacoesFormDescription ||
+          step.targetId === TUTORIAL_TARGETS.observacoesFormTaskSelect
+        ) {
+          // Best-effort skip: emit the saved event so the engine can advance
+          // past the entire form-fill flow. Safe because tutorial mode never
+          // hits the real API.
+          try {
+            tutorial?.notifyAction("submit", {
+              eventId: "observacoes.saved",
+            });
+          } catch {}
+        }
+      };
+    }, [isTutorialActive, tutorial])
+  );
+
   const handleNavigateBack = () => {
     const backPath = getBackPath();
     if (backPath) {
@@ -130,6 +283,11 @@ function CreateObservationScreenInner() {
   };
 
   const handleCancel = () => {
+    // During the tutorial, a "Cancelar" confirm modal would derail the flow.
+    if (isTutorialActive) {
+      handleNavigateBack();
+      return;
+    }
     Alert.alert(
       "Cancelar",
       "Tem certeza que deseja cancelar? Todos os dados serão perdidos.",
@@ -163,7 +321,9 @@ function CreateObservationScreenInner() {
     );
   }
 
-  if (isLoadingTasks) {
+  // In tutorial mode, the demo tasks fallback keeps the form usable even while
+  // the real query is loading or has failed.
+  if (isLoadingTasks && !isTutorialActive) {
     return (
       <>
         <Stack.Screen
@@ -195,7 +355,7 @@ function CreateObservationScreenInner() {
     );
   }
 
-  if (tasksError) {
+  if (tasksError && !isTutorialActive) {
     return (
       <>
         <Stack.Screen
@@ -229,10 +389,10 @@ function CreateObservationScreenInner() {
             <Button
               variant="ghost"
               size="icon"
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting}
+              onPress={handleSave}
+              disabled={(!isTutorialActive && !isValid) || isSubmitting}
             >
-              <IconDeviceFloppy size={20} color={isValid && !isSubmitting ? colors.primary : colors.muted} />
+              <IconDeviceFloppy size={20} color={(isTutorialActive || isValid) && !isSubmitting ? colors.primary : colors.muted} />
             </Button>
           ),
         }}
@@ -251,46 +411,56 @@ function CreateObservationScreenInner() {
               <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Informações da Observação</ThemedText>
             </View>
 
-            <SimpleFormField label="Tarefa" required error={errors.taskId}>
-              <Controller
-                control={control}
-                name="taskId"
-                render={({ field: { onChange, value } }) => (
-                  <Combobox
-                    value={value}
-                    onValueChange={onChange}
-                    options={tasks.length === 0 ? [] : tasks.map((task) => ({
-                      label: `${task.name} - ${task.customer?.fantasyName || 'Sem cliente'}${task.truck?.plate ? ` - ${task.truck.plate}` : ''}`,
-                      value: task.id,
-                    }))}
-                    placeholder="Selecione uma tarefa"
-                    emptyText="Nenhuma tarefa disponível"
-                    searchable={false}
-                  />
-                )}
-              />
-            </SimpleFormField>
+            <View
+              ref={taskSelectTarget.ref}
+              onLayout={taskSelectTarget.onLayout}
+            >
+              <SimpleFormField label="Tarefa" required error={errors.taskId}>
+                <Controller
+                  control={control}
+                  name="taskId"
+                  render={({ field: { onChange, value } }) => (
+                    <Combobox
+                      value={value}
+                      onValueChange={onChange}
+                      options={tasks.length === 0 ? [] : tasks.map((task: any) => ({
+                        label: `${task.name} - ${task.customer?.fantasyName || 'Sem cliente'}${task.truck?.plate ? ` - ${task.truck.plate}` : ''}`,
+                        value: task.id,
+                      }))}
+                      placeholder="Selecione uma tarefa"
+                      emptyText="Nenhuma tarefa disponível"
+                      searchable={false}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+            </View>
 
-            <SimpleFormField label="Descrição" required error={errors.description}>
-              <Controller
-                control={control}
-                name="description"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="Descreva a observação"
-                    multiline
-                    numberOfLines={6}
-                    textAlignVertical="top"
-                    maxLength={1000}
-                    error={!!errors.description}
-                    style={{ minHeight: 120 }}
-                  />
-                )}
-              />
-            </SimpleFormField>
+            <View
+              ref={descriptionTarget.ref}
+              onLayout={descriptionTarget.onLayout}
+            >
+              <SimpleFormField label="Descrição" required error={errors.description}>
+                <Controller
+                  control={control}
+                  name="description"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Descreva a observação"
+                      multiline
+                      numberOfLines={6}
+                      textAlignVertical="top"
+                      maxLength={1000}
+                      error={!!errors.description}
+                      style={{ minHeight: 120 }}
+                    />
+                  )}
+                />
+              </SimpleFormField>
+            </View>
           </Card>
 
           {/* Action Buttons */}
@@ -298,13 +468,15 @@ function CreateObservationScreenInner() {
             <Button variant="outline" style={{ flex: 1 }} onPress={handleCancel} disabled={isSubmitting}>
               <ThemedText>Cancelar</ThemedText>
             </Button>
-            <Button
-              style={{ flex: 1 }}
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting}
-            >
-              <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Salvar Observação"}</ThemedText>
-            </Button>
+            <View ref={saveTarget.ref} onLayout={saveTarget.onLayout} style={{ flex: 1 }}>
+              <Button
+                style={{ flex: 1 }}
+                onPress={handleSave}
+                disabled={(!isTutorialActive && !isValid) || isSubmitting}
+              >
+                <ThemedText style={{ color: "white" }}>{isSubmitting ? "Salvando..." : "Salvar Observação"}</ThemedText>
+              </Button>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

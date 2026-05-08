@@ -118,6 +118,23 @@ export const secullumService = {
     quantidade?: number;
   }) => apiClient.post<{ success: boolean; data: any }>("/integrations/secullum/requests/pending", params || {}),
 
+  // One row per active user for a single day — powers the daily-ponto
+  // dashboard widget so HR/admin can see every employee's punches at a glance.
+  getTimeEntriesByDay: (date: string) =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data: Array<{
+        user: {
+          id: string;
+          name: string;
+          positionName: string | null;
+          sectorName: string | null;
+        };
+        entry: any | null;
+      }>;
+    }>("/integrations/secullum/time-entries/by-day", { params: { date } }),
+
   // Pendencias (simple requests endpoint)
   getPendencias: (userCpf?: string) =>
     apiClient.get<{ success: boolean; data: any[]; meta: any }>("/integrations/secullum/pendencias", {

@@ -160,6 +160,10 @@ export const ServicesTableEnhanced: React.FC<ServicesTableEnhancedProps> = ({
         return { icon: IconCheck, color: colors.primary, label: SERVICE_ORDER_STATUS_LABELS[SERVICE_ORDER_STATUS.COMPLETED] };
       case SERVICE_ORDER_STATUS.IN_PROGRESS:
         return { icon: IconPlayerPlay, color: colors.secondary, label: SERVICE_ORDER_STATUS_LABELS[SERVICE_ORDER_STATUS.IN_PROGRESS] };
+      case SERVICE_ORDER_STATUS.PAUSED:
+        return { icon: IconPlayerPause, color: colors.warning, label: SERVICE_ORDER_STATUS_LABELS[SERVICE_ORDER_STATUS.PAUSED] };
+      case SERVICE_ORDER_STATUS.WAITING_APPROVE:
+        return { icon: IconClock, color: colors.warning, label: SERVICE_ORDER_STATUS_LABELS[SERVICE_ORDER_STATUS.WAITING_APPROVE] };
       case SERVICE_ORDER_STATUS.PENDING:
         return { icon: IconPlayerPause, color: colors.mutedForeground, label: SERVICE_ORDER_STATUS_LABELS[SERVICE_ORDER_STATUS.PENDING] };
       case SERVICE_ORDER_STATUS.CANCELLED:

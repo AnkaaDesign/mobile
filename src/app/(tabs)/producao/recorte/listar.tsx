@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { Layout } from '@/components/list/Layout';
 import { cutsListConfig } from '@/config/list/production/cuts';
 import { useAuth } from '@/contexts/auth-context';
@@ -8,6 +8,7 @@ import { CutRequestModal } from '@/components/production/cuts/form/cut-request-m
 import { canRequestCutForTask } from '@/utils/permissions/entity-permissions';
 import { useFileViewer } from '@/components/file';
 import { useCutMutations, useScreenReady} from '@/hooks';
+import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial';
 import type { Cut } from '@/types';
 
 export default function CuttingListScreen() {
@@ -16,6 +17,10 @@ export default function CuttingListScreen() {
   const { actions: fileViewerActions } = useFileViewer();
   const { update } = useCutMutations();
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Tutorial targets
+  const listTarget = useTutorialTarget(TUTORIAL_TARGETS.recorteList);
+  const firstItemTarget = useTutorialTarget(TUTORIAL_TARGETS.recorteFirstItem);
 
   // Cut request modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -246,7 +251,17 @@ export default function CuttingListScreen() {
 
   return (
     <>
-      <Layout config={dynamicConfig} />
+      <View ref={listTarget.ref} onLayout={listTarget.onLayout} style={{ flex: 1 }}>
+        {/* recorteFirstItem shares the wrapper since the shared Layout renders
+            rows internally. Spotlight will highlight the top of the list. */}
+        <View
+          ref={firstItemTarget.ref}
+          onLayout={firstItemTarget.onLayout}
+          style={{ flex: 1 }}
+        >
+          <Layout config={dynamicConfig} />
+        </View>
+      </View>
 
       {/* Cut Request Modal */}
       <CutRequestModal

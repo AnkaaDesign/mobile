@@ -11,6 +11,7 @@ import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
 import type { CalculationRow } from "@/types/secullum";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },
@@ -54,6 +55,11 @@ export default function MeusPontosScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+  const pontosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontos);
+  const tutorial = useOptionalTutorial();
+  const tutorialIsTargetingPontos =
+    !!tutorial?.isActive &&
+    tutorial?.currentStep?.targetId === TUTORIAL_TARGETS.pessoalPontos;
 
   // Month navigation state (start with current month)
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -180,8 +186,9 @@ export default function MeusPontosScreen() {
   const apiResponse = calculationsData?.data || calculationsData;
   const isNotRegisteredFromResponse = apiResponse && 'notRegistered' in apiResponse && apiResponse.notRegistered === true;
 
-  // Handle API errors
-  if (error || isNotRegisteredFromResponse) {
+  // Handle API errors — but during tutorial, fall through to render the
+  // header so the spotlight has a target.
+  if ((error || isNotRegisteredFromResponse) && !tutorialIsTargetingPontos) {
     const errorMessage = isNotRegisteredFromResponse && apiResponse && 'message' in apiResponse
       ? (apiResponse.message || '')
       : ((error as any)?.response?.data?.message || (error as any)?.message || 'Erro ao carregar seus pontos');
@@ -227,7 +234,7 @@ export default function MeusPontosScreen() {
     <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Header: Month Navigator + Column Button */}
-        <View style={styles.headerContainer}>
+        <View ref={pontosTarget.ref} onLayout={pontosTarget.onLayout} style={styles.headerContainer}>
           {/* Month Navigator */}
           <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TouchableOpacity

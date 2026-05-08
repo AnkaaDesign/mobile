@@ -21,11 +21,15 @@ import type { Notification } from '@/types';
 import * as Haptics from 'expo-haptics';
 import { extendedColors } from '@/lib/theme/extended-colors';
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial';
 
 export default function NotificationCenterScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+
+  // Tutorial target
+  const notificationsListTarget = useTutorialTarget(TUTORIAL_TARGETS.notificationsList);
 
   // State
   const [refreshing, setRefreshing] = useState(false);
@@ -224,7 +228,11 @@ export default function NotificationCenterScreen() {
         }}
       />
 
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View
+        ref={notificationsListTarget.ref}
+        onLayout={notificationsListTarget.onLayout}
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}

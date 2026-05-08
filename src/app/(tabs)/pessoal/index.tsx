@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { USER_STATUS } from "@/constants";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 interface PersonalMenuItem {
   id: string;
@@ -38,6 +39,7 @@ export default function PessoalScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { data: currentUser } = useCurrentUser();
+  const gridTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalGrid);
 
   // Check if user is eligible for bonus (must be EFFECTED and have bonifiable position)
   const isBonifiable = currentUser?.status === USER_STATUS.EFFECTED &&
@@ -135,7 +137,7 @@ export default function PessoalScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.menuGrid}>
+        <View ref={gridTarget.ref} onLayout={gridTarget.onLayout} style={styles.menuGrid}>
           {personalMenuItems.map((item) => (
             <TouchableOpacity
               key={item.id}

@@ -104,6 +104,18 @@ export interface PpeDeliverySignature extends BaseEntity {
   legalBasis: string;
   consentGiven: boolean;
 
+  // PAdES seal (ICP-Brasil cert applied server-side over the signed PDF)
+  padesSealed?: boolean;
+  padesSealedAt?: Date | null;
+  certSubject?: string | null;
+  certIssuer?: string | null;
+  certSerialNumber?: string | null;
+  certCnpj?: string | null;
+  certNotAfter?: Date | null;
+
+  // SHA-256 of the unsealed signed PDF (before PAdES) — shown on audit trail page
+  documentSha256?: string | null;
+
   // Relations
   signedByUser?: User;
   signedDocument?: {
@@ -114,6 +126,50 @@ export interface PpeDeliverySignature extends BaseEntity {
     path: string;
     size: number;
   } | null;
+  events?: PpeDeliverySignatureEvent[];
+}
+
+// =====================
+// PPE Signature Audit Trail Types
+// =====================
+
+export type PpeSignatureEventType =
+  | 'DELIVERY_CREATED'
+  | 'DELIVERY_APPROVED'
+  | 'DELIVERY_REJECTED'
+  | 'NOTIFICATION_SENT'
+  | 'NOTIFICATION_FAILED'
+  | 'DOCUMENT_VIEWED'
+  | 'BIOMETRIC_PROMPTED'
+  | 'BIOMETRIC_SUCCEEDED'
+  | 'BIOMETRIC_FAILED'
+  | 'SIGNATURE_SUBMITTED'
+  | 'HMAC_VALIDATED'
+  | 'HMAC_REJECTED'
+  | 'PADES_SEALED'
+  | 'PADES_FAILED'
+  | 'SIGNATURE_COMPLETED'
+  | 'SIGNATURE_FAILED'
+  | 'PDF_DOWNLOADED';
+
+/** Subset of PpeSignatureEventType that mobile clients are allowed to emit. */
+export type PpeTrackableSignatureEventType =
+  | 'DOCUMENT_VIEWED'
+  | 'BIOMETRIC_PROMPTED'
+  | 'BIOMETRIC_SUCCEEDED'
+  | 'BIOMETRIC_FAILED'
+  | 'PDF_DOWNLOADED';
+
+export interface PpeDeliverySignatureEvent extends BaseEntity {
+  deliveryId: string;
+  signatureId: string | null;
+  type: PpeSignatureEventType;
+  occurredAt: Date;
+  actorUserId: string | null;
+  actorName?: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  metadata: Record<string, any> | null;
 }
 
 // PPE configuration is now stored directly on the Item model

@@ -99,7 +99,6 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
 
   // Recursos Humanos
   { prefix: "/recursos-humanos/cargos", icon: IconBriefcase, color: "#a855f7" },
-  { prefix: "/recursos-humanos/ferias", icon: IconBeach, color: "#3b82f6" },
   { prefix: "/recursos-humanos/feriados", icon: IconCalendar, color: "#f97316" },
   { prefix: "/recursos-humanos/avisos", icon: IconAlertTriangle, color: "#ef4444" },
   { prefix: "/recursos-humanos/epi/entregas", icon: IconShield, color: "#fbbf24" },
@@ -110,7 +109,6 @@ const PATH_PREFIX_ICON_MAP: Array<{ prefix: string; icon: Icon; color: string }>
 
   // Pessoal
   { prefix: "/pessoal/feriados", icon: IconCalendar, color: "#f97316" },
-  { prefix: "/pessoal/ferias", icon: IconBeach, color: "#3b82f6" },
   { prefix: "/pessoal/meus-epis", icon: IconShield, color: "#eab308" },
   { prefix: "/pessoal/meus-emprestimos", icon: IconRepeat, color: "#a855f7" },
   { prefix: "/pessoal/minhas-atividades", icon: IconActivity, color: "#22c55e" },
@@ -222,8 +220,6 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
   // Recursos Humanos
   [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_LISTAR]: { icon: IconBriefcase, color: "bg-purple-500" },
   [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR]: { icon: IconBriefcase, color: "bg-purple-600" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_LISTAR]: { icon: IconBeach, color: "bg-blue-500" },
-  [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_CADASTRAR]: { icon: IconBeach, color: "bg-blue-600" },
   [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
   [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR]: { icon: IconCalendar, color: "bg-orange-600" },
   [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_LISTAR]: { icon: IconAlertTriangle, color: "bg-red-500" },
@@ -239,7 +235,6 @@ export const PAGE_ICON_MAP: Record<string, { icon: Icon; color: string }> = {
 
   // Pessoal
   [FAVORITE_PAGES.PESSOAL_MINHAS_COMISSOES_LISTAR]: { icon: IconCoins, color: "bg-green-500" },
-  [FAVORITE_PAGES.PESSOAL_MINHAS_FERIAS_LISTAR]: { icon: IconBeach, color: "bg-blue-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_FERIADOS_LISTAR]: { icon: IconCalendar, color: "bg-orange-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_EMPRESTIMOS_LISTAR]: { icon: IconRepeat, color: "bg-purple-500" },
   [FAVORITE_PAGES.PESSOAL_MEUS_EPIS_LISTAR]: { icon: IconShield, color: "bg-yellow-500" },
@@ -364,8 +359,6 @@ export function getPageIconName(path: string): string {
     // Recursos Humanos
     "/recursos-humanos/cargos": "briefcase",
     "/recursos-humanos/cargos/cadastrar": "briefcase",
-    "/recursos-humanos/ferias": "beach",
-    "/recursos-humanos/ferias/cadastrar": "beach",
     "/recursos-humanos/feriados": "calendar",
     "/recursos-humanos/feriados/cadastrar": "calendar",
     "/recursos-humanos/avisos": "alert-triangle",
@@ -384,7 +377,6 @@ export function getPageIconName(path: string): string {
 
     // Pessoal
     "/pessoal/minhas-comissoes": "coins",
-    "/pessoal/minhas-ferias": "beach",
     "/pessoal/meus-feriados": "calendar",
     "/pessoal/meus-emprestimos": "repeat",
     "/pessoal/meus-epis": "shield",
@@ -490,8 +482,6 @@ export function getPageIconName(path: string): string {
     // Recursos Humanos
     [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_LISTAR]: "briefcase",
     [FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR]: "briefcase",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_LISTAR]: "beach",
-    [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_CADASTRAR]: "beach",
     [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_LISTAR]: "calendar",
     [FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR]: "calendar",
     [FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_LISTAR]: "alert-triangle",

@@ -19,8 +19,6 @@ export function BasicInfoCard({ employee }: BasicInfoCardProps) {
         return "success";
       case USER_STATUS.DISMISSED:
         return "destructive";
-      case "ON_VACATION":
-        return "warning";
       default:
         return "secondary";
     }

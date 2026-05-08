@@ -229,13 +229,6 @@ const ALL_ROUTES = [
   { name: "recursos-humanos/feriados/listar", title: "Feriados" },
   { name: "recursos-humanos/feriados/detalhes/[id]", title: "Detalhes do Feriado" },
   { name: "recursos-humanos/feriados/editar/[id]", title: "Editar Feriado" },
-  { name: "recursos-humanos/ferias/index", title: "Férias" },
-  { name: "recursos-humanos/ferias/cadastrar", title: "Cadastrar Férias" },
-  { name: "recursos-humanos/ferias/calendario", title: "Calendário de Férias" },
-  { name: "recursos-humanos/ferias/editar-em-lote", title: "Editar Férias em Lote" },
-  { name: "recursos-humanos/ferias/listar", title: "Férias" },
-  { name: "recursos-humanos/ferias/detalhes/[id]", title: "Detalhes das Férias" },
-  { name: "recursos-humanos/ferias/editar/[id]", title: "Editar Férias" },
   // { name: "recursos-humanos/folha-de-pagamento/index", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "recursos-humanos/folha-de-pagamento/[userId]", title: "Folha de Pagamento" }, // Temporarily hidden for testing
   // { name: "recursos-humanos/folha-de-pagamento/listar", title: "Folhas de Pagamento" }, // Temporarily hidden for testing
@@ -268,7 +261,6 @@ const ALL_ROUTES = [
   { name: "meu-pessoal/index", title: "Meu Pessoal" },
   { name: "meu-pessoal/advertencias", title: "Advertências" },
   { name: "meu-pessoal/emprestimos", title: "Empréstimos" },
-  { name: "meu-pessoal/ferias", title: "Férias" },
 
   // Personal
   { name: "pessoal/index", title: "Pessoal" },
@@ -276,7 +268,6 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-epis/request", title: "Solicitar EPI" },
   { name: "pessoal/meus-feriados/detalhes/[id]", title: "Detalhes do Feriado" },
   { name: "pessoal/minhas-advertencias/detalhes/[id]", title: "Detalhes da Advertência" },
-  { name: "pessoal/minhas-ferias/detalhes/[id]", title: "Detalhes das Férias" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
   { name: "pessoal/minhas-notificacoes/detalhes/[id]", title: "Detalhes da Notificação" },
   { name: "pessoal/preferencias/notificacoes", title: "Preferências de Notificações" },

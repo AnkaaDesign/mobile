@@ -21,6 +21,7 @@ import { navigationTracker } from "@/utils/navigation-tracker";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
+import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 
 import { TaskGeneralPaintCard } from "@/components/production/task/detail/task-general-paint-card";
 import { TaskLogoPaintsCard } from "@/components/production/task/detail/task-logo-paints-card";
@@ -35,6 +36,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithServiceOrdersChangelog, ChangelogSkeleton } from "@/components/ui/task-with-service-orders-changelog";
 import { FileItem, useFileViewer} from "@/components/file";
+import { tutorialMocks } from "@/components/tutorial/tutorial-mocks";
 import {
   IconFileText,
   IconCalendarEvent,
@@ -78,6 +80,12 @@ export default function ScheduleDetailsScreen() {
 
   // Track screen performance
   const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
+
+  // Tutorial targets (task detail)
+  const taskHeaderTarget = useTutorialTarget(TUTORIAL_TARGETS.taskHeader);
+  const taskInfoCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskInfoCard);
+  const taskDatesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskDatesCard);
+  const taskServicesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskServicesCard);
 
   // Performance logging - track screen mount
   const mountTime = useRef(performance.now());
@@ -127,7 +135,36 @@ export default function ScheduleDetailsScreen() {
   });
 
   // Use full data when available, fall back to minimal data
-  const task = fullResponse?.data ?? minimalResponse?.data;
+  const realTask = fullResponse?.data ?? minimalResponse?.data;
+
+  // Tutorial-mode bypass: when the tutorial is active and the API hasn't
+  // loaded a real task (the mock task IDs like "tut-00000001-..." won't
+  // resolve from the backend), fall back to the in-memory mock task so the
+  // detail screen still renders sections for the spotlight steps to anchor
+  // to (taskHeader, taskInfoCard, taskDatesCard, taskServicesCard).
+  const tutorial = useOptionalTutorial();
+  const isTutorialActive = tutorial?.isActive ?? false;
+  const mockTask = useMemo(() => {
+    const m = tutorialMocks.tasks[0] as any;
+    // Map the mock's `services` array to the `serviceOrders` shape that the
+    // detail screen reads from. Most cards on this screen tolerate missing
+    // optional fields, so we only fill what the spotlighted sections need.
+    return {
+      ...m,
+      serviceOrders: (m.services ?? []).map((s: any) => ({
+        id: s.id,
+        description: s.description,
+        status: s.status,
+        type: 'PRODUCTION',
+        position: 0,
+        checkinFiles: [],
+        checkoutFiles: [],
+      })),
+      sectorId: m.sector?.id,
+      details: '',
+    };
+  }, []);
+  const task = realTask ?? (isTutorialActive ? mockTask : undefined);
 
   // Performance logging - track when data is ready
   useEffect(() => {
@@ -286,7 +323,7 @@ export default function ScheduleDetailsScreen() {
     }
   }, [showBelowFold]);
 
-  if (isLoading) {
+  if (isLoading && !isTutorialActive) {
     perfLog.mark('Showing skeleton screen for ScheduleDetailsScreen');
     // Show skeleton that mirrors the actual page structure
     return (
@@ -311,7 +348,7 @@ export default function ScheduleDetailsScreen() {
     );
   }
 
-  if (error || !task) {
+  if ((error || !task) && !isTutorialActive) {
     return (
       <ErrorScreen
         message="Erro ao carregar detalhes da tarefa"
@@ -335,50 +372,56 @@ export default function ScheduleDetailsScreen() {
       >
         <View style={styles.content}>
           {/* Task Name Header Card */}
-          <Card style={styles.headerCard}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerLeft}>
-                <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={2}>
-                  {taskDisplayName}
-                </ThemedText>
+          <View ref={taskHeaderTarget.ref} onLayout={taskHeaderTarget.onLayout}>
+            <Card style={styles.headerCard}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <ThemedText style={StyleSheet.flatten([styles.taskTitle, { color: colors.foreground }])} numberOfLines={2}>
+                    {taskDisplayName}
+                  </ThemedText>
+                </View>
+                <View style={styles.headerActions}>
+                  {canEdit && (
+                    <TouchableOpacity
+                      onPress={handleEdit}
+                      style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
+                      activeOpacity={0.7}
+                    >
+                      <IconEdit size={18} color={colors.primaryForeground} />
+                    </TouchableOpacity>
+                  )}
+                  {canDelete && (
+                    <TouchableOpacity
+                      onPress={handleDelete}
+                      style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
+                      activeOpacity={0.7}
+                    >
+                      <IconTrash size={18} color={colors.destructiveForeground} />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-              <View style={styles.headerActions}>
-                {canEdit && (
-                  <TouchableOpacity
-                    onPress={handleEdit}
-                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-                    activeOpacity={0.7}
-                  >
-                    <IconEdit size={18} color={colors.primaryForeground} />
-                  </TouchableOpacity>
-                )}
-                {canDelete && (
-                  <TouchableOpacity
-                    onPress={handleDelete}
-                    style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
-                    activeOpacity={0.7}
-                  >
-                    <IconTrash size={18} color={colors.destructiveForeground} />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          </Card>
+            </Card>
+          </View>
 
           {/* Overview Card - Informações Gerais */}
-          <TaskInfoCard task={{
-            ...task,
-            truck: task.truck,
-            customer: task.customer,
-            responsibles: (task as any).responsibles,
-            details: task.details ?? "",
-          }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} />
+          <View ref={taskInfoCardTarget.ref} onLayout={taskInfoCardTarget.onLayout}>
+            <TaskInfoCard task={{
+              ...task,
+              truck: task.truck,
+              customer: task.customer,
+              responsibles: (task as any).responsibles,
+              details: task.details ?? "",
+            }} truckDimensions={truckDimensions} canViewFinancialFields={canViewFinancialFields} canViewRestrictedFields={canViewRestrictedFields} canViewTruckDetails={canViewTruckDetails} isDesignerUser={isDesignerUser} />
+          </View>
 
           {/* Dates Card - Datas */}
-          <TaskDatesCard task={{
-            ...task,
-            createdBy: task.createdBy,
-          } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} />
+          <View ref={taskDatesCardTarget.ref} onLayout={taskDatesCardTarget.onLayout}>
+            <TaskDatesCard task={{
+              ...task,
+              createdBy: task.createdBy,
+            } as React.ComponentProps<typeof TaskDatesCard>['task']} canViewRestrictedFields={canViewRestrictedFields} />
+          </View>
 
 
           {/* Truck Layout - Only for Admin, Logistic, and Leader */}
@@ -398,7 +441,9 @@ export default function ScheduleDetailsScreen() {
 
           {/* Services */}
           {task.serviceOrders && task.serviceOrders.length > 0 && (
-            <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
+            <View ref={taskServicesCardTarget.ref} onLayout={taskServicesCardTarget.onLayout}>
+              <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
+            </View>
           )}
 
           {/* === Below-fold sections (deferred for faster perceived render) === */}

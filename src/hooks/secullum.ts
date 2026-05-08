@@ -19,6 +19,7 @@ export const secullumKeys = {
   approvedRequests: (params?: any) => [...secullumKeys.all, "approved-requests", params] as const,
   pendencias: (userCpf?: string) => [...secullumKeys.all, "pendencias", userCpf] as const,
   timeEntries: (params?: any) => [...secullumKeys.all, "time-entries", params] as const,
+  timeEntriesByDay: (date?: string) => [...secullumKeys.all, "time-entries-by-day", date] as const,
   horarios: (params?: any) => [...secullumKeys.all, "horarios", params] as const,
   horarioDetail: (id: number | string) => [...secullumKeys.all, "horarios", "detail", id] as const,
 };
@@ -87,6 +88,18 @@ export const useSecullumDailySummary = () => {
     queryFn: () => secullumService.getDailySummary(),
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+  });
+};
+
+// Per-day, per-user time-entries — used by the HR daily-ponto widget. Each
+// row is { user, entry } where `entry` is the Secullum row for that day or
+// null when the employee has no punches yet.
+export const useSecullumTimeEntriesByDay = (date?: string) => {
+  return useQuery({
+    queryKey: secullumKeys.timeEntriesByDay(date),
+    queryFn: () => secullumService.getTimeEntriesByDay(date as string),
+    enabled: !!date,
+    staleTime: 60 * 1000,
   });
 };
 

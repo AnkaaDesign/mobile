@@ -42,7 +42,6 @@ export const NOTIFICATION_CATEGORIES = {
   TASK_UPDATE: 'task-update',
   ORDER_UPDATE: 'order-update',
   PPE_REQUEST: 'ppe-request',
-  VACATION_REQUEST: 'vacation-request',
   STOCK_ALERT: 'stock-alert',
   GENERAL: 'general',
 } as const;
@@ -93,7 +92,6 @@ export class NotificationCategoriesService {
       await this.setupTaskUpdateCategory();
       await this.setupOrderUpdateCategory();
       await this.setupPPERequestCategory();
-      await this.setupVacationRequestCategory();
       await this.setupStockAlertCategory();
       await this.setupGeneralCategory();
 
@@ -216,51 +214,6 @@ export class NotificationCategoriesService {
       console.log('[NotificationCategories] PPE request category registered');
     } catch (error) {
       console.error('[NotificationCategories] Failed to setup PPE request category:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Set up vacation request notification category
-   */
-  private async setupVacationRequestCategory(): Promise<void> {
-    try {
-      await Notifications.setNotificationCategoryAsync(
-        NOTIFICATION_CATEGORIES.VACATION_REQUEST,
-        [
-          {
-            identifier: NOTIFICATION_ACTIONS.APPROVE,
-            buttonTitle: 'Approve',
-            options: {
-              opensAppToForeground: true,
-              isAuthenticationRequired: true,
-            },
-          },
-          {
-            identifier: NOTIFICATION_ACTIONS.REJECT,
-            buttonTitle: 'Reject',
-            options: {
-              opensAppToForeground: true,
-              isDestructive: true,
-              isAuthenticationRequired: true,
-            },
-          },
-          {
-            identifier: NOTIFICATION_ACTIONS.VIEW,
-            buttonTitle: 'View Details',
-            options: { opensAppToForeground: true },
-          },
-        ],
-        {
-          previewPlaceholder: 'Vacation Request',
-          categorySummaryFormat: '%u vacation requests',
-        }
-      );
-
-      this.registeredCategories.add(NOTIFICATION_CATEGORIES.VACATION_REQUEST);
-      console.log('[NotificationCategories] Vacation request category registered');
-    } catch (error) {
-      console.error('[NotificationCategories] Failed to setup vacation request category:', error);
       throw error;
     }
   }

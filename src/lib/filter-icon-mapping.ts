@@ -181,11 +181,6 @@ export const FILTER_KEY_ICON_MAP: Record<string, FilterIconComponent> = {
   equipment: IconTool,
   equipmentType: IconTool,
 
-  // Vacation filters
-  vacationType: IconBeach,
-  vacationTypes: IconBeach,
-  vacation: IconBeach,
-
   // Warning/Alert filters
   severity: IconAlertTriangle,
   severities: IconAlertTriangle,

@@ -91,7 +91,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
 
   // Human Resources - List Pages
   "/recursos-humanos/cargos": FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_LISTAR,
-  "/recursos-humanos/ferias": FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_LISTAR,
   "/recursos-humanos/feriados": FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_LISTAR,
   "/recursos-humanos/avisos": FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_LISTAR,
   "/recursos-humanos/epi": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_LISTAR,
@@ -101,7 +100,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
 
   // Human Resources - Create Pages
   "/recursos-humanos/cargos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_CARGOS_CADASTRAR,
-  "/recursos-humanos/ferias/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_FERIAS_CADASTRAR,
   "/recursos-humanos/feriados/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_FERIADOS_CADASTRAR,
   "/recursos-humanos/avisos/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_AVISOS_CADASTRAR,
   "/recursos-humanos/epi/cadastrar": FAVORITE_PAGES.RECURSOS_HUMANOS_EPI_CADASTRAR,
@@ -111,7 +109,6 @@ const routeToFavoritePageMap: Record<string, FAVORITE_PAGES> = {
 
   // Personal - List Pages
   "/pessoal/minhas-comissoes": FAVORITE_PAGES.PESSOAL_MINHAS_COMISSOES_LISTAR,
-  "/pessoal/minhas-ferias": FAVORITE_PAGES.PESSOAL_MINHAS_FERIAS_LISTAR,
   "/pessoal/meus-feriados": FAVORITE_PAGES.PESSOAL_MEUS_FERIADOS_LISTAR,
   "/pessoal/meus-emprestimos": FAVORITE_PAGES.PESSOAL_MEUS_EMPRESTIMOS_LISTAR,
   "/pessoal/meus-epis": FAVORITE_PAGES.PESSOAL_MEUS_EPIS_LISTAR,
@@ -200,7 +197,6 @@ export function getEntityDisplayName(entity: string): string {
 
     // Human Resources
     cargos: "Cargo",
-    ferias: "Férias",
     feriados: "Feriado",
     avisos: "Aviso",
     tamanhos: "Tamanho",
@@ -420,7 +416,6 @@ export function getFavoritePageIcon(favoritePage: FAVORITE_PAGES): string {
 
   // Human Resources icons
   if (favoritePage.includes("CARGOS")) return "💼";
-  if (favoritePage.includes("FERIAS")) return "🏖️";
   if (favoritePage.includes("FERIADOS")) return "📅";
   if (favoritePage.includes("AVISOS")) return "⚠️";
 

@@ -12,7 +12,6 @@ const ROUTE_FIXES: RouteMapping[] = [
   { menuPath: '/meu-pessoal', screenName: 'meu-pessoal/index', actualPath: '(tabs)/meu-pessoal/index' },
   { menuPath: '/meu-pessoal/avisos', screenName: 'meu-pessoal/advertencias', actualPath: '(tabs)/meu-pessoal/advertencias' },
   { menuPath: '/meu-pessoal/emprestimos', screenName: 'meu-pessoal/emprestimos', actualPath: '(tabs)/meu-pessoal/emprestimos' },
-  { menuPath: '/meu-pessoal/ferias', screenName: 'meu-pessoal/ferias', actualPath: '(tabs)/meu-pessoal/ferias' },
 
   // Fix other module index routes
   { menuPath: '/producao', screenName: 'producao/index', actualPath: '(tabs)/producao/index' },

@@ -163,7 +163,6 @@ export const TABLER_ICONS = {
   briefcase: "IconBriefcase",
 
   // Time Management
-  vacation: "IconBeach", // Vacation/holiday
   beach: "IconBeach", // Beach icon (for favorites)
   holiday: "IconCalendarEvent",
   timeOff: "IconCalendarMinus",
@@ -215,7 +214,6 @@ export const TABLER_ICONS = {
 
   // Personal Tasks and Items
   myTasks: "IconList",
-  myVacations: "IconCalendar",
   myBorrows: "IconPackage",
   myEpis: "IconShield",
   myNotifications: "IconBell",

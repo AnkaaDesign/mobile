@@ -76,18 +76,6 @@ export default function RecursosHumanosScreen() {
               ))}
             </View>
           </View>
-          {/* Métricas de Férias skeleton — 3 centered stat cards */}
-          <View style={{ gap: 12 }}>
-            <Skeleton style={{ height: 22, width: 160, borderRadius: 4 }} />
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {[1, 2, 3].map((i) => (
-                <View key={i} style={{ flex: 1, minWidth: "45%", backgroundColor: colors.card, padding: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: "center", gap: 6 }}>
-                  <Skeleton style={{ height: 12, width: 90, borderRadius: 4 }} />
-                  <Skeleton style={{ height: 28, width: 40, borderRadius: 4 }} />
-                </View>
-              ))}
-            </View>
-          </View>
         </View>
       </ScrollView>
     );
@@ -300,69 +288,6 @@ export default function RecursosHumanosScreen() {
                 </View>
               );
             })}
-          </View>
-        </View>
-
-        {/* Vacation Metrics */}
-        <View style={{ gap: 12 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", color: colors.foreground }}>
-            Métricas de Férias
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            <View
-              style={{
-                flex: 1,
-                minWidth: "45%",
-                backgroundColor: colors.card,
-                padding: 16,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>De Férias Agora</Text>
-              <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 24 }}>
-                {data?.vacationMetrics?.onVacationNow?.value || 0}
-              </Text>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                minWidth: "45%",
-                backgroundColor: colors.card,
-                padding: 16,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Próximas Férias</Text>
-              <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 24 }}>
-                {data?.vacationMetrics?.upcomingVacations?.value || 0}
-              </Text>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                minWidth: "45%",
-                backgroundColor: colors.card,
-                padding: 16,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Aprovadas</Text>
-              <Text style={{ color: "#22c55e", fontWeight: "700", fontSize: 24 }}>
-                {data?.vacationMetrics?.approvedVacations?.value || 0}
-              </Text>
-            </View>
           </View>
         </View>
 

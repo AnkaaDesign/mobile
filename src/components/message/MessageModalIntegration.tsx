@@ -16,6 +16,7 @@ import { MessageModal } from "./MessageModal";
 import { useUnviewedMessages } from "@/hooks/useUnviewedMessages";
 import { useAuth } from "@/contexts/auth-context";
 import { messageService } from "@/api-client/message";
+import { useOptionalTutorial } from "@/components/tutorial";
 
 interface MessageModalProviderProps {
   /**
@@ -53,6 +54,12 @@ export function MessageModalProvider({
 
   // Use provided userId or fall back to auth context
   const userId = providedUserId || user?.id;
+
+  // Suppress while the game-style tutorial is running (or about to start) so
+  // the welcome step is the first thing the user sees.
+  const tutorial = useOptionalTutorial();
+  const tutorialBlocking =
+    (tutorial?.isActive ?? false) || (tutorial?.isPendingStart ?? false);
 
   // Track if we've already logged the endpoint error (to avoid spam)
   const hasLoggedEndpointError = useRef(false);
@@ -114,6 +121,11 @@ export function MessageModalProvider({
 
   // Don't render if no user ID
   if (!userId) {
+    return null;
+  }
+
+  // Hide while the tutorial is active or about to start.
+  if (tutorialBlocking) {
     return null;
   }
 

@@ -541,7 +541,6 @@ const entitySpecificFields: Partial<Record<CHANGE_LOG_ENTITY_TYPE, Record<string
     sectorId: "Setor",
     privileges: "Privilégios",
     commissionEligible: "Elegível para Comissão",
-    maxAllowedVacationDays: "Dias Máximos de Férias",
     remuneration: "Remuneração",
     sector: "Setor",
     "sector.name": "Nome do Setor",
@@ -1318,32 +1317,6 @@ export function formatFieldValue(value: ComplexFieldValue, field?: string | null
       MUNICIPAL: "Municipal",
     };
     return holidayTypeLabels[value] || value;
-  }
-
-  // Handle vacation status
-  if ((field === "status" || field === "status_transition") && entityType === CHANGE_LOG_ENTITY_TYPE.VACATION && typeof value === "string") {
-    const vacationStatusLabels: Record<string, string> = {
-      PENDING: "Pendente",
-      APPROVED: "Aprovado",
-      REJECTED: "Rejeitado",
-      IN_PROGRESS: "Em Andamento",
-      COMPLETED: "Concluído",
-      CANCELLED: "Cancelado",
-    };
-    return vacationStatusLabels[value] || value;
-  }
-
-  // Handle vacation type
-  if (field === "type" && entityType === CHANGE_LOG_ENTITY_TYPE.VACATION && typeof value === "string") {
-    const vacationTypeLabels: Record<string, string> = {
-      ANNUAL: "Anual",
-      COLLECTIVE: "Coletiva",
-      SICK_LEAVE: "Licença Médica",
-      MATERNITY_LEAVE: "Licença Maternidade",
-      PATERNITY_LEAVE: "Licença Paternidade",
-      OTHER: "Outro",
-    };
-    return vacationTypeLabels[value] || value;
   }
 
   // Handle cut status

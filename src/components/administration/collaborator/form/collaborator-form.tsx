@@ -321,6 +321,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
     const hasChanged = prevStatusRef.current !== watchedStatus;
     if (!hasChanged) return;
 
+    const previousStatus = prevStatusRef.current;
     prevStatusRef.current = watchedStatus as USER_STATUS | undefined;
 
     if (watchedStatus === USER_STATUS.EFFECTED && !effectedAt) {
@@ -335,6 +336,18 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       form.setValue("dismissedAt", today, { shouldValidate: false });
+    }
+
+    // Inverse: when un-dismissing, clear `dismissedAt` so we don't leave a
+    // stale dismissal timestamp on a now-active user. Mirrors the API
+    // service's auto-clear logic (commit 8e1148f).
+    if (
+      previousStatus === USER_STATUS.DISMISSED &&
+      watchedStatus &&
+      watchedStatus !== USER_STATUS.DISMISSED &&
+      form.getValues("dismissedAt")
+    ) {
+      form.setValue("dismissedAt", null, { shouldValidate: false, shouldDirty: true });
     }
   }, [watchedStatus, effectedAt, form]);
 
@@ -541,6 +554,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           <FormRow>
             <FormFieldGroup
               label="CPF"
+              required={mode === "create"}
               error={form.formState.errors.cpf?.message}
             >
               <Controller
@@ -607,6 +621,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
 
             <FormFieldGroup
               label="Nº da Folha"
+              required={mode === "create"}
               error={form.formState.errors.payrollNumber?.message}
             >
               <Controller

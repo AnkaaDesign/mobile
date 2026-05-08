@@ -100,17 +100,6 @@ const notificationSections: NotificationSection[] = [
       { key: "security", label: "Seguranca", description: "Alertas de seguranca importantes", mandatory: true },
     ],
   },
-  {
-    id: "vacation",
-    title: "Ferias",
-    icon: "calendar",
-    events: [
-      { key: "requested", label: "Solicitacao", description: "Quando ferias sao solicitadas", mandatory: false },
-      { key: "approved", label: "Aprovacao", description: "Quando ferias sao aprovadas", mandatory: true },
-      { key: "rejected", label: "Rejeicao", description: "Quando ferias sao rejeitadas", mandatory: true },
-      { key: "reminder", label: "Lembrete", description: "Lembretes sobre ferias proximas", mandatory: false },
-    ],
-  },
 ];
 
 // Create default preferences

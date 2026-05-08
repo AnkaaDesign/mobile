@@ -34,6 +34,7 @@ import { SectorSelectModal } from '@/components/production/task/modals'
 // CopyFromTaskModal removed - copy from task now uses page navigation
 import { AddArtworksModal } from './add-artworks-modal'
 import { useTable } from '@/hooks/list/useTable'
+import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
@@ -64,6 +65,18 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   // Track page access for recents/most accessed
   usePageTracker({ title: config.title })
+
+  // Tutorial targets - only active for cronograma pathname (not agenda)
+  const isCronogramaPath = pathname?.includes('cronograma') ?? false
+  const cronogramaSearchTarget = useTutorialTarget(
+    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaSearch : 'cronograma.search.inactive'
+  )
+  const cronogramaFiltersTarget = useTutorialTarget(
+    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFilters : 'cronograma.filters.inactive'
+  )
+  const cronogramaFirstTaskTarget = useTutorialTarget(
+    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFirstTask : 'cronograma.firstTask.inactive'
+  )
 
   // ============================================================================
   // State
@@ -713,7 +726,11 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     <ThemedView style={styles.container}>
       {/* Header with Search and Actions — always rendered to preserve focus */}
       <View style={styles.header}>
-        <View style={styles.searchContainer}>
+        <View
+          ref={isCronogramaPath ? cronogramaSearchTarget.ref : undefined}
+          onLayout={isCronogramaPath ? cronogramaSearchTarget.onLayout : undefined}
+          style={styles.searchContainer}
+        >
           <Search
             value={displaySearchText}
             onChangeText={handleSearchTextChange}
@@ -751,26 +768,34 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           />
 
           {config.filters && (
-            <TouchableOpacity
-              onPress={() => setFiltersOpen(true)}
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                },
-              ]}
-              activeOpacity={0.7}
+            <View
+              ref={isCronogramaPath ? cronogramaFiltersTarget.ref : undefined}
+              onLayout={isCronogramaPath ? cronogramaFiltersTarget.onLayout : undefined}
             >
-              <IconFilter size={20} color={colors.foreground} />
-              {activeFiltersCount > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
-                  <ThemedText style={styles.badgeText}>
-                    {activeFiltersCount}
-                  </ThemedText>
-                </View>
-              )}
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (isCronogramaPath) cronogramaFiltersTarget.onPress()
+                  setFiltersOpen(true)
+                }}
+                style={[
+                  styles.actionButton,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                  },
+                ]}
+                activeOpacity={0.7}
+              >
+                <IconFilter size={20} color={colors.foreground} />
+                {activeFiltersCount > 0 && (
+                  <View style={[styles.badge, { backgroundColor: colors.destructive }]}>
+                    <ThemedText style={styles.badgeText}>
+                      {activeFiltersCount}
+                    </ThemedText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
@@ -957,8 +982,22 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 user: user ?? undefined,
                 rowIndex: index,
               }
+              // Tutorial: spotlight first task of the very first section on cronograma path
+              const isFirstTask = isCronogramaPath && index === 0 && sections[0]?.sectorId === section.sectorId
+              const tutorialRef = isFirstTask ? cronogramaFirstTaskTarget.ref : undefined
+              const tutorialOnLayout = isFirstTask ? cronogramaFirstTaskTarget.onLayout : undefined
+              const handleRowPressWithTutorial = isFirstTask
+                ? (i: Task) => {
+                    cronogramaFirstTaskTarget.onPress()
+                    handleRowPress(i)
+                  }
+                : handleRowPress
               return (
-                <View style={[styles.rowContainer, { borderColor: colors.border }]}>
+                <View
+                  ref={tutorialRef}
+                  onLayout={tutorialOnLayout}
+                  style={[styles.rowContainer, { borderColor: colors.border }]}
+                >
                   <TableRow
                     item={item as Task}
                     index={index}
@@ -969,7 +1008,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                       onToggle: handleToggleSelection,
                     }}
                     actions={filteredTableActions as any}
-                    onPress={handleRowPress as any}
+                    onPress={handleRowPressWithTutorial as any}
                     getRowStyle={config.table.getRowStyle as any}
                     renderContext={renderContext}
                   />

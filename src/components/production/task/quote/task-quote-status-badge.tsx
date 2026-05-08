@@ -20,7 +20,7 @@ import { spacing, fontSize, borderRadius } from "@/constants/design-system";
  * solid-color icon and text.
  */
 
-type IconComponent = typeof TablerIcon;
+type IconComponent = TablerIcon;
 
 interface StatusVisual {
   color: string;

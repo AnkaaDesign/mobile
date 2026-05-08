@@ -36,6 +36,13 @@ import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
 import { maskPhone } from '@/utils';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useDrawerStatus } from "@react-navigation/drawer";
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
+
+type TutorialTargetHandle = {
+  ref: React.RefObject<View | null>;
+  onLayout: () => void;
+  onPress: () => void;
+};
 
 // Spacing constants
 const SPACING = {
@@ -71,6 +78,48 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const { navigation } = props;
   const drawerStatus = useDrawerStatus();
+
+  // Tutorial targets — declare up-front so hook order is stable across renders.
+  // Scope: PRODUCTION sector users only. drawerProducao is registered for the
+  // grouped admin menu; PRODUCTION users see direct items at root level.
+  const tInicio = useTutorialTarget(TUTORIAL_TARGETS.drawerInicio);
+  const tProducao = useTutorialTarget(TUTORIAL_TARGETS.drawerProducao);
+  const tCronograma = useTutorialTarget(TUTORIAL_TARGETS.drawerCronograma);
+  const tRecorte = useTutorialTarget(TUTORIAL_TARGETS.drawerRecorte);
+  const tObservacoes = useTutorialTarget(TUTORIAL_TARGETS.drawerObservacoes);
+  const tHistorico = useTutorialTarget(TUTORIAL_TARGETS.drawerHistorico);
+  const tPessoal = useTutorialTarget(TUTORIAL_TARGETS.drawerPessoal);
+  const tFerramentas = useTutorialTarget(TUTORIAL_TARGETS.drawerFerramentas);
+  const tDrawerPerfil = useTutorialTarget(TUTORIAL_TARGETS.drawerPerfil);
+  const tDrawerConfiguracoes = useTutorialTarget(TUTORIAL_TARGETS.drawerConfiguracoes);
+
+  // Map menu-item id (or production-variant id) to the tutorial target handle.
+  // Non-mapped items render normally.
+  const tutorialHandlesByMenuId = useMemo<Record<string, TutorialTargetHandle | undefined>>(() => ({
+    home: tInicio,
+    // Producao parent (admin/non-production sectors)
+    producao: tProducao,
+    // Cronograma — both nested-under-producao and direct PRODUCTION variant
+    cronograma: tCronograma,
+    "cronograma-production": tCronograma,
+    // Recorte — both nested and direct PRODUCTION variant
+    recorte: tRecorte,
+    "recorte-production": tRecorte,
+    "recorte-direct": tRecorte,
+    // Observacoes — both nested and direct variants
+    observacoes: tObservacoes,
+    "observacoes-production": tObservacoes,
+    "observacoes-direct": tObservacoes,
+    // Histórico — nested and direct PRODUCTION variant
+    historico: tHistorico,
+    "historico-production": tHistorico,
+    "historico-direct": tHistorico,
+    // Pessoal — top-level item (production variant exists at root)
+    pessoal: tPessoal,
+    "pessoal-production": tPessoal,
+    // Ferramentas (tools)
+    ferramentas: tFerramentas,
+  }), [tInicio, tProducao, tCronograma, tRecorte, tObservacoes, tHistorico, tPessoal, tFerramentas]);
 
   // State
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
@@ -390,6 +439,11 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       const isInPath = isInActivePath(item);
       const chevronAnimation = hasChildren ? getChevronAnimation(item.id) : null;
 
+      // Tutorial target handle for this drawer item, if any.
+      // Only attach to top-level rendering so the spotlight matches the row
+      // the user actually sees in the drawer.
+      const tutorialHandle = level === 0 ? tutorialHandlesByMenuId[item.id] : undefined;
+
       const chevronRotation = chevronAnimation?.interpolate({
         inputRange: [0, 1],
         outputRange: ["0deg", "90deg"],
@@ -427,7 +481,12 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       };
 
       return (
-        <View key={item.id} style={styles.menuItem}>
+        <View
+          key={item.id}
+          ref={tutorialHandle?.ref}
+          onLayout={tutorialHandle?.onLayout}
+          style={styles.menuItem}
+        >
           <View
             style={[
               styles.menuItemPressable,
@@ -444,6 +503,8 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
           >
             <Pressable
               onPress={() => {
+                // Notify tutorial engine of tap on this drawer entry, if any
+                tutorialHandle?.onPress();
                 if (hasChildren && item.path) {
                   handleMainItemClick(item);
                 } else if (!hasChildren) {
@@ -563,7 +624,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         </View>
       );
     },
-    [expandedMenus, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers],
+    [expandedMenus, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers, tutorialHandlesByMenuId],
   );
 
   return (
@@ -680,53 +741,61 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 ],
               }
             ]}>
-              <Pressable
-                onPress={() => {
-                  // INSTANT haptic feedback
-                  impactHaptic();
-                  closeUserMenu();
-                  navigateToPath(routes.profile.root);
-                }}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: pressed
-                      ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
-                      : "transparent",
-                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                  }
-                ]}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
-                  <IconUser size={22} color={isDarkMode ? "#d4d4d4" : "#404040"} />
-                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
-                    Meu Perfil
-                  </Text>
-                </View>
-              </Pressable>
+              <View ref={tDrawerPerfil.ref} onLayout={tDrawerPerfil.onLayout}>
+                <Pressable
+                  onPress={() => {
+                    // Notify tutorial engine of tap on the perfil drawer entry
+                    tDrawerPerfil.onPress();
+                    // INSTANT haptic feedback
+                    impactHaptic();
+                    closeUserMenu();
+                    navigateToPath(routes.profile.root);
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: pressed
+                        ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                        : "transparent",
+                      transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                    }
+                  ]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
+                    <IconUser size={22} color={isDarkMode ? "#d4d4d4" : "#404040"} />
+                    <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
+                      Meu Perfil
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
 
-              <Pressable
-                onPress={() => {
-                  // INSTANT haptic feedback
-                  impactHaptic();
-                  closeUserMenu();
-                  navigateToPath(routes.personal.preferences.root);
-                }}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: pressed
-                      ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
-                      : "transparent",
-                    transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
-                  }
-                ]}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
-                  <IconSettings size={22} color={isDarkMode ? "#d4d4d4" : "#404040"} />
-                  <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
-                    Configurações
-                  </Text>
-                </View>
-              </Pressable>
+              <View ref={tDrawerConfiguracoes.ref} onLayout={tDrawerConfiguracoes.onLayout}>
+                <Pressable
+                  onPress={() => {
+                    // Notify tutorial engine of tap on the configuracoes drawer entry
+                    tDrawerConfiguracoes.onPress();
+                    // INSTANT haptic feedback
+                    impactHaptic();
+                    closeUserMenu();
+                    navigateToPath(routes.personal.preferences.root);
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: pressed
+                        ? (isDarkMode ? "rgba(21, 128, 61, 0.2)" : "rgba(21, 128, 61, 0.15)")
+                        : "transparent",
+                      transform: pressed ? [{ scale: 0.98 }] : [{ scale: 1 }],
+                    }
+                  ]}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, minHeight: 44 }}>
+                    <IconSettings size={22} color={isDarkMode ? "#d4d4d4" : "#404040"} />
+                    <Text style={{ fontSize: 15, fontWeight: "500", marginLeft: 12, color: isDarkMode ? "#d4d4d4" : "#404040" }}>
+                      Configurações
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
 
               <Pressable
                 onPress={() => {

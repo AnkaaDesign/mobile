@@ -317,7 +317,6 @@ export function getChannelIdForEntityType(entityType: string): string {
     order: 'orders',
     stock: 'stock',
     ppe: 'default',
-    vacation: 'default',
     warning: 'urgent',
     general: 'default',
   };

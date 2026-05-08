@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Image, Modal, TouchableOpacity, ScrollView, StyleSheet, Text } from 'react-native';
+import { View, Image, Modal, TouchableOpacity, ScrollView, StyleSheet, Text, type ImageSourcePropType } from 'react-native';
 import { useTheme } from '@/lib/theme';
 import { borderRadius, spacing, fontSize } from '@/constants/design-system';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -11,7 +11,7 @@ interface DecoratorBlockEditorProps {
   disabled?: boolean;
 }
 
-const DECORATOR_IMAGES: Record<DecoratorVariant, ReturnType<typeof require>> = {
+const DECORATOR_IMAGES: Record<DecoratorVariant, ImageSourcePropType> = {
   'header-logo': require('../../../../../../../assets/header-logo.webp'),
   'header-logo-stripes': require('../../../../../../../assets/header-logo-stripes.webp'),
   'footer-wave-dark': require('../../../../../../../assets/footer-wave-dark.webp'),

@@ -1056,13 +1056,6 @@ export const NAVIGATION_MENU: MenuItem[] = [
         children: [{ id: "minhas-advertencias-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-advertencias/detalhes/:id", isDynamic: true }],
       },
       {
-        id: "minhas-ferias-production",
-        title: "Minhas Férias",
-        icon: "calendarWeek",
-        path: "/pessoal/minhas-ferias",
-        children: [{ id: "minhas-ferias-detalhes-production", title: "Detalhes", icon: "eye", path: "/pessoal/minhas-ferias/detalhes/:id", isDynamic: true }],
-      },
-      {
         id: "minhas-movimentacoes-production",
         title: "Minhas Movimentacoes",
         icon: "movement",

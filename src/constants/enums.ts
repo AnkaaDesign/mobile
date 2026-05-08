@@ -1324,10 +1324,6 @@ export enum ALERT_TYPE {
   HIGH_DEMAND = "HIGH_DEMAND",
   USER_VIOLATION = "USER_VIOLATION",
 
-  // Vacation Alerts
-  EXPIRING_DAYS = "EXPIRING_DAYS",
-  PLANNING_CONFLICT = "PLANNING_CONFLICT",
-
   // Warning Alerts
   REPEAT_OFFENDER = "REPEAT_OFFENDER",
   ESCALATION_NEEDED = "ESCALATION_NEEDED",
@@ -1691,10 +1687,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: Record<string, { importance: string;
   [ALERT_TYPE.HIGH_DEMAND]: { importance: NOTIFICATION_IMPORTANCE.NORMAL, channels: [NOTIFICATION_CHANNEL.IN_APP] },
   [ALERT_TYPE.USER_VIOLATION]: { importance: NOTIFICATION_IMPORTANCE.HIGH, channels: [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
 
-  // Vacation Alerts
-  [ALERT_TYPE.EXPIRING_DAYS]: { importance: NOTIFICATION_IMPORTANCE.NORMAL, channels: [NOTIFICATION_CHANNEL.IN_APP] },
-  [ALERT_TYPE.PLANNING_CONFLICT]: { importance: NOTIFICATION_IMPORTANCE.HIGH, channels: [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
-
   // Warning Alerts
   [ALERT_TYPE.REPEAT_OFFENDER]: { importance: NOTIFICATION_IMPORTANCE.HIGH, channels: [NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
   [ALERT_TYPE.ESCALATION_NEEDED]: { importance: NOTIFICATION_IMPORTANCE.URGENT, channels: [NOTIFICATION_CHANNEL.PUSH, NOTIFICATION_CHANNEL.IN_APP, NOTIFICATION_CHANNEL.EMAIL] },
@@ -1871,7 +1863,6 @@ export enum FAVORITE_PAGES {
 
   // Human Resources - List Pages
   RECURSOS_HUMANOS_CARGOS_LISTAR = "/recursos-humanos/cargos",
-  RECURSOS_HUMANOS_FERIAS_LISTAR = "/recursos-humanos/ferias",
   RECURSOS_HUMANOS_FERIADOS_LISTAR = "/recursos-humanos/feriados",
   RECURSOS_HUMANOS_AVISOS_LISTAR = "/recursos-humanos/advertencias",
   RECURSOS_HUMANOS_CALCULOS = "/recursos-humanos/calculos",
@@ -1882,7 +1873,6 @@ export enum FAVORITE_PAGES {
 
   // Human Resources - Create Pages
   RECURSOS_HUMANOS_CARGOS_CADASTRAR = "/recursos-humanos/cargos/cadastrar",
-  RECURSOS_HUMANOS_FERIAS_CADASTRAR = "/recursos-humanos/ferias/cadastrar",
   RECURSOS_HUMANOS_FERIADOS_CADASTRAR = "/recursos-humanos/feriados/cadastrar",
   RECURSOS_HUMANOS_AVISOS_CADASTRAR = "/recursos-humanos/advertencias/cadastrar",
   RECURSOS_HUMANOS_EPI_CADASTRAR = "/recursos-humanos/epi/cadastrar",
@@ -1892,7 +1882,6 @@ export enum FAVORITE_PAGES {
 
   // Personal - List Pages
   PESSOAL_MINHAS_COMISSOES_LISTAR = "/pessoal/minhas-comissoes",
-  PESSOAL_MINHAS_FERIAS_LISTAR = "/pessoal/minhas-ferias",
   PESSOAL_MEUS_FERIADOS_LISTAR = "/pessoal/meus-feriados",
   PESSOAL_MEUS_EMPRESTIMOS_LISTAR = "/pessoal/meus-emprestimos",
   PESSOAL_MEUS_EPIS_LISTAR = "/pessoal/meus-epis",
@@ -1907,25 +1896,21 @@ export enum FAVORITE_PAGES {
 
   // Human Resources - Edit Pages
   RECURSOS_HUMANOS_CARGOS_EDITAR = "/recursos-humanos/cargos/editar/:id",
-  RECURSOS_HUMANOS_FERIAS_EDITAR = "/recursos-humanos/ferias/editar/:id",
   RECURSOS_HUMANOS_FERIADOS_EDITAR = "/recursos-humanos/feriados/editar/:id",
   RECURSOS_HUMANOS_AVISOS_EDITAR = "/recursos-humanos/advertencias/editar/:id",
   RECURSOS_HUMANOS_SETORES_EDITAR = "/recursos-humanos/setores/editar/:id",
 
   // Human Resources - Details Pages
   RECURSOS_HUMANOS_CARGOS_DETALHES = "/recursos-humanos/cargos/detalhes/:id",
-  RECURSOS_HUMANOS_FERIAS_DETALHES = "/recursos-humanos/ferias/detalhes/:id",
   RECURSOS_HUMANOS_FERIADOS_DETALHES = "/recursos-humanos/feriados/detalhes/:id",
   RECURSOS_HUMANOS_AVISOS_DETALHES = "/recursos-humanos/advertencias/detalhes/:id",
 
   // Human Resources - Batch Edit Pages
   RECURSOS_HUMANOS_CARGOS_EDITAR_LOTE = "/recursos-humanos/cargos/editar-lote",
-  RECURSOS_HUMANOS_FERIAS_EDITAR_LOTE = "/recursos-humanos/ferias/editar-lote",
   RECURSOS_HUMANOS_FERIADOS_EDITAR_LOTE = "/recursos-humanos/feriados/editar-lote",
   RECURSOS_HUMANOS_AVISOS_EDITAR_LOTE = "/recursos-humanos/advertencias/editar-lote",
 
   // Human Resources - Calendar Pages
-  RECURSOS_HUMANOS_FERIAS_CALENDARIO = "/recursos-humanos/ferias/calendario",
   RECURSOS_HUMANOS_FERIADOS_CALENDARIO = "/recursos-humanos/feriados/calendario",
 
   // Human Resources - Additional Pages

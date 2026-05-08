@@ -168,9 +168,6 @@ export function EmployeeDetailSkeleton() {
         </View>
       </SkeletonCard>
 
-      {/* VacationsTable */}
-      <TableCard rowCount={2} />
-
       {/* WarningsTable */}
       <TableCard rowCount={2} />
 

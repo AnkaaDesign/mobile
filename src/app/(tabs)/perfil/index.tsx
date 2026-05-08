@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { View, ScrollView, StyleSheet, Alert, RefreshControl, KeyboardAvoidingView, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, Alert, RefreshControl, KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
 import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,8 +19,8 @@ import { useKeyboardAwareScroll, useScreenReady} from '@/hooks';
 import { Skeleton } from "@/components/ui/skeleton";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
-import { IconCamera, IconTrash } from "@tabler/icons-react-native";
-import { ReplayTourButton } from "@/components/guided-tour";
+import { IconCamera, IconTrash, IconBell, IconChevronRight } from "@tabler/icons-react-native";
+import { ReplayTutorialButton, useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 import {
   SHIRT_SIZE_LABELS,
   PANTS_SIZE_LABELS,
@@ -48,6 +49,7 @@ type ProfileFormData = z.infer<typeof profileUpdateSchema>;
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const { refreshUserData } = useAuth();
+  const router = useRouter();
 
   // Keyboard-aware scrolling (same pattern as customer form)
   const { handlers, refs } = useKeyboardAwareScroll();
@@ -69,6 +71,18 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [originalValues, setOriginalValues] = useState<ProfileFormData | null>(null);
+
+  const photoTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilPhoto);
+  const sizesTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilSizes);
+  const notificationPrefsTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilNotificationPrefs);
+
+  // Force-render fallback for tutorial steps whose target sections are
+  // conditionally hidden (e.g. measures card hidden when user has no
+  // ppeSize). Without this, the spotlight has nothing to land on.
+  const tutorial = useOptionalTutorial();
+  const tutorialIsTargeting = (id: string) =>
+    !!tutorial?.isActive && tutorial.currentStep?.targetId === id;
+  const tutorialSizesActive = tutorialIsTargeting(TUTORIAL_TARGETS.perfilSizes);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileUpdateSchema),
@@ -332,6 +346,7 @@ export default function ProfileScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Profile Photo Card */}
+        <View ref={photoTarget.ref} onLayout={photoTarget.onLayout}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Foto de Perfil</ThemedText>
 
@@ -389,6 +404,7 @@ export default function ProfileScreen() {
             </ThemedText>
           </View>
         </Card>
+        </View>
 
         {/* Basic Information Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -462,14 +478,23 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        {/* Measures Card (Read-only) */}
-        {user.ppeSize && (
+        {/* Measures Card (Read-only). Force-rendered while the tutorial
+            spotlights this section so the engine can find a target even
+            when the user has no ppeSize stored. */}
+        {(user.ppeSize || tutorialSizesActive) && (
+          <View ref={sizesTarget.ref} onLayout={sizesTarget.onLayout}>
           <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <ThemedText style={styles.cardTitle}>Medidas</ThemedText>
             <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
               Suas medidas para EPIs (somente leitura)
             </ThemedText>
 
+            {!user.ppeSize ? (
+              <ThemedText style={{ color: colors.mutedForeground, fontSize: 13 }}>
+                Suas medidas (camisa, calça, bota, luvas, máscara, mangas, galocha)
+                aparecem aqui quando o RH cadastra os tamanhos.
+              </ThemedText>
+            ) : (
             <View style={styles.measuresGrid}>
               {user.ppeSize.shirts && (
                 <View style={styles.measureItem}>
@@ -514,7 +539,9 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
+            )}
           </Card>
+          </View>
         )}
 
         {/* Address Card */}
@@ -672,7 +699,40 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        <ReplayTourButton />
+        {/* Notification Preferences Card - links to dedicated screen */}
+        <View ref={notificationPrefsTarget.ref} onLayout={notificationPrefsTarget.onLayout}>
+          <Pressable
+            onPress={() => {
+              notificationPrefsTarget.onPress();
+              router.push("/(tabs)/perfil/notification-preferences" as any);
+            }}
+            style={({ pressed }) => [
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <View style={styles.notificationPrefsRow}>
+              <View style={[styles.notificationPrefsIcon, { backgroundColor: colors.primary }]}>
+                <IconBell size={20} color="#ffffff" />
+              </View>
+              <View style={styles.notificationPrefsText}>
+                <ThemedText style={styles.notificationPrefsTitle}>
+                  Preferências de Notificações
+                </ThemedText>
+                <ThemedText style={[styles.notificationPrefsSubtitle, { color: colors.mutedForeground }]}>
+                  Configure como você recebe alertas por canal
+                </ThemedText>
+              </View>
+              <IconChevronRight size={20} color={colors.mutedForeground} />
+            </View>
+          </Pressable>
+        </View>
+
+        <ReplayTutorialButton />
         </KeyboardAwareFormProvider>
         </ScrollView>
 
@@ -824,5 +884,28 @@ const styles = StyleSheet.create({
   },
   stateField: {
     width: 80,
+  },
+  notificationPrefsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  notificationPrefsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationPrefsText: {
+    flex: 1,
+  },
+  notificationPrefsTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  notificationPrefsSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });
