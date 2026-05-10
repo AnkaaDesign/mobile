@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet, Alert as RNAlert } from "react-native";
-import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
@@ -8,9 +7,9 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import type { ExternalWithdrawal, ExternalWithdrawalItem } from "@/types";
 
@@ -54,8 +53,13 @@ interface ExternalWithdrawalEditFormProps {
 
 export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEditFormProps) {
   const { colors } = useTheme();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({
+      fallback: mobileRoute(
+        routes.inventory.externalWithdrawals.details(withdrawal.id),
+      ),
+    });
 
   // Convert existing withdrawal data to initial state
   const initialSelectedItems = useMemo(
@@ -278,7 +282,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
 
       if (result.success) {
         await resetForm();
-        router.replace(routeToMobilePath(routes.inventory.externalWithdrawals.details(withdrawal.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.externalWithdrawals.details(withdrawal.id)));
       }
     } catch (error) {
       console.error("Submission error:", error);
@@ -294,7 +298,7 @@ export function ExternalWithdrawalEditForm({ withdrawal }: ExternalWithdrawalEdi
     updateAsync,
     withdrawal.id,
     resetForm,
-    router,
+    nav,
   ]);
 
   // Render stage content (same as create form)

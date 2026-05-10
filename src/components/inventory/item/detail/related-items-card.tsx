@@ -4,9 +4,9 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { IconPackage, IconChevronRight } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
-import { router } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { itemUtils } from "@/utils";
@@ -17,6 +17,7 @@ interface RelatedItemsCardProps {
 
 export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
   const relatedItems = item.relatedItems || [];
   const relatedTo = item.relatedTo || [];
   const allRelated = [...relatedItems, ...relatedTo];
@@ -26,7 +27,7 @@ export function RelatedItemsCard({ item }: RelatedItemsCardProps) {
   }
 
   const handleItemPress = (relatedId: string) => {
-    router.push(routeToMobilePath(routes.inventory.products.details(relatedId)) as any);
+    nav.push(mobileRoute(routes.inventory.products.details(relatedId)));
   };
 
   return (

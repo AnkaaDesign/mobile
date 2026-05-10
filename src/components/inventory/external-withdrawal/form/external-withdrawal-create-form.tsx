@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet, Alert as RNAlert } from "react-native";
-import { useRouter } from "expo-router";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconUser, IconPackage, IconFileText, IconReceipt } from "@tabler/icons-react-native";
 
 import { useTheme } from "@/lib/theme";
@@ -8,9 +7,9 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { EXTERNAL_WITHDRAWAL_TYPE, EXTERNAL_WITHDRAWAL_TYPE_LABELS } from "@/constants";
 import { useExternalWithdrawalFormState } from "@/hooks/use-external-withdrawal-form-state";
 import { useExternalWithdrawalMutations } from "@/hooks";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -48,8 +47,11 @@ const STAGES = [
 
 export function ExternalWithdrawalCreateForm() {
   const { colors } = useTheme();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({
+      fallback: mobileRoute(routes.inventory.externalWithdrawals.root),
+    });
 
   // Form state hook
   const {
@@ -174,12 +176,12 @@ export function ExternalWithdrawalCreateForm() {
 
       if (result.success && result.data) {
         await resetForm();
-        router.replace(routeToMobilePath(routes.inventory.externalWithdrawals.details(result.data.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.externalWithdrawals.details(result.data.id)));
       }
     } catch (error) {
       console.error("Submission error:", error);
     }
-  }, [validation, getFormData, receiptFiles, nfeFiles, createAsync, resetForm, router]);
+  }, [validation, getFormData, receiptFiles, nfeFiles, createAsync, resetForm, nav]);
 
   // Render stage content
   const renderStageContent = useCallback(() => {

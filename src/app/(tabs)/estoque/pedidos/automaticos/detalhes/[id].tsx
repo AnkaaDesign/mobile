@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, Alert, Pressable , StyleSheet} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import {
   IconEdit,
-  
+
   IconPlayerPlay,
   IconPlayerPause,
   IconCalendar,
@@ -26,35 +26,48 @@ import {
 import { ActionSheet, type ActionSheetItem } from "@/components/ui/action-sheet";
 import { Header } from "@/components/ui/header";
 import { InfoRow } from "@/components/ui/info-row";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import { FrequencyBadge } from "@/components/inventory/order/schedule/frequency-badge";
 import { ScheduleInfoCard } from "@/components/inventory/order/schedule/schedule-info-card";
 
 import { ScheduleHistory } from "@/components/inventory/order/schedule/schedule-history";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege, formatDateTime, formatDate } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
+import { formatDateTime, formatDate } from "@/utils";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AutomaticOrderDetailScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <AutomaticOrderDetailScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function AutomaticOrderDetailScreenInner() {
+  const nav = useNav();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
   const [showActionSheet, setShowActionSheet] = useState(false);
 
-  // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN);
-
   const scheduleId = params.id!;
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.automatic.root) });
+
+  const editPriv = usePrivilegeGate({
+    any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN],
+  });
+  const deletePriv = usePrivilegeGate(SECTOR_PRIVILEGES.ADMIN);
+  const canEdit = editPriv.allowed;
+  const canDelete = deletePriv.allowed;
 
   const include: OrderScheduleInclude = {
     weeklyConfig: { include: { daysOfWeek: true } },
@@ -102,7 +115,7 @@ export default function AutomaticOrderDetailScreen() {
       Alert.alert("Sem permissão", "Você não tem permissão para editar agendamentos automáticos");
       return;
     }
-    router.push(routeToMobilePath(routes.inventory.orders.automatic.root + `/edit/${scheduleId}`) as any);
+    nav.push(mobileRoute(routes.inventory.orders.automatic.edit(scheduleId)));
   };
 
   const handleDelete = useCallback(async () => {
@@ -174,15 +187,15 @@ export default function AutomaticOrderDetailScreen() {
           text: "Criar",
           onPress: () => {
             // Navigate to create order with pre-filled data from schedule
-            router.push({
-              pathname: routeToMobilePath(routes.inventory.orders.create) as any,
+            nav.push({
+              pathname: mobileRoute(routes.inventory.orders.create),
               params: { fromSchedule: scheduleId },
-            });
+            } as any);
           },
         },
       ],
     );
-  }, [canEdit, scheduleId, router]);
+  }, [canEdit, scheduleId, nav]);
 
   if (isLoading) {
     return (

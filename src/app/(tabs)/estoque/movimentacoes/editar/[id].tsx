@@ -1,19 +1,18 @@
-import { useEffect } from "react";
-import { useLocalSearchParams, router } from "expo-router";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { Redirect, useLocalSearchParams } from "expo-router";
 
+import { mobileRoute } from "@/constants/routes.types";
+import { routes } from "@/constants";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+
+/**
+ * Mobile does not yet support editing single movements (batch-only).
+ * Redirect to the details page so users land somewhere sensible.
+ */
 export default function EditMovementPage() {
   useScreenReady();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  useEffect(() => {
-    // Redirect to details page as mobile doesn't have batch edit yet
-    if (id) {
-      router.replace(routeToMobilePath(routes.inventory.activities.details(id)) as any);
-    }
-  }, [id]);
+  if (!id) return null;
 
-  return null;
+  return <Redirect href={mobileRoute(routes.inventory.activities.details(id))} />;
 }

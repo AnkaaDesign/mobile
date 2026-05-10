@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -10,7 +9,8 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Item } from '@/types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { BorrowTable, createColumnDefinitions } from "@/components/inventory/borrow/list/borrow-table";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
@@ -24,6 +24,7 @@ interface BorrowsTableProps {
 
 export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -107,7 +108,7 @@ export function BorrowsTable({ item, maxHeight = 500 }: BorrowsTableProps) {
   }, []);
 
   const handleBorrowPress = (borrowId: string) => {
-    router.push(routeToMobilePath(routes.inventory.borrows.details(borrowId)) as any);
+    nav.push(mobileRoute(routes.inventory.borrows.details(borrowId)));
   };
 
   // Don't show if no borrows and not loading

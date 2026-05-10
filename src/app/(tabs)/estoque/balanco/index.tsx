@@ -1,16 +1,27 @@
-import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { StockBalanceBatchCreateForm } from "@/components/inventory/stock-balance/form";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { routes } from "@/constants";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function StockBalanceScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <StockBalanceScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function StockBalanceScreenInner() {
+  const nav = useNav();
   useScreenReady();
-  const router = useRouter();
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.products.list) as any);
+    nav.replace(mobileRoute(routes.inventory.products.list));
   };
 
   return (

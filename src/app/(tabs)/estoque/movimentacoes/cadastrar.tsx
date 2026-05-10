@@ -1,15 +1,25 @@
-import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ActivityBatchCreateForm } from "@/components/inventory/activity/form";
-import { useActivityBatchMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes, ACTIVITY_OPERATION } from "@/constants";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useActivityBatchMutations, useFormScreenKey, useScreenReady } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { ACTIVITY_OPERATION, SECTOR_PRIVILEGES, routes } from "@/constants";
 
 export default function InventoryMovementsCreateScreen() {
-  const router = useRouter();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <InventoryMovementsCreateInner />
+    </PrivilegeGate>
+  );
+}
+
+function InventoryMovementsCreateInner() {
+  const nav = useNav();
   const { batchCreateAsync, isBatchCreating } = useActivityBatchMutations();
 
-  // End navigation loading overlay when screen mounts
   useScreenReady();
   const formKey = useFormScreenKey();
 
@@ -21,7 +31,6 @@ export default function InventoryMovementsCreateScreen() {
     orderItemId?: string | null;
     items: Array<{ itemId: string; quantity: number }>;
   }) => {
-    // Create batch activities - one activity per item
     const activities = data.items.map((item) => ({
       operation: data.operation,
       userId: data.userId,
@@ -33,13 +42,11 @@ export default function InventoryMovementsCreateScreen() {
     }));
 
     const result = await batchCreateAsync({ activities });
-
-    // Return the result to be displayed in the modal
     return result?.data;
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.activities.list) as any);
+    nav.replace(mobileRoute(routes.inventory.activities.list));
   };
 
   return (

@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "expo-router";
 
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes } from "@/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
@@ -80,8 +81,9 @@ const STEPS: FormStep[] = [
 
 export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
   const { colors } = useTheme();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.root) });
 
   // Local state for date (since it's a Date object)
   const [forecastDate, setForecastDate] = useState<Date | undefined>(undefined);
@@ -378,7 +380,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
           if (onSuccess) {
             onSuccess();
           } else {
-            router.replace(`/(tabs)/estoque/pedidos/detalhes/${result.data.id}` as never);
+            nav.replace(mobileRoute(routes.inventory.orders.details(result.data.id)));
           }
         }
       } catch (error) {
@@ -401,7 +403,7 @@ export function OrderCreateForm({ onSuccess }: OrderCreateFormProps) {
     suppliers,
     createAsync,
     onSuccess,
-    router,
+    nav,
   ]);
 
   // Handle cancel with confirmation if form has data

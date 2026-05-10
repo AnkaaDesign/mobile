@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,39 +11,39 @@ import type { OrderItemUpdateFormData } from '../../../../../../../schemas';
 import { ThemedView, ThemedText, ErrorScreen, Button } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatDate } from "@/utils";
-import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditOrderItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EditOrderItemScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditOrderItemScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function EditOrderItemScreenInner() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { orderId, id } = useLocalSearchParams<{ orderId: string; id: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
 
-  // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-
-  if (!canEdit) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Sem permissão" detail="Você não tem permissão para editar itens" />
-      </ThemedView>
-    );
-  }
+  const goBack = () =>
+    nav.goBack({
+      fallback: mobileRoute(
+        routes.inventory.orders.items.list(orderId as string),
+      ),
+    });
 
   // Track if form has been initialized to prevent unnecessary resets
   const formInitialized = useRef(false);

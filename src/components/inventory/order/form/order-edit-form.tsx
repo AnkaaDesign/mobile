@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, Alert } from "react-native";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "expo-router";
 
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,6 @@ import {
 } from "@/constants";
 import { formatCurrency, formatQuantity, formatPixKey } from "@/utils";
 import { createOrderFormData } from "@/utils/order-form-utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
 import { routes } from "@/constants";
 import type { FormStep } from "@/components/ui/form-steps";
 import type { OrderUpdateFormData } from "@/schemas";
@@ -88,8 +87,11 @@ const STEPS: FormStep[] = [
 
 export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess }) => {
   const { colors } = useTheme();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({
+      fallback: mobileRoute(routes.inventory.orders.details(orderId)),
+    });
 
   // Fetch order data
   const { data: orderResponse, isLoading: isLoadingOrder } = useOrder(orderId, {
@@ -512,7 +514,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
         if (onSuccess) {
           onSuccess();
         } else {
-          router.replace(routeToMobilePath(routes.inventory.orders.details(orderId)) as any);
+          nav.replace(mobileRoute(routes.inventory.orders.details(orderId)));
         }
       }
     } catch (error) {
@@ -538,7 +540,7 @@ export const OrderEditForm: React.FC<OrderEditFormProps> = ({ orderId, onSuccess
     suppliers,
     updateAsync,
     onSuccess,
-    router,
+    nav,
   ]);
 
   // Handle cancel with confirmation if form has data

@@ -1,51 +1,38 @@
-import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-// import { showToast } from "@/components/ui/toast";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
-import { PrivilegeGuard } from "@/components/privilege-guard";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useItemCategory, useItemCategoryMutations, useScreenReady } from "@/hooks";
-import { type ItemCategoryUpdateFormData } from '../../../../../../schemas';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { type ItemCategoryUpdateFormData } from "@/schemas";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CategoryEditScreenWrapper() {
   return (
-    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN]} requireAll={false}>
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
       <CategoryEditScreen />
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }
 
 function CategoryEditScreen() {
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { updateAsync } = useItemCategoryMutations();
-  const { goBack } = useNavigationLoading();
 
-  // End navigation loading overlay when screen mounts
-
-  const {
-    data: response,
-    isLoading,
-    error,
-  } = useItemCategory(id!, {
-    // Use select to fetch only fields needed for the edit form
-    // No need to include items - only editing name and type
-    select: {
-      id: true,
-      name: true,
-      type: true,
-    },
+  const { data: response, isLoading, error } = useItemCategory(id!, {
+    select: { id: true, name: true, type: true },
   });
 
   useScreenReady(!isLoading);
@@ -54,48 +41,57 @@ function CategoryEditScreen() {
 
   const handleFormSubmit = async (changedData: Partial<ItemCategoryUpdateFormData>) => {
     if (!id) return;
-
     try {
-      console.log("Sending only changed fields:", changedData);
-
-      await updateAsync({
-        id,
-        data: changedData,
-      });
-
-      // API client already shows success alert
-      router.replace(routeToMobilePath(routes.inventory.products.categories.details(id!)) as any);
+      await updateAsync({ id, data: changedData });
+      nav.replace(mobileRoute(routes.inventory.products.categories.details(id)));
     } catch (error) {
-      // API client already shows error alert
+      // API client surfaces error.
       console.error("Error updating category:", error);
     }
   };
 
   const handleCancel = () => {
-    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.categories.root) });
+    nav.goBack({ fallback: mobileRoute(routes.inventory.products.categories.root) });
   };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["bottom"]}
+      >
         <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
+          <Skeleton style={{ height: 24, width: "40%", borderRadius: 4 }} />
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 16,
+              gap: 12,
+            }}
+          >
+            <Skeleton style={{ height: 16, width: "70%", borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: "50%", borderRadius: 4 }} />
+            <Skeleton style={{ height: 16, width: "60%", borderRadius: 4 }} />
+          </View>
         </View>
-      </View>
       </SafeAreaView>
     );
   }
 
   if (error || !category) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom"]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["bottom"]}
+      >
         <View style={styles.errorContainer}>
           <ThemedText style={styles.errorTitle}>Categoria não encontrada</ThemedText>
-          <ThemedText style={styles.errorMessage}>A categoria que você está procurando não existe ou foi removida.</ThemedText>
+          <ThemedText style={styles.errorMessage}>
+            A categoria que você está procurando não existe ou foi removida.
+          </ThemedText>
           <Button onPress={handleCancel}>
             <ThemedText style={styles.buttonText}>Voltar para lista</ThemedText>
           </Button>
@@ -108,10 +104,7 @@ function CategoryEditScreen() {
     <ItemCategoryForm
       key={id}
       mode="update"
-      defaultValues={{
-        name: category.name,
-        type: category.type,
-      }}
+      defaultValues={{ name: category.name, type: category.type }}
       onSubmit={handleFormSubmit}
       onCancel={handleCancel}
       isSubmitting={false}
@@ -120,14 +113,7 @@ function CategoryEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1 },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
@@ -145,7 +131,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     opacity: 0.7,
   },
-  buttonText: {
-    color: "white",
-  },
+  buttonText: { color: "white" },
 });

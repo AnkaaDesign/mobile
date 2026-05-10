@@ -1,41 +1,52 @@
-import { useRouter } from "expo-router";
-// import { showToast } from "@/components/ui/toast";
 import { ItemCategoryForm } from "@/components/inventory/item/category/form/category-form";
-import { useItemCategoryMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { itemCategoryCreateSchema, type ItemCategoryCreateFormData } from '../../../../../schemas';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useFormScreenKey, useItemCategoryMutations, useScreenReady } from "@/hooks";
+import { itemCategoryCreateSchema, type ItemCategoryCreateFormData } from "@/schemas";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
 
 export default function CategoryCreateScreen() {
-  const router = useRouter();
-  const { createAsync, createMutation } = useItemCategoryMutations();
-  const { goBack } = useNavigationLoading();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <CategoryCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
 
-  // End navigation loading overlay when screen mounts
+function CategoryCreateScreenInner() {
+  const nav = useNav();
+  const { createAsync, createMutation } = useItemCategoryMutations();
+
   useScreenReady();
   const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemCategoryCreateFormData) => {
     try {
-      // Validate data with schema
       const validatedData = itemCategoryCreateSchema.parse(data);
-
       const result = await createAsync(validatedData);
-
       if (result.success && result.data) {
-        // API client already shows success alert
-        router.replace(routeToMobilePath(routes.inventory.products.categories.details(result.data.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.products.categories.details(result.data.id)));
       }
     } catch (error) {
-      // API client already shows error alert
+      // API client surfaces error.
       console.error("Error creating category:", error);
     }
   };
 
   const handleCancel = () => {
-    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.categories.root) });
+    nav.goBack({ fallback: mobileRoute(routes.inventory.products.categories.root) });
   };
 
-  return <ItemCategoryForm key={formKey} mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
+  return (
+    <ItemCategoryForm
+      key={formKey}
+      mode="create"
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      isSubmitting={createMutation.isPending}
+    />
+  );
 }
