@@ -1,271 +1,103 @@
-import { useState } from "react";
-import { View, ScrollView, ActivityIndicator, StyleSheet, Alert } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { usePaintBrand, usePaintBrandMutations, useScreenReady } from "@/hooks";
-import { paintBrandUpdateSchema } from '../../../../../schemas';
-import type { PaintBrandUpdateFormData } from '../../../../../schemas';
+import { usePaintBrand, usePaintBrandMutations } from "@/hooks";
+import { paintBrandUpdateSchema } from "@/schemas";
+import type { PaintBrandUpdateFormData } from "@/schemas";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { routes } from "@/constants";
-import {
-  IconTag,
-} from "@tabler/icons-react-native";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { IconTag } from "@tabler/icons-react-native";
 
 export default function EditPaintBrandScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EditPaintBrandScreenInner key={id} />;
-}
-
-function EditPaintBrandScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { update } = usePaintBrandMutations();
+  const { updateAsync } = usePaintBrandMutations();
 
-  // End navigation loading overlay when screen mounts
+  const loadQuery = usePaintBrand(id || "", {});
+  const paintBrand = (loadQuery.data as any)?.data;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check user permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);
-
-  // Fetch paint brand data
-  // Fixed: PaintBrandGetUniqueResponse has a data property, need to extract it
-  const { data: paintBrandResponse, isLoading, error } = usePaintBrand(id || "");
-
-  useScreenReady(!isLoading);
-  const paintBrand = paintBrandResponse?.data;
-
-  // Form setup
   const form = useForm<PaintBrandUpdateFormData>({
     resolver: zodResolver(paintBrandUpdateSchema),
     defaultValues: {
       name: paintBrand?.name || "",
     },
-    values: paintBrand
-      ? {
-          name: paintBrand.name,
-        }
-      : undefined,
+    values: paintBrand ? { name: paintBrand.name } : undefined,
+  });
+
+  const flow = useFormFlow<PaintBrandUpdateFormData, any>({
+    form,
+    mutation: async (data) => updateAsync({ id: id!, data }),
+    successRoute: () => mobileRoute(routes.painting.paintBrands.details(id!)),
+    successAction: "replace",
+    cancelFallback: mobileRoute(routes.painting.paintBrands.details(id!)),
   });
 
   const {
     control,
-    handleSubmit,
-    formState: { errors, isValid, isDirty },
+    formState: { errors },
   } = form;
 
-  // Handle form submission
-  const onSubmit = async (data: PaintBrandUpdateFormData) => {
-    if (!canEdit) {
-      Alert.alert("Erro", "Você não tem permissão para editar");
-      return;
-    }
-
-    if (!id) {
-      Alert.alert("Erro", "ID da marca de tinta não encontrado");
-      return;
-    }
-
-    if (!isDirty) {
-      Alert.alert("Informação", "Nenhuma alteração foi feita");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      await update({ id, data });
-      router.replace(routeToMobilePath(routes.painting.paintBrands.details(id)) as any);
-    } catch (_error) {
-      // API client already shows error alert
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle cancel
-  const handleCancel = () => {
-    goBack();
-  };
-
-  if (!canEdit) {
-    return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Você não tem permissão para editar marcas de tinta
-        </ThemedText>
-        <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-        {/* Header card skeleton */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 12, width: '70%', borderRadius: 4 }} />
-            </View>
-          </View>
-        </View>
-        {/* Form card skeleton: name field */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 44, borderRadius: 6 }} />
-        </View>
-        {/* Action buttons skeleton */}
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Skeleton style={{ height: 44, flex: 1, borderRadius: 8 }} />
-          <Skeleton style={{ height: 44, flex: 1, borderRadius: 8 }} />
-        </View>
-      </View>
-    );
-  }
-
-  if (error || !paintBrand) {
-    return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Erro ao carregar marca de tinta
-        </ThemedText>
-        <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
-
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Editar Marca de Tinta",
-          headerBackTitle: "Cancelar",
-          headerRight: () => (
-            <Button
-              size="sm"
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting || !isDirty}
-            >
-              {isSubmitting ? "Salvando..." : "Salvar"}
-            </Button>
-          ),
-        }}
-      />
-      <ScrollView
-        style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <IconTag size={24} color={colors.primary} />
-            <View style={styles.headerText}>
-              <ThemedText style={styles.headerTitle}>Editar Marca de Tinta</ThemedText>
-              <ThemedText style={styles.headerSubtitle}>
-                Atualize as informações da marca de tinta
-              </ThemedText>
-            </View>
+    <FormScreen
+      title="Editar Marca de Tinta"
+      subtitle="Atualize as informações da marca de tinta"
+      mode="edit"
+      form={form}
+      flow={flow}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      loadQuery={loadQuery as any}
+      submitLabel="Salvar Alterações"
+      submittingLabel="Salvando..."
+    >
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <IconTag size={24} color={colors.primary} />
+          <View style={styles.headerText}>
+            <ThemedText style={styles.headerTitle}>Editar Marca de Tinta</ThemedText>
+            <ThemedText style={styles.headerSubtitle}>
+              Atualize as informações da marca de tinta
+            </ThemedText>
           </View>
-        </Card>
-
-        {/* Form */}
-        <Card style={styles.formCard}>
-          <View style={styles.formSection}>
-            <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
-
-            <View style={styles.fieldContainer}>
-              <ThemedText style={styles.fieldLabel}>
-                Nome <ThemedText style={styles.required}>*</ThemedText>
-              </ThemedText>
-              <Controller
-                control={control}
-                name="name"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Ex: Suvinil, Coral, Sherwin-Williams..."
-                    error={!!errors.name}
-                    errorMessage={errors.name?.message}
-                  />
-                )}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            style={styles.actionButton}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            style={styles.actionButton}
-            disabled={!isValid || isSubmitting || !isDirty}
-          >
-            {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-          </Button>
         </View>
-      </ScrollView>
-    </>
+      </Card>
+
+      <Card style={styles.formCard}>
+        <View style={styles.formSection}>
+          <ThemedText style={styles.sectionTitle}>Informações Básicas</ThemedText>
+
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.fieldLabel}>
+              Nome <ThemedText style={styles.required}>*</ThemedText>
+            </ThemedText>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  placeholder="Ex: Suvinil, Coral, Sherwin-Williams..."
+                  error={!!errors.name}
+                  errorMessage={errors.name?.message}
+                />
+              )}
+            />
+          </View>
+        </View>
+      </Card>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-  },
-  errorText: {
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  backButton: {
-    marginTop: spacing.sm,
-  },
   headerCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -288,30 +120,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     lineHeight: 20,
   },
-  card: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
   formCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -333,12 +141,5 @@ const styles = StyleSheet.create({
   },
   required: {
     color: "#ef4444",
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
   },
 });

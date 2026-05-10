@@ -21,9 +21,10 @@ import {
   SimpleFormField,
 } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNav } from "@/contexts/nav";
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { PhoneArrayInput } from "@/components/ui";
@@ -38,14 +39,23 @@ import { FilePicker, type FilePickerItem } from "@/components/ui/file-picker";
  */
 export default function FinancialCustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <FinancialCustomerEditScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL],
+      }}
+    >
+      <FinancialCustomerEditScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function FinancialCustomerEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const insets = useSafeAreaInsets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
@@ -264,7 +274,7 @@ function FinancialCustomerEditScreenInner() {
       if (result?.data) {
         // API client already shows success alert
         // Navigate back to financial customer details, not administration
-        router.replace(routeToMobilePath(routes.financial.customers.details(id!)) as any);
+        router.replace(mobileRoute(routes.financial.customers.details(id!)) as any);
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }

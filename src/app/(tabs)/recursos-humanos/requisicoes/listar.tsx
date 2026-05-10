@@ -32,7 +32,7 @@ import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 
 import { Skeleton } from "@/components/ui/skeleton";interface TimeAdjustmentRequest {
@@ -156,7 +156,8 @@ const getDeviceInfo = (type?: string) => {
 
 export default function RequisitionsListScreen() {
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<TimeAdjustmentRequest | null>(null);

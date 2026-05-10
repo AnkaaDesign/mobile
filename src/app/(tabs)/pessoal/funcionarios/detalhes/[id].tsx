@@ -1,18 +1,10 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useUser, useScreenReady } from '@/hooks';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getFileUrl } from "@/utils/file-utils";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { ThemedView } from "@/components/ui/themed-view";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize } from "@/constants/design-system";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
+import { useUser } from "@/hooks";
+import { USER_STATUS, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { spacing, fontSize } from "@/constants/design-system";
 import {
   IconUser,
   IconPhone,
@@ -22,11 +14,17 @@ import {
   IconBuilding,
   IconStar,
 } from "@tabler/icons-react-native";
-import { USER_STATUS } from "@/constants";
 import { formatDate } from "@/utils";
-// import { showToast } from "@/components/ui/toast";
+import { getFileUrl } from "@/utils/file-utils";
+import type { User } from "@/types";
 
-// Helper function to get status label
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useTheme } from "@/lib/theme";
+
 const getStatusLabel = (status: string) => {
   const statusLabels: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: "Experiência 1",
@@ -37,7 +35,6 @@ const getStatusLabel = (status: string) => {
   return statusLabels[status] || status;
 };
 
-// Helper function to get status color
 const getStatusColor = (status: string, colors: any) => {
   const statusColors: Record<string, string> = {
     [USER_STATUS.EXPERIENCE_PERIOD_1]: colors.warning,
@@ -48,8 +45,10 @@ const getStatusColor = (status: string, colors: any) => {
   return statusColors[status] || colors.mutedForeground;
 };
 
-// Helper function to calculate employment duration
-const getEmploymentDuration = (exp1StartAt: Date | string | null, dismissedAt?: Date | string | null) => {
+const getEmploymentDuration = (
+  exp1StartAt: Date | string | null,
+  dismissedAt?: Date | string | null,
+) => {
   if (!exp1StartAt) return null;
 
   const startDate = new Date(exp1StartAt);
@@ -71,29 +70,20 @@ const getEmploymentDuration = (exp1StartAt: Date | string | null, dismissedAt?: 
   const finalYears = Math.floor(totalMonths / 12);
   const finalMonths = totalMonths % 12;
 
-  const parts = [];
+  const parts: string[] = [];
   if (finalYears > 0) parts.push(`${finalYears} ano${finalYears > 1 ? "s" : ""}`);
   if (finalMonths > 0) parts.push(`${finalMonths} mês${finalMonths > 1 ? "es" : ""}`);
-  if (totalDays > 0 && parts.length === 0) parts.push(`${totalDays} dia${totalDays > 1 ? "s" : ""}`);
+  if (totalDays > 0 && parts.length === 0)
+    parts.push(`${totalDays} dia${totalDays > 1 ? "s" : ""}`);
 
   return parts.join(" e ") || "Menos de 1 dia";
 };
 
 export default function EmployeeDetailScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const [refreshing, setRefreshing] = useState(false);
 
-  const id = params?.id || "";
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useUser(id, {
-    // Use optimized select for better performance - fetches only fields needed for personal employee detail view
+  const query = useUser(id || "", {
     select: {
       id: true,
       name: true,
@@ -104,346 +94,286 @@ export default function EmployeeDetailScreen() {
       performanceLevel: true,
       exp1StartAt: true,
       dismissedAt: true,
-      // Relations with minimal select
       avatar: {
-        select: {
-          id: true,
-          thumbnailUrl: true,
-        },
+        select: { id: true, thumbnailUrl: true },
       },
       position: {
-        select: {
-          id: true,
-          name: true,
-        },
+        select: { id: true, name: true },
       },
       sector: {
-        select: {
-          id: true,
-          name: true,
-        },
+        select: { id: true, name: true },
       },
       ledSector: {
-        select: {
-          id: true,
-          name: true,
-        },
+        select: { id: true, name: true },
       },
     },
     enabled: !!id && id !== "",
   });
 
-  useScreenReady(!isLoading);
-
-  const employee = response?.data;
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-        <ScrollView style={styles.scrollView}>
-          <View style={[styles.container, { paddingHorizontal: spacing.md, paddingTop: spacing.sm, gap: spacing.md }]}>
-            {/* Profile header card skeleton */}
-            <Card style={{ padding: spacing.lg }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Skeleton style={{ width: 64, height: 64, borderRadius: 32 }} />
-                <View style={{ marginLeft: spacing.lg, flex: 1, gap: 8 }}>
-                  <Skeleton style={{ height: 20, width: '60%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 14, width: '40%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 22, width: '30%', borderRadius: 10 }} />
-                </View>
-              </View>
-            </Card>
-            {/* Contact card skeleton */}
-            <Card style={{ padding: spacing.md, gap: 12 }}>
-              <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
-              <View style={{ gap: 10 }}>
-                {[1, 2].map((i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
-                    <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Skeleton style={{ height: 11, width: '20%', borderRadius: 4 }} />
-                      <Skeleton style={{ height: 15, width: '55%', borderRadius: 4 }} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </Card>
-            {/* Professional info card skeleton */}
-            <Card style={{ padding: spacing.md, gap: 12 }}>
-              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
-              <View style={{ gap: 10 }}>
-                {[1, 2, 3, 4].map((i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
-                    <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Skeleton style={{ height: 11, width: '20%', borderRadius: 4 }} />
-                      <Skeleton style={{ height: 15, width: `${40 + i * 5}%`, borderRadius: 4 }} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </Card>
-          </View>
-        </ScrollView>
-      </ThemedView>
-    );
-  }
-
-  if (error || !employee || !id) {
-    return (
-      <ThemedView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Card style={styles.errorCard}>
-            <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
-              <IconUser size={32} color={colors.mutedForeground} />
-            </View>
-            <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
-              Funcionário não encontrado
-            </ThemedText>
-            <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-              O funcionário solicitado não foi encontrado ou pode ter sido removido.
-            </ThemedText>
-            <Button onPress={() => goBack()}>
-              <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-            </Button>
-          </Card>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  const employmentDuration = getEmploymentDuration(employee.exp1StartAt, employee.dismissedAt);
-
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
-      showsVerticalScrollIndicator={false}
+    <DetailScreen<User>
+      query={query as any}
+      icon={IconUser}
+      title={(e) => e.name || "Funcionário"}
+      // Read-only mirror — funcionários listados são apenas visualizados.
+      editGuard={{ editable: [] }}
+      notFoundFallback={mobileRoute("/pessoal/funcionarios")}
     >
-      <View style={styles.container}>
-        {/* Header Card */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <Avatar
-              imageUrl={employee.avatar?.id ? getFileUrl(employee.avatar as any) : undefined}
-              name={employee.name || "F"}
-              size="lg"
-            />
-            <View style={styles.headerInfo}>
-              <ThemedText style={[styles.employeeName, { color: colors.foreground }]}>
-                {employee.name}
-              </ThemedText>
-              {employee.position && (
-                <ThemedText style={[styles.employeePosition, { color: colors.mutedForeground }]}>
-                  {employee.position.name}
-                </ThemedText>
-              )}
-              <Badge
-                variant="secondary"
-                style={{
-                  backgroundColor: getStatusColor(employee.status, colors) + "20",
-                  marginTop: spacing.xs,
-                }}
-              >
-                <ThemedText
-                  style={[
-                    styles.statusText,
-                    { color: getStatusColor(employee.status, colors) },
-                  ]}
-                >
-                  {getStatusLabel(employee.status)}
-                </ThemedText>
-              </Badge>
-            </View>
-          </View>
-        </Card>
+      {(employee) => {
+        const employmentDuration = getEmploymentDuration(
+          employee.exp1StartAt,
+          employee.dismissedAt,
+        );
 
-        {/* Contact Information */}
-        <Card style={[styles.card, { padding: spacing.md }]}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <View style={styles.sectionHeaderLeft}>
-              <IconPhone size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Informações de Contato
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.sectionContent}>
-            {employee.email && (
-              <View style={styles.infoRow}>
-                <IconMail size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    E-mail
+        return (
+          <View style={styles.body}>
+            {/* Header card */}
+            <Card style={styles.headerCard}>
+              <View style={styles.headerContent}>
+                <Avatar
+                  imageUrl={
+                    employee.avatar?.id
+                      ? getFileUrl(employee.avatar as any)
+                      : undefined
+                  }
+                  name={employee.name || "F"}
+                  size="lg"
+                />
+                <View style={styles.headerInfo}>
+                  <ThemedText
+                    style={[styles.employeeName, { color: colors.foreground }]}
+                  >
+                    {employee.name}
                   </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.email}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            {employee.phone && (
-              <View style={styles.infoRow}>
-                <IconPhone size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Telefone
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.phone}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-          </View>
-        </Card>
-
-        {/* Professional Information */}
-        <Card style={[styles.card, { padding: spacing.md }]}>
-          <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
-            <View style={styles.sectionHeaderLeft}>
-              <IconBriefcase size={20} color={colors.mutedForeground} />
-              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Informações Profissionais
-              </ThemedText>
-            </View>
-          </View>
-          <View style={styles.sectionContent}>
-            {employee.position && (
-              <View style={styles.infoRow}>
-                <IconBriefcase size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Cargo
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.position.name}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            {employee.sector && (
-              <View style={styles.infoRow}>
-                <IconBuilding size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Setor
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.sector.name}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            {employee.ledSector && (
-              <View style={styles.infoRow}>
-                <IconStar size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Setor Liderado
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {employee.ledSector.name}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            {employee.exp1StartAt && (
-              <View style={styles.infoRow}>
-                <IconCalendar size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Data de Admissão
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
-                    {formatDate(employee.exp1StartAt)}
-                  </ThemedText>
-                  {employmentDuration && (
-                    <ThemedText style={[styles.infoSubValue, { color: colors.mutedForeground }]}>
-                      {employee.dismissedAt ? "Trabalhou por" : "Há"} {employmentDuration}
+                  {employee.position && (
+                    <ThemedText
+                      style={[
+                        styles.employeePosition,
+                        { color: colors.mutedForeground },
+                      ]}
+                    >
+                      {employee.position.name}
                     </ThemedText>
                   )}
-                </View>
-              </View>
-            )}
-            {employee.dismissedAt && (
-              <View style={styles.infoRow}>
-                <IconCalendar size={16} color={colors.destructive} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Data de Demissão
-                  </ThemedText>
-                  <ThemedText style={[styles.infoValue, { color: colors.destructive }]}>
-                    {formatDate(employee.dismissedAt)}
-                  </ThemedText>
-                </View>
-              </View>
-            )}
-            {employee.performanceLevel !== undefined && (
-              <View style={styles.infoRow}>
-                <IconStar size={16} color={colors.mutedForeground} />
-                <View style={styles.infoTextContainer}>
-                  <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-                    Nível de Desempenho
-                  </ThemedText>
-                  <View style={styles.performanceContainer}>
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <IconStar
-                        key={level}
-                        size={18}
-                        color={level <= employee.performanceLevel ? colors.warning : colors.muted}
-                        fill={level <= employee.performanceLevel ? colors.warning : "none"}
-                      />
-                    ))}
-                    <ThemedText style={[styles.performanceText, { color: colors.foreground }]}>
-                      {employee.performanceLevel}/5
+                  <Badge
+                    variant="secondary"
+                    style={{
+                      backgroundColor:
+                        getStatusColor(employee.status, colors) + "20",
+                      marginTop: spacing.xs,
+                    }}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.statusText,
+                        { color: getStatusColor(employee.status, colors) },
+                      ]}
+                    >
+                      {getStatusLabel(employee.status)}
                     </ThemedText>
-                  </View>
+                  </Badge>
                 </View>
               </View>
-            )}
+            </Card>
+
+            {/* Contact */}
+            <Card style={styles.card}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconPhone size={20} color={colors.mutedForeground} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: colors.foreground }]}
+                  >
+                    Informações de Contato
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                {employee.email && (
+                  <InfoRow
+                    icon={<IconMail size={16} color={colors.mutedForeground} />}
+                    label="E-mail"
+                    value={employee.email}
+                    colors={colors}
+                  />
+                )}
+                {employee.phone && (
+                  <InfoRow
+                    icon={<IconPhone size={16} color={colors.mutedForeground} />}
+                    label="Telefone"
+                    value={employee.phone}
+                    colors={colors}
+                  />
+                )}
+              </View>
+            </Card>
+
+            {/* Professional */}
+            <Card style={styles.card}>
+              <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
+                <View style={styles.sectionHeaderLeft}>
+                  <IconBriefcase size={20} color={colors.mutedForeground} />
+                  <ThemedText
+                    style={[styles.sectionTitle, { color: colors.foreground }]}
+                  >
+                    Informações Profissionais
+                  </ThemedText>
+                </View>
+              </View>
+              <View style={styles.sectionContent}>
+                {employee.position && (
+                  <InfoRow
+                    icon={<IconBriefcase size={16} color={colors.mutedForeground} />}
+                    label="Cargo"
+                    value={employee.position.name}
+                    colors={colors}
+                  />
+                )}
+                {employee.sector && (
+                  <InfoRow
+                    icon={<IconBuilding size={16} color={colors.mutedForeground} />}
+                    label="Setor"
+                    value={employee.sector.name}
+                    colors={colors}
+                  />
+                )}
+                {employee.ledSector && (
+                  <InfoRow
+                    icon={<IconStar size={16} color={colors.mutedForeground} />}
+                    label="Setor Liderado"
+                    value={employee.ledSector.name}
+                    colors={colors}
+                  />
+                )}
+                {employee.exp1StartAt && (
+                  <View style={styles.infoRow}>
+                    <IconCalendar size={16} color={colors.mutedForeground} />
+                    <View style={styles.infoTextContainer}>
+                      <ThemedText
+                        style={[styles.infoLabel, { color: colors.mutedForeground }]}
+                      >
+                        Data de Admissão
+                      </ThemedText>
+                      <ThemedText
+                        style={[styles.infoValue, { color: colors.foreground }]}
+                      >
+                        {formatDate(employee.exp1StartAt)}
+                      </ThemedText>
+                      {employmentDuration && (
+                        <ThemedText
+                          style={[
+                            styles.infoSubValue,
+                            { color: colors.mutedForeground },
+                          ]}
+                        >
+                          {employee.dismissedAt ? "Trabalhou por" : "Há"}{" "}
+                          {employmentDuration}
+                        </ThemedText>
+                      )}
+                    </View>
+                  </View>
+                )}
+                {employee.dismissedAt && (
+                  <View style={styles.infoRow}>
+                    <IconCalendar size={16} color={colors.destructive} />
+                    <View style={styles.infoTextContainer}>
+                      <ThemedText
+                        style={[styles.infoLabel, { color: colors.mutedForeground }]}
+                      >
+                        Data de Demissão
+                      </ThemedText>
+                      <ThemedText
+                        style={[styles.infoValue, { color: colors.destructive }]}
+                      >
+                        {formatDate(employee.dismissedAt)}
+                      </ThemedText>
+                    </View>
+                  </View>
+                )}
+                {employee.performanceLevel !== undefined && (
+                  <View style={styles.infoRow}>
+                    <IconStar size={16} color={colors.mutedForeground} />
+                    <View style={styles.infoTextContainer}>
+                      <ThemedText
+                        style={[styles.infoLabel, { color: colors.mutedForeground }]}
+                      >
+                        Nível de Desempenho
+                      </ThemedText>
+                      <View style={styles.performanceContainer}>
+                        {[1, 2, 3, 4, 5].map((level) => (
+                          <IconStar
+                            key={level}
+                            size={18}
+                            color={
+                              level <= employee.performanceLevel
+                                ? colors.warning
+                                : colors.muted
+                            }
+                            fill={
+                              level <= employee.performanceLevel
+                                ? colors.warning
+                                : "none"
+                            }
+                          />
+                        ))}
+                        <ThemedText
+                          style={[styles.performanceText, { color: colors.foreground }]}
+                        >
+                          {employee.performanceLevel}/5
+                        </ThemedText>
+                      </View>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </Card>
+
+            {/* Notice */}
+            <Card style={[styles.noticeCard, { backgroundColor: colors.muted }]}>
+              <IconUser size={20} color={colors.mutedForeground} />
+              <ThemedText
+                style={[styles.noticeText, { color: colors.mutedForeground }]}
+              >
+                Esta visualização contém apenas informações públicas do funcionário.
+                Informações sensíveis como documentos, salário e dados pessoais estão
+                restritas.
+              </ThemedText>
+            </Card>
           </View>
-        </Card>
+        );
+      }}
+    </DetailScreen>
+  );
+}
 
-        {/* Notice Card for Regular Users */}
-        <Card style={[styles.noticeCard, { backgroundColor: colors.muted }]}>
-          <IconUser size={20} color={colors.mutedForeground} />
-          <ThemedText style={[styles.noticeText, { color: colors.mutedForeground }]}>
-            Esta visualização contém apenas informações públicas do funcionário.
-            Informações sensíveis como documentos, salário e dados pessoais estão restritas.
-          </ThemedText>
-        </Card>
-
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.md }} />
+function InfoRow({
+  icon,
+  label,
+  value,
+  colors,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  colors: any;
+}) {
+  return (
+    <View style={styles.infoRow}>
+      {icon}
+      <View style={styles.infoTextContainer}>
+        <ThemedText style={[styles.infoLabel, { color: colors.mutedForeground }]}>
+          {label}
+        </ThemedText>
+        <ThemedText style={[styles.infoValue, { color: colors.foreground }]}>
+          {value}
+        </ThemedText>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+  body: {
     gap: spacing.md,
   },
   headerCard: {
@@ -471,8 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   card: {
-    padding: 0,
-    overflow: "hidden",
+    padding: spacing.md,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -493,22 +422,6 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     gap: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  cardTitle: {
-    fontSize: fontSize.base,
-    fontWeight: "600",
-    marginLeft: spacing.sm,
-  },
-  cardContent: {
-    padding: spacing.md,
-    gap: spacing.md,
   },
   infoRow: {
     flexDirection: "row",
@@ -548,43 +461,5 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
     flex: 1,
     lineHeight: fontSize.sm * 1.4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingCard: {
-    padding: spacing.lg,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  errorCard: {
-    padding: spacing.xl,
-    alignItems: "center",
-    width: "100%",
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
   },
 });

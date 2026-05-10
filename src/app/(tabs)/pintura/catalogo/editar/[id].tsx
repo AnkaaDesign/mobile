@@ -1,30 +1,44 @@
-import { View, StyleSheet } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
+import {
+  usePaint,
+  usePaintMutations,
+  usePaintFormulaMutations,
+  useScreenReady,
+} from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 import type { PaintFormula } from "@/types";
 import type { PaintUpdateFormData, PaintFormulaCreateFormData } from "@/schemas";
 import { paintFormulaComponentService, notify } from "@/api-client";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 
 export default function EditCatalogScreen() {
-  const router = useRouter();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditCatalogScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditCatalogScreenInner() {
+  const nav = useNav();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { updateAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // End navigation loading overlay when screen mounts
 
   const {
     data: response,
@@ -34,11 +48,7 @@ export default function EditCatalogScreen() {
     include: {
       paintType: true,
       paintBrand: true,
-      paintGrounds: {
-        include: {
-          groundPaint: true,
-        },
-      },
+      paintGrounds: { include: { groundPaint: true } },
     },
   });
 
@@ -51,25 +61,25 @@ export default function EditCatalogScreen() {
 
     setIsSubmitting(true);
     try {
-      const result = await updateAsync({ id, data });
+      const result = await nav.withLoading(async () => updateAsync({ id, data }));
 
       if (result.success) {
-        let formulaCreationResults = {
+        const formulaCreationResults = {
           success: 0,
           failed: 0,
           errors: [] as string[],
         };
 
-        // Create new formulas if any
         if (formulas && formulas.length > 0) {
           for (const formula of formulas) {
-            const validComponents = formula.components?.filter((c) => {
-              return c.itemId && c.weightInGrams && c.weightInGrams > 0;
-            }) || [];
+            const validComponents =
+              formula.components?.filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0) || [];
 
             if (validComponents.length === 0) {
               formulaCreationResults.failed++;
-              formulaCreationResults.errors.push(`Fórmula "${formula.description || "Sem descrição"}" não tem componentes válidos`);
+              formulaCreationResults.errors.push(
+                `Fórmula "${formula.description || "Sem descrição"}" não tem componentes válidos`,
+              );
               continue;
             }
 
@@ -78,7 +88,7 @@ export default function EditCatalogScreen() {
               description: formula.description || "Fórmula Principal",
               components: validComponents.map((c) => ({
                 itemId: c.itemId,
-                weightInGrams: c.weightInGrams!, // Backend will calculate ratio from weight (non-null assertion is safe due to filter above)
+                weightInGrams: c.weightInGrams!,
               })),
             };
 
@@ -88,25 +98,26 @@ export default function EditCatalogScreen() {
             } catch (error: any) {
               formulaCreationResults.failed++;
               const errorMessage = error.message || "Erro desconhecido";
-              formulaCreationResults.errors.push(`Fórmula "${formula.description || "Sem descrição"}": ${errorMessage}`);
+              formulaCreationResults.errors.push(
+                `Fórmula "${formula.description || "Sem descrição"}": ${errorMessage}`,
+              );
             }
           }
 
-          // Show formula creation results if there were any issues
           if (formulaCreationResults.failed > 0) {
             Alert.alert(
               "Tinta atualizada com avisos",
               `Tinta atualizada com sucesso!\n\nFórmulas criadas: ${formulaCreationResults.success}\nFórmulas com erro: ${formulaCreationResults.failed}\n\nErros:\n${formulaCreationResults.errors.join("\n")}`,
-              [{ text: "OK" }]
+              [{ text: "OK" }],
             );
           }
         }
 
-        // Deduct stock for new formula components — run in parallel, one summary toast at the end
+        // Deduct stock for new formula components.
         const allDeductComponents = (formulas || []).flatMap((formula) =>
           (formula.components || [])
             .filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0)
-            .map((c) => ({ itemId: c.itemId, weight: c.weightInGrams! }))
+            .map((c) => ({ itemId: c.itemId, weight: c.weightInGrams! })),
         );
 
         if (allDeductComponents.length > 0) {
@@ -115,13 +126,16 @@ export default function EditCatalogScreen() {
               paintFormulaComponentService.deductForFormulationTest(
                 { itemId: c.itemId, weight: c.weight },
                 { suppressToast: true },
-              )
-            )
+              ),
+            ),
           );
-          notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
+          notify.success(
+            "Estoque atualizado",
+            `${allDeductComponents.length} componente(s) deduzido(s) do estoque`,
+          );
         }
 
-        router.replace(routeToMobilePath(routes.painting.catalog.details(id!)) as any);
+        nav.replace(mobileRoute(routes.painting.catalog.details(id)));
       }
     } catch (error) {
       console.error("Error updating paint:", error);
@@ -131,41 +145,32 @@ export default function EditCatalogScreen() {
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.painting.catalog.details(id!)) as any);
+    nav.replace(mobileRoute(routes.painting.catalog.details(id!)));
   };
 
   if (isLoadingPaint) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: "Editar Tinta",
-            headerBackTitle: "Voltar",
-          }}
-        />
+        <Stack.Screen options={{ title: "Editar Tinta", headerBackTitle: "Voltar" }} />
         <ThemedView style={styles.container}>
           <View style={styles.skeletonContainer}>
-            {/* Header info card: name, code, hex */}
-            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }]}>
-              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
+            <View
+              style={[
+                styles.skeleton,
+                {
+                  backgroundColor: colors.card,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  padding: 16,
+                  gap: 12,
+                },
+              ]}
+            >
+              <Skeleton style={{ height: 14, width: "30%", borderRadius: 4 }} />
               <Skeleton style={{ height: 40, borderRadius: 6 }} />
-              <Skeleton style={{ height: 14, width: '20%', borderRadius: 4 }} />
+              <Skeleton style={{ height: 14, width: "20%", borderRadius: 4 }} />
               <Skeleton style={{ height: 40, borderRadius: 6 }} />
-              <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 40, borderRadius: 6 }} />
-            </View>
-            {/* Type/brand/finish selectors */}
-            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }]}>
-              <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 40, borderRadius: 6 }} />
-              <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 40, borderRadius: 6 }} />
-            </View>
-            {/* Formulas card */}
-            <View style={[styles.skeleton, { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }]}>
-              <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: '70%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 14, width: '60%', borderRadius: 4 }} />
             </View>
           </View>
         </ThemedView>
@@ -176,20 +181,15 @@ export default function EditCatalogScreen() {
   if (error || !paint) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: "Editar Tinta",
-            headerBackTitle: "Voltar",
-          }}
-        />
-        <ThemedView className="flex-1">
-          <View className="flex-1 items-center justify-center px-4">
-            <ThemedText className="text-2xl font-semibold mb-2 text-center">Tinta não encontrada</ThemedText>
-            <ThemedText className="text-muted-foreground mb-4 text-center">
+        <Stack.Screen options={{ title: "Editar Tinta", headerBackTitle: "Voltar" }} />
+        <ThemedView style={{ flex: 1 }}>
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorTitle}>Tinta não encontrada</ThemedText>
+            <ThemedText style={styles.errorDescription}>
               A tinta que você está procurando não existe ou foi removida.
             </ThemedText>
             <Button onPress={handleCancel}>
-              <ThemedText className="text-white">Voltar para lista</ThemedText>
+              <ThemedText style={{ color: "white" }}>Voltar para lista</ThemedText>
             </Button>
           </View>
         </ThemedView>
@@ -199,13 +199,8 @@ export default function EditCatalogScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "Editar Tinta",
-          headerBackTitle: "Voltar",
-        }}
-      />
-      <ThemedView className="flex-1">
+      <Stack.Screen options={{ title: "Editar Tinta", headerBackTitle: "Voltar" }} />
+      <ThemedView style={{ flex: 1 }}>
         <PaintForm
           key={id}
           mode="update"
@@ -221,7 +216,11 @@ export default function EditCatalogScreen() {
             tags: paint.tags || [],
             groundIds: paint.paintGrounds?.map((g) => g.groundPaintId) || [],
           }}
-          initialGrounds={paint.paintGrounds?.map((g) => g.groundPaint).filter((g): g is NonNullable<typeof g> => g !== undefined) || []}
+          initialGrounds={
+            paint.paintGrounds
+              ?.map((g) => g.groundPaint)
+              .filter((g): g is NonNullable<typeof g> => g !== undefined) || []
+          }
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isSubmitting}
@@ -241,5 +240,21 @@ const styles = StyleSheet.create({
   },
   skeleton: {
     height: 200,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  errorTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  errorDescription: {
+    textAlign: "center",
+    opacity: 0.7,
   },
 });

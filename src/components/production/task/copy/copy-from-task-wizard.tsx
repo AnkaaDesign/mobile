@@ -8,7 +8,7 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import {
   IconCheck,
   IconArrowDown,
@@ -306,7 +306,7 @@ function SourceTaskTable({
 
 export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFields, setSelectedFields] = useState<Set<CopyableTaskField>>(new Set());
@@ -466,8 +466,8 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
   }, [currentStep]);
 
   const handleCancel = useCallback(() => {
-    goBack();
-  }, [goBack]);
+    nav.goBack();
+  }, [nav]);
 
   // Full wizard reset: step, field selection, source task, search. Runs on
   // cancel and after a successful submit so re-opening returns to step 1.
@@ -497,7 +497,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
       Alert.alert(
         "Campos copiados com sucesso",
         `${fieldsToSubmit.length} campo(s) copiado(s) de "${sourceTask.name}"`,
-        [{ text: "OK", onPress: () => goBack() }],
+        [{ text: "OK", onPress: () => nav.goBack() }],
       );
     } catch (error: any) {
       Alert.alert(
@@ -505,7 +505,7 @@ export function CopyFromTaskWizard({ taskId }: CopyFromTaskWizardProps) {
         error.message || "Não foi possível copiar os campos. Tente novamente.",
       );
     }
-  }, [sourceTask, selectedFields, copyMutation, taskId, goBack]);
+  }, [sourceTask, selectedFields, copyMutation, taskId, nav]);
 
   // Loading state
   if (taskLoading || !targetTask) {

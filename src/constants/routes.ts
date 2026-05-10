@@ -108,6 +108,14 @@ export const routes = {
     inventory: "/painel/estoque",
     production: "/painel/producao",
     warehouse: "/painel/almoxarifado",
+    root: "/painel",
+  },
+
+  // Notifications - top-level tab (modal-style screen)
+  notifications: {
+    root: "/notifications",
+    list: "/notifications",
+    details: (id: string) => `/notifications/${id}`,
   },
 
   // Customers - Alias for administration customers for backward compatibility
@@ -460,12 +468,34 @@ export const routes = {
       list: "/pintura/tipos-de-tinta/listar",
       root: "/pintura/tipos-de-tinta",
     },
+    // Alias for paintTypes (canonical convention: <domain>.<entity>)
+    types: {
+      create: "/pintura/tipos-de-tinta/cadastrar",
+      details: (id: string) => `/pintura/tipos-de-tinta/detalhes/${id}`,
+      edit: (id: string) => `/pintura/tipos-de-tinta/editar/${id}`,
+      list: "/pintura/tipos-de-tinta/listar",
+      root: "/pintura/tipos-de-tinta",
+    },
     paintBrands: {
       create: "/pintura/marcas-de-tinta/cadastrar",
       details: (id: string) => `/pintura/marcas-de-tinta/detalhes/${id}`,
       edit: (id: string) => `/pintura/marcas-de-tinta/editar/${id}`,
       list: "/pintura/marcas-de-tinta/listar",
       root: "/pintura/marcas-de-tinta",
+    },
+    // Alias for paintBrands (canonical convention: <domain>.<entity>)
+    brands: {
+      create: "/pintura/marcas-de-tinta/cadastrar",
+      details: (id: string) => `/pintura/marcas-de-tinta/detalhes/${id}`,
+      edit: (id: string) => `/pintura/marcas-de-tinta/editar/${id}`,
+      list: "/pintura/marcas-de-tinta/listar",
+      root: "/pintura/marcas-de-tinta",
+    },
+    // Basic Catalog - leaders / unprivileged read-only catalog access
+    basicCatalog: {
+      list: "/pintura/catalogo-basico/listar",
+      details: (id: string) => `/pintura/catalogo-basico/detalhes/${id}`,
+      root: "/pintura/catalogo-basico",
     },
     productions: {
       create: "/pintura/producoes/cadastrar",
@@ -478,39 +508,69 @@ export const routes = {
 
   // Server - Servidor - Server Management
   server: {
+    root: "/servidor",
     backup: "/servidor/backups/listar",
     backupCreate: "/servidor/backups/cadastrar",
     backupSchedule: "/servidor/backups/agendamentos",
     backupDetails: (id: string) => `/servidor/backups/detalhes/${id}`,
+    backups: {
+      root: "/servidor/backups",
+      list: "/servidor/backups/listar",
+      create: "/servidor/backups/cadastrar",
+      details: (id: string) => `/servidor/backups/detalhes/${id}`,
+      schedule: "/servidor/backups/agendamentos",
+    },
     changeLogs: {
       details: (id: string) => `/servidor/registros-de-alteracoes/detalhes/${id}`,
+      list: "/servidor/registros-de-alteracoes",
       root: "/servidor/registros-de-alteracoes",
     },
     databaseSync: "/servidor/database-sync",
     deployments: {
+      root: "/servidor/implantacoes",
+      list: "/servidor/implantacoes",
       create: "/servidor/implantacoes/cadastrar",
       details: (id: string) => `/servidor/implantacoes/detalhes/${id}`,
       edit: (id: string) => `/servidor/implantacoes/editar/${id}`,
-      root: "/servidor/implantacoes",
     },
     throttler: {
       root: "/servidor/rate-limiting",
+      list: "/servidor/rate-limiting",
     },
     logs: "/servidor/logs",
     metrics: "/servidor/metricas",
-    root: "/servidor",
     services: "/servidor/services",
     fileManager: "/servidor/file-manager",
     users: {
-      create: "/servidor/usuarios/cadastrar",
       root: "/servidor/usuarios",
+      list: "/servidor/usuarios",
+      create: "/servidor/usuarios/cadastrar",
     },
   },
 
   // Personal - Pessoal - Personal (User-specific data)
+  // NOTE: existing screens under (tabs)/pessoal/* are flat index.tsx files
+  // (no `/listar` sub-route). Routes here intentionally point to the index.
   personal: {
+    root: "/pessoal",
     myHolidays: {
-      root: "/pessoal/feriados",
+      root: "/pessoal/meus-feriados",
+      list: "/pessoal/meus-feriados",
+      details: (id: string) => `/pessoal/meus-feriados/detalhes/${id}`,
+    },
+    myWarnings: {
+      root: "/pessoal/minhas-advertencias",
+      list: "/pessoal/minhas-advertencias",
+      details: (id: string) => `/pessoal/minhas-advertencias/detalhes/${id}`,
+    },
+    myPoints: {
+      root: "/pessoal/meus-pontos",
+      list: "/pessoal/meus-pontos",
+    },
+    myMessages: {
+      root: "/pessoal/minhas-mensagens",
+      list: "/pessoal/minhas-mensagens",
+      details: (id: string) => `/pessoal/minhas-mensagens/detalhes/${id}`,
     },
     preferences: {
       root: "/pessoal/preferencias",
@@ -522,14 +582,17 @@ export const routes = {
       details: (id: string) => `/pessoal/meus-epis/detalhes/${id}`,
       request: "/pessoal/meus-epis/solicitar",
       root: "/pessoal/meus-epis",
+      list: "/pessoal/meus-epis",
     },
     myBorrows: {
       details: (id: string) => `/pessoal/meus-emprestimos/detalhes/${id}`,
       root: "/pessoal/meus-emprestimos",
+      list: "/pessoal/meus-emprestimos",
     },
     myMovements: {
       details: (id: string) => `/pessoal/minhas-movimentacoes/detalhes/${id}`,
       root: "/pessoal/minhas-movimentacoes",
+      list: "/pessoal/minhas-movimentacoes",
     },
     myBonuses: {
       root: "/pessoal/meu-bonus",
@@ -544,7 +607,6 @@ export const routes = {
       root: "/pessoal/meus-bonus",
       simulation: "/pessoal/simulacao-bonus",
     },
-    root: "/pessoal",
   },
 
   // Production - Produção - Production Management
@@ -579,6 +641,16 @@ export const routes = {
       details: (id: string) => `/producao/cronograma/detalhes/${id}`,
       edit: (id: string) => `/producao/cronograma/editar/${id}`,
       list: "/producao/cronograma",
+      /**
+       * Cronograma multi-context list helper.
+       * Encodes the calling context as a `from` query param so the destination
+       * screen can render appropriate breadcrumbs / back behavior without
+       * pathname-sniffing.
+       *
+       * Usage: `nav.push(mobileRoute(routes.production.schedule.listFrom({ from: 'agenda' })))`
+       */
+      listFrom: ({ from }: { from: "agenda" | "historico" | "tarefa" }) =>
+        `/producao/cronograma?from=${from}`,
       root: "/producao/cronograma",
     },
     agenda: {

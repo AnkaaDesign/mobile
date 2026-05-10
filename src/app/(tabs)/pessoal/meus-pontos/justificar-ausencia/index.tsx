@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from "react-native";
-import { router, Stack } from "expo-router";
+import { Stack } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconChevronRight, IconCalendarOff, IconInfoCircle } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, ErrorScreen, EmptyState } from "@/components/ui";
@@ -23,6 +25,7 @@ const formatDayDisplay = (ymd: string) => {
 export default function JustificarAusenciaListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const nav = useNav();
 
   // Default range: last 30 days through today. Matches the Secullum app default.
   const range = useMemo(() => {
@@ -104,7 +107,7 @@ export default function JustificarAusenciaListScreen() {
               <TouchableOpacity
                 disabled={disabled}
                 onPress={() =>
-                  router.push(`/(tabs)/pessoal/meus-pontos/justificar-ausencia/${item.date}` as any)
+                  nav.push(mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${item.date}`))
                 }
                 style={[
                   styles.row,

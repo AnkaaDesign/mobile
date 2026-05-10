@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { useNav } from "@/contexts/nav";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,8 +14,9 @@ import { FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from '@/constants/routes.types';
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
@@ -29,11 +31,23 @@ const roleOptions = Object.values(ResponsibleRole).map((role) => ({
 
 export default function EditResponsibleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EditResponsibleScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <EditResponsibleScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function EditResponsibleScreenInner() {
-  const router = useRouter();
+  const nav = useNav();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,7 +113,7 @@ function EditResponsibleScreenInner() {
 
       await updateAsync({ id, data });
       Alert.alert("Sucesso", "Responsável atualizado com sucesso!");
-      router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any);
+      nav.replace(mobileRoute(routes.administration.responsibles.details(id)));
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Erro ao atualizar responsável");
     } finally {
@@ -117,12 +131,12 @@ function EditResponsibleScreenInner() {
           {
             text: "Descartar",
             style: "destructive",
-            onPress: () => router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any),
+            onPress: () => nav.replace(mobileRoute(routes.administration.responsibles.details(id))),
           },
         ],
       );
     } else {
-      router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any);
+      nav.replace(mobileRoute(routes.administration.responsibles.details(id)));
     }
   };
 

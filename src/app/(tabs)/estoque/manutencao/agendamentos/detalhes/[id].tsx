@@ -1,24 +1,23 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMaintenance, useScreenReady} from '@/hooks';
-import { ThemedView, ThemedText, Card, ErrorScreen, Button, Badge } from '@/components/ui';
+import { useLocalSearchParams } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import { useMaintenance } from '@/hooks';
+import { ThemedText, Card, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
+import { mobileRoute } from '@/constants/routes.types';
 import { formatDate, formatDateTime } from '@/utils';
-import { MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS } from '@/constants';
-import { useState, useCallback } from 'react';
+import {
+  MAINTENANCE_STATUS_LABELS,
+  SCHEDULE_FREQUENCY_LABELS,
+  routes,
+} from '@/constants';
 import { IconCalendar, IconAlertCircle, IconClock } from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DetailScreen } from '@/components/screens/detail-screen';
 
 export default function MaintenanceScheduleDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: scheduleResponse, isLoading, error, refetch } = useMaintenance(id, {
+  const query = useMaintenance(id, {
     include: {
       item: true,
       lastRunSchedule: true,
@@ -26,237 +25,147 @@ export default function MaintenanceScheduleDetailsScreen() {
     },
   });
 
-  useScreenReady(!isLoading);
-  const schedule = (scheduleResponse?.data || null) as any;
+  return (
+    <DetailScreen
+      query={query as any}
+      icon={IconCalendar}
+      title={(s: any) => s.item?.name ?? 'Agendamento de Manutenção'}
+      editRoute={(s: any) => mobileRoute(routes.inventory.maintenance.schedules.edit(s.id))}
+      notFoundFallback={mobileRoute(routes.inventory.maintenance.schedules.root)}
+      status={(s: any) => ({
+        label:
+          MAINTENANCE_STATUS_LABELS[s.status as keyof typeof MAINTENANCE_STATUS_LABELS] ?? s.status,
+        variant:
+          s.status === 'FINISHED' ? 'success' : s.status === 'PENDING' ? 'warning' : 'default',
+      })}
+    >
+      {(schedule: any) => <ScheduleBody schedule={schedule} />}
+    </DetailScreen>
+  );
+}
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
-
-  if (isLoading && !refreshing) {
-    return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          {/* Schedule info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
-              <Skeleton width="55%" height={20} />
-              <Skeleton width={70} height={24} borderRadius={12} />
-            </View>
-            {/* Schedule details section */}
-            <Skeleton width="50%" height={16} style={{ marginBottom: spacing.md }} />
-            {[1, 2, 3, 4].map(i => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-                <Skeleton width="35%" height={14} />
-                <Skeleton width="45%" height={14} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !schedule) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar agendamento"
-          detail={error?.message || 'Agendamento não encontrado'}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
-  }
+function ScheduleBody({ schedule }: { schedule: any }) {
+  const { colors } = useTheme();
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {/* Header Card - Schedule Info */}
-        <Card style={styles.card}>
-          <View style={[styles.headerRow, { paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-            <View style={{ flex: 1 }}>
-              <ThemedText style={styles.titleText}>
-                {schedule.item?.name || 'Agendamento de Manutenção'}
-              </ThemedText>
+    <View style={styles.body}>
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconCalendar size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Detalhes do Agendamento</ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.content}>
+          <View style={styles.infoRow}>
+            <ThemedText style={styles.infoLabel}>Frequência:</ThemedText>
+            <ThemedText style={styles.infoValue}>
+              {schedule.frequency
+                ? SCHEDULE_FREQUENCY_LABELS[
+                    schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS
+                  ]
+                : '-'}
+            </ThemedText>
+          </View>
+
+          {schedule.frequencyCount && (
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.infoLabel}>Intervalo:</ThemedText>
+              <ThemedText style={styles.infoValue}>A cada {schedule.frequencyCount}</ThemedText>
             </View>
-            <Badge
-              variant={
-                schedule.status === 'FINISHED' ? 'success' :
-                schedule.status === 'PENDING' ? 'warning' :
-                'default'
-              }
-            >
-              {MAINTENANCE_STATUS_LABELS[schedule.status as keyof typeof MAINTENANCE_STATUS_LABELS] || schedule.status}
-            </Badge>
+          )}
+
+          {schedule.lastRun && (
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.infoLabel}>Última Execução:</ThemedText>
+              <ThemedText style={styles.infoValue}>{formatDate(schedule.lastRun)}</ThemedText>
+            </View>
+          )}
+
+          {schedule.nextRun && (
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.infoLabel}>Próxima Execução:</ThemedText>
+              <ThemedText style={styles.infoValue}>{formatDate(schedule.nextRun)}</ThemedText>
+            </View>
+          )}
+
+          <View style={styles.infoRow}>
+            <ThemedText style={styles.infoLabel}>Criado em:</ThemedText>
+            <ThemedText style={styles.infoValue}>{formatDateTime(schedule.createdAt)}</ThemedText>
+          </View>
+        </View>
+      </Card>
+
+      {schedule.triggeredSchedules && schedule.triggeredSchedules.length > 0 ? (
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconClock size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Execuções</ThemedText>
+            </View>
           </View>
 
           <View style={styles.content}>
-            {/* Schedule Details Section */}
-            <View style={styles.section}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconCalendar size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Detalhes do Agendamento</ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.content}>
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.infoLabel}>Frequência:</ThemedText>
-                  <ThemedText style={styles.infoValue}>
-                    {schedule.frequency ? SCHEDULE_FREQUENCY_LABELS[schedule.frequency as keyof typeof SCHEDULE_FREQUENCY_LABELS] : '-'}
+            {schedule.triggeredSchedules.map((execution: any, index: number) => (
+              <View
+                key={index}
+                style={[styles.executionItem, { backgroundColor: colors.muted }]}
+              >
+                <View style={styles.executionRow}>
+                  <ThemedText style={styles.executionLabel}>Execução {index + 1}</ThemedText>
+                  <ThemedText style={styles.executionDate}>
+                    {execution.createdAt ? formatDateTime(execution.createdAt) : '-'}
                   </ThemedText>
                 </View>
-
-                {schedule.frequencyCount && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.infoLabel}>Intervalo:</ThemedText>
-                    <ThemedText style={styles.infoValue}>A cada {schedule.frequencyCount}</ThemedText>
-                  </View>
-                )}
-
-                {schedule.lastRun && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.infoLabel}>Última Execução:</ThemedText>
-                    <ThemedText style={styles.infoValue}>{formatDate(schedule.lastRun)}</ThemedText>
-                  </View>
-                )}
-
-                {schedule.nextRun && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.infoLabel}>Próxima Execução:</ThemedText>
-                    <ThemedText style={styles.infoValue}>{formatDate(schedule.nextRun)}</ThemedText>
-                  </View>
-                )}
-
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.infoLabel}>Criado em:</ThemedText>
-                  <ThemedText style={styles.infoValue}>{formatDateTime(schedule.createdAt)}</ThemedText>
+                <View style={styles.executionRow}>
+                  <ThemedText style={styles.executionStatus}>Status:</ThemedText>
+                  <Badge variant={execution.status === 'FINISHED' ? 'success' : 'default'} size="sm">
+                    {MAINTENANCE_STATUS_LABELS[
+                      execution.status as keyof typeof MAINTENANCE_STATUS_LABELS
+                    ] || execution.status}
+                  </Badge>
                 </View>
               </View>
-            </View>
-
-            {/* Executions Section */}
-            {schedule.triggeredSchedules && schedule.triggeredSchedules.length > 0 && (
-              <View style={styles.section}>
-                <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                  <View style={styles.headerLeft}>
-                    <IconClock size={20} color={colors.mutedForeground} />
-                    <ThemedText style={styles.title}>Execuções</ThemedText>
-                  </View>
-                </View>
-
-                <View style={styles.content}>
-                  {schedule.triggeredSchedules.map((execution: any, index: number) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.executionItem,
-                        { backgroundColor: colors.muted }
-                      ]}
-                    >
-                      <View style={styles.executionRow}>
-                        <ThemedText style={styles.executionLabel}>Execução {index + 1}</ThemedText>
-                        <ThemedText style={styles.executionDate}>
-                          {execution.createdAt ? formatDateTime(execution.createdAt) : '-'}
-                        </ThemedText>
-                      </View>
-                      <View style={styles.executionRow}>
-                        <ThemedText style={styles.executionStatus}>Status:</ThemedText>
-                        <Badge variant={execution.status === 'FINISHED' ? 'success' : 'default'} size="sm">
-                          {MAINTENANCE_STATUS_LABELS[execution.status as keyof typeof MAINTENANCE_STATUS_LABELS] || execution.status}
-                        </Badge>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {(!schedule.triggeredSchedules || schedule.triggeredSchedules.length === 0) && (
-              <View style={styles.emptyState}>
-                <IconAlertCircle size={48} color={colors.mutedForeground} />
-                <ThemedText style={styles.emptyText}>Nenhuma execução realizada</ThemedText>
-              </View>
-            )}
+            ))}
           </View>
         </Card>
-
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          <Button
-            variant="outline"
-            onPress={() => router.push(`/(tabs)/estoque/manutencao/agendamentos/editar/${id}` as any)}
-            style={styles.actionButton}
-          >
-            Editar Agendamento
-          </Button>
+      ) : (
+        <View style={styles.emptyState}>
+          <IconAlertCircle size={48} color={colors.mutedForeground} />
+          <ThemedText style={styles.emptyText}>Nenhuma execução realizada</ThemedText>
         </View>
-      </ScrollView>
-    </ThemedView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
+  body: {
+    gap: spacing.md,
   },
   card: {
     padding: spacing.md,
-    marginBottom: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: '600',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   content: {
     gap: spacing.sm,
-  },
-  section: {
-    marginBottom: spacing.lg,
   },
   infoRow: {
     flexDirection: 'row',
@@ -304,12 +213,5 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 12,
     opacity: 0.7,
-  },
-  actions: {
-    gap: 12,
-    marginTop: 8,
-  },
-  actionButton: {
-    width: '100%',
   },
 });

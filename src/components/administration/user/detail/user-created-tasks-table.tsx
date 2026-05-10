@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { DetailCard } from "@/components/ui/detail-page-layout";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -10,7 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconFileText, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -25,7 +25,7 @@ interface UserCreatedTasksTableProps {
 
 export function UserCreatedTasksTable({ user, maxHeight = 500 }: UserCreatedTasksTableProps) {
   const { colors } = useTheme();
-  const { pushWithLoading } = useNavigationLoading();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -121,7 +121,7 @@ export function UserCreatedTasksTable({ user, maxHeight = 500 }: UserCreatedTask
   }, []);
 
   const handleTaskPress = (taskId: string) => {
-    pushWithLoading(routeToMobilePath(routes.production.schedule.details(taskId)));
+    nav.push(mobileRoute(routes.production.schedule.details(taskId)));
   };
 
   // Don't show if no tasks and not loading

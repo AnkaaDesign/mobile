@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,8 +12,8 @@ import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { formatCNPJ, cleanCNPJ, formatZipCode, cleanZipCode } from "@/utils";
 import { TagManager } from "@/components/inventory/supplier/form";
 import { PhoneArrayInput } from "@/components/ui";
@@ -27,8 +26,8 @@ export default function SupplierCreateScreen() {
 }
 
 function SupplierCreateScreenInner() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack({ fallback: mobileRoute(routes.inventory.suppliers.root) });
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFiles, setLogoFiles] = useState<FilePickerItem[]>([]);
@@ -139,7 +138,7 @@ function SupplierCreateScreenInner() {
         const result = await createAsync(formData as any);
 
         if (result?.data) {
-          router.replace(routeToMobilePath(routes.inventory.suppliers.details(result.data.id)) as any);
+          nav.replace(mobileRoute(routes.inventory.suppliers.details(result.data.id)));
         } else {
           Alert.alert("Erro", "Erro ao criar fornecedor");
         }
@@ -148,7 +147,7 @@ function SupplierCreateScreenInner() {
         const result = await createAsync(data);
 
         if (result?.data) {
-          router.replace(routeToMobilePath(routes.inventory.suppliers.details(result.data.id)) as any);
+          nav.replace(mobileRoute(routes.inventory.suppliers.details(result.data.id)));
         } else {
           Alert.alert("Erro", "Erro ao criar fornecedor");
         }

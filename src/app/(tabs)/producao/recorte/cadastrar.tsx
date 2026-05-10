@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { router, Stack } from "expo-router";
+import { useState } from "react";
+import { Stack } from "expo-router";
 import { ScrollView, View, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,6 @@ import {
   CUT_REQUEST_REASON_LABELS,
   SECTOR_PRIVILEGES,
 } from "@/constants";
-import { ErrorScreen } from "@/components/ui/error-screen";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,34 +24,35 @@ import { Combobox } from "@/components/ui/combobox";
 import { IconScissors, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
 
 export default function CreateCuttingScreen() {
   const formKey = useFormScreenKey();
-  return <CreateCuttingScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <CreateCuttingScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateCuttingScreenInner() {
   useScreenReady();
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useCutMutations();
-
-  // Permission check
-  const canCreate = React.useMemo(() => {
-    if (!user) return false;
-    return (
-      hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-      hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
-      hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN)
-    );
-  }, [user]);
 
   const {
     control,
@@ -75,20 +75,15 @@ function CreateCuttingScreenInner() {
   });
 
   const onSubmit = async (data: CutCreateFormData) => {
-    if (!canCreate) {
-      Alert.alert("Erro", "Você não tem permissão para criar recortes");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const result = await createAsync(data);
 
       const newId = (result as any)?.data?.id || (result as any)?.id;
       if (newId) {
-        router.replace(routeToMobilePath(routes.production.cutting.details(newId)) as any);
+        nav.dismissTo(mobileRoute(routes.production.cutting.details(newId)));
       } else {
-        goBack();
+        nav.goBack();
       }
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Não foi possível criar o recorte. Tente novamente.");
@@ -103,29 +98,10 @@ function CreateCuttingScreenInner() {
       {
         text: "Cancelar",
         style: "destructive",
-        onPress: () => goBack(),
+        onPress: () => nav.goBack(),
       },
     ]);
   };
-
-  // Permission gate
-  if (!canCreate) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Novo Recorte",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para criar recortes. É necessário privilégio de Produção, Almoxarifado ou Administrador."
-        />
-      </>
-    );
-  }
 
   return (
     <>

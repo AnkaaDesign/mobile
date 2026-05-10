@@ -7,19 +7,20 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useCreateOrderSchedule } from "@/hooks";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useTheme } from "@/lib/theme";
 import {
   orderScheduleCreateSchema,
   type OrderScheduleCreateFormData,
 } from "@/schemas";
-import { SCHEDULE_FREQUENCY } from "@/constants";
+import { SCHEDULE_FREQUENCY, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import { Card } from "@/components/ui/card";
@@ -61,10 +62,21 @@ const FREQUENCY_OPTIONS = Object.values(SCHEDULE_FREQUENCY).map((freq) => ({
 }));
 
 export default function OrderScheduleCreateScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <OrderScheduleCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function OrderScheduleCreateScreenInner() {
   useScreenReady();
   const formKey = useFormScreenKey();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.schedules.root) });
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

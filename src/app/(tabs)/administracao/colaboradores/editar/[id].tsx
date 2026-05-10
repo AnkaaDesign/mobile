@@ -1,18 +1,27 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { CollaboratorForm } from "@/components/administration/collaborator/form/collaborator-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useUser } from "@/hooks/useUser";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { FormSkeleton } from "@/components/ui/form-skeleton";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditCollaboratorScreen() {
+  return (
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.HUMAN_RESOURCES] }}>
+      <EditCollaboratorInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditCollaboratorInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: user, isLoading, error } = useUser(id, {
-    // Use optimized select for better performance - fetches only fields needed for form
     select: {
       id: true,
       name: true,
@@ -27,7 +36,6 @@ export default function EditCollaboratorScreen() {
       avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      // Address fields for form
       address: true,
       addressNumber: true,
       addressComplement: true,
@@ -35,39 +43,19 @@ export default function EditCollaboratorScreen() {
       city: true,
       state: true,
       zipCode: true,
-      // Status tracking dates for form
       effectedAt: true,
       exp1StartAt: true,
       exp1EndAt: true,
       exp2StartAt: true,
       exp2EndAt: true,
       dismissedAt: true,
-      // IDs for form selectors
       sectorId: true,
       positionId: true,
-      // Timestamps
       createdAt: true,
       updatedAt: true,
-      // Relations with minimal select for form dropdowns
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      position: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      ledSector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // PPE size for form
+      sector: { select: { id: true, name: true } },
+      position: { select: { id: true, name: true } },
+      ledSector: { select: { id: true, name: true } },
       ppeSize: true,
     },
   });

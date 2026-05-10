@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, EmptyState } from "@/components/ui";
 import { Card } from "@/components/ui/card";

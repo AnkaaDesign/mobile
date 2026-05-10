@@ -1,22 +1,35 @@
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { useMemo } from "react";
+import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Switch } from "@/components/ui/switch";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { FormActionBar } from "@/components/forms";
-import { useTheme } from "@/lib/theme";
-import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { mobileRoute } from "@/constants/routes.types";
+import {
+  routes,
+  SCHEDULE_FREQUENCY,
+  ASSIGNMENT_TYPE,
+  SECTOR_PRIVILEGES,
+} from "@/constants";
+import {
+  SCHEDULE_FREQUENCY_LABELS,
+  ASSIGNMENT_TYPE_LABELS,
+  PPE_TYPE_LABELS,
+} from "@/constants/enum-labels";
 
-import { SCHEDULE_FREQUENCY, ASSIGNMENT_TYPE } from "@/constants";
-import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS, PPE_TYPE_LABELS } from "@/constants/enum-labels";
-import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+interface PpeScheduleCreateForm {
+  name: string;
+  frequency: SCHEDULE_FREQUENCY;
+  frequencyCount: number;
+  assignmentType: ASSIGNMENT_TYPE;
+  ppeTypes: string[];
+  isActive: boolean;
+}
 
 export default function CreatePPEScheduleScreen() {
   const formKey = useFormScreenKey();
@@ -24,244 +37,190 @@ export default function CreatePPEScheduleScreen() {
 }
 
 function CreatePPEScheduleScreenInner() {
-  useScreenReady();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
-  const { colors } = useTheme();
-
-  const form = useForm({
+  const form = useForm<PpeScheduleCreateForm>({
     defaultValues: {
       name: "",
       frequency: SCHEDULE_FREQUENCY.MONTHLY,
       frequencyCount: 1,
       assignmentType: ASSIGNMENT_TYPE.ALL,
-      ppeTypes: [] as string[],
+      ppeTypes: [],
       isActive: true,
     },
   });
 
-  const isLoading = false;
+  // Mock mutation — wire to real API once available.
+  const flow = useFormFlow<PpeScheduleCreateForm, { id: string }>({
+    form,
+    mutation: async (_data) => {
+      Alert.alert("Sucesso", "Agendamento criado com sucesso");
+      return { id: "" };
+    },
+    successRoute: () => mobileRoute(routes.inventory.ppe.schedules.root),
+    cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
+  });
 
-  const frequencyOptions: ComboboxOption[] = Object.entries(SCHEDULE_FREQUENCY_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  const frequencyOptions: ComboboxOption[] = useMemo(
+    () =>
+      Object.entries(SCHEDULE_FREQUENCY_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
   );
 
-  const assignmentTypeOptions: ComboboxOption[] = Object.entries(ASSIGNMENT_TYPE_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  const assignmentTypeOptions: ComboboxOption[] = useMemo(
+    () =>
+      Object.entries(ASSIGNMENT_TYPE_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
   );
 
-  const ppeTypeOptions: ComboboxOption[] = Object.entries(PPE_TYPE_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  const ppeTypeOptions: ComboboxOption[] = useMemo(
+    () =>
+      Object.entries(PPE_TYPE_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
   );
-
-  const handleSubmit = async () => {
-    try {
-      // TODO: Implement API call
-      goBack();
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao criar o agendamento");
-    }
-  };
-
-  const handleCancel = () => {
-    goBack();
-  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+    <FormScreen
+      title="Novo Agendamento de EPI"
+      mode="create"
+      form={form}
+      flow={flow}
+      submittingLabel="Salvando..."
+      submitLabel="Criar Agendamento"
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <FormCard title="Informações Básicas" icon="IconCalendar">
+        <FormFieldGroup
+          label="Nome do Agendamento"
+          required
+          error={form.formState.errors.name?.message as string | undefined}
         >
-          {/* Basic Information */}
-          <FormCard title="Informações Básicas" icon="IconCalendar">
-            {/* Name */}
-            <FormFieldGroup
-              label="Nome do Agendamento"
-              required
-              error={form.formState.errors.name?.message}
-            >
-              <Controller
-                control={form.control}
-                name="name"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={value || ""}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    placeholder="Digite o nome do agendamento"
-                    editable={!isLoading}
-                    error={!!form.formState.errors.name}
-                  />
-                )}
+          <Controller
+            control={form.control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Digite o nome do agendamento"
+                error={!!form.formState.errors.name}
               />
-            </FormFieldGroup>
+            )}
+          />
+        </FormFieldGroup>
 
-            {/* Status */}
-            <FormFieldGroup label="Status">
-              <Controller
-                control={form.control}
-                name="isActive"
-                render={({ field: { onChange, value } }) => (
-                  <Switch
-                    checked={value}
-                    onCheckedChange={onChange}
-                    disabled={isLoading}
-                  />
-                )}
+        <FormFieldGroup label="Status">
+          <Controller
+            control={form.control}
+            name="isActive"
+            render={({ field: { onChange, value } }) => (
+              <Switch checked={value} onCheckedChange={onChange} />
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
+
+      <FormCard title="Configuração de Frequência" icon="IconClock">
+        <FormFieldGroup
+          label="Frequência"
+          required
+          error={form.formState.errors.frequency?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="frequency"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <Combobox
+                options={frequencyOptions}
+                value={value || undefined}
+                onValueChange={onChange}
+                placeholder="Selecione a frequência"
+                searchable={false}
+                error={error?.message}
               />
-            </FormFieldGroup>
-          </FormCard>
+            )}
+          />
+        </FormFieldGroup>
 
-          {/* Schedule Configuration */}
-          <FormCard title="Configuração de Frequência" icon="IconClock">
-            {/* Frequency */}
-            <FormFieldGroup
-              label="Frequência"
-              required
-              error={form.formState.errors.frequency?.message}
-            >
-              <Controller
-                control={form.control}
-                name="frequency"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={frequencyOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione a frequência"
-                    disabled={isLoading}
-                    searchable={false}
-                    error={error?.message}
-                  />
-                )}
+        <FormFieldGroup
+          label="Quantidade"
+          error={form.formState.errors.frequencyCount?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="frequencyCount"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={String(value || 1)}
+                onChangeText={(text: string | number | null) => {
+                  if (!text) {
+                    onChange(1);
+                    return;
+                  }
+                  const numValue = parseInt(String(text));
+                  onChange(isNaN(numValue) ? 1 : numValue);
+                }}
+                onBlur={onBlur}
+                placeholder="1"
+                error={!!form.formState.errors.frequencyCount}
+                keyboardType="number-pad"
               />
-            </FormFieldGroup>
+            )}
+          />
+        </FormFieldGroup>
 
-            {/* Frequency Count */}
-            <FormFieldGroup
-              label="Quantidade"
-              error={form.formState.errors.frequencyCount?.message}
-            >
-              <Controller
-                control={form.control}
-                name="frequencyCount"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={String(value || 1)}
-                    onChangeText={(text: string | number | null) => {
-                      if (!text) {
-                        onChange(1);
-                        return;
-                      }
-                      const numValue = parseInt(String(text));
-                      onChange(isNaN(numValue) ? 1 : numValue);
-                    }}
-                    onBlur={onBlur}
-                    placeholder="1"
-                    editable={!isLoading}
-                    error={!!form.formState.errors.frequencyCount}
-                    keyboardType="number-pad"
-                  />
-                )}
+        <FormFieldGroup
+          label="Tipo de Atribuição"
+          required
+          error={form.formState.errors.assignmentType?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="assignmentType"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <Combobox
+                options={assignmentTypeOptions}
+                value={value || undefined}
+                onValueChange={onChange}
+                placeholder="Selecione o tipo"
+                searchable={false}
+                error={error?.message}
               />
-            </FormFieldGroup>
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
 
-            {/* Assignment Type */}
-            <FormFieldGroup
-              label="Tipo de Atribuição"
-              required
-              error={form.formState.errors.assignmentType?.message}
-            >
-              <Controller
-                control={form.control}
-                name="assignmentType"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={assignmentTypeOptions}
-                    value={value || undefined}
-                    onValueChange={onChange}
-                    placeholder="Selecione o tipo"
-                    disabled={isLoading}
-                    searchable={false}
-                    error={error?.message}
-                  />
-                )}
+      <FormCard title="Tipos de EPI" icon="IconShield">
+        <FormFieldGroup
+          label="Selecione os tipos de EPI"
+          error={form.formState.errors.ppeTypes?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="ppeTypes"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <Combobox
+                options={ppeTypeOptions}
+                value={value?.[0] || undefined}
+                onValueChange={(val) => onChange(val ? [val] : [])}
+                placeholder="Selecione os tipos"
+                searchable={false}
+                clearable
+                error={error?.message}
               />
-            </FormFieldGroup>
-          </FormCard>
-
-          {/* PPE Items */}
-          <FormCard title="Tipos de EPI" icon="IconShield">
-            {/* PPE Types */}
-            <FormFieldGroup
-              label="Selecione os tipos de EPI"
-              error={form.formState.errors.ppeTypes?.message}
-            >
-              <Controller
-                control={form.control}
-                name="ppeTypes"
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Combobox
-                    options={ppeTypeOptions}
-                    value={value?.[0] || undefined}
-                    onValueChange={(val) => onChange(val ? [val] : [])}
-                    placeholder="Selecione os tipos"
-                    disabled={isLoading}
-                    searchable={false}
-                    clearable
-                    error={error?.message}
-                  />
-                )}
-              />
-            </FormFieldGroup>
-          </FormCard>
-
-          <View style={styles.spacing} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <FormActionBar
-        onSave={form.handleSubmit(handleSubmit)}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-        isSaveDisabled={!form.formState.isDirty || isLoading}
-      />
-    </SafeAreaView>
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
+    </FormScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: formSpacing.screenPadding,
-    paddingBottom: formSpacing.screenPaddingBottom,
-  },
-  spacing: {
-    height: spacing.xl,
-  },
-});

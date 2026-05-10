@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
@@ -16,11 +15,11 @@ import { spacing } from "@/constants/design-system";
 
 import { usePpeDeliveryMutations, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { getItems, getUsers } from "@/api-client";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, USER_STATUS, ITEM_CATEGORY_TYPE, PPE_TYPE, routes } from "@/constants";
 import { ppeDeliveryCreateSchema, type PpeDeliveryCreateFormData } from "../../../../../schemas";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { getItemPpeSize } from "@/utils/ppe-size-mapping";
 import type { Item, User } from "@/types";
 
@@ -31,9 +30,9 @@ export default function CreateHRPPEDeliveryScreen() {
 
 function CreateHRPPEDeliveryScreenInner() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const goBack = () => nav.goBack();
   const { user: currentUser } = useAuth();
   const { createAsync, createMutation } = usePpeDeliveryMutations();
 
@@ -174,7 +173,7 @@ function CreateHRPPEDeliveryScreenInner() {
       });
       const newId = (result as any)?.data?.id || (result as any)?.id;
       if (newId) {
-        router.replace(routeToMobilePath(routes.humanResources.ppe.deliveries.details(newId)) as any);
+        nav.replace(mobileRoute(routes.humanResources.ppe.deliveries.details(newId)));
       } else {
         goBack();
       }

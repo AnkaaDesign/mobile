@@ -1,41 +1,52 @@
-import { useRouter } from "expo-router";
-// import { showToast } from "@/components/ui/toast";
 import { ItemBrandForm } from "@/components/inventory/item/brand/form/brand-form";
-import { useItemBrandMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { itemBrandCreateSchema, type ItemBrandCreateFormData } from '../../../../../schemas';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useFormScreenKey, useItemBrandMutations, useScreenReady } from "@/hooks";
+import { itemBrandCreateSchema, type ItemBrandCreateFormData } from "@/schemas";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
 
 export default function BrandCreateScreen() {
-  const router = useRouter();
-  const { createAsync, createMutation } = useItemBrandMutations();
-  const { goBack } = useNavigationLoading();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <BrandCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
 
-  // End navigation loading overlay when screen mounts
+function BrandCreateScreenInner() {
+  const nav = useNav();
+  const { createAsync, createMutation } = useItemBrandMutations();
+
   useScreenReady();
   const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemBrandCreateFormData) => {
     try {
-      // Validate data with schema
       const validatedData = itemBrandCreateSchema.parse(data);
-
       const result = await createAsync(validatedData);
-
       if (result.success && result.data) {
-        // API client already shows success alert
-        router.replace(routeToMobilePath(routes.inventory.products.brands.details(result.data.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.products.brands.details(result.data.id)));
       }
     } catch (error) {
-      // API client already shows error alert
+      // API client surfaces error.
       console.error("Error creating brand:", error);
     }
   };
 
   const handleCancel = () => {
-    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.brands.root) });
+    nav.goBack({ fallback: mobileRoute(routes.inventory.products.brands.root) });
   };
 
-  return <ItemBrandForm key={formKey} mode="create" onSubmit={handleSubmit} onCancel={handleCancel} isSubmitting={createMutation.isPending} />;
+  return (
+    <ItemBrandForm
+      key={formKey}
+      mode="create"
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+      isSubmitting={createMutation.isPending}
+    />
+  );
 }

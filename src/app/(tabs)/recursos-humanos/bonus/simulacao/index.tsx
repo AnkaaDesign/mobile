@@ -12,7 +12,7 @@ import { calculateBonusForPosition } from "@/utils/bonus";
 import { USER_STATUS } from "@/constants";
 import { bonusService } from "@/api-client";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { PrivilegeGuard } from "@/components/privilege-guard";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Standard position names for simulation
@@ -295,16 +295,16 @@ export default function BonusSimulationScreen() {
 
   if (!usersData?.data || usersData.data.length === 0) {
     return (
-      <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN]}>
+      <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}>
         <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
           <EmptyState icon="users" title="Nenhum colaborador encontrado" description="Não há colaboradores elegíveis para simulação" />
         </ThemedView>
-      </PrivilegeGuard>
+      </PrivilegeGate>
     );
   }
 
   return (
-    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN]}>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         <ScrollView style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
           {/* Header Card with Inputs */}
@@ -451,7 +451,7 @@ export default function BonusSimulationScreen() {
           </View>
         </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }
 

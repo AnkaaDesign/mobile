@@ -9,14 +9,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-context";
+// `useNavigationLoading` is still imported for `isNavigatingRef` and
+// `startNavigation` (synchronous double-click guard + manual overlay control).
+// `useNav` doesn't expose either (foundation TODO).
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
 import { useTutorialTarget, useOptionalTutorial, TUTORIAL_TARGETS } from "@/components/tutorial";
-import { router } from "expo-router";
 import * as Haptics from 'expo-haptics';
+import { authRoute } from "@/components/auth/auth-routes";
+import { routes } from "@/constants/routes";
 
 // Performance monitoring
 const PERF_DEBUG = __DEV__;
@@ -773,7 +777,8 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
 function InnerLayout() {
   const { user, isAuthReady, isLoading, silentRefreshUserData } = useAuth();
   const { theme, isDark } = useTheme();
-  const { canGoBack, goBack } = useNavigationHistory();
+  const nav = useNav();
+  const { canGoBack, goBack } = nav;
   const { startNavigation, isNavigatingRef } = useNavigationLoading();
   const insets = useSafeAreaInsets();
   const hasRedirectedToLogin = useRef(false);
@@ -847,7 +852,8 @@ function InnerLayout() {
   }), [isDark]);
 
   // Handle authentication redirect at the root level
-  // This prevents issues with router.replace() from inside nested Drawer navigators
+  // (Done at root via useNav.replace to avoid issues with replace from inside
+  // nested Drawer navigators.)
   useEffect(() => {
     // Don't redirect if we already did
     if (hasRedirectedToLogin.current) return;
@@ -860,9 +866,9 @@ function InnerLayout() {
       hasRedirectedToLogin.current = true;
       console.log("[PrivilegeOptimizedFullLayout] User logged out, redirecting to login");
       // Use replace to prevent back navigation to protected screens
-      router.replace('/(autenticacao)/entrar' as any);
+      nav.replace(authRoute(routes.authentication.login));
     }
-  }, [user, isAuthReady, isLoading]);
+  }, [user, isAuthReady, isLoading, nav]);
 
   // Reset redirect flag when user logs in (so we can redirect again on next logout)
   useEffect(() => {

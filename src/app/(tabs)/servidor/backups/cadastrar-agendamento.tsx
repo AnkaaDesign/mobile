@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, Alert } from "react-native";
-import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
@@ -9,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Icon } from "@/components/ui/icon";
 import { Combobox } from "@/components/ui/combobox";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useBackupMutations, useBackupUtils } from "@/hooks/useBackup";
 import { useTheme } from "@/lib/theme";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { spacing } from "@/constants/design-system";
 
 type RetentionPeriod = '1_day' | '3_days' | '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months' | '1_year';
@@ -85,8 +84,7 @@ const INITIAL_FORM: ScheduleForm = {
 };
 
 export default function CreateBackupScheduleScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const [form, setForm] = useState<ScheduleForm>({ ...INITIAL_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,16 +117,16 @@ export default function CreateBackupScheduleScreen() {
       });
 
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
-      goBack();
+      nav.goBack();
     } catch {
       Alert.alert("Erro", "Falha ao criar agendamento");
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, generateCronExpression, scheduleMutation, router]);
+  }, [form, generateCronExpression, scheduleMutation, nav]);
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView key={formKey} className="flex-1">
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
           <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground, marginBottom: 16 }}>
@@ -269,12 +267,12 @@ export default function CreateBackupScheduleScreen() {
               <Icon name="clock" size={16} color="#fff" />
               <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Agendamento"}</Text>
             </Button>
-            <Button variant="outline" onPress={() => goBack()} disabled={isSubmitting}>
+            <Button variant="outline" onPress={() => nav.goBack()} disabled={isSubmitting}>
               <Text style={{ color: colors.foreground }}>Cancelar</Text>
             </Button>
           </View>
         </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

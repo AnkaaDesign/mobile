@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -14,9 +13,9 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { positionCreateSchema, positionUpdateSchema } from "@/schemas/position";
 import type { PositionCreateFormData, PositionUpdateFormData } from "@/schemas/position";
@@ -31,8 +30,8 @@ interface PositionFormProps {
 }
 
 export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFormProps) {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = usePositionMutations();
@@ -64,7 +63,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.humanResources.positions.details(newId)) as any);
+          nav.replace(mobileRoute(routes.humanResources.positions.details(newId)));
         } else {
           goBack();
         }
@@ -74,7 +73,7 @@ export function PositionForm({ mode, position, onSuccess, onCancel }: PositionFo
           data: data as PositionUpdateFormData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.humanResources.positions.details(position.id)) as any);
+        nav.replace(mobileRoute(routes.humanResources.positions.details(position.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o cargo");

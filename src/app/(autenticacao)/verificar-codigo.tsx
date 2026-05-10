@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { useScreenReady } from "@/hooks/use-screen-ready";
@@ -13,11 +13,20 @@ import { Logo } from "@/components/ui/logo";
 import { VerificationCodeForm } from "@/components/auth/verification-code-form";
 import { shadow, spacing } from "@/constants/design-system";
 import { useAuth } from "@/contexts/auth-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute, type AppRoute } from "@/constants/routes.types";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 import { maskPhone } from "@/utils";
 
+/**
+ * Verification-code screen — uses imperative <VerificationCodeForm> (not RHF)
+ * because of auto-submit-on-complete and resend cooldown semantics that
+ * don't fit the standard form-flow shape. Routes are typed via `authRoute`.
+ */
 export default function VerificationCodeScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { verifyCode, resendVerification } = useAuth();
   const [error, setError] = useState("");
 
@@ -32,9 +41,9 @@ export default function VerificationCodeScreen() {
   useEffect(() => {
     // Redirect if no contact value provided
     if (!cleanContactValue) {
-      router.replace('/(autenticacao)/entrar' as any);
+      nav.replace(authRoute(routes.authentication.login));
     }
-  }, [cleanContactValue, router]);
+  }, [cleanContactValue, nav]);
 
   const handleVerification = async (code: string) => {
     if (!cleanContactValue) {
@@ -53,7 +62,9 @@ export default function VerificationCodeScreen() {
 
       console.log("Verificação bem-sucedida! Sua conta foi verificada com sucesso.");
       const destination = Array.isArray(returnTo) ? returnTo[0] : returnTo;
-      router.replace((destination || '/(autenticacao)/entrar') as any);
+      // returnTo is supplied as a literal `/(autenticacao)/...` path or omitted.
+      const target = (destination ?? "/(autenticacao)/entrar") as AppRoute;
+      nav.replace(mobileRoute(target));
     } catch (error) {
       console.error("Verification failed:", error);
 
@@ -95,7 +106,7 @@ export default function VerificationCodeScreen() {
   };
 
   const handleGoBack = () => {
-    router.back();
+    nav.goBack({ fallback: authRoute(routes.authentication.login) });
   };
 
   if (!cleanContactValue) {

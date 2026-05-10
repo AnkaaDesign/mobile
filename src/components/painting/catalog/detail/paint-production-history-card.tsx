@@ -8,7 +8,6 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -18,6 +17,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Paint, PaintProduction } from "@/types";
+import { routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
@@ -86,6 +88,7 @@ export function PaintProductionHistoryCard({
   maxHeight = 400,
 }: PaintProductionHistoryCardProps) {
   const { colors, isDark } = useTheme();
+  const nav = useNav();
 
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
@@ -163,7 +166,7 @@ export function PaintProductionHistoryCard({
   }, []);
 
   const handleProductionPress = (productionId: string) => {
-    router.push(`/(tabs)/pintura/producoes/detalhes/${productionId}` as any);
+    nav.push(mobileRoute(routes.painting.productions.details(productionId)));
   };
 
   const renderHeader = useCallback(() => (

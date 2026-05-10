@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
 import { useMyActivitiesInfiniteMobile, useScreenReady } from '@/hooks';
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -29,8 +29,7 @@ import { useColumnVisibility } from "@/hooks/useColumnVisibility";
 export default function MyMovementsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
+  const nav = useNav();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -190,9 +189,8 @@ export default function MyMovementsScreen() {
 
   // Handle activity press - navigate to detail page with loading overlay
   const handleActivityPress = useCallback((activityId: string) => {
-    if (isNavigatingRef.current) return;
-    pushWithLoading(`/pessoal/minhas-movimentacoes/detalhes/${activityId}`);
-  }, [pushWithLoading]);
+    nav.push(mobileRoute(`/pessoal/minhas-movimentacoes/detalhes/${activityId}`));
+  }, [nav]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);

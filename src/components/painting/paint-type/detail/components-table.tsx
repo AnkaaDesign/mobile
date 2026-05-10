@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -8,9 +7,10 @@ import { ListActionButton } from "@/components/ui/list-action-button";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconComponents, IconAlertCircle, IconList } from "@tabler/icons-react-native";
-import type { PaintType, Item } from '@/types';
+import type { PaintType, Item } from "@/types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { ItemTable } from "@/components/inventory/item/list/item-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -35,6 +35,7 @@ const createColumnDefinitions = () => {
 
 export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -110,7 +111,7 @@ export function ComponentsTable({ paintType, maxHeight = 400 }: ComponentsTableP
   }, []);
 
   const handleItemPress = (itemId: string) => {
-    router.push(routeToMobilePath(routes.inventory.products.details(itemId)) as any);
+    nav.push(mobileRoute(routes.inventory.products.details(itemId)));
   };
 
   // Don't show if no component IDs configured and not loading

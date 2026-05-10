@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { IconFilter, IconList } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -31,7 +32,7 @@ import { TeamPpeDeliveryFilterDrawerContent } from "@/components/my-team/ppe-del
 import { TeamPpeDeliveryColumnDrawerContent } from "@/components/my-team/ppe-delivery/list/team-ppe-delivery-column-drawer-content";
 
 export default function TeamEPIsScreen() {
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
@@ -162,8 +163,8 @@ export default function TeamEPIsScreen() {
   }, [refresh]);
 
   const handleDeliveryPress = useCallback((deliveryId: string) => {
-    router.push(`/meu-pessoal/epis/detalhes/${deliveryId}` as any);
-  }, [router]);
+    nav.push(mobileRoute(`/meu-pessoal/epis/detalhes/${deliveryId}`));
+  }, [nav]);
 
   const handleEditDelivery = useCallback(() => {
     // TODO: Navigate to edit page when implemented

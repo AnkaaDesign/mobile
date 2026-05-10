@@ -29,10 +29,22 @@ interface NavigationLoadingContextType {
   pushWithLoading: (route: string) => void;
   /** Replace route with loading overlay */
   replaceWithLoading: (route: string) => void;
+  /**
+   * Dismiss to a route with loading overlay. Wraps `router.dismissTo` —
+   * pops the stack to the target if present, otherwise replaces.
+   */
+  dismissToWithLoading: (route: string) => void;
   /** Go back with loading overlay (deprecated - use goBack instead) */
   goBackWithLoading: (options?: { fallbackRoute?: string }) => void;
   /** Go back without loading overlay (instant) */
   goBack: (options?: { fallbackRoute?: string }) => void;
+  /**
+   * Wrap an async operation (typically a mutation) with the loading overlay.
+   * Closes the "no overlay on mutations" gap — overlay shows for the
+   * duration of the promise, regardless of success/failure. The promise's
+   * resolution / rejection is propagated unchanged.
+   */
+  withLoading: <T>(fn: () => Promise<T>) => Promise<T>;
 }
 
 const NavigationLoadingContext = createContext<NavigationLoadingContextType | null>(null);
@@ -201,6 +213,17 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     });
   }, [navigateWithLoading]);
 
+  const dismissToWithLoading = useCallback((route: string) => {
+    navigateWithLoading(() => {
+      const r: any = router;
+      if (typeof r.dismissTo === "function") {
+        r.dismissTo(route);
+      } else {
+        r.replace(route);
+      }
+    });
+  }, [navigateWithLoading]);
+
   const goBackWithLoading = useCallback((options?: { fallbackRoute?: string }) => {
     navigateWithLoading(() => {
       historyGoBack(options);
@@ -211,6 +234,25 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     historyGoBack(options);
   }, [historyGoBack]);
 
+  /**
+   * Run an async operation with the overlay visible for its duration.
+   * Resolves / rejects with the underlying promise's outcome.
+   *
+   * The overlay is unconditionally hidden in the finally block — error
+   * handling is the caller's responsibility (see useFormFlow).
+   */
+  const withLoading = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
+    showOverlay();
+    // Long-running mutations may exceed DEFAULT_TIMEOUT; clear that timer.
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    return fn().finally(() => {
+      hideOverlay();
+    });
+  }, [showOverlay, hideOverlay]);
+
   const contextValue = useMemo(() => ({
     isNavigatingRef,
     startNavigation,
@@ -220,8 +262,10 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     navigateWithLoading,
     pushWithLoading,
     replaceWithLoading,
+    dismissToWithLoading,
     goBackWithLoading,
     goBack,
+    withLoading,
   }), [
     startNavigation,
     endNavigation,
@@ -230,8 +274,10 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     navigateWithLoading,
     pushWithLoading,
     replaceWithLoading,
+    dismissToWithLoading,
     goBackWithLoading,
     goBack,
+    withLoading,
   ]);
 
   return (
@@ -267,6 +313,11 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
   );
 }
 
+/**
+ * @deprecated Use `useNav` from `@/contexts/nav` for new code. This hook
+ * is kept temporarily so existing callers keep working during migration;
+ * it will be removed in the Phase 3 cleanup pass.
+ */
 export function useNavigationLoading() {
   const context = useContext(NavigationLoadingContext);
   if (!context) {

@@ -1,55 +1,24 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form/task-form-with-provider";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
-import { useTaskMutations, useLayoutsByTruck, useTaskDetail, useScreenReady} from '@/hooks';
+import { useTaskMutations, useLayoutsByTruck, useTaskDetail, useScreenReady } from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { useTheme } from "@/lib/theme";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes, SECTOR_PRIVILEGES } from "@/constants";
-import { spacing } from "@/constants/design-system";
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import type { FilePickerItem } from "@/components/ui/file-picker";
 
-export default function EditScheduleScreen() {
-  const router = useRouter();
+function EditScheduleInner() {
+  const nav = useNav();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
   const { updateAsync, isLoading } = useTaskMutations();
-
-  const [checkingPermission, setCheckingPermission] = useState(true);
-
-  // Check permissions - must match useTaskPermissions().canEdit
-  const userPrivilege = user?.sector?.privileges;
-  const canEdit = userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-                  userPrivilege === SECTOR_PRIVILEGES.FINANCIAL ||
-                  userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-                  userPrivilege === SECTOR_PRIVILEGES.DESIGNER ||
-                  userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-                  userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
-
-  useEffect(() => {
-    // Wait for user to load
-    if (user !== undefined) {
-      setCheckingPermission(false);
-
-      // Redirect if no permission
-      if (!canEdit) {
-        Alert.alert(
-          "Acesso negado",
-          "Você não tem permissão para editar tarefas"
-        );
-        router.replace("/(tabs)/producao/cronograma");
-      }
-    }
-  }, [user, canEdit, router]);
 
   // Use optimized task detail hook - loads minimal data for edit form
   const {
@@ -241,7 +210,7 @@ export default function EditScheduleScreen() {
   const handleNavigateBack = () => {
     // Use goBack() to return to the previous screen in the navigation stack
     // This correctly returns to agenda, cronograma, or historico - wherever the user came from
-    goBack();
+    nav.goBack();
   };
 
   /**
@@ -836,23 +805,6 @@ export default function EditScheduleScreen() {
     handleNavigateBack();
   };
 
-  // If still checking permission or no permission, show skeleton while redirect happens
-  if (checkingPermission || !user || !canEdit) {
-    return (
-      <ThemedView style={styles.container}>
-        <FormSkeleton
-          cards={[
-            { title: true, titleWidth: "50%", fields: 3 },
-            { title: true, titleWidth: "35%", fields: 4, fieldLayout: "grid" },
-            { title: true, titleWidth: "45%", fields: 3 },
-            { title: true, titleWidth: "40%", fields: 2, toggleCount: 1 },
-          ]}
-          showActionBar
-        />
-      </ThemedView>
-    );
-  }
-
   if (isLoadingTask) {
     return (
       <ThemedView style={styles.container}>
@@ -983,6 +935,26 @@ export default function EditScheduleScreen() {
         isSubmitting={isLoading}
       />
     </ThemedView>
+  );
+}
+
+export default function EditScheduleScreen() {
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.DESIGNER,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <EditScheduleInner />
+    </PrivilegeGate>
   );
 }
 

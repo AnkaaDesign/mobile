@@ -27,9 +27,9 @@ import { useKeyboardAwareScroll } from "@/hooks";
 import { MAINTENANCE_STATUS } from "@/constants";
 import { MAINTENANCE_STATUS_LABELS } from "@/constants/enum-labels";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 interface MaintenanceFormProps {
   mode: "create" | "update";
@@ -40,7 +40,7 @@ interface MaintenanceFormProps {
 
 export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: MaintenanceFormProps) {
   const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useMaintenanceMutations();
@@ -95,9 +95,9 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.inventory.maintenance.details(newId)) as any);
+          nav.replace(mobileRoute(routes.inventory.maintenance.details(newId)));
         } else {
-          goBack();
+          nav.goBack({ fallback: mobileRoute(routes.inventory.maintenance.root) });
         }
       } else if (maintenance) {
         await updateAsync({
@@ -105,7 +105,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
           data: data as MaintenanceUpdateFormData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.inventory.maintenance.details(maintenance.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.maintenance.details(maintenance.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a manutenção");
@@ -116,7 +116,7 @@ export function MaintenanceForm({ mode, maintenance, onSuccess, onCancel }: Main
     if (onCancel) {
       onCancel();
     } else {
-      goBack();
+      nav.goBack({ fallback: mobileRoute(routes.inventory.maintenance.root) });
     }
   };
 

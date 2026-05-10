@@ -3,7 +3,6 @@ import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } f
 import { Text } from "@/components/ui/text";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -18,9 +17,9 @@ import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/
 import { ThemedText } from "@/components/ui";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { bonusCreateSchema, bonusUpdateSchema } from "@/schemas/bonus";
 import type { BonusCreateFormData, BonusUpdateFormData } from "@/schemas/bonus";
@@ -42,8 +41,8 @@ const PERFORMANCE_LEVELS = Array.from({ length: 6 }, (_, i) => ({
 }));
 
 export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useBonusMutations();
@@ -87,7 +86,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.humanResources.bonifications.details(newId)) as any);
+          nav.replace(mobileRoute(routes.humanResources.bonifications.details(newId)));
         } else {
           goBack();
         }
@@ -97,7 +96,7 @@ export function BonusForm({ mode, bonus, onSuccess, onCancel }: BonusFormProps) 
           data: data as BonusUpdateFormData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.humanResources.bonifications.details(bonus.id)) as any);
+        nav.replace(mobileRoute(routes.humanResources.bonifications.details(bonus.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o bônus");

@@ -6,14 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useSystemUsers, useDeleteSystemUser } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useScreenReady } from "@/hooks/use-screen-ready";export default function SystemUsersScreen() {
+import { useScreenReady } from "@/hooks/use-screen-ready";
+
+export default function SystemUsersScreen() {
   const { colors } = useTheme();
   const { data, isLoading, refetch, isFetching } = useSystemUsers();
   const { mutateAsync: deleteUser } = useDeleteSystemUser();
@@ -87,7 +89,7 @@ import { useScreenReady } from "@/hooks/use-screen-ready";export default functio
   };
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView className="flex-1">
         {isLoading ? (
           <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
@@ -214,6 +216,6 @@ import { useScreenReady } from "@/hooks/use-screen-ready";export default functio
           />
         )}
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

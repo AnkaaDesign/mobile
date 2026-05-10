@@ -2,14 +2,24 @@ import { View, ScrollView, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { SectorForm } from "@/components/administration/sector/form/sector-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useSector } from "@/hooks/useSector";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { Skeleton } from "@/components/ui/skeleton";
 import { spacing, borderRadius } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditSectorScreen() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <EditSectorInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditSectorInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: sector, isLoading, error } = useSector(id);

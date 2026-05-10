@@ -1,449 +1,391 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useMaintenance, useScreenReady} from '@/hooks';
-import { ThemedView, ThemedText, Card, CardHeader, CardTitle, CardContent, ErrorScreen, Button, Badge } from '@/components/ui';
+import { useLocalSearchParams } from 'expo-router';
+import { View, StyleSheet, Pressable } from 'react-native';
+import { useMaintenance, useMaintenanceMutations } from '@/hooks';
+import { ThemedText, Card, CardHeader, CardTitle, CardContent, Badge } from '@/components/ui';
 import { useTheme } from '@/lib/theme';
+import { useNav } from '@/contexts/nav';
+import { mobileRoute } from '@/constants/routes.types';
 import { formatCurrency, formatQuantity, formatDate, formatDateTime } from '@/utils';
-import { MAINTENANCE_STATUS, MAINTENANCE_STATUS_LABELS, SCHEDULE_FREQUENCY_LABELS, MEASURE_UNIT_LABELS } from '@/constants';
-import { useState, useCallback } from 'react';
-import { IconChevronRight, IconBox, IconPackage, IconCalendar, IconAlertCircle } from '@tabler/icons-react-native';
+import {
+  MAINTENANCE_STATUS,
+  MAINTENANCE_STATUS_LABELS,
+  SCHEDULE_FREQUENCY_LABELS,
+  MEASURE_UNIT_LABELS,
+  routes,
+} from '@/constants';
+import {
+  IconChevronRight,
+  IconBox,
+  IconPackage,
+  IconCalendar,
+  IconAlertCircle,
+  IconTool,
+} from '@tabler/icons-react-native';
 import { spacing, fontSize } from '@/constants/design-system';
-import { Skeleton } from '@/components/ui/skeleton';
+import { DetailScreen } from '@/components/screens/detail-screen';
 
 export default function MaintenanceDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
+  const nav = useNav();
+  const { deleteMutation } = useMaintenanceMutations();
 
-  const { data: maintenanceResponse, isLoading, error, refetch } = useMaintenance(id, {
+  const query = useMaintenance(id, {
     include: {
       item: {
         include: {
           brand: true,
           category: true,
           supplier: true,
-          prices: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
+          prices: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
       },
       itemsNeeded: {
         include: {
           item: {
             include: {
-              prices: {
-                orderBy: { createdAt: 'desc' },
-                take: 1,
-              },
+              prices: { orderBy: { createdAt: 'desc' }, take: 1 },
             },
           },
         },
       },
       maintenanceSchedule: {
         include: {
-          item: {
-            select: {
-              id: true,
-              name: true,
-              uniCode: true,
-            },
-          },
+          item: { select: { id: true, name: true, uniCode: true } },
         },
       },
     },
   });
 
-  useScreenReady(!isLoading);
-  const maintenance = (maintenanceResponse?.data || null) as any;
+  return (
+    <DetailScreen
+      query={query as any}
+      icon={IconTool}
+      privilege={undefined}
+      editRoute={(m: any) => mobileRoute(routes.inventory.maintenance.edit(m.id))}
+      deleteAction={{
+        mutation: deleteMutation,
+        confirmText: 'Tem certeza que deseja excluir esta manutenção?',
+        successRoute: mobileRoute(routes.inventory.maintenance.root),
+      }}
+      notFoundFallback={mobileRoute(routes.inventory.maintenance.root)}
+      status={(m: any) => ({
+        label:
+          MAINTENANCE_STATUS_LABELS[m.status as keyof typeof MAINTENANCE_STATUS_LABELS] ?? m.status,
+        variant:
+          m.status === MAINTENANCE_STATUS.COMPLETED
+            ? 'success'
+            : m.status === MAINTENANCE_STATUS.IN_PROGRESS
+              ? 'info'
+              : m.status === MAINTENANCE_STATUS.PENDING
+                ? 'warning'
+                : 'default',
+      })}
+    >
+      {(maintenance: any) => <MaintenanceBody maintenance={maintenance} />}
+    </DetailScreen>
+  );
+}
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refetch]);
-
-  if (isLoading && !refreshing) {
-    return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          {/* Main info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
-              <Skeleton width="50%" height={20} />
-              <Skeleton width={70} height={24} borderRadius={12} />
-            </View>
-            {[1, 2, 3, 4].map(i => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                <Skeleton width="35%" height={14} />
-                <Skeleton width="45%" height={14} />
-              </View>
-            ))}
-          </View>
-          {/* Equipment card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {[1, 2, 3].map(i => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                <Skeleton width="30%" height={14} />
-                <Skeleton width="50%" height={14} />
-              </View>
-            ))}
-          </View>
-          {/* Items needed card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="45%" height={18} style={{ marginBottom: spacing.md }} />
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-              {[1, 2, 3].map(i => (
-                <Skeleton key={i} width="30%" height={60} borderRadius={8} />
-              ))}
-            </View>
-            {[1, 2].map(i => (
-              <View key={i} style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, marginBottom: spacing.sm }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-                  <Skeleton width="50%" height={14} />
-                  <Skeleton width={70} height={20} borderRadius={10} />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Skeleton width="35%" height={12} />
-                  <Skeleton width="25%" height={12} />
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !maintenance) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar manutenção"
-          detail={error?.message || 'Manutenção não encontrada'}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
-  }
+function MaintenanceBody({ maintenance }: { maintenance: any }) {
+  const { colors } = useTheme();
+  const nav = useNav();
 
   const targetItem = maintenance.item;
   const maintenanceItems = maintenance.itemsNeeded || [];
   const schedule = maintenance.maintenanceSchedule;
 
-  // Calculate estimated cost
   const estimatedCost = maintenanceItems.reduce((total: number, mi: any) => {
     if (!mi.item) return total;
     const itemPrice = mi.item.prices && mi.item.prices.length > 0 ? mi.item.prices[0].value : 0;
     return total + itemPrice * mi.quantity;
   }, 0);
 
-  // Calculate items statistics
-  const itemsWithStock = maintenanceItems.filter((mi: any) => mi.item && mi.item.quantity >= mi.quantity).length;
+  const itemsWithStock = maintenanceItems.filter(
+    (mi: any) => mi.item && mi.item.quantity >= mi.quantity,
+  ).length;
   const itemsWithoutStock = maintenanceItems.length - itemsWithStock;
 
-  // Get frequency label
   const getFrequencyLabel = () => {
     const freq = maintenance.frequency || schedule?.frequency;
     const count = maintenance.frequencyCount || schedule?.frequencyCount;
     if (!freq) return '-';
-    const baseLabel = SCHEDULE_FREQUENCY_LABELS[freq as keyof typeof SCHEDULE_FREQUENCY_LABELS] || freq;
+    const baseLabel =
+      SCHEDULE_FREQUENCY_LABELS[freq as keyof typeof SCHEDULE_FREQUENCY_LABELS] || freq;
     return count && count > 1 ? `${baseLabel} (x${count})` : baseLabel;
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-      >
-        {/* Header Card - Maintenance Info */}
-        <Card style={styles.card}>
-          <CardHeader>
-            <View style={styles.headerRow}>
-              <CardTitle>{maintenance.name || 'Manutenção'}</CardTitle>
-              <Badge
-                variant={
-                  maintenance.status === MAINTENANCE_STATUS.COMPLETED ? 'success' :
-                  maintenance.status === MAINTENANCE_STATUS.IN_PROGRESS ? 'info' :
-                  maintenance.status === MAINTENANCE_STATUS.PENDING ? 'warning' :
-                  'default'
-                }
-              >
-                {MAINTENANCE_STATUS_LABELS[maintenance.status as keyof typeof MAINTENANCE_STATUS_LABELS] || maintenance.status}
-              </Badge>
+    <View style={styles.body}>
+      {/* Header / Description card */}
+      <Card style={styles.card}>
+        <CardHeader>
+          <View style={styles.headerRow}>
+            <CardTitle>{maintenance.name || 'Manutenção'}</CardTitle>
+          </View>
+        </CardHeader>
+        <CardContent>
+          {maintenance.description ? (
+            <View style={styles.section}>
+              <ThemedText style={styles.sectionLabel}>Descrição</ThemedText>
+              <ThemedText style={styles.description}>{maintenance.description}</ThemedText>
             </View>
-          </CardHeader>
-          <CardContent>
-            {maintenance.description && (
-              <View style={styles.section}>
-                <ThemedText style={styles.sectionLabel}>Descrição</ThemedText>
-                <ThemedText style={styles.description}>{maintenance.description}</ThemedText>
+          ) : null}
+
+          <View style={styles.infoGrid}>
+            {(maintenance.frequency || schedule?.frequency) && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>Frequência:</ThemedText>
+                <ThemedText style={styles.infoValue}>{getFrequencyLabel()}</ThemedText>
               </View>
             )}
 
-            <View style={styles.infoGrid}>
-              {/* Frequency */}
-              {(maintenance.frequency || schedule?.frequency) && (
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.infoLabel}>Frequência:</ThemedText>
-                  <ThemedText style={styles.infoValue}>{getFrequencyLabel()}</ThemedText>
-                </View>
-              )}
-
-              {/* Next Run */}
-              {maintenance.nextRun && (
-                <View style={styles.infoRow}>
-                  <IconCalendar size={16} color={colors.mutedForeground} style={styles.infoIcon} />
-                  <ThemedText style={styles.infoLabel}>Próxima Execução:</ThemedText>
-                  <ThemedText style={styles.infoValue}>{formatDate(maintenance.nextRun)}</ThemedText>
-                </View>
-              )}
-
-              {/* Last Run */}
-              {maintenance.lastRun && (
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.infoLabel}>Última Execução:</ThemedText>
-                  <ThemedText style={styles.infoValue}>{formatDate(maintenance.lastRun)}</ThemedText>
-                </View>
-              )}
-
-              {/* Estimated Cost */}
-              {estimatedCost > 0 && (
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.infoLabel}>Custo Estimado:</ThemedText>
-                  <ThemedText style={[styles.infoValue, styles.currencyValue]}>
-                    {formatCurrency(estimatedCost)}
-                  </ThemedText>
-                </View>
-              )}
-
-              {/* Created/Updated */}
+            {maintenance.nextRun && (
               <View style={styles.infoRow}>
-                <ThemedText style={styles.infoLabel}>Criado em:</ThemedText>
-                <ThemedText style={styles.infoValue}>{formatDateTime(maintenance.createdAt)}</ThemedText>
+                <IconCalendar size={16} color={colors.mutedForeground} style={styles.infoIcon} />
+                <ThemedText style={styles.infoLabel}>Próxima Execução:</ThemedText>
+                <ThemedText style={styles.infoValue}>{formatDate(maintenance.nextRun)}</ThemedText>
               </View>
-            </View>
-          </CardContent>
-        </Card>
+            )}
 
-        {/* Target Item Card */}
-        {targetItem && (
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconBox size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Equipamento</ThemedText>
+            {maintenance.lastRun && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>Última Execução:</ThemedText>
+                <ThemedText style={styles.infoValue}>{formatDate(maintenance.lastRun)}</ThemedText>
               </View>
+            )}
+
+            {estimatedCost > 0 && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.infoLabel}>Custo Estimado:</ThemedText>
+                <ThemedText style={[styles.infoValue, styles.currencyValue]}>
+                  {formatCurrency(estimatedCost)}
+                </ThemedText>
+              </View>
+            )}
+
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.infoLabel}>Criado em:</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {formatDateTime(maintenance.createdAt)}
+              </ThemedText>
             </View>
-            <View style={styles.content}>
-              <Pressable
-                onPress={() => router.push(`/(tabs)/estoque/produtos/detalhes/${targetItem.id}` as any)}
-                style={styles.itemPressable}
-              >
-                <View style={styles.itemHeader}>
-                  <View style={{ flex: 1 }}>
-                    <ThemedText style={styles.itemName}>{targetItem.name}</ThemedText>
-                    {targetItem.uniCode && (
-                      <ThemedText style={styles.itemCode}>{targetItem.uniCode}</ThemedText>
-                    )}
-                  </View>
-                  <IconChevronRight size={20} color={colors.mutedForeground} />
-                </View>
+          </View>
+        </CardContent>
+      </Card>
 
-                <View style={styles.itemDetails}>
-                  {targetItem.brand && (
-                    <View style={styles.itemDetailRow}>
-                      <ThemedText style={styles.detailLabel}>Marca:</ThemedText>
-                      <ThemedText style={styles.detailValue}>{targetItem.brand.name}</ThemedText>
-                    </View>
-                  )}
-                  {targetItem.category && (
-                    <View style={styles.itemDetailRow}>
-                      <ThemedText style={styles.detailLabel}>Categoria:</ThemedText>
-                      <ThemedText style={styles.detailValue}>{targetItem.category.name}</ThemedText>
-                    </View>
-                  )}
-                  {targetItem.supplier && (
-                    <View style={styles.itemDetailRow}>
-                      <ThemedText style={styles.detailLabel}>Fornecedor:</ThemedText>
-                      <ThemedText style={styles.detailValue}>
-                        {targetItem.supplier.fantasyName}
-                      </ThemedText>
-                    </View>
-                  )}
-
-                  <View style={styles.stockRow}>
-                    <View style={styles.stockItem}>
-                      <ThemedText style={styles.detailLabel}>Estoque</ThemedText>
-                      <ThemedText style={styles.stockValue}>
-                        {formatQuantity(targetItem.quantity || 0)}
-                        {targetItem.measureUnit && ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}`}
-                      </ThemedText>
-                    </View>
-                    {targetItem.prices && targetItem.prices.length > 0 && (
-                      <View style={styles.stockItem}>
-                        <ThemedText style={styles.detailLabel}>Preço</ThemedText>
-                        <ThemedText style={[styles.stockValue, styles.currencyValue]}>
-                          {formatCurrency(targetItem.prices[0].value)}
-                        </ThemedText>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </Pressable>
-            </View>
-          </Card>
-        )}
-
-        {/* Maintenance Items Card */}
+      {/* Target Item Card */}
+      {targetItem && (
         <Card style={styles.card}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>
-              <IconPackage size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Itens Necessários</ThemedText>
+              <IconBox size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Equipamento</ThemedText>
             </View>
           </View>
           <View style={styles.content}>
-            {maintenanceItems.length === 0 ? (
-              <View style={styles.emptyState}>
-                <IconAlertCircle size={48} color={colors.mutedForeground} />
-                <ThemedText style={styles.emptyText}>Nenhum item necessário</ThemedText>
+            <Pressable
+              onPress={() =>
+                nav.push(mobileRoute(routes.inventory.products.details(targetItem.id)))
+              }
+              style={styles.itemPressable}
+            >
+              <View style={styles.itemHeader}>
+                <View style={{ flex: 1 }}>
+                  <ThemedText style={styles.itemName}>{targetItem.name}</ThemedText>
+                  {targetItem.uniCode && (
+                    <ThemedText style={styles.itemCode}>{targetItem.uniCode}</ThemedText>
+                  )}
+                </View>
+                <IconChevronRight size={20} color={colors.mutedForeground} />
               </View>
-            ) : (
-              <>
-                {/* Statistics */}
-                <View style={styles.statsGrid}>
-                  <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
-                    <ThemedText style={styles.statLabel}>Total</ThemedText>
-                    <ThemedText style={styles.statValue}>{maintenanceItems.length}</ThemedText>
+
+              <View style={styles.itemDetails}>
+                {targetItem.brand && (
+                  <View style={styles.itemDetailRow}>
+                    <ThemedText style={styles.detailLabel}>Marca:</ThemedText>
+                    <ThemedText style={styles.detailValue}>{targetItem.brand.name}</ThemedText>
                   </View>
-                  <View style={[styles.statCard, { backgroundColor: `${colors.success}20` }]}>
-                    <ThemedText style={[styles.statLabel, { color: colors.success }]}>Com Estoque</ThemedText>
-                    <ThemedText style={[styles.statValue, { color: colors.success }]}>{itemsWithStock}</ThemedText>
+                )}
+                {targetItem.category && (
+                  <View style={styles.itemDetailRow}>
+                    <ThemedText style={styles.detailLabel}>Categoria:</ThemedText>
+                    <ThemedText style={styles.detailValue}>{targetItem.category.name}</ThemedText>
                   </View>
-                  <View style={[styles.statCard, { backgroundColor: `${colors.destructive}20` }]}>
-                    <ThemedText style={[styles.statLabel, { color: colors.destructive }]}>Sem Estoque</ThemedText>
-                    <ThemedText style={[styles.statValue, { color: colors.destructive }]}>{itemsWithoutStock}</ThemedText>
+                )}
+                {targetItem.supplier && (
+                  <View style={styles.itemDetailRow}>
+                    <ThemedText style={styles.detailLabel}>Fornecedor:</ThemedText>
+                    <ThemedText style={styles.detailValue}>
+                      {targetItem.supplier.fantasyName}
+                    </ThemedText>
                   </View>
+                )}
+
+                <View style={styles.stockRow}>
+                  <View style={styles.stockItem}>
+                    <ThemedText style={styles.detailLabel}>Estoque</ThemedText>
+                    <ThemedText style={styles.stockValue}>
+                      {formatQuantity(targetItem.quantity || 0)}
+                      {targetItem.measureUnit &&
+                        ` ${MEASURE_UNIT_LABELS[targetItem.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}`}
+                    </ThemedText>
+                  </View>
+                  {targetItem.prices && targetItem.prices.length > 0 && (
+                    <View style={styles.stockItem}>
+                      <ThemedText style={styles.detailLabel}>Preço</ThemedText>
+                      <ThemedText style={[styles.stockValue, styles.currencyValue]}>
+                        {formatCurrency(targetItem.prices[0].value)}
+                      </ThemedText>
+                    </View>
+                  )}
                 </View>
-
-                {/* Items List */}
-                <View style={styles.itemsList}>
-                  {maintenanceItems.map((maintenanceItem: any, index: number) => {
-                    const item = maintenanceItem.item;
-                    const hasStock = item && item.quantity >= maintenanceItem.quantity;
-
-                    return (
-                      <View
-                        key={maintenanceItem.id || index}
-                        style={[
-                          styles.maintenanceItem,
-                          { borderLeftColor: hasStock ? colors.success : colors.destructive }
-                        ]}
-                      >
-                        <View style={styles.maintenanceItemHeader}>
-                          <ThemedText style={styles.maintenanceItemName}>
-                            {item?.name || 'Item não encontrado'}
-                          </ThemedText>
-                          <Badge variant={hasStock ? 'success' : 'destructive'}>
-                            {hasStock ? 'Disponível' : 'Indisponível'}
-                          </Badge>
-                        </View>
-
-                        {item && (
-                          <>
-                            <View style={styles.maintenanceItemRow}>
-                              <ThemedText style={styles.maintenanceItemLabel}>Necessário:</ThemedText>
-                              <ThemedText style={styles.maintenanceItemValue}>
-                                {formatQuantity(maintenanceItem.quantity)} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
-                              </ThemedText>
-                            </View>
-                            <View style={styles.maintenanceItemRow}>
-                              <ThemedText style={styles.maintenanceItemLabel}>Disponível:</ThemedText>
-                              <ThemedText style={[
-                                styles.maintenanceItemValue,
-                                { color: hasStock ? colors.success : colors.destructive }
-                              ]}>
-                                {formatQuantity(item.quantity || 0)} {item.measureUnit && MEASURE_UNIT_LABELS[item.measureUnit as keyof typeof MEASURE_UNIT_LABELS]}
-                              </ThemedText>
-                            </View>
-                            {item.prices && item.prices.length > 0 && (
-                              <View style={styles.maintenanceItemRow}>
-                                <ThemedText style={styles.maintenanceItemLabel}>Custo Unit.:</ThemedText>
-                                <ThemedText style={[styles.maintenanceItemValue, styles.currencyValue]}>
-                                  {formatCurrency(item.prices[0].value)}
-                                </ThemedText>
-                              </View>
-                            )}
-                          </>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              </>
-            )}
+              </View>
+            </Pressable>
           </View>
         </Card>
+      )}
 
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          <Button
-            variant="outline"
-            onPress={() => router.push(`/(tabs)/estoque/manutencao/editar/${id}` as any)}
-            style={styles.actionButton}
-          >
-            Editar Manutenção
-          </Button>
+      {/* Maintenance Items Card */}
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconPackage size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Itens Necessários</ThemedText>
+          </View>
         </View>
-      </ScrollView>
-    </ThemedView>
+        <View style={styles.content}>
+          {maintenanceItems.length === 0 ? (
+            <View style={styles.emptyState}>
+              <IconAlertCircle size={48} color={colors.mutedForeground} />
+              <ThemedText style={styles.emptyText}>Nenhum item necessário</ThemedText>
+            </View>
+          ) : (
+            <>
+              <View style={styles.statsGrid}>
+                <View style={[styles.statCard, { backgroundColor: colors.muted }]}>
+                  <ThemedText style={styles.statLabel}>Total</ThemedText>
+                  <ThemedText style={styles.statValue}>{maintenanceItems.length}</ThemedText>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: `${colors.success}20` }]}>
+                  <ThemedText style={[styles.statLabel, { color: colors.success }]}>
+                    Com Estoque
+                  </ThemedText>
+                  <ThemedText style={[styles.statValue, { color: colors.success }]}>
+                    {itemsWithStock}
+                  </ThemedText>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: `${colors.destructive}20` }]}>
+                  <ThemedText style={[styles.statLabel, { color: colors.destructive }]}>
+                    Sem Estoque
+                  </ThemedText>
+                  <ThemedText style={[styles.statValue, { color: colors.destructive }]}>
+                    {itemsWithoutStock}
+                  </ThemedText>
+                </View>
+              </View>
+
+              <View style={styles.itemsList}>
+                {maintenanceItems.map((maintenanceItem: any, index: number) => {
+                  const item = maintenanceItem.item;
+                  const hasStock = item && item.quantity >= maintenanceItem.quantity;
+
+                  return (
+                    <View
+                      key={maintenanceItem.id || index}
+                      style={[
+                        styles.maintenanceItem,
+                        { borderLeftColor: hasStock ? colors.success : colors.destructive },
+                      ]}
+                    >
+                      <View style={styles.maintenanceItemHeader}>
+                        <ThemedText style={styles.maintenanceItemName}>
+                          {item?.name || 'Item não encontrado'}
+                        </ThemedText>
+                        <Badge variant={hasStock ? 'success' : 'destructive'}>
+                          {hasStock ? 'Disponível' : 'Indisponível'}
+                        </Badge>
+                      </View>
+
+                      {item && (
+                        <>
+                          <View style={styles.maintenanceItemRow}>
+                            <ThemedText style={styles.maintenanceItemLabel}>
+                              Necessário:
+                            </ThemedText>
+                            <ThemedText style={styles.maintenanceItemValue}>
+                              {formatQuantity(maintenanceItem.quantity)}{' '}
+                              {item.measureUnit &&
+                                MEASURE_UNIT_LABELS[
+                                  item.measureUnit as keyof typeof MEASURE_UNIT_LABELS
+                                ]}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.maintenanceItemRow}>
+                            <ThemedText style={styles.maintenanceItemLabel}>
+                              Disponível:
+                            </ThemedText>
+                            <ThemedText
+                              style={[
+                                styles.maintenanceItemValue,
+                                { color: hasStock ? colors.success : colors.destructive },
+                              ]}
+                            >
+                              {formatQuantity(item.quantity || 0)}{' '}
+                              {item.measureUnit &&
+                                MEASURE_UNIT_LABELS[
+                                  item.measureUnit as keyof typeof MEASURE_UNIT_LABELS
+                                ]}
+                            </ThemedText>
+                          </View>
+                          {item.prices && item.prices.length > 0 && (
+                            <View style={styles.maintenanceItemRow}>
+                              <ThemedText style={styles.maintenanceItemLabel}>
+                                Custo Unit.:
+                              </ThemedText>
+                              <ThemedText
+                                style={[styles.maintenanceItemValue, styles.currencyValue]}
+                              >
+                                {formatCurrency(item.prices[0].value)}
+                              </ThemedText>
+                            </View>
+                          )}
+                        </>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
+        </View>
+      </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
+  body: {
+    gap: spacing.md,
   },
   card: {
     padding: spacing.md,
-    marginBottom: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   title: {
     fontSize: fontSize.lg,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   content: {
     gap: spacing.sm,
@@ -452,11 +394,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   section: {
     marginBottom: 16,
@@ -610,12 +547,5 @@ const styles = StyleSheet.create({
   maintenanceItemValue: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  actions: {
-    gap: 12,
-    marginTop: 8,
-  },
-  actionButton: {
-    width: '100%',
   },
 });

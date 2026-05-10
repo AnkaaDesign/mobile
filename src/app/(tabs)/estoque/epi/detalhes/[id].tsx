@@ -1,454 +1,282 @@
-import { useCallback, useMemo, useState } from "react";
-import { View, ScrollView, Alert, RefreshControl , StyleSheet} from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { useTheme } from "@/lib/theme";
-import { spacing } from "@/constants/design-system";
+import { useCallback } from "react";
+import { View, Alert, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { ErrorScreen } from "@/components/ui/error-screen";
 import { Card } from "@/components/ui/card";
-import { fontSize } from "@/constants/design-system";
 import { Badge } from "@/components/ui/badge";
-import { usePpeDelivery, usePpeDeliveryMutations, useScreenReady} from '@/hooks';
-import { hasPrivilege, formatDate, formatDateTime, formatQuantity } from "@/utils";
-import { SECTOR_PRIVILEGES, PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from "@/constants";
-import { IconRefresh, IconAlertTriangle, IconShield, IconUser, IconPackage } from "@tabler/icons-react-native";
-import { PpeDetailSkeleton } from "@/components/inventory/ppe/skeleton/ppe-detail-skeleton";
+import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
+import { spacing, fontSize } from "@/constants/design-system";
+import { usePpeDelivery, usePpeDeliveryMutations } from "@/hooks";
+import { formatDate, formatDateTime, formatQuantity } from "@/utils";
+import {
+  SECTOR_PRIVILEGES,
+  PPE_DELIVERY_STATUS,
+  PPE_DELIVERY_STATUS_LABELS,
+  routes,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import {
+  IconAlertTriangle,
+  IconShield,
+  IconUser,
+  IconPackage,
+} from "@tabler/icons-react-native";
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { EDITABLE_PPE_DELIVERY_STATUSES } from "@/constants/editable-statuses";
 
 export default function PPEDetailsScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
-  const { deleteMutation, updateMutation } = usePpeDeliveryMutations();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { deleteMutation } = usePpeDeliveryMutations();
 
-  // Permission check
-  const canManagePpe = useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.HUMAN_RESOURCES) || hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
-
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = usePpeDelivery(params.id!, {
+  const query = usePpeDelivery(id, {
     include: {
-      item: {
-        include: {
-          brand: true,
-          category: true,
-          supplier: true,
-        },
-      },
-      user: {
-        include: {
-          position: true,
-          sector: true,
-        },
-      },
+      item: { include: { brand: true, category: true, supplier: true } },
+      user: { include: { position: true, sector: true } },
     },
-    enabled: !!params.id && canManagePpe,
+    enabled: !!id,
   });
 
-  useScreenReady(!isLoading);
+  return (
+    <DetailScreen
+      query={query as any}
+      icon={IconShield}
+      title={(d: any) => d.item?.name ?? `Entrega EPI #${String(d.id).slice(0, 8)}`}
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+      editGuard={{ editable: EDITABLE_PPE_DELIVERY_STATUSES }}
+      editRoute={(d: any) => mobileRoute(routes.inventory.ppe.deliveries.edit(d.id))}
+      deleteAction={{
+        mutation: deleteMutation,
+        confirmText:
+          "Tem certeza que deseja excluir esta entrega de EPI? Esta ação é irreversível.",
+        successRoute: mobileRoute(routes.inventory.ppe.deliveries.root),
+      }}
+      notFoundFallback={mobileRoute(routes.inventory.ppe.deliveries.root)}
+      status={(d: any) => ({
+        label: PPE_DELIVERY_STATUS_LABELS[d.status as PPE_DELIVERY_STATUS] ?? d.status,
+        variant:
+          d.status === PPE_DELIVERY_STATUS.DELIVERED
+            ? "success"
+            : d.status === PPE_DELIVERY_STATUS.PENDING
+              ? "warning"
+              : d.status === PPE_DELIVERY_STATUS.REPROVED ||
+                  d.status === PPE_DELIVERY_STATUS.CANCELLED
+                ? "destructive"
+                : "default",
+      })}
+    >
+      {(ppeDelivery: any, ctx) => (
+        <PpeDetailBody
+          ppeDelivery={ppeDelivery}
+          refetch={query.refetch}
+          isEditable={ctx.isEditable}
+        />
+      )}
+    </DetailScreen>
+  );
+}
 
-  const ppeDelivery = response?.data;
+function PpeDetailBody({
+  ppeDelivery,
+  refetch,
+  isEditable,
+}: {
+  ppeDelivery: any;
+  refetch: () => Promise<unknown>;
+  isEditable: boolean;
+}) {
+  const { colors } = useTheme();
+  const nav = useNav();
+  const { updateMutation } = usePpeDeliveryMutations();
 
-  // Handle refresh
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
-
-  // Handle status change
-  const handleStatusChange = useCallback(async (newStatus: PPE_DELIVERY_STATUS) => {
-    Alert.alert(
-      "Alterar Status",
-      `Deseja alterar o status para ${PPE_DELIVERY_STATUS_LABELS[newStatus as keyof typeof PPE_DELIVERY_STATUS_LABELS]}?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          style: "default",
-          onPress: async () => {
-            try {
-              await updateMutation.mutateAsync({
-                id: params.id!,
-                data: { status: newStatus },
-              });
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível alterar o status");
-            }
+  const handleStatusChange = useCallback(
+    (newStatus: PPE_DELIVERY_STATUS) => {
+      Alert.alert(
+        "Alterar Status",
+        `Deseja alterar o status para ${PPE_DELIVERY_STATUS_LABELS[newStatus]}?`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Confirmar",
+            style: "default",
+            onPress: async () => {
+              try {
+                await nav.withLoading(async () =>
+                  updateMutation.mutateAsync({
+                    id: ppeDelivery.id,
+                    data: { status: newStatus } as any,
+                  }),
+                );
+                await refetch();
+              } catch {
+                Alert.alert("Erro", "Não foi possível alterar o status");
+              }
+            },
           },
-        },
-      ]
-    );
-  }, [updateMutation, params.id, refetch]);
+        ],
+      );
+    },
+    [nav, refetch, updateMutation, ppeDelivery.id],
+  );
 
-  // Handle delete
-  const handleDelete = useCallback(async () => {
-    Alert.alert(
-      "Excluir Entrega de EPI",
-      "Tem certeza que deseja excluir esta entrega de EPI? Esta ação é irreversível.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteMutation.mutateAsync(params.id!);
-              goBack();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível excluir a entrega de EPI");
-            }
-          },
-        },
-      ]
-    );
-  }, [deleteMutation, params.id]);
-
-  // Permission gate
-  if (!canManagePpe) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Detalhes da Entrega de EPI",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para acessar esta funcionalidade."
-        />
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Detalhes da Entrega de EPI",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Erro ao carregar entrega de EPI"
-          detail={error.message}
-        />
-      </>
-    );
-  }
-
-  if (isLoading || !ppeDelivery) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Detalhes do EPI",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <PpeDetailSkeleton />
-      </>
-    );
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case PPE_DELIVERY_STATUS.PENDING:
-        return "#f59e0b";
-      case PPE_DELIVERY_STATUS.APPROVED:
-        return "#10b981";
-      case PPE_DELIVERY_STATUS.DELIVERED:
-        return "#3b82f6";
-      case PPE_DELIVERY_STATUS.REPROVED:
-        return "#ef4444";
-      case PPE_DELIVERY_STATUS.CANCELLED:
-        return "#6b7280";
-      default:
-        return colors.mutedForeground;
-    }
-  };
-
-  const isOverdue = ppeDelivery.scheduledDate && new Date(ppeDelivery.scheduledDate) < new Date() && ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING;
+  const isOverdue =
+    ppeDelivery.scheduledDate &&
+    new Date(ppeDelivery.scheduledDate) < new Date() &&
+    ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING;
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: `Entrega #${ppeDelivery.id.slice(0, 8)}`,
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={() => refetch()}
-              >
-                <IconRefresh size={20} color={colors.foreground} />
-              </Button>
-            </View>
-          ),
-        }}
-      />
-
-      <ScrollView
-        style={styles.container}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={StyleSheet.flatten([styles.content, { paddingBottom: insets.bottom + spacing.lg }])}>
-          {/* PPE Delivery Info Card */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconShield size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Informações da Entrega de EPI</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.label}>Status</ThemedText>
-                <Badge
-                  variant="default"
-                  style={{ backgroundColor: getStatusColor(ppeDelivery.status) }}
-                >
-                  <ThemedText style={styles.statusText}>
-                    {PPE_DELIVERY_STATUS_LABELS[ppeDelivery.status]}
-                  </ThemedText>
-                </Badge>
-              </View>
-
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.label}>Quantidade</ThemedText>
-                <ThemedText style={styles.value}>{formatQuantity(ppeDelivery.quantity)}</ThemedText>
-              </View>
-
-              <View style={styles.infoRow}>
-                <ThemedText style={styles.label}>Data de Criação</ThemedText>
-                <ThemedText style={styles.value}>
-                  {formatDateTime(ppeDelivery.createdAt)}
-                </ThemedText>
-              </View>
-
-              {ppeDelivery.scheduledDate && (
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.label}>Data Agendada</ThemedText>
-                  <View style={styles.valueRow}>
-                    <ThemedText style={StyleSheet.flatten([styles.value, isOverdue && { color: "#ef4444" }])}>
-                      {formatDate(ppeDelivery.scheduledDate)}
-                    </ThemedText>
-                    {isOverdue && <IconAlertTriangle size={16} color="#ef4444" />}
-                  </View>
-                </View>
-              )}
-
-              {ppeDelivery.actualDeliveryDate && (
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.label}>Data de Entrega</ThemedText>
-                  <ThemedText style={styles.value}>
-                    {formatDate(ppeDelivery.actualDeliveryDate)}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          </Card>
-
-          {/* Item Info Card */}
-          {ppeDelivery.item && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconPackage size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Informações do Item</ThemedText>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.label}>Nome</ThemedText>
-                  <ThemedText style={styles.value}>
-                    {ppeDelivery.item.name}
-                  </ThemedText>
-                </View>
-
-                {ppeDelivery.item.uniCode && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Código</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.item.uniCode}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {ppeDelivery.item.brand && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Marca</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.item.brand.name}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {ppeDelivery.item.category && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Categoria</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.item.category.name}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {ppeDelivery.item.supplier && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Fornecedor</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.item.supplier.fantasyName || ppeDelivery.item.supplier.corporateName}
-                    </ThemedText>
-                  </View>
-                )}
-              </View>
-            </Card>
-          )}
-
-          {/* User Info Card */}
-          {ppeDelivery.user && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconUser size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <View style={styles.infoRow}>
-                  <ThemedText style={styles.label}>Nome</ThemedText>
-                  <ThemedText style={styles.value}>
-                    {ppeDelivery.user.name}
-                  </ThemedText>
-                </View>
-
-                {ppeDelivery.user.position && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Cargo</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.user.position.name}
-                    </ThemedText>
-                  </View>
-                )}
-
-                {ppeDelivery.user.sector && (
-                  <View style={styles.infoRow}>
-                    <ThemedText style={styles.label}>Setor</ThemedText>
-                    <ThemedText style={styles.value}>
-                      {ppeDelivery.user.sector.name}
-                    </ThemedText>
-                  </View>
-                )}
-              </View>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <View style={styles.actions}>
-            {ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
-              <>
-                <Button
-                  variant="outline"
-                  onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.APPROVED)}
-                  style={styles.actionButton}
-                >
-                  <ThemedText>Aprovar Entrega</ThemedText>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.REPROVED)}
-                  style={styles.actionButton}
-                >
-                  <ThemedText>Reprovar Entrega</ThemedText>
-                </Button>
-              </>
-            )}
-
-            {ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
-              <Button
-                variant="outline"
-                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.DELIVERED)}
-                style={styles.actionButton}
-              >
-                <ThemedText>Marcar como Entregue</ThemedText>
-              </Button>
-            )}
-
-            {ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
-              <Button
-                variant="outline"
-                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.PENDING)}
-                style={styles.actionButton}
-              >
-                <ThemedText>Reativar Entrega</ThemedText>
-              </Button>
-            )}
-
-            {isAdmin && (
-              <Button
-                variant="destructive"
-                onPress={handleDelete}
-                style={styles.actionButton}
-              >
-                <ThemedText style={{ color: colors.destructiveForeground }}>
-                  Excluir Entrega
-                </ThemedText>
-              </Button>
-            )}
+    <View style={styles.body}>
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconShield size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Informações da Entrega</ThemedText>
           </View>
         </View>
-      </ScrollView>
-    </>
+        <View style={styles.content}>
+          <View style={styles.infoRow}>
+            <ThemedText style={styles.label}>Quantidade</ThemedText>
+            <ThemedText style={styles.value}>{formatQuantity(ppeDelivery.quantity)}</ThemedText>
+          </View>
+          <View style={styles.infoRow}>
+            <ThemedText style={styles.label}>Data de Criação</ThemedText>
+            <ThemedText style={styles.value}>{formatDateTime(ppeDelivery.createdAt)}</ThemedText>
+          </View>
+          {ppeDelivery.scheduledDate && (
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.label}>Data Agendada</ThemedText>
+              <View style={styles.valueRow}>
+                <ThemedText style={[styles.value, isOverdue && { color: "#ef4444" }]}>
+                  {formatDate(ppeDelivery.scheduledDate)}
+                </ThemedText>
+                {isOverdue && <IconAlertTriangle size={16} color="#ef4444" />}
+              </View>
+            </View>
+          )}
+          {ppeDelivery.actualDeliveryDate && (
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.label}>Data de Entrega</ThemedText>
+              <ThemedText style={styles.value}>
+                {formatDate(ppeDelivery.actualDeliveryDate)}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </Card>
+
+      {ppeDelivery.item && (
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações do Item</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.label}>Nome</ThemedText>
+              <ThemedText style={styles.value}>{ppeDelivery.item.name}</ThemedText>
+            </View>
+            {ppeDelivery.item.uniCode && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Código</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.item.uniCode}</ThemedText>
+              </View>
+            )}
+            {ppeDelivery.item.brand && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Marca</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.item.brand.name}</ThemedText>
+              </View>
+            )}
+            {ppeDelivery.item.category && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Categoria</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.item.category.name}</ThemedText>
+              </View>
+            )}
+          </View>
+        </Card>
+      )}
+
+      {ppeDelivery.user && (
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconUser size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Informações do Usuário</ThemedText>
+            </View>
+          </View>
+          <View style={styles.content}>
+            <View style={styles.infoRow}>
+              <ThemedText style={styles.label}>Nome</ThemedText>
+              <ThemedText style={styles.value}>{ppeDelivery.user.name}</ThemedText>
+            </View>
+            {ppeDelivery.user.position && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Cargo</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.user.position.name}</ThemedText>
+              </View>
+            )}
+            {ppeDelivery.user.sector && (
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Setor</ThemedText>
+                <ThemedText style={styles.value}>{ppeDelivery.user.sector.name}</ThemedText>
+              </View>
+            )}
+          </View>
+        </Card>
+      )}
+
+      {isEditable && (
+        <View style={styles.actions}>
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
+            <>
+              <Button
+                variant="outline"
+                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.APPROVED)}
+                style={styles.actionButton}
+              >
+                <ThemedText>Aprovar Entrega</ThemedText>
+              </Button>
+              <Button
+                variant="outline"
+                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.REPROVED)}
+                style={styles.actionButton}
+              >
+                <ThemedText>Reprovar Entrega</ThemedText>
+              </Button>
+            </>
+          )}
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
+            <Button
+              variant="outline"
+              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.DELIVERED)}
+              style={styles.actionButton}
+            >
+              <ThemedText>Marcar como Entregue</ThemedText>
+            </Button>
+          )}
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
+            <Button
+              variant="outline"
+              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.PENDING)}
+              style={styles.actionButton}
+            >
+              <ThemedText>Reativar Entrega</ThemedText>
+            </Button>
+          )}
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
+  body: {
     gap: spacing.md,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.xs,
   },
   card: {
     padding: spacing.md,
@@ -470,7 +298,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: "500",
   },
-  cardContent: {
+  content: {
     gap: spacing.md,
   },
   infoRow: {
@@ -490,27 +318,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-  },
-  statusText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "600",
-  },
-  deliveryItem: {
-    paddingVertical: spacing.xs,
-  },
-  deliveryItemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-  },
-  deliveryDate: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  deliveryQuantity: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginTop: 2,
   },
   actions: {
     marginTop: spacing.lg,

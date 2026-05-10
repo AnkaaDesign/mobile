@@ -1,15 +1,26 @@
-import { View, ScrollView, StyleSheet } from "react-native";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { MaintenanceForm } from "@/components/inventory/maintenance/form/maintenance-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useMaintenance } from "@/hooks/useMaintenance";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { Skeleton } from "@/components/ui/skeleton";
-import { spacing } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditMaintenanceScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditMaintenanceInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditMaintenanceInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: maintenanceResponse, isLoading, error } = useMaintenance(id, {
@@ -24,19 +35,9 @@ export default function EditMaintenanceScreen() {
 
   if (isLoading) {
     return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={{ marginBottom: spacing.md }}>
-                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
+      <ThemedView style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
     );
   }
 

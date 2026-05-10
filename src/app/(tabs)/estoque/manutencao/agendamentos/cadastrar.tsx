@@ -1,27 +1,20 @@
 import { useMemo } from "react";
-import { ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
-import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { FormActionBar } from "@/components/forms";
-import { useTheme } from "@/lib/theme";
-import { formSpacing } from "@/constants/form-styles";
-
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { useItems } from "@/hooks/useItem";
-import { SCHEDULE_FREQUENCY_LABELS } from "@/constants";
-import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES } from "@/constants";
 
-// Schedule form schema
 const maintenanceScheduleCreateSchema = z.object({
   itemId: z.string().min(1, "Item é obrigatório"),
   frequency: z.string().min(1, "Frequência é obrigatória"),
@@ -31,25 +24,12 @@ const maintenanceScheduleCreateSchema = z.object({
 
 type MaintenanceScheduleCreateFormData = z.infer<typeof maintenanceScheduleCreateSchema>;
 
-interface MaintenanceScheduleCreateScreenProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-}
-
-export default function MaintenanceScheduleCreateScreen(props: MaintenanceScheduleCreateScreenProps) {
+export default function MaintenanceScheduleCreateScreen() {
   const formKey = useFormScreenKey();
-  return <MaintenanceScheduleCreateScreenInner key={formKey} {...props} />;
+  return <MaintenanceScheduleCreateScreenInner key={formKey} />;
 }
 
-function MaintenanceScheduleCreateScreenInner({
-  onSuccess,
-  onCancel,
-}: MaintenanceScheduleCreateScreenProps) {
-  useScreenReady();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
-  const { colors } = useTheme();
-
+function MaintenanceScheduleCreateScreenInner() {
   const { data: items } = useItems({
     orderBy: { name: "asc" },
     limit: 100,
@@ -65,191 +45,137 @@ function MaintenanceScheduleCreateScreenInner({
     },
   });
 
-  const isLoading = false;
-
-  const handleSubmit = async (_data: MaintenanceScheduleCreateFormData) => {
-    try {
-      // TODO: Implement API call to create schedule
+  // Mock mutation — wire to real API once available. Surfaces a success
+  // alert and lets <FormScreen> drive navigation through useFormFlow.
+  // Foundation patch: useFormFlow accepts a callback directly, no useMutation wrapper.
+  const flow = useFormFlow<MaintenanceScheduleCreateFormData, { id: string }>({
+    form,
+    mutation: async (_data) => {
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
-      onSuccess?.();
-      goBack();
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o agendamento");
-    }
-  };
+      return { id: "" };
+    },
+    successRoute: () => mobileRoute(routes.inventory.maintenance.schedules.root),
+    cancelFallback: mobileRoute(routes.inventory.maintenance.schedules.root),
+  });
 
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    } else {
-      goBack();
-    }
-  };
-
-  const itemOptions: ComboboxOption[] =
-    items?.data?.map((item) => ({
-      value: item.id,
-      label: item.name,
-    })) || [];
-
-  const frequencyOptions: ComboboxOption[] = Object.entries(SCHEDULE_FREQUENCY_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  const itemOptions: ComboboxOption[] = useMemo(
+    () =>
+      items?.data?.map((item) => ({
+        value: item.id,
+        label: item.name,
+      })) || [],
+    [items?.data],
   );
 
-  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
-    onFieldLayout: () => {},
-    onFieldFocus: () => {},
-    onComboboxOpen: () => false,
-    onComboboxClose: () => {},
-  }), []);
+  const frequencyOptions: ComboboxOption[] = useMemo(
+    () =>
+      Object.entries(SCHEDULE_FREQUENCY_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
+  );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+    <FormScreen
+      title="Novo Agendamento"
+      mode="create"
+      form={form}
+      flow={flow}
+      submittingLabel="Salvando..."
+      submitLabel="Criar Agendamento"
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <FormCard title="Novo Agendamento" icon="IconTool">
+        <FormFieldGroup
+          label="Item/Equipamento"
+          required
+          error={form.formState.errors.itemId?.message}
         >
-          <KeyboardAwareFormProvider value={keyboardContextValue}>
-            {/* Schedule Information */}
-            <FormCard
-              title="Novo Agendamento"
-              icon="IconTool"
-            >
-              {/* Item Selection */}
-              <FormFieldGroup
-                label="Item/Equipamento"
-                required
-                error={form.formState.errors.itemId?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="itemId"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <Combobox
-                      options={itemOptions}
-                      value={value}
-                      onValueChange={onChange}
-                      placeholder="Selecione o item"
-                      disabled={isLoading}
-                      searchable
-                      clearable={false}
-                      error={error?.message}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
+          <Controller
+            control={form.control}
+            name="itemId"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <Combobox
+                options={itemOptions}
+                value={value}
+                onValueChange={onChange}
+                placeholder="Selecione o item"
+                searchable
+                clearable={false}
+                error={error?.message}
+              />
+            )}
+          />
+        </FormFieldGroup>
 
-              {/* Frequency Selection */}
-              <FormFieldGroup
-                label="Frequência"
-                required
-                error={form.formState.errors.frequency?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="frequency"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <Combobox
-                      options={frequencyOptions}
-                      value={value}
-                      onValueChange={onChange}
-                      placeholder="Selecione a frequência"
-                      disabled={isLoading}
-                      searchable={false}
-                      clearable={false}
-                      error={error?.message}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
+        <FormFieldGroup
+          label="Frequência"
+          required
+          error={form.formState.errors.frequency?.message}
+        >
+          <Controller
+            control={form.control}
+            name="frequency"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <Combobox
+                options={frequencyOptions}
+                value={value}
+                onValueChange={onChange}
+                placeholder="Selecione a frequência"
+                searchable={false}
+                clearable={false}
+                error={error?.message}
+              />
+            )}
+          />
+        </FormFieldGroup>
 
-              {/* Frequency Count */}
-              <FormFieldGroup
-                label="Intervalo"
-                required
-                error={form.formState.errors.frequencyCount?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="frequencyCount"
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <Input
-                      value={String(value || 1)}
-                      onChangeText={(val) => {
-                        if (!val) {
-                          onChange(1);
-                          return;
-                        }
-                        const numValue = parseInt(String(val));
-                        onChange(isNaN(numValue) || numValue < 1 ? 1 : numValue);
-                      }}
-                      onBlur={onBlur}
-                      placeholder="Digite o intervalo"
-                      keyboardType="numeric"
-                      editable={!isLoading}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
+        <FormFieldGroup
+          label="Intervalo"
+          required
+          error={form.formState.errors.frequencyCount?.message}
+        >
+          <Controller
+            control={form.control}
+            name="frequencyCount"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={String(value || 1)}
+                onChangeText={(val) => {
+                  if (!val) {
+                    onChange(1);
+                    return;
+                  }
+                  const numValue = parseInt(String(val));
+                  onChange(isNaN(numValue) || numValue < 1 ? 1 : numValue);
+                }}
+                onBlur={onBlur}
+                placeholder="Digite o intervalo"
+                keyboardType="numeric"
+              />
+            )}
+          />
+        </FormFieldGroup>
 
-              {/* Next Run Date */}
-              <FormFieldGroup
-                label="Próxima Execução"
-                error={form.formState.errors.nextRun?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="nextRun"
-                  render={({ field: { onChange, value } }) => (
-                    <DatePicker
-                      value={value}
-                      onChange={onChange}
-                      placeholder="Selecione a data"
-                      disabled={isLoading}
-                      type="datetime"
-                    />
-                  )}
-                />
-              </FormFieldGroup>
-            </FormCard>
-          </KeyboardAwareFormProvider>
-        </ScrollView>
-
-        <FormActionBar
-          onCancel={handleCancel}
-          onSubmit={form.handleSubmit(handleSubmit)}
-          isSubmitting={isLoading}
-          canSubmit={form.formState.isValid}
-          submitLabel="Criar Agendamento"
-        />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <FormFieldGroup
+          label="Próxima Execução"
+          error={form.formState.errors.nextRun?.message}
+        >
+          <Controller
+            control={form.control}
+            name="nextRun"
+            render={({ field: { onChange, value } }) => (
+              <DatePicker
+                value={value}
+                onChange={onChange}
+                placeholder="Selecione a data"
+                type="datetime"
+              />
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
+    </FormScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: formSpacing.containerPaddingHorizontal,
-    paddingTop: formSpacing.containerPaddingVertical,
-    paddingBottom: 0,
-  },
-});

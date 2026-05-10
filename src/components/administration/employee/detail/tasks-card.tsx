@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendar, IconChevronRight } from "@tabler/icons-react-native";
 import { getBadgeVariant } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 
 interface TasksCardProps {
   employee: User;
@@ -26,7 +26,7 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
   const totalTasks = employee._count?.createdTasks || employee.createdTasks?.length || 0;
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+    router.push(mobileRoute(routes.production.schedule.details(taskId)) as any);
   };
 
   return (
@@ -106,7 +106,7 @@ export function TasksCard({ employee, maxItems = 5 }: TasksCardProps) {
                 style={[styles.viewAllButton, { backgroundColor: colors.primary + "10" }]}
                 onPress={() => {
                   // Navigate to tasks list filtered by this user
-                  router.push(routeToMobilePath(routes.production.schedule.list) as any);
+                  router.push(mobileRoute(routes.production.schedule.list) as any);
                 }}
                 activeOpacity={0.7}
               >

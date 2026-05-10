@@ -1,5 +1,6 @@
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -11,7 +12,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function FuncionariosIndexScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -33,7 +34,7 @@ export default function FuncionariosIndexScreen() {
   ];
 
   const handleMenuPress = (route: string) => {
-    router.push(route as any);
+    nav.push(mobileRoute(route));
   };
 
   return (

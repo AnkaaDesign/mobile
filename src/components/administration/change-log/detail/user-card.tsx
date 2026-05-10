@@ -7,7 +7,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import type { ChangeLog } from '../../../../types';
 import { IconChevronRight } from "@tabler/icons-react-native";
 
@@ -32,7 +32,7 @@ export function UserCard({ changeLog }: UserCardProps) {
 
   const handleUserPress = () => {
     if (changeLog.userId) {
-      router.push(routeToMobilePath(routes.administration.collaborators.details(changeLog.userId)) as any);
+      router.push(mobileRoute(routes.administration.collaborators.details(changeLog.userId)) as any);
     }
   };
 

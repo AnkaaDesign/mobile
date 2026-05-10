@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, RefreshControl, Dimensions } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getHealthHistory } from '../../../api-client';
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -47,7 +49,15 @@ interface ResourceMetrics {
   hostname: string;
 }
 
-export default function ServerResourcesScreen() {
+export default function ServerResourcesScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerResourcesScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerResourcesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '6h' | '24h'>('1h');
 

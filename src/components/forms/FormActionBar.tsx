@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { View, StyleSheet, ActivityIndicator, Platform, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconArrowLeft, IconArrowRight, IconCheck, IconX } from "@tabler/icons-react-native";
@@ -14,7 +14,13 @@ export interface FormActionBarProps {
   onCancel?: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  /** Standard submit handler. Prefer `onSubmit` over `onSave`. */
   onSubmit?: () => void | Promise<void>;
+  /**
+   * @deprecated Use `onSubmit`. Kept as an alias so existing callers keep
+   * compiling during the Phase 0 → Phase 2 migration window. Will be
+   * removed in Phase 3 cleanup.
+   */
   onSave?: () => void | Promise<void>;
   isSubmitting?: boolean;
   isLoading?: boolean;
@@ -27,6 +33,15 @@ export interface FormActionBarProps {
   prevLabel?: string;
   nextLabel?: string;
   submitLabel?: string;
+  /**
+   * Label shown on the submit button while the mutation is pending.
+   * **Required** by JSDoc convention — passing the prop avoids the
+   * audit-flagged "Salvando..." default that confuses users on slow
+   * mutations. The runtime emits a one-time warning when omitted.
+   * (Hard-typed as required would break callers and exceed the TS-error
+   * gate during the migration window — promote to a hard requirement
+   * in Phase 3.)
+   */
   submittingLabel?: string;
   showCancel?: boolean;
   style?: object;
@@ -74,8 +89,18 @@ export function FormActionBar({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  // DEBUG ref must be before any early returns (React hooks rule)
-  const prevButtonStateRef = useRef<string>('');
+
+  // One-time runtime warning when `submittingLabel` is omitted — promotes
+  // the JSDoc convention without breaking callers (which would exceed the
+  // TS-error gate during the Phase 0 migration window).
+  useEffect(() => {
+    if (!submittingLabel) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[FormActionBar] submittingLabel is recommended — pass an explicit label like 'Salvando' or 'Enviando' so the submit button reads sensibly while the mutation is pending. Default 'Salvando...' is a placeholder and will be removed in Phase 3.",
+      );
+    }
+  }, [submittingLabel]);
 
   // Auto-detect form from <FormProvider>. useFormContext() returns null when
   // there's no provider, which is safe.
@@ -152,13 +177,6 @@ export function FormActionBar({
   const showCancelButton = showCancel && onCancel && (isFirstStep || !isMultiStep);
   const submitHandler = onSave || onSubmit;
 
-  // DEBUG: Log button state only when it changes
-  const buttonStateKey = `${canSubmit}|${isDisabled}|${isSaveDisabled}`;
-  if (buttonStateKey !== prevButtonStateRef.current) {
-    prevButtonStateRef.current = buttonStateKey;
-    console.log('[FormActionBar DEBUG] canSubmit:', canSubmit, '| isDisabled:', isDisabled, '| isSaveDisabled:', isSaveDisabled, '| button disabled:', !canSubmit || isDisabled || isSaveDisabled);
-  }
-
   return (
     <View
       style={[
@@ -196,10 +214,11 @@ export function FormActionBar({
             <IconArrowRight size={18} color={colors.primaryForeground} />
           </Button>
         ) : showSubmit ? (
-          <Button variant="default" onPress={() => {
-            console.log('[FormActionBar DEBUG] Submit button PRESSED. canSubmit:', canSubmit, '| isDisabled:', isDisabled);
-            handleSubmitWithReset(submitHandler);
-          }} disabled={!canSubmit || isDisabled || isSaveDisabled}>
+          <Button
+            variant="default"
+            onPress={() => handleSubmitWithReset(submitHandler)}
+            disabled={!canSubmit || isDisabled || isSaveDisabled}
+          >
             {isDisabled ? (
               <ActivityIndicator size="small" color={colors.primaryForeground} />
             ) : (

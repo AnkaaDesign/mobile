@@ -1,483 +1,224 @@
-import { useState } from "react";
-import { View, ScrollView, Alert, RefreshControl, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { IconEdit, IconTrash, IconCheck, IconX, IconHistory, IconCurrencyReal, IconTruckDelivery } from "@tabler/icons-react-native";
-import { useExternalWithdrawal, useExternalWithdrawalMutations, useScreenReady} from '@/hooks';
-import { ThemedView } from "@/components/ui/themed-view";
+import { View, Alert, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import {
+  IconCheck,
+  IconCurrencyReal,
+  IconHistory,
+  IconTruckDelivery,
+  IconX,
+  IconPackage,
+} from "@tabler/icons-react-native";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
-import { ErrorScreen } from "@/components/ui/error-screen";
+import { Card } from "@/components/ui/card";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { DetailScreen } from "@/components/screens/detail-screen";
 import { ExternalWithdrawalInfoCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-info-card";
 import { ExternalWithdrawalItemsCard } from "@/components/inventory/external-withdrawal/detail/external-withdrawal-items-card";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { EXTERNAL_WITHDRAWAL_STATUS, EXTERNAL_WITHDRAWAL_TYPE, SECTOR_PRIVILEGES, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
+import { useExternalWithdrawal, useExternalWithdrawalMutations } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import {
+  EXTERNAL_WITHDRAWAL_STATUS,
+  EXTERNAL_WITHDRAWAL_TYPE,
+  SECTOR_PRIVILEGES,
+  CHANGE_LOG_ENTITY_TYPE,
+  routes,
+} from "@/constants";
+import { EDITABLE_EXTERNAL_WITHDRAWAL_STATUSES } from "@/constants/editable-statuses";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import type { ExternalWithdrawal } from "@/types";
 
-
-import { Skeleton } from "@/components/ui/skeleton";export default function ExternalWithdrawalDetailScreen() {
+export default function ExternalWithdrawalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
+  const nav = useNav();
+  const { deleteMutation, updateAsync } = useExternalWithdrawalMutations();
 
-  // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-  const canDelete = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.ADMIN);
-  const canManage = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-
-  // Fetch withdrawal data
-  const { data: response, isLoading, error, refetch } = useExternalWithdrawal(id!, {
+  const query = useExternalWithdrawal(id as string, {
     include: {
       receipts: true,
       items: {
         include: {
-          item: {
-            include: {
-              brand: true,
-              category: true,
-            },
-          },
+          item: { include: { brand: true, category: true } },
         },
         orderBy: { createdAt: "asc" },
       },
     },
+    enabled: !!id,
   });
 
-  const { delete: deleteWithdrawal, update: updateWithdrawal } = useExternalWithdrawalMutations();
-
-  useScreenReady(!isLoading);
-
-  const withdrawal = response?.data;
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleGoBack = () => {
-    goBack();
-  };
-
-  const handleEdit = () => {
-    if (!canEdit) {
-      Alert.alert("Sem permissão", "Você não tem permissão para editar retiradas externas");
-      return;
-    }
-    router.push(routeToMobilePath(`/inventory/external-withdrawals/edit/${id}`) as any);
-  };
-
-  const handleDelete = () => {
-    if (!canDelete) {
-      Alert.alert("Sem permissão", "Você não tem permissão para excluir retiradas externas");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Exclusão",
-      "Tem certeza que deseja excluir esta retirada externa? Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteWithdrawal(id!);
-              goBack();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível excluir a retirada externa");
-            }
-          },
+  const promptUpdateStatus = (status: EXTERNAL_WITHDRAWAL_STATUS, title: string, message: string) => {
+    Alert.alert(title, message, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Confirmar",
+        onPress: async () => {
+          if (!id) return;
+          try {
+            await nav.withLoading(async () =>
+              updateAsync({ id, data: { status } }),
+            );
+            await query.refetch();
+          } catch {
+            // API client surfaces error.
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
-
-  const handleMarkAsFullyReturned = async () => {
-    if (!canManage) {
-      Alert.alert("Sem permissão", "Você não tem permissão para alterar retiradas externas");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Devolução Completa",
-      "Deseja marcar esta retirada como totalmente devolvida?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            try {
-              await updateWithdrawal({
-                id: id!,
-                data: { status: EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED },
-              });
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível atualizar o status");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleMarkAsCharged = async () => {
-    if (!canManage) {
-      Alert.alert("Sem permissão", "Você não tem permissão para alterar retiradas externas");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Cobrança",
-      "Deseja marcar esta retirada como cobrada?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            try {
-              await updateWithdrawal({
-                id: id!,
-                data: { status: EXTERNAL_WITHDRAWAL_STATUS.CHARGED },
-              });
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível atualizar o status");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleMarkAsDelivered = async () => {
-    if (!canManage) {
-      Alert.alert("Sem permissão", "Você não tem permissão para alterar retiradas externas");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Entrega",
-      "Deseja marcar esta retirada como entregue?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            try {
-              await updateWithdrawal({
-                id: id!,
-                data: { status: EXTERNAL_WITHDRAWAL_STATUS.DELIVERED },
-              });
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível atualizar o status");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const handleCancel = async () => {
-    if (!canManage) {
-      Alert.alert("Sem permissão", "Você não tem permissão para cancelar retiradas externas");
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Cancelamento",
-      "Tem certeza que deseja cancelar esta retirada externa?",
-      [
-        { text: "Não", style: "cancel" },
-        {
-          text: "Sim, Cancelar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await updateWithdrawal({
-                id: id!,
-                data: { status: EXTERNAL_WITHDRAWAL_STATUS.CANCELLED },
-              });
-              await refetch();
-            } catch (_error) {
-              Alert.alert("Erro", "Não foi possível cancelar a retirada");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          {/* Header card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs }}>
-              <Skeleton style={{ height: 20, width: '50%', borderRadius: 4 }} />
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
-                <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
-              </View>
-            </View>
-          </View>
-          {/* Info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
-            <Skeleton style={{ height: 18, width: '45%', borderRadius: 4, marginBottom: spacing.sm }} />
-            {[1, 2, 3, 4, 5].map(i => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-                <Skeleton style={{ height: 14, width: '35%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-          {/* Items card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.sm }}>
-            <Skeleton style={{ height: 18, width: '35%', borderRadius: 4, marginBottom: spacing.sm }} />
-            {[1, 2, 3].map(i => (
-              <View key={i} style={{ backgroundColor: colors.muted, borderRadius: 8, padding: spacing.sm, marginBottom: spacing.sm }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs }}>
-                  <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 14, width: '25%', borderRadius: 4 }} />
-                </View>
-                <Skeleton style={{ height: 12, width: '35%', borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !withdrawal) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen
-          message="Erro ao carregar retirada externa"
-          detail={error?.message || "Retirada externa não encontrada"}
-          onRetry={handleRefresh}
-        />
-      </ThemedView>
-    );
-  }
-
-  // Determine available actions based on status and type
-  // RETURNABLE type: Show "Marcar como Devolvido" action
-  const showMarkAsFullyReturned =
-    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE &&
-    (withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING || withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED) &&
-    canManage;
-  // CHARGEABLE type: Show "Marcar como Cobrado" action
-  const showMarkAsCharged =
-    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE &&
-    withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
-    canManage;
-  // COMPLIMENTARY type: Show "Marcar como Entregue" action
-  const showMarkAsDelivered =
-    withdrawal?.type === EXTERNAL_WITHDRAWAL_TYPE.COMPLIMENTARY &&
-    withdrawal?.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
-    canManage;
-  // Show cancel for any type that is not in a final state
-  const finalStatuses = [
-    EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED,
-    EXTERNAL_WITHDRAWAL_STATUS.CHARGED,
-    EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED,
-    EXTERNAL_WITHDRAWAL_STATUS.DELIVERED,
-    EXTERNAL_WITHDRAWAL_STATUS.CANCELLED,
-  ];
-  const showCancel = withdrawal?.status && !finalStatuses.includes(withdrawal.status) && canManage;
-
-  // Generate page title
-  const pageTitle = `Retirada #${withdrawal?.id?.slice(-8).toUpperCase()}`;
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
-      }
-      showsVerticalScrollIndicator={false}
+    <DetailScreen<ExternalWithdrawal>
+      query={query as any}
+      icon={IconPackage}
+      title={(w) => `Retirada #${String(w.id).slice(-8).toUpperCase()}`}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      editGuard={{ editable: EDITABLE_EXTERNAL_WITHDRAWAL_STATUSES }}
+      editRoute={(w) => mobileRoute(routes.inventory.externalWithdrawals.edit(w.id))}
+      deleteAction={{
+        mutation: deleteMutation,
+        confirmText:
+          "Tem certeza que deseja excluir esta retirada externa? Esta ação não pode ser desfeita.",
+        successRoute: mobileRoute(routes.inventory.externalWithdrawals.root),
+      }}
+      notFoundFallback={mobileRoute(routes.inventory.externalWithdrawals.root)}
     >
-      <View style={styles.content}>
-        {/* Page Header Card */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <ThemedText
-                style={[styles.pageTitle, { color: colors.foreground }]}
-                numberOfLines={2}
-              >
-                {pageTitle}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              {canEdit && (
-                <TouchableOpacity
-                  onPress={handleEdit}
-                  style={[styles.actionButton, { backgroundColor: colors.primary }]}
-                  activeOpacity={0.7}
-                >
-                  <IconEdit size={18} color={colors.primaryForeground} />
-                </TouchableOpacity>
-              )}
-              {canDelete && (
-                <TouchableOpacity
-                  onPress={handleDelete}
-                  style={[styles.actionButton, { backgroundColor: colors.destructive }]}
-                  activeOpacity={0.7}
-                >
-                  <IconTrash size={18} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </Card>
+      {(withdrawal, ctx) => {
+        const showMarkAsFullyReturned =
+          withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.RETURNABLE &&
+          (withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING ||
+            withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.PARTIALLY_RETURNED) &&
+          ctx.isEditable;
+        const showMarkAsCharged =
+          withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.CHARGEABLE &&
+          withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
+          ctx.isEditable;
+        const showMarkAsDelivered =
+          withdrawal.type === EXTERNAL_WITHDRAWAL_TYPE.COMPLIMENTARY &&
+          withdrawal.status === EXTERNAL_WITHDRAWAL_STATUS.PENDING &&
+          ctx.isEditable;
+        const finalStatuses: EXTERNAL_WITHDRAWAL_STATUS[] = [
+          EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED,
+          EXTERNAL_WITHDRAWAL_STATUS.CHARGED,
+          EXTERNAL_WITHDRAWAL_STATUS.LIQUIDATED,
+          EXTERNAL_WITHDRAWAL_STATUS.DELIVERED,
+          EXTERNAL_WITHDRAWAL_STATUS.CANCELLED,
+        ];
+        const showCancel =
+          !!withdrawal.status && !finalStatuses.includes(withdrawal.status) && ctx.isEditable;
 
-        <View style={styles.cardsContainer}>
-          {/* Withdrawal Info */}
-          <ExternalWithdrawalInfoCard withdrawal={withdrawal} />
+        return (
+          <View style={styles.body}>
+            <ExternalWithdrawalInfoCard withdrawal={withdrawal} />
+            <ExternalWithdrawalItemsCard
+              items={withdrawal.items || []}
+              withdrawalType={withdrawal.type}
+              withdrawalStatus={withdrawal.status}
+            />
 
-          {/* Withdrawal Items */}
-          <ExternalWithdrawalItemsCard items={withdrawal?.items || []} withdrawalType={withdrawal?.type} withdrawalStatus={withdrawal?.status} />
-
-          {/* Changelog */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconHistory size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconHistory size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+                </View>
               </View>
-            </View>
-            <View style={styles.content}>
-              <ChangelogTimeline
-                entityType={CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL}
-                entityId={withdrawal.id}
-                entityName={withdrawal.withdrawerName}
-                entityCreatedAt={withdrawal.createdAt}
-                maxHeight={400}
-              />
-            </View>
-          </Card>
+              <View style={styles.changelogContent}>
+                <ChangelogTimeline
+                  entityType={CHANGE_LOG_ENTITY_TYPE.EXTERNAL_WITHDRAWAL}
+                  entityId={withdrawal.id}
+                  entityName={withdrawal.withdrawerName}
+                  entityCreatedAt={withdrawal.createdAt}
+                  maxHeight={400}
+                />
+              </View>
+            </Card>
 
-          {/* Action Buttons */}
-          {(showMarkAsFullyReturned || showMarkAsCharged || showMarkAsDelivered || showCancel) && (
-            <View style={styles.actionsCard}>
-              {showMarkAsFullyReturned && (
-                <Button
-                  onPress={handleMarkAsFullyReturned}
-                  style={styles.actionButtonLarge}
-                >
-                  <IconCheck size={20} color={colors.primaryForeground} />
-                  <ThemedText style={{ color: colors.primaryForeground }}>
-                    Marcar como Devolvido
-                  </ThemedText>
-                </Button>
-              )}
-              {showMarkAsCharged && (
-                <Button
-                  onPress={handleMarkAsCharged}
-                  style={styles.actionButtonLarge}
-                  variant="default"
-                >
-                  <IconCurrencyReal size={20} color={colors.primaryForeground} />
-                  <ThemedText style={{ color: colors.primaryForeground }}>
-                    Marcar como Cobrado
-                  </ThemedText>
-                </Button>
-              )}
-              {showMarkAsDelivered && (
-                <Button
-                  onPress={handleMarkAsDelivered}
-                  style={styles.actionButtonLarge}
-                  variant="default"
-                >
-                  <IconTruckDelivery size={20} color={colors.primaryForeground} />
-                  <ThemedText style={{ color: colors.primaryForeground }}>
-                    Marcar como Entregue
-                  </ThemedText>
-                </Button>
-              )}
-              {showCancel && (
-                <Button
-                  onPress={handleCancel}
-                  style={styles.actionButtonLarge}
-                  variant="destructive"
-                >
-                  <IconX size={20} color={colors.destructiveForeground} />
-                  <ThemedText style={{ color: colors.destructiveForeground }}>
-                    Cancelar Retirada
-                  </ThemedText>
-                </Button>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+            {(showMarkAsFullyReturned || showMarkAsCharged || showMarkAsDelivered || showCancel) && (
+              <View style={styles.actionsCard}>
+                {showMarkAsFullyReturned && (
+                  <Button
+                    onPress={() =>
+                      promptUpdateStatus(
+                        EXTERNAL_WITHDRAWAL_STATUS.FULLY_RETURNED,
+                        "Confirmar Devolução Completa",
+                        "Deseja marcar esta retirada como totalmente devolvida?",
+                      )
+                    }
+                    style={styles.actionButtonLarge}
+                  >
+                    <IconCheck size={20} color={colors.primaryForeground} />
+                    <ThemedText style={{ color: colors.primaryForeground }}>
+                      Marcar como Devolvido
+                    </ThemedText>
+                  </Button>
+                )}
+                {showMarkAsCharged && (
+                  <Button
+                    onPress={() =>
+                      promptUpdateStatus(
+                        EXTERNAL_WITHDRAWAL_STATUS.CHARGED,
+                        "Confirmar Cobrança",
+                        "Deseja marcar esta retirada como cobrada?",
+                      )
+                    }
+                    style={styles.actionButtonLarge}
+                  >
+                    <IconCurrencyReal size={20} color={colors.primaryForeground} />
+                    <ThemedText style={{ color: colors.primaryForeground }}>
+                      Marcar como Cobrado
+                    </ThemedText>
+                  </Button>
+                )}
+                {showMarkAsDelivered && (
+                  <Button
+                    onPress={() =>
+                      promptUpdateStatus(
+                        EXTERNAL_WITHDRAWAL_STATUS.DELIVERED,
+                        "Confirmar Entrega",
+                        "Deseja marcar esta retirada como entregue?",
+                      )
+                    }
+                    style={styles.actionButtonLarge}
+                  >
+                    <IconTruckDelivery size={20} color={colors.primaryForeground} />
+                    <ThemedText style={{ color: colors.primaryForeground }}>
+                      Marcar como Entregue
+                    </ThemedText>
+                  </Button>
+                )}
+                {showCancel && (
+                  <Button
+                    onPress={() =>
+                      promptUpdateStatus(
+                        EXTERNAL_WITHDRAWAL_STATUS.CANCELLED,
+                        "Confirmar Cancelamento",
+                        "Tem certeza que deseja cancelar esta retirada externa?",
+                      )
+                    }
+                    style={styles.actionButtonLarge}
+                    variant="destructive"
+                  >
+                    <IconX size={20} color={colors.destructiveForeground} />
+                    <ThemedText style={{ color: colors.destructiveForeground }}>
+                      Cancelar Retirada
+                    </ThemedText>
+                  </Button>
+                )}
+              </View>
+            )}
+          </View>
+        );
+      }}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
-  },
-  headerCard: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  pageTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardsContainer: {
+  body: {
     gap: spacing.md,
   },
   card: {
@@ -486,26 +227,21 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
-  sectionHeader: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
   },
   title: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.medium,
+  },
+  changelogContent: {
+    gap: spacing.sm,
   },
   actionsCard: {
     gap: spacing.sm,

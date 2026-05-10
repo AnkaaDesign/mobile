@@ -1,4 +1,6 @@
 import { Redirect } from "expo-router";
+import { routes } from "@/constants";
+import { mobileRoute } from '@/constants/routes.types';
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
 /**
@@ -7,5 +9,5 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
  */
 export default function CollaboratorsIndex() {
   useScreenReady();
-  return <Redirect href="/(tabs)/administracao/colaboradores/listar" />;
+  return <Redirect href={mobileRoute(routes.administration.collaborators.list)} />;
 }

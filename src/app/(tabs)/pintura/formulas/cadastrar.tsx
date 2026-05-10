@@ -1,55 +1,41 @@
 import { View, ScrollView, StyleSheet } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { useScreenReady, useFormScreenKey } from "@/hooks";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
-import {
-  IconFlask,
-  IconInfoCircle,
-  IconPalette,
-} from "@tabler/icons-react-native";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { IconFlask, IconInfoCircle, IconPalette } from "@tabler/icons-react-native";
 
 export default function CreateFormulaScreen() {
-  const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const { user } = useAuth();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <CreateFormulaScreenInner />
+    </PrivilegeGate>
+  );
+}
 
-  // End navigation loading overlay when screen mounts
+function CreateFormulaScreenInner() {
+  const { colors } = useTheme();
+  const nav = useNav();
+
   useScreenReady();
   const formKey = useFormScreenKey();
 
-  // Check user permissions
-  const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-
-  // Handle navigation to catalog
   const handleGoToCatalog = () => {
-    router.push("/(tabs)/pintura/catalogo");
+    nav.push(mobileRoute(routes.painting.catalog.root));
   };
 
-  // Handle cancel
   const handleCancel = () => {
-    goBack();
+    nav.goBack({ fallback: mobileRoute(routes.painting.formulas.root) });
   };
-
-  if (!canCreate) {
-    return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Você não tem permissão para criar fórmulas
-        </ThemedText>
-        <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
 
   return (
     <>
@@ -61,14 +47,16 @@ export default function CreateFormulaScreen() {
       />
       <ScrollView
         key={formKey}
-        style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Info Card */}
         <Card style={styles.infoCard}>
           <View style={styles.infoContent}>
             <IconInfoCircle size={48} color={colors.primary} />
-            <ThemedText style={styles.infoTitle}>Fórmulas são gerenciadas através do Catálogo</ThemedText>
+            <ThemedText style={styles.infoTitle}>
+              Fórmulas são gerenciadas através do Catálogo
+            </ThemedText>
             <ThemedText style={styles.infoDescription}>
               Para criar uma nova fórmula, você precisa acessar o Catálogo de Tintas e criar ou editar uma tinta.
               As fórmulas são gerenciadas diretamente na página de edição da tinta.
@@ -83,56 +71,29 @@ export default function CreateFormulaScreen() {
             <ThemedText style={styles.instructionsTitle}>Como criar uma fórmula:</ThemedText>
           </View>
           <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <View style={StyleSheet.flatten([styles.instructionNumber, { backgroundColor: colors.primary }])}>
-                <ThemedText style={StyleSheet.flatten([styles.instructionNumberText, { color: colors.primaryForeground }])}>
-                  1
-                </ThemedText>
+            {[
+              "Acesse o Catálogo de Tintas",
+              "Crie uma nova tinta ou selecione uma tinta existente",
+              "Na página de edição da tinta, navegue até a aba \"Formulação\"",
+              "Adicione os componentes e suas proporções para criar a fórmula",
+            ].map((text, idx) => (
+              <View key={idx} style={styles.instructionItem}>
+                <View style={[styles.instructionNumber, { backgroundColor: colors.primary }]}>
+                  <ThemedText
+                    style={[styles.instructionNumberText, { color: colors.primaryForeground }]}
+                  >
+                    {idx + 1}
+                  </ThemedText>
+                </View>
+                <ThemedText style={styles.instructionText}>{text}</ThemedText>
               </View>
-              <ThemedText style={styles.instructionText}>
-                Acesse o Catálogo de Tintas
-              </ThemedText>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={StyleSheet.flatten([styles.instructionNumber, { backgroundColor: colors.primary }])}>
-                <ThemedText style={StyleSheet.flatten([styles.instructionNumberText, { color: colors.primaryForeground }])}>
-                  2
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.instructionText}>
-                Crie uma nova tinta ou selecione uma tinta existente
-              </ThemedText>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={StyleSheet.flatten([styles.instructionNumber, { backgroundColor: colors.primary }])}>
-                <ThemedText style={StyleSheet.flatten([styles.instructionNumberText, { color: colors.primaryForeground }])}>
-                  3
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.instructionText}>
-                Na página de edição da tinta, navegue até a aba "Formulação"
-              </ThemedText>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={StyleSheet.flatten([styles.instructionNumber, { backgroundColor: colors.primary }])}>
-                <ThemedText style={StyleSheet.flatten([styles.instructionNumberText, { color: colors.primaryForeground }])}>
-                  4
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.instructionText}>
-                Adicione os componentes e suas proporções para criar a fórmula
-              </ThemedText>
-            </View>
+            ))}
           </View>
         </Card>
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            style={styles.actionButton}
-          >
+          <Button variant="outline" onPress={handleCancel} style={styles.actionButton}>
             Voltar
           </Button>
           <Button
@@ -155,19 +116,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.md,
     paddingBottom: spacing.xl,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  errorText: {
-    textAlign: "center",
-    marginBottom: spacing.md,
-  },
-  backButton: {
-    marginTop: spacing.sm,
   },
   infoCard: {
     marginBottom: spacing.md,

@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
@@ -53,6 +54,7 @@ const DEFAULT_VISIBLE_COLUMNS = [
 export default function MeusPontosScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const pontosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontos);
@@ -265,7 +267,7 @@ export default function MeusPontosScreen() {
           <TouchableOpacity
             style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() =>
-              router.push("/(tabs)/pessoal/meus-pontos/justificar-ausencia" as any)
+              nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
             }
             accessibilityLabel="Justificar Ausência"
           >

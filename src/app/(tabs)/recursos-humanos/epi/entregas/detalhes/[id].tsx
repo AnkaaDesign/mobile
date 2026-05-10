@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { usePpeDelivery } from "@/hooks/usePpe";
 import { routes, CHANGE_LOG_ENTITY_TYPE, PPE_DELIVERY_STATUS } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconShield, IconRefresh, IconEdit } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 // import { showToast } from "@/components/ui/toast";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
@@ -18,12 +18,13 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { DeliveryCard, EmployeeCard, ItemDetailsCard } from "@/components/human-resources/ppe/delivery/detail";
 import { PpeDeliveryDetailSkeleton } from "@/components/human-resources/ppe/delivery/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function HRPPEDeliveryDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -62,7 +63,7 @@ export default function HRPPEDeliveryDetailsScreen() {
 
   const handleEdit = () => {
     if (delivery) {
-      router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.edit(delivery.id)) as any);
+      nav.push(mobileRoute(routes.humanResources.ppe.deliveries.edit(delivery.id)));
     }
   };
 

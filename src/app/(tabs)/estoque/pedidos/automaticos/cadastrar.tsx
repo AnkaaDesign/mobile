@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView , StyleSheet} from "react-native";
-import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,37 +19,38 @@ import {
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { spacing, fontSize } from "@/constants/design-system";
 
 import { ItemMultiSelector } from "@/components/inventory/item/item-multi-selector";
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CreateAutomaticOrderScreen() {
   const formKey = useFormScreenKey();
-  return <CreateAutomaticOrderScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <CreateAutomaticOrderScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateAutomaticOrderScreenInner() {
   useScreenReady();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.automatic.root) });
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check permissions
-  const canCreate = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
 
   const {
     control,
@@ -73,9 +73,9 @@ function CreateAutomaticOrderScreenInner() {
     onCreateSuccess: (data) => {
       const resultId = (data as any)?.id || (data as any)?.data?.id;
       if (resultId) {
-        router.replace(routeToMobilePath(routes.inventory.orders.automatic.details(resultId)) as any);
+        nav.replace(mobileRoute(routes.inventory.orders.automatic.details(resultId)));
       } else {
-        router.replace(routeToMobilePath(routes.inventory.orders.automatic.root) as any);
+        nav.replace(mobileRoute(routes.inventory.orders.automatic.root));
       }
     },
   });
@@ -86,11 +86,6 @@ function CreateAutomaticOrderScreenInner() {
 
   const onSubmit = useCallback(
     async (data: OrderScheduleCreateFormData) => {
-      if (!canCreate) {
-        Alert.alert("Sem permissão", "Você não tem permissão para criar agendamentos automáticos");
-        return;
-      }
-
       setIsSubmitting(true);
       try {
         await createOrderSchedule(data);
@@ -101,7 +96,7 @@ function CreateAutomaticOrderScreenInner() {
         setIsSubmitting(false);
       }
     },
-    [createOrderSchedule, canCreate],
+    [createOrderSchedule],
   );
 
   const handleCancel = useCallback(() => {
@@ -109,27 +104,7 @@ function CreateAutomaticOrderScreenInner() {
       { text: "Continuar Editando", style: "cancel" },
       { text: "Cancelar", style: "destructive", onPress: () => goBack() },
     ]);
-  }, [router]);
-
-  if (!canCreate) {
-    return (
-      <ThemedView style={styles.container}>
-        <FormHeader
-          title="Novo Agendamento Automático"
-          onCancel={handleCancel}
-          showActions={false}
-        />
-        <View style={styles.permissionContainer}>
-          <ThemedText style={styles.permissionText}>
-            Você não tem permissão para criar agendamentos automáticos
-          </ThemedText>
-          <Button variant="outline" onPress={() => goBack()}>
-            <ThemedText>Voltar</ThemedText>
-          </Button>
-        </View>
-      </ThemedView>
-    );
-  }
+  }, []);
 
   if (isSubmitting) {
     return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>

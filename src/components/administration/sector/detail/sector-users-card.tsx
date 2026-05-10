@@ -7,7 +7,7 @@ import { IconChevronRight } from "@tabler/icons-react-native";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
 import { routes, USER_STATUS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -22,11 +22,11 @@ export function SectorUsersCard({ sector }: SectorUsersCardProps) {
   const totalUsers = sector._count?.users || users.length;
 
   const handleViewAllUsers = () => {
-    router.push(routeToMobilePath(`${routes.administration.users.root}?sectorId=${sector.id}`) as any);
+    router.push(mobileRoute(`${routes.administration.users.root}?sectorId=${sector.id}`) as any);
   };
 
   const handleUserPress = (userId: string) => {
-    router.push(routeToMobilePath(routes.administration.users.details(userId)) as any);
+    router.push(mobileRoute(routes.administration.users.details(userId)) as any);
   };
 
   return (

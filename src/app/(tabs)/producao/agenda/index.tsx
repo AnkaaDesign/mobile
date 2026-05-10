@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import { TaskScheduleLayout } from "@/components/production/task/schedule/TaskScheduleLayout";
 import { tasksListAgendaConfig } from "@/config/list/production/tasks-agenda";
 import { SECTOR_PRIVILEGES } from "@/constants";
@@ -9,8 +9,9 @@ import { useMemo, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { ListConfig } from "@/components/list/types";
 import type { Task } from "@/types";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants/routes";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTaskDetailMinimalInclude } from "@/hooks/use-task-detail-include";
@@ -19,7 +20,7 @@ import { taskKeys } from "@/hooks/queryKeys";
 export default function ProductionPreparationScreen() {
   // useScreenReady is called inside TaskScheduleLayout with data loading state
   const { user } = useAuth();
-  const { pushWithLoading } = useNavigationLoading();
+  const nav = useNav();
   const queryClient = useQueryClient();
   const taskInclude = useTaskDetailMinimalInclude(user);
 
@@ -43,7 +44,7 @@ export default function ProductionPreparationScreen() {
     user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
   const handleCreateTask = () => {
-    pushWithLoading("/(tabs)/producao/agenda/cadastrar");
+    nav.push(mobileRoute(routes.production.agenda.create));
   };
 
   // Determine user privileges for agenda filtering

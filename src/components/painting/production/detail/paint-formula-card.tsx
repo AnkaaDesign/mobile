@@ -1,5 +1,4 @@
 import { View, StyleSheet } from "react-native";
-import { router } from "expo-router";
 import { DetailCard, DetailField } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
@@ -7,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconPaint, IconCurrencyDollar, IconWeight, IconFlask } from "@tabler/icons-react-native";
-import type { PaintProduction } from '../../../../types';
+import type { PaintProduction } from "@/types";
 import { PAINT_FINISH_LABELS, routes, SECTOR_PRIVILEGES } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { formatCurrency } from "@/utils";
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from "@/contexts/auth-context";
 
 interface PaintFormulaCardProps {
   production: PaintProduction;
@@ -20,13 +20,14 @@ interface PaintFormulaCardProps {
 export function PaintFormulaCard({ production }: PaintFormulaCardProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const nav = useNav();
   const isWarehouseUser = user?.sector?.privileges === SECTOR_PRIVILEGES.WAREHOUSE;
   const formula = production.formula;
   const paint = formula?.paint;
 
   const handleViewFormula = () => {
     if (paint && formula) {
-      router.push(routeToMobilePath(routes.painting.catalog.formulaDetails(paint.id, formula.id)) as any);
+      nav.push(mobileRoute(routes.painting.catalog.formulaDetails(paint.id, formula.id)));
     }
   };
 

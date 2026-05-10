@@ -2,7 +2,6 @@ import { useMemo, useEffect, useRef } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -15,9 +14,9 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { userCreateSchema, userUpdateSchema } from "@/schemas/user";
 import type { UserCreateFormData, UserUpdateFormData } from "@/schemas/user";
@@ -66,8 +65,7 @@ const BRAZIL_STATES: ComboboxOption[] = [
 ];
 
 export function CollaboratorForm({ mode, user, onSuccess, onCancel }: CollaboratorFormProps) {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useUserMutations();
@@ -358,9 +356,9 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.administration.collaborators.details(newId)) as any);
+          nav.replace(mobileRoute(routes.administration.collaborators.details(newId)));
         } else {
-          goBack();
+          nav.goBack();
         }
       } else if (user) {
         await updateAsync({
@@ -368,7 +366,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
           data: data as UserUpdateFormData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.administration.collaborators.details(user.id)) as any);
+        nav.replace(mobileRoute(routes.administration.collaborators.details(user.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o colaborador");
@@ -379,7 +377,7 @@ export function CollaboratorForm({ mode, user, onSuccess, onCancel }: Collaborat
     if (onCancel) {
       onCancel();
     } else {
-      goBack();
+      nav.goBack();
     }
   };
 

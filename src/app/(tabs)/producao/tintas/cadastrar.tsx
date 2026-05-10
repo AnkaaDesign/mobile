@@ -1,17 +1,16 @@
 import { useState } from "react";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
 import { paintFormulaComponentService, notify } from "@/api-client";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import type { PaintCreateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 
 export default function CreatePaintScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { createAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +81,7 @@ export default function CreatePaintScreen() {
         notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
       }
 
-      goBack();
+      nav.goBack();
     } catch (error) {
       console.error("Error creating paint:", error);
       // API client already shows error alert
@@ -92,7 +91,7 @@ export default function CreatePaintScreen() {
   };
 
   const handleCancel = () => {
-    goBack();
+    nav.goBack();
   };
 
   return (

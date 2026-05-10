@@ -5,8 +5,8 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { apiClient } from "@/api-client";
@@ -149,7 +149,7 @@ export default function RateLimitingScreen() {
 
   if (isLoading) {
     return (
-      <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+      <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
         <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
         <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
         <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
@@ -162,12 +162,12 @@ export default function RateLimitingScreen() {
           <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
         </View>
       </View>
-      </PrivilegeGuard>
+      </PrivilegeGate>
     );
   }
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView className="flex-1">
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
@@ -347,6 +347,6 @@ export default function RateLimitingScreen() {
         </Text>
       </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

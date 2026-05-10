@@ -5,8 +5,8 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { Button } from "@/components/ui/button";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { Icon } from "@/components/ui/icon";
 
 import { apiClient } from "@/api-client";
@@ -109,7 +109,7 @@ export default function DatabaseSyncScreen() {
   }
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView className="flex-1">
       <ScrollView
         style={{ flex: 1 }}
@@ -289,6 +289,6 @@ export default function DatabaseSyncScreen() {
         </View>
       </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

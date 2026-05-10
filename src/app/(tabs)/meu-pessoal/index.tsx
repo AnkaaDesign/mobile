@@ -1,6 +1,7 @@
 import React from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { useAuth } from "@/contexts/auth-context";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -31,7 +32,7 @@ interface TeamMenuItem {
 
 export default function MeuPessoalScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -92,7 +93,7 @@ export default function MeuPessoalScreen() {
 
   const handleMenuPress = (item: TeamMenuItem) => {
     if (item.available) {
-      router.push(item.route as any);
+      nav.push(mobileRoute(item.route));
     }
   };
 

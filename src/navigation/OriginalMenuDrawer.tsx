@@ -14,8 +14,13 @@ const Text = RNText; // Use React Native's Text directly
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useFavorites } from "@/contexts/favorites-context";
+// `useNavigationHistory` is still imported for `clearHistory` (logout flow)
+// — `useNav` doesn't expose history mutators (foundation TODO).
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
+// `useNavigationLoading` is still imported for `isNavigatingRef` (synchronous
+// double-click guard) — `useNav` doesn't expose that ref (foundation TODO).
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import {
@@ -32,7 +37,8 @@ import { selectionHaptic, impactHaptic, lightImpactHaptic } from "@/utils/haptic
 import { usePathname } from "expo-router";
 import { MENU_ITEMS, routes, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
-import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
+import { normalizePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { maskPhone } from '@/utils';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useDrawerStatus } from "@react-navigation/drawer";
@@ -70,8 +76,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const { user: authUser, logout, refreshUserData } = useAuth();
   const { theme, setTheme, isDark: isDarkMode } = useTheme();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
+  const nav = useNav();
   const { clearHistory } = useNavigationHistory();
-  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
+  const { isNavigatingRef } = useNavigationLoading();
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -333,16 +340,16 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       // Prevent double-navigation
       if (isNavigatingRef.current) return;
 
-      const tabRoute = routeToMobilePath(path);
+      const tabRoute = mobileRoute(path);
 
       // Close drawer and user menu first so overlay is visible
       props.navigation?.closeDrawer?.();
       closeUserMenu();
 
-      // Navigate with loading overlay
-      pushWithLoading(tabRoute);
+      // Navigate with loading overlay (useNav.push wraps pushWithLoading)
+      nav.push(tabRoute);
     },
-    [pushWithLoading, isNavigatingRef, props.navigation, closeUserMenu],
+    [nav, isNavigatingRef, props.navigation, closeUserMenu],
   );
 
   // Expose navigateToPath to the tutorial onAction registered above.

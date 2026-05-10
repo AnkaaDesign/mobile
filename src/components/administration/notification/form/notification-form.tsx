@@ -19,7 +19,7 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import type { User, Sector, Notification } from "@/types";
 import { getUsers, getSectors, adminSendNotification, type AdminSendNotificationData } from "@/api-client";
@@ -74,7 +74,7 @@ interface NotificationFormProps {
 }
 
 export function NotificationForm({ mode, notification, onSuccess, onCancel }: NotificationFormProps) {
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const [isSending, setIsSending] = useState(false);
@@ -181,7 +181,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
 
       Alert.alert("Sucesso", scheduleLater ? "Notificação agendada com sucesso" : "Notificação enviada com sucesso");
       onSuccess?.();
-      goBack();
+      nav.goBack();
     } catch (error: any) {
       console.error("Error sending notification:", error);
       Alert.alert("Erro", error?.message || "Erro ao enviar notificação");
@@ -194,7 +194,7 @@ export function NotificationForm({ mode, notification, onSuccess, onCancel }: No
     if (onCancel) {
       onCancel();
     } else {
-      goBack();
+      nav.goBack();
     }
   };
 

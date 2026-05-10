@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +39,7 @@ interface TaskQuoteWizardProps {
 export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProps) {
   const { colors } = useTheme();
   const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -457,8 +457,8 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
 
   // Handle cancel
   const handleCancel = useCallback(() => {
-    goBack();
-  }, [goBack]);
+    nav.goBack();
+  }, [nav]);
 
   // Full wizard reset: step + local pickers/caches. react-hook-form fields
   // are reset automatically by MultiStepFormContainer via useFormContext.

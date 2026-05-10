@@ -1,7 +1,6 @@
-import { Layout } from '@/components/list/Layout'
-import { paintBrandsListConfig } from '@/config/list/painting'
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { Layout } from "@/components/list/Layout";
+import { paintBrandsListConfig } from "@/config/list/painting";
 
 export default function PaintBrandListScreen() {
-  return <Layout config={paintBrandsListConfig} />
+  return <Layout config={paintBrandsListConfig} />;
 }

@@ -1,29 +1,35 @@
 import { View, ScrollView, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useExternalWithdrawal, useScreenReady} from '@/hooks';
+
+import { useExternalWithdrawal, useScreenReady } from "@/hooks";
 import { ExternalWithdrawalEditForm } from "@/components/inventory/external-withdrawal/form/external-withdrawal-edit-form";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
-
 export default function EditExternalWithdrawalScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditExternalWithdrawalScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditExternalWithdrawalScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
 
-  // Fetch withdrawal data with items
   const { data: response, isLoading, error, refetch } = useExternalWithdrawal(id!, {
     include: {
       receipts: true,
       items: {
         include: {
-          item: {
-            include: {
-              brand: true,
-              category: true,
-            },
-          },
+          item: { include: { brand: true, category: true } },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -38,18 +44,17 @@ export default function EditExternalWithdrawalScreen() {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={{ padding: spacing.md, gap: spacing.md }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
+          <View
+            style={{
+              backgroundColor: colors.card,
+              borderRadius: 12,
+              padding: spacing.md,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
             <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
             {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={{ marginBottom: spacing.md }}>
-                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            ))}
-          </View>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 3 }).map((_, i) => (
               <View key={i} style={{ marginBottom: spacing.md }}>
                 <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
                 <Skeleton width="100%" height={44} borderRadius={8} />

@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,9 +14,10 @@ import { FormFieldGroup } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from '@/constants/routes.types';
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize } from "@/constants/design-system";
@@ -32,12 +32,23 @@ const roleOptions = Object.values(ResponsibleRole).map((role) => ({
 
 export default function CreateResponsibleScreen() {
   const formKey = useFormScreenKey();
-  return <CreateResponsibleScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <CreateResponsibleScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateResponsibleScreenInner() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSystemAccess, setHasSystemAccess] = useState(false);
@@ -86,9 +97,9 @@ function CreateResponsibleScreenInner() {
       Alert.alert("Sucesso", "Responsável cadastrado com sucesso!");
       const resultId = (result as any)?.data?.id || (result as any)?.id;
       if (resultId) {
-        router.replace(routeToMobilePath(routes.administration.responsibles.details(resultId)) as any);
+        nav.replace(mobileRoute(routes.administration.responsibles.details(resultId)));
       } else {
-        router.replace(routeToMobilePath(routes.administration.responsibles.list) as any);
+        nav.replace(mobileRoute(routes.administration.responsibles.list));
       }
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Erro ao cadastrar responsável");
@@ -107,7 +118,7 @@ function CreateResponsibleScreenInner() {
           text: "Descartar",
           style: "destructive",
           onPress: () => {
-            goBack();
+            nav.goBack();
           },
         },
       ],

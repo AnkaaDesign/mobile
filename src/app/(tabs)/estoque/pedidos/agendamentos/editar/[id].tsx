@@ -13,14 +13,16 @@ import { useForm, Controller, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useOrderSchedule, useUpdateOrderSchedule } from "@/hooks";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useTheme } from "@/lib/theme";
 import {
   orderScheduleUpdateSchema,
   mapOrderScheduleToFormData,
   type OrderScheduleUpdateFormData,
 } from "@/schemas";
-import { SCHEDULE_FREQUENCY } from "@/constants";
+import { SCHEDULE_FREQUENCY, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { SCHEDULE_FREQUENCY_LABELS } from "@/constants/enum-labels";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { Card } from "@/components/ui/card";
@@ -63,8 +65,20 @@ const FREQUENCY_OPTIONS = Object.values(SCHEDULE_FREQUENCY).map((freq) => ({
 }));
 
 export default function OrderScheduleEditScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <OrderScheduleEditScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function OrderScheduleEditScreenInner() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.schedules.root) });
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

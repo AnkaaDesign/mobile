@@ -1,93 +1,47 @@
-import React, { useState } from "react";
-import { Stack, router } from "expo-router";
-import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import React from "react";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFormScreenKey } from "@/hooks/use-form-screen-key";
-import { useAirbrushingMutations, useScreenReady} from '@/hooks';
-import { useTasks } from "@/hooks";
-import { airbrushingCreateSchema, type AirbrushingCreateFormData } from '../../../../schemas';
-import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
-import { ErrorScreen } from "@/components/ui/error-screen";
+
+import { useAirbrushingMutations, useTasks } from "@/hooks";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { airbrushingCreateSchema, type AirbrushingCreateFormData } from "../../../../schemas";
+import {
+  AIRBRUSHING_STATUS,
+  AIRBRUSHING_STATUS_LABELS,
+  SECTOR_PRIVILEGES,
+  routes,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { FormScreen } from "@/components/screens/form-screen";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { IconBrush, IconDeviceFloppy, IconX, IconClock, IconTag, IconFileText } from "@tabler/icons-react-native";
+import { IconBrush, IconClock, IconTag, IconFileText } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { routes } from "@/constants";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AirbrushingCreateScreen() {
-  const formKey = useFormScreenKey();
-  return <AirbrushingCreateScreenInner key={formKey} />;
-}
-
-function AirbrushingCreateScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useAirbrushingMutations();
 
-  // Permission check
-  const canCreate = React.useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
-
-  // Fetch available tasks
-  const {
-    data: tasksResponse,
-    isLoading: isLoadingTasks,
-    error: tasksError,
-  } = useTasks({
+  const tasksQuery = useTasks({
     orderBy: { createdAt: "desc" },
     include: {
-      customer: {
-        select: {
-          id: true,
-          fantasyName: true,
-        },
-      },
-      truck: {
-        select: {
-          id: true,
-          plate: true,
-        },
-      },
+      customer: { select: { id: true, fantasyName: true } },
+      truck: { select: { id: true, plate: true } },
     },
-    // Only show tasks that don't have airbrushing yet
-    where: {
-      airbrushing: null,
-    },
+    where: { airbrushing: null },
   });
 
-  useScreenReady(!isLoadingTasks);
+  const tasks = tasksQuery.data?.data || [];
 
-  const tasks = tasksResponse?.data || [];
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isValid },
-    watch,
-    
-    
-  } = useForm<AirbrushingCreateFormData>({
+  const form = useForm<AirbrushingCreateFormData>({
     resolver: zodResolver(airbrushingCreateSchema),
     defaultValues: {
       status: AIRBRUSHING_STATUS.PENDING,
@@ -98,362 +52,196 @@ function AirbrushingCreateScreenInner() {
     mode: "onChange",
   });
 
-  const watchedPrice = watch("price");
-
-  const onSubmit = async (data: AirbrushingCreateFormData) => {
-    if (!canCreate) {
-      Alert.alert("Erro", "Você não tem permissão para criar airbrushing");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const result = await createAsync({
+  const flow = useFormFlow<AirbrushingCreateFormData, any>({
+    form,
+    mutation: async (data) =>
+      createAsync({
         ...data,
-        // Convert price to number if it's a string
-        price: typeof data.price === 'string' ? parseFloat(data.price) || null : data.price,
-      });
-
+        price:
+          typeof data.price === "string" ? parseFloat(data.price) || null : data.price,
+      }),
+    successRoute: (result) => {
       const newId = (result as any)?.data?.id || (result as any)?.id;
-      if (newId) {
-        router.replace(routeToMobilePath(routes.production.airbrushings.details(newId)) as any);
-      } else {
-        goBack();
-      }
-    } catch (error: any) {
-      Alert.alert(
-        "Erro",
-        error?.message || "Não foi possível criar o airbrushing. Tente novamente."
+      return mobileRoute(
+        newId
+          ? routes.production.airbrushings.details(newId)
+          : routes.production.airbrushings.root,
       );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+    successAction: "replace",
+    cancelFallback: mobileRoute(routes.production.airbrushings.root),
+  });
 
-  const handleCancel = () => {
-    Alert.alert(
-      "Cancelar",
-      "Tem certeza que deseja cancelar? Todos os dados serão perdidos.",
-      [
-        { text: "Continuar Editando", style: "cancel" },
-        {
-          text: "Cancelar",
-          style: "destructive",
-          onPress: () => goBack(),
-        },
-      ]
-    );
-  };
-
-  // Permission gate
-  if (!canCreate) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Criar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para criar airbrushing. É necessário privilégio de Produção, Líder ou Administrador."
-        />
-      </>
-    );
-  }
-
-  if (isLoadingTasks) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Criar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ScrollView style={{ flex: 1 }}>
-          <View style={{ padding: spacing.md, gap: spacing.md }}>
-            {/* Header card */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="50%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="80%" height={14} />
-            </View>
-            {/* Task selection */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="30%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-              <Skeleton width="100%" height={44} borderRadius={8} />
-            </View>
-            {/* Status */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="25%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-              <Skeleton width="100%" height={44} borderRadius={8} />
-            </View>
-            {/* Dates */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
-              <View style={{ marginBottom: spacing.md }}>
-                <Skeleton width="40%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-              <View>
-                <Skeleton width="45%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            </View>
-            {/* Price */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-              <Skeleton width="100%" height={44} borderRadius={8} />
-            </View>
-          </View>
-        </ScrollView>
-      </>
-    );
-  }
-
-  if (tasksError) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Criar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          title="Erro ao carregar tarefas"
-          message={tasksError?.message || "Não foi possível carregar as tarefas disponíveis"}
-        />
-      </>
-    );
-  }
+  const watchedPrice = form.watch("price");
+  const errors = form.formState.errors;
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Criar Airbrushing",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerLeft: () => (
-            <Button variant="ghost" size="icon" onPress={handleCancel}>
-              <IconX size={20} color={colors.foreground} />
-            </Button>
-          ),
-          headerRight: () => (
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting}
-            >
-              <IconDeviceFloppy
-                size={20}
-                color={isValid && !isSubmitting ? colors.primary : colors.muted}
-              />
-            </Button>
-          ),
-        }}
-      />
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={{ flex: 1, backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: spacing.md }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconBrush size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Novo Airbrushing</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <ThemedText style={{ fontSize: 14, color: colors.muted }}>
-                Preencha as informações para criar um novo airbrushing
-              </ThemedText>
-            </View>
-          </Card>
-
-          {/* Task Selection */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconTag size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Tarefa</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <Label style={{ marginBottom: spacing.xs }}>Tarefa *</Label>
-              <Controller
-                control={control}
-                name="taskId"
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    options={tasks.length === 0 ? [] : tasks.map((task) => ({
-                      value: task.id,
-                      label: `${task.name} - ${task.customer?.fantasyName} - ${task.truck?.plate}`,
-                    }))}
-                    placeholder="Selecione uma tarefa"
-                    emptyText="Nenhuma tarefa disponível"
-                  />
-                )}
-              />
-              {errors.taskId && (
-                <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                  {errors.taskId.message}
-                </ThemedText>
-              )}
-            </View>
-          </Card>
-
-          {/* Status */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconFileText size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Status</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <Label style={{ marginBottom: spacing.xs }}>Status</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
-                      value: status,
-                      label: AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS],
-                    }))}
-                    placeholder="Selecione o status"
-                  />
-                )}
-              />
-            </View>
-          </Card>
-
-          {/* Dates */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconClock size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Datas</ThemedText>
-              </View>
-            </View>
-
-            <View style={[styles.content, { gap: spacing.md }]}>
-              <View>
-                <Label style={{ marginBottom: spacing.xs }}>Data de Início</Label>
-                <Controller
-                  control={control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <DatePicker
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data de início"
-                    />
-                  )}
-                />
-              </View>
-
-              <View>
-                <Label style={{ marginBottom: spacing.xs }}>Data de Finalização</Label>
-                <Controller
-                  control={control}
-                  name="finishDate"
-                  render={({ field }) => (
-                    <DatePicker
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data de finalização"
-                    />
-                  )}
-                />
-              </View>
-            </View>
-          </Card>
-
-          {/* Price */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconTag size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Preço</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
-              <Controller
-                control={control}
-                name="price"
-                render={({ field }) => (
-                  <Input
-                    value={field.value?.toString() || ""}
-                    onChangeText={(text) => {
-                      // Allow only numbers and decimal point
-                      const cleanText = String(text || '').replace(/[^0-9.,]/g, '').replace(',', '.');
-                      const numValue = cleanText ? parseFloat(cleanText) : null;
-                      field.onChange(numValue);
-                    }}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                  />
-                )}
-              />
-              {watchedPrice && (
-                <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
-                  {formatCurrency(watchedPrice)}
-                </ThemedText>
-              )}
-              {errors.price && (
-                <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                  {errors.price.message}
-                </ThemedText>
-              )}
-            </View>
-          </Card>
-
-          {/* Action Buttons */}
-          <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.lg }}>
-            <Button
-              variant="outline"
-              style={{ flex: 1 }}
-              onPress={handleCancel}
-              disabled={isSubmitting}
-            >
-              <ThemedText>Cancelar</ThemedText>
-            </Button>
-            <Button
-              style={{ flex: 1 }}
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting}
-            >
-              <ThemedText style={{ color: "white" }}>
-                {isSubmitting ? "Salvando..." : "Criar"}
-              </ThemedText>
-            </Button>
+    <FormScreen<AirbrushingCreateFormData, any>
+      mode="create"
+      title="Criar Airbrushing"
+      form={form}
+      flow={flow}
+      privilege={{ any: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN] }}
+      submittingLabel="Criando..."
+      submitLabel="Criar"
+      loadQuery={tasksQuery as any}
+    >
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconBrush size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Novo Airbrushing</ThemedText>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        </View>
+        <View style={styles.content}>
+          <ThemedText style={{ fontSize: 14, color: colors.muted }}>
+            Preencha as informações para criar um novo airbrushing
+          </ThemedText>
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconTag size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Tarefa</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <Label style={{ marginBottom: spacing.xs }}>Tarefa *</Label>
+          <Controller
+            control={form.control}
+            name="taskId"
+            render={({ field }) => (
+              <Combobox
+                value={field.value}
+                onValueChange={field.onChange}
+                options={tasks.map((task: any) => ({
+                  value: task.id,
+                  label: `${task.name} - ${task.customer?.fantasyName} - ${task.truck?.plate}`,
+                }))}
+                placeholder="Selecione uma tarefa"
+                emptyText="Nenhuma tarefa disponível"
+              />
+            )}
+          />
+          {errors.taskId && (
+            <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
+              {errors.taskId.message as any}
+            </ThemedText>
+          )}
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconFileText size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Status</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <Label style={{ marginBottom: spacing.xs }}>Status</Label>
+          <Controller
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <Combobox
+                value={field.value}
+                onValueChange={field.onChange}
+                options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
+                  value: status,
+                  label:
+                    AIRBRUSHING_STATUS_LABELS[
+                      status as keyof typeof AIRBRUSHING_STATUS_LABELS
+                    ],
+                }))}
+                placeholder="Selecione o status"
+              />
+            )}
+          />
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconClock size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Datas</ThemedText>
+          </View>
+        </View>
+        <View style={[styles.content, { gap: spacing.md }]}>
+          <View>
+            <Label style={{ marginBottom: spacing.xs }}>Data de Início</Label>
+            <Controller
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  placeholder="Selecione a data de início"
+                />
+              )}
+            />
+          </View>
+          <View>
+            <Label style={{ marginBottom: spacing.xs }}>Data de Finalização</Label>
+            <Controller
+              control={form.control}
+              name="finishDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  placeholder="Selecione a data de finalização"
+                />
+              )}
+            />
+          </View>
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconTag size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Preço</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
+          <Controller
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <Input
+                value={field.value?.toString() || ""}
+                onChangeText={(text) => {
+                  const cleanText = String(text || "")
+                    .replace(/[^0-9.,]/g, "")
+                    .replace(",", ".");
+                  const numValue = cleanText ? parseFloat(cleanText) : null;
+                  field.onChange(numValue);
+                }}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+              />
+            )}
+          />
+          {watchedPrice ? (
+            <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
+              {formatCurrency(watchedPrice)}
+            </ThemedText>
+          ) : null}
+          {errors.price && (
+            <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
+              {errors.price.message as any}
+            </ThemedText>
+          )}
+        </View>
+      </Card>
+    </FormScreen>
   );
 }
 

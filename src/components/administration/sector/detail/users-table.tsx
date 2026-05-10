@@ -10,7 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconUsers, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Sector } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { UserTable } from "@/components/administration/user/list/user-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -111,7 +111,7 @@ export function UsersTable({ sector, maxHeight = 500 }: UsersTableProps) {
   }, []);
 
   const handleUserPress = (userId: string) => {
-    router.push(routeToMobilePath(routes.administration.users.details(userId)) as any);
+    router.push(mobileRoute(routes.administration.users.details(userId)) as any);
   };
 
   // Don't show if no users and not loading

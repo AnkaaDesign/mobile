@@ -1,5 +1,4 @@
 import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
-import { router } from 'expo-router'
 import { DetailCard } from '@/components/ui/detail-page-layout'
 import { Card } from '@/components/ui/card'
 import { Text } from '@/components/ui/text'
@@ -8,6 +7,9 @@ import { spacing, fontSize } from '@/constants/design-system'
 import type { Paint } from '@/types'
 import { PaintPreview } from '@/components/painting/preview/painting-preview'
 import { useTheme } from '@/lib/theme'
+import { useNav } from '@/contexts/nav'
+import { mobileRoute } from '@/constants/routes.types'
+import { routes } from '@/constants'
 
 // Badge colors - unified neutral, more subtle
 const BADGE_COLORS = {
@@ -21,13 +23,14 @@ interface PaintGroundPaintsCardProps {
 
 export function PaintGroundPaintsCard({ paint }: PaintGroundPaintsCardProps) {
   const { isDark } = useTheme();
+  const nav = useNav();
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
   if (!paint.paintGrounds || paint.paintGrounds.length === 0) {
     return null
   }
 
   const handlePaintPress = (paintId: string) => {
-    router.push(`/pintura/catalogo/detalhes/${paintId}`)
+    nav.push(mobileRoute(routes.painting.catalog.details(paintId)));
   }
 
   return (

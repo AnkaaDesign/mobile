@@ -1,7 +1,7 @@
 
 import { View, ScrollView, StyleSheet, Pressable } from "react-native";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNav } from "@/contexts/nav";
 import { IconChartBar, IconPackage, IconActivity, IconMask } from "@tabler/icons-react-native";
 
 import { ThemedView, ThemedText } from "@/components/ui";
@@ -19,7 +19,7 @@ interface ReportCard {
 
 export default function PpeReportsScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -52,7 +52,7 @@ export default function PpeReportsScreen() {
 
   const handleReportPress = (report: ReportCard) => {
     if (report.path) {
-      router.push(report.path as any);
+      nav.push(report.path as any);
     } else {
       // Show under construction message
     }

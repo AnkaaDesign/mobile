@@ -16,7 +16,7 @@ import {
 import { formatCurrency, formatPercentage } from '@/utils';
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from '@/constants';
-import { PrivilegeGuard } from "@/components/privilege-guard";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { spacing } from "@/constants/design-system";
@@ -334,7 +334,7 @@ export default function PayrollDetailScreen() {
   const hasPayrollDiscounts = payroll.discounts && payroll.discounts.length > 0;
 
   return (
-    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL] }}>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         <ScrollView
           style={styles.scrollView}
@@ -603,7 +603,7 @@ export default function PayrollDetailScreen() {
           </Card>
         </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }
 

@@ -7,7 +7,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { routes, CHANGE_LOG_ENTITY_TYPE, CHANGE_LOG_ENTITY_TYPE_LABELS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import type { ChangeLog } from '../../../../types';
 import { IconChevronRight, IconExternalLink } from "@tabler/icons-react-native";
 
@@ -102,7 +102,7 @@ export function EntityLinkCard({ changeLog, entityName }: EntityLinkCardProps) {
   const handleEntityPress = () => {
     if (entityRoute) {
       try {
-        router.push(routeToMobilePath(entityRoute) as any);
+        router.push(mobileRoute(entityRoute) as any);
       } catch (error) {
         console.warn("Failed to navigate to entity:", error);
       }

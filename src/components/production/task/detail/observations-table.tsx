@@ -14,7 +14,7 @@ import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useObservationsInfiniteMobile } from "@/hooks";
 import { ObservationTable, createColumnDefinitions } from "@/components/production/observation/list/observation-table";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import type { Observation } from "@/types";
 
 interface ObservationsTableProps {
@@ -92,7 +92,7 @@ export function ObservationsTable({ taskId, maxHeight = 400 }: ObservationsTable
   }, []);
 
   const handleObservationPress = (observationId: string) => {
-    router.push(routeToMobilePath(routes.production.observations.details(observationId)) as any);
+    router.push(mobileRoute(routes.production.observations.details(observationId)));
   };
 
   // Don't show if no observations and not loading
