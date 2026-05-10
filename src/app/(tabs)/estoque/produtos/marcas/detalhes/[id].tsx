@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useItemBrand, useScreenReady } from "@/hooks";
 import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
@@ -14,7 +14,7 @@ import { ThemedView } from "@/components/ui/themed-view";
 import { Header } from "@/components/ui/header";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import {
   IconTags,
@@ -30,14 +30,14 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
 } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import { TouchableOpacity } from "react-native";
 // import { showToast } from "@/components/ui/toast";
 
 export default function BrandDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
-  const { pushWithLoading, goBack } = useNavigationLoading();
+  const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -161,7 +161,7 @@ export default function BrandDetailScreen() {
 
   const handleEdit = () => {
     if (brand) {
-      pushWithLoading(routeToMobilePath(routes.inventory.products.brands.edit(brand.id)));
+      nav.push(mobileRoute(routes.inventory.products.brands.edit(brand.id)));
     }
   };
 
@@ -174,13 +174,13 @@ export default function BrandDetailScreen() {
   }, [refetch]);
 
   const handleItemPress = (itemId: string) => {
-    pushWithLoading(routeToMobilePath(routes.inventory.products.details(itemId)));
+    nav.push(mobileRoute(routes.inventory.products.details(itemId)));
   };
 
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Carregando..." showBackButton={true} onBackPress={() => goBack()} />
+        <Header title="Carregando..." showBackButton={true} onBackPress={() => nav.goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <SkeletonCard style={styles.fullWidthSkeleton} />
@@ -194,7 +194,7 @@ export default function BrandDetailScreen() {
   if (error || !brand || !id || id === "") {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Erro" showBackButton={true} onBackPress={() => goBack()} />
+        <Header title="Erro" showBackButton={true} onBackPress={() => nav.goBack()} />
         <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
           <View style={styles.contentContainer}>
             <Card>
@@ -204,7 +204,7 @@ export default function BrandDetailScreen() {
                 </View>
                 <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>Marca não encontrada</ThemedText>
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>A marca solicitada não foi encontrada ou pode ter sido removida.</ThemedText>
-                <Button onPress={() => goBack()}>
+                <Button onPress={() => nav.goBack()}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
                 </Button>
               </CardContent>
@@ -220,7 +220,7 @@ export default function BrandDetailScreen() {
       <Header
         title={brand.name}
         showBackButton={true}
-        onBackPress={() => goBack()}
+        onBackPress={() => nav.goBack()}
         rightAction={
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity

@@ -1,40 +1,43 @@
-import { useRouter } from "expo-router";
-// import { showToast } from "@/components/ui/toast";
 import { ItemForm } from "@/components/inventory/item/form/item-form";
-import { useItemMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { itemCreateSchema, type ItemCreateFormData } from '../../../../schemas';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useFormScreenKey, useItemMutations, useScreenReady } from "@/hooks";
+import { itemCreateSchema, type ItemCreateFormData } from "@/schemas";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
 
 export default function ItemCreateScreen() {
-  const router = useRouter();
-  const { createAsync, createMutation } = useItemMutations();
-  const { goBack } = useNavigationLoading();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <ItemCreateScreenInner />
+    </PrivilegeGate>
+  );
+}
 
-  // End navigation loading overlay when screen mounts
+function ItemCreateScreenInner() {
+  const nav = useNav();
+  const { createAsync, createMutation } = useItemMutations();
+
   useScreenReady();
   const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: ItemCreateFormData) => {
     try {
-      // Validate data with schema
       const validatedData = itemCreateSchema.parse(data);
-
       const result = await createAsync(validatedData);
-
       if (result.success && result.data) {
-        // API client already shows success alert
-        router.replace(routeToMobilePath(routes.inventory.products.details(result.data.id)) as any);
+        nav.replace(mobileRoute(routes.inventory.products.details(result.data.id)));
       }
     } catch (error) {
-      // API client already shows error alert
+      // API client surfaces error.
       console.error("Error creating item:", error);
     }
   };
 
   const handleCancel = () => {
-    goBack({ fallbackRoute: routeToMobilePath(routes.inventory.products.root) });
+    nav.goBack({ fallback: mobileRoute(routes.inventory.products.root) });
   };
 
   return (
