@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { z } from "zod";
 
@@ -54,16 +53,12 @@ function MaintenanceScheduleEditScreenInner() {
     },
   });
 
-  const mutation = useMutation<{ id: string }, unknown, MaintenanceScheduleUpdateFormData>({
-    mutationFn: async (_data) => {
+  const flow = useFormFlow<MaintenanceScheduleUpdateFormData, { id: string }>({
+    form,
+    mutation: async (_data) => {
       Alert.alert("Sucesso", "Agendamento atualizado com sucesso");
       return { id: id ?? "" };
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successRoute: () => mobileRoute(routes.inventory.maintenance.schedules.root),
     cancelFallback: mobileRoute(routes.inventory.maintenance.schedules.root),
   });

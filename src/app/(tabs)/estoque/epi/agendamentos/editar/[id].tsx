@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 
 import { Input } from "@/components/ui/input";
@@ -63,8 +62,9 @@ function EditPPEScheduleScreenInner() {
         },
   });
 
-  const mutation = useMutation<{ id: string }, unknown, PpeScheduleEditForm>({
-    mutationFn: async (_data) => {
+  const flow = useFormFlow<PpeScheduleEditForm, { id: string }>({
+    form,
+    mutation: async (_data) => {
       if (!id) {
         Alert.alert("Erro", "ID de agendamento não encontrado");
         throw new Error("missing id");
@@ -72,11 +72,6 @@ function EditPPEScheduleScreenInner() {
       Alert.alert("Sucesso", "Agendamento atualizado com sucesso");
       return { id };
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successRoute: () => mobileRoute(routes.inventory.ppe.schedules.root),
     cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
   });

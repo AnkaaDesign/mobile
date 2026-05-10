@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { useMaintenance } from '@/hooks';
@@ -26,24 +25,11 @@ export default function MaintenanceScheduleDetailsScreen() {
     },
   });
 
-  // Synthesize a `name` field for the detail header (the schedule's item
-  // name is what the user expects to see).
-  const adaptedQuery = useMemo(() => {
-    const data = (query as any).data;
-    if (!data) return query;
-    const inner = data.data ?? data;
-    if (!inner?.id) return query;
-    const named = {
-      ...inner,
-      name: inner.item?.name ?? 'Agendamento de Manutenção',
-    };
-    return { ...query, data: { ...data, data: named } } as typeof query;
-  }, [query]);
-
   return (
     <DetailScreen
-      query={adaptedQuery as any}
+      query={query as any}
       icon={IconCalendar}
+      title={(s: any) => s.item?.name ?? 'Agendamento de Manutenção'}
       editRoute={(s: any) => mobileRoute(routes.inventory.maintenance.schedules.edit(s.id))}
       notFoundFallback={mobileRoute(routes.inventory.maintenance.schedules.root)}
       status={(s: any) => ({

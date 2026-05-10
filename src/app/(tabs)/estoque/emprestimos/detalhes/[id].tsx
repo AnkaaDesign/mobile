@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { View, Alert, StyleSheet, TouchableOpacity } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -33,18 +32,6 @@ export default function BorrowDetailsScreen() {
     enabled: !!id,
   });
 
-  // Synthesize a `name` field for the detail header (Borrow has no name in
-  // the schema, but DetailPageHeader requires entity.name). See template
-  // feedback: <DetailScreen title> prop is declared but unused.
-  const adaptedQuery = useMemo(() => {
-    const data = (query as any).data;
-    if (!data) return query;
-    const inner = data.data ?? data;
-    if (!inner?.id) return query;
-    const named = { ...inner, name: `Empréstimo #${String(inner.id).slice(0, 8)}` };
-    return { ...query, data: { ...data, data: named } } as typeof query;
-  }, [query]);
-
   const handleReturn = (borrowId: string) => {
     Alert.alert(
       "Devolver Item",
@@ -76,9 +63,10 @@ export default function BorrowDetailsScreen() {
   };
 
   return (
-    <DetailScreen<Borrow & { name: string }>
-      query={adaptedQuery as any}
+    <DetailScreen<Borrow>
+      query={query as any}
       icon={IconPackage}
+      title={(b) => `Empréstimo de ${b.user?.name ?? `#${String(b.id).slice(0, 8)}`}`}
       privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
       editGuard={{ editable: EDITABLE_BORROW_STATUSES }}
       editRoute={(b) => mobileRoute(routes.inventory.borrows.edit(b.id))}
@@ -90,9 +78,9 @@ export default function BorrowDetailsScreen() {
       }}
       notFoundFallback={mobileRoute(routes.inventory.borrows.root)}
     >
-      {(borrow) => (
+      {(borrow, ctx) => (
         <View style={styles.body}>
-          {borrow.status === BORROW_STATUS.ACTIVE && (
+          {ctx.isEditable && borrow.status === BORROW_STATUS.ACTIVE && (
             <TouchableOpacity
               onPress={() => handleReturn(borrow.id)}
               style={[styles.returnButton, { backgroundColor: colors.primary }]}

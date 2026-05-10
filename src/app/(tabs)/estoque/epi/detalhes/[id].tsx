@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { View, Alert, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
@@ -39,25 +39,11 @@ export default function PPEDetailsScreen() {
     enabled: !!id,
   });
 
-  // Synthesize a `name` field for the detail header (PpeDelivery has no
-  // name in its schema). See template feedback: `title` prop on
-  // <DetailScreen> is declared but unused.
-  const adaptedQuery = useMemo(() => {
-    const data = (query as any).data;
-    if (!data) return query;
-    const inner = data.data ?? data;
-    if (!inner?.id) return query;
-    const named = {
-      ...inner,
-      name: inner.item?.name ?? `Entrega EPI #${String(inner.id).slice(0, 8)}`,
-    };
-    return { ...query, data: { ...data, data: named } } as typeof query;
-  }, [query]);
-
   return (
     <DetailScreen
-      query={adaptedQuery as any}
+      query={query as any}
       icon={IconShield}
+      title={(d: any) => d.item?.name ?? `Entrega EPI #${String(d.id).slice(0, 8)}`}
       privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
       editGuard={{ editable: EDITABLE_PPE_DELIVERY_STATUSES }}
       editRoute={(d: any) => mobileRoute(routes.inventory.ppe.deliveries.edit(d.id))}
@@ -81,7 +67,13 @@ export default function PPEDetailsScreen() {
                 : "default",
       })}
     >
-      {(ppeDelivery: any) => <PpeDetailBody ppeDelivery={ppeDelivery} refetch={query.refetch} />}
+      {(ppeDelivery: any, ctx) => (
+        <PpeDetailBody
+          ppeDelivery={ppeDelivery}
+          refetch={query.refetch}
+          isEditable={ctx.isEditable}
+        />
+      )}
     </DetailScreen>
   );
 }
@@ -89,9 +81,11 @@ export default function PPEDetailsScreen() {
 function PpeDetailBody({
   ppeDelivery,
   refetch,
+  isEditable,
 }: {
   ppeDelivery: any;
   refetch: () => Promise<unknown>;
+  isEditable: boolean;
 }) {
   const { colors } = useTheme();
   const nav = useNav();
@@ -236,44 +230,46 @@ function PpeDetailBody({
         </Card>
       )}
 
-      <View style={styles.actions}>
-        {ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
-          <>
+      {isEditable && (
+        <View style={styles.actions}>
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.PENDING && (
+            <>
+              <Button
+                variant="outline"
+                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.APPROVED)}
+                style={styles.actionButton}
+              >
+                <ThemedText>Aprovar Entrega</ThemedText>
+              </Button>
+              <Button
+                variant="outline"
+                onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.REPROVED)}
+                style={styles.actionButton}
+              >
+                <ThemedText>Reprovar Entrega</ThemedText>
+              </Button>
+            </>
+          )}
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
             <Button
               variant="outline"
-              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.APPROVED)}
+              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.DELIVERED)}
               style={styles.actionButton}
             >
-              <ThemedText>Aprovar Entrega</ThemedText>
+              <ThemedText>Marcar como Entregue</ThemedText>
             </Button>
+          )}
+          {ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
             <Button
               variant="outline"
-              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.REPROVED)}
+              onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.PENDING)}
               style={styles.actionButton}
             >
-              <ThemedText>Reprovar Entrega</ThemedText>
+              <ThemedText>Reativar Entrega</ThemedText>
             </Button>
-          </>
-        )}
-        {ppeDelivery.status === PPE_DELIVERY_STATUS.APPROVED && (
-          <Button
-            variant="outline"
-            onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.DELIVERED)}
-            style={styles.actionButton}
-          >
-            <ThemedText>Marcar como Entregue</ThemedText>
-          </Button>
-        )}
-        {ppeDelivery.status === PPE_DELIVERY_STATUS.REPROVED && (
-          <Button
-            variant="outline"
-            onPress={() => handleStatusChange(PPE_DELIVERY_STATUS.PENDING)}
-            style={styles.actionButton}
-          >
-            <ThemedText>Reativar Entrega</ThemedText>
-          </Button>
-        )}
-      </View>
+          )}
+        </View>
+      )}
     </View>
   );
 }

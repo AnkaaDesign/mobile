@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 
 import { Input } from "@/components/ui/input";
@@ -48,16 +47,13 @@ function MaintenanceScheduleCreateScreenInner() {
 
   // Mock mutation — wire to real API once available. Surfaces a success
   // alert and lets <FormScreen> drive navigation through useFormFlow.
-  const mutation = useMutation<{ id: string }, unknown, MaintenanceScheduleCreateFormData>({
-    mutationFn: async (_data) => {
+  // Foundation patch: useFormFlow accepts a callback directly, no useMutation wrapper.
+  const flow = useFormFlow<MaintenanceScheduleCreateFormData, { id: string }>({
+    form,
+    mutation: async (_data) => {
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
       return { id: "" };
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successRoute: () => mobileRoute(routes.inventory.maintenance.schedules.root),
     cancelFallback: mobileRoute(routes.inventory.maintenance.schedules.root),
   });

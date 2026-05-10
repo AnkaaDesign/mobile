@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
@@ -50,16 +49,12 @@ function CreatePPEScheduleScreenInner() {
   });
 
   // Mock mutation — wire to real API once available.
-  const mutation = useMutation<{ id: string }, unknown, PpeScheduleCreateForm>({
-    mutationFn: async (_data) => {
+  const flow = useFormFlow<PpeScheduleCreateForm, { id: string }>({
+    form,
+    mutation: async (_data) => {
       Alert.alert("Sucesso", "Agendamento criado com sucesso");
       return { id: "" };
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successRoute: () => mobileRoute(routes.inventory.ppe.schedules.root),
     cancelFallback: mobileRoute(routes.inventory.ppe.schedules.root),
   });

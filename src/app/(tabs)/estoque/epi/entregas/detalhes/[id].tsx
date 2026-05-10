@@ -79,22 +79,11 @@ export default function PPEDeliveryDetailsScreen() {
     },
   });
 
-  const adaptedQuery = useMemo(() => {
-    const data = (query as any).data;
-    if (!data) return query;
-    const inner = data.data ?? data;
-    if (!inner?.id) return query;
-    const named = {
-      ...inner,
-      name: inner.item?.name ?? `Entrega EPI #${String(inner.id).slice(-8)}`,
-    };
-    return { ...query, data: { ...data, data: named } } as typeof query;
-  }, [query]);
-
   return (
     <DetailScreen
-      query={adaptedQuery as any}
+      query={query as any}
       icon={IconShield}
+      title={(d: any) => d.item?.name ?? `Entrega EPI #${String(d.id).slice(-8)}`}
       privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
       editGuard={{ editable: EDITABLE_PPE_DELIVERY_STATUSES }}
       editRoute={(d: any) => mobileRoute(routes.inventory.ppe.deliveries.edit(d.id))}
@@ -110,7 +99,13 @@ export default function PPEDeliveryDetailsScreen() {
         variant: getBadgeVariantFromStatus("PPE_DELIVERY", d.status) as any,
       })}
     >
-      {(delivery: any) => <DeliveryDetailBody delivery={delivery} refetch={query.refetch} />}
+      {(delivery: any, ctx) => (
+        <DeliveryDetailBody
+          delivery={delivery}
+          refetch={query.refetch}
+          isEditable={ctx.isEditable}
+        />
+      )}
     </DetailScreen>
   );
 }
@@ -118,9 +113,11 @@ export default function PPEDeliveryDetailsScreen() {
 function DeliveryDetailBody({
   delivery,
   refetch,
+  isEditable,
 }: {
   delivery: any;
   refetch: () => Promise<unknown>;
+  isEditable: boolean;
 }) {
   const { colors } = useTheme();
   const nav = useNav();
@@ -207,8 +204,8 @@ function DeliveryDetailBody({
 
   return (
     <View style={styles.body}>
-      {/* Action buttons row (only when relevant status) */}
-      {delivery.status === PPE_DELIVERY_STATUS.PENDING && (
+      {/* Action buttons row (only when entity is editable AND status is PENDING) */}
+      {isEditable && delivery.status === PPE_DELIVERY_STATUS.PENDING && (
         <View style={styles.actionRow}>
           <Button variant="default" onPress={handleMarkDelivered} style={{ flex: 1 }}>
             <IconTruck size={18} color={colors.primaryForeground} />

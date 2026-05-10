@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
@@ -157,10 +156,11 @@ function CreatePPEDeliveryScreenInner() {
     return [item.name, brandName, displaySize].filter(Boolean).join(" - ");
   }, []);
 
-  // Wrapper mutation around the entity-mutation API to fit the
-  // useFormFlow shape `mutateAsync(formData)`.
-  const mutation = useMutation<{ id: string }, unknown, PpeDeliveryCreateFormData>({
-    mutationFn: async (data) => {
+  // Foundation patch: useFormFlow accepts a callback directly; no
+  // useMutation wrapper needed around the entity-mutation API.
+  const flow = useFormFlow<PpeDeliveryCreateFormData, { id: string }>({
+    form,
+    mutation: async (data) => {
       const result = await createAsync({
         ...data,
         status: PPE_DELIVERY_STATUS.APPROVED,
@@ -173,11 +173,6 @@ function CreatePPEDeliveryScreenInner() {
     onError: (err: any) => {
       Alert.alert("Erro", err?.message || "Ocorreu um erro ao criar a entrega de EPI");
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successAction: "replace",
     successRoute: (result) =>
       result.id

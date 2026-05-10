@@ -2,7 +2,6 @@ import { useEffect, useMemo } from "react";
 import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 
 import { Input } from "@/components/ui/input";
@@ -79,8 +78,9 @@ function EditPPEDeliveryScreenInner() {
     [],
   );
 
-  const mutation = useMutation<{ id: string }, unknown, PpeDeliveryUpdateFormData>({
-    mutationFn: async (data) => {
+  const flow = useFormFlow<PpeDeliveryUpdateFormData, { id: string }>({
+    form,
+    mutation: async (data) => {
       if (!id) {
         Alert.alert("Erro", "ID de entrega não encontrado");
         throw new Error("missing id");
@@ -95,11 +95,6 @@ function EditPPEDeliveryScreenInner() {
     onError: (err: any) => {
       Alert.alert("Erro", err?.message || "Ocorreu um erro ao atualizar a entrega de EPI");
     },
-  });
-
-  const flow = useFormFlow({
-    form,
-    mutation,
     successAction: "replace",
     successRoute: (result) =>
       mobileRoute(routes.inventory.ppe.deliveries.details(result.id)),
