@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { View, TouchableOpacity, ScrollView, StyleSheet, Modal, KeyboardAvoidingView, Platform, Alert as RNAlert } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes } from "@/constants";
 import { Text } from "@/components/ui/text";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -48,7 +50,7 @@ interface ComponentCalculation {
 
 export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = true }: MobilePaintFormulaCalculatorProps) {
   const { colors } = useTheme();
-  const router = useRouter();
+  const nav = useNav();
   const { createAsync: createProduction } = usePaintProductionMutations();
 
   // Keyboard-aware scrolling
@@ -327,7 +329,7 @@ export function MobilePaintFormulaCalculator({ formula, allowPriceVisibility = t
       if (result?.data?.id) {
         // API client already shows success alert, just navigate
         setSelectedComponents([]);
-        router.push("/(tabs)/pintura/catalogo/listar");
+        nav.push(mobileRoute(routes.painting.catalog.list));
       }
     } catch (error) {
       console.error("Error creating production:", error);

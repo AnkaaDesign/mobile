@@ -1,89 +1,53 @@
-import { View, StyleSheet } from "react-native";
-import { Stack, router, useLocalSearchParams, Redirect } from "expo-router";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { Stack, useLocalSearchParams, Redirect } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { usePaintFormula, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 
-
-import { Skeleton } from "@/components/ui/skeleton";
-
+/**
+ * Edit Formula screen — formulas are managed via the paint catalog.
+ * Loads the formula and redirects to the parent paint's catalog page.
+ */
 export default function EditFormulaScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditFormulaScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditFormulaScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const nav = useNav();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goBack } = useNavigationHistory();
 
-  // End navigation loading overlay when screen mounts
-
-  // Check user permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-
-  // Fetch formula data
   const { data: response, isLoading, error } = usePaintFormula(id || "", {
-    include: {
-      paint: true,
-    },
-    enabled: !!id && canEdit,
+    include: { paint: true },
+    enabled: !!id,
   });
 
   useScreenReady(!isLoading);
 
   const formula = response?.data;
 
-  // Handle cancel
   const handleCancel = () => {
-    goBack();
+    nav.goBack({ fallback: mobileRoute(routes.painting.formulas.root) });
   };
-
-  if (!canEdit) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Editar Fórmula",
-          }}
-        />
-        <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>
-            Você não tem permissão para editar fórmulas
-          </ThemedText>
-          <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
-            Voltar
-          </Button>
-        </View>
-      </>
-    );
-  }
 
   if (isLoading) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: "Editar Fórmula",
-          }}
-        />
-        <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-          {/* Header info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
-              <Skeleton style={{ height: 18, width: '50%', borderRadius: 4 }} />
-            </View>
-            <Skeleton style={{ height: 13, width: '70%', borderRadius: 4 }} />
-          </View>
-          {/* Redirect info card */}
-          <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-            <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
-            <Skeleton style={{ height: 13, width: '80%', borderRadius: 4 }} />
-            <Skeleton style={{ height: 13, width: '65%', borderRadius: 4 }} />
-          </View>
+        <Stack.Screen options={{ title: "Editar Fórmula" }} />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </>
     );
@@ -92,15 +56,9 @@ export default function EditFormulaScreen() {
   if (error || !formula) {
     return (
       <>
-        <Stack.Screen
-          options={{
-            title: "Editar Fórmula",
-          }}
-        />
+        <Stack.Screen options={{ title: "Editar Fórmula" }} />
         <View style={styles.centerContainer}>
-          <ThemedText style={styles.errorText}>
-            Erro ao carregar fórmula
-          </ThemedText>
+          <ThemedText style={styles.errorText}>Erro ao carregar fórmula</ThemedText>
           <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
             Voltar
           </Button>
@@ -109,21 +67,14 @@ export default function EditFormulaScreen() {
     );
   }
 
-  // Redirect to paint catalog edit since formulas are now managed there
+  // Redirect to paint catalog edit since formulas are now managed there.
   if (formula.paintId) {
-    // For mobile, we redirect to the catalog page since the edit with tabs might not be implemented yet
-    // In the future, this could redirect to: /(tabs)/pintura/catalogo/editar/${formula.paintId}?tab=formulation
-    return <Redirect href={`/(tabs)/pintura/catalogo/${formula.paintId}` as any} />;
+    return <Redirect href={mobileRoute(routes.painting.catalog.edit(formula.paintId)) as any} />;
   }
 
-  // Fallback if no paintId
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "Editar Fórmula",
-        }}
-      />
+      <Stack.Screen options={{ title: "Editar Fórmula" }} />
       <View style={styles.centerContainer}>
         <ThemedText style={styles.errorText}>
           Esta fórmula não está associada a uma tinta.
@@ -142,9 +93,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.xl,
-  },
-  loadingText: {
-    marginTop: spacing.md,
   },
   errorText: {
     textAlign: "center",

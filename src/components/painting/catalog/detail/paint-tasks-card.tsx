@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -10,7 +9,8 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Paint, Task } from "@/types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
@@ -24,6 +24,7 @@ interface PaintTasksCardProps {
 
 export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
@@ -88,7 +89,7 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
   }, []);
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+    nav.push(mobileRoute(routes.production.schedule.details(taskId)));
   };
 
   if (!isLoading && tasks.length === 0 && !searchQuery) {

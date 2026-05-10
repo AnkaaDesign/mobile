@@ -1,61 +1,74 @@
-import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
+import { Stack } from "expo-router";
 import { Alert } from "react-native";
 import { ThemedView } from "@/components/ui/themed-view";
 import { PaintForm } from "@/components/painting/forms/painting-form";
-import { usePaintMutations, usePaintFormulaMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
+import {
+  usePaintMutations,
+  usePaintFormulaMutations,
+  useScreenReady,
+  useFormScreenKey,
+} from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import type { PaintFormula } from "@/types";
 import type { PaintCreateFormData, PaintFormulaCreateFormData } from "@/schemas";
 import { paintFormulaComponentService, notify } from "@/api-client";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 
 export default function CreateCatalogScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <CreateCatalogScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function CreateCatalogScreenInner() {
+  const nav = useNav();
   const { createAsync } = usePaintMutations();
   const formulaMutations = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // End navigation loading overlay when screen mounts
   useScreenReady();
   const formKey = useFormScreenKey();
 
   const handleSubmit = async (data: PaintCreateFormData, formulas?: PaintFormula[]) => {
     setIsSubmitting(true);
     try {
-      // Create the paint first
-      const result = await createAsync(data);
+      const result = await nav.withLoading(async () => createAsync(data));
 
       if (result.success && result.data?.id) {
         const paintId = result.data.id;
 
-        let formulaCreationResults = {
+        const formulaCreationResults = {
           success: 0,
           failed: 0,
           errors: [] as string[],
         };
 
-        // Create formulas for the newly created paint
         if (formulas && formulas.length > 0) {
           for (const formula of formulas) {
-            const validComponents = formula.components?.filter((c) => {
-              return c.itemId && c.weightInGrams && c.weightInGrams > 0;
-            }) || [];
+            const validComponents =
+              formula.components?.filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0) || [];
 
             if (validComponents.length === 0) {
               formulaCreationResults.failed++;
-              formulaCreationResults.errors.push(`Fórmula "${formula.description || "Sem descrição"}" não tem componentes válidos`);
+              formulaCreationResults.errors.push(
+                `Fórmula "${formula.description || "Sem descrição"}" não tem componentes válidos`,
+              );
               continue;
             }
 
             const formulaData: PaintFormulaCreateFormData = {
-              paintId: paintId,
+              paintId,
               description: formula.description || "Fórmula Principal",
               components: validComponents.map((c) => ({
                 itemId: c.itemId,
-                weightInGrams: c.weightInGrams!, // Backend will calculate ratio from weight (non-null assertion is safe due to filter above)
+                weightInGrams: c.weightInGrams!,
               })),
             };
 
@@ -65,25 +78,26 @@ export default function CreateCatalogScreen() {
             } catch (error: any) {
               formulaCreationResults.failed++;
               const errorMessage = error.message || "Erro desconhecido";
-              formulaCreationResults.errors.push(`Fórmula "${formula.description || "Sem descrição"}": ${errorMessage}`);
+              formulaCreationResults.errors.push(
+                `Fórmula "${formula.description || "Sem descrição"}": ${errorMessage}`,
+              );
             }
           }
 
-          // Show formula creation results if there were any issues
           if (formulaCreationResults.failed > 0) {
             Alert.alert(
               "Tinta criada com avisos",
               `Tinta criada com sucesso!\n\nFórmulas criadas: ${formulaCreationResults.success}\nFórmulas com erro: ${formulaCreationResults.failed}\n\nErros:\n${formulaCreationResults.errors.join("\n")}`,
-              [{ text: "OK" }]
+              [{ text: "OK" }],
             );
           }
         }
 
-        // Deduct stock for all formula components — run in parallel, one summary toast at the end
+        // Deduct stock for all formula components — run in parallel.
         const allDeductComponents = (formulas || []).flatMap((formula) =>
           (formula.components || [])
             .filter((c) => c.itemId && c.weightInGrams && c.weightInGrams > 0)
-            .map((c) => ({ itemId: c.itemId, weight: c.weightInGrams! }))
+            .map((c) => ({ itemId: c.itemId, weight: c.weightInGrams! })),
         );
 
         if (allDeductComponents.length > 0) {
@@ -92,13 +106,16 @@ export default function CreateCatalogScreen() {
               paintFormulaComponentService.deductForFormulationTest(
                 { itemId: c.itemId, weight: c.weight },
                 { suppressToast: true },
-              )
-            )
+              ),
+            ),
           );
-          notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
+          notify.success(
+            "Estoque atualizado",
+            `${allDeductComponents.length} componente(s) deduzido(s) do estoque`,
+          );
         }
 
-        router.replace(routeToMobilePath(routes.painting.catalog.details(paintId)) as any);
+        nav.replace(mobileRoute(routes.painting.catalog.details(paintId)));
       }
     } catch (error) {
       console.error("Error creating paint:", error);
@@ -108,11 +125,7 @@ export default function CreateCatalogScreen() {
   };
 
   const handleCancel = () => {
-    if (router.canGoBack()) {
-      goBack();
-    } else {
-      router.replace(routeToMobilePath(routes.painting.catalog.root) as any);
-    }
+    nav.goBack({ fallback: mobileRoute(routes.painting.catalog.root) });
   };
 
   return (
@@ -123,7 +136,7 @@ export default function CreateCatalogScreen() {
           headerBackTitle: "Voltar",
         }}
       />
-      <ThemedView className="flex-1">
+      <ThemedView style={{ flex: 1 }}>
         <PaintForm
           key={formKey}
           mode="create"

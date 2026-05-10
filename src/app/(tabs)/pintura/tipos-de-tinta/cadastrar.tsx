@@ -1,68 +1,42 @@
 import { useState } from "react";
-import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { Stack, router } from "expo-router";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFormScreenKey } from "@/hooks/use-form-screen-key";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { usePaintTypeMutations } from "@/hooks/paintType";
-import { useItems } from "@/hooks/useItem";
-import { useScreenReady } from "@/hooks";
-import { paintTypeCreateSchema } from '../../../../schemas';
-import type { PaintTypeCreateFormData } from '../../../../schemas';
+import { useItems } from "@/hooks";
+import { paintTypeCreateSchema } from "@/schemas";
+import type { PaintTypeCreateFormData } from "@/schemas";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { routes } from "@/constants";
-import {
-  IconTag,
-  IconDroplet,
-  IconBoxSeam,
-} from "@tabler/icons-react-native";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { IconTag, IconDroplet, IconBoxSeam } from "@tabler/icons-react-native";
 
 export default function CreatePaintTypeScreen() {
-  const formKey = useFormScreenKey();
-  return <CreatePaintTypeScreenInner key={formKey} />;
-}
-
-function CreatePaintTypeScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
   const { create } = usePaintTypeMutations();
-
-  // End navigation loading overlay when screen mounts
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemSearch] = useState("");
 
-  // Check user permissions
-  const canCreate = hasPrivilege(user, SECTOR_PRIVILEGES.BASIC);
-
-  // Fetch component items
+  // Fetch component items for the multi-select.
   const { data: itemsResponse, isLoading: isLoadingItems } = useItems({
     searchingFor: itemSearch,
     orderBy: { name: "asc" },
   });
 
-  useScreenReady(!isLoadingItems);
+  const componentItems =
+    itemsResponse?.data?.map((item) => ({
+      value: item.id,
+      label: item.name,
+    })) || [];
 
-  const componentItems = itemsResponse?.data?.map((item) => ({
-    value: item.id,
-    label: item.name,
-  })) || [];
-
-  // Form setup
   const form = useForm<PaintTypeCreateFormData>({
     resolver: zodResolver(paintTypeCreateSchema),
     defaultValues: {
@@ -72,259 +46,171 @@ function CreatePaintTypeScreenInner() {
     },
   });
 
+  const flow = useFormFlow<PaintTypeCreateFormData, any>({
+    form,
+    mutation: async (data) => {
+      const result = await create(data as any);
+      return result;
+    },
+    successRoute: (result) => {
+      const newId = (result as any)?.data?.id || (result as any)?.id;
+      return newId
+        ? mobileRoute(routes.painting.paintTypes.details(newId))
+        : mobileRoute(routes.painting.paintTypes.root);
+    },
+    successAction: "replace",
+    cancelFallback: mobileRoute(routes.painting.paintTypes.root),
+  });
+
   const {
     control,
-    handleSubmit,
     watch,
-    formState: { errors, isValid },
+    formState: { errors },
   } = form;
 
   const needGround = watch("needGround");
 
-  // Handle form submission
-  const onSubmit = async (data: PaintTypeCreateFormData) => {
-    if (!canCreate) {
-      Alert.alert("Acesso negado", "Você não tem permissão para criar");
-      return;
-    }
-
-    if (!isValid) {
-      Alert.alert("Erro", "Por favor, corrija os erros no formulário");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const result = await create(data);
-      const newId = (result as any)?.data?.id || (result as any)?.id;
-      if (newId) {
-        router.replace(routeToMobilePath(routes.painting.paintTypes.details(newId)) as any);
-      } else {
-        goBack();
-      }
-    } catch (_error) {
-      // API client already shows error alert
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Handle cancel
-  const handleCancel = () => {
-    goBack();
-  };
-
-  if (!canCreate) {
-    return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>
-          Você não tem permissão para criar tipos de tinta
-        </ThemedText>
-        <Button variant="outline" onPress={handleCancel} style={styles.backButton}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
-
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Novo Tipo de Tinta",
-          headerBackTitle: "Cancelar",
-          headerRight: () => (
-            <Button
-              size="sm"
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || isSubmitting}
-            >
-              {isSubmitting ? "Salvando..." : "Salvar"}
-            </Button>
-          ),
-        }}
-      />
-      <ScrollView
-        style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <IconTag size={24} color={colors.primary} />
-            <View style={styles.headerText}>
-              <ThemedText style={styles.headerTitle}>Novo Tipo de Tinta</ThemedText>
-              <ThemedText style={styles.headerSubtitle}>
-                Cadastre um novo tipo de tinta para categorizar e organizar o catálogo
-              </ThemedText>
-            </View>
-          </View>
-        </Card>
-
-        {/* Basic Information */}
-        <Card style={styles.card}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <IconTag size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-
-            <View style={styles.fieldContainer}>
-              <ThemedText style={styles.fieldLabel}>
-                Nome <ThemedText style={styles.required}>*</ThemedText>
-              </ThemedText>
-              <Controller
-                control={control}
-                name="name"
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    value={value}
-                    onChangeText={onChange}
-                    placeholder="Ex: Poliéster, Acrílica, Poliuretano..."
-                    error={!!errors.name}
-                    errorMessage={errors.name?.message}
-                  />
-                )}
-              />
-            </View>
-          </View>
-        </Card>
-
-        {/* Ground Configuration */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconDroplet size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Configuração de Fundo</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
-              Define se este tipo de tinta requer aplicação de fundo
+    <FormScreen
+      title="Novo Tipo de Tinta"
+      subtitle="Cadastre um novo tipo de tinta"
+      mode="create"
+      form={form}
+      flow={flow}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      submitLabel="Criar Tipo"
+      submittingLabel="Criando..."
+    >
+      {/* Header */}
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <IconTag size={24} color={colors.primary} />
+          <View style={styles.headerText}>
+            <ThemedText style={styles.headerTitle}>Novo Tipo de Tinta</ThemedText>
+            <ThemedText style={styles.headerSubtitle}>
+              Cadastre um novo tipo de tinta para categorizar e organizar o catálogo
             </ThemedText>
+          </View>
+        </View>
+      </Card>
 
-            <View style={styles.switchContainer}>
-              <View style={styles.switchLabelContainer}>
-                <ThemedText style={styles.switchLabel}>Requer Fundo</ThemedText>
-                <ThemedText style={[styles.switchDescription, { color: colors.mutedForeground }]}>
-                  Tintas deste tipo exigirão seleção de fundos durante o cadastro
-                </ThemedText>
-              </View>
-              <Controller
-                control={control}
-                name="needGround"
-                render={({ field: { onChange, value } }) => (
-                  <Switch
-                    checked={value}
-                    onCheckedChange={onChange}
-                    disabled={isSubmitting}
-                  />
-                )}
-              />
+      {/* Basic Information */}
+      <Card style={styles.card}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <IconTag size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Informações Básicas</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.fieldContainer}>
+            <ThemedText style={styles.fieldLabel}>
+              Nome <ThemedText style={styles.required}>*</ThemedText>
+            </ThemedText>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  value={value}
+                  onChangeText={onChange}
+                  placeholder="Ex: Poliéster, Acrílica, Poliuretano..."
+                  error={!!errors.name}
+                  errorMessage={errors.name?.message}
+                />
+              )}
+            />
+          </View>
+        </View>
+      </Card>
+
+      {/* Ground Configuration */}
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconDroplet size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Configuração de Fundo</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
+            Define se este tipo de tinta requer aplicação de fundo
+          </ThemedText>
+
+          <View style={styles.switchContainer}>
+            <View style={styles.switchLabelContainer}>
+              <ThemedText style={styles.switchLabel}>Requer Fundo</ThemedText>
+              <ThemedText style={[styles.switchDescription, { color: colors.mutedForeground }]}>
+                Tintas deste tipo exigirão seleção de fundos durante o cadastro
+              </ThemedText>
             </View>
+            <Controller
+              control={control}
+              name="needGround"
+              render={({ field: { onChange, value } }) => (
+                <Switch checked={value} onCheckedChange={onChange} disabled={flow.isSubmitting} />
+              )}
+            />
+          </View>
 
-            {needGround && (
-              <View style={[styles.infoBox, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
-                <ThemedText style={[styles.infoText, { color: colors.mutedForeground }]}>
-                  ℹ️ Tintas deste tipo exigirão a seleção de fundos apropriados durante o cadastro.
-                </ThemedText>
-              </View>
+          {needGround && (
+            <View
+              style={[
+                styles.infoBox,
+                { backgroundColor: colors.muted + "30", borderColor: colors.border },
+              ]}
+            >
+              <ThemedText style={[styles.infoText, { color: colors.mutedForeground }]}>
+                ℹ️ Tintas deste tipo exigirão a seleção de fundos apropriados durante o cadastro.
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </Card>
+
+      {/* Component Items */}
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconBoxSeam size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Componentes</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
+            Selecione os itens que podem ser usados como componentes em fórmulas deste tipo de tinta
+          </ThemedText>
+
+          <View style={styles.fieldContainer}>
+            <Label>Itens de Componentes</Label>
+            <Controller
+              control={control}
+              name="componentItemIds"
+              render={({ field: { onChange, value } }) => (
+                <Combobox
+                  mode="multiple"
+                  options={componentItems}
+                  value={Array.isArray(value) ? value : []}
+                  onValueChange={onChange}
+                  onCreate={() => {}}
+                  placeholder="Selecione os componentes"
+                  searchPlaceholder="Buscar itens..."
+                  disabled={flow.isSubmitting || isLoadingItems}
+                  loading={isLoadingItems}
+                />
+              )}
+            />
+            {errors.componentItemIds && (
+              <ThemedText style={styles.errorText}>{errors.componentItemIds.message}</ThemedText>
             )}
           </View>
-        </Card>
-
-        {/* Component Items */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconBoxSeam size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Componentes</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <ThemedText style={[styles.sectionDescription, { color: colors.mutedForeground }]}>
-              Selecione os itens que podem ser usados como componentes em fórmulas deste tipo de tinta
-            </ThemedText>
-
-            <View style={styles.fieldContainer}>
-              <Label>Itens de Componentes</Label>
-              <Controller
-                control={control}
-                name="componentItemIds"
-                render={({ field: { onChange, value } }) => (
-                  <Combobox
-                    mode="multiple"
-                    options={componentItems}
-                    value={Array.isArray(value) ? value : []}
-                    onValueChange={onChange}
-                    onCreate={() => {}}
-                    placeholder="Selecione os componentes"
-                    searchPlaceholder="Buscar itens..."
-                    disabled={isSubmitting || isLoadingItems}
-                    loading={isLoadingItems}
-                  />
-                )}
-              />
-              {errors.componentItemIds && (
-                <ThemedText style={styles.errorText}>
-                  {errors.componentItemIds.message}
-                </ThemedText>
-              )}
-            </View>
-          </View>
-        </Card>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            style={styles.actionButton}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            style={styles.actionButton}
-            disabled={!isValid || isSubmitting}
-          >
-            {isSubmitting ? "Criando..." : "Criar Tipo"}
-          </Button>
         </View>
-      </ScrollView>
-    </>
+      </Card>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  errorText: {
-    textAlign: "center",
-    marginBottom: spacing.md,
-    fontSize: fontSize.xs,
-    color: "#ef4444",
-    marginTop: spacing.xs,
-  },
-  backButton: {
-    marginTop: spacing.sm,
-  },
   headerCard: {
     marginBottom: spacing.md,
     padding: spacing.md,
@@ -386,6 +272,11 @@ const styles = StyleSheet.create({
   required: {
     color: "#ef4444",
   },
+  errorText: {
+    fontSize: fontSize.xs,
+    color: "#ef4444",
+    marginTop: spacing.xs,
+  },
   switchContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -414,12 +305,5 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: fontSize.sm,
     lineHeight: 20,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
   },
 });

@@ -1,18 +1,18 @@
 import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
-import { useRouter } from "expo-router";
 import { routes, DASHBOARD_TIME_PERIOD, PAINT_FINISH_LABELS, PAINT_FINISH } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { usePaintDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function PinturaScreen() {
   const { colors } = useTheme();
-  const router = useRouter();
+  const nav = useNav();
   const insets = useSafeAreaInsets();
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
@@ -118,7 +118,7 @@ export default function PinturaScreen() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.catalog.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.painting.catalog.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -142,7 +142,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.productions.root) as any)}
+              onPress={() => nav.push(mobileRoute(routes.painting.productions.root))}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -166,7 +166,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.paintTypes.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.painting.paintTypes.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -190,7 +190,7 @@ export default function PinturaScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.painting.paintBrands.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.painting.paintBrands.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",

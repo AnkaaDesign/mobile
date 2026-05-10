@@ -8,7 +8,6 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -18,6 +17,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBuildingFactory, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { PaintFormula, PaintProduction } from "@/types";
+import { routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
@@ -75,6 +77,7 @@ export function FormulaProductionsTable({
   maxHeight = 400,
 }: FormulaProductionsTableProps) {
   const { colors, isDark } = useTheme();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -160,7 +163,7 @@ export function FormulaProductionsTable({
   }, []);
 
   const handleProductionPress = (productionId: string) => {
-    router.push(`/(tabs)/pintura/producoes/detalhes/${productionId}` as any);
+    nav.push(mobileRoute(routes.painting.productions.details(productionId)));
   };
 
   // Render table header

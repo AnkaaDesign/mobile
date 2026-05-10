@@ -1,17 +1,17 @@
 import { View, TouchableOpacity, Alert } from "react-native";
-import { router } from "expo-router";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Text } from "@/components/ui/text";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from '../../../../utils';
-import type { Paint, PaintFormula } from '../../../../types';
-import { routes, SECTOR_PRIVILEGES } from '@/constants';
-import { routeToMobilePath } from '@/utils/route-mapper';
-import * as Clipboard from 'expo-clipboard';
-import { useTheme } from '@/lib/theme';
-import { useAuth } from '@/contexts/auth-context';
+import { formatCurrency } from "@/utils";
+import type { Paint, PaintFormula } from "@/types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
+import * as Clipboard from "expo-clipboard";
+import { useTheme } from "@/lib/theme";
+import { useAuth } from "@/contexts/auth-context";
 
 interface PaintFormulasCardProps {
   paint: Paint;
@@ -30,6 +30,7 @@ function getFormulaComponentCount(formula: PaintFormula): number {
 export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCardProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const nav = useNav();
   const userPrivilege = user?.sector?.privileges;
 
   const canSeePrices = userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
@@ -39,7 +40,7 @@ export function PaintFormulasCard({ paint, canNavigate = true }: PaintFormulasCa
   const hasFormulas = paint.formulas && paint.formulas.length > 0;
 
   const handleFormulaClick = (formulaId: string) => {
-    router.push(routeToMobilePath(routes.painting.formulas.details(formulaId)) as any);
+    nav.push(mobileRoute(routes.painting.formulas.details(formulaId)));
   };
 
   const handleFormulaCopy = async (formula: PaintFormula) => {
@@ -62,11 +63,11 @@ Componentes: ${componentCount}`;
   };
 
   const handleShowAll = () => {
-    router.push(`${routeToMobilePath(routes.painting.formulas.list)}?paintId=${paint.id}` as any);
+    nav.push(mobileRoute(`${routes.painting.formulas.list}?paintId=${paint.id}`));
   };
 
   const handleCreateFormula = () => {
-    router.push(`${routeToMobilePath(routes.painting.catalog.edit(paint.id))}?step=2` as any);
+    nav.push(mobileRoute(`${routes.painting.catalog.edit(paint.id)}?step=2`));
   };
 
   return (
