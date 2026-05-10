@@ -16,8 +16,6 @@ import { useCutsInfiniteMobile } from "@/hooks";
 import { CutsTable as CutsTableComponent, createColumnDefinitions } from "@/components/production/cuts/list/cuts-table";
 import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
 import { canRequestCutForTask } from "@/utils/permissions/entity-permissions";
-import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
 import type { Cut } from "@/types";
 
 interface CutsTableProps {

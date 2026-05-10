@@ -1,52 +1,49 @@
-
-import { Alert, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Alert, StyleSheet, View, ActivityIndicator } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { TaskFormWithProvider as TaskForm } from "@/components/production/task/form";
-import { useTaskDetail, useTaskMutations, useScreenReady} from '@/hooks';
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { ErrorScreen, Skeleton, ThemedScrollView, Card, CardContent } from "@/components/ui";
+import { useTaskDetail, useTaskMutations, useScreenReady } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useStatusGuard } from "@/hooks/use-status-guard";
+import { EDITABLE_TASK_STATUSES } from "@/constants/editable-statuses";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { ErrorScreen, ThemedText } from "@/components/ui";
+import { ThemedView } from "@/components/ui/themed-view";
+import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 
 export default function EditServiceOrderScreen() {
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <EditServiceOrderInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditServiceOrderInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { goBack: goBackHistory } = useNavigationHistory();
-  // Fixed: isUpdating doesn't exist, use isLoading instead
+  const { colors } = useTheme();
+  const nav = useNav();
   const { updateAsync, isLoading: isUpdating } = useTaskMutations();
 
   const { data: task, isLoading, error, refetch } = useTaskDetail(id!, {
     include: {
-      // Only essential fields for service order edit - optimized with select patterns
-      customer: {
-        select: {
-          id: true,
-          fantasyName: true,
-        }
-      },
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-      generalPainting: {
-        select: {
-          id: true,
-          name: true,
-          hex: true,
-        }
-      },
-      logoPaints: {
-        select: {
-          id: true,
-          name: true,
-          hex: true,
-        }
-      },
+      customer: { select: { id: true, fantasyName: true } },
+      sector: { select: { id: true, name: true } },
+      generalPainting: { select: { id: true, name: true, hex: true } },
+      logoPaints: { select: { id: true, name: true, hex: true } },
       serviceOrders: {
         select: {
           id: true,
@@ -56,48 +53,32 @@ export default function EditServiceOrderScreen() {
           type: true,
           assignedToId: true,
           observation: true,
-        }
+        },
       },
-      budgets: {
-        select: {
-          id: true,
-          filename: true,
-          mimetype: true,
-          size: true,
-        }
-      },
-      invoices: {
-        select: {
-          id: true,
-          filename: true,
-          mimetype: true,
-          size: true,
-        }
-      },
-      receipts: {
-        select: {
-          id: true,
-          filename: true,
-          mimetype: true,
-          size: true,
-        }
-      },
+      budgets: { select: { id: true, filename: true, mimetype: true, size: true } },
+      invoices: { select: { id: true, filename: true, mimetype: true, size: true } },
+      receipts: { select: { id: true, filename: true, mimetype: true, size: true } },
     },
   });
 
   useScreenReady(!isLoading);
 
+  const taskData = task?.data;
+  const guard = useStatusGuard(taskData, { editable: EDITABLE_TASK_STATUSES });
+
   const handleSubmit = async (data: any) => {
     try {
-      const result = await updateAsync({ id: id!, data });
+      const result = await nav.withLoading(async () =>
+        updateAsync({ id: id!, data }),
+      );
 
       if (result?.data) {
         Alert.alert("Sucesso", "Ordem de serviço atualizada com sucesso!", [
           {
             text: "OK",
             onPress: () => {
-              router.replace(
-                routeToMobilePath(routes.production.serviceOrders.details(id!)) as any
+              nav.replace(
+                mobileRoute(routes.production.serviceOrders.details(id!)),
               );
             },
           },
@@ -108,13 +89,12 @@ export default function EditServiceOrderScreen() {
     } catch (error: any) {
       Alert.alert(
         "Erro",
-        error.message || "Erro ao atualizar ordem de serviço. Tente novamente."
+        error.message || "Erro ao atualizar ordem de serviço. Tente novamente.",
       );
     }
   };
 
   const handleCancel = () => {
-    console.log('[EditServiceOrder] handleCancel called');
     Alert.alert(
       "Descartar Alterações",
       "Você tem alterações não salvas. Deseja descartá-las?",
@@ -123,33 +103,21 @@ export default function EditServiceOrderScreen() {
         {
           text: "Descartar",
           style: "destructive",
-          onPress: () => {
-            console.log('[EditServiceOrder] User confirmed discard, going back');
-            goBackHistory();
-          }
+          onPress: () => nav.goBack(),
         },
-      ]
+      ],
     );
   };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <ThemedScrollView contentContainerStyle={styles.content}>
-          <Card>
-            <CardContent style={styles.skeletonContent}>
-              <Skeleton height={24} width="60%" />
-              <Skeleton height={48} width="100%" />
-              <Skeleton height={48} width="100%" />
-              <Skeleton height={48} width="100%" />
-            </CardContent>
-          </Card>
-        </ThemedScrollView>
-      </SafeAreaView>
+      <ThemedView style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </ThemedView>
     );
   }
 
-  if (error || !task?.data) {
+  if (error || !taskData) {
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <ErrorScreen
@@ -161,27 +129,42 @@ export default function EditServiceOrderScreen() {
     );
   }
 
+  if (guard.isTerminal) {
+    return (
+      <ThemedView style={styles.centered}>
+        <View style={[styles.banner, { backgroundColor: colors.muted }]}>
+          <ThemedText style={styles.bannerText}>
+            {guard.message ??
+              "Esta tarefa está em um estado finalizado e não pode ser editada."}
+          </ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   const initialData = {
-    name: task.data.name,
-    customerId: task.data.customerId || "",
-    sectorId: task.data.sectorId ?? null,
-    serialNumber: task.data.serialNumber ?? null,
-    chassisNumber: task.data.truck?.chassisNumber ?? null,
-    plate: task.data.truck?.plate ?? null,
-    details: task.data.details ?? null,
-    entryDate: task.data.entryDate ? new Date(task.data.entryDate) : null,
-    term: task.data.term ? new Date(task.data.term) : null,
-    generalPaintingId: task.data.generalPainting?.id ?? null,
-    // Fixed: paints doesn't exist, should use logoPaints instead
-    paintIds: task.data.logoPaints?.filter((p: any) => p && p.id).map((p: any /* TODO: Add proper type */) => p.id) || [],
-    services: task.data.serviceOrders?.map((s) => ({
+    name: taskData.name,
+    customerId: taskData.customerId || "",
+    sectorId: taskData.sectorId ?? null,
+    serialNumber: taskData.serialNumber ?? null,
+    chassisNumber: taskData.truck?.chassisNumber ?? null,
+    plate: taskData.truck?.plate ?? null,
+    details: taskData.details ?? null,
+    entryDate: taskData.entryDate ? new Date(taskData.entryDate) : null,
+    term: taskData.term ? new Date(taskData.term) : null,
+    generalPaintingId: taskData.generalPainting?.id ?? null,
+    paintIds:
+      taskData.logoPaints
+        ?.filter((p: any) => p && p.id)
+        .map((p: any) => p.id) || [],
+    services: taskData.serviceOrders?.map((s) => ({
       description: s.description,
       status: s.status ?? undefined,
     })) || [{ description: "", status: "PENDING" }],
-    status: task.data.status,
-    commission: task.data.commission ?? null,
-    startedAt: task.data.startedAt ? new Date(task.data.startedAt) : null,
-    finishedAt: task.data.finishedAt ? new Date(task.data.finishedAt) : null,
+    status: taskData.status,
+    commission: taskData.commission ?? null,
+    startedAt: taskData.startedAt ? new Date(taskData.startedAt) : null,
+    finishedAt: taskData.finishedAt ? new Date(taskData.finishedAt) : null,
   };
 
   return (
@@ -190,7 +173,7 @@ export default function EditServiceOrderScreen() {
         key={id}
         mode="edit"
         initialData={initialData}
-        initialCustomer={task.data.customer}
+        initialCustomer={taskData.customer}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isSubmitting={isUpdating}
@@ -200,10 +183,19 @@ export default function EditServiceOrderScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.lg,
   },
-  skeletonContent: {
-    gap: spacing.md,
+  banner: {
+    padding: spacing.lg,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  bannerText: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });

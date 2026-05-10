@@ -18,7 +18,7 @@ import { useRouter } from "expo-router";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { type FilePickerItem } from "@/components/ui/file-picker";
 import { MultiStepFormContainer } from "@/components/forms";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { useTaskMutations } from "@/hooks/useTask";
 import { useCreateTaskQuote, taskQuoteKeys } from "@/hooks/useTaskQuote";
 import { uploadSingleFile } from "@/api-client/file";
@@ -81,7 +81,7 @@ function toNumber(v: any): number | null {
 // ---------------------------------------------------------------------------
 export function BudgetCreateWizard() {
   const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const queryClient = useQueryClient();
 
   // Mutations
@@ -303,8 +303,8 @@ export function BudgetCreateWizard() {
   }, []);
 
   const handleCancel = useCallback(() => {
-    goBack();
-  }, [goBack]);
+    nav.goBack();
+  }, [nav]);
 
   // Full wizard reset: step, local pickers/caches, and file selections.
   // react-hook-form fields are reset automatically by MultiStepFormContainer

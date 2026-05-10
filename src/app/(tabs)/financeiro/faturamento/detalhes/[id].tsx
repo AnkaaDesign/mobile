@@ -1,6 +1,9 @@
 import { Stack, useLocalSearchParams } from "expo-router";
+
 import { TaskQuoteWizard } from "@/components/production/task/quote/task-quote-wizard";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 /**
  * Billing detail page — opens the TaskQuoteWizard for the given task ID.
@@ -12,7 +15,10 @@ export default function BillingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   return (
-    <>
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL] }}
+      fallback="unauthorized"
+    >
       <Stack.Screen
         options={{
           title: "Fatura",
@@ -20,6 +26,6 @@ export default function BillingDetailScreen() {
         }}
       />
       <TaskQuoteWizard taskId={id} mode="billing" />
-    </>
+    </PrivilegeGate>
   );
 }

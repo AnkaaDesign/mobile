@@ -56,6 +56,16 @@ import {
   IconPhotoCheck,
 } from "@tabler/icons-react-native";
 
+// TODO: split cronograma multi-context — this screen is currently re-exported
+// across cronograma/, agenda/, historico/, tarefa/ routes and switches behavior
+// via pathname.includes() below. The intended foundation pattern is one route
+// file per context, each rendering <DetailScreen> with an explicit `context`
+// prop and a shared cronogramaConfig that decides UI variations. The two-phase
+// minimal/full task-detail include should flow through DetailScreen's
+// dataLoader.phases slot. Deferred from area-6 migration session because the
+// 1.4kloc body has too much pre-existing tightly-coupled state to lift safely
+// in one pass without dedicated regression coverage. The other 60 area-6
+// screens were prioritized.
 export default function ScheduleDetailsScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useTheme();
