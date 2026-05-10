@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet } from "react-native";
-import { router } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes } from "@/constants/routes";
 import { fontSize, fontWeight, spacing, borderRadius } from "@/constants/design-system";
 
 /**
@@ -11,30 +13,21 @@ import { fontSize, fontWeight, spacing, borderRadius } from "@/constants/design-
  * Matches web's NotFound component design with native mobile styling.
  * Provides consistent UX across platforms when users navigate to non-existent routes.
  *
- * Features:
- * - Theme-aware styling
- * - Alert triangle icon
- * - Clear 404 error code display
- * - User-friendly Portuguese message
- * - Navigation buttons (Back + Home)
- * - Support contact suggestion
+ * Uses `useNav` for navigation and typed routes via `mobileRoute(routes.home)`
+ * — no string concatenation or routeToMobilePath shim.
  *
  * @see /web/src/pages/not-found.tsx for web equivalent
  */
 export default function NotFoundScreen() {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const handleGoBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      // If no history, go to home
-      router.replace("/");
-    }
+    nav.goBack({ fallback: mobileRoute(routes.home) });
   };
 
   const handleGoHome = () => {
-    router.replace("/");
+    nav.replace(mobileRoute(routes.home));
   };
 
   return (

@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordResetSchema, PasswordResetFormData } from '../../../schemas';
 import { authService } from '../../../api-client';
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useNav } from "@/contexts/nav";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -21,11 +25,15 @@ import { Logo } from "@/components/ui/logo";
 import { shadow, spacing, borderRadius } from "@/constants/design-system";
 import { useTheme } from "@/lib/theme";
 
+/**
+ * Reset-password screen — submit new password + token. Bespoke layout, mutation
+ * via `useFormFlow` callback form. On invalid/expired-code error, bounce back
+ * to recovery to request a fresh code.
+ */
 export default function ResetPasswordScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -35,12 +43,7 @@ export default function ResetPasswordScreen() {
   const contactValue = Array.isArray(contact) ? contact[0] : contact;
   const codeValue = Array.isArray(code) ? code[0] : code;
 
-  const {
-    setValue,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<PasswordResetFormData>({
+  const form = useForm<PasswordResetFormData>({
     resolver: zodResolver(passwordResetSchema),
     defaultValues: {
       contact: contactValue || "",
@@ -48,40 +51,45 @@ export default function ResetPasswordScreen() {
     },
   });
 
+  const {
+    setValue,
+    formState: { errors },
+    watch,
+  } = form;
+
   const password = watch("password") || "";
   const confirmPassword = watch("confirmPassword") || "";
 
-  const onSubmit = async (data: PasswordResetFormData) => {
-    setIsLoading(true);
-
-    try {
+  const flow = useFormFlow<PasswordResetFormData, void>({
+    form,
+    mutation: async (data) => {
       await authService.resetPasswordWithCode(data);
-
       console.log("Senha redefinida com sucesso! Sua senha foi alterada. Faça login com sua nova senha.");
-      router.replace('/(autenticacao)/entrar' as any);
-    } catch (error) {
+    },
+    successRoute: () => authRoute(routes.authentication.login),
+    successAction: "replace",
+    onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao redefinir sua senha";
 
       if (errorMessage.includes("código") || errorMessage.includes("expirou")) {
         console.error("Código inválido: O código informado é inválido ou expirou. Solicite um novo código.");
-        router.replace({
-          pathname: '/(autenticacao)/recuperar-senha' as any,
-          params: { contact: contactValue },
-        });
+        nav.replace(
+          authRoute(routes.authentication.recoverPassword, { contact: contactValue }),
+        );
       } else {
         console.error("Erro ao redefinir senha:", errorMessage);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
+
+  const isLoading = flow.isSubmitting;
 
   // If no contact or code, redirect to forgot password
   React.useEffect(() => {
     if (!contactValue || !codeValue) {
-      router.replace('/(autenticacao)/recuperar-senha' as any);
+      nav.replace(authRoute(routes.authentication.recoverPassword));
     }
-  }, [contactValue, codeValue, router]);
+  }, [contactValue, codeValue, nav]);
 
   if (!contactValue || !codeValue) {
     return null;
@@ -195,7 +203,7 @@ export default function ResetPasswordScreen() {
 
                 <CardFooter style={{ paddingTop: spacing.lg, gap: spacing.md }}>
                   {/* Submit Button */}
-                  <Button onPress={handleSubmit(onSubmit)} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
+                  <Button onPress={() => void flow.submit()} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
                     {isLoading && <LoadingSpinner size="sm" style={{ marginRight: spacing.sm }} />}
                     <ThemedText size="base" weight="semibold" style={{ color: "white" }}>
                       {isLoading ? "Redefinindo senha..." : "Redefinir senha"}
@@ -208,7 +216,7 @@ export default function ResetPasswordScreen() {
                       variant="primary"
                       size="sm"
                       weight="semibold"
-                      onPress={() => router.push('/(autenticacao)/entrar' as any)}
+                      onPress={() => nav.push(authRoute(routes.authentication.login))}
                       style={{ textDecorationLine: "underline" }}
                     >
                       Voltar ao login

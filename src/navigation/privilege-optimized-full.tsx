@@ -7,7 +7,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet, Platform } from "
 import { useAuth } from "@/contexts/auth-context";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 
 // Performance monitoring
@@ -451,7 +451,7 @@ interface ExtendedUser {
 export function PrivilegeOptimizedFullLayout() {
   const { user } = useAuth();
   const { isDark } = useTheme();
-  const { canGoBack, goBack } = useNavigationHistory();
+  const { canGoBack, goBack } = useNav();
 
   // Cast user to ExtendedUser for type safety
   const extUser = user as ExtendedUser | null;

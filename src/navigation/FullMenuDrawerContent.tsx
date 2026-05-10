@@ -20,9 +20,13 @@ import { Icon } from '@/components/ui/icon';
 import { IconChevronRight, IconStar, IconStarFilled } from '@tabler/icons-react-native';
 import { MENU_ITEMS, MenuItem} from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
-import { routeToMobilePath, normalizePath } from '@/utils/route-mapper';
+import { normalizePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { useFavorites } from '@/contexts/favorites-context';
 import { useAuth } from '@/contexts/auth-context';
+import { useNav } from '@/contexts/nav';
+// `useNavigationLoading` is still imported for its `isNavigatingRef` ref-based
+// double-click guard — `useNav` doesn't expose that surface (foundation TODO).
 import { useNavigationLoading } from '@/contexts/navigation-loading-context';
 import { SECTOR_PRIVILEGES } from '@/constants/enums';
 import { maskPhone } from '@/utils';
@@ -69,7 +73,8 @@ function FullMenuDrawerContent({
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
+  const nav = useNav();
+  const { isNavigatingRef } = useNavigationLoading();
 
   const isDarkMode = isDark;
 
@@ -177,15 +182,15 @@ function FullMenuDrawerContent({
       // Prevent double-navigation
       if (isNavigatingRef.current) return;
 
-      const tabRoute = routeToMobilePath(path);
+      const tabRoute = mobileRoute(path);
 
       // Close drawer first so overlay is visible
       navigation?.closeDrawer?.();
 
-      // Navigate with loading overlay
-      pushWithLoading(tabRoute);
+      // Navigate with loading overlay (useNav.push wraps pushWithLoading)
+      nav.push(tabRoute);
     },
-    [pushWithLoading, isNavigatingRef, navigation],
+    [nav, isNavigatingRef, navigation],
   );
 
   // Check if menu item is active

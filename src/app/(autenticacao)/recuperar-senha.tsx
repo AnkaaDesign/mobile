@@ -1,11 +1,13 @@
-import { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
-import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { passwordRecoverySchema, PasswordRecoveryFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useNav } from "@/contexts/nav";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -19,45 +21,51 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
 
+/**
+ * Password recovery — request a verification code, then jump to the verify
+ * screen. Bespoke centered-card layout (auth pages don't fit <FormScreen>).
+ */
 export default function RecoverPasswordScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { recoverPassword } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    setValue,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<PasswordRecoveryFormData>({
+  const form = useForm<PasswordRecoveryFormData>({
     resolver: zodResolver(passwordRecoverySchema),
   });
 
+  const {
+    setValue,
+    formState: { errors },
+    watch,
+  } = form;
+
   const contact = watch("contact") || "";
 
-  const onSubmit = async (data: PasswordRecoveryFormData) => {
-    setIsLoading(true);
-
-    try {
+  const flow = useFormFlow<PasswordRecoveryFormData, { contact: string }>({
+    form,
+    mutation: async (data) => {
       await recoverPassword(data);
-
       console.log("Código enviado! Você receberá um código de 6 dígitos para redefinir sua senha.");
+      return { contact: data.contact };
+    },
+    onSuccess: (result) => {
+      nav.replace(
+        authRoute(routes.authentication.verifyPasswordReset, {
+          contact: result.contact,
+          returnTo: "/(autenticacao)/entrar",
+        }),
+      );
+    },
+    onError: (error) => {
+      console.error(
+        "Erro ao enviar código:",
+        error instanceof Error ? error.message : "Ocorreu um erro ao enviar o código de recuperação",
+      );
+    },
+  });
 
-      // Redirect to verification page for password reset
-      router.replace({
-        pathname: '/(autenticacao)/verificar-redefinicao-senha' as any,
-        params: {
-          contact: data.contact,
-          returnTo: '/(autenticacao)/entrar',
-        },
-      });
-    } catch (error) {
-      console.error("Erro ao enviar código:", error instanceof Error ? error.message : "Ocorreu um erro ao enviar o código de recuperação");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isLoading = flow.isSubmitting;
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -108,7 +116,7 @@ export default function RecoverPasswordScreen() {
 
                 <CardFooter style={{ paddingTop: spacing.lg, gap: spacing.md }}>
                   {/* Submit Button */}
-                  <Button onPress={handleSubmit(onSubmit)} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
+                  <Button onPress={() => void flow.submit()} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
                     {isLoading && <LoadingSpinner size="sm" style={{ marginRight: spacing.sm }} />}
                     <ThemedText size="base" weight="semibold" style={{ color: "white" }}>
                       {isLoading ? "Enviando..." : "Enviar código de recuperação"}
@@ -123,7 +131,7 @@ export default function RecoverPasswordScreen() {
                         variant="primary"
                         size="sm"
                         weight="semibold"
-                        onPress={() => router.push('/(autenticacao)/entrar' as any)}
+                        onPress={() => nav.push(authRoute(routes.authentication.login))}
                         style={{ textDecorationLine: "underline" }}
                       >
                         Voltar ao login

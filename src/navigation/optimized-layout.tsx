@@ -8,7 +8,7 @@ import { useFavorites } from "@/contexts/favorites-context";
 import { useTheme } from "@/lib/theme";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Icon } from "@/components/ui/icon";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { MENU_ITEMS, MenuItem } from '@/constants';
 import { getFilteredMenuForUser, getTablerIcon } from '@/utils/navigation';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
@@ -200,7 +200,7 @@ function LoadingScreen() {
 export function OptimizedDrawerLayout() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
-  const { canGoBack, goBack } = useNavigationHistory();
+  const { canGoBack, goBack } = useNav();
   const insets = useSafeAreaInsets();
 
   const userPrivileges = useMemo(() =>
