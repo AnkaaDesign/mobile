@@ -16,7 +16,7 @@ import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -86,9 +86,9 @@ function CreateResponsibleScreenInner() {
       Alert.alert("Sucesso", "Responsável cadastrado com sucesso!");
       const resultId = (result as any)?.data?.id || (result as any)?.id;
       if (resultId) {
-        router.replace(routeToMobilePath(routes.administration.responsibles.details(resultId)) as any);
+        router.replace(mobileRoute(routes.administration.responsibles.details(resultId)));
       } else {
-        router.replace(routeToMobilePath(routes.administration.responsibles.list) as any);
+        router.replace(mobileRoute(routes.administration.responsibles.list));
       }
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Erro ao cadastrar responsável");

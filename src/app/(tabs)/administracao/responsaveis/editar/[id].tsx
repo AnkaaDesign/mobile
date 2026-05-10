@@ -14,7 +14,7 @@ import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
@@ -99,7 +99,7 @@ function EditResponsibleScreenInner() {
 
       await updateAsync({ id, data });
       Alert.alert("Sucesso", "Responsável atualizado com sucesso!");
-      router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any);
+      router.replace(mobileRoute(routes.administration.responsibles.details(id)));
     } catch (error: any) {
       Alert.alert("Erro", error?.message || "Erro ao atualizar responsável");
     } finally {
@@ -117,12 +117,12 @@ function EditResponsibleScreenInner() {
           {
             text: "Descartar",
             style: "destructive",
-            onPress: () => router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any),
+            onPress: () => router.replace(mobileRoute(routes.administration.responsibles.details(id))),
           },
         ],
       );
     } else {
-      router.replace(routeToMobilePath(routes.administration.responsibles.details(id)) as any);
+      router.replace(mobileRoute(routes.administration.responsibles.details(id)));
     }
   };
 

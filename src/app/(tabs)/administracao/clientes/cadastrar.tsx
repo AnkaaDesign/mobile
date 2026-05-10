@@ -17,8 +17,9 @@ import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
@@ -32,7 +33,19 @@ import { IconBuilding, IconFileText, IconMapPin, IconPhone, IconTag } from "@tab
 
 export default function CreateCustomerScreen() {
   const formKey = useFormScreenKey();
-  return <CreateCustomerScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <CreateCustomerScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateCustomerScreenInner() {
@@ -237,7 +250,7 @@ function CreateCustomerScreenInner() {
 
       if (result?.data) {
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.administration.customers.details(result.data?.id || '')) as any);
+        router.replace(mobileRoute(routes.administration.customers.details(result.data?.id || '')));
       } else {
         Alert.alert("Erro", "Erro ao criar cliente");
       }
@@ -251,7 +264,7 @@ function CreateCustomerScreenInner() {
   const handleCancel = () => {
     Alert.alert("Descartar Cadastro", "Deseja descartar o cadastro do cliente?", [
       { text: "Continuar Editando", style: "cancel" },
-      { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.administration.customers.list) as any) },
+      { text: "Descartar", style: "destructive", onPress: () => router.push(mobileRoute(routes.administration.customers.list)) },
     ]);
   };
 
