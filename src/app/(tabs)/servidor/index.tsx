@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ScrollView, RefreshControl, TouchableOpacity, View } from "react-native";
-import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
@@ -8,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Icon } from "@/components/ui/icon";
 import { ErrorScreen } from "@/components/ui/error-screen";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useServerMetrics, useServerStatus } from "@/hooks/useServer";
-import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { Skeleton } from "@/components/ui/skeleton";
 import { spacing, borderRadius } from "@/constants/design-system";
@@ -28,8 +29,16 @@ const quickAccessItems = [
   { title: "Rate Limit", icon: "shield", route: routes.server.throttler.root, color: "#8b5cf6" },
 ];
 
-export default function ServidorScreen() {
-  const router = useRouter();
+export default function ServidorScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServidorScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServidorScreen() {
+  const nav = useNav();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -284,7 +293,7 @@ export default function ServidorScreen() {
                 <TouchableOpacity
                   key={item.route}
                   onPress={() =>
-                    router.push(routeToMobilePath(item.route) as any)
+                    nav.push(mobileRoute(item.route))
                   }
                   className="basis-[30%] flex-grow"
                   style={{ minWidth: "30%" }}
