@@ -1,48 +1,45 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { View, ScrollView, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
+import { View } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedView, ThemedText } from "@/components/ui";
-import { Button } from "@/components/ui/button";
+
+import { ThemedText } from "@/components/ui";
 import { Combobox } from "@/components/ui/combobox";
 import { TextArea } from "@/components/ui/text-area";
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { usePpeSize, useRequestPpeDelivery } from '@/hooks';
-import { getItems } from '@/api-client';
-import { ppeRequestSchema } from '@/schemas/ppe-request';
-import { PPE_TYPE, ITEM_CATEGORY_TYPE } from '@/constants';
-import { getItemPpeSize } from '@/utils/ppe-size-mapping';
-import { getPpeSizeByType, allowsOnDemandDelivery } from '@/utils/ppe';
+import { usePpeSize, useRequestPpeDelivery } from "@/hooks";
+import { getItems } from "@/api-client";
+import { ppeRequestSchema } from "@/schemas/ppe-request";
+import { PPE_TYPE, ITEM_CATEGORY_TYPE, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { getItemPpeSize } from "@/utils/ppe-size-mapping";
+import { getPpeSizeByType, allowsOnDemandDelivery } from "@/utils/ppe";
 import { cn } from "@/lib/utils";
 import { formatQuantity } from "@/utils";
-import type { PpeRequestFormData } from '@/schemas/ppe-request';
-import type { Item } from '@/types';
+import type { PpeRequestFormData } from "@/schemas/ppe-request";
+import type { Item } from "@/types";
 import { useTheme } from "@/lib/theme";
 
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
 
 export default function RequestPPEScreen() {
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
-  // Use a ref for caching loaded items — NOT state, to avoid re-renders inside queryFn
   const loadedItemsRef = useRef<Map<string, Item>>(new Map());
 
-  // Get user's PPE size - user.ppeSize is already the full PpeSize object if included
-  // If it's just an ID reference, fetch it; otherwise use it directly
-  const ppeSizeId = typeof user?.ppeSize === 'object' ? user.ppeSize?.id : user?.ppeSize;
-  const { data: fetchedPpeSize, isLoading: isLoadingPpeSize } = usePpeSize(ppeSizeId || '', {
-    enabled: !!ppeSizeId && typeof user?.ppeSize !== 'object',
-  });
+  const ppeSizeId = typeof user?.ppeSize === "object" ? user.ppeSize?.id : user?.ppeSize;
+  const { data: fetchedPpeSize, isLoading: isLoadingPpeSize } = usePpeSize(
+    ppeSizeId || "",
+    {
+      enabled: !!ppeSizeId && typeof user?.ppeSize !== "object",
+    },
+  );
 
-  // Use directly loaded ppeSize or fetched one — memoize to stabilize reference
   const userPpeSizeData = useMemo(() => {
-    if (typeof user?.ppeSize === 'object' && user.ppeSize) {
+    if (typeof user?.ppeSize === "object" && user.ppeSize) {
       return user.ppeSize;
     }
     return fetchedPpeSize?.data ?? null;
@@ -57,23 +54,27 @@ export default function RequestPPEScreen() {
     },
   });
 
-  // Request PPE delivery mutation
   const requestMutation = useRequestPpeDelivery();
 
-  // Memoize the initial options to prevent infinite loops
-  const initialOptions = useMemo(() => {
-    return selectedItem ? [selectedItem] : [];
-  }, [selectedItem?.id]);
+  const initialOptions = useMemo(
+    () => (selectedItem ? [selectedItem] : []),
+    [selectedItem?.id],
+  );
 
-  // Check if user has PPE sizes configured
   const hasSizesConfigured = useMemo(() => {
     if (!userPpeSizeData) return false;
-    return !!(userPpeSizeData.shirts || userPpeSizeData.pants || userPpeSizeData.boots ||
-              userPpeSizeData.gloves || userPpeSizeData.mask || userPpeSizeData.sleeves ||
-              userPpeSizeData.rainBoots || userPpeSizeData.shorts);
+    return !!(
+      userPpeSizeData.shirts ||
+      userPpeSizeData.pants ||
+      userPpeSizeData.boots ||
+      userPpeSizeData.gloves ||
+      userPpeSizeData.mask ||
+      userPpeSizeData.sleeves ||
+      userPpeSizeData.rainBoots ||
+      userPpeSizeData.shorts
+    );
   }, [userPpeSizeData]);
 
-  // Store userPpeSizeData in a ref so queryFn can access latest value without being a dependency
   const userPpeSizeDataRef = useRef(userPpeSizeData);
   useEffect(() => {
     userPpeSizeDataRef.current = userPpeSizeData;
@@ -84,326 +85,268 @@ export default function RequestPPEScreen() {
     hasSizesConfiguredRef.current = hasSizesConfigured;
   }, [hasSizesConfigured]);
 
-  // Async query for PPE items + client-side size filtering.
-  // Fetches all PPE items at once (catalogs are small) to avoid
-  // infinite pagination when client-side filtering removes items.
-  // IMPORTANT: No setState calls inside — only refs. This prevents re-render loops.
-  const searchPpeItems = useCallback(async (
-    search: string,
-  ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
-    try {
-      const response = await getItems({
-        take: 500,
-        where: {
-          isActive: true,
-          category: {
-            type: ITEM_CATEGORY_TYPE.PPE,
+  const searchPpeItems = useCallback(
+    async (
+      search: string,
+    ): Promise<{ data: Item[]; hasMore: boolean; total?: number }> => {
+      try {
+        const response = await getItems({
+          take: 500,
+          where: {
+            isActive: true,
+            category: { type: ITEM_CATEGORY_TYPE.PPE },
+            quantity: { gt: 0 },
           },
-          quantity: {
-            gt: 0,
-          },
-        },
-        include: {
-          brand: true,
-          category: true,
-          measures: true,
-        },
-        searchingFor: search || undefined,
-        orderBy: { name: 'asc' },
-      });
+          include: { brand: true, category: true, measures: true },
+          searchingFor: search || undefined,
+          orderBy: { name: "asc" },
+        });
 
-      let items = response.data || [];
+        let items = response.data || [];
+        const sizesConfigured = hasSizesConfiguredRef.current;
+        const ppeSizeData = userPpeSizeDataRef.current;
 
-      // CLIENT-SIDE FILTERING (matching web implementation)
-      const sizesConfigured = hasSizesConfiguredRef.current;
-      const ppeSizeData = userPpeSizeDataRef.current;
+        items = items.filter((item: Item) => {
+          if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) return false;
+          if (!sizesConfigured || !ppeSizeData) return true;
+          if (!item.ppeType) return true;
+          if (item.ppeType === PPE_TYPE.OTHERS) return true;
 
-      items = items.filter((item: Item) => {
-        // 1. Filter by delivery mode - only allow ON_DEMAND or BOTH (or legacy null)
-        if (item.ppeDeliveryMode && !allowsOnDemandDelivery(item)) {
-          return false;
-        }
+          const userSize = getPpeSizeByType(ppeSizeData, item.ppeType);
+          const itemSize = getItemPpeSize(item);
+          if (!itemSize) return true;
+          if (!userSize) return true;
+          return itemSize === userSize;
+        });
 
-        // 2. If user has no sizes configured, include all items (filtered only by delivery mode above)
-        if (!sizesConfigured || !ppeSizeData) {
-          return true;
-        }
+        items.forEach((item) => loadedItemsRef.current.set(item.id, item));
+        return { data: items, hasMore: false };
+      } catch {
+        return { data: [], hasMore: false };
+      }
+    },
+    [],
+  );
 
-        // 3. If item doesn't have a ppeType, include it
-        if (!item.ppeType) return true;
-
-        // 4. For OTHERS type, always include (no size requirement)
-        if (item.ppeType === PPE_TYPE.OTHERS) return true;
-
-        // 5. Get user's size for this PPE type
-        const userSize = getPpeSizeByType(ppeSizeData, item.ppeType);
-
-        // 6. Get item's size from measures array (handles both letter and numeric sizes)
-        const itemSize = getItemPpeSize(item);
-
-        // 7. If item has no size defined, include it (size is optional)
-        if (!itemSize) return true;
-
-        // 8. If user has no size configured for this type, include item
-        if (!userSize) return true;
-
-        // 9. Match user's size with item's size (e.g., "SIZE_38" === "SIZE_38")
-        return itemSize === userSize;
-      });
-
-      // Cache loaded items in ref (no re-render!)
-      items.forEach(item => loadedItemsRef.current.set(item.id, item));
-
-      return {
-        data: items,
-        hasMore: false,
-      };
-    } catch (_error) {
-      return { data: [], hasMore: false };
-    }
-  }, []); // Empty deps — reads from refs, never causes re-creation
-
-  // Update stock availability when selected item changes
   useEffect(() => {
     if (selectedItem) {
       const stock = selectedItem.quantity ?? (selectedItem as any).currentStock;
-      if (stock !== undefined) {
-        setStockAvailable(stock);
-      } else {
-        setStockAvailable(null);
-      }
+      setStockAvailable(stock !== undefined ? stock : null);
     } else {
       setStockAvailable(null);
     }
   }, [selectedItem]);
 
-  // Get option value and label for Combobox
   const getOptionValue = useCallback((item: Item) => item.id, []);
-  const getOptionLabel = useCallback((item: Item) => {
-    return item.name;
-  }, []);
+  const getOptionLabel = useCallback((item: Item) => item.name, []);
 
-  // Memoized renderOption to prevent busting Combobox's React.memo
-  const renderPpeOption = useCallback((item: Item, isSelected: boolean) => {
-    return (
+  const renderPpeOption = useCallback(
+    (item: Item, isSelected: boolean) => (
       <View style={{ flex: 1 }}>
         <ThemedText style={{ fontWeight: isSelected ? "600" : "400" }}>
           {item.name}
         </ThemedText>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 2, flexWrap: "wrap" }}>
           {item.ppeCA && (
             <ThemedText style={{ fontSize: 12, color: colors.mutedForeground }}>
               CA: {item.ppeCA}
             </ThemedText>
           )}
           {item.quantity !== undefined && (
-            <ThemedText style={{ fontSize: 12, color: item.quantity > 0 ? colors.mutedForeground : colors.destructive }}>
+            <ThemedText
+              style={{
+                fontSize: 12,
+                color: item.quantity > 0 ? colors.mutedForeground : colors.destructive,
+              }}
+            >
               Estoque: {formatQuantity(item.quantity)}
             </ThemedText>
           )}
         </View>
       </View>
-    );
-  }, [colors]);
+    ),
+    [colors],
+  );
 
-  const handleSubmit = useCallback(async (data: PpeRequestFormData) => {
-    const requestData = {
-      itemId: data.itemId,
-      quantity: 1,
-      reason: data.reason,
-    };
+  const flow = useFormFlow<PpeRequestFormData, unknown>({
+    form,
+    mutation: async (data) => {
+      const requestData = {
+        itemId: data.itemId,
+        quantity: 1,
+        reason: data.reason,
+      };
+      return requestMutation.mutateAsync(requestData);
+    },
+    cancelFallback: mobileRoute(routes.personal.myPpes.root),
+    successRoute: () => mobileRoute(routes.personal.myPpes.root),
+  });
 
-    try {
-      await requestMutation.mutateAsync(requestData);
-      form.reset();
-      goBack();
-    } catch (error: any) {
-      // API client handles error alerts
-    }
-  }, [requestMutation, form]);
+  const queryKey = useMemo(
+    () => ["ppe-items", "request", userPpeSizeData?.id ?? null],
+    [userPpeSizeData?.id],
+  );
 
-  const isLoading = requestMutation.isPending;
-
-  // Stable queryKey using primitive ppeSizeId
-  const queryKey = useMemo(() => ["ppe-items", "request", userPpeSizeData?.id ?? null], [userPpeSizeData?.id]);
+  const isLoading = flow.isSubmitting || isLoadingPpeSize;
 
   return (
-    <ThemedView style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom }}>
-      <ScrollView style={{ flex: 1, padding: 16 }}>
-        <View style={{ gap: 16 }}>
-          {/* Item Selection - Now with async loading and infinite scroll */}
-          <Controller
-            control={form.control}
-            name="itemId"
-            render={({ field: { onChange, value }, fieldState: { error } }) => (
-              <View style={{ gap: 8 }}>
-                <ThemedText style={{ fontSize: 14, fontWeight: "500" }}>
-                  Item <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+    <FormScreen<PpeRequestFormData, unknown>
+      title="Solicitar EPI"
+      mode="create"
+      form={form}
+      flow={flow}
+      submitLabel="Solicitar EPI"
+      submittingLabel="Enviando..."
+    >
+      <View style={{ gap: 16 }}>
+        <Controller
+          control={form.control}
+          name="itemId"
+          render={({ field: { onChange, value }, fieldState: { error } }) => (
+            <View style={{ gap: 8 }}>
+              <ThemedText style={{ fontSize: 14, fontWeight: "500" }}>
+                Item <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+              </ThemedText>
+              <Combobox<Item>
+                async={true}
+                queryKey={queryKey}
+                queryFn={searchPpeItems}
+                initialOptions={initialOptions}
+                minSearchLength={0}
+                pageSize={20}
+                debounceMs={300}
+                value={value}
+                onValueChange={(newValue) => {
+                  const id = Array.isArray(newValue) ? newValue[0] : newValue;
+                  onChange(id || "");
+                  if (id) {
+                    const item = loadedItemsRef.current.get(id);
+                    if (item) setSelectedItem(item);
+                  } else {
+                    setSelectedItem(null);
+                  }
+                }}
+                getOptionValue={getOptionValue}
+                getOptionLabel={getOptionLabel}
+                placeholder="Selecione o item de EPI"
+                emptyText="Nenhum EPI encontrado"
+                searchPlaceholder="Buscar EPI por nome ou código..."
+                disabled={isLoading}
+                searchable={true}
+                clearable={false}
+                error={error?.message}
+                renderOption={renderPpeOption}
+              />
+              {error && (
+                <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
+                  {error.message}
                 </ThemedText>
-                <Combobox<Item>
-                  async={true}
-                  queryKey={queryKey}
-                  queryFn={searchPpeItems}
-                  initialOptions={initialOptions}
-                  minSearchLength={0}
-                  pageSize={20}
-                  debounceMs={300}
-                  value={value}
-                  onValueChange={(newValue) => {
-                    const id = Array.isArray(newValue) ? newValue[0] : newValue;
-                    onChange(id || '');
-                    // Update selected item from cached items (ref, not state)
-                    if (id) {
-                      const item = loadedItemsRef.current.get(id);
-                      if (item) {
-                        setSelectedItem(item);
-                      }
-                    } else {
-                      setSelectedItem(null);
-                    }
-                  }}
-                  getOptionValue={getOptionValue}
-                  getOptionLabel={getOptionLabel}
-                  placeholder="Selecione o item de EPI"
-                  emptyText="Nenhum EPI encontrado"
-                  searchPlaceholder="Buscar EPI por nome ou código..."
-                  disabled={isLoading || isLoadingPpeSize}
-                  searchable={true}
-                  clearable={false}
-                  error={error?.message}
-                  renderOption={renderPpeOption}
-                />
-                {error && (
-                  <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
-                    {error.message}
-                  </ThemedText>
-                )}
-              </View>
-            )}
-          />
+              )}
+            </View>
+          )}
+        />
 
-          {/* Selected Item Info */}
-          {selectedItem && (
-            <View style={{
+        {selectedItem && (
+          <View
+            style={{
               padding: 12,
               backgroundColor: colors.card,
               borderRadius: 8,
               borderWidth: 1,
-              borderColor: colors.border
-            }}>
-              <ThemedText style={{ fontWeight: "600", marginBottom: 4 }}>
-                Item Selecionado
+              borderColor: colors.border,
+            }}
+          >
+            <ThemedText style={{ fontWeight: "600", marginBottom: 4 }}>
+              Item Selecionado
+            </ThemedText>
+            <ThemedText style={{ fontSize: 13 }}>{selectedItem.name}</ThemedText>
+            {selectedItem.ppeCA && (
+              <ThemedText
+                style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 4 }}
+              >
+                CA: {selectedItem.ppeCA}
               </ThemedText>
-              <ThemedText style={{ fontSize: 13 }}>
-                {selectedItem.name}
-              </ThemedText>
-              {selectedItem.ppeCA && (
-                <ThemedText style={{ fontSize: 12, color: colors.mutedForeground, marginTop: 4 }}>
-                  CA: {selectedItem.ppeCA}
-                </ThemedText>
-              )}
-              {stockAvailable !== null && (
-                <ThemedText style={{
+            )}
+            {stockAvailable !== null && (
+              <ThemedText
+                style={{
                   fontSize: 12,
                   color: stockAvailable > 0 ? colors.mutedForeground : colors.destructive,
-                  marginTop: 4
-                }}>
-                  Estoque disponível: {stockAvailable} unidades
+                  marginTop: 4,
+                }}
+              >
+                Estoque disponível: {stockAvailable} unidades
+              </ThemedText>
+            )}
+          </View>
+        )}
+
+        <Controller
+          control={form.control}
+          name="reason"
+          render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
+            <View style={{ gap: 8 }}>
+              <ThemedText style={{ fontSize: 14, fontWeight: "500" }}>
+                Justificativa{" "}
+                <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
+              </ThemedText>
+              <TextArea
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Informe o motivo da solicitação"
+                editable={!isLoading}
+                numberOfLines={3}
+                className={cn(error && "border-destructive")}
+              />
+              {error && (
+                <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
+                  {error.message}
                 </ThemedText>
               )}
             </View>
           )}
+        />
 
-          {/* Reason (Required) */}
-          <Controller
-            control={form.control}
-            name="reason"
-            render={({ field: { onChange, value, onBlur }, fieldState: { error } }) => (
-              <View style={{ gap: 8 }}>
-                <ThemedText style={{ fontSize: 14, fontWeight: "500" }}>
-                  Justificativa <ThemedText style={{ color: colors.destructive }}>*</ThemedText>
-                </ThemedText>
-                <TextArea
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  placeholder="Informe o motivo da solicitação"
-                  editable={!isLoading}
-                  numberOfLines={3}
-                  className={cn(error && "border-destructive")}
-                />
-                {error && (
-                  <ThemedText style={{ fontSize: 12, color: colors.destructive }}>
-                    {error.message}
-                  </ThemedText>
-                )}
-              </View>
-            )}
-          />
-
-          {/* Info about PPE sizes */}
-          {!hasSizesConfigured && !isLoadingPpeSize && (
-            <View style={{
+        {!hasSizesConfigured && !isLoadingPpeSize && (
+          <View
+            style={{
               padding: 12,
               backgroundColor: "#dbeafe",
               borderRadius: 8,
               borderWidth: 1,
-              borderColor: "#93c5fd"
-            }}>
-              <ThemedText style={{ fontSize: 13, color: "#1e40af", marginBottom: 4 }}>
-                Dica: Cadastre seus tamanhos de EPI
-              </ThemedText>
-              <ThemedText style={{ fontSize: 12, color: "#1e3a8a" }}>
-                Cadastrar seus tamanhos ajuda a mostrar apenas os EPIs do seu tamanho.
-                Acesse seu perfil ou entre em contato com o RH.
-              </ThemedText>
-            </View>
-          )}
+              borderColor: "#93c5fd",
+            }}
+          >
+            <ThemedText style={{ fontSize: 13, color: "#1e40af", marginBottom: 4 }}>
+              Dica: Cadastre seus tamanhos de EPI
+            </ThemedText>
+            <ThemedText style={{ fontSize: 12, color: "#1e3a8a" }}>
+              Cadastrar seus tamanhos ajuda a mostrar apenas os EPIs do seu tamanho.
+              Acesse seu perfil ou entre em contato com o RH.
+            </ThemedText>
+          </View>
+        )}
 
-          {/* Info when user has PPE sizes */}
-          {hasSizesConfigured && (
-            <View style={{
+        {hasSizesConfigured && (
+          <View
+            style={{
               padding: 12,
               backgroundColor: "#dcfce7",
               borderRadius: 8,
               borderWidth: 1,
-              borderColor: "#86efac"
-            }}>
-              <ThemedText style={{ fontSize: 13, color: "#166534", marginBottom: 4 }}>
-                Seus tamanhos de EPI estão cadastrados
-              </ThemedText>
-              <ThemedText style={{ fontSize: 12, color: "#15803d" }}>
-                Os EPIs exibidos já estão filtrados de acordo com seus tamanhos registrados.
-              </ThemedText>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      <View style={{ padding: 16, gap: 12, borderTopWidth: 1, borderColor: colors.border }}>
-        <Button
-          onPress={() => {
-            form.handleSubmit(handleSubmit)();
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <ActivityIndicator size="small" color="#fff" />
-              <ThemedText style={{ color: "#fff" }}>Enviando...</ThemedText>
-            </View>
-          ) : (
-            <ThemedText style={{ color: "#fff" }}>Solicitar EPI</ThemedText>
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          onPress={() => goBack()}
-          disabled={isLoading}
-        >
-          <ThemedText>Cancelar</ThemedText>
-        </Button>
+              borderColor: "#86efac",
+            }}
+          >
+            <ThemedText style={{ fontSize: 13, color: "#166534", marginBottom: 4 }}>
+              Seus tamanhos de EPI estão cadastrados
+            </ThemedText>
+            <ThemedText style={{ fontSize: 12, color: "#15803d" }}>
+              Os EPIs exibidos já estão filtrados de acordo com seus tamanhos registrados.
+            </ThemedText>
+          </View>
+        )}
       </View>
-    </ThemedView>
+    </FormScreen>
   );
 }
