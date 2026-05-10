@@ -1,20 +1,16 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import { useUser, useScreenReady} from '@/hooks';
-import { useAuth } from '../../../../../contexts/auth-context';
-import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { Card, CardContent } from "@/components/ui/card";
+
+import { useUser } from "@/hooks";
+import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconUser } from "@tabler/icons-react-native";
-// import { showToast } from "@/components/ui/toast";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { Card as UICard, CardHeader, CardContent as UICardContent } from "@/components/ui/card";
-import { IconHistory } from "@tabler/icons-react-native";
+import { spacing, fontSize } from "@/constants/design-system";
+import { IconUser, IconHistory } from "@tabler/icons-react-native";
 
-// Import modular components
 import {
   BasicInfoCard,
   AddressCard,
@@ -24,32 +20,13 @@ import {
   WarningsTable,
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
-import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function EmployeeDetailsScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user: currentUser, accessToken } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
 
-  const id = params?.id || "";
-
-  // Debug logging
-  console.log("[EMPLOYEE DETAILS] Screen mounted with ID:", id);
-  console.log("[EMPLOYEE DETAILS] Full params:", params);
-  console.log("[EMPLOYEE DETAILS] Current logged-in user:", currentUser ? `${currentUser.name} (${currentUser.id})` : "null");
-  console.log("[EMPLOYEE DETAILS] User sector privileges:", currentUser?.sector?.privileges || "none");
-  console.log("[EMPLOYEE DETAILS] Has access token:", !!accessToken);
-  console.log("[EMPLOYEE DETAILS] Is viewing own profile:", id === currentUser?.id);
-  console.log("[EMPLOYEE DETAILS] Access token (first 50 chars):", accessToken ? accessToken.substring(0, 50) + "..." : "null");
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useUser(id, {
-    // Use optimized select for better performance - fetches only fields needed for detail view
+  const query = useUser(id as string, {
     select: {
       id: true,
       name: true,
@@ -65,7 +42,6 @@ export default function EmployeeDetailsScreen() {
       avatarId: true,
       payrollNumber: true,
       performanceLevel: true,
-      // Address fields
       address: true,
       addressNumber: true,
       addressComplement: true,
@@ -73,208 +49,75 @@ export default function EmployeeDetailsScreen() {
       city: true,
       state: true,
       zipCode: true,
-      // Status tracking dates
       effectedAt: true,
       exp1StartAt: true,
       exp1EndAt: true,
       exp2StartAt: true,
       exp2EndAt: true,
       dismissedAt: true,
-      // Login info
       lastLoginAt: true,
       requirePasswordChange: true,
-      // Timestamps
       createdAt: true,
       updatedAt: true,
-      // Relations with select
-      avatar: {
-        select: {
-          id: true,
-          filename: true,
-          path: true,
-          thumbnailUrl: true,
-        },
-      },
-      position: {
-        select: {
-          id: true,
-          name: true,
-          hierarchy: true,
-        },
-      },
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      ledSector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      ppeSize: true, // Full PPE size data for detail display
-      _count: {
-        select: {
-          tasks: true,
-          activities: true,
-          borrows: true,
-          changeLogs: true,
-        },
-      },
+      avatar: { select: { id: true, filename: true, path: true, thumbnailUrl: true } },
+      position: { select: { id: true, name: true, hierarchy: true } },
+      sector: { select: { id: true, name: true } },
+      ledSector: { select: { id: true, name: true } },
+      ppeSize: true,
+      _count: { select: { tasks: true, activities: true, borrows: true, changeLogs: true } },
     },
-    enabled: !!id && id !== "",
+    enabled: !!id,
   });
 
-  useScreenReady(!isLoading);
-
-  const employee = response?.data;
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-        <View style={styles.container}>
-          <EmployeeDetailSkeleton />
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !employee || !id || id === "") {
-    return (
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-        <View style={styles.container}>
-          <Card>
-            <CardContent style={styles.errorContent}>
-              <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
-                <IconUser size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
-                Colaborador não encontrado
-              </ThemedText>
-              <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-                O colaborador solicitado não foi encontrado ou pode ter sido removido.
-              </ThemedText>
-            </CardContent>
-          </Card>
-        </View>
-      </ScrollView>
-    );
-  }
-
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
-      showsVerticalScrollIndicator={false}
+    <DetailScreen<any>
+      query={query as any}
+      icon={IconUser}
+      title={(e) => e.name ?? "Colaborador"}
+      editRoute={(e) => mobileRoute(routes.administration.collaborators.edit(e.id))}
+      notFoundFallback={mobileRoute(routes.administration.collaborators.list)}
     >
-      <View style={styles.container}>
-          {/* Basic Information and Address */}
+      {(employee) => (
+        <View style={styles.body}>
           <BasicInfoCard employee={employee} />
           <AddressCard employee={employee} />
-
-          {/* Professional Information and Login Info */}
           <ProfessionalInfoCard employee={employee} />
           <LoginInfoCard employee={employee} />
-
-          {/* PPE Sizes */}
           <PpeSizesCard employee={employee} />
-
-          {/* Relation Tables */}
           <WarningsTable employee={employee} maxHeight={400} />
           <PpeDeliveriesTable employee={employee} maxHeight={400} />
-
-          {/* Changelog Timeline */}
-          <UICard>
-            <CardHeader style={styles.cardHeader}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconHistory size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>
-                    Histórico de Alterações
-                  </ThemedText>
-                </View>
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
               </View>
-            </CardHeader>
-            <UICardContent>
-              <ChangelogTimeline
-                entityType={CHANGE_LOG_ENTITY_TYPE.USER}
-                entityId={employee.id}
-                entityName={employee.name}
-                entityCreatedAt={employee.createdAt}
-                maxHeight={400}
-              />
-            </UICardContent>
-          </UICard>
-
-          {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+            </View>
+            <ChangelogTimeline
+              entityType={CHANGE_LOG_ENTITY_TYPE.USER}
+              entityId={employee.id}
+              entityName={employee.name}
+              entityCreatedAt={employee.createdAt}
+              maxHeight={400}
+            />
+          </Card>
+        </View>
+      )}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  body: {
     gap: spacing.lg,
   },
-  errorContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
-  },
-  cardHeader: {
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+  card: {
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
     marginBottom: spacing.md,
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
