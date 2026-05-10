@@ -15,7 +15,7 @@ import { IconClock, IconUser, IconCalendar, IconMapPin, IconCamera, IconPhone, I
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 
 import { Skeleton } from "@/components/ui/skeleton";const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -63,7 +63,8 @@ interface TimeEntryDetail {
 
 export default function TimeEntryDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);

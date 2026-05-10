@@ -12,12 +12,13 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconClock, IconRefresh, IconCheck, IconX } from "@tabler/icons-react-native";
 import { TouchableOpacity } from "react-native";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function ScheduleDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useItem } from "@/hooks/useItem";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -9,7 +9,7 @@ import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconShield, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 // import { showToast } from "@/components/ui/toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,13 @@ import { DeliveriesTable, SchedulesTable } from "@/components/human-resources/pp
 // Import skeleton
 import { PpeDetailSkeleton } from "@/components/human-resources/ppe/skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function PPEDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -130,7 +131,7 @@ export default function PPEDetailsScreen() {
 
   const handleEdit = () => {
     if (item) {
-      router.push(routeToMobilePath(routes.humanResources.ppe.edit(item.id)) as any);
+      nav.push(mobileRoute(routes.humanResources.ppe.edit(item.id)));
     }
   };
 
@@ -173,7 +174,7 @@ export default function PPEDetailsScreen() {
                 <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
                   O EPI que você está procurando não existe ou foi removido do sistema.
                 </ThemedText>
-                <Button onPress={() => router.push(routeToMobilePath(routes.humanResources.ppe.root) as any)}>
+                <Button onPress={() => nav.push(mobileRoute(routes.humanResources.ppe.root))}>
                   <ThemedText style={{ color: colors.primaryForeground }}>Ir para Lista de EPIs</ThemedText>
                 </Button>
               </CardContent>
