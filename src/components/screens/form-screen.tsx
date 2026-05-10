@@ -13,7 +13,7 @@
  * `submittingLabel` is required (the audit flagged its omission as a
  * source of confusing UX during slow mutations).
  */
-import React, { ReactNode } from "react";
+import React, { ReactNode, useMemo } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 import type { UseQueryResult } from "@tanstack/react-query";
@@ -25,6 +25,11 @@ import { ErrorScreen } from "@/components/ui/error-screen";
 import { PageHeader } from "@/components/ui/page-header";
 import { FormActionBar } from "@/components/forms/FormActionBar";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useKeyboardAwareScroll } from "@/hooks/useKeyboardAwareScroll";
+import {
+  KeyboardAwareFormProvider,
+  type KeyboardAwareFormContextType,
+} from "@/contexts/KeyboardAwareFormContext";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { usePrivilegeGate, type PrivilegeReq } from "@/hooks/use-privilege-gate";
 import { useStatusGuard, type StatusGuardConfig } from "@/hooks/use-status-guard";
@@ -56,6 +61,25 @@ function InnerFormScreen<TForm extends Record<string, any>, TResult>(
   const { colors } = useTheme();
   const isReady = !props.loadQuery?.isLoading;
   useScreenReady(isReady);
+
+  // Provide KeyboardAwareFormContext so FormCard / FormFieldGroup children
+  // get keyboard-aware focus tracking out of the box. Consumers that need
+  // their own provider can still nest one — the inner provider wins.
+  const { handlers } = useKeyboardAwareScroll();
+  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(
+    () => ({
+      onFieldLayout: handlers.handleFieldLayout,
+      onFieldFocus: handlers.handleFieldFocus,
+      onComboboxOpen: handlers.handleComboboxOpen,
+      onComboboxClose: handlers.handleComboboxClose,
+    }),
+    [
+      handlers.handleFieldLayout,
+      handlers.handleFieldFocus,
+      handlers.handleComboboxOpen,
+      handlers.handleComboboxClose,
+    ],
+  );
 
   // Edit-mode terminal-status block — show read-only banner, hide form body.
   const editingEntity =
@@ -115,16 +139,18 @@ function InnerFormScreen<TForm extends Record<string, any>, TResult>(
     <ThemedView style={styles.root}>
       <PageHeader title={props.title} subtitle={props.subtitle} variant="list" />
       <FormProvider {...props.form}>
-        <View style={styles.body}>{props.children}</View>
-        <FormActionBar
-          onCancel={onCancel}
-          onSubmit={() => props.flow.submit()}
-          isSubmitting={props.flow.isSubmitting}
-          canSubmit={!props.flow.isBlocked}
-          submitLabel={props.submitLabel ?? (props.mode === "create" ? "Cadastrar" : "Salvar")}
-          submittingLabel={props.submittingLabel}
-          form={props.form}
-        />
+        <KeyboardAwareFormProvider value={keyboardContextValue}>
+          <View style={styles.body}>{props.children}</View>
+          <FormActionBar
+            onCancel={onCancel}
+            onSubmit={() => props.flow.submit()}
+            isSubmitting={props.flow.isSubmitting}
+            canSubmit={!props.flow.isBlocked}
+            submitLabel={props.submitLabel ?? (props.mode === "create" ? "Cadastrar" : "Salvar")}
+            submittingLabel={props.submittingLabel}
+            form={props.form}
+          />
+        </KeyboardAwareFormProvider>
       </FormProvider>
     </ThemedView>
   );

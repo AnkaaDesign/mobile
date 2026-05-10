@@ -14,7 +14,7 @@
  * now exposes the dataLoader.phases slot but the per-context routing into it
  * is consumer-owned.
  */
-import React, { ReactNode, useCallback } from "react";
+import React, { ReactNode, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, ActivityIndicator } from "react-native";
 import type { UseQueryResult, UseMutationResult } from "@tanstack/react-query";
 
@@ -22,6 +22,7 @@ import { useTheme } from "@/lib/theme";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { DetailPageHeader, type BaseEntity, type IconComponent, type BadgeConfig } from "@/components/ui/detail-page-header";
+import type { PageAction } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useScreenReady } from "@/hooks/use-screen-ready";
@@ -33,9 +34,28 @@ import { SECTOR_PRIVILEGES } from "@/constants";
 import type { AppRoute } from "@/constants/routes.types";
 import { spacing } from "@/constants/design-system";
 
+/**
+ * Context object passed as the second argument to <DetailScreen> children.
+ * Lets consumers conditionally render status-change actions without
+ * re-implementing the editable predicate.
+ */
+export interface DetailScreenChildContext {
+  /** True when the entity is in an editable status (or no editGuard set). */
+  isEditable: boolean;
+  /** True when the entity is in a terminal/non-editable status. */
+  isTerminal: boolean;
+  /** Optional sequenced phase queries (mirrors the dataLoader.phases prop). */
+  phases?: UseQueryResult<any>[];
+}
+
 export interface DetailScreenProps<T extends BaseEntity> {
   query: UseQueryResult<T | { data?: T } | any>;
   icon: IconComponent;
+  /**
+   * Resolves the title displayed in the header. Required for transactional
+   * entities lacking a `name` field (Borrow, PpeDelivery, Maintenance).
+   * When omitted, falls back to `entity.name`.
+   */
   title?: (entity: T) => string;
   subtitle?: (entity: T) => ReactNode;
   badges?: (entity: T) => BadgeConfig[];
@@ -46,6 +66,12 @@ export interface DetailScreenProps<T extends BaseEntity> {
     confirmText?: string;
     successRoute?: AppRoute;
   };
+  /**
+   * Overflow-menu actions rendered in the header. Status / privilege
+   * filtering is the consumer's responsibility — pass an empty array (or
+   * filter the list) when an action is not currently allowed.
+   */
+  actions?: PageAction[];
   privilege?: PrivilegeReq;
   /** Status allowlist for edit visibility. */
   editGuard?: StatusGuardConfig<T>;
@@ -57,11 +83,11 @@ export interface DetailScreenProps<T extends BaseEntity> {
    */
   dataLoader?: { phases: UseQueryResult<any>[] };
   /**
-   * Body content. Receives the loaded entity and (optionally) the
-   * additional phase results so consumers can pull data from them without
-   * re-subscribing.
+   * Body content. Receives the loaded entity plus a context object exposing
+   * `isEditable` / `isTerminal` so consumers can conditionally render
+   * status-change actions without re-implementing the predicate.
    */
-  children: (entity: T, phases?: UseQueryResult<any>[]) => ReactNode;
+  children: (entity: T, ctx: DetailScreenChildContext) => ReactNode;
 }
 
 function unwrapEntity<T extends BaseEntity>(q: DetailScreenProps<T>["query"]): T | undefined {
@@ -152,6 +178,21 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
   const showEditButton =
     !!props.editRoute && editPriv.allowed && (!editGuardActive || guard.isEditable);
 
+  const resolvedTitle = props.title ? props.title(entity) : entity.name ?? "";
+
+  // Filter overflow actions on `hidden` flag (consumer should also pre-filter
+  // on privilege/status; this is a defensive last pass).
+  const overflowActions = useMemo(
+    () => (props.actions ?? []).filter((a) => !a.hidden),
+    [props.actions],
+  );
+
+  const childContext: DetailScreenChildContext = {
+    isEditable: editGuardActive ? guard.isEditable : true,
+    isTerminal: editGuardActive ? guard.isTerminal : false,
+    phases: props.dataLoader?.phases,
+  };
+
   return (
     <ScrollView
       style={styles.root}
@@ -167,10 +208,13 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
         <DetailPageHeader<T>
           entity={entity}
           icon={props.icon}
+          displayName={resolvedTitle}
           onRefresh={() => props.query.refetch()}
           onEdit={handleEdit}
           subtitle={props.subtitle?.(entity)}
           badges={props.badges?.(entity) ?? []}
+          actions={overflowActions}
+          showEditButton={showEditButton}
           isRefreshing={props.query.isRefetching}
         />
       </View>
@@ -189,7 +233,7 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
         </View>
       ) : null}
       <View style={styles.body}>
-        {props.children(entity, props.dataLoader?.phases)}
+        {props.children(entity, childContext)}
       </View>
       {props.deleteAction && editPriv.allowed ? (
         <View style={styles.deleteRow}>

@@ -28,8 +28,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useNav } from "@/contexts/nav";
 import { PrivilegeGate } from "@/components/auth/privilege-gate";
-import type { PrivilegeReq } from "@/hooks/use-privilege-gate";
+import { usePrivilegeGate, type PrivilegeReq } from "@/hooks/use-privilege-gate";
 import type { AppRoute } from "@/constants/routes.types";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { spacing } from "@/constants/design-system";
 
 export interface BulkAction<T> {
@@ -95,6 +96,14 @@ function InnerListScreen<T>({
   const nav = useNav();
   useScreenReady(!query.isLoading);
 
+  // Gate the primary action button on its declared privilege. Hooks must
+  // run unconditionally — pass BASIC as a no-op when no privilege is set.
+  const primaryActionPriv = usePrivilegeGate(
+    primaryAction?.privilege ?? SECTOR_PRIVILEGES.BASIC,
+  );
+  const showPrimaryAction =
+    !!primaryAction && (!primaryAction.privilege || primaryActionPriv.allowed);
+
   const items = extractItems<T>(query);
 
   const handleRefresh = useCallback(() => {
@@ -153,7 +162,7 @@ function InnerListScreen<T>({
         icon={icon}
         variant="list"
         actions={
-          primaryAction
+          showPrimaryAction && primaryAction
             ? [
                 {
                   key: "primary",

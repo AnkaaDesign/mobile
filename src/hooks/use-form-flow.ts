@@ -17,11 +17,24 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 import type { UseFormReturn } from "react-hook-form";
-import type { UseMutationResult } from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 
 import { useNav } from "@/contexts/nav";
 import type { AppRoute } from "@/constants/routes.types";
 import { isEditableStatus } from "@/constants/editable-statuses";
+
+/**
+ * Accept either a `UseMutationResult` (legacy form, when the caller already
+ * has a `useMutation` instance) or a callback `(data) => Promise<TResult>`.
+ *
+ * Most real-world entity hooks expose `createAsync` / `updateAsync` callbacks
+ * with bespoke argument shapes (`{ data, include }` etc.) that don't fit a
+ * raw `mutateAsync(formData)` signature. The callback form lets the caller
+ * write `mutation: (data) => createAsync(data)` and skip the wrapper boilerplate.
+ */
+export type FormFlowMutation<TForm, TResult> =
+  | UseMutationResult<TResult, unknown, TForm>
+  | ((data: TForm) => Promise<TResult>);
 
 export interface FormFlowStep<TForm = any> {
   /** Stable id for telemetry / progress display. */
@@ -40,8 +53,12 @@ export interface FormFlowStep<TForm = any> {
 export interface UseFormFlowOpts<TForm extends Record<string, any>, TResult> {
   /** RHF form instance — needed for dirty-state checks and step validation. */
   form?: UseFormReturn<TForm>;
-  /** Mutation that performs the submit. */
-  mutation: UseMutationResult<TResult, unknown, TForm>;
+  /**
+   * Either a `UseMutationResult` (when the caller already has a
+   * `useMutation` instance) or a `(data) => Promise<TResult>` callback.
+   * Discriminated at runtime via `'mutateAsync' in input`.
+   */
+  mutation: FormFlowMutation<TForm, TResult>;
   /** Where to navigate on success. */
   successRoute?: (result: TResult) => AppRoute;
   /** push, replace, or dismissTo. Default: 'dismissTo'. */
@@ -100,6 +117,12 @@ export interface UseFormFlowResult<TForm, TResult> {
 const DEFAULT_DIRTY_TEXT =
   "Você tem alterações não salvas. Deseja descartá-las e sair?";
 
+function isMutationResult<TForm, TResult>(
+  m: FormFlowMutation<TForm, TResult>,
+): m is UseMutationResult<TResult, unknown, TForm> {
+  return typeof m === "object" && m !== null && "mutateAsync" in m;
+}
+
 export function useFormFlow<TForm extends Record<string, any>, TResult>(
   opts: UseFormFlowOpts<TForm, TResult>,
 ): UseFormFlowResult<TForm, TResult> {
@@ -109,6 +132,29 @@ export function useFormFlow<TForm extends Record<string, any>, TResult>(
 
   const steps = opts.steps ?? [];
   const isMultiStep = steps.length > 0;
+
+  // When the caller passes a callback, build a UseMutationResult internally
+  // so `mutation.isPending` / `mutation.mutateAsync` work uniformly. The
+  // callback identity is read through a ref so re-renders don't reset
+  // pending state on the internal mutation. The internal mutation is only
+  // exercised when the input is a callback — when a real `UseMutationResult`
+  // is supplied, the internal one stays unused.
+  const callbackRef = useRef<((data: TForm) => Promise<TResult>) | null>(null);
+  callbackRef.current = isMutationResult(opts.mutation) ? null : opts.mutation;
+
+  const internalMutation = useMutation<TResult, unknown, TForm>({
+    mutationFn: async (data) => {
+      const cb = callbackRef.current;
+      if (!cb) throw new Error("useFormFlow: callback mutation invoked with no callback set");
+      return cb(data);
+    },
+  });
+
+  const effectiveMutation: UseMutationResult<TResult, unknown, TForm> = isMutationResult(
+    opts.mutation,
+  )
+    ? opts.mutation
+    : internalMutation;
 
   const isBlocked = useMemo(() => {
     if (!opts.blockOnTerminalStatus) return false;
@@ -126,7 +172,7 @@ export function useFormFlow<TForm extends Record<string, any>, TResult>(
       // can retry. (Bug fix: goBack() was previously called in finally,
       // which navigated away on errors.)
       try {
-        const result = await nav.withLoading(async () => opts.mutation.mutateAsync(data));
+        const result = await nav.withLoading(async () => effectiveMutation.mutateAsync(data));
         opts.onSuccess?.(result);
         if (opts.successRoute) {
           const target = opts.successRoute(result);
@@ -141,7 +187,7 @@ export function useFormFlow<TForm extends Record<string, any>, TResult>(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nav, opts.mutation, opts.successRoute, opts.successAction, opts.onSuccess, opts.onError],
+    [nav, effectiveMutation, opts.successRoute, opts.successAction, opts.onSuccess, opts.onError],
   );
 
   const submit = useCallback(async () => {
@@ -247,7 +293,7 @@ export function useFormFlow<TForm extends Record<string, any>, TResult>(
   return {
     submit,
     cancel,
-    isSubmitting: opts.mutation.isPending,
+    isSubmitting: effectiveMutation.isPending,
     isBlocked,
     steps,
     currentStepIndex: stepIndex,
@@ -257,6 +303,6 @@ export function useFormFlow<TForm extends Record<string, any>, TResult>(
     nextStep,
     prevStep,
     goToStep,
-    mutation: opts.mutation,
+    mutation: effectiveMutation,
   };
 }
