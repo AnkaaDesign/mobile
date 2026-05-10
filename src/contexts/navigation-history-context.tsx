@@ -189,22 +189,34 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     const currentHistory = historyRef.current;
     const r = routerRef.current;
 
+    // Prefer dismissTo() over navigate() — it pops the navigation stack to
+    // the target href when present (cleaner than navigate(), which leaks
+    // intermediate stack frames and causes "press back twice" bugs) and
+    // falls back to replace() inside the target stack when the href lives
+    // in a different drawer screen (preserving cross-drawer correctness).
+    // Defensive fallback to navigate() for SDKs that don't expose dismissTo.
+    const dismissOrNavigate = (target: string) => {
+      const router: any = r;
+      if (typeof router.dismissTo === "function") {
+        router.dismissTo(target);
+      } else {
+        router.navigate(target);
+      }
+    };
+
     if (currentHistory.length > 1) {
       const previousPath = currentHistory[currentHistory.length - 2];
       // Remove current from history
       historyRef.current = currentHistory.slice(0, -1);
-      // Use navigate() instead of replace() — navigate() properly switches
-      // the active screen in Drawer/Tab navigators (replace only swaps the
-      // current stack entry but doesn't change which Drawer screen is active)
-      r.navigate(previousPath as any);
+      dismissOrNavigate(previousPath);
     } else if (options?.fallbackRoute) {
       // No history but explicit fallback provided — use it
-      r.navigate(options.fallbackRoute as any);
+      dismissOrNavigate(options.fallbackRoute);
     } else {
       // Compute parent route from current pathname
       const current = currentPathnameRef.current;
       const parentRoute = computeParentRoute(current);
-      r.navigate(parentRoute as any);
+      dismissOrNavigate(parentRoute);
     }
   }, []);
 
