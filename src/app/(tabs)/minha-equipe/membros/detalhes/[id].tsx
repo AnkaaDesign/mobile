@@ -1,185 +1,116 @@
-import { useState, useCallback, useMemo } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
+import { useMemo } from "react";
+import { View, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+
 import { useTeamStaffUsers } from "@/hooks/use-team-staff-users";
-import { useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
-import { Card, CardContent } from "@/components/ui/card";
+import { spacing, fontSize, borderRadius } from "@/constants/design-system";
+import { IconUser, IconUsers } from "@tabler/icons-react-native";
+import { isTeamLeader } from "@/utils/user";
+import { mobileRoute } from "@/constants/routes.types";
+
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useTheme } from "@/lib/theme";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { IconUser, IconUsers } from "@tabler/icons-react-native";
-import { isTeamLeader } from "@/utils/user";
-
-// Import modular components
 import {
   BasicInfoCard,
   ProfessionalInfoCard,
   WarningsTable,
   PpeDeliveriesTable,
 } from "@/components/administration/employee/detail";
-import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 
-/**
- * Team Member Details Screen
- * Shows details of a team member for team leaders
- */
 export default function TeamMemberDetailsScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user: currentUser } = useAuth();
-  const [refreshing, setRefreshing] = useState(false);
 
-  // End navigation loading overlay when screen mounts
-
-  const id = params?.id || "";
   const userIsTeamLeader = currentUser ? isTeamLeader(currentUser) : false;
 
-  // Build query params to filter by specific user ID
-  // Using team-staff endpoint which is accessible to team leaders
-  const queryParams = useMemo(() => ({
-    where: { id },
-    include: {
-      position: true,
-      sector: true,
-      ppeSize: true,
-    },
-  }), [id]);
+  const queryParams = useMemo(
+    () => ({
+      where: { id },
+      include: {
+        position: true,
+        sector: true,
+        ppeSize: true,
+      },
+    }),
+    [id],
+  );
 
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useTeamStaffUsers(queryParams, {
+  const query = useTeamStaffUsers(queryParams, {
     enabled: !!id && id !== "" && userIsTeamLeader,
   });
 
-  useScreenReady(!isLoading);
+  // Custom unwrap: useTeamStaffUsers returns { data: User[] }, find by id.
+  // Pass-through synthesized query for the DetailScreen.
+  const synthesizedQuery = useMemo(() => {
+    if (!query.data) return query;
+    const list = (query.data as any)?.data;
+    if (!Array.isArray(list)) return query;
+    const employee = list.find((u: any) => u.id === id) || list[0];
+    return { ...query, data: employee ? { data: employee } : undefined };
+  }, [query, id]);
 
-  // Extract the employee from the response (first item since we filter by ID)
-  const employee = useMemo(() => {
-    if (!response?.data || !Array.isArray(response.data)) return null;
-    return response.data.find((user: any) => user.id === id) || response.data[0];
-  }, [response, id]);
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch()
-      .then(() => {
-        Alert.alert("Sucesso", "Dados atualizados com sucesso");
-      })
-      .finally(() => {
-        setRefreshing(false);
-      });
-  }, [refetch]);
-
-  // Show access denied if not a team leader
   if (!userIsTeamLeader) {
     return (
-      <ThemedView style={styles.accessDeniedContainer}>
-        <View style={styles.emptyContainer}>
-          <Card style={styles.card}>
-            <IconUsers size={48} color={colors.mutedForeground} />
-            <ThemedText style={[styles.accessDeniedTitle, { color: colors.foreground }]}>
-              Acesso Restrito
-            </ThemedText>
-            <ThemedText style={[styles.accessDeniedSubtitle, { color: colors.mutedForeground }]}>
-              Esta área é exclusiva para líderes de equipe.
-            </ThemedText>
-          </Card>
-        </View>
+      <ThemedView style={styles.accessDenied}>
+        <Card style={styles.accessDeniedCard}>
+          <IconUsers size={48} color={colors.mutedForeground} />
+          <ThemedText
+            style={[styles.accessDeniedTitle, { color: colors.foreground }]}
+          >
+            Acesso Restrito
+          </ThemedText>
+          <ThemedText
+            style={[styles.accessDeniedSubtitle, { color: colors.mutedForeground }]}
+          >
+            Esta área é exclusiva para líderes de equipe.
+          </ThemedText>
+        </Card>
       </ThemedView>
     );
   }
 
-  if (isLoading) {
-    return (
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-        <View style={styles.container}>
-          <EmployeeDetailSkeleton />
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !employee || !id || id === "") {
-    return (
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-        <View style={styles.container}>
-          <Card>
-            <CardContent style={styles.errorContent}>
-              <View style={[styles.errorIcon, { backgroundColor: colors.muted }]}>
-                <IconUser size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={[styles.errorTitle, { color: colors.foreground }]}>
-                Membro não encontrado
-              </ThemedText>
-              <ThemedText style={[styles.errorDescription, { color: colors.mutedForeground }]}>
-                O membro da equipe solicitado não foi encontrado ou não pertence ao seu setor liderado.
-              </ThemedText>
-            </CardContent>
-          </Card>
-        </View>
-      </ScrollView>
-    );
-  }
-
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: colors.background }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
-      showsVerticalScrollIndicator={false}
+    <DetailScreen<any>
+      query={synthesizedQuery as any}
+      icon={IconUser}
+      title={(e) => e.name || "Membro"}
+      subtitle={(e) => e.position?.name}
+      // Read-only mirror — team leaders only view their members.
+      editGuard={{ editable: [] }}
+      notFoundFallback={mobileRoute("/meu-pessoal/usuarios")}
     >
-      <View style={styles.container}>
-        {/* Basic Information */}
-        <BasicInfoCard employee={employee} />
-
-        {/* Professional Information */}
-        <ProfessionalInfoCard employee={employee} />
-
-        {/* Relation Tables */}
-        <WarningsTable employee={employee} maxHeight={400} />
-        <PpeDeliveriesTable employee={employee} maxHeight={400} />
-
-        {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+      {(employee) => (
+        <View style={styles.body}>
+          <BasicInfoCard employee={employee} />
+          <ProfessionalInfoCard employee={employee} />
+          <WarningsTable employee={employee} maxHeight={400} />
+          <PpeDeliveriesTable employee={employee} maxHeight={400} />
+        </View>
+      )}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  body: {
     gap: spacing.lg,
   },
-  accessDeniedContainer: {
-    flex: 1,
-  },
-  emptyContainer: {
+  accessDenied: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.xl,
   },
-  card: {
+  accessDeniedCard: {
     padding: spacing.xl,
     alignItems: "center",
     width: "100%",
+    borderRadius: borderRadius.md,
   },
   accessDeniedTitle: {
     fontSize: fontSize.lg,
@@ -191,30 +122,5 @@ const styles = StyleSheet.create({
   accessDeniedSubtitle: {
     fontSize: fontSize.base,
     textAlign: "center",
-  },
-  errorContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
   },
 });
