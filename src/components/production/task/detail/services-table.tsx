@@ -14,7 +14,7 @@ import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useServiceOrdersInfiniteMobile } from "@/hooks";
 import { ServiceOrderTable, createColumnDefinitions } from "@/components/production/service-order/list/service-order-table";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 
 interface ServicesTableProps {
   taskId: string;
@@ -102,7 +102,7 @@ export function ServicesTable({ taskId, maxHeight = 400 }: ServicesTableProps) {
   }, []);
 
   const handleServiceOrderPress = (serviceOrderId: string) => {
-    router.push(routeToMobilePath(routes.production.serviceOrders.details(serviceOrderId)) as any);
+    router.push(mobileRoute(routes.production.serviceOrders.details(serviceOrderId)));
   };
 
   // Don't show if no service orders and not loading

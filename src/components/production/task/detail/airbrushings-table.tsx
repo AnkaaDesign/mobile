@@ -14,7 +14,7 @@ import { useDebounce } from "@/hooks/useDebouncedSearch";
 import { useAirbrushingsInfiniteMobile } from "@/hooks";
 import { AirbrushingTable, createColumnDefinitions } from "@/components/production/airbrushing/list/airbrushing-table";
 import { routes, SECTOR_PRIVILEGES } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPrivilege } from "@/utils";
 import type { Airbrushing } from "@/types";
@@ -103,7 +103,7 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
   }, []);
 
   const handleAirbrushingPress = (airbrushingId: string) => {
-    router.push(routeToMobilePath(routes.production.airbrushings.details(airbrushingId)) as any);
+    router.push(mobileRoute(routes.production.airbrushings.details(airbrushingId)));
   };
 
   // Don't show if no airbrushings and not loading

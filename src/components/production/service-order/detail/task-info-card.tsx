@@ -10,7 +10,7 @@ import {
 import type { ServiceOrder } from "@/types";
 import { formatDate } from "@/utils";
 import { router } from "expo-router";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
 
 interface TaskInfoCardProps {
@@ -37,7 +37,7 @@ export function TaskInfoCard({ serviceOrder }: TaskInfoCardProps) {
 
   const handleTaskPress = () => {
     if (task.id) {
-      router.push(routeToMobilePath(routes.production.history.details(task.id)) as any);
+      router.push(mobileRoute(routes.production.history.details(task.id)));
     }
   };
 
