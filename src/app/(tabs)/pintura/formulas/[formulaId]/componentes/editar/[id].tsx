@@ -1,35 +1,29 @@
 import { useMemo, useEffect } from "react";
-import { View, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator , StyleSheet} from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { usePaintFormulaComponent, usePaintFormulaComponentMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
-import { useItems } from "@/hooks";
-import { paintFormulaComponentUpdateSchema } from '../../../../../../../schemas';
-import type { PaintFormulaComponentUpdateFormData } from '../../../../../../../schemas';
-import { spacing, fontSize, fontWeight } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege } from "@/utils";
-// import { showToast } from "@/components/ui/toast";
-import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import {
-  IconFlask,
-  IconPercentage,
-  IconPackage,
-  IconEdit,
-} from "@tabler/icons-react-native";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
+  usePaintFormulaComponent,
+  usePaintFormulaComponentMutations,
+  useItems,
+} from "@/hooks";
+import {
+  paintFormulaComponentUpdateSchema,
+  type PaintFormulaComponentUpdateFormData,
+} from "@/schemas";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { IconPercentage, IconPackage, IconEdit } from "@tabler/icons-react-native";
 
 export default function EditComponentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,69 +32,30 @@ export default function EditComponentScreen() {
 
 function EditComponentScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
-  const { id } = useLocalSearchParams<{ formulaId: string; id: string }>();
-  const { update: updateComponent, isLoading: isUpdating } = usePaintFormulaComponentMutations();
+  const { id, formulaId } = useLocalSearchParams<{ formulaId: string; id: string }>();
+  const { updateAsync } = usePaintFormulaComponentMutations();
 
-  // Keyboard-aware scrolling
-  const { handlers, refs } = useKeyboardAwareScroll();
-
-  // Memoize keyboard context value
-  const keyboardContextValue = useMemo<KeyboardAwareFormContextType>(() => ({
-    onFieldLayout: handlers.handleFieldLayout,
-    onFieldFocus: handlers.handleFieldFocus,
-    onComboboxOpen: handlers.handleComboboxOpen,
-    onComboboxClose: handlers.handleComboboxClose,
-  }), [handlers.handleFieldLayout, handlers.handleFieldFocus, handlers.handleComboboxOpen, handlers.handleComboboxClose]);
-
-  // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-
-  // Fetch component data
-  const {
-    data: component,
-    isLoading: isLoadingComponent,
-    error: componentError,
-  } = usePaintFormulaComponent(id!, {
-    include: {
-      item: {
-        include: {
-          brand: true,
-          category: true,
-        }
-      }
-    }
+  const componentQuery = usePaintFormulaComponent(id!, {
+    include: { item: { include: { brand: true, category: true } } },
   });
 
-  // End navigation loading overlay when screen mounts
-  useScreenReady(!isLoadingComponent);
+  const component = componentQuery.data;
 
-  // Fetch available items for selection
-  const {
-    data: itemsData,
-    isLoading: isLoadingItems
-  } = useItems({
+  const { data: itemsData, isLoading: isLoadingItems } = useItems({
     perPage: 100,
-    include: {
-      brand: true,
-      category: true,
-    },
+    include: { brand: true, category: true },
     orderBy: { name: "asc" },
   });
 
-  // Transform items for combobox
   const itemOptions = useMemo(() => {
     if (!itemsData?.data) return [];
-
-    return itemsData.data.map(item => ({
+    return itemsData.data.map((item) => ({
       value: item.id,
       label: item.uniCode ? `${item.name} (${item.uniCode})` : item.name,
       description: item.brand?.name || item.category?.name || undefined,
     }));
   }, [itemsData]);
 
-  // Form setup
   const form = useForm<PaintFormulaComponentUpdateFormData>({
     resolver: zodResolver(paintFormulaComponentUpdateSchema),
     defaultValues: {
@@ -109,356 +64,213 @@ function EditComponentScreenInner() {
     },
   });
 
-  const { handleSubmit, control, formState: { errors, isValid, isDirty }, watch, reset } = form;
-
-  // Set initial values when component data loads
+  // Hydrate form once the component data arrives.
   useEffect(() => {
     if (component?.data) {
-      reset({
+      form.reset({
         itemId: component.data.itemId,
         ratio: component.data.ratio,
       });
     }
-  }, [component, reset]);
+  }, [component, form]);
 
-  // Watch selected item for display
+  const flow = useFormFlow<PaintFormulaComponentUpdateFormData, any>({
+    form,
+    mutation: async (data) => updateAsync({ id: id!, data }),
+    successRoute: () => mobileRoute(routes.painting.formulas.details(formulaId!)),
+    successAction: "replace",
+    cancelFallback: mobileRoute(routes.painting.formulas.details(formulaId!)),
+  });
+
+  const {
+    control,
+    watch,
+    formState: { errors },
+  } = form;
+
   const selectedItemId = watch("itemId");
   const selectedItem = useMemo(() => {
     if (!selectedItemId || !itemsData?.data) return null;
-    return itemsData.data.find(item => item.id === selectedItemId);
+    return itemsData.data.find((item) => item.id === selectedItemId);
   }, [selectedItemId, itemsData]);
 
-  // Handle form submission
-  const onSubmit = async (data: PaintFormulaComponentUpdateFormData) => {
-    if (!canEdit) {
-      Alert.alert("Erro", "Você não tem permissão para editar componentes");
-      return;
-    }
-
-    try {
-      await updateComponent({ id: id!, data });
-      // API client already shows success alert
-      goBack();
-    } catch (error: any) {
-      // API client already shows error alert
-    }
-  };
-
-  // Handle cancel with unsaved changes check
-  const handleCancel = () => {
-    if (isDirty) {
-      Alert.alert(
-        "Descartar Alterações",
-        "Você tem alterações não salvas. Deseja descartar?",
-        [
-          { text: "Continuar Editando", style: "cancel" },
-          {
-            text: "Descartar",
-            style: "destructive",
-            onPress: () => goBack(),
-          },
-        ]
-      );
-    } else {
-      goBack();
-    }
-  };
-
-  if (!canEdit) {
-    return (
-      <View style={styles.centerContainer}>
-        <IconFlask size={48} color={colors.muted} />
-        <ThemedText style={styles.permissionText}>
-          Você não tem permissão para editar componentes
-        </ThemedText>
-        <Button variant="outline" onPress={() => goBack()}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
-
-  if (isLoadingComponent) {
-    return (
-      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-        {/* Header card skeleton */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Skeleton style={{ width: 24, height: 24, borderRadius: 4 }} />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Skeleton style={{ height: 16, width: '55%', borderRadius: 4 }} />
-              <Skeleton style={{ height: 12, width: '70%', borderRadius: 4 }} />
-            </View>
-          </View>
-        </View>
-        {/* Current component info card */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-            <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
-          </View>
-          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 13, width: '25%', borderRadius: 4 }} />
-        </View>
-        {/* Item selection card */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
-          </View>
-          <Skeleton style={{ height: 44, borderRadius: 6 }} />
-        </View>
-        {/* Ratio card */}
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-            <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
-          </View>
-          <Skeleton style={{ height: 13, width: '55%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 44, borderRadius: 6 }} />
-        </View>
-      </View>
-    );
-  }
-
-  if (componentError || !component?.data) {
-    return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={styles.errorText}>Erro ao carregar componente</ThemedText>
-        <Button variant="outline" onPress={() => goBack()}>
-          Voltar
-        </Button>
-      </View>
-    );
-  }
-
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Editar Componente",
-          headerBackTitle: "Cancelar",
-          headerLeft: () => (
-            <Button variant="ghost" size="sm" onPress={handleCancel}>
-              Cancelar
-            </Button>
-          ),
-        }}
-      />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
-        <ScrollView
-          ref={refs.scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          onLayout={handlers.handleScrollViewLayout}
-          onScroll={handlers.handleScroll}
-          scrollEventThrottle={16}
-        >
-        <KeyboardAwareFormProvider value={keyboardContextValue}>
-          {/* Header Card */}
-          <Card style={styles.headerCard}>
-            <View style={styles.headerContent}>
-              <IconEdit size={24} color={colors.primary} />
-              <View style={styles.headerText}>
-                <ThemedText style={styles.headerTitle}>Editar Componente</ThemedText>
-                <ThemedText style={styles.headerSubtitle}>
-                  Altere o item ou a proporção do componente na fórmula
-                </ThemedText>
-              </View>
-            </View>
-          </Card>
-
-          {/* Current Component Info */}
-          {component?.data?.item && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconPackage size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Componente Atual</ThemedText>
-                </View>
-              </View>
-              <View style={styles.currentComponentInfo}>
-                <ThemedText style={styles.currentItemName}>{component.data.item.name}</ThemedText>
-                {component.data.item.uniCode && (
-                  <ThemedText style={styles.currentItemCode}>Código: {component.data.item.uniCode}</ThemedText>
-                )}
-                <View style={styles.currentRatioContainer}>
-                  <IconPercentage size={16} color={colors.primary} />
-                  <ThemedText style={styles.currentRatio}>{component.data.ratio.toFixed(2)}%</ThemedText>
-                </View>
-              </View>
-            </Card>
-          )}
-
-          {/* Item Selection Card */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconPackage size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Alterar Item</ThemedText>
-              </View>
-            </View>
-
-            <Controller
-              control={control}
-              name="itemId"
-              render={({ field: { onChange, value } }) => (
-                <Combobox
-                  options={itemOptions}
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Selecione um item..."
-                  searchPlaceholder="Buscar itens..."
-                  emptyText="Nenhum item encontrado"
-                  loading={isLoadingItems}
-                  error={errors.itemId?.message}
-                />
-              )}
-            />
-
-            {/* Selected Item Preview (only if different from current) */}
-            {selectedItem && selectedItem.id !== component?.data?.itemId && (
-              <View style={styles.selectedItemPreview}>
-                <View style={styles.previewHeader}>
-                  <ThemedText style={styles.previewTitle}>Novo Item Selecionado</ThemedText>
-                </View>
-                <View style={styles.previewContent}>
-                  <ThemedText style={styles.itemName}>{selectedItem.name}</ThemedText>
-                  {selectedItem.uniCode && (
-                    <ThemedText style={styles.itemCode}>Código: {selectedItem.uniCode}</ThemedText>
-                  )}
-                  {selectedItem.category?.description && (
-                    <ThemedText style={styles.itemDescription}>{selectedItem.category.description}</ThemedText>
-                  )}
-                  <View style={styles.itemMeta}>
-                    {selectedItem.brand && (
-                      <ThemedText style={styles.metaText}>
-                        Marca: {selectedItem.brand.name}
-                      </ThemedText>
-                    )}
-                    {selectedItem.category && (
-                      <ThemedText style={styles.metaText}>
-                        Categoria: {selectedItem.category.name}
-                      </ThemedText>
-                    )}
-                  </View>
-                </View>
-              </View>
-            )}
-          </Card>
-
-          {/* Ratio Input Card */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconPercentage size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Alterar Proporção</ThemedText>
-              </View>
-            </View>
-
-            <Controller
-              control={control}
-              name="ratio"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <View>
-                  <Label style={styles.fieldLabel}>Proporção (%)</Label>
-                  <ThemedText style={styles.fieldHelperText}>
-                    Insira a nova proporção deste componente na fórmula (0.1% a 100%)
-                  </ThemedText>
-                  <NumberInput
-                    value={value}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    placeholder="Ex: 15.5"
-                    min={0.1}
-                    max={100}
-                    step={0.1}
-                    decimalPlaces={1}
-                    error={!!errors.ratio}
-                  />
-                  {errors.ratio && (
-                    <ThemedText style={styles.fieldErrorText}>
-                      {errors.ratio.message}
-                    </ThemedText>
-                  )}
-                </View>
-              )}
-            />
-
-            {/* Ratio Helper */}
-            <View style={styles.ratioHelper}>
-              <ThemedText style={styles.helperTitle}>Dicas para proporções:</ThemedText>
-              <ThemedText style={styles.helperText}>• 5% = componente secundário</ThemedText>
-              <ThemedText style={styles.helperText}>• 25% = componente principal</ThemedText>
-              <ThemedText style={styles.helperText}>• 50% = base da fórmula</ThemedText>
-            </View>
-          </Card>
-        </KeyboardAwareFormProvider>
-        </ScrollView>
-
-        {/* Action Buttons */}
-        <View style={StyleSheet.flatten([styles.actionBar, { borderTopColor: colors.border }])}>
-          <Button
-            variant="outline"
-            onPress={handleCancel}
-            style={styles.cancelButton}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            disabled={!isValid || !isDirty || isUpdating}
-            style={styles.saveButton}
-          >
-{isUpdating ? "Salvando..." : isDirty ? "Salvar Alterações" : "Nenhuma Alteração"}
-          </Button>
+    <FormScreen
+      title="Editar Componente"
+      subtitle="Altere o item ou a proporção do componente na fórmula"
+      mode="edit"
+      form={form}
+      flow={flow}
+      privilege={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+      loadQuery={componentQuery as any}
+      submitLabel="Salvar Alterações"
+      submittingLabel="Salvando..."
+    >
+      {/* Header */}
+      <Card style={styles.headerCard}>
+        <View style={styles.headerContent}>
+          <IconEdit size={24} color={colors.primary} />
+          <View style={styles.headerText}>
+            <ThemedText style={styles.headerTitle}>Editar Componente</ThemedText>
+            <ThemedText style={styles.headerSubtitle}>
+              Altere o item ou a proporção do componente na fórmula
+            </ThemedText>
+          </View>
         </View>
-      </KeyboardAvoidingView>
-    </>
+      </Card>
+
+      {/* Current Component Info */}
+      {component?.data?.item && (
+        <Card style={styles.card}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconPackage size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Componente Atual</ThemedText>
+            </View>
+          </View>
+          <View style={styles.currentComponentInfo}>
+            <ThemedText style={styles.currentItemName}>{component.data.item.name}</ThemedText>
+            {component.data.item.uniCode && (
+              <ThemedText style={styles.currentItemCode}>
+                Código: {component.data.item.uniCode}
+              </ThemedText>
+            )}
+            <View style={styles.currentRatioContainer}>
+              <IconPercentage size={16} color={colors.primary} />
+              <ThemedText style={styles.currentRatio}>
+                {component.data.ratio.toFixed(2)}%
+              </ThemedText>
+            </View>
+          </View>
+        </Card>
+      )}
+
+      {/* Item Selection */}
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconPackage size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Alterar Item</ThemedText>
+          </View>
+        </View>
+
+        <Controller
+          control={control}
+          name="itemId"
+          render={({ field: { onChange, value } }) => (
+            <Combobox
+              options={itemOptions}
+              value={value || ""}
+              onValueChange={onChange}
+              placeholder="Selecione um item..."
+              searchPlaceholder="Buscar itens..."
+              emptyText="Nenhum item encontrado"
+              loading={isLoadingItems}
+              error={errors.itemId?.message}
+            />
+          )}
+        />
+
+        {selectedItem && selectedItem.id !== component?.data?.itemId && (
+          <View style={styles.selectedItemPreview}>
+            <View style={styles.previewHeader}>
+              <ThemedText style={styles.previewTitle}>Novo Item Selecionado</ThemedText>
+            </View>
+            <View style={styles.previewContent}>
+              <ThemedText style={styles.itemName}>{selectedItem.name}</ThemedText>
+              {selectedItem.uniCode && (
+                <ThemedText style={styles.itemCode}>Código: {selectedItem.uniCode}</ThemedText>
+              )}
+              {selectedItem.category?.description && (
+                <ThemedText style={styles.itemDescription}>
+                  {selectedItem.category.description}
+                </ThemedText>
+              )}
+              <View style={styles.itemMeta}>
+                {selectedItem.brand && (
+                  <ThemedText style={styles.metaText}>
+                    Marca: {selectedItem.brand.name}
+                  </ThemedText>
+                )}
+                {selectedItem.category && (
+                  <ThemedText style={styles.metaText}>
+                    Categoria: {selectedItem.category.name}
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+      </Card>
+
+      {/* Ratio */}
+      <Card style={styles.card}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconPercentage size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Alterar Proporção</ThemedText>
+          </View>
+        </View>
+
+        <Controller
+          control={control}
+          name="ratio"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <View>
+              <Label style={styles.fieldLabel}>Proporção (%)</Label>
+              <ThemedText style={styles.fieldHelperText}>
+                Insira a nova proporção deste componente na fórmula (0.1% a 100%)
+              </ThemedText>
+              <NumberInput
+                value={value}
+                onChange={onChange}
+                onBlur={onBlur}
+                placeholder="Ex: 15.5"
+                min={0.1}
+                max={100}
+                step={0.1}
+                decimalPlaces={1}
+                error={!!errors.ratio}
+              />
+              {errors.ratio && (
+                <ThemedText style={styles.fieldErrorText}>{errors.ratio.message}</ThemedText>
+              )}
+            </View>
+          )}
+        />
+
+        <View style={styles.ratioHelper}>
+          <ThemedText style={styles.helperTitle}>Dicas para proporções:</ThemedText>
+          <ThemedText style={styles.helperText}>• 5% = componente secundário</ThemedText>
+          <ThemedText style={styles.helperText}>• 25% = componente principal</ThemedText>
+          <ThemedText style={styles.helperText}>• 50% = base da fórmula</ThemedText>
+        </View>
+      </Card>
+    </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-    paddingBottom: 0, // No spacing - action bar has its own margin
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  permissionText: {
-    textAlign: "center",
-    fontSize: fontSize.md,
-    opacity: 0.7,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    textAlign: "center",
-    fontSize: fontSize.md,
-    opacity: 0.7,
-  },
-  errorText: {
+  headerCard: {
     marginBottom: spacing.md,
-    textAlign: "center",
-    fontSize: fontSize.md,
-    color: "red",
+    padding: spacing.lg,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerText: {
+    marginLeft: spacing.md,
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+  },
+  headerSubtitle: {
+    fontSize: fontSize.sm,
+    opacity: 0.7,
+    marginTop: spacing.xs,
   },
   card: {
     padding: spacing.md,
@@ -481,34 +293,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: "500",
   },
-  headerCard: {
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerText: {
-    marginLeft: spacing.md,
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-  },
-  headerSubtitle: {
-    fontSize: fontSize.sm,
-    opacity: 0.7,
-    marginTop: spacing.xs,
-  },
-  currentComponentCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    backgroundColor: "rgba(0, 122, 255, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 122, 255, 0.2)",
-  },
   currentComponentInfo: {
     gap: spacing.xs,
   },
@@ -523,35 +307,20 @@ const styles = StyleSheet.create({
   currentRatioContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: spacing.xs,
     marginTop: spacing.xs,
   },
   currentRatio: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: "#007AFF",
-    marginLeft: 4,
-  },
-  formCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-  cardTitle: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
-    marginLeft: spacing.sm,
+    fontWeight: fontWeight.medium,
   },
   selectedItemPreview: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: "rgba(52, 199, 89, 0.05)",
+    backgroundColor: "rgba(0, 122, 255, 0.05)",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(52, 199, 89, 0.2)",
+    borderColor: "rgba(0, 122, 255, 0.2)",
   },
   previewHeader: {
     marginBottom: spacing.sm,
@@ -559,7 +328,7 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
-    color: "#34C759",
+    opacity: 0.8,
   },
   previewContent: {
     gap: spacing.xs,
@@ -590,10 +359,10 @@ const styles = StyleSheet.create({
   ratioHelper: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: "rgba(255, 149, 0, 0.05)",
+    backgroundColor: "rgba(52, 199, 89, 0.05)",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 149, 0, 0.2)",
+    borderColor: "rgba(52, 199, 89, 0.2)",
   },
   helperTitle: {
     fontSize: fontSize.sm,
@@ -604,19 +373,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     opacity: 0.7,
     marginBottom: 2,
-  },
-  actionBar: {
-    flexDirection: "row",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: spacing.sm,
-  },
-  cancelButton: {
-    flex: 1,
-  },
-  saveButton: {
-    flex: 2,
   },
   fieldLabel: {
     fontSize: fontSize.sm,
