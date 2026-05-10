@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNav } from "@/contexts/nav";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
@@ -49,7 +49,7 @@ export default function CreateCustomerScreen() {
 }
 
 function CreateCustomerScreenInner() {
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
@@ -250,7 +250,7 @@ function CreateCustomerScreenInner() {
 
       if (result?.data) {
         // API client already shows success alert
-        router.replace(mobileRoute(routes.administration.customers.details(result.data?.id || '')));
+        nav.replace(mobileRoute(routes.administration.customers.details(result.data?.id || '')));
       } else {
         Alert.alert("Erro", "Erro ao criar cliente");
       }
@@ -264,7 +264,7 @@ function CreateCustomerScreenInner() {
   const handleCancel = () => {
     Alert.alert("Descartar Cadastro", "Deseja descartar o cadastro do cliente?", [
       { text: "Continuar Editando", style: "cancel" },
-      { text: "Descartar", style: "destructive", onPress: () => router.push(mobileRoute(routes.administration.customers.list)) },
+      { text: "Descartar", style: "destructive", onPress: () => nav.push(mobileRoute(routes.administration.customers.list)) },
     ]);
   };
 

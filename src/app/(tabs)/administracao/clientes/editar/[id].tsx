@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNav } from "@/contexts/nav";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCustomer, useCustomerMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
@@ -50,7 +51,7 @@ export default function CustomerEditScreen() {
 
 function CustomerEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
@@ -366,7 +367,7 @@ function CustomerEditScreenInner() {
 
       if (result?.data) {
         // API client already shows success alert
-        router.replace(mobileRoute(routes.administration.customers.details(id!)));
+        nav.replace(mobileRoute(routes.administration.customers.details(id!)));
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
@@ -382,10 +383,10 @@ function CustomerEditScreenInner() {
     if (isDirty || hasNewLogo) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.replace(mobileRoute(routes.administration.customers.details(id!))) },
+        { text: "Descartar", style: "destructive", onPress: () => nav.replace(mobileRoute(routes.administration.customers.details(id!))) },
       ]);
     } else {
-      router.replace(mobileRoute(routes.administration.customers.details(id!)));
+      nav.replace(mobileRoute(routes.administration.customers.details(id!)));
     }
   };
 
