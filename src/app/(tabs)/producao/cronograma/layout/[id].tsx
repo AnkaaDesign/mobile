@@ -13,13 +13,14 @@ import { SkeletonCard } from "@/components/ui/skeleton-card";
 import { LayoutForm } from "@/components/production/layout/layout-form";
 import { useTaskDetail, useLayoutsByTruck, useLayoutMutations, useScreenReady} from '@/hooks';
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { navigationTracker } from "@/utils/navigation-tracker";
 import { useTheme } from "@/lib/theme";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes, TRUCK_MANUFACTURER } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, TRUCK_MANUFACTURER, SECTOR_PRIVILEGES } from "@/constants";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { canEditLayouts, canEditLayoutsOnly, canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
+import { canEditLayoutForTask } from "@/utils/permissions/entity-permissions";
 import type { LayoutCreateFormData, TruckCreateFormData } from "@/schemas";
 import type { FormStep } from "@/components/ui/form-steps";
 import { Icon } from "@/components/ui/icon";
@@ -38,19 +39,14 @@ const SIDE_FOR_STEP: Record<number, "left" | "right" | "back"> = {
   3: "back",
 };
 
-export default function LayoutOnlyEditScreen() {
+function LayoutOnlyEditInner() {
   const router = useRouter();
+  const nav = useNav();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
   const { createOrUpdateTruckLayout, isSavingTruckLayout } = useLayoutMutations();
-  const [checkingPermission, setCheckingPermission] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check permissions - Only LEADER and LOGISTIC can use this page
-  // ADMIN should use the full edit page instead
-  const canEditLayout = canEditLayouts(user);
 
   // Fetch task details
   const {
@@ -302,8 +298,11 @@ export default function LayoutOnlyEditScreen() {
       // API client already shows success alert
       // Navigate back to the correct list based on navigation source
       const source = navigationTracker.getSource();
-      const fallbackRoute = routeToMobilePath(routes.production.schedule.root);
-      router.replace((source || fallbackRoute) as any);
+      if (source) {
+        router.replace(source as any);
+      } else {
+        nav.dismissTo(mobileRoute(routes.production.schedule.root));
+      }
     } catch (error: any) {
       console.error("[LayoutOnlyEdit] Error saving layout:", error);
       // API client already shows error alert
@@ -313,70 +312,31 @@ export default function LayoutOnlyEditScreen() {
   };
 
   const handleCancel = () => {
-    goBack();
+    nav.goBack();
   };
 
-  // Check if user can edit this specific task's layout (led sector check)
+  // Check if user can edit this specific task's layout (led sector check).
+  // Basic privilege check is handled by the outer <PrivilegeGate>. This is the
+  // task-specific check (sector ownership) which still has to run inline.
   const canEditThisTaskLayout = canEditLayoutForTask(user, task?.sectorId);
 
-  // Debug logging
-  console.log('[Layout Page] State:', {
-    checkingPermission,
-    hasUser: !!user,
-    hasTask: !!task,
-    hasTruck: !!task?.truck,
-    truckId: task?.truck?.id,
-    isLoadingTask,
-    isLoadingLayouts,
-    layoutsQueryEnabled: !!truckId,
-    canEditLayout,
-    canEditThisTaskLayout,
-    taskSectorId: task?.sectorId,
-    userPrivilege: user?.sector?.privileges,
-  });
-
-  // Permission check effect - redirect if no permission for this task
+  // Permission check effect - redirect if user can't edit THIS task's layout
   useEffect(() => {
-    console.log('[Layout Page] Permission check effect:', {
-      userDefined: user !== undefined,
-      taskDefined: task !== undefined,
-      isLoadingTask,
-    });
-
     if (user !== undefined && task !== undefined && !isLoadingTask) {
-      setCheckingPermission(false);
-
-      // Check basic layout permission first
-      if (!canEditLayout) {
-        console.log('[Layout Page] No basic layout permission');
-        Alert.alert("Acesso negado", "Voce nao tem permissao para editar layouts");
-        const source = navigationTracker.getSource();
-        router.replace((source || "/(tabs)/producao/cronograma") as any);
-        return;
-      }
-
-      // Check if user can edit THIS task's layout (led sector validation)
       if (!canEditThisTaskLayout) {
-        console.log('[Layout Page] Cannot edit this task layout');
         Alert.alert("Acesso negado", "Voce so pode editar layouts de tarefas do seu setor liderado ou tarefas sem setor definido");
         const source = navigationTracker.getSource();
         router.replace((source || "/(tabs)/producao/cronograma") as any);
       }
     }
-  }, [user, task, isLoadingTask, canEditLayout, canEditThisTaskLayout, router]);
+  }, [user, task, isLoadingTask, canEditThisTaskLayout, router]);
 
   // Show skeleton while checking permission or loading data
   // TEMPORARILY: Skip layouts loading check to see if that's the issue
   const shouldCheckLayoutsLoading = false; // !!truckId;
   const stillLoadingLayouts = shouldCheckLayoutsLoading && isLoadingLayouts;
 
-  if (checkingPermission || !user || isLoadingTask) {
-    console.log('[Layout Page] Showing skeleton - still loading', {
-      checkingPermission,
-      noUser: !user,
-      isLoadingTask,
-      stillLoadingLayouts,
-    });
+  if (!user || isLoadingTask) {
     return (
       <ThemedView style={styles.container}>
         <ScrollView
@@ -437,13 +397,10 @@ export default function LayoutOnlyEditScreen() {
     );
   }
 
-  // If no permission after loading, return null (the useEffect will handle redirect)
-  if (!canEditLayout || !canEditThisTaskLayout) {
-    console.log('[Layout Page] No permission - redirecting');
+  // If no task-level permission after loading, return null (useEffect handles redirect)
+  if (!canEditThisTaskLayout) {
     return null;
   }
-
-  console.log('[Layout Page] Rendering main content');
 
   if (error || !task) {
     return (
@@ -623,6 +580,23 @@ export default function LayoutOnlyEditScreen() {
         )}
       </MultiStepFormContainer>
     </ThemedView>
+  );
+}
+
+export default function LayoutOnlyEditScreen() {
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <LayoutOnlyEditInner />
+    </PrivilegeGate>
   );
 }
 

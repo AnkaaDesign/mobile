@@ -14,13 +14,12 @@ import { ImagePreviewModal } from '@/components/ui/image-preview-modal'
 import { FormSkeleton } from '@/components/ui/form-skeleton'
 import { MultiStepFormContainer } from '@/components/forms'
 import { useTaskMutations, useTaskDetail, useScreenReady } from '@/hooks'
-import { useAuth } from '@/contexts/auth-context'
+import { PrivilegeGate } from '@/components/auth/privilege-gate'
 import { navigationTracker } from '@/utils/navigation-tracker'
 import { useTheme } from '@/lib/theme'
-import { TASK_STATUS } from '@/constants'
+import { TASK_STATUS, SECTOR_PRIVILEGES } from '@/constants'
 import { SERVICE_ORDER_STATUS, SERVICE_ORDER_TYPE } from '@/constants/enums'
 import { spacing, fontSize, borderRadius } from '@/constants/design-system'
-import { canViewCheckinCheckout } from '@/utils/permissions/entity-permissions'
 import { getApiBaseUrl } from '@/utils/file'
 import { rewriteCdnUrl } from '@/utils/file-viewer-utils'
 import type { File as AnkaaFile } from '@/types'
@@ -40,32 +39,17 @@ function fileToPickerItem(file: AnkaaFile): FilePickerItem {
   }
 }
 
-export default function CheckinCheckoutScreen() {
+function CheckinCheckoutInner() {
   const router = useRouter()
   const pathname = usePathname()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { user } = useAuth()
   const { colors } = useTheme()
   const { updateAsync, isLoading: isSaving } = useTaskMutations()
 
   const navigation = useNavigation()
-  const [checkingPermission, setCheckingPermission] = useState(true)
   const [hasChanges, setHasChanges] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const savedSuccessfully = useRef(false)
-
-  // Permission check
-  const canAccess = canViewCheckinCheckout(user)
-
-  React.useEffect(() => {
-    if (user !== undefined) {
-      setCheckingPermission(false)
-      if (!canAccess) {
-        Alert.alert('Acesso negado', 'Você não tem permissão para acessar check-in/check-out.')
-        router.replace('/(tabs)/producao/cronograma')
-      }
-    }
-  }, [user, canAccess, router])
 
   // Prevent accidental back navigation when there are unsaved changes
   React.useEffect(() => {
@@ -428,16 +412,6 @@ export default function CheckinCheckoutScreen() {
     }
     return { totalCheckin, totalCheckout }
   }, [activeServiceOrders, checkinFilesByServiceOrder, checkoutFilesByServiceOrder])
-
-  // Loading / permission check
-  if (checkingPermission || !user || !canAccess) {
-    return (
-      <ThemedView style={styles.container}>
-        <Stack.Screen options={{ title: 'Check-in / Check-out', headerBackTitle: 'Voltar', headerShown: true }} />
-        <FormSkeleton cards={[{ title: true, titleWidth: '40%', fields: 2 }, { title: true, titleWidth: '40%', fields: 2 }]} />
-      </ThemedView>
-    )
-  }
 
   if (isLoadingTask || !initialized) {
     return (
@@ -836,6 +810,23 @@ export default function CheckinCheckoutScreen() {
         onClose={() => setPreviewVisible(false)}
       />
     </ThemedView>
+  )
+}
+
+export default function CheckinCheckoutScreen() {
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <CheckinCheckoutInner />
+    </PrivilegeGate>
   )
 }
 
