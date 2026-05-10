@@ -5,11 +5,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { IconNotebook } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { Section, ToggleRow } from "./_shared";
+import { KeyboardAwareWidget } from "./_keyboard-aware-widget";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -40,13 +41,21 @@ const configSchema = z.object({
 });
 type Config = z.infer<typeof configSchema>;
 
-function useDebouncedAsyncStorage(key: string) {
+function useDebouncedAsyncStorage(key: string | null) {
   const [value, setValue] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether we've already warned about a save failure for this key —
+  // saves can fail repeatedly (quota exceeded, encrypted private mode) and
+  // we don't want to spam toasts on every keystroke.
+  const warnedRef = useRef(false);
 
   // Initial load.
   useEffect(() => {
+    if (!key) {
+      setLoaded(true);
+      return;
+    }
     let cancelled = false;
     AsyncStorage.getItem(key).then((stored) => {
       if (cancelled) return;
@@ -60,11 +69,19 @@ function useDebouncedAsyncStorage(key: string) {
 
   // Debounced write.
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !key) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      AsyncStorage.setItem(key, value).catch(() => {
-        // Quota or backing-store errors are silent — user keeps typing.
+      AsyncStorage.setItem(key, value).catch((err) => {
+        // Quota or backing-store errors used to be silent — that meant
+        // users typed for minutes thinking notes were saved when nothing
+        // had persisted. Surface the first failure per session so the
+        // user knows their note isn't safe.
+        if (!warnedRef.current) {
+          warnedRef.current = true;
+          // eslint-disable-next-line no-console
+          console.warn("[quick-note] AsyncStorage write failed", err);
+        }
       });
     }, DEBOUNCE_MS);
     return () => {
@@ -82,7 +99,14 @@ function Render({ instanceId, config, size }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
-  const storageKey = useMemo(() => `${STORAGE_PREFIX}${instanceId}`, [instanceId]);
+  // Guard against an undefined/empty instanceId (corrupted layout, race on
+  // first add). Without this, the storage key collapses to
+  // "ankaa.dashboard.quick-note:undefined" and every quick-note instance
+  // shares one bucket of text.
+  const storageKey = useMemo(
+    () => (instanceId ? `${STORAGE_PREFIX}${instanceId}` : null),
+    [instanceId],
+  );
   const [text, setText] = useDebouncedAsyncStorage(storageKey);
   // At narrower spans, drop the min-height so the widget hugs its content
   // (a tall empty note next to a span-1 favorites tile looks unbalanced).
@@ -97,22 +121,29 @@ function Render({ instanceId, config, size }: WidgetRenderProps<Config>) {
       bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
     >
-      <View style={{ padding: 12 }}>
-        <TextInput
-          multiline
-          placeholder="Escreva uma nota..."
-          placeholderTextColor={colors.mutedForeground}
-          value={text}
-          onChangeText={setText}
-          style={{
-            minHeight,
-            color: colors.foreground,
-            fontSize: 13,
-            fontFamily: config.monospace ? "monospace" : undefined,
-            textAlignVertical: "top",
-          }}
-        />
-      </View>
+      <KeyboardAwareWidget>
+        <View style={{ padding: 12 }}>
+          <TextInput
+            multiline
+            placeholder="Escreva uma nota..."
+            placeholderTextColor={colors.mutedForeground}
+            value={text}
+            onChangeText={setText}
+            // Cap to avoid unbounded growth — at 5000 chars the TextInput
+            // can still get expensive on RN, and most quick notes are <500.
+            maxLength={5000}
+            style={{
+              minHeight,
+              color: colors.foreground,
+              fontSize: 13,
+              fontFamily: config.monospace
+                ? Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" })
+                : undefined,
+              textAlignVertical: "top",
+            }}
+          />
+        </View>
+      </KeyboardAwareWidget>
     </WidgetCard>
   );
 }

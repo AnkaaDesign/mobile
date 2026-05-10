@@ -23,8 +23,13 @@
 // (small rotation oscillation) is applied to every tile while editing for
 // affordance.
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { View, Text, Pressable } from "react-native";
+import {
+  GestureDetector,
+  type ComposedGesture,
+  type GestureType,
+} from "react-native-gesture-handler";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -72,12 +77,14 @@ interface WidgetTileProps {
    *  shows just the SizeSelector (cuts resize from "open configure modal,
    *  scroll to Tamanho, change size, Aplicar" to a single sheet open). */
   onResize?: (instanceId: string) => void;
-  /** Drag handle press handler — wired up by DashboardGrid's
-   *  DraggableFlatList. Only relevant in edit mode. Drags the WHOLE row
-   *  this tile sits in (within-row reordering is handled by the arrow
-   *  buttons below, since DraggableFlatList is 1-D and the rows are its
-   *  list items). */
+  /** Drag handle press handler — legacy 1-D drag wiring (kept for screens
+   *  not yet on SortableGrid). Edit-mode home (`inicio.tsx`) uses
+   *  `dragGesture` instead. */
   onDragHandlePressIn?: () => void;
+  /** Pan gesture from SortableGrid. When provided, the drag-handle button
+   *  is wrapped in a GestureDetector so the gesture only activates when
+   *  the user grabs the grip, not when tapping anywhere on the tile. */
+  dragGesture?: GestureType | ComposedGesture;
   /** Swap this tile with its left/right neighbour in the linear instance
    *  order. May move the tile across a row boundary — that's OK; the
    *  parent re-packs after every reorder. */
@@ -89,6 +96,13 @@ interface WidgetTileProps {
    *  flip the global isEditing flag so the user enters edit mode without
    *  hunting for a toolbar button. */
   onEnterEditMode?: () => void;
+  /** True when this instance's persisted config failed Zod validation at
+   *  load time and was replaced with the widget's defaultConfig. Drives
+   *  the inline "config restored" banner shown only in edit mode. */
+  wasConfigRestored?: boolean;
+  /** Reset this instance's config to the widget's defaultConfig. Wired to
+   *  the banner's "Restaurar padrões" button. */
+  onResetConfig?: () => void;
 }
 
 export function WidgetTile({
@@ -99,24 +113,22 @@ export function WidgetTile({
   onMoreActions,
   onResize,
   onDragHandlePressIn,
+  dragGesture,
   onMoveLeft,
   onMoveRight,
   canMoveLeft,
   canMoveRight,
   onEnterEditMode,
+  wasConfigRestored,
+  onResetConfig,
 }: WidgetTileProps) {
   const { colors } = useTheme();
   const def = widgetRegistry.get(instance.widgetId);
 
-  // Parse config through the widget's schema so new fields with .default()
-  // backfill on layouts saved before the field existed. Without this, adding
-  // a new sub-object like `display: { density, ... }` would crash render for
-  // every existing instance until the user re-saved it.
-  const parsedConfig = useMemo(() => {
-    if (!def) return instance.config;
-    const result = def.configSchema.safeParse(instance.config);
-    return result.success ? result.data : def.defaultConfig;
-  }, [def, instance.config]);
+  // instance.config is already validated at load time by sanitizeLayout in
+  // use-dashboard-layout.ts, so we don't re-parse here. Tile re-renders no
+  // longer pay the per-render Zod cost, and silent fallback-to-defaults is
+  // surfaced via wasConfigRestored + the inline edit-mode banner below.
 
   // iOS-style jiggle while editing. The instanceId-derived offset desyncs the
   // animation across tiles so the dashboard doesn't feel mechanical. We oscillate
@@ -216,9 +228,51 @@ export function WidgetTile({
         android_disableSound
       >
         <View style={{ maxHeight, overflow: "hidden", borderRadius: 12 }}>
+          {isEditing && wasConfigRestored && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                backgroundColor: colors.warning + "22",
+                borderBottomWidth: 1,
+                borderBottomColor: colors.warning + "55",
+              }}
+            >
+              <View style={{ flex: 1, flexDirection: "row", gap: 6, alignItems: "center" }}>
+                <IconAlertTriangle size={14} color={colors.warning} />
+                <Text
+                  style={{ flex: 1, fontSize: 11, color: colors.foreground }}
+                  numberOfLines={2}
+                >
+                  Configuração inválida foi restaurada para os padrões.
+                </Text>
+              </View>
+              {onResetConfig && (
+                <Pressable
+                  onPress={onResetConfig}
+                  hitSlop={6}
+                  accessibilityLabel="Restaurar configuração padrão"
+                  style={({ pressed }) => ({
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    backgroundColor: pressed ? colors.warning + "33" : "transparent",
+                  })}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: colors.warning }}>
+                    Restaurar
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
           <Render
             instanceId={instance.instanceId}
-            config={parsedConfig}
+            config={instance.config}
             size={instance.size}
             isEditing={isEditing}
           />
@@ -249,7 +303,22 @@ export function WidgetTile({
             elevation: 3,
           }}
         >
-          {onDragHandlePressIn && (
+          {dragGesture ? (
+            <GestureDetector gesture={dragGesture}>
+              <View
+                accessibilityLabel={`Arrastar ${def.name}`}
+                style={{
+                  width: 32,
+                  height: 32,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 8,
+                }}
+              >
+                <IconGripVertical size={18} color={colors.foreground} />
+              </View>
+            </GestureDetector>
+          ) : onDragHandlePressIn ? (
             <Pressable
               onPressIn={onDragHandlePressIn}
               accessibilityLabel={`Arrastar linha ${def.name}`}
@@ -265,7 +334,7 @@ export function WidgetTile({
             >
               <IconGripVertical size={18} color={colors.foreground} />
             </Pressable>
-          )}
+          ) : null}
           {onMoveLeft && (
             <Pressable
               onPress={onMoveLeft}

@@ -14,11 +14,12 @@ export const spacing = {
 } as const;
 
 export const borderRadius = {
+  // Aligned with web's --radius: 0.5rem (8px). md = radius - 2 = 6, sm = radius - 4 = 4.
   sm: 4,
   DEFAULT: 6,
-  md: 8,
-  lg: 12,
-  xl: 16,
+  md: 6,
+  lg: 8,
+  xl: 12,
   full: 9999,
 } as const;
 

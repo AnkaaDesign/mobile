@@ -681,19 +681,15 @@ export function canViewAirbrushingFinancials(user: User | null): boolean {
 // =====================
 
 /**
- * Can user create/edit/delete observations?
- * FINANCIAL, COMMERCIAL, PRODUCTION, WAREHOUSE, ADMIN, PRODUCTION_MANAGER can create/edit observations
- * Matches API observation permissions
+ * Can user create observations?
+ * Only ADMIN and COMMERCIAL can create new observations.
+ * Edit/delete of existing observations is broader — see canEditObservations.
  */
 export function canCreateObservations(user: User | null): boolean {
   if (!user) return false;
   return hasAnyPrivilege(user, [
     SECTOR_PRIVILEGES.ADMIN,
-    SECTOR_PRIVILEGES.FINANCIAL,
     SECTOR_PRIVILEGES.COMMERCIAL,
-    SECTOR_PRIVILEGES.PRODUCTION,
-    SECTOR_PRIVILEGES.WAREHOUSE,
-    SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
   ]);
 }
 

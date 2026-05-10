@@ -4,13 +4,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconPackage, IconRefresh } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -25,6 +19,7 @@ import {
   TableRefreshSection,
   ColumnPickerSection,
   computeBodyMaxHeight,
+  densityClasses,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -43,6 +38,10 @@ import {
   textCellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
+import { toneForBorrowStatus } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -61,13 +60,7 @@ import type {
   WidgetRenderProps,
 } from "../types";
 
-// Solid BADGE_COLORS palette.
-const STATUS_TONES: Record<BORROW_STATUS, { bg: string; fg: string }> = {
-  [BORROW_STATUS.ACTIVE]: { bg: "#1d4ed8", fg: "#ffffff" },
-  [BORROW_STATUS.RETURNED]: { bg: "#15803d", fg: "#ffffff" },
-  [BORROW_STATUS.OVERDUE]: { bg: "#b91c1c", fg: "#ffffff" },
-  [BORROW_STATUS.LOST]: { bg: "#7f1d1d", fg: "#ffffff" },
-};
+// Status tones now live in _status-tones.tsx and adapt to dark mode.
 
 const BORROW_COLUMN_KEYS = ["item", "status", "days"] as const;
 type BorrowColumnKey = (typeof BORROW_COLUMN_KEYS)[number];
@@ -165,7 +158,7 @@ function daysSince(d: string | Date | null | undefined): number {
 }
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -218,7 +211,18 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       const overdue = days > 30;
       if (config.filters.onlyOverdue && !overdue) return false;
       if (term) {
-        const haystack = `${r.item?.name ?? ""} ${r.user?.name ?? ""}`.toLowerCase();
+        // Extended search haystack — was item.name + user.name only; now
+        // covers SKU/uniCode and quantity so users can search the same
+        // attributes they see in detail page filters.
+        const haystack = [
+          r.item?.name,
+          r.item?.uniCode,
+          r.user?.name,
+          r.quantity,
+        ]
+          .filter((v) => v != null)
+          .join(" ")
+          .toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       return true;
@@ -234,11 +238,18 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       density={density}
       bodyPadded={false}
       bodyMaxHeight={computeBodyMaxHeight(size.rows)}
+      onRefresh={refetch}
+      refreshing={isRefetching}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar empréstimos"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -261,24 +272,16 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           <WidgetTableHeader
             columns={visibleCols.map((k) => BORROW_COLUMN_DEFS[k])}
             reserveRowDot={display.showRowDot}
+            density={density}
           />
         )}
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={5} density={density} />
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Erro ao carregar empréstimos.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Erro ao carregar empréstimos."
+            onRetry={() => refetch()}
+          />
         ) : filtered.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -293,12 +296,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           </WidgetTableMessage>
         ) : (
           filtered.map((b, idx) => {
-            const tone = STATUS_TONES[b.status as BORROW_STATUS] ?? {
+            const tone = toneForBorrowStatus(b.status as BORROW_STATUS, isDark) ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
+              border: colors.border,
             };
             const days = b.status === BORROW_STATUS.ACTIVE ? daysSince(b.createdAt) : null;
             const overdue = days != null && days > 30;
+            // Use density tokens for primary/meta/badge/days font sizes so
+            // the widget actually responds to the user's density setting.
+            const cellFontSize = densityClasses(density).fontSize;
+            const metaFontSize = Math.max(10, cellFontSize - 2);
             return (
               <WidgetTableRow
                 key={b.id}
@@ -323,7 +331,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         <Text
                           numberOfLines={1}
                           style={{
-                            fontSize: 13,
+                            fontSize: cellFontSize,
                             fontWeight: "600",
                             color: colors.foreground,
                           }}
@@ -332,7 +340,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         </Text>
                         <Text
                           numberOfLines={1}
-                          style={{ fontSize: 11, color: colors.mutedForeground }}
+                          style={{ fontSize: metaFontSize, color: colors.mutedForeground }}
                         >
                           {b.user?.name ?? "—"}
                           {b.quantity != null ? ` · ${b.quantity} un.` : ""}
@@ -353,7 +361,11 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         >
                           <Text
                             numberOfLines={1}
-                            style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
+                            style={{
+                              fontSize: metaFontSize,
+                              fontWeight: "600",
+                              color: tone.fg,
+                            }}
                           >
                             {BORROW_STATUS_LABELS[b.status as BORROW_STATUS] ?? b.status}
                           </Text>
@@ -368,10 +380,10 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                       numberOfLines={1}
                       style={{
                         ...textCellStyleForColumn(def),
-                        fontSize: 11,
+                        fontSize: metaFontSize,
                         fontWeight: overdue ? "700" : "500",
                         color: overdue
-                          ? "#b91c1c"
+                          ? colors.destructive
                           : days != null
                             ? colors.foreground
                             : colors.mutedForeground,

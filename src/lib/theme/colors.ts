@@ -16,13 +16,13 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     mutedForeground: "#737373", // neutral-500 - matching web
     accent: "#15803d", // HSL: 142 72% 29% - green-700 matching web primary
     accentForeground: "#ffffff", // white - matching web
-    destructive: "#b91c1c", // red-700 - Tailwind red-700 for better visibility
+    destructive: "#bf4040", // HSL: 0 50% 50% - matching web --destructive (light)
     destructiveForeground: "#ffffff", // white - matching web
-    border: "#d4d4d4", // HSL: 0 0% 83% - matching web border (one tone darker)
-    input: "#f5f5f5", // HSL: 0 0% 96% - slightly darker than white for better contrast
+    border: "#d4d4d4", // HSL: 0 0% 83% - matching web border
+    input: "#ffffff", // pure white - matches web's --input: 0 0% 100%
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
-    error: "#b91c1c", // alias for destructive
+    error: "#bf4040", // alias for destructive
     onError: "#ffffff", // alias for destructiveForeground
     onPrimary: "#ffffff", // alias for primaryForeground
     text: "#404040", // alias for foreground
@@ -32,6 +32,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     surfaceVariant: "#f5f5f5", // slightly darker surface for alternating rows
     warning: "#f59e0b", // amber-500 - warning color
     success: "#16a34a", // green-600 - success color
+    info: "#5985b3", // HSL: 210 30% 50% - info accent matching web
   },
   dark: {
     background: "#1c1c1c", // HSL: 0 0% 11% - matching web dark background
@@ -48,7 +49,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     mutedForeground: "#a3a3a3", // neutral-400 - matching web
     accent: "#15803d", // HSL: 142 72% 29% - green-700 matching web primary
     accentForeground: "#ffffff", // white - matching web
-    destructive: "#ef4444", // red-500 - better visibility in dark mode
+    destructive: "#a14040", // HSL: 0 40% 45% - matching web --destructive (dark, desaturated)
     destructiveForeground: "#ffffff", // white - matching web
     border: "#383838", // HSL: 0 0% 22% - subtle but visible, matching web
     // Slightly lighter than card (#262626) so inputs are visually distinct
@@ -58,7 +59,7 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     input: "#2f2f2f",
     ring: "#15803d", // HSL: 142 72% 29% - green-700 matching web
     // Additional semantic colors
-    error: "#ef4444", // alias for destructive
+    error: "#a14040", // alias for destructive
     onError: "#ffffff", // alias for destructiveForeground
     onPrimary: "#ffffff", // alias for primaryForeground
     text: "#d9d9d9", // alias for foreground
@@ -68,5 +69,6 @@ export const themeColors: Record<"light" | "dark", ThemeColors> = {
     surfaceVariant: "#333333", // slightly lighter surface for alternating rows
     warning: "#fbbf24", // amber-400 - warning color for dark theme
     success: "#22c55e", // green-500 - success color for dark theme
+    info: "#5985b3", // HSL: 210 25% 45% - info accent for dark theme
   },
 } as const;

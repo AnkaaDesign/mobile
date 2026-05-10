@@ -81,6 +81,7 @@ export default function HomeScreen() {
     reorderItems,
     configureWidget,
     resizeWidget,
+    restoredInstanceIds,
   } = useDashboardLayout();
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   // Active configure-modal target. When non-null, the ConfigureWidgetModal
@@ -483,6 +484,14 @@ export default function HomeScreen() {
             onMoreActions={(instanceId) => setOverflowInstanceId(instanceId)}
             onResize={(instanceId) => setResizeInstanceId(instanceId)}
             onEnterEditMode={enterEdit}
+            restoredInstanceIds={restoredInstanceIds}
+            onResetConfig={(instanceId) => {
+              const it = layout.items.find((i) => i.instanceId === instanceId);
+              if (!it) return;
+              const def = widgetRegistry.get(it.widgetId);
+              if (!def) return;
+              configureWidget(instanceId, def.defaultConfig);
+            }}
           />
         </View>
 

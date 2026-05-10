@@ -10,6 +10,8 @@ import { useHomeDashboard } from "@/hooks/dashboard";
 import { RecentMessagesList } from "@/components/home-dashboard/recent-messages-list";
 import { useTheme } from "@/lib/theme";
 import { Section, ToggleRow, LabeledField } from "./_shared";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -41,7 +43,9 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
-  const { data, isLoading, isError } = useHomeDashboard({ platform: "mobile" });
+  const { data, isLoading, isError, refetch, isRefetching } = useHomeDashboard({
+    platform: "mobile",
+  });
   const messages = data?.data?.recentMessages ?? [];
   const unreadCount = data?.data?.counts?.unreadMessages ?? 0;
 
@@ -55,15 +59,18 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
         {isLoading ? (
-          <Text style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}>
-            Carregando...
-          </Text>
+          // Skeleton placeholder rows so users see content shape during fetch
+          // instead of a blank patch with "Carregando..." text.
+          <SkeletonRows count={3} density="comfortable" />
         ) : isError ? (
-          <Text style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}>
-            Não foi possível carregar mensagens.
-          </Text>
+          <WidgetErrorState
+            message="Não foi possível carregar mensagens."
+            onRetry={() => refetch()}
+          />
         ) : messages.length === 0 ? (
-          <Text style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}>
+          <Text
+            style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}
+          >
             Nenhuma mensagem recente.
           </Text>
         ) : (

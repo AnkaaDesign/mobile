@@ -14,7 +14,10 @@ import type { DashboardLayout, WidgetInstance } from "./types";
 
 export const widgetSizeSchema = z.object({
   span: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  rows: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  // Schema v3 widens rows from 1|2|3 to 1|2|3|4 to match WIDGET_ROW_VALUES in
+  // types.ts. v3 is a strict superset of v2 — no item-level migration needed;
+  // saveAndExit naturally upgrades the version field on next save.
+  rows: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
 });
 
 export const widgetInstanceSchema = z.object({

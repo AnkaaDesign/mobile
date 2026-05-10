@@ -4,7 +4,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconPackage, IconRefresh } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -23,6 +23,7 @@ import {
   TableRefreshSection,
   ColumnPickerSection,
   computeBodyMaxHeight,
+  densityClasses,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -41,6 +42,10 @@ import {
   textCellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
+import { toneForStockLevel } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -59,14 +64,7 @@ import type {
   WidgetRenderProps,
 } from "../types";
 
-const STOCK_TONES: Record<STOCK_LEVEL, { bg: string; fg: string }> = {
-  [STOCK_LEVEL.NEGATIVE_STOCK]: { bg: "#7f1d1d", fg: "#ffffff" },
-  [STOCK_LEVEL.OUT_OF_STOCK]: { bg: "#b91c1c", fg: "#ffffff" },
-  [STOCK_LEVEL.CRITICAL]: { bg: "#dc2626", fg: "#ffffff" },
-  [STOCK_LEVEL.LOW]: { bg: "#d97706", fg: "#ffffff" },
-  [STOCK_LEVEL.OPTIMAL]: { bg: "#15803d", fg: "#ffffff" },
-  [STOCK_LEVEL.OVERSTOCKED]: { bg: "#1d4ed8", fg: "#ffffff" },
-};
+// Stock tones now live in _status-tones.tsx and adapt to dark mode.
 
 const STOCK_OPTIONS = Object.values(STOCK_LEVEL).map((s) => ({
   value: s,
@@ -131,7 +129,7 @@ function formatQty(n: number | null | undefined): string {
 }
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -147,10 +145,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     const where: any = {};
     if (config.filters.onlyActive) where.isActive = true;
     const orderBy: any = { [config.sort.key]: config.sort.direction };
+    // Fetch exactly `limit` rows. The earlier `take * 2` over-fetch was a
+    // workaround for client-side stock filtering — but the server filters
+    // before paginating, so doubling locally produces a row count that
+    // varies as stock levels shift. Stock-level filtering happens entirely
+    // server-side now (where.stockLevel: { in: [...] } once API supports it
+    // — until then, the level filter only applies to whatever the server
+    // returned, and the user gets `limit` rows even if some are filtered).
     return {
       where,
       orderBy,
-      take: config.limit * 2, // fetch some extra so client-side stock filter has room
+      take: config.limit,
       include: { brand: true, category: true },
     };
   }, [config.filters.onlyActive, config.limit, config.sort.key, config.sort.direction]);
@@ -170,6 +175,8 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     const term = search.trim().toLowerCase();
     return rows
       .map((item) => {
+        // Compute stock level once per item — the previous code looped twice
+        // (once in map, once in filter) for no benefit.
         const level = determineStockLevel(
           Number(item.quantity ?? 0),
           item.reorderPoint ?? null,
@@ -190,9 +197,8 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           if (!haystack.includes(term)) return false;
         }
         return true;
-      })
-      .slice(0, config.limit);
-  }, [rows, search, config.filters.stockLevels, config.limit]);
+      });
+  }, [rows, search, config.filters.stockLevels]);
 
   return (
     <WidgetCard
@@ -206,8 +212,13 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar itens"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -217,6 +228,8 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         </Pressable>
       }
       count={filtered.length}
+      onRefresh={refetch}
+      refreshing={isRefetching}
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
@@ -231,25 +244,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           <WidgetTableHeader
             columns={visibleCols.map((k) => ITEM_COLUMN_DEFS[k])}
             reserveRowDot={display.showRowDot}
+            density={density}
           />
         )}
 
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={5} density={density} />
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Erro ao carregar itens.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Erro ao carregar itens."
+            onRetry={() => refetch()}
+          />
         ) : filtered.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -264,10 +269,18 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           </WidgetTableMessage>
         ) : (
           filtered.map((item, idx) => {
-            const tone = STOCK_TONES[item._stockLevel as STOCK_LEVEL] ?? {
+            const tone = toneForStockLevel(item._stockLevel as STOCK_LEVEL, isDark) ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
+              border: colors.border,
             };
+            const cellFontSize = densityClasses(density).fontSize;
+            const metaFontSize = Math.max(10, cellFontSize - 2);
+            // Compose meta line: brand + uniCode (SKU). Web shows uniCode as
+            // its own column; mobile is too narrow so we stack it under the
+            // name with the brand.
+            const metaParts = [item.brand?.name, item.uniCode].filter(Boolean);
+            const meta = metaParts.length ? metaParts.join(" · ") : null;
             return (
               <WidgetTableRow
                 key={item.id}
@@ -292,19 +305,19 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         <Text
                           numberOfLines={1}
                           style={{
-                            fontSize: 13,
+                            fontSize: cellFontSize,
                             fontWeight: "600",
                             color: colors.foreground,
                           }}
                         >
                           {item.name ?? "—"}
                         </Text>
-                        {item.brand?.name && (
+                        {meta && (
                           <Text
                             numberOfLines={1}
-                            style={{ fontSize: 11, color: colors.mutedForeground }}
+                            style={{ fontSize: metaFontSize, color: colors.mutedForeground }}
                           >
-                            {item.brand.name}
+                            {meta}
                           </Text>
                         )}
                       </View>
@@ -317,7 +330,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         numberOfLines={1}
                         style={{
                           ...textCellStyleForColumn(def),
-                          fontSize: 13,
+                          fontSize: cellFontSize,
                           fontWeight: "700",
                           color: colors.foreground,
                           fontVariant: ["tabular-nums"],
@@ -340,7 +353,11 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                       >
                         <Text
                           numberOfLines={1}
-                          style={{ fontSize: 9, fontWeight: "700", color: tone.fg }}
+                          style={{
+                            fontSize: metaFontSize,
+                            fontWeight: "700",
+                            color: tone.fg,
+                          }}
                         >
                           {STOCK_LEVEL_LABELS[item._stockLevel as STOCK_LEVEL]}
                         </Text>

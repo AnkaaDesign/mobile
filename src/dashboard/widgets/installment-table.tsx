@@ -6,13 +6,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   IconReceipt,
@@ -37,6 +31,7 @@ import {
   ConfigTitleInput,
   TableRefreshSection,
   computeBodyMaxHeight,
+  densityClasses,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -56,6 +51,10 @@ import {
 } from "./_table";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
+import { toneForBucket, toneForInstallmentStatus } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { selectionHaptic, lightImpactHaptic } from "@/utils/haptics";
 import { WidgetCard } from "../components/widget-card";
 import {
   AccentPicker,
@@ -93,16 +92,6 @@ const BUCKET_LABELS: Record<Bucket, string> = {
   "next-7-days": "7 dias",
   "next-30-days": "30 dias",
   "this-month": "Mês",
-};
-
-const BUCKET_TONES: Record<Bucket, string> = {
-  all: "#6b7280",
-  overdue: "#b91c1c",
-  today: "#ea580c",
-  tomorrow: "#d97706",
-  "next-7-days": "#ca8a04",
-  "next-30-days": "#1d4ed8",
-  "this-month": "#4f46e5",
 };
 
 // Quote statuses that yield meaningful installments. Mirrors web's intent
@@ -279,7 +268,7 @@ const INSTALLMENT_SORT_OPTIONS = [
 // ---------- Render ----------
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -385,11 +374,18 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       density={density}
       bodyPadded={false}
       bodyMaxHeight={computeBodyMaxHeight(size.rows)}
+      onRefresh={refetch}
+      refreshing={isRefetching}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar parcelas"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -410,18 +406,34 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         )}
 
         {config.showBucketChips && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 6, paddingBottom: 8 }}
+          // Wrapping container — replaces a horizontal ScrollView. The
+          // ScrollView nested a horizontal scroll inside widget-card's vertical
+          // ScrollView and the page-level DraggableFlatList; on iOS the gesture
+          // chain occasionally hijacked the parent vertical scroll when the
+          // user swiped within the chip strip. flex-wrap fits all 7 chips on
+          // 1-2 rows on phones and a single row on tablets, with no gesture
+          // conflict.
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 6,
+              paddingBottom: 8,
+            }}
           >
             {BUCKETS.map((b) => {
               const active = b === bucket;
-              const tone = BUCKET_TONES[b];
+              const tone = toneForBucket(b, isDark).bg;
               return (
                 <Pressable
                   key={b}
-                  onPress={() => setBucket(b)}
+                  onPress={() => {
+                    selectionHaptic();
+                    setBucket(b);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`Filtro ${BUCKET_LABELS[b]}`}
                   style={({ pressed }) => ({
                     flexDirection: "row",
                     alignItems: "center",
@@ -462,32 +474,24 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
         )}
 
         {display.showColumnHeaders && (
           <WidgetTableHeader
             columns={INSTALLMENT_COLUMNS}
             reserveRowDot={display.showRowDot}
+            density={density}
           />
         )}
 
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={5} density={density} />
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Erro ao carregar parcelas.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Erro ao carregar parcelas."
+            onRetry={() => refetch()}
+          />
         ) : visible.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -504,6 +508,12 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           visible.map((r, idx) => {
             const cdColor = countdownColor(r.daysUntilDue, r.installmentStatus);
             const isPaid = r.installmentStatus === INSTALLMENT_STATUS.PAID;
+            const cellFontSize = densityClasses(density).fontSize;
+            const metaFontSize = Math.max(10, cellFontSize - 2);
+            const paidIconColor = toneForInstallmentStatus(
+              INSTALLMENT_STATUS.PAID,
+              isDark,
+            ).bg;
             return (
               <WidgetTableRow
                 key={r.id}
@@ -512,7 +522,14 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 striping={display.striping}
                 gridLines={display.gridLines}
                 hoverHighlight={display.hoverHighlight}
-                rowDotColor={display.showRowDot ? accent.hex : undefined}
+                // Row dot reflects the installment's status (paid/overdue/etc),
+                // not the accent — gives the user instant visual signal of
+                // which rows need attention without parsing the badge.
+                rowDotColor={
+                  display.showRowDot
+                    ? toneForInstallmentStatus(r.installmentStatus, isDark).bg
+                    : undefined
+                }
                 onPress={() =>
                   router.push(`/(tabs)/financeiro/orcamento/detalhes/${r.taskId}` as any)
                 }
@@ -520,13 +537,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text
                     numberOfLines={1}
-                    style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}
+                    style={{
+                      fontSize: cellFontSize,
+                      fontWeight: "600",
+                      color: colors.foreground,
+                    }}
                   >
                     {r.customerName}
                   </Text>
                   <Text
                     numberOfLines={1}
-                    style={{ fontSize: 11, color: colors.mutedForeground }}
+                    style={{ fontSize: metaFontSize, color: colors.mutedForeground }}
                   >
                     {r.taskName}
                     {r.total > 1 ? ` · ${r.number}/${r.total}` : ""}
@@ -541,7 +562,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: cellFontSize,
                       fontWeight: "700",
                       color: colors.foreground,
                       fontVariant: ["tabular-nums"],
@@ -551,10 +572,10 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                   </Text>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                     {isPaid ? (
-                      <IconCircleCheck size={11} color="#15803d" />
+                      <IconCircleCheck size={11} color={paidIconColor} />
                     ) : null}
                     <Text
-                      style={{ fontSize: 10, color: cdColor, fontWeight: "600" }}
+                      style={{ fontSize: metaFontSize, color: cdColor, fontWeight: "600" }}
                       numberOfLines={1}
                     >
                       {isPaid

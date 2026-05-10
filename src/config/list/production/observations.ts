@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Observation } from '@/types'
-import { canEditObservations, canDeleteObservations } from '@/utils/permissions/entity-permissions'
+import { canCreateObservations, canEditObservations, canDeleteObservations } from '@/utils/permissions/entity-permissions'
 
 
 export const observationsListConfig: ListConfig<Observation> = {
@@ -157,7 +157,7 @@ export const observationsListConfig: ListConfig<Observation> = {
     create: {
       label: 'Nova Observação',
       route: '/producao/observacoes/cadastrar',
-      canCreate: canEditObservations,
+      canCreate: canCreateObservations,
     },
     bulk: [
       {

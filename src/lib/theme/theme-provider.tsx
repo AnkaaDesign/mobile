@@ -78,8 +78,10 @@ export const useTheme = () => {
   const systemTheme = useSystemColorScheme();
 
   if (context === undefined) {
-    // Return default values that respect system theme instead of throwing to prevent crashes
-    console.warn("useTheme called outside ThemeProvider, using system defaults");
+    if (__DEV__) {
+      throw new Error("useTheme must be used within ThemeProvider");
+    }
+    // Production: fall back gracefully so a misconfigured screen doesn't brick the app
     const isDark = systemTheme === "dark";
     return {
       theme: "system" as ThemeMode,

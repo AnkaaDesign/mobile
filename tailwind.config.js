@@ -2,11 +2,13 @@ const { hairlineWidth } = require("nativewind/theme");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      fontFamily: {
+        mono: ["SF Mono", "Menlo", "Monaco", "Inconsolata", "Fira Code", "Consolas", "Roboto Mono", "Ubuntu Mono", "Courier New", "monospace"],
+      },
       colors: {
         // Semantic color tokens using CSS variables for dynamic theming
         border: "hsl(var(--border))",
@@ -42,6 +44,9 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
         // Neutral color scale for granular control
         neutral: {
           50: "#fafafa",

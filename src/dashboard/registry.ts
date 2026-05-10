@@ -2,6 +2,7 @@
 // and which sectors can use them. Mirrors web/src/dashboard/registry.ts.
 
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { logFrameworkWarning } from "./internal/logger";
 import type { WidgetCategory, WidgetDefinition } from "./types";
 
 class WidgetRegistry {
@@ -9,10 +10,10 @@ class WidgetRegistry {
 
   register<T>(def: WidgetDefinition<T>): void {
     if (this.defs.has(def.id)) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.warn(`[WidgetRegistry] Duplicate registration for "${def.id}"`);
-      }
+      // Always warn on duplicate registration. Production silently overwriting
+      // a widget definition (the previous behavior) means the second register()
+      // call wins with no signal — invisible to users and to Sentry.
+      logFrameworkWarning("registry", "duplicate-registration", { id: def.id });
     }
     this.defs.set(def.id, def as WidgetDefinition<any>);
   }

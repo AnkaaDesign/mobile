@@ -10,11 +10,20 @@
 
 import { useMemo } from "react";
 import { z } from "zod";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, Platform } from "react-native";
 import { IconClock } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { useMySecullumCalculations } from "@/hooks/secullum";
-import { Section, ToggleRow } from "./_shared";
+import {
+  Section,
+  ToggleRow,
+  densityClasses,
+  type Density,
+  TABLE_DISPLAY_DEFAULTS,
+  TableDisplayConfigSection,
+  makeTableDisplaySchema,
+  type TableDisplay,
+} from "./_shared";
 import {
   WidgetTableContainer,
   WidgetTableHeader,
@@ -23,6 +32,8 @@ import {
   textCellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -63,8 +74,53 @@ interface ParsedEntry {
   isSaturday: boolean;
 }
 
-function parseSecullumResponse(data: any): ParsedEntry[] {
-  const apiResponse = data?.data || data;
+interface SecullumColumn {
+  Nome?: string;
+}
+
+interface SecullumPayload {
+  data?: {
+    Colunas?: SecullumColumn[];
+    Linhas?: unknown[][];
+  } | null;
+  success?: boolean;
+}
+
+interface SecullumQueryData {
+  data?: SecullumPayload;
+}
+
+/** Try to derive day-of-week from the Secullum date string. The string looks
+ *  like "Dom 28/02" or "Sáb 14/06"; we extract the dd/MM portion and let the
+ *  Date constructor place it within a recent year window. Falls back to the
+ *  PT-BR weekday-prefix regex when parsing fails (legacy locale-fragile path
+ *  kept as a safety net). */
+function isWeekendFromDateString(dateStr: string, refYear: number): {
+  isSunday: boolean;
+  isSaturday: boolean;
+} {
+  const ddmm = dateStr.match(/(\d{1,2})\/(\d{1,2})/);
+  if (ddmm) {
+    const day = Number(ddmm[1]);
+    const month = Number(ddmm[2]);
+    if (Number.isFinite(day) && Number.isFinite(month)) {
+      const d = new Date(refYear, month - 1, day);
+      if (!Number.isNaN(d.getTime())) {
+        const dow = d.getDay();
+        return { isSunday: dow === 0, isSaturday: dow === 6 };
+      }
+    }
+  }
+  // Fallback: locale-prefix regex. Was the only path before; kept for
+  // robustness if Secullum ever returns a date format we can't parse.
+  return {
+    isSunday: /Dom/i.test(dateStr),
+    isSaturday: /S[áa]b/i.test(dateStr),
+  };
+}
+
+function parseSecullumResponse(data: SecullumQueryData | undefined): ParsedEntry[] {
+  const apiResponse = data?.data ?? (data as unknown as SecullumPayload);
   if (apiResponse && "success" in apiResponse && apiResponse.success === false)
     return [];
   const secullumData =
@@ -74,20 +130,22 @@ function parseSecullumResponse(data: any): ParsedEntry[] {
   if (!Array.isArray(Colunas) || !Array.isArray(Linhas)) return [];
 
   const columnMap = new Map<string, number>();
-  Colunas.forEach((col: any, i: number) => {
+  Colunas.forEach((col: SecullumColumn, i: number) => {
     if (col?.Nome) columnMap.set(col.Nome, i);
   });
 
-  return Linhas.map((row: any[]) => {
-    const dateStr: string = row[columnMap.get("Data") ?? 0] || "";
+  const refYear = new Date().getFullYear();
+  return Linhas.map((row: unknown[]) => {
+    const dateStr: string = (row[columnMap.get("Data") ?? 0] as string) || "";
+    const { isSunday, isSaturday } = isWeekendFromDateString(dateStr, refYear);
     return {
       date: dateStr,
-      entrada1: row[columnMap.get("Entrada 1") ?? 1] || "",
-      saida1: row[columnMap.get("Saída 1") ?? 2] || "",
-      entrada2: row[columnMap.get("Entrada 2") ?? 3] || "",
-      saida2: row[columnMap.get("Saída 2") ?? 4] || "",
-      isSunday: /Dom/i.test(dateStr),
-      isSaturday: /S[áa]b/i.test(dateStr),
+      entrada1: (row[columnMap.get("Entrada 1") ?? 1] as string) || "",
+      saida1: (row[columnMap.get("Saída 1") ?? 2] as string) || "",
+      entrada2: (row[columnMap.get("Entrada 2") ?? 3] as string) || "",
+      saida2: (row[columnMap.get("Saída 2") ?? 4] as string) || "",
+      isSunday,
+      isSaturday,
     };
   });
 }
@@ -105,6 +163,7 @@ const TIME_ENTRY_COLUMNS: WidgetTableColumn[] = [
 const configSchema = z.object({
   title: z.string().min(1).max(80).default("Meu Ponto"),
   showHeader: z.boolean().default(true),
+  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: false }),
   accent: makeAccentSchema({ color: "teal", icon: "Clock", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
@@ -118,16 +177,27 @@ function Render({ config }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
+  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const density = display.density as Density;
+  const { fontSize: cellFontSize } = densityClasses(density);
+  const dateFontSize = Math.max(10, cellFontSize - 2);
 
   const dateRange = useMemo(() => getTodayAndPreviousBusinessDay(), []);
-  const { data, isLoading, isError } = useMySecullumCalculations({
+  const { data, isLoading, isError, refetch } = useMySecullumCalculations({
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
   });
 
-  const notRegistered = (data?.data as any)?.notRegistered;
+  // The hook's response container has a `notRegistered` flag that surfaces
+  // an empty Secullum binding. Read it with a typed shape rather than `as any`.
+  const notRegistered = Boolean(
+    (data as { data?: { notRegistered?: boolean } } | undefined)?.data?.notRegistered,
+  );
   // Reverse so the most recent day appears at the top — same as page UX.
-  const entries = useMemo(() => parseSecullumResponse(data).reverse(), [data]);
+  const entries = useMemo(
+    () => parseSecullumResponse(data as SecullumQueryData).reverse(),
+    [data],
+  );
 
   return (
     <WidgetCard
@@ -138,11 +208,9 @@ function Render({ config }: WidgetRenderProps<Config>) {
       bodyPadded={false}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
     >
-      <WidgetTableContainer>
+      <WidgetTableContainer density={density}>
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={3} density={density} />
         ) : notRegistered ? (
           <WidgetTableMessage>
             <Text
@@ -156,17 +224,10 @@ function Render({ config }: WidgetRenderProps<Config>) {
             </Text>
           </WidgetTableMessage>
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Sem dados de ponto disponíveis.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Sem dados de ponto disponíveis."
+            onRetry={() => refetch()}
+          />
         ) : entries.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -181,17 +242,24 @@ function Render({ config }: WidgetRenderProps<Config>) {
           </WidgetTableMessage>
         ) : (
           <>
-            <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} />
+            <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} density={density} />
             {entries.map((e, i) => {
               const weekendTone = e.isSunday || e.isSaturday;
               const punches = [e.entrada1, e.saida1, e.entrada2, e.saida2];
               return (
-                <WidgetTableRow key={`${e.date}-${i}`} index={i} density="comfortable">
+                <WidgetTableRow
+                  key={`${e.date}-${i}`}
+                  index={i}
+                  density={density}
+                  striping={display.striping}
+                  gridLines={display.gridLines}
+                  hoverHighlight={display.hoverHighlight}
+                >
                   <Text
                     numberOfLines={1}
                     style={{
                       ...textCellStyleForColumn(TIME_ENTRY_COLUMNS[0]),
-                      fontSize: 11,
+                      fontSize: dateFontSize,
                       fontWeight: "600",
                       color: weekendTone ? colors.mutedForeground : colors.foreground,
                     }}
@@ -204,8 +272,12 @@ function Render({ config }: WidgetRenderProps<Config>) {
                       numberOfLines={1}
                       style={{
                         ...textCellStyleForColumn(TIME_ENTRY_COLUMNS[j + 1]),
-                        fontSize: 12,
-                        fontFamily: "monospace",
+                        fontSize: cellFontSize,
+                        fontFamily: Platform.select({
+                          ios: "Menlo",
+                          android: "monospace",
+                          default: "monospace",
+                        }),
                         color: val
                           ? weekendTone
                             ? colors.mutedForeground
@@ -258,6 +330,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onCheckedChange={(v) => set("showHeader", v)}
         />
       </Section>
+      <TableDisplayConfigSection
+        value={config.display as TableDisplay}
+        onChange={(next) => set("display", next as Config["display"])}
+        features={{ showSearchBox: false, showRowDot: false }}
+      />
     </View>
   );
 }
@@ -283,6 +360,7 @@ export const timeEntriesWidget: WidgetDefinition<Config> = {
   defaultConfig: {
     title: "Meu Ponto",
     showHeader: true,
+    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "teal", icon: "Clock", borderColor: "none" },
   },
   RenderComponent: Render,

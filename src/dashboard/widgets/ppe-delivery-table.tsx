@@ -8,7 +8,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   IconShieldCheck,
@@ -30,6 +30,7 @@ import {
   ConfigTitleInput,
   TableRefreshSection,
   computeBodyMaxHeight,
+  densityClasses,
   type Density,
   makeTableDisplaySchema,
   makeTableSortSchema,
@@ -40,12 +41,17 @@ import {
 } from "./_shared";
 import {
   WidgetTableContainer,
+  WidgetTableSearch,
   WidgetTableRow,
   WidgetTableHeader,
   WidgetTableMessage,
   cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
+import { toneForPpeDeliveryStatus } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic, longPressHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { Modal, ModalContent } from "@/components/ui/modal";
@@ -67,17 +73,7 @@ import type {
   WidgetRenderProps,
 } from "../types";
 
-// Solid BADGE_COLORS palette (centralized in src/constants/badge-colors.ts).
-const STATUS_TONES: Record<PPE_DELIVERY_STATUS, { bg: string; fg: string }> = {
-  [PPE_DELIVERY_STATUS.PENDING]: { bg: "#d97706", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.APPROVED]: { bg: "#1d4ed8", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.WAITING_SIGNATURE]: { bg: "#ea580c", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.DELIVERED]: { bg: "#0891b2", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.COMPLETED]: { bg: "#15803d", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.REPROVED]: { bg: "#b91c1c", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.SIGNATURE_REJECTED]: { bg: "#b91c1c", fg: "#ffffff" },
-  [PPE_DELIVERY_STATUS.CANCELLED]: { bg: "#6b7280", fg: "#ffffff" },
-};
+// Status tones now live in _status-tones.tsx and adapt to dark mode.
 
 const PPE_COLUMNS: WidgetTableColumn[] = [
   { key: "item", label: "Item / Colaborador", flex: 1 },
@@ -137,7 +133,7 @@ interface ActionTarget {
 }
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   const sector = user?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
@@ -178,9 +174,21 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
   const rows = (data?.data ?? []) as any[];
-  const visible = config.filters.onlyActionable
-    ? rows.filter((r) => r.status === PPE_DELIVERY_STATUS.PENDING)
-    : rows;
+  const [search, setSearch] = useState("");
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let list = rows;
+    if (config.filters.onlyActionable) {
+      list = list.filter((r) => r.status === PPE_DELIVERY_STATUS.PENDING);
+    }
+    if (term) {
+      list = list.filter((r) => {
+        const haystack = `${r.item?.name ?? ""} ${r.user?.name ?? ""}`.toLowerCase();
+        return haystack.includes(term);
+      });
+    }
+    return list;
+  }, [rows, config.filters.onlyActionable, search]);
 
   const approveMutation = useBatchApprovePpeDeliveries();
   const rejectMutation = useBatchRejectPpeDeliveries();
@@ -264,11 +272,18 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       density={density}
       bodyPadded={false}
       bodyMaxHeight={computeBodyMaxHeight(size.rows)}
+      onRefresh={refetch}
+      refreshing={isRefetching}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar entregas"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -280,28 +295,27 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       count={visible.length}
     >
       <WidgetTableContainer density={density}>
+        {display.showSearchBox && (
+          <WidgetTableSearch
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Buscar EPI ou colaborador..."
+          />
+        )}
         {display.showColumnHeaders && (
           <WidgetTableHeader
             columns={PPE_COLUMNS}
             reserveRowDot={display.showRowDot}
+            density={density}
           />
         )}
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={5} density={density} />
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Erro ao carregar entregas.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Erro ao carregar entregas."
+            onRetry={() => refetch()}
+          />
         ) : visible.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -316,7 +330,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           </WidgetTableMessage>
         ) : (
           visible.map((d, idx) => {
-            const tone = STATUS_TONES[d.status as PPE_DELIVERY_STATUS] ?? {
+            const tone = toneForPpeDeliveryStatus(d.status as PPE_DELIVERY_STATUS, isDark) ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
             };
@@ -335,13 +349,14 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 onTap={() =>
                   router.push(`/(tabs)/estoque/epi/entregas/editar/${d.id}` as any)
                 }
-                onLongPress={() =>
+                onLongPress={() => {
+                  longPressHaptic();
                   setActionTarget({
                     id: d.id,
                     label: itemLabel,
                     status: d.status as PPE_DELIVERY_STATUS,
-                  })
-                }
+                  });
+                }}
                 itemLabel={itemLabel}
                 userName={userName}
                 quantity={d.quantity}
@@ -411,12 +426,21 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                   flex: 1,
                   paddingVertical: 10,
                   borderRadius: 6,
-                  backgroundColor: "#b91c1c",
+                  // Theme-driven destructive color so dark mode renders the
+                  // desaturated red from colors.ts instead of full-saturation
+                  // red-700 that fails contrast on dark cards.
+                  backgroundColor: colors.destructive,
                   alignItems: "center",
                   opacity: pressed || rejectMutation.isPending ? 0.6 : 1,
                 })}
               >
-                <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>
+                <Text
+                  style={{
+                    color: colors.destructiveForeground,
+                    fontSize: 13,
+                    fontWeight: "600",
+                  }}
+                >
                   Reprovar
                 </Text>
               </Pressable>
@@ -540,7 +564,6 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
       <TableDisplayConfigSection
         value={config.display as TableDisplay}
         onChange={(next) => set("display", next as any)}
-        features={{ showSearchBox: false }}
       />
 
       <Section title="Filtros" defaultOpen>
@@ -618,7 +641,6 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
     display: {
       ...TABLE_DISPLAY_DEFAULTS,
       density: "comfortable",
-      showSearchBox: false,
     },
     accent: { color: "blue", icon: "ClipboardCheck", borderColor: "none" },
   },

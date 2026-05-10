@@ -37,6 +37,7 @@ import { View, Text, Pressable, TextInput, type ViewStyle } from "react-native";
 import { IconSearch } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { Density } from "./_shared";
+import { densityClasses } from "./_shared";
 
 const HORIZONTAL_INSET = 12;
 
@@ -200,6 +201,9 @@ interface WidgetTableHeaderProps {
    *  the same boolean as `WidgetTableRow.rowDotColor != null`. Without this,
    *  every header label sits ~12px to the LEFT of its row cells. */
   reserveRowDot?: boolean;
+  /** Pass the parent widget's density so header text sizing tracks the row
+   *  density. Defaults to "comfortable". */
+  density?: Density;
 }
 
 /**
@@ -209,8 +213,10 @@ interface WidgetTableHeaderProps {
 export function WidgetTableHeader({
   columns,
   reserveRowDot,
+  density = "comfortable",
 }: WidgetTableHeaderProps) {
   const { colors, isDark } = useTheme();
+  const { headerFontSize } = densityClasses(density);
   return (
     <View
       style={{
@@ -237,7 +243,9 @@ export function WidgetTableHeader({
           numberOfLines={1}
           style={{
             ...textCellStyleForColumn(col),
-            fontSize: 9,
+            // Header font size pulled from density tokens — was hardcoded 9px
+            // (below WCAG AA's 12px minimum-readable-body-text guidance).
+            fontSize: headerFontSize,
             fontWeight: "700",
             letterSpacing: 0.6,
             textTransform: "uppercase",

@@ -33,6 +33,7 @@ import type {
 } from "../types";
 import { WIDGET_ROW_VALUES } from "../types";
 import { getDefaultLayoutForSector } from "../presets";
+import { logFrameworkWarning } from "../internal/logger";
 
 function clampSpan(widgetId: string, requested: WidgetSpan): WidgetSpan {
   const def = widgetRegistry.get(widgetId);
@@ -64,29 +65,94 @@ function clampSize(widgetId: string, requested: WidgetSize): WidgetSize {
   };
 }
 
+/**
+ * Structural compare for two layouts. Cheaper than JSON.stringify on every
+ * render (which allocated and stringified ~10KB on each keystroke in edit
+ * mode) — we walk items by index and bail on first difference. Configs fall
+ * back to JSON.stringify per-item but only when sizes/IDs match, so most
+ * dirty checks short-circuit before reaching that path.
+ */
+function layoutsEqual(a: DashboardLayout, b: DashboardLayout): boolean {
+  if (a === b) return true;
+  if (a.items.length !== b.items.length) return false;
+  for (let i = 0; i < a.items.length; i++) {
+    const ai = a.items[i];
+    const bi = b.items[i];
+    if (ai.instanceId !== bi.instanceId) return false;
+    if (ai.widgetId !== bi.widgetId) return false;
+    if (ai.size.span !== bi.size.span) return false;
+    if (ai.size.rows !== bi.size.rows) return false;
+    if (ai.config !== bi.config) {
+      // Configs are mutated by setState replacement on configureWidget, so
+      // reference equality catches the no-change path. Only fall through to
+      // a deep compare if references differ.
+      if (JSON.stringify(ai.config) !== JSON.stringify(bi.config)) return false;
+    }
+  }
+  return true;
+}
+
+// Module-local counter to defeat millisecond collisions in the fallback path
+// when crypto.randomUUID is unavailable. Date.now() can collide on rapid
+// multi-add (e.g. user adds 4 widgets in <1ms via fast taps); the counter
+// guarantees per-process uniqueness without taking a polyfill dependency.
+let __instanceCounter = 0;
+
 function newInstanceId(): string {
-  // RN doesn't always have crypto.randomUUID; fall back to a timestamp + random suffix.
   if (typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function") {
     return (crypto as any).randomUUID();
   }
-  return `inst-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  __instanceCounter += 1;
+  return `inst-${Date.now()}-${__instanceCounter}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+interface SanitizeResult {
+  layout: DashboardLayout;
+  /** Instance IDs whose persisted config failed Zod validation and were
+   *  replaced with the widget's defaultConfig. Surfaced to the UI so the
+   *  user can be told their saved config was lost (and offered a Reset
+   *  affordance) instead of silently swapping under them. */
+  restoredInstanceIds: ReadonlySet<string>;
 }
 
 /**
  * Strip widgets the user is no longer allowed to use (sector changed, widget
- * removed). Also clamps each instance's size to the current widget's allowed
- * spans.
+ * removed), clamp each instance's size to allowed spans/rows, AND validate
+ * each instance's config against its widget's Zod schema. Validation runs
+ * once at load time (not on every render in widget-tile.tsx as before).
  */
 function sanitizeLayout(
   layout: DashboardLayout,
   userSector: SECTOR_PRIVILEGES | null | undefined,
-): DashboardLayout {
+): SanitizeResult {
+  const restored = new Set<string>();
   const items = layout.items.flatMap<WidgetInstance>((item) => {
     if (!widgetRegistry.has(item.widgetId)) return [];
     if (!widgetRegistry.canUserUse(item.widgetId, userSector)) return [];
-    return [{ ...item, size: clampSize(item.widgetId, item.size) }];
+    const def = widgetRegistry.get(item.widgetId);
+    if (!def) return [];
+    const parsed = def.configSchema.safeParse(item.config);
+    let nextConfig: unknown;
+    if (parsed.success) {
+      nextConfig = parsed.data;
+    } else {
+      restored.add(item.instanceId);
+      nextConfig = def.defaultConfig;
+      logFrameworkWarning("widget-tile", "config-restored", {
+        widgetId: item.widgetId,
+        instanceId: item.instanceId,
+        zodError: parsed.error.issues,
+      });
+    }
+    return [
+      {
+        ...item,
+        size: clampSize(item.widgetId, item.size),
+        config: nextConfig,
+      },
+    ];
   });
-  return { ...layout, items };
+  return { layout: { ...layout, items }, restoredInstanceIds: restored };
 }
 
 /**
@@ -134,6 +200,11 @@ export interface UseDashboardLayoutReturn {
   isSaving: boolean;
   isDirty: boolean;
   isEditing: boolean;
+  /** Instance IDs whose persisted config was invalid and was replaced with
+   *  the widget's defaultConfig at load time. Tiles consult this set to
+   *  display a one-time "config restored" banner in edit mode so users
+   *  notice instead of having defaults silently swapped in. */
+  restoredInstanceIds: ReadonlySet<string>;
   enterEdit: () => void;
   saveAndExit: () => Promise<void>;
   discardAndExit: () => void;
@@ -151,11 +222,14 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     (user?.sector?.privileges as SECTOR_PRIVILEGES | undefined) ?? null;
   const { preferences, isLoading, isUpdating, updateMine } = useMyPreferences();
 
-  const persisted = useMemo<DashboardLayout>(() => {
+  const persistedResult = useMemo<SanitizeResult>(() => {
     const raw = preferences ? (preferences as any).dashboardLayoutMobile : null;
     const base = loadLayoutFromPreferences(raw, currentPrivilege);
     return sanitizeLayout(base, currentPrivilege);
   }, [preferences, currentPrivilege]);
+
+  const persisted = persistedResult.layout;
+  const restoredInstanceIds = persistedResult.restoredInstanceIds;
 
   const [working, setWorking] = useState<DashboardLayout>(persisted);
   const [isEditing, setIsEditing] = useState(false);
@@ -167,7 +241,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
 
   const isDirty = useMemo(() => {
     if (!isEditing || !snapshotRef.current) return false;
-    return JSON.stringify(snapshotRef.current) !== JSON.stringify(working);
+    return !layoutsEqual(snapshotRef.current, working);
   }, [isEditing, working]);
 
   const enterEdit = useCallback(() => {
@@ -257,7 +331,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
 
   const resetToPreset = useCallback(() => {
     const preset = getDefaultLayoutForSector(currentPrivilege);
-    setWorking(sanitizeLayout(preset, currentPrivilege));
+    setWorking(sanitizeLayout(preset, currentPrivilege).layout);
   }, [currentPrivilege]);
 
   return {
@@ -266,6 +340,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
     isSaving: isUpdating,
     isDirty,
     isEditing,
+    restoredInstanceIds,
     enterEdit,
     saveAndExit,
     discardAndExit,

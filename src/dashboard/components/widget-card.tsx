@@ -13,7 +13,7 @@
 //    a tighter header to match its row spacing.
 
 import { type ReactNode } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { IconChevronRight } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
@@ -52,6 +52,20 @@ export interface WidgetCardProps {
   /** Hide the bottom horizontal padding inside the scrollable body — useful
    *  for table widgets that already pad rows themselves. */
   scrollPaddingBottom?: number;
+  /** When true, the body wrapper renders `children` directly without an
+   *  inner ScrollView. Use this when the widget owns its own FlatList /
+   *  DraggableFlatList — same-orientation nested scrolls don't compose on
+   *  RN, and inner scrollers fight the parent for gestures (the bug behind
+   *  the original installment-table chip-scroll regression). The widget is
+   *  responsible for its own RefreshControl in this mode. */
+  bodyAsList?: boolean;
+  /** Optional pull-to-refresh handler for the inner ScrollView (only used
+   *  when `bodyAsList === false` AND `bodyMaxHeight != null`). Pass the
+   *  hook's `refetch` directly. */
+  onRefresh?: () => Promise<unknown> | void;
+  /** Pair with `onRefresh` — drive the spinner from the hook's `isFetching`
+   *  / `isRefetching` flag. */
+  refreshing?: boolean;
   children: ReactNode;
 }
 
@@ -81,6 +95,9 @@ export function WidgetCard({
   density = "comfortable",
   bodyMaxHeight,
   scrollPaddingBottom,
+  bodyAsList = false,
+  onRefresh,
+  refreshing,
   children,
 }: WidgetCardProps) {
   const { colors, isDark } = useTheme();
@@ -180,7 +197,21 @@ export function WidgetCard({
           )}
         </View>
       )}
-      {bodyMaxHeight != null ? (
+      {bodyAsList ? (
+        // The widget owns its own scroller (FlatList/DraggableFlatList).
+        // We must NOT wrap in a ScrollView — same-orientation nested
+        // scrolls don't compose on RN. The widget is responsible for
+        // its own RefreshControl in this mode.
+        <View
+          style={
+            bodyMaxHeight != null
+              ? { maxHeight: bodyMaxHeight, flexShrink: 1 }
+              : { flexShrink: 1 }
+          }
+        >
+          {children}
+        </View>
+      ) : bodyMaxHeight != null ? (
         <View style={{ maxHeight: bodyMaxHeight }}>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -197,6 +228,18 @@ export function WidgetCard({
             // Android — turn it on so rows can scroll without stealing
             // page swipes.
             nestedScrollEnabled
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={!!refreshing}
+                  onRefresh={() => {
+                    void onRefresh();
+                  }}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              ) : undefined
+            }
           >
             {children}
           </ScrollView>

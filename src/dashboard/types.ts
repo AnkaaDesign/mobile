@@ -142,10 +142,16 @@ export interface WidgetInstance {
 
 // ---------- Layout document ----------
 
-/** Bumped from 1 → 2 when the size schema diverged from web. Older
- *  v1 layouts (with {cols, rows} sizes) are auto-migrated on read by
- *  use-dashboard-layout.ts. */
-export const DASHBOARD_LAYOUT_VERSION = 2;
+/** Version history:
+ *    1 → original {cols, rows} shape (pre-platform-split). Auto-migrated on read by
+ *        use-dashboard-layout.ts via parseLegacyLayout().
+ *    2 → divergence from web: {span, rows} with rows ∈ {1, 2, 3}.
+ *    3 → widened rows to {1, 2, 3, 4} to match WIDGET_ROW_VALUES (the size
+ *        selector already exposed 4×, but v2 schema rejected it on read,
+ *        silently dropping user layouts back to the sector preset).
+ *        v3 is a strict superset of v2 — no per-item migration; saveAndExit
+ *        naturally rewrites the version on next save. */
+export const DASHBOARD_LAYOUT_VERSION = 3;
 
 export interface DashboardLayout {
   version: number;

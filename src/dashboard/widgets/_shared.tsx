@@ -222,13 +222,16 @@ export function densityClasses(d: Density): {
   fontSize: number;
   headerFontSize: number;
 } {
+  // headerFontSize is bumped to >=12 (was 10/11) to satisfy WCAG AA's 12px
+  // minimum-readable-body-text guidance on mobile. The 9px hardcode in
+  // _table.tsx pre-fix was below WCAG and unreadable on small phones.
   if (d === "compact") {
-    return { rowPaddingY: 6, rowPaddingX: 10, fontSize: 12, headerFontSize: 10 };
+    return { rowPaddingY: 6, rowPaddingX: 10, fontSize: 12, headerFontSize: 12 };
   }
   if (d === "spacious") {
-    return { rowPaddingY: 12, rowPaddingX: 14, fontSize: 14, headerFontSize: 11 };
+    return { rowPaddingY: 12, rowPaddingX: 14, fontSize: 14, headerFontSize: 13 };
   }
-  return { rowPaddingY: 8, rowPaddingX: 12, fontSize: 13, headerFontSize: 11 };
+  return { rowPaddingY: 8, rowPaddingX: 12, fontSize: 13, headerFontSize: 12 };
 }
 
 export function cardDensityClasses(d: Density): {

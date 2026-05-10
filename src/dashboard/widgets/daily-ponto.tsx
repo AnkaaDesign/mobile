@@ -6,13 +6,17 @@
 
 import { useMemo } from "react";
 import { z } from "zod";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { IconClock24, IconRefresh } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useSecullumDailySummary } from "@/hooks/secullum";
 import { Section, ToggleRow } from "./_shared";
+import { toneForPontoCategory } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -30,21 +34,8 @@ import type {
   WidgetRenderProps,
 } from "../types";
 
-// Category tone — tries to map common Secullum titles to BADGE_COLORS-style
-// solid fills. Unknown titles fall back to neutral.
-function toneFor(title: string): { bg: string; fg: string } {
-  const t = title.toLowerCase();
-  if (t.includes("falta")) return { bg: "#b91c1c", fg: "#fff" };
-  if (t.includes("atras")) return { bg: "#d97706", fg: "#fff" };
-  if (t.includes("hora extra") || t.includes("ext"))
-    return { bg: "#1d4ed8", fg: "#fff" };
-  if (t.includes("present") || t.includes("trabalh"))
-    return { bg: "#15803d", fg: "#fff" };
-  if (t.includes("férias") || t.includes("ferias") || t.includes("ausê"))
-    return { bg: "#7c3aed", fg: "#fff" };
-  if (t.includes("compens")) return { bg: "#0891b2", fg: "#fff" };
-  return { bg: "#6b7280", fg: "#fff" };
-}
+// Category tones now live in _status-tones.tsx (toneForPontoCategory) and
+// adapt to dark mode.
 
 const configSchema = z.object({
   title: z.string().min(1).max(80).default("Ponto do Dia"),
@@ -56,7 +47,7 @@ const configSchema = z.object({
 type Config = z.infer<typeof configSchema>;
 
 function Render({ config }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -88,8 +79,13 @@ function Render({ config }: WidgetRenderProps<Config>) {
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar resumo do ponto"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -101,20 +97,12 @@ function Render({ config }: WidgetRenderProps<Config>) {
     >
       <View style={{ paddingVertical: 4 }}>
         {isLoading ? (
-          <View style={{ padding: 24, alignItems: "center" }}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
+          <SkeletonRows count={4} density="comfortable" />
         ) : isError ? (
-          <Text
-            style={{
-              fontSize: 12,
-              color: colors.mutedForeground,
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            Erro ao carregar resumo do ponto.
-          </Text>
+          <WidgetErrorState
+            message="Erro ao carregar resumo do ponto."
+            onRetry={() => refetch()}
+          />
         ) : categories.length === 0 ? (
           <Text
             style={{
@@ -128,7 +116,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
           </Text>
         ) : (
           categories.map((cat, i) => {
-            const tone = toneFor(cat.Titulo);
+            const tone = toneForPontoCategory(cat.Titulo, isDark);
             const pct =
               cat.Total > 0
                 ? Math.min(100, Math.round((cat.Atual / cat.Total) * 100))

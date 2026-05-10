@@ -40,6 +40,7 @@ export interface ThemeColors {
   surfaceVariant: string;
   warning: string;
   success: string;
+  info: string;
 }
 
 export interface ThemeConfig {

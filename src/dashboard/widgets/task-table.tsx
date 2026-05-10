@@ -5,13 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import {
   IconClipboardText,
@@ -33,6 +27,7 @@ import {
   TableRefreshSection,
   ColumnPickerSection,
   computeBodyMaxHeight,
+  densityClasses,
   type Density,
   makeTableDisplaySchema,
   TABLE_DISPLAY_DEFAULTS,
@@ -49,6 +44,10 @@ import {
   cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
+import { toneForTaskStatus } from "./_status-tones";
+import { SkeletonRows } from "./_skeleton";
+import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { WidgetCard } from "../components/widget-card";
@@ -67,14 +66,7 @@ import type {
   WidgetRenderProps,
 } from "../types";
 
-// Solid BADGE_COLORS — same hues as the web widget's STATUS_BADGE_CLASSES.
-const STATUS_TONES: Record<TASK_STATUS, { bg: string; fg: string }> = {
-  [TASK_STATUS.PREPARATION]: { bg: "#ea580c", fg: "#fff" },
-  [TASK_STATUS.WAITING_PRODUCTION]: { bg: "#737373", fg: "#fff" },
-  [TASK_STATUS.IN_PRODUCTION]: { bg: "#1d4ed8", fg: "#fff" },
-  [TASK_STATUS.COMPLETED]: { bg: "#15803d", fg: "#fff" },
-  [TASK_STATUS.CANCELLED]: { bg: "#b91c1c", fg: "#fff" },
-};
+// Status tones now live in _status-tones.tsx and adapt to dark mode.
 
 // Column catalogue. The "task" key is always visible (it carries the row's
 // primary identity); status and term are user-toggleable via the column
@@ -110,6 +102,10 @@ const configSchema = z.object({
   title: z.string().min(1).max(80).default("Tarefas"),
   showHeader: z.boolean().default(true),
   showPaintDot: z.boolean().default(true),
+  /** Hours-before-deadline window that flips the term cell to amber. Mirrors
+   *  web's `termCriticalHours` config knob — 4 was previously a magic literal
+   *  in deadlineColor(). 1-72 covers same-shift through 3-day windows. */
+  termCriticalHours: z.number().int().min(1).max(72).default(4),
   filters: z
     .object({
       statuses: z
@@ -154,10 +150,15 @@ function startOfToday(): Date {
  * default in `web/src/dashboard/widgets/task-table.tsx`. Day-based bucketing
  * was wrong here because tasks are scheduled with hour precision (e.g.
  * "08/05 17:00" vs "08/05 18:00" matter for SLA on the same day).
+ *
+ * `criticalHours` is now a config-driven knob (default 4) so commercial-side
+ * users can widen the warning window (e.g. 24h) when their lead time differs
+ * from production's.
  */
 function deadlineColor(
   termIso: string | Date | null | undefined,
   status: TASK_STATUS,
+  criticalHours: number = 4,
 ): string {
   if (status === TASK_STATUS.COMPLETED) return "#16a34a";
   if (status === TASK_STATUS.CANCELLED) return "#737373";
@@ -166,7 +167,7 @@ function deadlineColor(
   if (Number.isNaN(t)) return "#737373";
   const ms = t - Date.now();
   if (ms < 0) return "#dc2626"; // overdue → red-600
-  if (ms / 3_600_000 <= 4) return "#d97706"; // ≤4h → amber-600
+  if (ms / 3_600_000 <= criticalHours) return "#d97706"; // ≤critical → amber
   return "#16a34a"; // green-600
 }
 
@@ -207,7 +208,7 @@ const TASK_INCLUDE = {
 };
 
 function Render({ config, size }: WidgetRenderProps<Config>) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const router = useRouter();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -279,8 +280,13 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       headerExtra={
         <Pressable
-          onPress={() => refetch()}
+          onPress={() => {
+            lightImpactHaptic();
+            refetch();
+          }}
           hitSlop={6}
+          accessibilityLabel="Atualizar tarefas"
+          accessibilityRole="button"
           style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
         >
           <IconRefresh
@@ -290,6 +296,8 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         </Pressable>
       }
       count={filtered.length}
+      onRefresh={refetch}
+      refreshing={isRefetching}
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
@@ -303,25 +311,17 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           <WidgetTableHeader
             columns={visibleCols.map((k) => TASK_COLUMN_DEFS[k])}
             reserveRowDot={display.showRowDot}
+            density={density}
           />
         )}
 
         {isLoading ? (
-          <WidgetTableMessage>
-            <ActivityIndicator color={colors.primary} />
-          </WidgetTableMessage>
+          <SkeletonRows count={5} density={density} />
         ) : isError ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Erro ao carregar tarefas.
-            </Text>
-          </WidgetTableMessage>
+          <WidgetErrorState
+            message="Erro ao carregar tarefas."
+            onRetry={() => refetch()}
+          />
         ) : filtered.length === 0 ? (
           <WidgetTableMessage>
             <Text
@@ -336,16 +336,24 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           </WidgetTableMessage>
         ) : (
           filtered.map((t, idx) => {
-            const tone = STATUS_TONES[t.status as TASK_STATUS] ?? {
+            const tone = toneForTaskStatus(t.status as TASK_STATUS, isDark) ?? {
               bg: colors.muted,
               fg: colors.mutedForeground,
+              border: colors.border,
             };
-            const dlColor = deadlineColor(t.term, t.status as TASK_STATUS);
+            const dlColor = deadlineColor(
+              t.term,
+              t.status as TASK_STATUS,
+              config.termCriticalHours,
+            );
             const overdue = isOverdue(t.term, t.status as TASK_STATUS);
             const paintHex =
               t.generalPainting?.hex ||
               t.generalPainting?.paint?.hex ||
               null;
+            const cellFontSize = densityClasses(density).fontSize;
+            const metaFontSize = Math.max(10, cellFontSize - 2);
+            const customer = customerLabel(t.customer);
             return (
               <WidgetTableRow
                 key={t.id}
@@ -362,46 +370,58 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 {visibleCols.map((key) => {
                   const def = TASK_COLUMN_DEFS[key];
                   if (key === "task") {
-                    // SINGLE LINE per row — matches web `task-table.tsx`'s
-                    // `name` column. Customer/serial are searchable via the
-                    // search box and visible on the detail page; stuffing
-                    // them into a subline breaks the table's row rhythm
-                    // (every other widget renders one line per row).
+                    // Two-line cell: paint dot + task name on top, customer
+                    // name underneath as muted meta. Web shows customer in
+                    // its own column; mobile is too narrow for that, so we
+                    // stack — gives the user the same context without
+                    // sacrificing horizontal real estate.
                     return (
-                      <View
-                        key={key}
-                        style={{
-                          flex: 1,
-                          minWidth: 0,
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        {config.showPaintDot && paintHex && (
-                          <View
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: 5,
-                              backgroundColor: paintHex,
-                              borderWidth: 1,
-                              borderColor: colors.border,
-                            }}
-                          />
-                        )}
-                        <Text
-                          numberOfLines={1}
+                      <View key={key} style={{ flex: 1, minWidth: 0 }}>
+                        <View
                           style={{
-                            fontSize: 13,
-                            fontWeight: "600",
-                            color: colors.foreground,
-                            flex: 1,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
                             minWidth: 0,
                           }}
                         >
-                          {t.name ?? "—"}
-                        </Text>
+                          {config.showPaintDot && paintHex && (
+                            <View
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: 5,
+                                backgroundColor: paintHex,
+                                borderWidth: 1,
+                                borderColor: colors.border,
+                              }}
+                            />
+                          )}
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: cellFontSize,
+                              fontWeight: "600",
+                              color: colors.foreground,
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                          >
+                            {t.name ?? "—"}
+                          </Text>
+                        </View>
+                        {customer !== "—" && (
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              fontSize: metaFontSize,
+                              color: colors.mutedForeground,
+                              marginTop: 1,
+                            }}
+                          >
+                            {customer}
+                          </Text>
+                        )}
                       </View>
                     );
                   }
@@ -418,7 +438,11 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                         >
                           <Text
                             numberOfLines={1}
-                            style={{ fontSize: 10, fontWeight: "600", color: tone.fg }}
+                            style={{
+                              fontSize: metaFontSize,
+                              fontWeight: "600",
+                              color: tone.fg,
+                            }}
                           >
                             {TASK_STATUS_LABELS[t.status as TASK_STATUS] ?? t.status}
                           </Text>
@@ -441,12 +465,16 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                       }}
                     >
                       {overdue && (
-                        <IconAlertTriangle size={11} color={dlColor} />
+                        <IconAlertTriangle
+                          size={11}
+                          color={dlColor}
+                          accessibilityLabel="Tarefa atrasada"
+                        />
                       )}
                       <Text
                         numberOfLines={1}
                         style={{
-                          fontSize: 11,
+                          fontSize: metaFontSize,
                           fontWeight: overdue ? "700" : "600",
                           color: dlColor,
                           fontVariant: ["tabular-nums"],
@@ -589,6 +617,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
     title: "Tarefas",
     showHeader: true,
     showPaintDot: true,
+    termCriticalHours: 4,
     filters: {
       statuses: [TASK_STATUS.IN_PRODUCTION, TASK_STATUS.WAITING_PRODUCTION],
       onlyOverdue: false,

@@ -10,24 +10,39 @@
 //   - Otherwise close current row and start a new one (item placed there).
 //   - Never reorder items to optimise packing — the user's order is sacred.
 //
-// EDIT MODE IS WYSIWYG: rows pack the SAME WAY as in view mode, so a span-1
-// widget and a span-2 widget remain side-by-side while the user is editing.
-// react-native-draggable-flatlist is a 1-D vertical list, so we make each
-// LIST ITEM a packed ROW (not an individual tile). Drag reorders ROWS.
-// Within-row reordering (swap tile A with its neighbour) uses left/right
-// arrow buttons on the tile toolbar — both because gesture-based reordering
-// across rows-of-different-widths is a separate Reanimated project and
-// because explicit arrows are the more discoverable touch UI on mobile.
+// EDIT MODE matches web (web/src/dashboard/components/dashboard-grid.tsx):
+// the packed grid stays put while dragging, only the active tile lifts
+// (opacity + zIndex), and other tiles spring to make room. Implemented in
+// sortable-grid.tsx on top of gesture-handler + Reanimated 4 (RN has no
+// drop-in dnd-kit equivalent for 2-D grids).
+// VIEW MODE: same packed grid, no drag chrome.
 
-import { useCallback, useMemo } from "react";
-import { View } from "react-native";
-import DraggableFlatList, {
-  type RenderItemParams,
-} from "react-native-draggable-flatlist";
+import { useMemo } from "react";
+import { View, Text, useWindowDimensions } from "react-native";
+import { IconLayoutGrid } from "@tabler/icons-react-native";
+import { useTheme } from "@/lib/theme";
 import { WidgetTile } from "./widget-tile";
+import { SortableGrid } from "./sortable-grid";
+import { logFrameworkWarning } from "../internal/logger";
 import type { WidgetInstance, WidgetSpan } from "../types";
 
-const SLOTS_PER_ROW = 3;
+/**
+ * Slots-per-row scales with viewport width:
+ *   <600px (phones, default): 3 slots — fits span 1/2/3 cleanly.
+ *   ≥600px <900px (tablets):  4 slots — span-1/2/3 widgets distribute proportionally.
+ *   ≥900px (large tablets):   6 slots — wider canvases, span values still
+ *                                       1/2/3 but a span-3 widget no longer
+ *                                       hogs the whole row.
+ *
+ * WidgetSpan semantics are unchanged — a span-3 widget always means "3 slots
+ * wide", so persisted layouts render correctly under any breakpoint.
+ */
+function useSlotsPerRow(): number {
+  const { width } = useWindowDimensions();
+  if (width >= 900) return 6;
+  if (width >= 600) return 4;
+  return 3;
+}
 
 interface DashboardGridProps {
   items: WidgetInstance[];
@@ -52,6 +67,13 @@ interface DashboardGridProps {
    *  flips global isEditing. Discoverable shortcut into edit mode that
    *  doesn't depend on the user finding the toolbar button. */
   onEnterEditMode?: () => void;
+  /** Set of instance IDs whose persisted config was invalid at load time
+   *  and was replaced with the widget's defaultConfig. Each tile in the
+   *  set renders an inline banner in edit mode. */
+  restoredInstanceIds?: ReadonlySet<string>;
+  /** Reset a single instance's config to the widget's defaultConfig (wired
+   *  by the parent to `configureWidget(id, def.defaultConfig)`). */
+  onResetConfig?: (instanceId: string) => void;
   /** Spacing between rows. Default matches the existing home padding. */
   rowGap?: number;
   /** Spacing between widgets inside a row. */
@@ -63,7 +85,7 @@ interface PackedRow {
   key: string;
 }
 
-function packRows(items: WidgetInstance[]): PackedRow[] {
+function packRows(items: WidgetInstance[], slotsPerRow: number): PackedRow[] {
   const rows: PackedRow[] = [];
   let current: WidgetInstance[] = [];
   let used = 0;
@@ -80,20 +102,33 @@ function packRows(items: WidgetInstance[]): PackedRow[] {
 
   for (const it of items) {
     const span = clampSpanToSlots(it.size?.span ?? 3);
-    if (used + span > SLOTS_PER_ROW) flush();
+    if (used + span > slotsPerRow) flush();
     current.push(it);
     used += span;
-    if (used >= SLOTS_PER_ROW) flush();
+    if (used >= slotsPerRow) flush();
   }
   flush();
 
   return rows;
 }
 
+// Track which (originalSpan) values we've already warned about per session
+// to avoid log floods when a corrupted layout has 50 instances all clamping.
+const __spanClampSeen = new Set<number>();
+
 function clampSpanToSlots(span: WidgetSpan | number): WidgetSpan {
-  if (span <= 1) return 1;
-  if (span >= 3) return 3;
-  return 2;
+  let clamped: WidgetSpan;
+  if (span <= 1) clamped = 1;
+  else if (span >= 3) clamped = 3;
+  else clamped = 2;
+  if (clamped !== span && !__spanClampSeen.has(span)) {
+    __spanClampSeen.add(span);
+    logFrameworkWarning("dashboard-grid", "span-clamped", {
+      original: span,
+      clamped,
+    });
+  }
+  return clamped;
 }
 
 interface GridRowProps {
@@ -105,8 +140,9 @@ interface GridRowProps {
   onEnterEditMode?: () => void;
   /** When set, the row is in edit mode and tiles render edit chrome. */
   isEditing?: boolean;
-  /** Drag callback received from DraggableFlatList — passed to every tile's
-   *  grip so tapping any tile's drag handle drags the WHOLE row. */
+  /** Drag callback received from DraggableFlatList. In edit mode the list's
+   *  items are individual widgets, so this drags only the tile it's wired
+   *  to. Unused in view mode. */
   onRowDrag?: () => void;
   /** Reorder callbacks (within and across rows). Implemented at the parent
    *  by swapping linear positions; packRows re-runs on next render. */
@@ -114,6 +150,12 @@ interface GridRowProps {
   onMoveRight?: (instanceId: string) => void;
   canMoveLeft?: (instanceId: string) => boolean;
   canMoveRight?: (instanceId: string) => boolean;
+  /** Forwarded to each tile so it can render the config-restored banner. */
+  restoredInstanceIds?: ReadonlySet<string>;
+  onResetConfig?: (instanceId: string) => void;
+  /** Slot count for the current viewport (3/4/6 from useSlotsPerRow). Used
+   *  for the trailing spacer so partial rows preserve widget proportions. */
+  slotsPerRow: number;
   columnGap: number;
 }
 
@@ -126,6 +168,8 @@ interface GridRowProps {
  */
 function GridRow({
   row,
+  restoredInstanceIds,
+  onResetConfig,
   onRemove,
   onConfigure,
   onMoreActions,
@@ -137,13 +181,14 @@ function GridRow({
   onMoveRight,
   canMoveLeft,
   canMoveRight,
+  slotsPerRow,
   columnGap,
 }: GridRowProps) {
   const used = row.items.reduce(
     (s, it) => s + clampSpanToSlots(it.size?.span ?? 3),
     0,
   );
-  const remaining = SLOTS_PER_ROW - used;
+  const remaining = slotsPerRow - used;
   return (
     <View style={{ flexDirection: "row", gap: columnGap }}>
       {row.items.map((instance) => {
@@ -156,6 +201,12 @@ function GridRow({
             <WidgetTile
               instance={instance}
               isEditing={!!isEditing}
+              wasConfigRestored={restoredInstanceIds?.has(instance.instanceId)}
+              onResetConfig={
+                onResetConfig
+                  ? () => onResetConfig(instance.instanceId)
+                  : undefined
+              }
               onRemove={() => onRemove(instance.instanceId)}
               onConfigure={onConfigure}
               onMoreActions={onMoreActions}
@@ -200,83 +251,35 @@ export function DashboardGrid({
   onMoreActions,
   onResize,
   onEnterEditMode,
+  restoredInstanceIds,
+  onResetConfig,
   rowGap = 16,
   columnGap = 12,
 }: DashboardGridProps) {
-  // Pack rows in BOTH modes. Edit mode used to render a flat 1-D list
-  // (each tile its own row) which violated the "favorites and messages
-  // sit side-by-side in view mode" expectation when editing — they
-  // visibly stacked vertically. Now both modes share the same packed grid.
-  const rows = useMemo(() => packRows(items), [items]);
+  const slotsPerRow = useSlotsPerRow();
+  const rows = useMemo(() => packRows(items, slotsPerRow), [items, slotsPerRow]);
 
-  // Adjacent-tile swap. The linear `items` array is the source of truth;
-  // packRows re-runs after every reorder so a swap may move a tile across
-  // a row boundary (which is fine — the user sees the new layout
-  // immediately).
-  const moveItem = useCallback(
-    (instanceId: string, direction: -1 | 1) => {
-      const idx = items.findIndex((it) => it.instanceId === instanceId);
-      if (idx < 0) return;
-      const target = idx + direction;
-      if (target < 0 || target >= items.length) return;
-      const next = items.slice();
-      [next[idx], next[target]] = [next[target], next[idx]];
-      onReorder?.(next);
-    },
-    [items, onReorder],
-  );
+  if (items.length === 0) {
+    return <EmptyDashboardState isEditing={isEditing} />;
+  }
 
-  const canMoveLeft = useCallback(
-    (instanceId: string) => {
-      const idx = items.findIndex((it) => it.instanceId === instanceId);
-      return idx > 0;
-    },
-    [items],
-  );
-  const canMoveRight = useCallback(
-    (instanceId: string) => {
-      const idx = items.findIndex((it) => it.instanceId === instanceId);
-      return idx >= 0 && idx < items.length - 1;
-    },
-    [items],
-  );
-
-  if (items.length === 0) return null;
-
-  // Edit mode: rows are the flat-list items, so DRAG REORDERS A WHOLE ROW.
-  // For within-row reordering use the arrow buttons on the tile toolbar.
+  // Edit mode: SortableGrid implements the same per-tile-drag-with-reflow
+  // behaviour as web's @dnd-kit/sortable, so widgets stay in their packed
+  // layout while the user reorders them.
   if (isEditing) {
     return (
-      <DraggableFlatList
-        data={rows}
-        keyExtractor={(row) => row.key}
-        activationDistance={8}
-        contentContainerStyle={{ gap: rowGap }}
-        scrollEnabled={false}
-        onDragEnd={({ data }) => {
-          // Flatten rows back to a linear instance order; packRows will
-          // re-derive the visual grid on the next render.
-          const flat = data.flatMap((r) => r.items);
-          onReorder?.(flat);
-        }}
-        renderItem={({ item: row, drag, isActive }: RenderItemParams<PackedRow>) => (
-          <View style={{ opacity: isActive ? 0.7 : 1 }}>
-            <GridRow
-              row={row}
-              isEditing
-              onRowDrag={drag}
-              onMoveLeft={(id) => moveItem(id, -1)}
-              onMoveRight={(id) => moveItem(id, 1)}
-              canMoveLeft={canMoveLeft}
-              canMoveRight={canMoveRight}
-              onRemove={onRemove}
-              onConfigure={onConfigure}
-              onMoreActions={onMoreActions}
-              onResize={onResize}
-              columnGap={columnGap}
-            />
-          </View>
-        )}
+      <SortableGrid
+        items={items}
+        slotsPerRow={slotsPerRow}
+        rowGap={rowGap}
+        columnGap={columnGap}
+        onReorder={(next) => onReorder?.(next)}
+        onRemove={onRemove}
+        onConfigure={onConfigure}
+        onMoreActions={onMoreActions}
+        onResize={onResize}
+        onResetConfig={onResetConfig}
+        restoredInstanceIds={restoredInstanceIds}
       />
     );
   }
@@ -292,9 +295,61 @@ export function DashboardGrid({
           onConfigure={onConfigure}
           onMoreActions={onMoreActions}
           onEnterEditMode={onEnterEditMode}
+          restoredInstanceIds={restoredInstanceIds}
+          onResetConfig={onResetConfig}
+          slotsPerRow={slotsPerRow}
           columnGap={columnGap}
         />
       ))}
+    </View>
+  );
+}
+
+/**
+ * Shown when the user's dashboard layout has zero items (sector preset is
+ * empty, user removed everything, or restoredInstanceIds drained the layout).
+ * Mirrors web/src/dashboard/components/dashboard-grid.tsx empty-state in spirit:
+ * a dashed-border card with a contextual CTA so users know to enter edit mode.
+ */
+function EmptyDashboardState({ isEditing }: { isEditing: boolean }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        borderWidth: 1,
+        borderStyle: "dashed",
+        borderColor: colors.border,
+        backgroundColor: colors.card,
+        borderRadius: 12,
+        paddingVertical: 24,
+        paddingHorizontal: 16,
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <IconLayoutGrid size={28} color={colors.mutedForeground} />
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: "600",
+          color: colors.foreground,
+          textAlign: "center",
+        }}
+      >
+        Nenhum widget adicionado
+      </Text>
+      <Text
+        style={{
+          fontSize: 12,
+          color: colors.mutedForeground,
+          textAlign: "center",
+          maxWidth: 320,
+        }}
+      >
+        {isEditing
+          ? "Toque em Adicionar para escolher um widget."
+          : "Toque em Editar para começar a montar seu painel."}
+      </Text>
     </View>
   );
 }

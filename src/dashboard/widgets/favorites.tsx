@@ -4,13 +4,14 @@
 // addable / removable / reorderable like any other widget.
 
 import { z } from "zod";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { IconStar } from "@tabler/icons-react-native";
 import { useFavorites } from "@/contexts/favorites-context";
 import { getIconInfoByPath } from "@/utils/page-icons";
 import { useTheme } from "@/lib/theme";
 import { Section, ToggleRow, LabeledField } from "./_shared";
+import { longPressHaptic, lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -40,19 +41,36 @@ type Config = z.infer<typeof configSchema>;
 function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const router = useRouter();
-  const { favorites } = useFavorites();
+  const { favorites, removeFavorite } = useFavorites();
   // At span 1 (1/3 row width) the grid math collapses — a 2-up grid would
   // give 50px-wide cards. Force single-column there. At span 2/3 honour the
   // user's itemsPerRow config.
   const span = size?.span ?? 3;
   const itemsPerRow = span === 1 ? 1 : config.itemsPerRow;
-  const widthPercent =
-    itemsPerRow === 1 ? ("100%" as const) : (`${100 / itemsPerRow - 2}%` as const);
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const HeaderIcon = accent.Icon;
+
+  const handleLongPress = (favId: string, favTitle: string) => {
+    longPressHaptic();
+    Alert.alert(
+      "Remover favorito",
+      `Remover "${favTitle}" dos favoritos?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: () => {
+            lightImpactHaptic();
+            void removeFavorite(favId);
+          },
+        },
+      ],
+    );
+  };
 
   if (favorites.length === 0) {
     return (
@@ -95,13 +113,27 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
             <Pressable
               key={fav.id}
               onPress={() => router.push(fav.path as any)}
+              onLongPress={() => handleLongPress(fav.id, fav.title)}
+              delayLongPress={400}
+              accessibilityLabel={`${fav.title}. Toque para abrir, segure para remover.`}
+              accessibilityRole="button"
               style={({ pressed }) => ({
                 backgroundColor: colors.muted,
                 padding: 8,
                 borderRadius: 8,
                 borderWidth: 1,
                 borderColor: colors.border,
-                width: widthPercent,
+                // Flex-based grid sizing — replaces the magic-number
+                // `100/n - 2%` math that broke when gap or padding changed.
+                // With gap:8 between cards and 12px container padding, each
+                // card flexes to its share of the row regardless of count.
+                flexBasis:
+                  itemsPerRow === 1
+                    ? "100%"
+                    : itemsPerRow === 2
+                      ? "48%"
+                      : "31%",
+                flexGrow: 0,
                 opacity: pressed ? 0.7 : 1,
               })}
             >

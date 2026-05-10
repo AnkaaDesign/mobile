@@ -17,6 +17,7 @@ import {
   ScrollView,
   TextInput,
   FlatList,
+  useWindowDimensions,
   type ListRenderItem,
 } from "react-native";
 import {
@@ -86,6 +87,12 @@ export function AddWidgetSheet({
       return haystack.includes(q);
     });
   }, [allWidgets, activeCategory, query]);
+
+  // Match the dashboard grid's breakpoints so the picker renders 2 columns on
+  // phones, 3 on small tablets, 4 on large tablets — keeps cards a comfortable
+  // tap target across screen sizes.
+  const { width: viewportWidth } = useWindowDimensions();
+  const numColumns = viewportWidth >= 900 ? 4 : viewportWidth >= 600 ? 3 : 2;
 
   const handleAdd = (widgetId: string) => {
     onAdd(widgetId);
@@ -338,9 +345,12 @@ export function AddWidgetSheet({
           </View>
         ) : (
           <FlatList
+            // FlatList requires re-key when numColumns changes (it's a layout
+            // mode, not a re-renderable prop), hence `key={numColumns}`.
+            key={numColumns}
             data={filtered}
             keyExtractor={(def) => def.id}
-            numColumns={2}
+            numColumns={numColumns}
             renderItem={renderCard}
             contentContainerStyle={{
               padding: 12,
