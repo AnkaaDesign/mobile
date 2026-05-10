@@ -18,12 +18,14 @@ import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
 import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
 import { PhoneArrayInput } from "@/components/ui";
 import { Text } from "@/components/ui/text";
 import { spacing, fontSize } from "@/constants/design-system";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { formSpacing } from "@/constants/form-styles";
 import { IconBuilding, IconMapPin, IconPhone, IconTag } from "@tabler/icons-react-native";
 import { Card } from "@/components/ui/card";
@@ -31,7 +33,15 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 export default function FinancialCustomerCreateScreen() {
   const formKey = useFormScreenKey();
-  return <FinancialCustomerCreateScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL],
+      }}
+    >
+      <FinancialCustomerCreateScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function FinancialCustomerCreateScreenInner() {
@@ -202,7 +212,7 @@ function FinancialCustomerCreateScreenInner() {
 
       if (result?.data) {
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.financial.customers.details(result.data?.id || '')) as any);
+        router.replace(mobileRoute(routes.financial.customers.details(result.data?.id || '')) as any);
       } else {
         Alert.alert("Erro", "Erro ao criar cliente");
       }
@@ -216,7 +226,7 @@ function FinancialCustomerCreateScreenInner() {
   const handleCancel = () => {
     Alert.alert("Descartar Cadastro", "Deseja descartar o cadastro do cliente?", [
       { text: "Continuar Editando", style: "cancel" },
-      { text: "Descartar", style: "destructive", onPress: () => router.push(routeToMobilePath(routes.financial.customers.root) as any) },
+      { text: "Descartar", style: "destructive", onPress: () => router.push(mobileRoute(routes.financial.customers.root) as any) },
     ]);
   };
 
