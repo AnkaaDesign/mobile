@@ -11,7 +11,7 @@ import { IconClipboardList, IconChevronRight, IconCalendar } from "@tabler/icons
 import type { Customer } from '../../../../types';
 import { routes, TASK_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { extendedColors } from "@/lib/theme/extended-colors";
 
 interface TasksCardProps {
@@ -43,7 +43,7 @@ export function TasksCard({ customer, maxHeight = 400 }: TasksCardProps) {
   };
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+    router.push(mobileRoute(routes.production.schedule.details(taskId)) as any);
   };
 
   if (totalTasks === 0) {

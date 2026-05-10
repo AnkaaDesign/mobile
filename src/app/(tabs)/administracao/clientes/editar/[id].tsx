@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, ScrollView, Alert, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNav } from "@/contexts/nav";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCustomer, useCustomerMutations, useKeyboardAwareScroll, useScreenReady } from "@/hooks";
@@ -16,8 +17,9 @@ import { FormFieldGroup, FormRow } from "@/components/ui/form-section";
 import { FormActionBar } from "@/components/forms";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import { useTheme } from "@/lib/theme";
-import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { routes, BRAZILIAN_STATES, BRAZILIAN_STATE_NAMES, REGISTRATION_STATUS_OPTIONS, STREET_TYPE_OPTIONS, SECTOR_PRIVILEGES } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { formatCPF, formatCNPJ, cleanCPF, cleanCNPJ, formatCEP, cleanCEP } from "@/utils";
 import { getFileUrl } from "@/utils/file-utils";
 import { TagManager } from "@/components/administration/customer/form/tag-manager";
@@ -32,12 +34,24 @@ import { ThemedText } from "@/components/ui/themed-text";
 
 export default function CustomerEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <CustomerEditScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <CustomerEditScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function CustomerEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentType, setDocumentType] = useState<"cpf" | "cnpj">("cnpj");
@@ -353,7 +367,7 @@ function CustomerEditScreenInner() {
 
       if (result?.data) {
         // API client already shows success alert
-        router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any);
+        nav.replace(mobileRoute(routes.administration.customers.details(id!)));
       } else {
         Alert.alert("Erro", "Erro ao atualizar cliente");
       }
@@ -369,10 +383,10 @@ function CustomerEditScreenInner() {
     if (isDirty || hasNewLogo) {
       Alert.alert("Descartar Alterações", "Você tem alterações não salvas. Deseja descartá-las?", [
         { text: "Continuar Editando", style: "cancel" },
-        { text: "Descartar", style: "destructive", onPress: () => router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any) },
+        { text: "Descartar", style: "destructive", onPress: () => nav.replace(mobileRoute(routes.administration.customers.details(id!))) },
       ]);
     } else {
-      router.replace(routeToMobilePath(routes.administration.customers.details(id!)) as any);
+      nav.replace(mobileRoute(routes.administration.customers.details(id!)));
     }
   };
 

@@ -2,24 +2,30 @@ import { View, ScrollView, StyleSheet } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { MessageForm } from "@/components/administration/message/form/message-form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useMessage } from "@/hooks/use-admin-messages-infinite-mobile";
 import { useTheme } from "@/lib/theme";
 import { Text } from "@/components/ui/text";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 import { Skeleton } from "@/components/ui/skeleton";
 import { spacing, borderRadius } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EditMessageScreen() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <EditMessageInner />
+    </PrivilegeGate>
+  );
+}
+
+function EditMessageInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { data: messageResponse, isLoading, error } = useMessage(id, {
     include: {
       createdBy: true,
-      targets: {
-        include: {
-          user: true,
-        },
-      },
+      targets: { include: { user: true } },
     },
   });
 
@@ -53,7 +59,7 @@ export default function EditMessageScreen() {
     );
   }
 
-  const message = messageResponse?.data || messageResponse;
+  const message = (messageResponse as any)?.data || messageResponse;
 
   return <MessageForm mode="update" message={message} />;
 }

@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -13,9 +12,9 @@ import { useTheme } from "@/lib/theme";
 import { formSpacing } from "@/constants/form-styles";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { sectorCreateSchema, sectorUpdateSchema } from "@/schemas/sector";
 import type { SectorCreateFormData, SectorUpdateFormData } from "@/schemas/sector";
@@ -31,8 +30,7 @@ interface SectorFormProps {
 }
 
 export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProps) {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useSectorMutations();
@@ -71,9 +69,9 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.administration.sectors.details(newId)) as any);
+          nav.replace(mobileRoute(routes.administration.sectors.details(newId)));
         } else {
-          goBack();
+          nav.goBack();
         }
       } else if (sector) {
         const updateData = {
@@ -85,7 +83,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
           data: updateData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.administration.sectors.details(sector.id)) as any);
+        nav.replace(mobileRoute(routes.administration.sectors.details(sector.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar o setor");
@@ -96,7 +94,7 @@ export function SectorForm({ mode, sector, onSuccess, onCancel }: SectorFormProp
     if (onCancel) {
       onCancel();
     } else {
-      goBack();
+      nav.goBack();
     }
   };
 

@@ -1,25 +1,209 @@
-import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
+import { View, Alert, StyleSheet } from "react-native";
 import { useState } from "react";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+
 import { Text } from "@/components/ui/text";
-import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useBackup, useBackupMutations } from "@/hooks/useBackup";
 import { formatDate } from "@/utils/date";
 import { formatFileSize } from "@/utils/file-utils";
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { IconArchive } from "@tabler/icons-react-native";
 
+export default function BackupDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { colors } = useTheme();
+  const nav = useNav();
+  const [isRestoring, setIsRestoring] = useState(false);
+  const query = useBackup(id as string);
+  const { restore, delete: deleteBackup } = useBackupMutations();
 
-import { Skeleton } from "@/components/ui/skeleton";const styles = StyleSheet.create({
+  const handleRestore = () => {
+    Alert.alert(
+      "Restaurar Backup",
+      "Tem certeza que deseja restaurar este backup? Esta ação substituirá os dados atuais.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Restaurar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsRestoring(true);
+              await nav.withLoading(async () => restore.mutateAsync({ id: id as string }));
+              Alert.alert("Sucesso", "Backup restaurado com sucesso");
+              nav.goBack();
+            } catch {
+              Alert.alert("Erro", "Falha ao restaurar backup");
+            } finally {
+              setIsRestoring(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Excluir Backup",
+      "Tem certeza que deseja excluir este backup? Esta ação não pode ser desfeita.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await nav.withLoading(async () => deleteBackup.mutateAsync(id as string));
+              Alert.alert("Sucesso", "Backup excluído com sucesso");
+              nav.dismissTo(mobileRoute(routes.server.backups.list));
+            } catch {
+              Alert.alert("Erro", "Falha ao excluir backup");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  return (
+    <DetailScreen<any>
+      query={query as any}
+      icon={IconArchive}
+      title={(b) => b.name || `Backup ${formatDate(b.createdAt)}`}
+      privilege={SECTOR_PRIVILEGES.ADMIN}
+      notFoundFallback={mobileRoute(routes.server.backups.list)}
+    >
+      {(backup) => (
+        <View style={styles.body}>
+          {/* Status Card */}
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <Icon name="info" size={20} color={colors.mutedForeground} />
+                <Text style={styles.title}>Status</Text>
+              </View>
+            </View>
+            <View style={styles.content}>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                <Badge variant={backup.status === "completed" ? "success" : backup.status === "failed" ? "destructive" : "default"}>
+                  {backup.status}
+                </Badge>
+                <Badge variant={backup.type === "full" ? "default" : backup.type === "database" ? "info" : "warning"}>
+                  {backup.type}
+                </Badge>
+                {backup.encrypted && (
+                  <Badge variant="info">
+                    <Icon name="lock" size={16} color={colors.mutedForeground} />
+                    Criptografado
+                  </Badge>
+                )}
+              </View>
+
+              <View style={{ gap: 8 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.mutedForeground }}>Tamanho</Text>
+                  <Text style={{ fontWeight: "500" }}>{backup.size ? formatFileSize(backup.size) : "N/A"}</Text>
+                </View>
+                <Separator />
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.mutedForeground }}>Duração</Text>
+                  <Text style={{ fontWeight: "500" }}>
+                    {(backup as any).duration ? `${Math.round((backup as any).duration / 1000)}s` : "N/A"}
+                  </Text>
+                </View>
+                <Separator />
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.mutedForeground }}>Criado em</Text>
+                  <Text style={{ fontWeight: "500" }}>{formatDate(backup.createdAt)}</Text>
+                </View>
+              </View>
+            </View>
+          </Card>
+
+          {backup.description && (
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="file-text" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Descrição</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <Text style={{ color: colors.mutedForeground }}>{backup.description}</Text>
+              </View>
+            </Card>
+          )}
+
+          {(backup as any).contents && (backup as any).contents.length > 0 && (
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="package" size={20} color={colors.mutedForeground} />
+                  <Text style={styles.title}>Conteúdo</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <View style={{ gap: 8 }}>
+                  {(backup as any).contents.map((item: string, index: number) => (
+                    <View key={index} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Icon name="check" size={20} color={colors.mutedForeground} />
+                      <Text>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {backup.status === "failed" && backup.error && (
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.destructive }]}>
+                <View style={styles.headerLeft}>
+                  <Icon name="alert-circle" size={20} color={colors.destructive} />
+                  <Text style={[styles.title, { color: colors.destructive }]}>Erro</Text>
+                </View>
+              </View>
+              <View style={styles.content}>
+                <Text style={{ color: colors.destructive }}>{backup.error}</Text>
+              </View>
+            </Card>
+          )}
+
+          <View style={{ gap: 8 }}>
+            {backup.status === "completed" && (
+              <Button onPress={handleRestore} disabled={isRestoring} variant="default">
+                <Icon name="refresh-cw" size={16} color="#fff" />
+                <Text style={{ color: colors.primaryForeground }}>
+                  {isRestoring ? "Restaurando..." : "Restaurar Backup"}
+                </Text>
+              </Button>
+            )}
+            <Button onPress={handleDelete} variant="destructive" disabled={isRestoring}>
+              <Icon name="trash" size={16} color="#fff" />
+              <Text style={{ color: colors.destructiveForeground }}>Excluir Backup</Text>
+            </Button>
+          </View>
+        </View>
+      )}
+    </DetailScreen>
+  );
+}
+
+const styles = StyleSheet.create({
+  body: {
+    gap: spacing.lg,
+  },
   card: {
     padding: spacing.md,
   },
@@ -44,227 +228,3 @@ import { Skeleton } from "@/components/ui/skeleton";const styles = StyleSheet.cr
     gap: spacing.sm,
   },
 });
-
-export default function BackupDetailsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
-  const [isRestoring, setIsRestoring] = useState(false);
-  const { colors } = useTheme();
-
-  const { data: backup, isLoading, refetch, isFetching } = useBackup(id!);
-
-  useScreenReady(!isLoading);
-  const { restore, delete: deleteBackup } = useBackupMutations();
-
-  const handleRestore = () => {
-    Alert.alert(
-      "Restaurar Backup",
-      "Tem certeza que deseja restaurar este backup? Esta ação substituirá os dados atuais.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Restaurar",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setIsRestoring(true);
-              await restore.mutateAsync({ id: id! });
-              Alert.alert("Sucesso", "Backup restaurado com sucesso");
-              goBack();
-            } catch (_error) {
-              Alert.alert("Erro", "Falha ao restaurar backup");
-            } finally {
-              setIsRestoring(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      "Excluir Backup",
-      "Tem certeza que deseja excluir este backup? Esta ação não pode ser desfeita.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteBackup.mutateAsync(id!);
-              Alert.alert("Sucesso", "Backup excluído com sucesso");
-              goBack();
-            } catch (_error) {
-              Alert.alert("Erro", "Falha ao excluir backup");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  if (isLoading || !backup) {
-    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
-        </View>
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
-        </View>
-      </View>;
-  }
-
-  return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
-      <ThemedView className="flex-1">
-      <ScrollView
-        style={{ flex: 1 }}
-        refreshControl={
-          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-        }
-      >
-        <View className="p-4 gap-4">
-          {/* Header */}
-          <View className="flex-row items-center justify-between">
-            <Text className="text-2xl font-bold flex-1">
-              {backup.name || `Backup ${formatDate(backup.createdAt)}`}
-            </Text>
-          </View>
-
-          {/* Status Card */}
-          <Card style={styles.card}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <Icon name="info" size={20} color={colors.mutedForeground} />
-                <Text style={styles.title}>Status</Text>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <View className="flex-row items-center gap-2 mb-4">
-                <Badge variant={backup.status === "completed" ? "success" : backup.status === "failed" ? "destructive" : "default"}>
-                  {backup.status}
-                </Badge>
-                <Badge variant={backup.type === "full" ? "default" : backup.type === "database" ? "info" : "warning"}>
-                  {backup.type}
-                </Badge>
-                {backup.encrypted && (
-                  <Badge variant="info">
-                    <Icon name="lock" size={16} color={colors.mutedForeground} />
-                    Criptografado
-                  </Badge>
-                )}
-              </View>
-
-              <View className="gap-2">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-muted-foreground">Tamanho</Text>
-                  <Text className="font-medium">
-                    {backup.size ? formatFileSize(backup.size) : "N/A"}
-                  </Text>
-                </View>
-                <Separator />
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-muted-foreground">Duração</Text>
-                  <Text className="font-medium">
-                    {(backup as any).duration
-                      ? `${Math.round((backup as any).duration / 1000)}s`
-                      : "N/A"}
-                  </Text>
-                </View>
-                <Separator />
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-muted-foreground">Criado em</Text>
-                  <Text className="font-medium">{formatDate(backup.createdAt)}</Text>
-                </View>
-              </View>
-            </View>
-          </Card>
-
-          {/* Details Card */}
-          {backup.description && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <Icon name="file-text" size={20} color={colors.mutedForeground} />
-                  <Text style={styles.title}>Descrição</Text>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <Text className="text-muted-foreground">{backup.description}</Text>
-              </View>
-            </Card>
-          )}
-
-          {/* Contents Card */}
-          {(backup as any).contents && (backup as any).contents.length > 0 && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <Icon name="package" size={20} color={colors.mutedForeground} />
-                  <Text style={styles.title}>Conteúdo</Text>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <View className="gap-2">
-                  {(backup as any).contents.map((item: string, index: number) => (
-                    <View key={index} className="flex-row items-center gap-2">
-                      <Icon name="check" size={20} color={colors.mutedForeground} />
-                      <Text>{item}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </Card>
-          )}
-
-          {/* Error Card */}
-          {backup.status === "failed" && backup.error && (
-            <Card style={styles.card}>
-              <View style={[styles.header, { borderBottomColor: colors.destructive }]}>
-                <View style={styles.headerLeft}>
-                  <Icon name="alert-circle" size={20} color={colors.destructive} />
-                  <Text style={[styles.title, { color: colors.destructive }]}>Erro</Text>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <Text style={{ color: colors.destructive }}>{backup.error}</Text>
-              </View>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <View className="gap-2">
-            {backup.status === "completed" && (
-              <Button
-                onPress={handleRestore}
-                disabled={isRestoring}
-                variant="default"
-              >
-                <Icon name="refresh-cw" className="w-4 h-4 mr-2" />
-                <Text className="text-primary-foreground">
-                  {isRestoring ? "Restaurando..." : "Restaurar Backup"}
-                </Text>
-              </Button>
-            )}
-            <Button
-              onPress={handleDelete}
-              variant="destructive"
-              disabled={isRestoring}
-            >
-              <Icon name="trash" className="w-4 h-4 mr-2" />
-              <Text className="text-destructive-foreground">Excluir Backup</Text>
-            </Button>
-          </View>
-        </View>
-      </ScrollView>
-      </ThemedView>
-    </PrivilegeGuard>
-  );
-}

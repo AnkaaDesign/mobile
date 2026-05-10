@@ -1,9 +1,9 @@
 import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
-import { useRouter } from "expo-router";
 import { routes, DASHBOARD_TIME_PERIOD } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { useAdministrationDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
@@ -12,7 +12,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 
 export default function AdministracaoScreen() {
   const { colors } = useTheme();
-  const router = useRouter();
+  const nav = useNav();
   const insets = useSafeAreaInsets();
   const [timePeriod] = useState(DASHBOARD_TIME_PERIOD.THIS_MONTH);
   const [refreshing, setRefreshing] = useState(false);
@@ -131,7 +131,7 @@ export default function AdministracaoScreen() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.administration.collaborators.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.administration.collaborators.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -155,7 +155,7 @@ export default function AdministracaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.administration.sectors.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.administration.sectors.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -179,7 +179,7 @@ export default function AdministracaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.administration.notifications.list) as any)}
+              onPress={() => nav.push(mobileRoute(routes.administration.notifications.list))}
               style={{
                 flex: 1,
                 minWidth: "45%",
