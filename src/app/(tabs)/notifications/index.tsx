@@ -7,7 +7,9 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
+import { useNav } from '@/contexts/nav';
+import { mobileRoute } from '@/constants/routes.types';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -24,7 +26,7 @@ import { useScreenReady } from '@/hooks/use-screen-ready';
 import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial';
 
 export default function NotificationCenterScreen() {
-  const router = useRouter();
+  const nav = useNav();
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
 
@@ -103,10 +105,10 @@ export default function NotificationCenterScreen() {
 
       // Navigate to action URL if available
       if (notification.actionUrl) {
-        router.push(notification.actionUrl as any);
+        nav.push(mobileRoute(notification.actionUrl));
       }
     },
-    [user?.id, markAsReadMutation, router]
+    [user?.id, markAsReadMutation, nav]
   );
 
   const handleMarkAsRead = useCallback(
