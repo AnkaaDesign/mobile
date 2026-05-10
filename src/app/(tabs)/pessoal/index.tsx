@@ -51,7 +51,7 @@ export default function PessoalScreen() {
       title: "Meus Feriados",
       description: "Feriados do ano",
       icon: <IconCalendarEvent size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/meus-feriados/listar",
+      route: "/(tabs)/pessoal/meus-feriados",
       available: true,
     },
     {
@@ -67,7 +67,7 @@ export default function PessoalScreen() {
       title: "Meus Empréstimos",
       description: "Ferramentas emprestadas",
       icon: <IconPackage size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/meus-emprestimos/listar",
+      route: "/(tabs)/pessoal/meus-emprestimos",
       available: true,
     },
     {
@@ -108,7 +108,7 @@ export default function PessoalScreen() {
       title: "Minhas Advertências",
       description: "Registros de advertências",
       icon: <IconAlertTriangle size={28} color={colors.primary} />,
-      route: "/(tabs)/pessoal/minhas-advertencias/listar",
+      route: "/(tabs)/pessoal/minhas-advertencias",
       available: true,
     },
   ];

@@ -40,7 +40,7 @@ export default function PaintBrandDetailsScreen() {
   // End navigation loading overlay when screen mounts
 
   // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch paint brand details

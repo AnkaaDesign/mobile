@@ -40,8 +40,7 @@ export default function PaintTypeDetailsScreen() {
   // End navigation loading overlay when screen mounts
 
   // Check permissions
-  // Fixed: PAINTING doesn't exist in SECTOR_PRIVILEGES, using PRODUCTION instead
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION);
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
   const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
 
   // Fetch paint type details
