@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { IconCalculator, IconHistory } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
@@ -118,7 +119,7 @@ const getNumericValue = (value: any): number => {
 export default function CurrentBonusScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
   const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
@@ -380,7 +381,7 @@ export default function CurrentBonusScreen() {
           <View style={styles.navigationButtons}>
             <TouchableOpacity
               style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/(tabs)/pessoal/meu-bonus/simulacao' as any)}
+              onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/simulacao'))}
             >
               <IconCalculator size={24} color={colors.primary} />
               <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
@@ -390,7 +391,7 @@ export default function CurrentBonusScreen() {
 
             <TouchableOpacity
               style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push('/(tabs)/pessoal/meu-bonus/historico' as any)}
+              onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/historico'))}
             >
               <IconHistory size={24} color={colors.primary} />
               <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
@@ -615,7 +616,7 @@ export default function CurrentBonusScreen() {
         <View style={styles.navigationButtons}>
           <TouchableOpacity
             style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push('/(tabs)/pessoal/meu-bonus/simulacao' as any)}
+            onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/simulacao'))}
           >
             <IconCalculator size={24} color={colors.primary} />
             <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
@@ -625,7 +626,7 @@ export default function CurrentBonusScreen() {
 
           <TouchableOpacity
             style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push('/(tabs)/pessoal/meu-bonus/historico' as any)}
+            onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/historico'))}
           >
             <IconHistory size={24} color={colors.primary} />
             <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
