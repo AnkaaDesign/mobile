@@ -1,11 +1,12 @@
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { router } from "expo-router";
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import { Badge } from "@/components/ui/badge";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { PAINT_FINISH_LABELS } from "@/constants";
+import { PAINT_FINISH_LABELS, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import type { Paint } from "@/types";
 import { PaintPreview } from "@/components/painting/preview/painting-preview";
 
@@ -21,6 +22,7 @@ interface PaintRelatedPaintsCardProps {
 
 export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
   const { colors, isDark } = useTheme();
+  const nav = useNav();
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
 
   // Combine related paints and remove duplicates
@@ -33,7 +35,7 @@ export function PaintRelatedPaintsCard({ paint }: PaintRelatedPaintsCardProps) {
   );
 
   const handlePaintPress = (paintId: string) => {
-    router.push(`/pintura/catalogo/detalhes/${paintId}` as any);
+    nav.push(mobileRoute(routes.painting.catalog.details(paintId)));
   };
 
   if (allRelated.length === 0) {
