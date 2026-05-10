@@ -1,69 +1,37 @@
 import React from "react";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, RefreshControl, StyleSheet } from "react-native";
-import { usePaintDetail, useScreenReady } from "@/hooks";
+import { useLocalSearchParams } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { usePaintDetail } from "@/hooks";
 import {
   PaintFormulasCard,
   PaintRelatedPaintsCard,
   PaintSpecificationsCard,
   PaintGroundPaintsCard,
 } from "@/components/painting/catalog/detail";
-import { ErrorScreen } from "@/components/ui/error-screen";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { spacing } from "@/constants/design-system";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
 import { hasPrivilege, isTeamLeader } from "@/utils";
+import { DetailScreen } from "@/components/screens/detail-screen";
 import { IconPaint } from "@tabler/icons-react-native";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Basic Catalog Details Screen
  *
- * This screen provides a read-only view of paint catalog items for team leaders.
+ * Read-only view of paint catalog items for team leaders.
  * Unlike the full painting catalog, this screen:
  * - Shows essential paint information (specifications, formulas, related paints)
  * - Does not allow editing or deleting
  * - Does not show tasks or production history (warehouse-specific features)
- * - Is accessible to team leaders (ledSector relationship) without requiring WAREHOUSE access
- *
- * Use case: Team leaders need to view paint information to understand production
- * requirements without having full warehouse management access.
+ * - Is accessible to team leaders without requiring WAREHOUSE access
  */
 export default function CatalogoBasicoDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors } = useTheme();
-  const { user } = useAuth();
-  const [refreshing, setRefreshing] = React.useState(false);
 
-  // End navigation loading overlay when screen mounts
-
-  // Check user permissions - team leaders can view, warehouse can edit
-  // Team leadership is now determined by ledSector relationship
-  const isLeader = isTeamLeader(user);
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
-  const userPrivilege = user?.sector?.privileges;
-
-  // Only WAREHOUSE, ADMIN, and PRODUCTION team leaders can navigate to formula details
-  const canNavigateToFormulas = userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE ||
-    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    (userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && isLeader);
-
-  // OPTIMIZED: Use select instead of include to fetch only required fields
-  // For basic catalog view, we only need formula counts, not full component data
-  // This reduces data transfer by ~80% compared to fetching full components with items
-  const {
-    data: paintResponse,
-    isLoading,
-    error,
-    refetch,
-  } = usePaintDetail(id as string, {
+  const query = usePaintDetail(id as string, {
     select: {
       id: true,
       name: true,
@@ -80,23 +48,8 @@ export default function CatalogoBasicoDetailsScreen() {
       paintBrandId: true,
       createdAt: true,
       updatedAt: true,
-      // Paint type with minimal fields
-      paintType: {
-        select: {
-          id: true,
-          name: true,
-          needGround: true,
-        },
-      },
-      // Paint brand with minimal fields
-      paintBrand: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      // Formulas with _count instead of full components array
-      // This is the key optimization - we only need component count for display
+      paintType: { select: { id: true, name: true, needGround: true } },
+      paintBrand: { select: { id: true, name: true } },
       formulas: {
         select: {
           id: true,
@@ -104,15 +57,9 @@ export default function CatalogoBasicoDetailsScreen() {
           density: true,
           pricePerLiter: true,
           createdAt: true,
-          // Fetch only component IDs so we can count them without loading full component data
-          components: {
-            select: {
-              id: true,
-            },
-          },
+          components: { select: { id: true } },
         },
       },
-      // Related paints with fields needed for display
       relatedPaints: {
         select: {
           id: true,
@@ -120,12 +67,7 @@ export default function CatalogoBasicoDetailsScreen() {
           hex: true,
           colorPreview: true,
           finish: true,
-          paintBrand: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          paintBrand: { select: { id: true, name: true } },
         },
       },
       relatedTo: {
@@ -135,15 +77,9 @@ export default function CatalogoBasicoDetailsScreen() {
           hex: true,
           colorPreview: true,
           finish: true,
-          paintBrand: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+          paintBrand: { select: { id: true, name: true } },
         },
       },
-      // Paint grounds with necessary fields for display
       paintGrounds: {
         select: {
           id: true,
@@ -154,18 +90,8 @@ export default function CatalogoBasicoDetailsScreen() {
               code: true,
               hex: true,
               colorPreview: true,
-              paintType: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-              paintBrand: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
+              paintType: { select: { id: true, name: true } },
+              paintBrand: { select: { id: true, name: true } },
             },
           },
         },
@@ -173,197 +99,72 @@ export default function CatalogoBasicoDetailsScreen() {
     },
   });
 
-  useScreenReady(!isLoading);
+  return (
+    <DetailScreen
+      query={query as any}
+      icon={IconPaint}
+      title={(p: any) => p.name ?? "Tinta"}
+      notFoundFallback={mobileRoute(routes.painting.basicCatalog.root)}
+    >
+      {(paint: any) => <BasicCatalogBody paint={paint} />}
+    </DetailScreen>
+  );
+}
 
-  const paint = paintResponse?.data;
+function BasicCatalogBody({ paint }: { paint: any }) {
+  const { user } = useAuth();
+  const isLeader = isTeamLeader(user);
+  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+  const userPrivilege = user?.sector?.privileges;
 
-  const handleRefresh = React.useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Carregando...",
-            headerBackTitle: "Voltar",
-          }}
-        />
-        <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-          <View style={{ padding: 16, gap: 16, paddingBottom: 32 }}>
-            {/* Header card skeleton: icon + name */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <Skeleton style={{ width: 40, height: 40, borderRadius: 8 }} />
-                <Skeleton style={{ height: 20, flex: 1, borderRadius: 4 }} />
-              </View>
-            </View>
-            {/* Color preview + specs card */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-              <Skeleton style={{ height: 100, borderRadius: 0 }} />
-              <View style={{ padding: 16, gap: 10 }}>
-                <Skeleton style={{ height: 14, width: '50%', borderRadius: 4 }} />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Skeleton style={{ height: 13, width: '35%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 13, width: '30%', borderRadius: 4 }} />
-                </View>
-              </View>
-            </View>
-            {/* Formulas card skeleton */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <Skeleton style={{ width: 20, height: 20, borderRadius: 4 }} />
-                <Skeleton style={{ height: 16, width: '40%', borderRadius: 4 }} />
-              </View>
-              {[1, 2].map((i) => (
-                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 }}>
-                  <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 22, width: 60, borderRadius: 4 }} />
-                </View>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-      </>
-    );
-  }
-
-  if (error || !paint) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Erro",
-            headerBackTitle: "Voltar",
-          }}
-        />
-        <ErrorScreen title="Erro ao carregar tinta" message={error?.message || "Tinta não encontrada"} />
-      </>
-    );
-  }
+  // Only WAREHOUSE, ADMIN, and PRODUCTION team leaders can navigate to formula details
+  const canNavigateToFormulas =
+    userPrivilege === SECTOR_PRIVILEGES.WAREHOUSE ||
+    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
+    (userPrivilege === SECTOR_PRIVILEGES.PRODUCTION && isLeader);
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: paint?.name || "Tinta",
-          headerBackTitle: "Voltar",
-        }}
-      />
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.container}>
-          {/* Header Card with Paint Name */}
-          <Card style={styles.headerCard}>
-            <View style={styles.headerContent}>
-              <View style={[styles.headerIconContainer, { backgroundColor: colors.primary + '15' }]}>
-                <IconPaint size={24} color={colors.primary} />
-              </View>
-              <View style={styles.headerLeft}>
-                <ThemedText style={[styles.paintTitle, { color: colors.foreground }]} numberOfLines={2}>
-                  {paint.name}
-                </ThemedText>
-              </View>
-            </View>
-          </Card>
+    <View style={styles.body}>
+      {isLeader && !canEdit && (
+        <Alert variant="default">
+          <Icon name="info" size={16} />
+          <AlertDescription>
+            Você está visualizando o catálogo básico como líder de equipe. Para editar ou
+            gerenciar esta tinta, é necessário acesso ao módulo de almoxarifado.
+          </AlertDescription>
+        </Alert>
+      )}
 
-          {/* Read-only notice for team leaders */}
-          {isLeader && !canEdit && (
-            <Alert variant="default">
-              <Icon name="info" size={16} />
-              <AlertDescription>
-                Você está visualizando o catálogo básico como líder de equipe. Para editar ou gerenciar esta tinta, é necessário acesso ao módulo de almoxarifado.
-              </AlertDescription>
-            </Alert>
-          )}
+      {canEdit && (
+        <Alert variant="default">
+          <Icon name="info" size={16} />
+          <AlertDescription>
+            Esta é uma visualização do catálogo básico. Para editar esta tinta, acesse o
+            catálogo completo através do módulo de pintura.
+          </AlertDescription>
+        </Alert>
+      )}
 
-          {/* Warehouse access notice */}
-          {canEdit && (
-            <Alert variant="default">
-              <Icon name="info" size={16} />
-              <AlertDescription>
-                Esta é uma visualização do catálogo básico. Para editar esta tinta, acesse o catálogo completo através do módulo de pintura.
-              </AlertDescription>
-            </Alert>
-          )}
+      <PaintSpecificationsCard paint={paint} />
+      <PaintGroundPaintsCard paint={paint} />
+      <PaintFormulasCard paint={paint} canNavigate={canNavigateToFormulas} />
+      <PaintRelatedPaintsCard paint={paint} />
 
-          {/* Specifications Card - Detailed info with color codes */}
-          <PaintSpecificationsCard paint={paint!} />
-
-          {/* Ground Paints Card - Recommended base paints */}
-          <PaintGroundPaintsCard paint={paint!} />
-
-          {/* Formulas Card - Navigation controlled by permissions */}
-          <PaintFormulasCard paint={paint!} canNavigate={canNavigateToFormulas} />
-
-          {/* Related Paints Card */}
-          <PaintRelatedPaintsCard paint={paint!} />
-
-          {/* Information cards */}
-          {(!paint?.formulas || paint.formulas.length === 0) && (
-            <Alert>
-              <Icon name="info" size={16} />
-              <AlertDescription>
-                Esta tinta ainda não possui fórmulas cadastradas. Entre em contato com o almoxarifado para adicionar fórmulas.
-              </AlertDescription>
-            </Alert>
-          )}
-        </View>
-      </ScrollView>
-    </>
+      {(!paint?.formulas || paint.formulas.length === 0) && (
+        <Alert>
+          <Icon name="info" size={16} />
+          <AlertDescription>
+            Esta tinta ainda não possui fórmulas cadastradas. Entre em contato com o
+            almoxarifado para adicionar fórmulas.
+          </AlertDescription>
+        </Alert>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
+  body: {
     gap: spacing.lg,
-  },
-  headerCard: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: spacing.xs,
-    gap: spacing.sm,
-  },
-  headerIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  paintTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
   },
 });
