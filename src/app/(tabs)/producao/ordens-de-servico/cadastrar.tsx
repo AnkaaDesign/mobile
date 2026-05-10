@@ -1,20 +1,33 @@
-
 import { Alert } from "react-native";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { TaskForm } from "@/components/production/task/form";
-import { useTaskMutations, useScreenReady, useFormScreenKey } from '@/hooks';
-import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useTaskMutations, useScreenReady, useFormScreenKey } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import type { TaskCreateFormData } from "@/schemas";
 
 export default function CreateServiceOrderScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationLoading();
-  const { getBackPath } = useNavigationHistory();
-  // Fixed: isCreating doesn't exist, use isLoading instead
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+        ],
+      }}
+    >
+      <CreateServiceOrderInner />
+    </PrivilegeGate>
+  );
+}
+
+function CreateServiceOrderInner() {
+  const nav = useNav();
   const { createAsync, isLoading: isCreating } = useTaskMutations();
 
   useScreenReady(!isCreating);
@@ -22,17 +35,17 @@ export default function CreateServiceOrderScreen() {
 
   const handleSubmit = async (data: TaskCreateFormData) => {
     try {
-      const result = await createAsync(data);
+      const result = await nav.withLoading(async () => createAsync(data));
 
       if (result?.data) {
         Alert.alert("Sucesso", "Ordem de serviço criada com sucesso!", [
           {
             text: "OK",
             onPress: () => {
-              router.replace(
-                routeToMobilePath(
-                  routes.production.serviceOrders.details(result.data?.id || '')
-                ) as any
+              nav.replace(
+                mobileRoute(
+                  routes.production.serviceOrders.details(result.data?.id || ""),
+                ),
               );
             },
           },
@@ -43,13 +56,12 @@ export default function CreateServiceOrderScreen() {
     } catch (error: any) {
       Alert.alert(
         "Erro",
-        error.message || "Erro ao criar ordem de serviço. Tente novamente."
+        error.message || "Erro ao criar ordem de serviço. Tente novamente.",
       );
     }
   };
 
   const handleCancel = () => {
-    console.log('[CreateServiceOrder] handleCancel called');
     Alert.alert(
       "Descartar Cadastro",
       "Deseja descartar o cadastro da ordem de serviço?",
@@ -59,17 +71,12 @@ export default function CreateServiceOrderScreen() {
           text: "Descartar",
           style: "destructive",
           onPress: () => {
-            console.log('[CreateServiceOrder] User confirmed discard, going back');
-            const backPath = getBackPath();
-            if (backPath) {
-              goBack();
-            } else {
-              // Fallback to service orders list
-              router.replace(routeToMobilePath(routes.production.serviceOrders.root) as any);
-            }
-          }
+            nav.goBack({
+              fallback: mobileRoute(routes.production.serviceOrders.root),
+            });
+          },
         },
-      ]
+      ],
     );
   };
 

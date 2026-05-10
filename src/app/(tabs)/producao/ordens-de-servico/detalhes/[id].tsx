@@ -1,197 +1,106 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useServiceOrderDetail, useScreenReady} from '@/hooks';
-import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
+import { useServiceOrderDetail } from "@/hooks";
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { EDITABLE_SERVICE_ORDER_STATUSES } from "@/constants/editable-statuses";
+import { spacing, fontSize } from "@/constants/design-system";
 import {
   IconClipboardList,
-  IconEdit,
   IconHistory,
 } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { TouchableOpacity } from "react-native";
-// import { showToast } from "@/components/ui/toast";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import { useTheme } from "@/lib/theme";
+import { DetailScreen } from "@/components/screens/detail-screen";
 
-// Import detail components
 import {
   ServiceOrderInfoCard,
   TaskInfoCard,
-  ServiceOrderDetailSkeleton,
 } from "@/components/production/service-order/detail";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
 export default function ServiceOrderDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const [refreshing, setRefreshing] = useState(false);
-
   const id = params?.id || "";
 
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useServiceOrderDetail(id, {
+  const query = useServiceOrderDetail(id, {
     include: {
-      // Only essential task fields for display - optimized with select patterns
       task: {
         select: {
           id: true,
           name: true,
           details: true,
           term: true,
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-            }
-          },
+          customer: { select: { id: true, fantasyName: true } },
         },
       },
     },
     enabled: !!id && id !== "",
   });
 
-  useScreenReady(!isLoading);
-
-  const serviceOrder = response?.data;
-
-  const handleEdit = () => {
-    if (serviceOrder) {
-      router.push(routeToMobilePath(routes.production.serviceOrders.edit(serviceOrder.id)) as any);
-    }
-  };
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <ServiceOrderDetailSkeleton />
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !serviceOrder || !id || id === "") {
-    return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <Card style={styles.card}>
-            <View style={styles.errorContent}>
-              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                <IconClipboardList size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                Ordem de Serviço não encontrada
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                A ordem de serviço solicitada não foi encontrada ou pode ter sido removida.
-              </ThemedText>
-            </View>
-          </Card>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  const orderDescription = serviceOrder.description || `Ordem #${serviceOrder.id.slice(-8).toUpperCase()}`;
-
   return (
-    <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
+    <DetailScreen<any>
+      query={query as any}
+      icon={IconClipboardList}
+      title={(so) =>
+        so.description || `Ordem #${String(so.id ?? "").slice(-8).toUpperCase()}`
       }
-      showsVerticalScrollIndicator={false}
+      privilege={{
+        any: [
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+          SECTOR_PRIVILEGES.ADMIN,
+        ],
+      }}
+      editGuard={{ editable: EDITABLE_SERVICE_ORDER_STATUSES }}
+      editRoute={(so) =>
+        mobileRoute(routes.production.serviceOrders.edit(so.id))
+      }
+      notFoundFallback={mobileRoute(routes.production.serviceOrders.root)}
     >
-      <View style={styles.container}>
-        {/* Header Card */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <View style={[styles.headerLeft, { flex: 1 }]}>
-              <IconClipboardList size={24} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.orderName, { color: colors.foreground }])} numberOfLines={2}>
-                {orderDescription}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            </View>
+      {(serviceOrder) => {
+        const orderDescription =
+          serviceOrder.description ||
+          `Ordem #${String(serviceOrder.id ?? "").slice(-8).toUpperCase()}`;
+
+        return (
+          <View style={styles.body}>
+            <ServiceOrderInfoCard serviceOrder={serviceOrder} />
+            <TaskInfoCard serviceOrder={serviceOrder} />
+
+            <Card style={styles.card}>
+              <View style={[styles.header, { borderBottomColor: colors.border }]}>
+                <View style={styles.headerLeft}>
+                  <IconHistory size={20} color={colors.mutedForeground} />
+                  <ThemedText style={styles.title}>
+                    Histórico de Alterações
+                  </ThemedText>
+                </View>
+              </View>
+              <ChangelogTimeline
+                entityType={CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER}
+                entityId={serviceOrder.id}
+                entityName={orderDescription}
+                entityCreatedAt={serviceOrder.createdAt}
+                maxHeight={400}
+              />
+            </Card>
           </View>
-        </Card>
-
-        {/* Service Order Info Card */}
-        <ServiceOrderInfoCard serviceOrder={serviceOrder} />
-
-        {/* Task Info Card */}
-        <TaskInfoCard serviceOrder={serviceOrder} />
-
-        {/* Changelog Timeline */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconHistory size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.SERVICE_ORDER}
-              entityId={serviceOrder.id}
-              entityName={orderDescription}
-              entityCreatedAt={serviceOrder.createdAt}
-              maxHeight={400}
-            />
-          </View>
-        </Card>
-
-        {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+        );
+      }}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+  body: {
     gap: spacing.md,
   },
   card: {
     padding: spacing.md,
-  },
-  headerCard: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
   },
   header: {
     flexDirection: "row",
@@ -209,54 +118,5 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.lg,
     fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
-  },
-  orderName: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl,
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
   },
 });
