@@ -1,28 +1,32 @@
-import { useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { useEffect, useMemo } from "react";
+import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMutation } from "@tanstack/react-query";
+import { useLocalSearchParams } from "expo-router";
 
 import { Input } from "@/components/ui/input";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
-import { FormActionBar } from "@/components/forms";
-import { useTheme } from "@/lib/theme";
-import { formSpacing } from "@/constants/form-styles";
-import { spacing } from "@/constants/design-system";
-import { Text } from "@/components/ui/text";
-
-import { usePpeDeliveryMutations, usePpeDelivery, useScreenReady } from "@/hooks";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { usePpeDeliveryMutations, usePpeDelivery } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
-import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, SECTOR_PRIVILEGES, routes } from "@/constants";
+import {
+  PPE_DELIVERY_STATUS,
+  PPE_DELIVERY_STATUS_ORDER,
+  SECTOR_PRIVILEGES,
+  routes,
+} from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
-import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
+import {
+  ppeDeliveryUpdateSchema,
+  mapPpeDeliveryToFormData,
+  type PpeDeliveryUpdateFormData,
+} from "@/schemas";
 import { hasPrivilege } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { Skeleton } from "@/components/ui/skeleton";
+import { mobileRoute } from "@/constants/routes.types";
+import { EDITABLE_PPE_DELIVERY_STATUSES } from "@/constants/editable-statuses";
 
 export default function EditPPEDeliveryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,18 +34,12 @@ export default function EditPPEDeliveryScreen() {
 }
 
 function EditPPEDeliveryScreenInner() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
-  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
-  const { updateAsync, updateMutation } = usePpeDeliveryMutations();
+  const { updateAsync } = usePpeDeliveryMutations();
 
-  const { data: delivery, isLoading: isDeliveryLoading } = usePpeDelivery(id, {
-    include: {
-      item: true,
-      user: true,
-    },
+  const loadQuery = usePpeDelivery(id, {
+    include: { item: true, user: true },
   });
 
   const form = useForm<PpeDeliveryUpdateFormData>({
@@ -52,197 +50,123 @@ function EditPPEDeliveryScreenInner() {
     },
   });
 
-  // Reset form when delivery data loads
+  // Reset form when delivery data loads.
   useEffect(() => {
-    if (delivery?.data) {
-      const formData = mapPpeDeliveryToFormData(delivery.data);
+    if (loadQuery.data?.data) {
+      const formData = mapPpeDeliveryToFormData(loadQuery.data.data);
       form.reset(formData);
     }
-  }, [delivery?.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadQuery.data?.data]);
 
-  // Auto-set actualDeliveryDate when status changes to DELIVERED
+  // Auto-set actualDeliveryDate when status changes to DELIVERED.
   const watchedStatus = form.watch("status");
   useEffect(() => {
     if (watchedStatus === PPE_DELIVERY_STATUS.DELIVERED) {
       form.setValue("actualDeliveryDate", new Date(), { shouldDirty: true });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedStatus]);
 
-  const isLoading = updateMutation.isPending || isDeliveryLoading;
   const canEditStatus = hasPrivilege(currentUser, SECTOR_PRIVILEGES.WAREHOUSE);
 
-  useScreenReady(!isLoading);
-
-  const statusOptions: ComboboxOption[] = Object.entries(PPE_DELIVERY_STATUS_LABELS).map(
-    ([value, label]) => ({
-      value,
-      label,
-    })
+  const statusOptions: ComboboxOption[] = useMemo(
+    () =>
+      Object.entries(PPE_DELIVERY_STATUS_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
   );
 
-  const handleSubmit = async (data: PpeDeliveryUpdateFormData) => {
-    try {
+  const mutation = useMutation<{ id: string }, unknown, PpeDeliveryUpdateFormData>({
+    mutationFn: async (data) => {
       if (!id) {
         Alert.alert("Erro", "ID de entrega não encontrado");
-        return;
+        throw new Error("missing id");
       }
-
       const submitData: PpeDeliveryUpdateFormData & { statusOrder?: number } = { ...data };
       if (data.status) {
         submitData.statusOrder = PPE_DELIVERY_STATUS_ORDER[data.status];
       }
+      await updateAsync({ id, data: submitData });
+      return { id };
+    },
+    onError: (err: any) => {
+      Alert.alert("Erro", err?.message || "Ocorreu um erro ao atualizar a entrega de EPI");
+    },
+  });
 
-      await updateAsync({
-        id,
-        data: submitData,
-      });
-      router.replace(routeToMobilePath(routes.inventory.ppe.deliveries.details(id)) as any);
-    } catch (error: any) {
-      Alert.alert("Erro", error.message || "Ocorreu um erro ao atualizar a entrega de EPI");
-    }
-  };
-
-  const handleCancel = () => {
-    goBack();
-  };
-
-  if (isDeliveryLoading) {
-    return (
-      <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={{ padding: spacing.md, gap: spacing.md }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={{ marginBottom: spacing.md }}>
-                <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (!delivery?.data) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.destructive }]}>
-          Erro ao carregar entrega de EPI
-        </Text>
-      </View>
-    );
-  }
+  const flow = useFormFlow({
+    form,
+    mutation,
+    successAction: "replace",
+    successRoute: (result) =>
+      mobileRoute(routes.inventory.ppe.deliveries.details(result.id)),
+    cancelFallback: mobileRoute(routes.inventory.ppe.deliveries.root),
+  });
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+    <FormScreen
+      title="Editar Entrega de EPI"
+      mode="edit"
+      form={form}
+      flow={flow}
+      loadQuery={loadQuery}
+      editGuard={{ editable: EDITABLE_PPE_DELIVERY_STATUSES }}
+      submittingLabel="Salvando..."
+      submitLabel="Salvar"
+      privilege={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <FormCard title="Informações Básicas" icon="IconShield">
+        <FormFieldGroup
+          label="Quantidade"
+          required
+          error={form.formState.errors.quantity?.message}
         >
-          <FormCard title="Informações Básicas" icon="IconShield">
-            {/* Quantity */}
-            <FormFieldGroup
-              label="Quantidade"
-              required
-              error={form.formState.errors.quantity?.message}
-            >
-              <Controller
-                control={form.control}
-                name="quantity"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    value={String(value || 0)}
-                    onChangeText={(text) => {
-                      if (!text) {
-                        onChange(0);
-                        return;
-                      }
-                      const numValue = parseInt(String(text));
-                      onChange(isNaN(numValue) ? 0 : numValue);
-                    }}
-                    onBlur={onBlur}
-                    placeholder="0"
-                    editable={!isLoading}
-                    error={!!form.formState.errors.quantity}
-                    keyboardType="number-pad"
-                  />
-                )}
+          <Controller
+            control={form.control}
+            name="quantity"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={String(value || 0)}
+                onChangeText={(text) => {
+                  if (!text) {
+                    onChange(0);
+                    return;
+                  }
+                  const numValue = parseInt(String(text));
+                  onChange(isNaN(numValue) ? 0 : numValue);
+                }}
+                onBlur={onBlur}
+                placeholder="0"
+                error={!!form.formState.errors.quantity}
+                keyboardType="number-pad"
               />
-            </FormFieldGroup>
-
-            {/* Status - Only visible for WAREHOUSE privilege */}
-            {canEditStatus && (
-              <FormFieldGroup
-                label="Status"
-                error={form.formState.errors.status?.message}
-              >
-                <Controller
-                  control={form.control}
-                  name="status"
-                  render={({ field: { onChange, value }, fieldState: { error } }) => (
-                    <Combobox
-                      options={statusOptions}
-                      value={value || undefined}
-                      onValueChange={onChange}
-                      placeholder="Selecione o status"
-                      disabled={isLoading}
-                      searchable={false}
-                      clearable
-                      error={error?.message}
-                    />
-                  )}
-                />
-              </FormFieldGroup>
             )}
-          </FormCard>
+          />
+        </FormFieldGroup>
 
-          <View style={styles.spacing} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <FormActionBar
-        onSave={form.handleSubmit(handleSubmit)}
-        onCancel={handleCancel}
-        isLoading={isLoading}
-        isSaveDisabled={!form.formState.isDirty || isLoading}
-      />
-    </SafeAreaView>
+        {canEditStatus && (
+          <FormFieldGroup label="Status" error={form.formState.errors.status?.message}>
+            <Controller
+              control={form.control}
+              name="status"
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Combobox
+                  options={statusOptions}
+                  value={value || undefined}
+                  onValueChange={onChange}
+                  placeholder="Selecione o status"
+                  searchable={false}
+                  clearable
+                  error={error?.message}
+                />
+              )}
+            />
+          </FormFieldGroup>
+        )}
+      </FormCard>
+    </FormScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: formSpacing.screenPadding,
-    paddingBottom: formSpacing.screenPaddingBottom,
-  },
-  spacing: {
-    height: spacing.xl,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-  },
-  errorText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-});

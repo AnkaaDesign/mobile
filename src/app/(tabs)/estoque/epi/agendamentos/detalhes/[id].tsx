@@ -1,59 +1,59 @@
-import { useState, useCallback } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl, Alert } from "react-native";
-import { useLocalSearchParams, Stack, router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
+import { useState, useCallback } from "react";
 
 import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
 import { spacing, fontSize } from "@/constants/design-system";
 import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorScreen } from "@/components/ui/error-screen";
+import { PageHeader } from "@/components/ui/page-header";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 import { formatDate, formatDateTime } from "@/utils";
-
 import {
   IconCalendar,
   IconClock,
   IconUsers,
   IconShield,
-  IconRefresh,
-  IconEdit,
-  IconTrash,
 } from "@tabler/icons-react-native";
-import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PPEScheduleDetailsScreen() {
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <Inner />
+    </PrivilegeGate>
+  );
+}
+
+function Inner() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goBack } = useNavigationHistory();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
 
-  // TODO: Use actual hook when available
-  // const { data: schedule, isLoading, error, refetch } = usePpeSchedule(id);
-
-  // Mock data for now
-  const schedule = null;
+  // TODO: Wire to real `usePpeSchedule` hook when available.
+  const schedule: any = { id, status: "ACTIVE" };
   const isLoading = false;
+  const error: unknown = null;
 
   useScreenReady(!isLoading);
-  const error = null;
-  const refetch = async () => {};
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
     setRefreshing(false);
-  }, [refetch]);
+  }, []);
 
-  const handleEdit = () => {
-    router.push(`/estoque/epi/agendamentos/editar/${id}`);
-  };
+  const handleEdit = () =>
+    nav.push(mobileRoute(routes.inventory.ppe.schedules.edit(id ?? "")));
 
   const handleDelete = () => {
     Alert.alert(
@@ -64,74 +64,34 @@ export default function PPEScheduleDetailsScreen() {
         {
           text: "Excluir",
           style: "destructive",
-          onPress: async () => {
+          onPress: () => {
             // TODO: Implement delete
-            goBack();
+            nav.goBack({ fallback: mobileRoute(routes.inventory.ppe.schedules.root) });
           },
         },
-      ]
+      ],
     );
   };
 
-  if (isLoading) {
-    return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
-        <Skeleton style={{ height: 24, width: '40%', borderRadius: 4 }} />
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '70%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '60%', borderRadius: 4 }} />
-        </View>
-        <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 16, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '80%', borderRadius: 4 }} />
-          <Skeleton style={{ height: 16, width: '45%', borderRadius: 4 }} />
-        </View>
-      </View>;
-  }
-
   if (error || !schedule) {
-    return (
-      <ErrorScreen
-        message="Erro ao carregar agendamento"
-        onRetry={refetch}
-      />
-    );
+    return <ErrorScreen message="Erro ao carregar agendamento" onRetry={handleRefresh} />;
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Detalhes do Agendamento",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={handleRefresh}
-              >
-                <IconRefresh size={20} color={colors.foreground} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={handleEdit}
-              >
-                <IconEdit size={20} color={colors.foreground} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onPress={handleDelete}
-              >
-                <IconTrash size={20} color={colors.destructive} />
-              </Button>
-            </View>
-          ),
-        }}
+    <ThemedView style={styles.root}>
+      <PageHeader
+        title="Detalhes do Agendamento"
+        variant="detail"
+        actions={[
+          { key: "edit", label: "Editar", onPress: handleEdit },
+          {
+            key: "delete",
+            label: "Excluir",
+            onPress: handleDelete,
+            variant: "destructive",
+          },
+        ]}
       />
-
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -143,8 +103,7 @@ export default function PPEScheduleDetailsScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        <View style={StyleSheet.flatten([styles.content, { paddingBottom: insets.bottom + spacing.lg }])}>
-          {/* Schedule Information */}
+        <View style={styles.content}>
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
@@ -152,22 +111,19 @@ export default function PPEScheduleDetailsScreen() {
                 <ThemedText style={styles.title}>Informações do Agendamento</ThemedText>
               </View>
             </View>
-            <View style={styles.content}>
+            <View style={styles.contentBlock}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Status</ThemedText>
                 <Badge variant="success">Ativo</Badge>
               </View>
-
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Frequência</ThemedText>
                 <ThemedText style={styles.value}>Mensal</ThemedText>
               </View>
-
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Contagem</ThemedText>
                 <ThemedText style={styles.value}>1</ThemedText>
               </View>
-
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Tipo de Atribuição</ThemedText>
                 <ThemedText style={styles.value}>Individual</ThemedText>
@@ -175,7 +131,6 @@ export default function PPEScheduleDetailsScreen() {
             </View>
           </Card>
 
-          {/* Schedule Timing */}
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
@@ -183,17 +138,15 @@ export default function PPEScheduleDetailsScreen() {
                 <ThemedText style={styles.title}>Datas e Horários</ThemedText>
               </View>
             </View>
-            <View style={styles.content}>
+            <View style={styles.contentBlock}>
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Criado em</ThemedText>
                 <ThemedText style={styles.value}>{formatDateTime(new Date())}</ThemedText>
               </View>
-
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Última Execução</ThemedText>
                 <ThemedText style={styles.value}>{formatDate(new Date())}</ThemedText>
               </View>
-
               <View style={styles.infoRow}>
                 <ThemedText style={styles.label}>Próxima Execução</ThemedText>
                 <ThemedText style={styles.value}>{formatDate(new Date())}</ThemedText>
@@ -201,7 +154,6 @@ export default function PPEScheduleDetailsScreen() {
             </View>
           </Card>
 
-          {/* PPE Items */}
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
@@ -209,7 +161,7 @@ export default function PPEScheduleDetailsScreen() {
                 <ThemedText style={styles.title}>Tipos de EPI</ThemedText>
               </View>
             </View>
-            <View style={styles.content}>
+            <View style={styles.contentBlock}>
               <View style={styles.badgeContainer}>
                 <Badge variant="secondary">Capacete (1x)</Badge>
                 <Badge variant="secondary">Luvas (2x)</Badge>
@@ -217,7 +169,6 @@ export default function PPEScheduleDetailsScreen() {
             </View>
           </Card>
 
-          {/* Users Information */}
           <Card style={styles.card}>
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <View style={styles.headerLeft}>
@@ -225,31 +176,21 @@ export default function PPEScheduleDetailsScreen() {
                 <ThemedText style={styles.title}>Usuários Inclusos</ThemedText>
               </View>
             </View>
-            <View style={styles.content}>
+            <View style={styles.contentBlock}>
               <ThemedText style={styles.description}>Nenhum usuário específico</ThemedText>
             </View>
           </Card>
         </View>
       </ScrollView>
-    </>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  card: {
-    padding: spacing.md,
-  },
+  root: { flex: 1 },
+  container: { flex: 1 },
+  content: { padding: spacing.md, gap: spacing.md },
+  card: { padding: spacing.md },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -267,6 +208,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: "500",
   },
+  contentBlock: { gap: spacing.sm },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
