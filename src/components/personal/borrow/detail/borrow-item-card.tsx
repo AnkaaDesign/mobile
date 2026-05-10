@@ -5,9 +5,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconBox, IconExternalLink } from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
-import { router } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
 import { formatQuantity } from "@/utils";
 import { Icon } from "@/components/ui/icon";
 
@@ -17,10 +17,11 @@ interface BorrowItemCardProps {
 
 export function BorrowItemCard({ borrow }: BorrowItemCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const handleNavigateToItem = () => {
     if (borrow.item?.id) {
-      router.push(routeToMobilePath(routes.inventory.products.details(borrow.item.id)) as any);
+      nav.push(mobileRoute(routes.inventory.products.details(borrow.item.id)));
     }
   };
 

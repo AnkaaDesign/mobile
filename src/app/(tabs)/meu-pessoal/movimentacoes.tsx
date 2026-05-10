@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth-context";
 import { useTeamStaffActivitiesInfiniteMobile } from "@/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import type { Activity } from "@/types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -31,9 +31,8 @@ import { isTeamLeader } from "@/utils/user";
 export default function TeamActivitiesScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const nav = useNav();
   const { user: currentUser } = useAuth();
-  const { pushWithLoading, isNavigatingRef } = useNavigationLoading();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -207,9 +206,8 @@ export default function TeamActivitiesScreen() {
   // Handle activity press - navigate to detail page with loading overlay
   // Note: Team staff activities navigate to the main inventory activity detail page
   const handleActivityPress = useCallback((activityId: string) => {
-    if (isNavigatingRef.current) return;
-    pushWithLoading(`/estoque/movimentacoes/detalhes/${activityId}`);
-  }, [pushWithLoading]);
+    nav.push(mobileRoute(`/estoque/movimentacoes/detalhes/${activityId}`));
+  }, [nav]);
 
   // Get all column definitions
   const allColumns = useMemo(() => createColumnDefinitions(), []);

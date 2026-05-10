@@ -8,13 +8,14 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams, router, Stack } from "expo-router";
+import { useLocalSearchParams, Stack } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconCamera, IconInfoCircle, IconX } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, Button, Combobox, Textarea } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
+import { useNav } from "@/contexts/nav";
 import {
   useMyJustificativas,
   useMyExistingSolicitacao,
@@ -39,6 +40,7 @@ const formatDayDisplay = (ymd: string) => {
 export default function JustificarAusenciaFormScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const nav = useNav();
   const { date } = useLocalSearchParams<{ date: string }>();
 
   const [justificativaId, setJustificativaId] = useState<string | undefined>();
@@ -152,7 +154,7 @@ export default function JustificarAusenciaFormScreen() {
       const ok = res?.data?.success ?? false;
       if (ok) {
         Alert.alert("Solicitação enviada", "Sua solicitação foi enviada para aprovação.", [
-          { text: "OK", onPress: () => router.back() },
+          { text: "OK", onPress: () => nav.goBack() },
         ]);
       } else {
         const message = res?.data?.message || "Falha ao enviar a solicitação.";
@@ -322,7 +324,7 @@ export default function JustificarAusenciaFormScreen() {
           <View style={styles.buttonsRow}>
             <Button
               variant="outline"
-              onPress={() => router.back()}
+              onPress={() => nav.goBack()}
               disabled={createMutation.isPending}
               style={styles.btn}
             >

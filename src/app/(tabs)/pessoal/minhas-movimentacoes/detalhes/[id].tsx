@@ -1,14 +1,15 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useTaskDetail, useScreenReady } from "@/hooks";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
+import { useTaskDetail } from "@/hooks";
+import {
+  CHANGE_LOG_ENTITY_TYPE,
+  TASK_STATUS,
+  TASK_STATUS_LABELS,
+  routes,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { formatDate } from "@/utils";
 import {
   IconActivity,
@@ -16,284 +17,170 @@ import {
   IconCalendar,
   IconInfoCircle,
 } from "@tabler/icons-react-native";
-// import { showToast } from "@/components/ui/toast";
-import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
+import type { Task } from "@/types";
+
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { Card } from "@/components/ui/card";
+import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
-import { TASK_STATUS_LABELS, TASK_STATUS } from "@/constants";
+import { useTheme } from "@/lib/theme";
+import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 
-
-import { Skeleton } from "@/components/ui/skeleton";export default function MovementDetailScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+export default function MovementDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const [refreshing, setRefreshing] = useState(false);
 
-  // End navigation loading overlay when screen mounts
-
-  const id = params?.id || "";
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useTaskDetail(id, {
+  const query = useTaskDetail(id || "", {
     include: {
-      sector: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      customer: {
-        select: {
-          id: true,
-          fantasyName: true,
-          name: true,
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      sector: { select: { id: true, name: true } },
+      customer: { select: { id: true, fantasyName: true, name: true } },
+      createdBy: { select: { id: true, name: true } },
     },
     enabled: !!id && id !== "",
   });
 
-  useScreenReady(!isLoading);
-
-  const task = response?.data;
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        {/* Task name header card skeleton */}
-        <View style={{ margin: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 }}>
-              <Skeleton style={{ width: 24, height: 24, borderRadius: 12 }} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton style={{ height: 18, width: '65%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 13, width: '40%', borderRadius: 4 }} />
-              </View>
-            </View>
-            <Skeleton style={{ height: 24, width: '20%', borderRadius: 10 }} />
-          </View>
-        </View>
-        {/* Info card skeleton */}
-        <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '50%', borderRadius: 4 }} />
-          <View style={{ gap: 10 }}>
-            {[['25%', '40%'], ['20%', '35%'], ['28%', '55%']].map(([l, r], i) => (
-              <View key={i} style={{ flexDirection: 'row' }}>
-                <Skeleton width={l} height={14} borderRadius={4} />
-                <View style={{ flex: 1 }} />
-                <Skeleton width={r} height={14} borderRadius={4} />
-              </View>
-            ))}
-          </View>
-        </View>
-        {/* Dates card skeleton */}
-        <View style={{ marginHorizontal: spacing.md, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: 12 }}>
-          <Skeleton style={{ height: 16, width: '25%', borderRadius: 4 }} />
-          <View style={{ gap: 10 }}>
-            {[['20%', '35%'], ['20%', '30%'], ['30%', '35%']].map(([l, r], i) => (
-              <View key={i} style={{ flexDirection: 'row' }}>
-                <Skeleton width={l} height={14} borderRadius={4} />
-                <View style={{ flex: 1 }} />
-                <Skeleton width={r} height={14} borderRadius={4} />
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  if (error || !task || !id || id === "") {
-    return (
-      <View style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <Card style={styles.card}>
-            <View style={styles.errorContent}>
-              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                <IconActivity size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                Movimentação não encontrada
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                A movimentação solicitada não foi encontrada ou pode ter sido removida.
-              </ThemedText>
-              <Button onPress={() => goBack()}>
-                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-              </Button>
-            </View>
-          </Card>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
+    <DetailScreen<Task>
+      query={query as any}
+      icon={IconActivity}
+      title={(t) => t.name || "Movimentação"}
+      subtitle={(t) =>
+        t.serialNumber ? `Nº Série: ${t.serialNumber}` : undefined
       }
-      showsVerticalScrollIndicator={false}
+      // Read-only mirror — user views their own task movements.
+      editGuard={{ editable: [] }}
+      notFoundFallback={mobileRoute(routes.personal.myMovements.root)}
     >
-      <View style={styles.container}>
-        {/* Movement Header Card */}
-        <Card style={styles.headerCard}>
-          <View style={styles.headerContent}>
-            <View style={[styles.headerLeft, { flex: 1 }]}>
-              <IconActivity size={24} color={colors.primary} />
-              <View style={{ flex: 1 }}>
-                <ThemedText style={StyleSheet.flatten([styles.activityTitle, { color: colors.foreground }])}>
-                  {task.name}
-                </ThemedText>
-                {task.serialNumber && (
-                  <ThemedText style={StyleSheet.flatten([styles.activitySubtitle, { color: colors.mutedForeground }])}>
-                    Nº Série: {task.serialNumber}
-                  </ThemedText>
-                )}
-              </View>
-            </View>
-            <Badge variant={task.status === TASK_STATUS.COMPLETED ? 'success' : task.status === TASK_STATUS.IN_PRODUCTION ? 'warning' : 'default'}>
+      {(task) => (
+        <View style={styles.body}>
+          {/* Status badge */}
+          <View style={styles.statusRow}>
+            <Badge
+              variant={
+                task.status === TASK_STATUS.COMPLETED
+                  ? "success"
+                  : task.status === TASK_STATUS.IN_PRODUCTION
+                    ? "warning"
+                    : "default"
+              }
+            >
               {TASK_STATUS_LABELS[task.status] || task.status}
             </Badge>
           </View>
-        </Card>
 
-        {/* Movement Info Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconInfoCircle size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Informações da Movimentação</ThemedText>
+          {/* Movement Info */}
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconInfoCircle size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>
+                  Informações da Movimentação
+                </ThemedText>
+              </View>
             </View>
-          </View>
-          <View style={styles.content}>
-            {task.customer && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Cliente
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {task.customer.fantasyName}
-                </ThemedText>
-              </View>
-            )}
-            {task.sector && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Setor
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {task.sector.name}
-                </ThemedText>
-              </View>
-            )}
-            {task.details && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Detalhes
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {task.details}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </Card>
+            <View style={styles.content}>
+              {task.customer && (
+                <View style={styles.detailRow}>
+                  <ThemedText
+                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
+                  >
+                    Cliente
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.detailValue, { color: colors.foreground }]}
+                  >
+                    {task.customer.fantasyName}
+                  </ThemedText>
+                </View>
+              )}
+              {task.sector && (
+                <View style={styles.detailRow}>
+                  <ThemedText
+                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
+                  >
+                    Setor
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.detailValue, { color: colors.foreground }]}
+                  >
+                    {task.sector.name}
+                  </ThemedText>
+                </View>
+              )}
+              {task.details && (
+                <View style={styles.detailRow}>
+                  <ThemedText
+                    style={[styles.detailLabel, { color: colors.mutedForeground }]}
+                  >
+                    Detalhes
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.detailValue, { color: colors.foreground }]}
+                  >
+                    {task.details}
+                  </ThemedText>
+                </View>
+              )}
+            </View>
+          </Card>
 
-        {/* Dates Card */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconCalendar size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Datas</ThemedText>
+          {/* Dates */}
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconCalendar size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>Datas</ThemedText>
+              </View>
             </View>
-          </View>
-          <View style={styles.content}>
-            {task.entryDate && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Entrada
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formatDate(task.entryDate)}
-                </ThemedText>
-              </View>
-            )}
-            {task.term && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Prazo
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formatDate(task.term)}
-                </ThemedText>
-              </View>
-            )}
-            {task.startedAt && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Iniciado em
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formatDate(task.startedAt)}
-                </ThemedText>
-              </View>
-            )}
-            {task.finishedAt && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Finalizado em
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formatDate(task.finishedAt)}
-                </ThemedText>
-              </View>
-            )}
-            {task.createdAt && (
-              <View style={styles.detailRow}>
-                <ThemedText style={StyleSheet.flatten([styles.detailLabel, { color: colors.mutedForeground }])}>
-                  Criado em
-                </ThemedText>
-                <ThemedText style={StyleSheet.flatten([styles.detailValue, { color: colors.foreground }])}>
-                  {formatDate(task.createdAt)}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </Card>
+            <View style={styles.content}>
+              {task.entryDate && (
+                <DateRow
+                  label="Entrada"
+                  value={formatDate(task.entryDate)}
+                  colors={colors}
+                />
+              )}
+              {task.term && (
+                <DateRow
+                  label="Prazo"
+                  value={formatDate(task.term)}
+                  colors={colors}
+                />
+              )}
+              {task.startedAt && (
+                <DateRow
+                  label="Iniciado em"
+                  value={formatDate(task.startedAt)}
+                  colors={colors}
+                />
+              )}
+              {task.finishedAt && (
+                <DateRow
+                  label="Finalizado em"
+                  value={formatDate(task.finishedAt)}
+                  colors={colors}
+                />
+              )}
+              {task.createdAt && (
+                <DateRow
+                  label="Criado em"
+                  value={formatDate(task.createdAt)}
+                  colors={colors}
+                />
+              )}
+            </View>
+          </Card>
 
-        {/* Changelog Timeline */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconHistory size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
+          {/* Changelog */}
+          <Card style={styles.card}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                <IconHistory size={20} color={colors.mutedForeground} />
+                <ThemedText style={styles.title}>
+                  Histórico de Alterações
+                </ThemedText>
+              </View>
             </View>
-          </View>
-          <View style={styles.content}>
             <ChangelogTimeline
               entityType={CHANGE_LOG_ENTITY_TYPE.TASK}
               entityId={task.id}
@@ -301,32 +188,43 @@ import { Skeleton } from "@/components/ui/skeleton";export default function Move
               entityCreatedAt={task.createdAt}
               maxHeight={400}
             />
-          </View>
-        </Card>
+          </Card>
+        </View>
+      )}
+    </DetailScreen>
+  );
+}
 
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.md }} />
-      </View>
-    </ScrollView>
+function DateRow({
+  label,
+  value,
+  colors,
+}: {
+  label: string;
+  value: string;
+  colors: any;
+}) {
+  return (
+    <View style={styles.detailRow}>
+      <ThemedText style={[styles.detailLabel, { color: colors.mutedForeground }]}>
+        {label}
+      </ThemedText>
+      <ThemedText style={[styles.detailValue, { color: colors.foreground }]}>
+        {value}
+      </ThemedText>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+  body: {
     gap: spacing.md,
   },
   card: {
     padding: spacing.md,
   },
-  headerCard: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+  statusRow: {
+    flexDirection: "row",
   },
   header: {
     flexDirection: "row",
@@ -348,22 +246,6 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.sm,
   },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.xs,
-  },
-  activityTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    flex: 1,
-  },
-  activitySubtitle: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    marginTop: spacing.xs / 2,
-  },
   detailRow: {
     flexDirection: "row",
     paddingVertical: spacing.xs,
@@ -376,29 +258,5 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: fontSize.sm,
     flex: 1,
-  },
-  errorContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl,
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
   },
 });

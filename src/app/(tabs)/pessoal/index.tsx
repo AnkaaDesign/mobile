@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { View, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { Card } from "@/components/ui/card";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
@@ -35,7 +36,7 @@ interface PersonalMenuItem {
 
 export default function PessoalScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { data: currentUser } = useCurrentUser();
@@ -126,7 +127,7 @@ export default function PessoalScreen() {
 
   const handleMenuPress = (item: PersonalMenuItem) => {
     if (item.available) {
-      router.push(item.route as any);
+      nav.push(mobileRoute(item.route));
     }
   };
 

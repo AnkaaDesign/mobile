@@ -6,9 +6,9 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 import { IconUser, IconExternalLink } from "@tabler/icons-react-native";
 import type { Borrow } from "@/types";
 import { formatBrazilianPhone } from "@/utils";
-import { router } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
 
 interface BorrowUserCardProps {
   borrow: Borrow;
@@ -16,10 +16,11 @@ interface BorrowUserCardProps {
 
 export function BorrowUserCard({ borrow }: BorrowUserCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const handleNavigateToUser = () => {
     if (borrow.user?.id) {
-      router.push(routeToMobilePath(routes.administration.users.details(borrow.user.id)) as any);
+      nav.push(mobileRoute(routes.administration.users.details(borrow.user.id)));
     }
   };
 

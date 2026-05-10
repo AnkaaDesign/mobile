@@ -1,5 +1,6 @@
 import { Alert, View, StyleSheet, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Icon } from "@/components/ui/icon";
@@ -29,7 +30,7 @@ type PreferenceItem = {
 export default function PreferencesIndexScreen() {
   useScreenReady();
   const { colors } = useTheme();
-  const router = useRouter();
+  const nav = useNav();
   const { user } = useAuth();
   const tutorial = useOptionalTutorial();
 
@@ -57,7 +58,7 @@ export default function PreferencesIndexScreen() {
             // (greeting, widget panel, edit-painel button) have something to
             // spotlight. Without this the tutorial would launch on top of
             // Preferências and the early targets would never measure.
-            router.push("/(tabs)/inicio" as any);
+            nav.push(mobileRoute("/inicio"));
             tutorial.start();
           },
         },
@@ -71,14 +72,14 @@ export default function PreferencesIndexScreen() {
       title: "Tema",
       description: "Aparência do aplicativo",
       icon: "palette",
-      onPress: () => router.push("/pessoal/preferencias/tema" as any),
+      onPress: () => nav.push(mobileRoute("/pessoal/preferencias/tema")),
     },
     {
       id: "notificacoes",
       title: "Notificações",
       description: "Configurar notificações",
       icon: "bell",
-      onPress: () => router.push("/(tabs)/perfil/notification-preferences" as any),
+      onPress: () => nav.push(mobileRoute("/perfil/notification-preferences")),
     },
   ];
 
