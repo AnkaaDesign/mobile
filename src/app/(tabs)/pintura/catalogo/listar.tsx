@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { View, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, GestureResponderEvent, useWindowDimensions } from "react-native";
 import type { FlatList as FlatListType } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePageTracker } from "@/hooks/use-page-tracker";
 import { TABLET_WIDTH_THRESHOLD } from "@/lib/table-utils";
@@ -17,12 +17,14 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 import { usePaintsInfiniteMobile } from "@/hooks/use-paints-infinite-mobile";
-import { usePaintMutations, useScreenReady} from '@/hooks';
+import { usePaintMutations, useScreenReady } from "@/hooks";
 import { spacing } from "@/constants/design-system";
-import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS } from '../../../../constants';
-import { hasAnyPrivilege } from '../../../../utils';
-import type { Paint } from '../../../../types';
+import { SECTOR_PRIVILEGES, PAINT_FINISH_LABELS, TRUCK_MANUFACTURER_LABELS, routes } from "@/constants";
+import { hasAnyPrivilege } from "@/utils";
+import type { Paint } from "@/types";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
 // import { useToast } from "@/hooks/use-toast";
 // import { showToast } from "@/components/ui/toast";
@@ -59,6 +61,7 @@ const TAG_BADGE_COLORS = {
 export default function CatalogListScreen() {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
+  const nav = useNav();
   const { width: screenWidth } = useWindowDimensions();
   const isTablet = screenWidth >= TABLET_WIDTH_THRESHOLD;
   const badgeStyle = isDark ? BADGE_COLORS.dark : BADGE_COLORS.light;
@@ -483,7 +486,7 @@ export default function CatalogListScreen() {
         id: "details",
         label: "Ver Detalhes",
         icon: "eye",
-        onPress: () => router.push(`/pintura/catalogo/detalhes/${contextMenuPaint.id}`),
+        onPress: () => nav.push(mobileRoute(routes.painting.catalog.details(contextMenuPaint.id))),
       },
     ];
 
@@ -492,7 +495,7 @@ export default function CatalogListScreen() {
         id: "edit",
         label: "Editar",
         icon: "edit",
-        onPress: () => router.push(`/pintura/catalogo/editar/${contextMenuPaint.id}`),
+        onPress: () => nav.push(mobileRoute(routes.painting.catalog.edit(contextMenuPaint.id))),
       });
     }
 
@@ -545,7 +548,7 @@ export default function CatalogListScreen() {
       <Card style={cardStyle}>
         {/* Touchable area for navigation - covers preview and main content */}
         <TouchableOpacity
-          onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
+          onPress={() => nav.push(mobileRoute(routes.painting.catalog.details(paint.id)))}
           onLongPress={(e) => handleLongPress(paint, e)}
           delayLongPress={500}
           activeOpacity={0.7}
@@ -623,7 +626,7 @@ export default function CatalogListScreen() {
 
         {/* Formula and Task Counts - touchable to navigate */}
         <TouchableOpacity
-          onPress={() => router.push(`/pintura/catalogo/detalhes/${paint.id}`)}
+          onPress={() => nav.push(mobileRoute(routes.painting.catalog.details(paint.id)))}
           onLongPress={(e) => handleLongPress(paint, e)}
           delayLongPress={500}
           activeOpacity={0.7}
@@ -867,7 +870,7 @@ export default function CatalogListScreen() {
         {canCreate && (
           <FAB
             icon="plus"
-            onPress={() => router.push("/pintura/catalogo/cadastrar")}
+            onPress={() => nav.push(mobileRoute(routes.painting.catalog.create))}
           />
         )}
 
