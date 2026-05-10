@@ -3,8 +3,17 @@
 
 import { routes } from "@/constants";
 
+// Re-export the typed mobile route helper so callers can migrate to it
+// without juggling import paths.
+export { mobileRoute, type AppRoute } from "@/constants/routes.types";
+
 /**
- * Convert a path to the mobile format with /(tabs) prefix
+ * Convert a path to the mobile format with /(tabs) prefix.
+ *
+ * @deprecated Use `mobileRoute()` from `@/constants/routes.types` (re-exported
+ * from this module) — it returns a branded `AppRoute` accepted by the new
+ * `useNav()` API and the screen templates. This shim is kept until Phase 3.
+ *
  * @param route - Portuguese route path
  * @returns Mobile formatted path
  */
