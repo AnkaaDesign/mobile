@@ -1,6 +1,5 @@
 import { View, ScrollView, Alert } from "react-native";
 import { useState } from "react";
-import { useRouter } from "expo-router";
 import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Card } from "@/components/ui/card";
@@ -8,15 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Combobox } from "@/components/ui/combobox";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useBackupMutations } from "@/hooks/useBackup";
 import { Icon } from "@/components/ui/icon";
 import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 type RetentionPeriod = "1_day" | "3_days" | "1_week" | "2_weeks" | "1_month" | "3_months" | "6_months" | "1_year";
 
@@ -81,8 +80,7 @@ const INITIAL_FORM: CreateBackupForm = {
 export default function CreateBackupScreen() {
   useScreenReady();
   const formKey = useFormScreenKey();
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { create } = useBackupMutations();
 
@@ -107,7 +105,7 @@ export default function CreateBackupScreen() {
         autoDelete: form.autoDelete.enabled ? form.autoDelete : undefined,
       });
       Alert.alert("Sucesso", "Backup criado com sucesso");
-      goBack();
+      nav.goBack();
     } catch {
       Alert.alert("Erro", "Falha ao criar backup");
     } finally {
@@ -116,13 +114,13 @@ export default function CreateBackupScreen() {
   };
 
   return (
-    <PrivilegeGuard requiredPrivilege={SECTOR_PRIVILEGES.ADMIN}>
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
       <ThemedView key={formKey} className="flex-1">
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
           {/* Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <Text style={{ fontSize: 20, fontWeight: "700", color: colors.foreground }}>Criar Novo Backup</Text>
-            <Button variant="ghost" size="sm" onPress={() => goBack()}>
+            <Button variant="ghost" size="sm" onPress={() => nav.goBack()}>
               <Icon name="x" size={20} color={colors.mutedForeground} />
             </Button>
           </View>
@@ -260,12 +258,12 @@ export default function CreateBackupScreen() {
               <Icon name="database" size={16} color="#fff" />
               <Text style={{ color: "#fff", fontWeight: "600" }}>{isSubmitting ? "Criando..." : "Criar Backup"}</Text>
             </Button>
-            <Button variant="outline" onPress={() => goBack()} disabled={isSubmitting}>
+            <Button variant="outline" onPress={() => nav.goBack()} disabled={isSubmitting}>
               <Text style={{ color: colors.foreground }}>Cancelar</Text>
             </Button>
           </View>
         </ScrollView>
       </ThemedView>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

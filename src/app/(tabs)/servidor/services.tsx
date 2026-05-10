@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getServices, startService, stopService, restartService } from '../../../api-client';
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -25,7 +27,15 @@ interface ServiceItem {
   subState?: string;
 }
 
-export default function ServerServicesScreen() {
+export default function ServerServicesScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerServicesScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerServicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();

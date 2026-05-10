@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getServiceLogs, getServices } from '../../../api-client';
 import { ThemedView } from '@/components/ui/themed-view';
@@ -37,7 +39,15 @@ const LINE_LIMITS = [
   { label: '1000 linhas', value: 1000 },
 ];
 
-export default function ServerLogsScreen() {
+export default function ServerLogsScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerLogsScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerLogsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedService, setSelectedService] = useState<string>('');
   const [lineLimit, setLineLimit] = useState(100);

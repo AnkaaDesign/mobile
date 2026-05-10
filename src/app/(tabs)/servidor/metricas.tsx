@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { ScrollView, RefreshControl, Alert, Platform } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics, getCpuTemperature, getSsdHealth, getRaidStatus, getHealthHistory } from '../../../api-client';
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -114,7 +116,15 @@ interface AlertThreshold {
   temperature: number;
 }
 
-export default function ServerMetricsScreen() {
+export default function ServerMetricsScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerMetricsScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerMetricsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('24h');
   const [showAlerts, setShowAlerts] = useState(true);

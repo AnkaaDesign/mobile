@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ScrollView, RefreshControl, Alert } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSystemStatus, getSystemHealth } from '../../../api-client';
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -24,7 +26,15 @@ interface MaintenanceSettings {
   scheduledEnd?: string;
 }
 
-export default function ServerMaintenanceScreen() {
+export default function ServerMaintenanceScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerMaintenanceScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerMaintenanceScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [maintenanceSettings, setMaintenanceSettings] = useState<MaintenanceSettings>({
     enabled: false,

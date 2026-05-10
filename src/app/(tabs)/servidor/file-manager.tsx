@@ -4,8 +4,8 @@ import { Text } from "@/components/ui/text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PrivilegeGuard } from "@/components/privilege-guard";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { SECTOR_PRIVILEGES } from "@/constants";
 import { useSharedFolders, useSharedFolderContents } from "@/hooks/useServer";
 import { Icon } from "@/components/ui/icon";
 import { SearchBar } from "@/components/ui/search-bar";
@@ -1026,7 +1026,7 @@ export default function FileManagerScreen() {
   }, []);
 
   return (
-    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL]}>
+    <PrivilegeGate required={{ any: [SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.COMMERCIAL] }}>
       <FileViewerProvider>
         <ThemedView className="flex-1">
           {browseFolder ? (
@@ -1047,6 +1047,6 @@ export default function FileManagerScreen() {
           )}
         </ThemedView>
       </FileViewerProvider>
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }

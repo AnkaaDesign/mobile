@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
+import { PrivilegeGate } from '@/components/auth/privilege-gate';
+import { SECTOR_PRIVILEGES } from '@/constants';
 import { useQuery } from '@tanstack/react-query';
 import { getSystemHealth, getSystemStatus, getMetrics } from '../../../api-client';
 import { useScreenReady } from '@/hooks/use-screen-ready';
@@ -13,7 +15,15 @@ import { ErrorScreen } from '@/components/ui/error-screen';
 import { DashboardCard } from '@/components/ui/dashboard-card';
 
 
-export default function ServerStatusScreen() {
+export default function ServerStatusScreenWrapper() {
+  return (
+    <PrivilegeGate required={SECTOR_PRIVILEGES.ADMIN}>
+      <ServerStatusScreen />
+    </PrivilegeGate>
+  );
+}
+
+function ServerStatusScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Query for system health
