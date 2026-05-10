@@ -10,9 +10,8 @@ import { ErrorScreen, ThemedText, Card, Button, Input, Combobox, SimpleFormField
 import { IconAlertCircle, IconDeviceFloppy, IconX } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
 import { mobileRoute } from "@/constants/routes.types";
 import {
@@ -27,13 +26,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CreateObservationScreen() {
   const formKey = useFormScreenKey();
-  return <CreateObservationScreenInner key={formKey} />;
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.PRODUCTION,
+          SECTOR_PRIVILEGES.WAREHOUSE,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <CreateObservationScreenInner key={formKey} />
+    </PrivilegeGate>
+  );
 }
 
 function CreateObservationScreenInner() {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack, getBackPath } = useNavigationHistory();
+  const nav = useNav();
   const params = useLocalSearchParams<{ taskId?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createAsync } = useObservationMutations();
@@ -45,17 +59,6 @@ function CreateObservationScreenInner() {
   const taskSelectTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormTaskSelect);
   const descriptionTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormDescription);
   const saveTarget = useTutorialTarget(TUTORIAL_TARGETS.observacoesFormSave);
-
-  // Permission check
-  const canCreate = React.useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.FINANCIAL) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.COMMERCIAL) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION_MANAGER);
-  }, [user]);
 
   // Fetch available tasks
   const {
@@ -176,11 +179,6 @@ function CreateObservationScreenInner() {
   const saveNotifiedRef = useRef(false);
 
   const onSubmit = async (data: ObservationCreateFormData) => {
-    if (!canCreate) {
-      Alert.alert("Erro", "Você não tem permissão para criar observações");
-      return;
-    }
-
     // Tutorial mode — never hit the real API. Notify the engine and bail out.
     if (isTutorialActive) {
       saveNotifiedRef.current = true;
@@ -208,9 +206,9 @@ function CreateObservationScreenInner() {
             text: "OK",
             onPress: () => {
               if (result?.data?.id) {
-                router.replace(mobileRoute(routes.production.observations.details(result.data.id)) as any);
+                nav.dismissTo(mobileRoute(routes.production.observations.details(result.data.id)));
               } else {
-                goBack();
+                nav.goBack();
               }
             },
           },
@@ -274,12 +272,7 @@ function CreateObservationScreenInner() {
   );
 
   const handleNavigateBack = () => {
-    const backPath = getBackPath();
-    if (backPath) {
-      goBack();
-    } else {
-      router.replace(mobileRoute(routes.production.observations.list) as any);
-    }
+    nav.goBack();
   };
 
   const handleCancel = () => {
@@ -301,25 +294,6 @@ function CreateObservationScreenInner() {
       ]
     );
   };
-
-  // Permission gate
-  if (!canCreate) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Cadastrar Observação",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para criar observações. É necessário privilégio de Administrador, Comercial ou Logística."
-        />
-      </>
-    );
-  }
 
   // In tutorial mode, the demo tasks fallback keeps the form usable even while
   // the real query is loading or has failed.

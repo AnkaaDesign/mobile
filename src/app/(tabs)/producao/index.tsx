@@ -3,7 +3,7 @@ import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useRouter, Redirect } from "expo-router";
 import { routes, DASHBOARD_TIME_PERIOD, SECTOR_PRIVILEGES } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import { useProductionDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useCallback } from "react";
@@ -148,7 +148,7 @@ export default function ProducaoScreen() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.schedule.list) as any)}
+              onPress={() => router.push(mobileRoute(routes.production.schedule.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -172,7 +172,7 @@ export default function ProducaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.cutting.list) as any)}
+              onPress={() => router.push(mobileRoute(routes.production.cutting.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -196,7 +196,7 @@ export default function ProducaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.airbrushings.list) as any)}
+              onPress={() => router.push(mobileRoute(routes.production.airbrushings.list) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -220,7 +220,7 @@ export default function ProducaoScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push(routeToMobilePath(routes.production.history.root) as any)}
+              onPress={() => router.push(mobileRoute(routes.production.history.root) as any)}
               style={{
                 flex: 1,
                 minWidth: "45%",

@@ -1,71 +1,28 @@
-import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
 import { Alert } from "react-native";
+
 import { TaskFormWithProvider } from "@/components/production/task/form/task-form-with-provider";
-import { useTaskMutations, useScreenReady, useFormScreenKey } from '@/hooks';
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useTaskMutations, useScreenReady, useFormScreenKey } from "@/hooks";
+import { useNav } from "@/contexts/nav";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { SECTOR_PRIVILEGES } from "@/constants";
 
-export default function CreateAgendaTaskScreen() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const { replaceWithLoading } = useNavigationLoading();
-  const { goBack } = useNavigationHistory();
+function CreateAgendaTaskInner() {
+  const nav = useNav();
   const { createAsync, isLoading } = useTaskMutations();
 
   useScreenReady(!isLoading);
   const formKey = useFormScreenKey();
-  const [checkingPermission, setCheckingPermission] = useState(true);
-
-  // Check permissions - ADMIN, COMMERCIAL, LOGISTIC, and PRODUCTION_MANAGER can create tasks
-  const userPrivilege = user?.sector?.privileges;
-  const canCreate =
-    userPrivilege === SECTOR_PRIVILEGES.ADMIN ||
-    userPrivilege === SECTOR_PRIVILEGES.COMMERCIAL ||
-    userPrivilege === SECTOR_PRIVILEGES.LOGISTIC ||
-    userPrivilege === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
-
-  useEffect(() => {
-    // Wait for user to load
-    if (user !== undefined) {
-      setCheckingPermission(false);
-
-      // Redirect if no permission
-      if (!canCreate) {
-        Alert.alert(
-          "Acesso negado",
-          "Você não tem permissão para criar tarefas"
-        );
-        router.replace("/(tabs)/producao/agenda" as any);
-      }
-    }
-  }, [user, canCreate, router]);
-
-  // Don't show anything while checking permissions
-  if (checkingPermission || !user || !canCreate) {
-    return null;
-  }
-
-  const handleNavigateBack = () => {
-    goBack();
-  };
 
   const handleSubmit = async (data: any) => {
     try {
-      console.log('[CreateAgendaTask] Starting task creation...');
-
       const result = await createAsync(data);
 
       if (result.success && result.data) {
-        console.log('[CreateAgendaTask] Task created successfully');
-        handleNavigateBack();
+        nav.goBack();
       } else {
-        console.error('[CreateAgendaTask] Task creation failed:', result);
         Alert.alert(
           "Erro ao criar tarefa",
-          result?.message || "Não foi possível criar a tarefa. Tente novamente."
+          result?.message || "Não foi possível criar a tarefa. Tente novamente.",
         );
       }
     } catch (error: any) {
@@ -74,7 +31,7 @@ export default function CreateAgendaTaskScreen() {
   };
 
   const handleCancel = () => {
-    handleNavigateBack();
+    nav.goBack();
   };
 
   return (
@@ -85,5 +42,23 @@ export default function CreateAgendaTaskScreen() {
       onCancel={handleCancel}
       isSubmitting={isLoading}
     />
+  );
+}
+
+export default function CreateAgendaTaskScreen() {
+  return (
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.COMMERCIAL,
+          SECTOR_PRIVILEGES.LOGISTIC,
+          SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
+        ],
+      }}
+      fallback="unauthorized"
+    >
+      <CreateAgendaTaskInner />
+    </PrivilegeGate>
   );
 }

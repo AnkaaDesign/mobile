@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ErrorScreen } from "@/components/ui/error-screen";
 import { CutRequestModal } from "@/components/production/cuts/form/cut-request-modal";
 import { useTheme } from "@/lib/theme";
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { useCut, useCutMutations, useScreenReady} from '@/hooks';
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 import {
@@ -53,7 +53,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CuttingDetailsScreen() {
   const { id } = useLocalSearchParams();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { update, delete: deleteAsync } = useCutMutations();
@@ -139,7 +139,7 @@ export default function CuttingDetailsScreen() {
             try {
               await deleteAsync(id as string);
               Alert.alert("Sucesso", "Recorte excluído com sucesso");
-              goBack();
+              nav.goBack();
             } catch (_error) {
               // API client already shows error alert
             }
@@ -449,7 +449,7 @@ export default function CuttingDetailsScreen() {
             </View>
             <TouchableOpacity
               style={[styles.relatedItem, { backgroundColor: colors.muted + "30" }]}
-              onPress={() => router.push(routes.production.cutting.details(cut.parentCut!.id) as any)}
+              onPress={() => nav.push(routes.production.cutting.details(cut.parentCut!.id) as any)}
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
@@ -472,7 +472,7 @@ export default function CuttingDetailsScreen() {
               <IconClipboardList size={20} color={colors.mutedForeground} />
               <ThemedText style={styles.sectionTitle}>Informações da Tarefa</ThemedText>
               <TouchableOpacity
-                onPress={() => router.push(`/producao/cronograma/detalhes/${cut.task!.id}`)}
+                onPress={() => nav.push(`/producao/cronograma/detalhes/${cut.task!.id}` as any)}
                 style={styles.linkButton}
                 activeOpacity={0.7}
               >
@@ -565,7 +565,7 @@ export default function CuttingDetailsScreen() {
                 <TouchableOpacity
                   key={childCut.id}
                   style={[styles.relatedItem, { backgroundColor: colors.muted + "30" }]}
-                  onPress={() => router.push(routes.production.cutting.details(childCut.id) as any)}
+                  onPress={() => nav.push(routes.production.cutting.details(childCut.id) as any)}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>

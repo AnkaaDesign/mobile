@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, StyleSheet } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 // import { showToast } from "@/components/ui/toast";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,16 +8,15 @@ import { Button } from "@/components/ui/button";
 import { PaintForm } from "@/components/painting/forms/painting-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { usePaint, usePaintMutations, usePaintFormulaMutations, useScreenReady } from "@/hooks";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { spacing } from "@/constants/design-system";
 import type { PaintUpdateFormData } from "@/schemas";
 import type { PaintFormula } from "@/types";
 import { paintFormulaComponentService, notify } from "@/api-client";
 
 export default function EditPaintScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { updateAsync, isLoading: isPaintLoading } = usePaintMutations();
   const { createAsync: createFormulaAsync, isLoading: isFormulaLoading } = usePaintFormulaMutations();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +113,7 @@ export default function EditPaintScreen() {
         notify.success("Estoque atualizado", `${allDeductComponents.length} componente(s) deduzido(s) do estoque`);
       }
 
-      goBack();
+      nav.goBack();
     } catch (error) {
       console.error("Error updating paint:", error);
     } finally {
@@ -123,7 +122,7 @@ export default function EditPaintScreen() {
   };
 
   const handleCancel = () => {
-    goBack();
+    nav.goBack();
   };
 
   if (isLoadingPaint) {

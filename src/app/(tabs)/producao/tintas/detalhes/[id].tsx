@@ -1,5 +1,5 @@
 
-import { Stack, useLocalSearchParams, router } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, View, StyleSheet, TouchableOpacity } from "react-native";
 import { usePaintDetail, useScreenReady } from '../../../../../hooks';
 import { PaintCatalogCard, PaintFormulaDetail, MobileProductionCalculator } from "@/components/painting";
@@ -12,9 +12,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/lib/theme/theme-provider";
-import { useAuth } from "@/contexts/auth-context";
+import { useNav } from "@/contexts/nav";
+import { usePrivilegeGate } from "@/hooks/use-privilege-gate";
 import { SECTOR_PRIVILEGES } from "@/constants";
-import { hasPrivilege, formatDensity } from "@/utils";
+import { formatDensity } from "@/utils";
 import { spacing, fontSize, borderRadius } from "@/constants/design-system";
 import { IconEdit } from "@tabler/icons-react-native";
 
@@ -57,16 +58,14 @@ const styles = StyleSheet.create({
 export default function PaintDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
-
-  // End navigation loading overlay when screen mounts
+  const nav = useNav();
 
   // Check user permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+  const canEdit = usePrivilegeGate(SECTOR_PRIVILEGES.WAREHOUSE).allowed;
 
   // Handle edit
   const handleEdit = () => {
-    router.push(`/producao/tintas/editar/${id}`);
+    nav.push(`/producao/tintas/editar/${id}` as any);
   };
 
   const {
