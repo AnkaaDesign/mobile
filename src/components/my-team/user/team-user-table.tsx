@@ -6,7 +6,6 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/lib/theme";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import { USER_STATUS } from "@/constants";
 import { formatDate } from "@/utils";
@@ -55,7 +54,6 @@ const getStatusLabel = (status: string) => {
 export const TeamUserTable = React.memo<TeamUserTableProps>(
   ({ users, onUserPress, onRefresh, refreshing = false, loading = false }) => {
     const { colors, isDark } = useTheme();
-    const { startNavigation } = useNavigationLoading();
 
     // Row component
     const renderRow = useCallback(
@@ -65,7 +63,6 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
 
         const handlePress = () => {
           if (onUserPress) {
-            startNavigation();
             onUserPress(item.id);
           }
         };
@@ -149,7 +146,7 @@ export const TeamUserTable = React.memo<TeamUserTableProps>(
           </Pressable>
         );
       },
-      [colors, isDark, onUserPress, startNavigation],
+      [colors, isDark, onUserPress],
     );
 
     // Empty state component
