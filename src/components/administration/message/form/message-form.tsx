@@ -18,7 +18,7 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import type { User, Sector } from "@/types";
 import { getUsers, getSectors, getPositions } from "@/api-client";
@@ -88,7 +88,7 @@ interface MessageFormProps {
 }
 
 export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormProps) {
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
   const { colors } = useTheme();
   const { handlers, refs, getContentPadding } = useKeyboardAwareScroll();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -304,12 +304,12 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
       if (mode === "create") {
         await createMessage(payload);
         Alert.alert("Sucesso", "Mensagem criada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); goBack(); } },
+          { text: "OK", onPress: () => { onSuccess?.(); nav.goBack(); } },
         ]);
       } else if (message?.id) {
         await updateMessage(message.id, payload);
         Alert.alert("Sucesso", "Mensagem atualizada com sucesso", [
-          { text: "OK", onPress: () => { onSuccess?.(); goBack(); } },
+          { text: "OK", onPress: () => { onSuccess?.(); nav.goBack(); } },
         ]);
       }
 
@@ -325,7 +325,7 @@ export function MessageForm({ mode, message, onSuccess, onCancel }: MessageFormP
     if (onCancel) {
       onCancel();
     } else {
-      goBack();
+      nav.goBack();
     }
   };
 

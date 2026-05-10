@@ -5,7 +5,7 @@ import { DetailCard } from "@/components/ui/detail-page-layout";
 import { router } from "expo-router";
 import type { Sector } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize, fontWeight, borderRadius } from "@/constants/design-system";
 
@@ -19,7 +19,7 @@ export function SectorTasksCard({ sector }: SectorTasksCardProps) {
   const taskCount = sector._count?.tasks || 0;
 
   const handleViewAllTasks = () => {
-    router.push(routeToMobilePath(`${routes.production.history.root}?sectorId=${sector.id}`) as any);
+    router.push(mobileRoute(`${routes.production.history.root}?sectorId=${sector.id}`) as any);
   };
 
   return (

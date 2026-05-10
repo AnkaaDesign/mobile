@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { DetailCard } from "@/components/ui/detail-page-layout";
-import { useNavigationLoading } from "@/contexts/navigation-loading-context";
+import { useNav } from "@/contexts/nav";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -10,7 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconActivity, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { ActivityTable, createColumnDefinitions } from "@/components/inventory/activity/list/activity-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -25,7 +25,7 @@ interface UserActivitiesTableProps {
 
 export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTableProps) {
   const { colors } = useTheme();
-  const { pushWithLoading } = useNavigationLoading();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -115,7 +115,7 @@ export function UserActivitiesTable({ user, maxHeight = 500 }: UserActivitiesTab
   }, []);
 
   const handleActivityPress = (activityId: string) => {
-    pushWithLoading(routeToMobilePath(routes.inventory.activities.details(activityId)));
+    nav.push(mobileRoute(routes.inventory.activities.details(activityId)));
   };
 
   // Don't show if no activities and not loading

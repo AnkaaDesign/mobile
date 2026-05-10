@@ -10,7 +10,7 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer, Task } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from '@/constants/routes.types';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -102,7 +102,7 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   }, []);
 
   const handleTaskPress = (taskId: string) => {
-    router.push(routeToMobilePath(routes.production.schedule.details(taskId)) as any);
+    router.push(mobileRoute(routes.production.schedule.details(taskId)) as any);
   };
 
   // Don't show if no tasks and not loading
