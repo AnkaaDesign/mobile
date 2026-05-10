@@ -1,33 +1,41 @@
-import React, { useState, useEffect } from "react";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { ScrollView, View, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { View, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAirbrushingDetail, useAirbrushingMutations, useScreenReady} from '@/hooks';
-import { useTasks } from "@/hooks";
-import { airbrushingUpdateSchema, mapAirbrushingToFormData, type AirbrushingUpdateFormData } from '../../../../../schemas';
-import { AIRBRUSHING_STATUS, AIRBRUSHING_STATUS_LABELS } from "@/constants";
-import { ErrorScreen } from "@/components/ui/error-screen";
+
+import { useAirbrushingDetail, useAirbrushingMutations } from "@/hooks";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import {
+  airbrushingUpdateSchema,
+  mapAirbrushingToFormData,
+  type AirbrushingUpdateFormData,
+} from "../../../../../schemas";
+import {
+  AIRBRUSHING_STATUS,
+  AIRBRUSHING_STATUS_LABELS,
+  SECTOR_PRIVILEGES,
+  routes,
+} from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { EDITABLE_AIRBRUSHING_STATUSES } from "@/constants/editable-statuses";
+import { FormScreen } from "@/components/screens/form-screen";
+
 import { ThemedText } from "@/components/ui/themed-text";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { IconBrush, IconDeviceFloppy, IconX, IconClock, IconTag, IconFileText } from "@tabler/icons-react-native";
+import {
+  IconBrush,
+  IconClock,
+  IconTag,
+  IconFileText,
+} from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
 import { formatCurrency } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
-import { routes } from "@/constants";
-
-
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AirbrushingEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,88 +45,24 @@ export default function AirbrushingEditScreen() {
 function AirbrushingEditScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { goBack } = useNavigationHistory();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { updateAsync } = useAirbrushingMutations();
 
-  // Permission check
-  const canEdit = React.useMemo(() => {
-    if (!user) return false;
-    return hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-           hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-  }, [user]);
-
-  // Fetch airbrushing data
-  const {
-    data: airbrushingResponse,
-    isLoading: isLoadingAirbrushing,
-    error: airbrushingError,
-  } = useAirbrushingDetail(id as string, {
+  const query = useAirbrushingDetail(id as string, {
     include: {
       task: {
         select: {
           id: true,
           name: true,
-          customer: {
-            select: {
-              id: true,
-              fantasyName: true,
-            },
-          },
-          truck: {
-            select: {
-              id: true,
-              model: true,
-              plate: true,
-            },
-          },
+          customer: { select: { id: true, fantasyName: true } },
+          truck: { select: { id: true, model: true, plate: true } },
         },
       },
     },
   });
 
-  useScreenReady(!isLoadingAirbrushing);
+  const airbrushing = query.data?.data;
 
-  const airbrushing = airbrushingResponse?.data;
-
-  // Fetch available tasks (including current one)
-  const {
-    isLoading: isLoadingTasks,
-    error: tasksError,
-  } = useTasks({
-    orderBy: { createdAt: "desc" },
-    include: {
-      customer: {
-        select: {
-          id: true,
-          fantasyName: true,
-        },
-      },
-      truck: {
-        select: {
-          id: true,
-          plate: true,
-        },
-      },
-    },
-    // Show tasks that don't have airbrushing OR the current task
-    where: {
-      OR: [
-        { airbrushing: null },
-        { id: airbrushing?.taskId },
-      ],
-    },
-  });
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isValid, isDirty },
-    watch,
-    
-    reset,
-  } = useForm<AirbrushingUpdateFormData>({
+  const form = useForm<AirbrushingUpdateFormData>({
     resolver: zodResolver(airbrushingUpdateSchema),
     defaultValues: {
       status: AIRBRUSHING_STATUS.PENDING,
@@ -129,375 +73,208 @@ function AirbrushingEditScreenInner() {
     mode: "onChange",
   });
 
-  const watchedPrice = watch("price");
-
-  // Update form when airbrushing data loads
   useEffect(() => {
     if (airbrushing) {
-      const formData = mapAirbrushingToFormData(airbrushing);
-      reset(formData);
+      form.reset(mapAirbrushingToFormData(airbrushing));
     }
-  }, [airbrushing, reset]);
+  }, [airbrushing, form]);
 
-  const onSubmit = async (data: AirbrushingUpdateFormData) => {
-    if (!canEdit) {
-      Alert.alert("Erro", "Você não tem permissão para editar airbrushing");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await updateAsync({
+  const flow = useFormFlow<AirbrushingUpdateFormData, any>({
+    form,
+    mutation: async (data) =>
+      updateAsync({
         id: id as string,
         data: {
           ...data,
-          // Convert price to number if it's a string
-          price: typeof data.price === 'string' ? parseFloat(data.price) || null : data.price,
+          price:
+            typeof data.price === "string"
+              ? parseFloat(data.price) || null
+              : data.price,
         },
-      });
+      }),
+    successRoute: () =>
+      mobileRoute(routes.production.airbrushings.details(id as string)),
+    successAction: "replace",
+    cancelFallback: mobileRoute(routes.production.airbrushings.root),
+    blockOnTerminalStatus: airbrushing
+      ? { entity: airbrushing, editable: EDITABLE_AIRBRUSHING_STATUSES }
+      : undefined,
+  });
 
-      router.replace(routeToMobilePath(routes.production.airbrushings.details(id as string)) as any);
-    } catch (error: any) {
-      Alert.alert(
-        "Erro",
-        error?.message || "Não foi possível atualizar o airbrushing. Tente novamente."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (isDirty) {
-      Alert.alert(
-        "Cancelar",
-        "Tem certeza que deseja cancelar? Todas as alterações serão perdidas.",
-        [
-          { text: "Continuar Editando", style: "cancel" },
-          {
-            text: "Cancelar",
-            style: "destructive",
-            onPress: () => goBack(),
-          },
-        ]
-      );
-    } else {
-      goBack();
-    }
-  };
-
-  // Permission gate
-  if (!canEdit) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Editar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          message="Acesso negado"
-          detail="Você não tem permissão para editar airbrushing. É necessário privilégio de Produção, Líder ou Administrador."
-        />
-      </>
-    );
-  }
-
-  if (isLoadingAirbrushing || isLoadingTasks) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Editar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ScrollView style={{ flex: 1 }}>
-          <View style={{ padding: spacing.md, gap: spacing.md }}>
-            {/* Header card */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="50%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="70%" height={14} />
-            </View>
-            {/* Task info (readonly) */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="40%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="100%" height={72} borderRadius={8} />
-            </View>
-            {/* Status */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="25%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-              <Skeleton width="100%" height={44} borderRadius={8} />
-            </View>
-            {/* Dates */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
-              <View style={{ marginBottom: spacing.md }}>
-                <Skeleton width="40%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-              <View>
-                <Skeleton width="45%" height={14} style={{ marginBottom: 4 }} />
-                <Skeleton width="100%" height={44} borderRadius={8} />
-              </View>
-            </View>
-            {/* Price */}
-            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-              <Skeleton width="20%" height={18} style={{ marginBottom: spacing.md }} />
-              <Skeleton width="30%" height={14} style={{ marginBottom: 4 }} />
-              <Skeleton width="100%" height={44} borderRadius={8} />
-            </View>
-          </View>
-        </ScrollView>
-      </>
-    );
-  }
-
-  if (airbrushingError || tasksError || !airbrushing) {
-    return (
-      <>
-        <Stack.Screen
-          options={{
-            title: "Editar Airbrushing",
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.foreground,
-          }}
-        />
-        <ErrorScreen
-          title="Erro ao carregar dados"
-          message={airbrushingError?.message || tasksError?.message || "Airbrushing não encontrado"}
-        />
-      </>
-    );
-  }
+  const watchedPrice = form.watch("price");
+  const errors = form.formState.errors;
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Editar Airbrushing",
-          headerStyle: { backgroundColor: colors.card },
-          headerTintColor: colors.foreground,
-          headerLeft: () => (
-            <Button variant="ghost" size="icon" onPress={handleCancel}>
-              <IconX size={20} color={colors.foreground} />
-            </Button>
-          ),
-          headerRight: () => (
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || !isDirty || isSubmitting}
-            >
-              <IconDeviceFloppy
-                size={20}
-                color={isValid && isDirty && !isSubmitting ? colors.primary : colors.muted}
-              />
-            </Button>
-          ),
-        }}
-      />
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <ScrollView
-          style={{ flex: 1, backgroundColor: colors.background }}
-          contentContainerStyle={{ padding: spacing.md }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconBrush size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Editar Airbrushing</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <ThemedText style={{ fontSize: 14, color: colors.muted }}>
-                Edite as informações do airbrushing
-              </ThemedText>
-            </View>
-          </Card>
-
-          {/* Task Information (Read-only) */}
-          {airbrushing.task && (
-            <Card style={[styles.card, { marginBottom: spacing.md }]}>
-              <View style={[styles.header, { borderBottomColor: colors.border }]}>
-                <View style={styles.headerLeft}>
-                  <IconTag size={20} color={colors.mutedForeground} />
-                  <ThemedText style={styles.title}>Tarefa Vinculada</ThemedText>
-                </View>
-              </View>
-              <View style={styles.content}>
-                <View style={{ backgroundColor: colors.muted + "20", padding: spacing.sm, borderRadius: 8 }}>
-                  <ThemedText style={{ fontWeight: "500" }}>
-                    {airbrushing.task.name}
-                  </ThemedText>
-                  {airbrushing.task.customer && (
-                    <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                      Cliente: {airbrushing.task.customer.fantasyName}
-                    </ThemedText>
-                  )}
-                  {airbrushing.task.truck && (
-                    <ThemedText style={{ fontSize: 12, color: colors.muted }}>
-                      Veículo: {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
-                    </ThemedText>
-                  )}
-                </View>
-              </View>
-            </Card>
-          )}
-
-          {/* Status */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconFileText size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Status</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <Label style={{ marginBottom: spacing.xs }}>Status</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Combobox
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
-                      value: status,
-                      label: AIRBRUSHING_STATUS_LABELS[status as keyof typeof AIRBRUSHING_STATUS_LABELS],
-                    }))}
-                    placeholder="Selecione o status"
-                  />
-                )}
-              />
-            </View>
-          </Card>
-
-          {/* Dates */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconClock size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Datas</ThemedText>
-              </View>
-            </View>
-
-            <View style={[styles.content, { gap: spacing.md }]}>
-              <View>
-                <Label style={{ marginBottom: spacing.xs }}>Data de Início</Label>
-                <Controller
-                  control={control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <DatePicker
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data de início"
-                    />
-                  )}
-                />
-              </View>
-
-              <View>
-                <Label style={{ marginBottom: spacing.xs }}>Data de Finalização</Label>
-                <Controller
-                  control={control}
-                  name="finishDate"
-                  render={({ field }) => (
-                    <DatePicker
-                      value={field.value ?? undefined}
-                      onChange={field.onChange}
-                      placeholder="Selecione a data de finalização"
-                    />
-                  )}
-                />
-              </View>
-            </View>
-          </Card>
-
-          {/* Price */}
-          <Card style={[styles.card, { marginBottom: spacing.md }]}>
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <View style={styles.headerLeft}>
-                <IconTag size={20} color={colors.mutedForeground} />
-                <ThemedText style={styles.title}>Preço</ThemedText>
-              </View>
-            </View>
-            <View style={styles.content}>
-              <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
-              <Controller
-                control={control}
-                name="price"
-                render={({ field }) => (
-                  <Input
-                    value={field.value?.toString() || ""}
-                    onChangeText={(text) => {
-                      // Allow only numbers and decimal point
-                      const cleanText = String(text || '').replace(/[^0-9.,]/g, '').replace(',', '.');
-                      const numValue = cleanText ? parseFloat(cleanText) : null;
-                      field.onChange(numValue);
-                    }}
-                    placeholder="0.00"
-                    keyboardType="decimal-pad"
-                  />
-                )}
-              />
-              {watchedPrice && (
-                <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
-                  {formatCurrency(watchedPrice)}
-                </ThemedText>
-              )}
-              {errors.price && (
-                <ThemedText style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}>
-                  {errors.price.message}
-                </ThemedText>
-              )}
-            </View>
-          </Card>
-
-          {/* Action Buttons */}
-          <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.lg }}>
-            <Button
-              variant="outline"
-              style={{ flex: 1 }}
-              onPress={handleCancel}
-              disabled={isSubmitting}
-            >
-              <ThemedText>Cancelar</ThemedText>
-            </Button>
-            <Button
-              style={{ flex: 1 }}
-              onPress={handleSubmit(onSubmit)}
-              disabled={!isValid || !isDirty || isSubmitting}
-            >
-              <ThemedText style={{ color: "white" }}>
-                {isSubmitting ? "Salvando..." : "Salvar"}
-              </ThemedText>
-            </Button>
+    <FormScreen<AirbrushingUpdateFormData, any>
+      mode="edit"
+      title="Editar Airbrushing"
+      form={form}
+      flow={flow}
+      privilege={{ any: [SECTOR_PRIVILEGES.PRODUCTION, SECTOR_PRIVILEGES.ADMIN] }}
+      submittingLabel="Salvando..."
+      submitLabel="Salvar"
+      loadQuery={query as any}
+      editGuard={{ editable: EDITABLE_AIRBRUSHING_STATUSES }}
+    >
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconBrush size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Editar Airbrushing</ThemedText>
           </View>
+        </View>
+        <View style={styles.content}>
+          <ThemedText style={{ fontSize: 14, color: colors.muted }}>
+            Edite as informações do airbrushing
+          </ThemedText>
+        </View>
+      </Card>
 
-          {/* Status Info */}
-          {!isDirty && (
-            <View style={{ marginTop: spacing.md, padding: spacing.sm, backgroundColor: colors.muted + "10", borderRadius: 8 }}>
-              <ThemedText style={{ fontSize: 12, color: colors.muted, textAlign: "center" }}>
-                Faça alterações para habilitar o botão salvar
-              </ThemedText>
+      {airbrushing?.task && (
+        <Card style={[styles.card, { marginBottom: spacing.md }]}>
+          <View style={[styles.header, { borderBottomColor: colors.border }]}>
+            <View style={styles.headerLeft}>
+              <IconTag size={20} color={colors.mutedForeground} />
+              <ThemedText style={styles.title}>Tarefa Vinculada</ThemedText>
             </View>
+          </View>
+          <View style={styles.content}>
+            <View
+              style={{
+                backgroundColor: colors.muted + "20",
+                padding: spacing.sm,
+                borderRadius: 8,
+              }}
+            >
+              <ThemedText style={{ fontWeight: "500" }}>
+                {airbrushing.task.name}
+              </ThemedText>
+              {airbrushing.task.customer && (
+                <ThemedText style={{ fontSize: 12, color: colors.muted }}>
+                  Cliente: {airbrushing.task.customer.fantasyName}
+                </ThemedText>
+              )}
+              {airbrushing.task.truck && (
+                <ThemedText style={{ fontSize: 12, color: colors.muted }}>
+                  Veículo: {airbrushing.task.truck.model} - {airbrushing.task.truck.plate}
+                </ThemedText>
+              )}
+            </View>
+          </View>
+        </Card>
+      )}
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconFileText size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Status</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <Label style={{ marginBottom: spacing.xs }}>Status</Label>
+          <Controller
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <Combobox
+                value={field.value}
+                onValueChange={field.onChange}
+                options={Object.values(AIRBRUSHING_STATUS).map((status) => ({
+                  value: status,
+                  label:
+                    AIRBRUSHING_STATUS_LABELS[
+                      status as keyof typeof AIRBRUSHING_STATUS_LABELS
+                    ],
+                }))}
+                placeholder="Selecione o status"
+              />
+            )}
+          />
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconClock size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Datas</ThemedText>
+          </View>
+        </View>
+        <View style={[styles.content, { gap: spacing.md }]}>
+          <View>
+            <Label style={{ marginBottom: spacing.xs }}>Data de Início</Label>
+            <Controller
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  placeholder="Selecione a data de início"
+                />
+              )}
+            />
+          </View>
+          <View>
+            <Label style={{ marginBottom: spacing.xs }}>Data de Finalização</Label>
+            <Controller
+              control={form.control}
+              name="finishDate"
+              render={({ field }) => (
+                <DatePicker
+                  value={field.value ?? undefined}
+                  onChange={field.onChange}
+                  placeholder="Selecione a data de finalização"
+                />
+              )}
+            />
+          </View>
+        </View>
+      </Card>
+
+      <Card style={[styles.card, { marginBottom: spacing.md }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <View style={styles.headerLeft}>
+            <IconTag size={20} color={colors.mutedForeground} />
+            <ThemedText style={styles.title}>Preço</ThemedText>
+          </View>
+        </View>
+        <View style={styles.content}>
+          <Label style={{ marginBottom: spacing.xs }}>Preço (R$)</Label>
+          <Controller
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <Input
+                value={field.value?.toString() || ""}
+                onChangeText={(text) => {
+                  const cleanText = String(text || "")
+                    .replace(/[^0-9.,]/g, "")
+                    .replace(",", ".");
+                  const numValue = cleanText ? parseFloat(cleanText) : null;
+                  field.onChange(numValue);
+                }}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+              />
+            )}
+          />
+          {watchedPrice ? (
+            <ThemedText style={{ fontSize: 12, color: colors.muted, marginTop: spacing.xs }}>
+              {formatCurrency(watchedPrice)}
+            </ThemedText>
+          ) : null}
+          {errors.price && (
+            <ThemedText
+              style={{ color: colors.destructive, fontSize: 12, marginTop: spacing.xs }}
+            >
+              {errors.price.message as any}
+            </ThemedText>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        </View>
+      </Card>
+    </FormScreen>
   );
 }
 
