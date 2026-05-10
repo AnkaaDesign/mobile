@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator, Alert } from "react-native";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -10,7 +9,7 @@ import { ThemedView, ThemedText, Button, ErrorScreen } from "@/components/ui";
 import { usePositions, usePositionBatchMutations } from "@/hooks";
 import { useTheme } from "@/lib/theme";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { spacing, borderRadius } from "@/constants/design-system";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,8 +21,8 @@ interface Position {
 }
 
 export default function PositionHierarchyScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
