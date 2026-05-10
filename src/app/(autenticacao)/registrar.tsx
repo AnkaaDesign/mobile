@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
-import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { contactMethodSchema } from '../../schemas';
 import { z } from "zod";
+
+import { contactMethodSchema } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useNav } from "@/contexts/nav";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -37,76 +41,89 @@ const registerFormSchema = z
 
 type RegisterFormData = z.infer<typeof registerFormSchema>;
 
+/**
+ * Register screen — bespoke centered-card layout (auth pages don't fit
+ * standard <FormScreen>). Mutation/cancel/navigation flow goes through
+ * `useFormFlow`; routes typed via `authRoute`.
+ */
 export default function RegisterScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
   const { register: registerUser } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const {
-    setValue,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<RegisterFormData>({
+  const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerFormSchema),
   });
+
+  const {
+    setValue,
+    formState: { errors },
+    watch,
+  } = form;
 
   const name = watch("name") || "";
   const contact = watch("contact") || "";
   const password = watch("password") || "";
   const confirmPassword = watch("confirmPassword") || "";
 
-  const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
+  // Result determines post-success navigation:
+  //   'verify-phone' → SMS verification screen
+  //   'verify-email' → login (the verification email link will resume there)
+  //   'auto-login' → AuthContext logged us in automatically; no nav
+  type RegisterResult =
+    | { kind: "verify-phone"; phone: string }
+    | { kind: "verify-email" }
+    | { kind: "auto-login" };
 
-    try {
+  const flow = useFormFlow<RegisterFormData, RegisterResult>({
+    form,
+    mutation: async (data): Promise<RegisterResult> => {
       const result = await registerUser({
         name: data.name,
         contact: data.contact,
         password: data.password,
       });
 
-      // Check if verification is required
       if (result.requiresVerification) {
         if (result.phone) {
-          // Phone verification required
           console.log("Conta criada com sucesso! Você receberá um código de verificação por SMS.");
-
-          router.replace({
-            pathname: '/(autenticacao)/verificar-codigo' as any,
-            params: {
-              contact: result.phone,
-              returnTo: '/(autenticacao)/entrar',
-            },
-          });
-        } else {
-          // Email verification or other verification required
-          console.log("Conta criada com sucesso! Verifique seu email para continuar.");
-          router.replace('/(autenticacao)/entrar' as any);
+          return { kind: "verify-phone", phone: result.phone };
         }
-      } else {
-        // No verification required, already logged in
-        console.log("Conta criada com sucesso! Você será redirecionado para o sistema.");
-        // Navigation is handled by the AuthContext
+        console.log("Conta criada com sucesso! Verifique seu email para continuar.");
+        return { kind: "verify-email" };
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao criar sua conta";
 
-      // Check if this is a verification redirect (success case)
+      console.log("Conta criada com sucesso! Você será redirecionado para o sistema.");
+      return { kind: "auto-login" };
+    },
+    onSuccess: (result) => {
+      if (result.kind === "verify-phone") {
+        nav.replace(
+          authRoute(routes.authentication.verifyCode, {
+            contact: result.phone,
+            returnTo: "/(autenticacao)/entrar",
+          }),
+        );
+      } else if (result.kind === "verify-email") {
+        nav.replace(authRoute(routes.authentication.login));
+      }
+      // auto-login → no nav (AuthContext handles it)
+    },
+    onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro ao criar sua conta";
+      // Special case: API may surface success-as-error during email verification flow.
       if (errorMessage.includes("Conta criada com sucesso")) {
         console.log("Conta criada com sucesso! Verifique seu email ou telefone para continuar.");
-        // Don't show as error since user was redirected to verification
       } else {
         console.error("Erro ao criar conta:", errorMessage);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+  });
+
+  const isLoading = flow.isSubmitting;
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -240,7 +257,7 @@ export default function RegisterScreen() {
 
                 <CardFooter style={{ paddingTop: spacing.lg, gap: spacing.md }}>
                   {/* Submit Button */}
-                  <Button onPress={handleSubmit(onSubmit)} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
+                  <Button onPress={() => void flow.submit()} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
                     {isLoading && <LoadingSpinner size="sm" style={{ marginRight: spacing.sm }} />}
                     <ThemedText size="base" weight="semibold" style={{ color: "white" }}>
                       {isLoading ? "Criando conta..." : "Criar conta"}
@@ -255,7 +272,7 @@ export default function RegisterScreen() {
                         variant="primary"
                         size="sm"
                         weight="semibold"
-                        onPress={() => router.push('/(autenticacao)/entrar' as any)}
+                        onPress={() => nav.push(authRoute(routes.authentication.login))}
                         style={{ textDecorationLine: "underline" }}
                       >
                         Fazer login

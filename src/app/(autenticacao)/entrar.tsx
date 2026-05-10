@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Pressable } from "react-native";
-import { useRouter } from "expo-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useFormFlow } from "@/hooks/use-form-flow";
 import { signInSchema, SignInFormData } from '../../schemas';
 import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -21,20 +25,21 @@ import { Icon } from "@/components/ui/icon";
 import { Logo } from "@/components/ui/logo";
 import { shadow, spacing } from "@/constants/design-system";
 
+/**
+ * Login screen — uses bespoke centered-card layout (auth pages don't fit the
+ * standard <FormScreen> template which assumes PageHeader + FormActionBar).
+ *
+ * Form mutation/cancel/navigation flow goes through `useFormFlow` (callback
+ * form), and routes are typed via `mobileRoute`.
+ */
 export default function LoginScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { login } = useAuth();
   const { clearHistory } = useNavigationHistory();
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const {
-    setValue,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<SignInFormData>({
+  const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
       contact: "",
@@ -42,46 +47,69 @@ export default function LoginScreen() {
     },
   });
 
+  const {
+    setValue,
+    formState: { errors },
+    watch,
+  } = form;
+
   const contact = watch("contact") || "";
   const password = watch("password") || "";
-  const onSubmit = async (data: SignInFormData) => {
-    setIsLoading(true);
 
-    try {
-      await login(data.contact, data.password);
-      clearHistory();
-      router.replace('/(tabs)/inicio' as any);
-    } catch (error: any) {
-      // Extract detailed error information from the enhanced error object
-      const errorMessage = error.message || error.toString() || "Ocorreu um erro ao fazer login";
-      const errorDetails = error.errors || [];
+  // Result is `'home'` for a clean login (navigate to home), `'verify'` when
+  // the account needs verification (we navigated there manually), or `'noop'`
+  // when AuthContext already redirected (e.g. VERIFICATION_REDIRECT).
+  type LoginResult = "home" | "verify" | "noop";
+  const flow = useFormFlow<SignInFormData, LoginResult>({
+    form,
+    mutation: async (data): Promise<LoginResult> => {
+      try {
+        await login(data.contact, data.password);
+        clearHistory();
+        return "home";
+      } catch (error: any) {
+        const errorMessage = error?.message || error?.toString() || "Ocorreu um erro ao fazer login";
 
-      // Check if this is a verification redirect
-      if (errorMessage === "VERIFICATION_REDIRECT") {
-        // Don't navigate or show error - AuthContext already redirected
-        console.log("[Login] Account needs verification - redirected by AuthContext");
-        return;
+        // Handled by AuthContext (it already redirected) — swallow.
+        if (errorMessage === "VERIFICATION_REDIRECT") {
+          console.log("[Login] Account needs verification - redirected by AuthContext");
+          return "noop";
+        }
+
+        // Account not verified — bounce to verification screen.
+        if (
+          errorMessage.includes("Conta não verificada") ||
+          errorMessage.includes("Conta ainda não verificada") ||
+          errorMessage.includes("verificação")
+        ) {
+          console.log("[Login] Account not verified - redirecting to verification");
+          nav.push(
+            authRoute(routes.authentication.verifyCode, {
+              contact: data.contact,
+              returnTo: "/(autenticacao)/entrar",
+            }),
+          );
+          return "verify";
+        }
+
+        // Re-throw so useFormFlow surfaces the error to onError below.
+        throw error;
       }
-
-      // Check if this is a verification error message
-      if (errorMessage.includes("Conta não verificada") || errorMessage.includes("Conta ainda não verificada") || errorMessage.includes("verificação")) {
-        console.log("[Login] Account not verified - redirecting to verification");
-        // Redirect to verification page directly without alert (API client already showed error)
-        router.push({
-          pathname: '/(autenticacao)/verificar-codigo' as any,
-          params: {
-            contact: data.contact,
-            returnTo: '/(autenticacao)/entrar',
-          },
-        });
-      } else {
-        // Error is already handled by API client notification system
-        console.error("[Login] Login error:", errorMessage, errorDetails);
+    },
+    onSuccess: (result) => {
+      // Only the clean-login path navigates here; the others either redirected
+      // manually (verify) or AuthContext already redirected (noop).
+      if (result === "home") {
+        nav.replace(mobileRoute(routes.home));
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    onError: (err) => {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error("[Login] Login error:", errorMessage);
+    },
+  });
+
+  const isLoading = flow.isSubmitting;
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -165,7 +193,7 @@ export default function LoginScreen() {
                       <ThemedText
                         variant="primary"
                         size="sm"
-                        onPress={() => router.push('/(autenticacao)/recuperar-senha' as any)}
+                        onPress={() => nav.push(authRoute(routes.authentication.recoverPassword))}
                         style={{ textDecorationLine: "underline" }}
                       >
                         Esqueceu sua senha?
@@ -176,7 +204,7 @@ export default function LoginScreen() {
 
                 <CardFooter style={{ paddingTop: spacing.lg, gap: spacing.md }}>
                   {/* Submit Button */}
-                  <Button onPress={handleSubmit(onSubmit)} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
+                  <Button onPress={() => void flow.submit()} disabled={isLoading} variant="default" size="lg" style={{ width: "100%" }}>
                     {isLoading && <LoadingSpinner size="sm" style={{ marginRight: spacing.sm }} />}
                     <ThemedText size="base" weight="semibold" style={{ color: "white" }}>
                       {isLoading ? "Fazendo login..." : "Entrar"}
@@ -191,7 +219,7 @@ export default function LoginScreen() {
                         variant="primary"
                         size="sm"
                         weight="semibold"
-                        onPress={() => router.push('/(autenticacao)/registrar' as any)}
+                        onPress={() => nav.push(authRoute(routes.authentication.register))}
                         style={{ textDecorationLine: "underline" }}
                       >
                         Cadastre-se

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, KeyboardAvoidingView, Platform } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedScrollView } from "@/components/ui/themed-scroll-view";
@@ -14,10 +14,18 @@ import { shadow, spacing } from "@/constants/design-system";
 import { authService } from '../../api-client';
 import { maskPhone } from "@/utils";
 import { useScreenReady } from "@/hooks/use-screen-ready";
+import { useNav } from "@/contexts/nav";
+import { routes } from "@/constants/routes";
+import { authRoute } from "@/components/auth/auth-routes";
 
+/**
+ * Verify-password-reset-code screen — code entry leads to the reset-password
+ * screen (token in URL). Imperative form due to auto-submit semantics; routes
+ * typed via `authRoute`.
+ */
 export default function VerifyPasswordCodeScreen() {
   useScreenReady();
-  const router = useRouter();
+  const nav = useNav();
   const { contact, returnTo } = useLocalSearchParams<{
     contact: string;
     returnTo: string;
@@ -26,15 +34,14 @@ export default function VerifyPasswordCodeScreen() {
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
 
-  // Support both new format (contact) and legacy format
   const contactValue = contact;
 
   // Redirect if no contact value provided
   useEffect(() => {
     if (!contactValue) {
-      router.replace('/(autenticacao)/recuperar-senha' as any);
+      nav.replace(authRoute(routes.authentication.recoverPassword));
     }
-  }, [contactValue, router]);
+  }, [contactValue, nav]);
 
   const handleVerification = async (code: string) => {
     if (!contactValue) {
@@ -49,17 +56,16 @@ export default function VerifyPasswordCodeScreen() {
       return;
     }
 
-    // Navigate directly to password reset page - the code will be validated
-    // when the user submits the new password via /auth/password-reset endpoint
+    // Navigate directly to password reset page — code will be validated when
+    // the user submits the new password via /auth/password-reset endpoint
     console.log("Código informado. Redirecionando para definir nova senha.");
-    router.replace({
-      pathname: `/(autenticacao)/redefinir-senha/${trimmedCode}` as any,
-      params: {
+    nav.replace(
+      authRoute(routes.authentication.resetPassword(trimmedCode), {
         contact: contactValue,
         code: trimmedCode,
-        returnTo: returnTo || '/(autenticacao)/entrar',
-      },
-    });
+        returnTo: returnTo || "/(autenticacao)/entrar",
+      }),
+    );
   };
 
   const handleResendCode = async () => {
@@ -88,7 +94,7 @@ export default function VerifyPasswordCodeScreen() {
   };
 
   const handleGoBack = () => {
-    router.back();
+    nav.goBack({ fallback: authRoute(routes.authentication.recoverPassword) });
   };
 
   if (!contactValue) {
