@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View, ScrollView, StyleSheet, Alert } from "react-native";
-import { router } from "expo-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ThemedText } from "@/components/ui/themed-text";
@@ -8,16 +7,16 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { IconUser, IconPhone } from "@tabler/icons-react-native";
-// import { showToast } from "@/components/ui/toast";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function EmployeesCreateScreen() {
   useScreenReady();
   const formKey = useFormScreenKey();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [formData, setFormData] = useState({
     name: "",
     cpf: "",

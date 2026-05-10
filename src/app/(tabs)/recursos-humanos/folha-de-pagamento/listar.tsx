@@ -1,5 +1,5 @@
-import { SECTOR_PRIVILEGES } from '@/constants';
-import { PrivilegeGuard } from "@/components/privilege-guard";
+import { SECTOR_PRIVILEGES } from "@/constants";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { Layout } from "@/components/list/Layout";
 import { payrollListConfig } from "@/config/list/hr";
 
@@ -9,8 +9,16 @@ import { payrollListConfig } from "@/config/list/hr";
  */
 export default function PayrollListScreen() {
   return (
-    <PrivilegeGuard requiredPrivilege={[SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN, SECTOR_PRIVILEGES.FINANCIAL]}>
+    <PrivilegeGate
+      required={{
+        any: [
+          SECTOR_PRIVILEGES.HUMAN_RESOURCES,
+          SECTOR_PRIVILEGES.ADMIN,
+          SECTOR_PRIVILEGES.FINANCIAL,
+        ],
+      }}
+    >
       <Layout config={payrollListConfig} />
-    </PrivilegeGuard>
+    </PrivilegeGate>
   );
 }
