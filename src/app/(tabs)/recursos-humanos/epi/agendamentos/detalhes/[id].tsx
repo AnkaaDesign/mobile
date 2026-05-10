@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { usePpeDeliverySchedule } from "@/hooks/usePpe";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Header } from "@/components/ui/header";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { IconCalendarEvent, IconRefresh, IconEdit } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import { TouchableOpacity } from "react-native";
 // import { showToast } from "@/components/ui/toast";
 
@@ -20,12 +20,13 @@ import { ScheduleCard, EmployeeCard, PpeItemsCard, DeliveryHistoryCard, Timeline
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { PpeScheduleDetailSkeleton } from "@/components/human-resources/ppe/schedule/skeleton/ppe-schedule-detail-skeleton";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function PPEScheduleDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -69,7 +70,7 @@ export default function PPEScheduleDetailsScreen() {
 
   const handleEdit = () => {
     if (schedule) {
-      router.push(routeToMobilePath(routes.humanResources.ppe.schedules.edit(schedule.id)) as any);
+      nav.push(mobileRoute(routes.humanResources.ppe.schedules.edit(schedule.id)));
     }
   };
 

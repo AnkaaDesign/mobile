@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useUser, useScreenReady} from '@/hooks';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { routes, CHANGE_LOG_ENTITY_TYPE, USER_STATUS } from '@/constants';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import {
   IconPhone,
   IconIdBadge,
 } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 // import { showToast } from "@/components/ui/toast";
 import { EmployeeDetailSkeleton } from "@/components/administration/employee/skeleton";
 import {
@@ -70,7 +70,8 @@ const getStatusLabel = (status: USER_STATUS) => {
 export default function EmployeeDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors, isDark } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -185,7 +186,7 @@ export default function EmployeeDetailScreen() {
 
   const handleEdit = () => {
     if (employee) {
-      router.push(routeToMobilePath(routes.humanResources.employees.edit(employee.id)) as any);
+      nav.push(mobileRoute(routes.humanResources.employees.edit(employee.id)));
     }
   };
 

@@ -1,246 +1,59 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { useHoliday } from "@/hooks/useHoliday";
-import { CHANGE_LOG_ENTITY_TYPE } from "@/constants";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ThemedText } from "@/components/ui/themed-text";
-import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconCalendar, IconRefresh, IconEdit, IconHistory } from "@tabler/icons-react-native";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
-import { TouchableOpacity } from "react-native";
-// import { showToast } from "@/components/ui/toast";
-
-// Import modular components
+import { useHoliday, useHolidayMutations } from "@/hooks/useHoliday";
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { spacing } from "@/constants/design-system";
+import { IconCalendar } from "@tabler/icons-react-native";
 import { HolidayCard } from "@/components/human-resources/holiday/detail";
-import { HolidayDetailSkeleton } from "@/components/human-resources/holiday/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
 
 export default function HolidayDetailScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const { colors, } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const [refreshing, setRefreshing] = useState(false);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const holidayId = id || "";
+  const { deleteMutation } = useHolidayMutations();
 
-  const id = params?.id || "";
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = useHoliday(id, {
-    enabled: !!id && id !== "",
-  });
-
-  useScreenReady(!isLoading);
-
-  const holiday = response?.data;
-
-  const handleEdit = () => {
-    if (holiday) {
-      // Note: The routes don't have an edit route for holidays yet
-      // This would need to be added to the routes configuration
-      Alert.alert("Informação", "Edição de feriados em desenvolvimento");
-    }
-  };
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    refetch().finally(() => {
-      setRefreshing(false);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso");
-    });
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <HolidayDetailSkeleton />
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !holiday || !id || id === "") {
-    return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}>
-        <View style={styles.container}>
-          <Card style={styles.card}>
-            <View style={styles.errorContent}>
-              <View style={StyleSheet.flatten([styles.errorIcon, { backgroundColor: colors.muted }])}>
-                <IconCalendar size={32} color={colors.mutedForeground} />
-              </View>
-              <ThemedText style={StyleSheet.flatten([styles.errorTitle, { color: colors.foreground }])}>
-                Feriado não encontrado
-              </ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.errorDescription, { color: colors.mutedForeground }])}>
-                O feriado solicitado não foi encontrado ou pode ter sido removido.
-              </ThemedText>
-              <Button onPress={() => goBack()}>
-                <ThemedText style={{ color: colors.primaryForeground }}>Voltar</ThemedText>
-              </Button>
-            </View>
-          </Card>
-        </View>
-      </ScrollView>
-    );
-  }
+  const query = useHoliday(holidayId, { enabled: !!holidayId });
 
   return (
-    <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
+    <DetailScreen
+      query={query as any}
+      icon={IconCalendar}
+      title={(h: any) => h.name ?? "Feriado"}
+      privilege={{
+        any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+      }}
+      editRoute={(h: any) =>
+        mobileRoute(routes.humanResources.holidays.edit(h.id))
       }
-      showsVerticalScrollIndicator={false}
+      deleteAction={{
+        mutation: deleteMutation,
+        confirmText:
+          "Tem certeza que deseja excluir este feriado? Esta ação não pode ser desfeita.",
+        successRoute: mobileRoute(routes.humanResources.holidays.root),
+      }}
+      notFoundFallback={mobileRoute(routes.humanResources.holidays.root)}
     >
-      <View style={styles.container}>
-        {/* Holiday Name Header Card */}
-        <Card style={styles.card}>
-          <View style={styles.headerContent}>
-            <View style={[styles.headerLeft, { flex: 1 }]}>
-              <IconCalendar size={24} color={colors.primary} />
-              <ThemedText style={StyleSheet.flatten([styles.holidayName, { color: colors.foreground }])}>
-                {holiday.name}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleEdit}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-                activeOpacity={0.7}
-              >
-                <IconEdit size={18} color={colors.primaryForeground} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Card>
-
-        {/* Holiday Information Card */}
-        <HolidayCard holiday={holiday} />
-
-        {/* Changelog Timeline */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconHistory size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Histórico de Alterações</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <ChangelogTimeline
-              entityType={CHANGE_LOG_ENTITY_TYPE.HOLIDAY}
-              entityId={holiday.id}
-              entityName={holiday.name}
-              entityCreatedAt={holiday.createdAt}
-              maxHeight={400}
-            />
-          </View>
-        </Card>
-
-        {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+      {(holiday: any) => (
+        <View style={styles.body}>
+          <HolidayCard holiday={holiday} />
+          <ChangelogTimeline
+            entityType={CHANGE_LOG_ENTITY_TYPE.HOLIDAY}
+            entityId={holiday.id}
+            entityName={holiday.name}
+            entityCreatedAt={holiday.createdAt}
+            maxHeight={400}
+          />
+        </View>
+      )}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  body: {
     gap: spacing.lg,
-  },
-  card: {
-    padding: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.md,
-  },
-  holidayName: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    flex: 1,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  errorContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.xxl,
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.lg,
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    marginBottom: spacing.sm,
-    textAlign: "center",
-  },
-  errorDescription: {
-    fontSize: fontSize.base,
-    textAlign: "center",
-    marginBottom: spacing.xl,
   },
 });

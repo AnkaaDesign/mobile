@@ -1,12 +1,12 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { IconChevronRight, IconUser } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { routes, USER_STATUS_LABELS } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { DetailCard } from "@/components/ui/detail-page-layout";
@@ -17,12 +17,13 @@ interface EmployeesCardProps {
 
 export function EmployeesCard({ position }: EmployeesCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const employees = position.users || [];
   const hasEmployees = employees.length > 0;
 
   const handleEmployeePress = (userId: string) => {
-    router.push(routeToMobilePath(routes.administration.collaborators.details(userId)) as any);
+    nav.push(mobileRoute(routes.administration.collaborators.details(userId)));
   };
 
   return (

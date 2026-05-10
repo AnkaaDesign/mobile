@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, ScrollView, RefreshControl, Alert, StyleSheet } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { usePpeSize } from "@/hooks/usePpe";
 import { routes, CHANGE_LOG_ENTITY_TYPE } from "@/constants";
 import { formatDate } from "@/utils";
@@ -12,19 +12,20 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { TouchableOpacity } from "react-native";
 // import { showToast } from "@/components/ui/toast";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 
 // Import modular components
 import { SizeCard, EmployeeCard, MeasurementsCard, DeliveryCompatibilityCard } from "@/components/human-resources/ppe/size/detail";
 import { PpeSizeDetailSkeleton } from "@/components/human-resources/ppe/size/skeleton";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 export default function PPESizeDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const [refreshing, setRefreshing] = useState(false);
 
   const id = params?.id || "";
@@ -56,7 +57,7 @@ export default function PPESizeDetailsScreen() {
   const handleEdit = () => {
     if (ppeSize) {
       // Navigate to edit page - route for sizes not available, using direct path
-      router.push(`/(tabs)/recursos-humanos/epi/tamanhos/editar/${ppeSize.id}` as any);
+      nav.push(`/(tabs)/recursos-humanos/epi/tamanhos/editar/${ppeSize.id}` as any);
     }
   };
 

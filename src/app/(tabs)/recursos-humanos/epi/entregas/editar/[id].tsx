@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,12 @@ import { Text } from "@/components/ui/text";
 
 import { usePpeDeliveryMutations, usePpeDelivery, useScreenReady } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_ORDER, SECTOR_PRIVILEGES, routes } from "@/constants";
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants/enum-labels";
 import { ppeDeliveryUpdateSchema, mapPpeDeliveryToFormData, type PpeDeliveryUpdateFormData } from "../../../../../../schemas";
 import { hasPrivilege } from "@/utils";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditHRPPEDeliveryScreen() {
@@ -30,9 +30,9 @@ export default function EditHRPPEDeliveryScreen() {
 }
 
 function EditHRPPEDeliveryScreenInner() {
-  const router = useRouter();
+  const nav = useNav();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
+  const goBack = () => nav.goBack();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user: currentUser } = useAuth();
   const { updateAsync, updateMutation } = usePpeDeliveryMutations();
@@ -96,7 +96,7 @@ function EditHRPPEDeliveryScreenInner() {
         id,
         data: submitData,
       });
-      router.replace(routeToMobilePath(routes.humanResources.ppe.deliveries.details(id)) as any);
+      nav.replace(mobileRoute(routes.humanResources.ppe.deliveries.details(id)));
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao atualizar a entrega de EPI");
     }

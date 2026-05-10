@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, FlatList } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -11,7 +10,8 @@ import { IconAlertCircle, IconList, IconCalendarRepeat } from "@tabler/icons-rea
 import { DetailCard } from "@/components/ui/detail-page-layout";
 import type { Item, PpeDeliverySchedule } from "@/types";
 import { routes } from "@/constants";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
 import { ColumnVisibilitySlidePanel } from "@/components/ui/column-visibility-slide-panel";
 import { useDebounce } from "@/hooks/useDebouncedSearch";
@@ -47,6 +47,7 @@ const createColumnDefinitions = (): Array<{ key: string; header: string; width: 
 
 export function SchedulesTable({ item, maxHeight = 500 }: SchedulesTableProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -111,7 +112,7 @@ export function SchedulesTable({ item, maxHeight = 500 }: SchedulesTableProps) {
   }, []);
 
   const handleSchedulePress = (scheduleId: string) => {
-    router.push(routeToMobilePath(routes.humanResources.ppe.schedules.details(scheduleId)) as any);
+    nav.push(mobileRoute(routes.humanResources.ppe.schedules.details(scheduleId)));
   };
 
   // Get status badge info

@@ -1,312 +1,77 @@
-import { useState, useCallback } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+
 import { usePosition, usePositionMutations } from "@/hooks/usePosition";
-import { routes, CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES } from "@/constants";
-import { Card, CardContent } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { ErrorScreen } from "@/components/ui/error-screen";
-import { useTheme } from "@/lib/theme";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
-import { IconRefresh, IconEdit, IconTrash } from "@tabler/icons-react-native";
-import { routeToMobilePath } from '@/utils/route-mapper';
-// import { showToast } from "@/components/ui/toast";
-import { hasPrivilege } from "@/utils";
-
-// Import modular components
-import { SpecificationsCard, RemunerationHistoryCard, RelatedUsersCard } from "@/components/human-resources/position/detail";
-
+import { CHANGE_LOG_ENTITY_TYPE, SECTOR_PRIVILEGES, routes } from "@/constants";
+import { mobileRoute } from "@/constants/routes.types";
+import { DetailScreen } from "@/components/screens/detail-screen";
+import { spacing } from "@/constants/design-system";
+import { IconBriefcase } from "@tabler/icons-react-native";
+import {
+  SpecificationsCard,
+  RemunerationHistoryCard,
+  RelatedUsersCard,
+} from "@/components/human-resources/position/detail";
 import { ChangelogTimeline } from "@/components/ui/changelog-timeline";
-import { useScreenReady } from '@/hooks/use-screen-ready';
 
+export default function PositionDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const positionId = id || "";
+  const { deleteMutation } = usePositionMutations();
 
-import { Skeleton } from "@/components/ui/skeleton";export default function PositionDetailScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
-  const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
-  const { user } = useAuth();
-  const { delete: deleteAsync } = usePositionMutations();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const id = params?.id || "";
-
-  // Check permissions
-  const canEdit = hasPrivilege(user, SECTOR_PRIVILEGES.HUMAN_RESOURCES);
-  const canDelete = hasPrivilege(user, SECTOR_PRIVILEGES.ADMIN);
-
-  const {
-    data: response,
-    isLoading,
-    error,
-    refetch,
-  } = usePosition(id, {
+  const query = usePosition(positionId, {
     include: {
-      users: {
-        include: {
-          sector: true,
-        },
-        orderBy: {
-          name: "asc",
-        },
-      },
-      remunerations: {
-        orderBy: {
-          createdAt: "desc",
-        },
-      },
+      users: { include: { sector: true }, orderBy: { name: "asc" } },
+      remunerations: { orderBy: { createdAt: "desc" } },
       changelogs: {
-        include: {
-          user: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
+        include: { user: true },
+        orderBy: { createdAt: "desc" },
         take: 10,
       },
-      _count: {
-        select: {
-          users: true,
-          remunerations: true,
-        },
-      },
+      _count: { select: { users: true, remunerations: true } },
     },
-    enabled: !!id && id !== "",
+    enabled: !!positionId,
   });
 
-  useScreenReady(!isLoading);
-
-  const position = response?.data;
-
-  const handleEdit = () => {
-    if (!canEdit) {
-      Alert.alert("Erro", "Você não tem permissão para editar");
-      return;
-    }
-    if (position) {
-      router.push(routeToMobilePath(routes.humanResources.positions.edit(position.id)) as any);
-    }
-  };
-
-  const handleDelete = () => {
-    if (!canDelete) {
-      Alert.alert("Erro", "Você não tem permissão para excluir");
-      return;
-    }
-
-    const employeeCount = position?._count?.users || 0;
-    const warningMessage = employeeCount > 0
-      ? `Este cargo possui ${employeeCount} colaborador${employeeCount !== 1 ? 'es' : ''} associado${employeeCount !== 1 ? 's' : ''}.\n\nTem certeza que deseja excluir? Esta ação não pode ser desfeita.`
-      : "Tem certeza que deseja excluir este cargo? Esta ação não pode ser desfeita.";
-
-    Alert.alert(
-      "Excluir Cargo",
-      warningMessage,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAsync(id as string);
-              // API client already shows success alert
-              goBack();
-            } catch (_error) {
-              // API client already shows error alert
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-    Alert.alert("Sucesso", "Detalhes atualizados");
-  }, [refetch]);
-
-  if (isLoading) {
-    return (
-      <ScrollView style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Header card skeleton: position name + action buttons */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Skeleton style={{ height: 22, width: '55%', borderRadius: 4 }} />
-            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
-              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
-              <Skeleton style={{ width: 36, height: 36, borderRadius: borderRadius.md }} />
-            </View>
-          </View>
-          {/* Specifications card skeleton */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton style={{ height: 16, width: 130, borderRadius: 4 }} />
-            </View>
-            {[0.7, 0.5, 0.6, 0.55].map((w, i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton style={{ height: 14, width: `${Math.round(w * 100)}%` as any, borderRadius: 4 }} />
-                <Skeleton style={{ height: 14, width: 60, borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-          {/* Remuneration history card skeleton */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton style={{ height: 16, width: 160, borderRadius: 4 }} />
-            </View>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Skeleton style={{ height: 14, width: '45%', borderRadius: 4 }} />
-                <Skeleton style={{ height: 14, width: '30%', borderRadius: 4 }} />
-              </View>
-            ))}
-          </View>
-          {/* Related users card skeleton */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }}>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-              <Skeleton style={{ height: 16, width: 120, borderRadius: 4 }} />
-            </View>
-            {[0, 1, 2, 3].map((i) => (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Skeleton style={{ width: 36, height: 36, borderRadius: 18 }} />
-                <View style={{ gap: 4, flex: 1 }}>
-                  <Skeleton style={{ height: 14, width: '55%', borderRadius: 4 }} />
-                  <Skeleton style={{ height: 12, width: '40%', borderRadius: 4 }} />
-                </View>
-              </View>
-            ))}
-          </View>
-          {/* Changelog skeleton */}
-          <View style={{ backgroundColor: colors.card, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md, height: 220 }}>
-            <Skeleton style={{ height: 16, width: 180, borderRadius: 4 }} />
-          </View>
-        </View>
-      </ScrollView>
-    );
-  }
-
-  if (error || !position || !id || id === "") {
-    return (
-      <ErrorScreen
-        message="Erro ao carregar detalhes do cargo"
-        onRetry={refetch}
-      />
-    );
-  }
-
   return (
-    <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={colors.primary}
-        />
+    <DetailScreen
+      query={query as any}
+      icon={IconBriefcase}
+      title={(p: any) => p.name ?? "Cargo"}
+      privilege={{
+        any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+      }}
+      editRoute={(p: any) =>
+        mobileRoute(routes.humanResources.positions.edit(p.id))
       }
-      showsVerticalScrollIndicator={false}
+      deleteAction={{
+        mutation: deleteMutation,
+        confirmText:
+          "Tem certeza que deseja excluir este cargo? Esta ação não pode ser desfeita.",
+        successRoute: mobileRoute(routes.humanResources.positions.root),
+      }}
+      notFoundFallback={mobileRoute(routes.humanResources.positions.root)}
     >
-      <View style={styles.content}>
-        {/* Position Name Header Card */}
-        <Card>
-          <CardContent style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <ThemedText style={StyleSheet.flatten([styles.positionTitle, { color: colors.foreground }])} numberOfLines={2}>
-                {position.name}
-              </ThemedText>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                onPress={handleRefresh}
-                style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.muted }])}
-                activeOpacity={0.7}
-                disabled={refreshing}
-              >
-                <IconRefresh size={18} color={colors.foreground} />
-              </TouchableOpacity>
-              {canEdit && (
-                <TouchableOpacity
-                  onPress={handleEdit}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.primary }])}
-                  activeOpacity={0.7}
-                >
-                  <IconEdit size={18} color={colors.primaryForeground} />
-                </TouchableOpacity>
-              )}
-              {canDelete && (
-                <TouchableOpacity
-                  onPress={handleDelete}
-                  style={StyleSheet.flatten([styles.actionButton, { backgroundColor: colors.destructive }])}
-                  activeOpacity={0.7}
-                >
-                  <IconTrash size={18} color={colors.destructiveForeground} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </CardContent>
-        </Card>
-
-        {/* Info Grid - Specifications and Remuneration History */}
-        <SpecificationsCard position={position} />
-        <RemunerationHistoryCard position={position} />
-
-        {/* Related Users - Full width, before changelog */}
-        <RelatedUsersCard position={position} />
-
-        {/* Changelog - Single column */}
-        <ChangelogTimeline
-          entityType={CHANGE_LOG_ENTITY_TYPE.POSITION}
-          entityId={id}
-          entityName={position.name}
-          entityCreatedAt={position.createdAt}
-          maxHeight={500}
-        />
-
-        {/* Bottom spacing for mobile navigation */}
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+      {(position: any) => (
+        <View style={styles.body}>
+          <SpecificationsCard position={position} />
+          <RemunerationHistoryCard position={position} />
+          <RelatedUsersCard position={position} />
+          <ChangelogTimeline
+            entityType={CHANGE_LOG_ENTITY_TYPE.POSITION}
+            entityId={position.id}
+            entityName={position.name}
+            entityCreatedAt={position.createdAt}
+            maxHeight={500}
+          />
+        </View>
+      )}
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  body: {
     gap: spacing.lg,
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.md,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  positionTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-  },
-  headerActions: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

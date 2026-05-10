@@ -1,6 +1,5 @@
 
 import { View, StyleSheet } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,8 @@ import { IconCalendarEvent, IconUser, IconPlus, IconClock, IconCalendar, IconCir
 import { SCHEDULE_FREQUENCY_LABELS, ASSIGNMENT_TYPE_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import type { Item, PpeDeliverySchedule } from '../../../../types';
 import { DetailCard } from "@/components/ui/detail-page-layout";
 
@@ -22,15 +22,16 @@ interface SchedulesCardProps {
 
 export function SchedulesCard({ schedules = [] }: SchedulesCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const activeSchedules = schedules.filter((s) => s.isActive);
 
   const handleViewAllSchedules = () => {
-    router.push(routeToMobilePath(routes.humanResources.ppe.schedules.root) as any);
+    nav.push(mobileRoute(routes.humanResources.ppe.schedules.root));
   };
 
   const handleAddSchedule = () => {
-    router.push(routeToMobilePath(routes.humanResources.ppe.schedules.create) as any);
+    nav.push(mobileRoute(routes.humanResources.ppe.schedules.create));
   };
 
   return (

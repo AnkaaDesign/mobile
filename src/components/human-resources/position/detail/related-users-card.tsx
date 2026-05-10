@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { SearchBar } from "@/components/ui/search-bar";
 import { ListActionButton } from "@/components/ui/list-action-button";
@@ -9,7 +8,8 @@ import { spacing, fontSize } from "@/constants/design-system";
 import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { UserTable } from "@/components/administration/user/list/user-table";
 
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -36,6 +36,7 @@ const createColumnDefinitions = () => {
 
 export function RelatedUsersCard({ position, maxHeight = 500 }: RelatedUsersCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -105,7 +106,7 @@ export function RelatedUsersCard({ position, maxHeight = 500 }: RelatedUsersCard
   }, []);
 
   const handleUserPress = (userId: string) => {
-    router.push(routeToMobilePath(routes.administration.users.details(userId)) as any);
+    nav.push(mobileRoute(routes.administration.users.details(userId)));
   };
 
   // Don't show if no users and not loading

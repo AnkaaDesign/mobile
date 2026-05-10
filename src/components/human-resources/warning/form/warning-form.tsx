@@ -2,7 +2,6 @@ import { useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Input } from "@/components/ui/input";
@@ -17,9 +16,9 @@ import { formSpacing } from "@/constants/form-styles";
 import { spacing } from "@/constants/design-system";
 import { useKeyboardAwareScroll } from "@/hooks";
 import { KeyboardAwareFormProvider, type KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
-import { routeToMobilePath } from "@/utils/route-mapper";
+import { mobileRoute } from "@/constants/routes.types";
 import { routes } from "@/constants";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
+import { useNav } from "@/contexts/nav";
 
 import { warningCreateSchema, warningUpdateSchema } from "@/schemas/warning";
 import type { WarningCreateFormData, WarningUpdateFormData } from "@/schemas/warning";
@@ -53,8 +52,8 @@ const CATEGORY_LABELS = {
 };
 
 export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormProps) {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  const nav = useNav();
+  const goBack = () => nav.goBack();
   const { colors } = useTheme();
   const { handlers, refs } = useKeyboardAwareScroll();
   const { createAsync, updateAsync, createMutation, updateMutation } = useWarningMutations();
@@ -135,7 +134,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
         const newId = (result as any)?.data?.id || (result as any)?.id;
         onSuccess?.();
         if (newId) {
-          router.replace(routeToMobilePath(routes.humanResources.warnings.details(newId)) as any);
+          nav.replace(mobileRoute(routes.humanResources.warnings.details(newId)));
         } else {
           goBack();
         }
@@ -145,7 +144,7 @@ export function WarningForm({ mode, warning, onSuccess, onCancel }: WarningFormP
           data: data as WarningUpdateFormData,
         });
         onSuccess?.();
-        router.replace(routeToMobilePath(routes.humanResources.warnings.details(warning.id)) as any);
+        nav.replace(mobileRoute(routes.humanResources.warnings.details(warning.id)));
       }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Ocorreu um erro ao salvar a advertência");
