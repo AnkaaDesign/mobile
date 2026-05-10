@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, Platform , StyleSheet} from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,37 +12,42 @@ import { Card } from "@/components/ui/card";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
 import { Combobox } from "@/components/ui/combobox";
 import type { ComboboxOption } from "@/components/ui/combobox";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useTheme } from "@/lib/theme";
 import { formatCurrency, formatQuantity } from "@/utils";
-import { useAuth } from "@/contexts/auth-context";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { hasPrivilege } from "@/utils";
-import { SECTOR_PRIVILEGES } from "@/constants";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 
 export default function AddOrderItemScreen() {
-  const router = useRouter();
-  const { goBack } = useNavigationHistory();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <AddOrderItemScreenInner />
+    </PrivilegeGate>
+  );
+}
+
+function AddOrderItemScreenInner() {
+  const nav = useNav();
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
-  // Check permissions
-  const canCreate = user && hasPrivilege(user, SECTOR_PRIVILEGES.WAREHOUSE);
+
+  const goBack = () =>
+    nav.goBack({
+      fallback: mobileRoute(
+        routes.inventory.orders.items.list(orderId as string),
+      ),
+    });
 
   // Signal screen ready on mount (create-like screen, order loading shows inline skeleton)
   useScreenReady();
-
-  if (!canCreate) {
-    return (
-      <ThemedView style={styles.container}>
-        <ErrorScreen message="Sem permissão" detail="Você não tem permissão para adicionar itens" />
-      </ThemedView>
-    );
-  }
 
   // Get order details
   const { data: order, isLoading: orderLoading, error: orderError } = useOrder(orderId || '', {

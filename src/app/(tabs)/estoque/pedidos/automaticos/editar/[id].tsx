@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { View, ScrollView, Alert, KeyboardAvoidingView, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,49 +8,51 @@ import { useOrderSchedule, useOrderScheduleMutations, useScreenReady} from '@/ho
 import { orderScheduleUpdateSchema, mapOrderScheduleToFormData, type OrderScheduleUpdateFormData, type OrderScheduleInclude } from '../../../../../../schemas';
 import type { OrderSchedule } from '../../../../../../types';
 import { SCHEDULE_FREQUENCY, SCHEDULE_FREQUENCY_LABELS, SECTOR_PRIVILEGES, routes } from "@/constants";
-import { hasPrivilege } from "@/utils";
-import { useAuth } from "@/contexts/auth-context";
 import {
   ThemedView,
   ThemedText,
   Card,
   Button,
   Input,
-  
+
   Switch,
   ErrorScreen,
 } from "@/components/ui";
 import { FormHeader } from "@/components/ui/form-header";
 import { FormSection } from "@/components/ui/form-section";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { ItemMultiSelector } from "@/components/inventory/item/item-multi-selector";
 import { FrequencySelector } from "@/components/inventory/order/schedule/frequency-selector";
 import { ScheduleConfigurationForm } from "@/components/inventory/order/schedule/schedule-configuration-form";
 import { useTheme } from "@/lib/theme";
-import { useNavigationHistory } from "@/contexts/navigation-history-context";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
 
 
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EditAutomaticOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <EditAutomaticOrderScreenInner key={id} />;
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <EditAutomaticOrderScreenInner key={id} />
+    </PrivilegeGate>
+  );
 }
 
 function EditAutomaticOrderScreenInner() {
-  const router = useRouter();
+  const nav = useNav();
   const params = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
-  const { goBack } = useNavigationHistory();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
 
-  // Check permissions
-  const canEdit = user && hasPrivilege(user as any, SECTOR_PRIVILEGES.WAREHOUSE);
-
   const scheduleId = params.id!;
+  const goBack = () =>
+    nav.goBack({ fallback: mobileRoute(routes.inventory.orders.automatic.root) });
 
   const include: OrderScheduleInclude = {
     weeklyConfig: { include: { daysOfWeek: true } },
@@ -95,7 +97,7 @@ function EditAutomaticOrderScreenInner() {
         {
           text: "OK",
           onPress: () => {
-            router.replace(routeToMobilePath(routes.inventory.orders.automatic.details(scheduleId)) as any);
+            nav.replace(mobileRoute(routes.inventory.orders.automatic.details(scheduleId)));
           },
         },
       ]);
@@ -117,11 +119,6 @@ function EditAutomaticOrderScreenInner() {
 
   const onSubmit = useCallback(
     async (data: OrderScheduleUpdateFormData) => {
-      if (!canEdit) {
-        Alert.alert("Sem permissão", "Você não tem permissão para editar agendamentos automáticos");
-        return;
-      }
-
       if (!isDirty) {
         Alert.alert("Sem alterações", "Nenhuma alteração foi feita para salvar.");
         return;
@@ -137,7 +134,7 @@ function EditAutomaticOrderScreenInner() {
         setIsSubmitting(false);
       }
     },
-    [updateOrderSchedule, scheduleId, canEdit, isDirty],
+    [updateOrderSchedule, scheduleId, isDirty],
   );
 
   const handleCancel = useCallback(() => {
@@ -149,27 +146,7 @@ function EditAutomaticOrderScreenInner() {
     } else {
       goBack();
     }
-  }, [router, isDirty]);
-
-  if (!canEdit) {
-    return (
-      <ThemedView style={styles.container}>
-        <FormHeader
-          title="Editar Agendamento"
-          onCancel={() => goBack()}
-          showActions={false}
-        />
-        <View style={styles.permissionContainer}>
-          <ThemedText style={styles.permissionText}>
-            Você não tem permissão para editar agendamentos automáticos
-          </ThemedText>
-          <Button variant="outline" onPress={() => goBack()}>
-            <ThemedText>Voltar</ThemedText>
-          </Button>
-        </View>
-      </ThemedView>
-    );
-  }
+  }, [isDirty]);
 
   if (isLoadingSchedule) {
     return <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
