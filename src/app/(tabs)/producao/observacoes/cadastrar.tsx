@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useNavigationHistory } from "@/contexts/navigation-history-context";
 import { hasPrivilege } from "@/utils";
 import { SECTOR_PRIVILEGES, routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
 import {
   TUTORIAL_TARGETS,
   useOptionalTutorial,
@@ -190,7 +190,7 @@ function CreateObservationScreenInner() {
         try {
           router.back();
         } catch {
-          router.replace(routeToMobilePath(routes.production.observations.list) as any);
+          router.replace(mobileRoute(routes.production.observations.list) as any);
         }
       }, 100);
       return;
@@ -208,7 +208,7 @@ function CreateObservationScreenInner() {
             text: "OK",
             onPress: () => {
               if (result?.data?.id) {
-                router.replace(routeToMobilePath(routes.production.observations.details(result.data.id)) as any);
+                router.replace(mobileRoute(routes.production.observations.details(result.data.id)) as any);
               } else {
                 goBack();
               }
@@ -278,7 +278,7 @@ function CreateObservationScreenInner() {
     if (backPath) {
       goBack();
     } else {
-      router.replace(routeToMobilePath(routes.production.observations.list) as any);
+      router.replace(mobileRoute(routes.production.observations.list) as any);
     }
   };
 
