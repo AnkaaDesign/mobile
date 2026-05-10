@@ -1,105 +1,102 @@
-import { useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+import { Alert } from "react-native";
+import { useForm, Controller } from "react-hook-form";
+
 import { Input } from "@/components/ui/input";
-import { IconCalendar } from "@tabler/icons-react-native";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
 import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { useHolidayMutations } from "@/hooks/useHoliday";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
-export default function HolidaysCreateScreen() {
-  useScreenReady();
-  const formKey = useFormScreenKey();
-  const { colors } = useTheme();
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      // Implementation will be added
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ScrollView
-      key={formKey}
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.container}>
-        {/* Form Header */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconCalendar size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Informações Básicas</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <Input placeholder="Nome do Feriado" />
-            <Input placeholder="Data do Feriado" />
-          </View>
-        </Card>
-
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button
-            variant="default"
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <ThemedText style={{ color: colors.primaryForeground }}>
-              Salvar Feriado
-            </ThemedText>
-          </Button>
-        </View>
-
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
-  );
+interface HolidayCreateForm {
+  name: string;
+  date: string;
 }
 
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
-  card: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  buttonContainer: {
-    gap: spacing.sm,
-  },
-});
+export default function HolidaysCreateScreen() {
+  const formKey = useFormScreenKey();
+  return <HolidaysCreateScreenInner key={formKey} />;
+}
+
+function HolidaysCreateScreenInner() {
+  const { createAsync } = useHolidayMutations();
+
+  const form = useForm<HolidayCreateForm>({
+    defaultValues: { name: "", date: "" },
+  });
+
+  const flow = useFormFlow<HolidayCreateForm, { id: string }>({
+    form,
+    mutation: async (data) => {
+      if (!data.name?.trim()) {
+        Alert.alert("Erro", "Nome do feriado é obrigatório");
+        throw new Error("missing name");
+      }
+      const r = await createAsync({
+        name: data.name,
+        date: data.date ? new Date(data.date) : new Date(),
+      } as any);
+      return { id: r?.data?.id ?? "" };
+    },
+    successRoute: () => mobileRoute(routes.humanResources.holidays.root),
+    cancelFallback: mobileRoute(routes.humanResources.holidays.root),
+  });
+
+  return (
+    <FormScreen
+      title="Novo Feriado"
+      mode="create"
+      form={form}
+      flow={flow}
+      submittingLabel="Salvando..."
+      submitLabel="Salvar Feriado"
+      privilege={{
+        any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+      }}
+    >
+      <FormCard title="Informações do Feriado" icon="IconCalendar">
+        <FormFieldGroup
+          label="Nome do Feriado"
+          required
+          error={form.formState.errors.name?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Digite o nome do feriado"
+                error={!!form.formState.errors.name}
+              />
+            )}
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup
+          label="Data do Feriado"
+          required
+          error={form.formState.errors.date?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="date"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="AAAA-MM-DD"
+                error={!!form.formState.errors.date}
+              />
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
+    </FormScreen>
+  );
+}

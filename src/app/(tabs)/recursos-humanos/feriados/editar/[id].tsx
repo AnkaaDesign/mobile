@@ -1,158 +1,125 @@
-import { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { useEffect } from "react";
+import { Alert } from "react-native";
+import { useForm, Controller } from "react-hook-form";
 import { useLocalSearchParams } from "expo-router";
-import { useTheme } from "@/lib/theme";
-import { spacing, fontSize } from "@/constants/design-system";
-import { Card } from "@/components/ui/card";
-import { ThemedText } from "@/components/ui/themed-text";
-import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { IconCalendar } from "@tabler/icons-react-native";
-import { useHoliday } from "@/hooks/useHoliday";
-import { useScreenReady } from '@/hooks/use-screen-ready';
+import { FormCard, FormFieldGroup } from "@/components/ui/form-section";
+import { FormScreen } from "@/components/screens/form-screen";
+import { useFormFlow } from "@/hooks/use-form-flow";
+import { useFormScreenKey } from "@/hooks/use-form-screen-key";
+import { useHoliday, useHolidayMutations } from "@/hooks/useHoliday";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+
+interface HolidayEditForm {
+  name: string;
+  date: string;
+}
 
 export default function HolidayEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <HolidayEditScreenInner key={id} />;
+  const formKey = useFormScreenKey();
+  return <HolidayEditScreenInner key={`${id}-${formKey}`} />;
 }
 
 function HolidayEditScreenInner() {
-  const { colors } = useTheme();
-  const params = useLocalSearchParams<{ id: string }>();
-  const id = params?.id || "";
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", date: "" });
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const holidayId = id || "";
+  const loadQuery = useHoliday(holidayId, { enabled: !!holidayId });
+  const { updateAsync } = useHolidayMutations();
 
-  const { data: response, isLoading } = useHoliday(id, {
-    enabled: !!id && id !== "",
+  const form = useForm<HolidayEditForm>({
+    defaultValues: { name: "", date: "" },
   });
 
-  useScreenReady(!isLoading);
-
-  const holiday = response?.data;
-
+  // Hydrate the form once the holiday loads.
   useEffect(() => {
-    if (holiday) {
-      setFormData({
-        name: holiday.name || "",
-        date: holiday.date instanceof Date ? holiday.date.toISOString().split('T')[0] : (holiday.date || ""),
+    const holiday = loadQuery.data?.data;
+    if (!holiday) return;
+    form.reset({
+      name: holiday.name || "",
+      date:
+        holiday.date instanceof Date
+          ? holiday.date.toISOString().split("T")[0]
+          : holiday.date || "",
+    });
+  }, [loadQuery.data, form]);
+
+  const flow = useFormFlow<HolidayEditForm, { id: string }>({
+    form,
+    mutation: async (data) => {
+      if (!holidayId) {
+        Alert.alert("Erro", "ID do feriado não encontrado");
+        throw new Error("missing id");
+      }
+      const r = await updateAsync({
+        id: holidayId,
+        data: {
+          name: data.name,
+          date: data.date ? new Date(data.date) : undefined,
+        } as any,
       });
-    }
-  }, [holiday]);
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      // Implementation will be added
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <ScrollView
-        style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border, gap: spacing.md }}>
-            <Skeleton width="40%" height={18} style={{ marginBottom: spacing.xs }} />
-            <Skeleton width="100%" height={44} />
-            <Skeleton width="100%" height={44} />
-          </View>
-          <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: spacing.md, borderWidth: 1, borderColor: colors.border }}>
-            <Skeleton width="100%" height={44} />
-          </View>
-          <View style={{ height: spacing.xxl * 2 }} />
-        </View>
-      </ScrollView>
-    );
-  }
+      return { id: r?.data?.id ?? holidayId };
+    },
+    successRoute: () => mobileRoute(routes.humanResources.holidays.root),
+    cancelFallback: mobileRoute(routes.humanResources.holidays.root),
+  });
 
   return (
-    <ScrollView
-      style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
-      showsVerticalScrollIndicator={false}
+    <FormScreen
+      title="Editar Feriado"
+      mode="edit"
+      form={form}
+      flow={flow}
+      loadQuery={loadQuery as any}
+      submittingLabel="Salvando..."
+      submitLabel="Salvar Alterações"
+      privilege={{
+        any: [SECTOR_PRIVILEGES.HUMAN_RESOURCES, SECTOR_PRIVILEGES.ADMIN],
+      }}
     >
-      <View style={styles.container}>
-        {/* Form Header */}
-        <Card style={styles.card}>
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <IconCalendar size={20} color={colors.mutedForeground} />
-              <ThemedText style={styles.title}>Editar Feriado</ThemedText>
-            </View>
-          </View>
-          <View style={styles.content}>
-            <Input
-              placeholder="Nome do Feriado"
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: String(text ?? '') })}
-            />
-            <Input
-              placeholder="Data do Feriado"
-              value={formData.date}
-              onChangeText={(text) => setFormData({ ...formData, date: String(text ?? '') })}
-            />
-          </View>
-        </Card>
+      <FormCard title="Informações do Feriado" icon="IconCalendar">
+        <FormFieldGroup
+          label="Nome do Feriado"
+          required
+          error={form.formState.errors.name?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Digite o nome do feriado"
+                error={!!form.formState.errors.name}
+              />
+            )}
+          />
+        </FormFieldGroup>
 
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <Button
-            variant="default"
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <ThemedText style={{ color: colors.primaryForeground }}>
-              Salvar Alterações
-            </ThemedText>
-          </Button>
-        </View>
-
-        <View style={{ height: spacing.xxl * 2 }} />
-      </View>
-    </ScrollView>
+        <FormFieldGroup
+          label="Data do Feriado"
+          required
+          error={form.formState.errors.date?.message as string | undefined}
+        >
+          <Controller
+            control={form.control}
+            name="date"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                value={value || ""}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="AAAA-MM-DD"
+                error={!!form.formState.errors.date}
+              />
+            )}
+          />
+        </FormFieldGroup>
+      </FormCard>
+    </FormScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    gap: spacing.lg,
-  },
-  card: {
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: "500",
-  },
-  content: {
-    gap: spacing.sm,
-  },
-  buttonContainer: {
-    gap: spacing.sm,
-  },
-});
