@@ -1,6 +1,5 @@
 
 import { View, StyleSheet } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,8 @@ import { IconCalendar, IconUser, IconPlus, IconPackage } from "@tabler/icons-rea
 import { PPE_DELIVERY_STATUS_LABELS } from "@/constants";
 import { formatDate } from "@/utils";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import type { Item, PpeDelivery } from '../../../../types';
 import { DetailCard } from "@/components/ui/detail-page-layout";
 
@@ -22,15 +22,16 @@ interface DeliveriesCardProps {
 
 export function DeliveriesCard({ deliveries = [] }: DeliveriesCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const recentDeliveries = deliveries.slice(0, 5);
 
   const handleViewAllDeliveries = () => {
-    router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.root) as any);
+    nav.push(mobileRoute(routes.humanResources.ppe.deliveries.root));
   };
 
   const handleAddDelivery = () => {
-    router.push(routeToMobilePath(routes.humanResources.ppe.deliveries.create) as any);
+    nav.push(mobileRoute(routes.humanResources.ppe.deliveries.create));
   };
 
   const getStatusColor = (status: string) => {

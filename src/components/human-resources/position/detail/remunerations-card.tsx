@@ -1,12 +1,12 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { IconTrendingUp, IconTrendingDown, IconMinus, IconChevronRight } from "@tabler/icons-react-native";
 import type { Position } from '../../../../types';
 import { formatCurrency, formatDate } from "@/utils";
 import { routes } from "@/constants";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
 import { extendedColors } from "@/lib/theme/extended-colors";
@@ -19,13 +19,14 @@ interface RemunerationsCardProps {
 
 export function RemunerationsCard({ position }: RemunerationsCardProps) {
   const { colors, isDark } = useTheme();
+  const nav = useNav();
 
   // Get remunerations (MonetaryValue entities via remunerations relation)
   const values = position.remunerations || [];
   const hasRemunerations = values.length > 0;
 
   const handleViewRemunerations = () => {
-    router.push(routeToMobilePath(routes.humanResources.positions.remunerations(position.id)) as any);
+    nav.push(mobileRoute(routes.humanResources.positions.remunerations(position.id)));
   };
 
   // Calculate trend

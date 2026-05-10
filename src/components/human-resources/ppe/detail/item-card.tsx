@@ -1,6 +1,5 @@
 
 import { View, StyleSheet, TouchableOpacity } from "react-native";
-import { router } from "expo-router";
 import { ThemedText } from "@/components/ui/themed-text";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -8,7 +7,8 @@ import { extendedColors } from "@/lib/theme/extended-colors";
 import { IconPackage, IconCurrencyDollar, IconArrowRight, IconAlertTriangle } from "@tabler/icons-react-native";
 import { routes, MEASURE_UNIT_LABELS } from "@/constants";
 import { formatCurrency, itemUtils } from "@/utils";
-import { routeToMobilePath } from '@/utils/route-mapper';
+import { mobileRoute } from "@/constants/routes.types";
+import { useNav } from "@/contexts/nav";
 import type { Item } from '../../../../types';
 import { DetailCard } from "@/components/ui/detail-page-layout";
 
@@ -18,6 +18,7 @@ interface ItemCardProps {
 
 export function ItemCard({ item }: ItemCardProps) {
   const { colors } = useTheme();
+  const nav = useNav();
 
   const getStockStatus = () => {
     const quantity = item.quantity || 0;
@@ -37,7 +38,7 @@ export function ItemCard({ item }: ItemCardProps) {
   const currentPrice = item.prices?.[0]?.value;
 
   const handleNavigateToItem = () => {
-    router.push(routeToMobilePath(routes.inventory.products.details(item.id)) as any);
+    nav.push(mobileRoute(routes.inventory.products.details(item.id)));
   };
 
   return (
