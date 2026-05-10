@@ -1,15 +1,25 @@
-import { useRouter } from "expo-router";
 import { ThemedView } from "@/components/ui/themed-view";
 import { BorrowBatchCreateForm } from "@/components/inventory/borrow/form";
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
 import { useBorrowBatchMutations, useScreenReady, useFormScreenKey } from "@/hooks";
-import { routeToMobilePath } from '@/utils/route-mapper';
-import { routes } from "@/constants";
+import { useNav } from "@/contexts/nav";
+import { mobileRoute } from "@/constants/routes.types";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
 
 export default function EstoqueEmprestimosCadastrarScreen() {
-  const router = useRouter();
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <BorrowCreateInner />
+    </PrivilegeGate>
+  );
+}
+
+function BorrowCreateInner() {
+  const nav = useNav();
   const { batchCreateAsync, isLoading: isBatchCreating } = useBorrowBatchMutations();
 
-  // End navigation loading overlay when screen mounts
   useScreenReady(true);
   const formKey = useFormScreenKey();
 
@@ -17,7 +27,6 @@ export default function EstoqueEmprestimosCadastrarScreen() {
     userId: string;
     items: Array<{ itemId: string; quantity: number }>;
   }) => {
-    // Create batch borrows - one borrow per item
     const borrows = data.items.map((item) => ({
       userId: data.userId,
       itemId: item.itemId,
@@ -25,13 +34,11 @@ export default function EstoqueEmprestimosCadastrarScreen() {
     }));
 
     const result = await batchCreateAsync({ borrows });
-
-    // Return the result to be displayed in the modal
     return result?.data;
   };
 
   const handleCancel = () => {
-    router.replace(routeToMobilePath(routes.inventory.borrows.root) as any);
+    nav.replace(mobileRoute(routes.inventory.borrows.root));
   };
 
   return (
