@@ -12,13 +12,13 @@ interface DecoratorBlockEditorProps {
 }
 
 const DECORATOR_IMAGES: Record<DecoratorVariant, ImageSourcePropType> = {
-  'header-logo': require('../../../../../../../assets/header-logo.webp'),
-  'header-logo-stripes': require('../../../../../../../assets/header-logo-stripes.webp'),
-  'footer-wave-dark': require('../../../../../../../assets/footer-wave-dark.webp'),
-  'footer-wave-logo': require('../../../../../../../assets/footer-wave-logo.webp'),
-  'footer-diagonal-stripes': require('../../../../../../../assets/footer-diagonal-stripes.webp'),
-  'footer-wave-gold': require('../../../../../../../assets/footer-wave-gold.webp'),
-  'footer-geometric': require('../../../../../../../assets/footer-geometric.webp'),
+  'header-logo': require('../../../../../../../assets/header-logo.png'),
+  'header-logo-stripes': require('../../../../../../../assets/header-logo-stripes.png'),
+  'footer-wave-dark': require('../../../../../../../assets/footer-wave-dark.png'),
+  'footer-wave-logo': require('../../../../../../../assets/footer-wave-logo.png'),
+  'footer-diagonal-stripes': require('../../../../../../../assets/footer-diagonal-stripes.png'),
+  'footer-wave-gold': require('../../../../../../../assets/footer-wave-gold.png'),
+  'footer-geometric': require('../../../../../../../assets/footer-geometric.png'),
 };
 
 const VARIANT_LABELS: Record<DecoratorVariant, string> = {
