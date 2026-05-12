@@ -60,6 +60,7 @@ export default function ObservationListScreen() {
     <View
       ref={listTarget.ref}
       onLayout={listTarget.onLayout}
+      collapsable={false}
       style={styles.flex}
     >
       <Layout config={observationsListConfig} />
@@ -71,6 +72,7 @@ export default function ObservationListScreen() {
       <View
         ref={fabTarget.ref}
         onLayout={fabTarget.onLayout}
+        collapsable={false}
         pointerEvents={isTutorialActive && isFabStep ? 'box-none' : 'none'}
         style={[styles.fabOverlay, { bottom: fabBottom }]}
       >

@@ -1,6 +1,10 @@
 // packages/api-client/src/customer.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   CustomerGetManyFormData,
@@ -39,6 +43,8 @@ export class CustomerService {
   // =====================
 
   async getCustomers(params?: CustomerGetManyFormData): Promise<CustomerGetManyResponse> {
+    const mock = getTutorialMockList("customers", params ?? {});
+    if (mock) return mock as unknown as CustomerGetManyResponse;
     const response = await apiClient.get<CustomerGetManyResponse>(this.basePath, {
       params,
     });
@@ -46,6 +52,10 @@ export class CustomerService {
   }
 
   async getCustomerById(id: string, params?: Omit<CustomerGetByIdFormData, "id">): Promise<CustomerGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("customers", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as CustomerGetUniqueResponse;
+    }
     const response = await apiClient.get<CustomerGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

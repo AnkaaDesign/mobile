@@ -42,6 +42,8 @@ export default function PreferencesIndexScreen() {
     (hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
       user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER);
   const replayTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesReplayButton);
+  const themeCardTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesThemeCard);
+  const notificationsCardTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesNotificationsCard);
 
   const handleReplayTutorial = () => {
     if (!tutorial) return;
@@ -73,13 +75,20 @@ export default function PreferencesIndexScreen() {
       description: "Aparência do aplicativo",
       icon: "palette",
       onPress: () => nav.push(mobileRoute("/pessoal/preferencias/tema")),
+      ref: themeCardTarget.ref,
+      onLayout: themeCardTarget.onLayout,
     },
     {
       id: "notificacoes",
       title: "Notificações",
       description: "Configurar notificações",
       icon: "bell",
-      onPress: () => nav.push(mobileRoute("/perfil/notification-preferences")),
+      onPress: () => {
+        notificationsCardTarget.onPress();
+        nav.push(mobileRoute("/perfil/notification-preferences"));
+      },
+      ref: notificationsCardTarget.ref,
+      onLayout: notificationsCardTarget.onLayout,
     },
   ];
 

@@ -6,7 +6,7 @@ import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { useHRDashboard } from "@/hooks/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useScreenReady } from '@/hooks/use-screen-ready';
 
@@ -26,6 +26,56 @@ export default function RecursosHumanosScreen() {
     await refetch();
     setRefreshing(false);
   }, [refetch]);
+
+  // Stable nav handlers — without these, each Pressable in Quick Access gets a
+  // new arrow function per render, defeating Pressable's native press handling.
+  const goToEmployees = useCallback(
+    () => nav.push(mobileRoute(routes.humanResources.employees.list)),
+    [nav],
+  );
+  const goToPositions = useCallback(
+    () => nav.push(mobileRoute(routes.humanResources.positions.list)),
+    [nav],
+  );
+  const goToHolidays = useCallback(
+    () => nav.push(mobileRoute(routes.humanResources.holidays.list)),
+    [nav],
+  );
+  const goToPPE = useCallback(
+    () => nav.push(mobileRoute(routes.humanResources.ppe.root)),
+    [nav],
+  );
+
+  // Pre-format metric values once per data change instead of re-running
+  // toLocaleString on every render for each of the 6 metric cards.
+  const formattedMetrics = useMemo(() => {
+    const data = dashboard?.data;
+    if (!data) return null;
+    const fmt = (n: number) => n.toLocaleString('pt-BR');
+    return {
+      totalEmployees: fmt(data.overview?.totalEmployees?.value || 0),
+      activeEmployees: fmt(data.overview?.activeEmployees?.value || 0),
+      newHires: fmt(data.overview?.newHires?.value || 0),
+      tasksCreated: fmt(data.taskMetrics?.totalTasksCreated?.value || 0),
+      totalPPE: fmt(data.ppeMetrics?.totalPPE || 0),
+      totalPositions: fmt(data.positionMetrics?.totalPositions || 0),
+    };
+  }, [dashboard?.data]);
+
+  // Pre-compute status percentages once per data change.
+  const employeeStatusRows = useMemo(() => {
+    const overview = dashboard?.data?.overview;
+    if (!overview) return [];
+    const total = overview.totalEmployees?.value || 1;
+    return [
+      { label: "Ativo", value: overview.activeEmployees?.value || 0, color: "#22c55e" },
+      { label: "Inativo", value: overview.inactiveEmployees?.value || 0, color: "#ef4444" },
+      { label: "Novas Contratações", value: overview.newHires?.value || 0, color: "#3b82f6" },
+    ].map(row => ({
+      ...row,
+      percentage: Math.round((row.value / total) * 100),
+    }));
+  }, [dashboard?.data?.overview]);
 
   if (isLoading && !refreshing) {
     return (
@@ -116,7 +166,7 @@ export default function RecursosHumanosScreen() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Pressable
-              onPress={() => nav.push(mobileRoute(routes.humanResources.employees.list))}
+              onPress={goToEmployees}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -140,7 +190,7 @@ export default function RecursosHumanosScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => nav.push(mobileRoute(routes.humanResources.positions.list))}
+              onPress={goToPositions}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -164,7 +214,7 @@ export default function RecursosHumanosScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => nav.push(mobileRoute(routes.humanResources.holidays.list))}
+              onPress={goToHolidays}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -188,7 +238,7 @@ export default function RecursosHumanosScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => nav.push(mobileRoute(routes.humanResources.ppe.root))}
+              onPress={goToPPE}
               style={{
                 flex: 1,
                 minWidth: "45%",
@@ -220,12 +270,12 @@ export default function RecursosHumanosScreen() {
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {[
-              { title: "Total Funcionários", value: data?.overview?.totalEmployees?.value || 0, icon: "users", color: "#3b82f6" },
-              { title: "Ativos", value: data?.overview?.activeEmployees?.value || 0, icon: "user-check", color: "#22c55e" },
-              { title: "Novas Contratações", value: data?.overview?.newHires?.value || 0, icon: "user", color: "#a855f7" },
-              { title: "Tarefas Criadas", value: data?.taskMetrics?.totalTasksCreated?.value || 0, icon: "clipboard-list", color: "#f97316" },
-              { title: "Total EPIs", value: data?.ppeMetrics?.totalPPE || 0, icon: "helmet", color: "#06b6d4" },
-              { title: "Total Cargos", value: data?.positionMetrics?.totalPositions || 0, icon: "briefcase", color: "#8b5cf6" },
+              { title: "Total Funcionários", value: formattedMetrics?.totalEmployees ?? '0', icon: "users", color: "#3b82f6" },
+              { title: "Ativos", value: formattedMetrics?.activeEmployees ?? '0', icon: "user-check", color: "#22c55e" },
+              { title: "Novas Contratações", value: formattedMetrics?.newHires ?? '0', icon: "user", color: "#a855f7" },
+              { title: "Tarefas Criadas", value: formattedMetrics?.tasksCreated ?? '0', icon: "clipboard-list", color: "#f97316" },
+              { title: "Total EPIs", value: formattedMetrics?.totalPPE ?? '0', icon: "helmet", color: "#06b6d4" },
+              { title: "Total Cargos", value: formattedMetrics?.totalPositions ?? '0', icon: "briefcase", color: "#8b5cf6" },
             ].map((metric) => (
               <View
                 key={metric.title}
@@ -246,7 +296,7 @@ export default function RecursosHumanosScreen() {
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 16 }}>
-                    {typeof metric.value === 'number' ? metric.value.toLocaleString('pt-BR') : metric.value}
+                    {metric.value}
                   </Text>
                 </View>
               </View>
@@ -260,34 +310,26 @@ export default function RecursosHumanosScreen() {
             Status dos Funcionários
           </Text>
           <View style={{ backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 12, gap: 8 }}>
-            {[
-              { label: "Ativo", value: data?.overview?.activeEmployees?.value || 0, color: "#22c55e" },
-              { label: "Inativo", value: data?.overview?.inactiveEmployees?.value || 0, color: "#ef4444" },
-              { label: "Novas Contratações", value: data?.overview?.newHires?.value || 0, color: "#3b82f6" },
-            ].map((status) => {
-              const total = data?.overview?.totalEmployees?.value || 1;
-              const percentage = Math.round((status.value / total) * 100);
-              return (
-                <View key={status.label} style={{ gap: 4 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Text style={{ color: colors.foreground, fontWeight: "500" }}>{status.label}</Text>
-                    <Text style={{ color: colors.mutedForeground }}>
-                      {status.value} ({percentage}%)
-                    </Text>
-                  </View>
-                  <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
-                    <View
-                      style={{
-                        height: 6,
-                        backgroundColor: status.color,
-                        borderRadius: 3,
-                        width: `${Math.min(percentage, 100)}%`,
-                      }}
-                    />
-                  </View>
+            {employeeStatusRows.map((status) => (
+              <View key={status.label} style={{ gap: 4 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "500" }}>{status.label}</Text>
+                  <Text style={{ color: colors.mutedForeground }}>
+                    {status.value} ({status.percentage}%)
+                  </Text>
                 </View>
-              );
-            })}
+                <View style={{ height: 6, backgroundColor: colors.muted, borderRadius: 3, overflow: "hidden" }}>
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: status.color,
+                      borderRadius: 3,
+                      width: `${Math.min(status.percentage, 100)}%`,
+                    }}
+                  />
+                </View>
+              </View>
+            ))}
           </View>
         </View>
 

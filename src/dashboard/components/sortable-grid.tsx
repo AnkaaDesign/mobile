@@ -14,9 +14,13 @@
 //   - Render every tile as an absolutely-positioned <Animated.View> driven by
 //     two shared values per tile (tx, ty). Inactive tiles spring to their
 //     home; the active tile's tx/ty is gesture-driven during a drag.
-//   - Each tile's drag-handle button is wrapped in a GestureDetector. The
-//     gesture activates after a short long-press (matches dnd-kit's
-//     activationDistance: 8 — explicit intent, not accidental).
+//   - The whole tile body is the drag activator. Single
+//     Gesture.Pan().activateAfterLongPress(350) per MOBILE_WIDGETS_SPEC §3.2:
+//     the user must hold the tile for 350ms before the pan activates, which
+//     prevents accidental drags during a vertical scroll. The parent
+//     ScrollView is told to suspend scrolling via onDragActiveChange the
+//     moment the pan activates, so once we own the gesture nothing else
+//     competes for the touch.
 //   - On every gesture frame we hit-test the active tile's center against
 //     the other tiles' home rects (closest-center, same as dnd-kit's
 //     closestCenter collision). If the over-target changed, we splice the
@@ -25,6 +29,16 @@
 //     position.
 //   - On drop, the active tile springs to its new home and onReorder fires
 //     with the committed linear order.
+//
+// Resync behaviour: the parent's `items` prop is the source of truth for
+// non-drag-driven changes (resize, configure, add, remove). Our local
+// `order` shadow exists only so mid-drag swaps render instantly without a
+// round-trip through the parent. We detect "the parent said something
+// non-trivially different" by comparing IDs/sizes/configs of every item,
+// and resync — UNLESS a drag is in flight (drag dictates order; the parent
+// hasn't been told about it yet, so its `items` would clobber). The
+// previous implementation only resync'd on ID-set changes, which silently
+// dropped resize updates because the IDs hadn't changed.
 
 import {
   useCallback,
@@ -35,17 +49,22 @@ import {
   type ComponentProps,
 } from "react";
 import { View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Gesture } from "react-native-gesture-handler";
 import Animated, {
+  interpolate,
   runOnJS,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
   type SharedValue,
 } from "react-native-reanimated";
+import { lightImpactHaptic, longPressHaptic } from "@/utils/haptics";
+import { shadow } from "@/constants/design-system";
 import { WidgetTile } from "./widget-tile";
 import { WIDGET_ROW_MAX_HEIGHT } from "../types";
 import type { WidgetInstance, WidgetRows, WidgetSpan } from "../types";
+import { useOptionalTutorial } from "@/components/tutorial";
 
 function clampSpan(span: WidgetSpan | number): WidgetSpan {
   if (span <= 1) return 1;
@@ -122,6 +141,29 @@ function computeLayout(
   return { rects, totalHeight };
 }
 
+// Identity check that catches anything the parent may have changed about an
+// item — IDs, position, span, rows, config (by reference). Used to decide
+// whether the parent's `items` prop differs from our local `order` shadow
+// in a way that warrants a resync.
+function itemsStructurallyEqual(
+  a: WidgetInstance[],
+  b: WidgetInstance[],
+): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const ai = a[i];
+    const bi = b[i];
+    if (ai.instanceId !== bi.instanceId) return false;
+    if (ai.size?.span !== bi.size?.span) return false;
+    if (ai.size?.rows !== bi.size?.rows) return false;
+    // Reference compare on config — sanitizeLayout / configureWidget always
+    // replace the reference on a real change, so this is sufficient.
+    if (ai.config !== bi.config) return false;
+  }
+  return true;
+}
+
 type TileForwardProps = Omit<
   ComponentProps<typeof WidgetTile>,
   | "instance"
@@ -130,13 +172,8 @@ type TileForwardProps = Omit<
   | "onConfigure"
   | "onMoreActions"
   | "onResize"
-  | "onMoveLeft"
-  | "onMoveRight"
-  | "canMoveLeft"
-  | "canMoveRight"
   | "wasConfigRestored"
   | "onResetConfig"
-  | "onDragHandlePressIn"
   | "dragGesture"
 >;
 
@@ -152,6 +189,19 @@ interface SortableGridProps extends TileForwardProps {
   onResize?: (instanceId: string) => void;
   onResetConfig?: (instanceId: string) => void;
   restoredInstanceIds?: ReadonlySet<string>;
+  /** Tutorial: id to register the FIRST tile's ⋮ overflow button under
+   *  (e.g. TUTORIAL_TARGETS.homeWidgetMoreActions). Wired by the host. */
+  firstTileMoreActionsTutorialTargetId?: string;
+  /** Tutorial: id to register the LAST tile under
+   *  (e.g. TUTORIAL_TARGETS.homeFirstWidgetTile, semantically "the newly
+   *  added widget" which lands at the end of the list). */
+  lastTileTutorialTargetId?: string;
+  /** Fires when a tile drag begins (true) and ends/cancels (false). The
+   *  parent screen wires this to ScrollView.scrollEnabled so the page
+   *  scroll is disabled while a widget is being dragged — without this the
+   *  parent ScrollView steals the touch before the long-press threshold
+   *  fires (the user-reported "page scrolls instead of dragging" bug). */
+  onDragActiveChange?: (active: boolean) => void;
 }
 
 export function SortableGrid({
@@ -166,6 +216,9 @@ export function SortableGrid({
   onResize,
   onResetConfig,
   restoredInstanceIds,
+  onDragActiveChange,
+  firstTileMoreActionsTutorialTargetId,
+  lastTileTutorialTargetId,
   ...rest
 }: SortableGridProps) {
   // Local order shadows the parent's items for instant gesture feedback. The
@@ -173,19 +226,14 @@ export function SortableGrid({
   // round-trip through the parent's persistence layer.
   const [order, setOrder] = useState<WidgetInstance[]>(items);
 
-  // Resync when the parent adds/removes a widget (ID set differs). We
-  // intentionally do NOT resync on pure reorder — that would clobber
-  // mid-drag state with the parent's pre-drag order.
+  // True while ANY tile in this grid is mid-drag. Set/cleared by
+  // SortableTile via the prop callbacks below. Used by the resync effect to
+  // skip clobbering local order with the parent's pre-drag items.
+  const isDraggingRef = useRef(false);
+
   useEffect(() => {
-    const sameIds =
-      order.length === items.length &&
-      order.every((o, i) => o.instanceId === items[i]?.instanceId);
-    const idSet = new Set(items.map((i) => i.instanceId));
-    const localIds = new Set(order.map((i) => i.instanceId));
-    const sameSet =
-      idSet.size === localIds.size &&
-      [...idSet].every((id) => localIds.has(id));
-    if (!sameIds && !sameSet) {
+    if (isDraggingRef.current) return;
+    if (!itemsStructurallyEqual(order, items)) {
       setOrder(items);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,40 +284,82 @@ export function SortableGrid({
     });
   }, []);
 
-  const commit = useCallback(() => {
-    onReorder(orderRef.current);
-  }, [onReorder]);
+  const handleDragStart = useCallback(() => {
+    isDraggingRef.current = true;
+    // Pickup haptic — without this it's hard to tell when the long-press
+    // has crossed the threshold and the tile is now drag-locked.
+    void longPressHaptic();
+    onDragActiveChange?.(true);
+  }, [onDragActiveChange]);
 
-  // Adjacent-position swap for the arrow buttons. Mutates local state and
-  // immediately commits — no drag is in flight.
-  const moveAdjacent = useCallback(
-    (instanceId: string, direction: -1 | 1) => {
-      setOrder((prev) => {
-        const idx = prev.findIndex((it) => it.instanceId === instanceId);
-        if (idx < 0) return prev;
-        const target = idx + direction;
-        if (target < 0 || target >= prev.length) return prev;
-        const next = prev.slice();
-        [next[idx], next[target]] = [next[target], next[idx]];
-        // Defer commit to next tick so onReorder sees the updated order.
-        queueMicrotask(() => onReorder(next));
-        return next;
-      });
-    },
-    [onReorder],
-  );
+  const finishDrag = useCallback(() => {
+    isDraggingRef.current = false;
+    // Drop haptic — closes the loop so the user feels the commit beat.
+    void lightImpactHaptic();
+    onReorder(orderRef.current);
+    onDragActiveChange?.(false);
+  }, [onReorder, onDragActiveChange]);
+
+  // Capture the SortableGrid container's window position so tiles (which
+  // are absolute-positioned inside it and animate via transforms) can
+  // register tutorial target rects in window coordinates rather than
+  // relying on measureInWindow through a transformed Animated.View.
+  const tutorial = useOptionalTutorial();
+  const measureTick = tutorial?.measureTick ?? 0;
+  const containerRef = useRef<View | null>(null);
+  const [containerOffset, setContainerOffset] = useState<{ x: number; y: number } | null>(null);
+  const measureContainer = useCallback(() => {
+    containerRef.current?.measureInWindow((x, y) => {
+      setContainerOffset((prev) =>
+        prev && prev.x === x && prev.y === y ? prev : { x, y },
+      );
+    });
+  }, []);
+  // Re-measure on (a) every tutorial measure-tick (drawer events / explicit
+  // bumps), and (b) every active step change. Catches the case where the
+  // container shifted after its initial onLayout — page scroll, parent
+  // animation, layout reflow from a new widget arriving — and the
+  // previously captured offset would otherwise point the registered tile
+  // rect at stale coordinates.
+  const activeStepId = tutorial?.currentStep?.id ?? null;
+  useEffect(() => {
+    if (!tutorial?.isActive) return;
+    measureContainer();
+    // Settling RAF — handles the case where the tutorial step transitions
+    // mid-layout and our first measurement caught an interim frame.
+    const t1 = setTimeout(measureContainer, 120);
+    const t2 = setTimeout(measureContainer, 360);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [measureTick, activeStepId, order.length, tutorial?.isActive, measureContainer]);
+
+  const lastInstanceId = order.length > 0 ? order[order.length - 1].instanceId : null;
+  const firstInstanceId = order.length > 0 ? order[0].instanceId : null;
 
   return (
     <View
+      ref={containerRef}
       style={{ position: "relative", width: "100%", height: totalHeight }}
       onLayout={(e) => {
         const w = e.nativeEvent.layout.width;
         if (w !== containerWidth) setContainerWidth(w);
+        measureContainer();
       }}
     >
-      {order.map((instance, idx) => {
+      {order.map((instance) => {
         const rect = rects.get(instance.instanceId);
         if (!rect) return null;
+        const tileTutorialTargetId =
+          lastTileTutorialTargetId && instance.instanceId === lastInstanceId
+            ? lastTileTutorialTargetId
+            : undefined;
+        const moreActionsTutorialTargetId =
+          firstTileMoreActionsTutorialTargetId &&
+          instance.instanceId === firstInstanceId
+            ? firstTileMoreActionsTutorialTargetId
+            : undefined;
         return (
           <SortableTile
             key={instance.instanceId}
@@ -277,21 +367,21 @@ export function SortableGrid({
             rect={rect}
             findOverId={findOverId}
             onSwap={swap}
-            onCommit={commit}
+            onDragStart={handleDragStart}
+            onCommit={finishDrag}
             onRemove={() => onRemove(instance.instanceId)}
             onConfigure={onConfigure}
             onMoreActions={onMoreActions}
             onResize={onResize}
-            onMoveLeft={() => moveAdjacent(instance.instanceId, -1)}
-            onMoveRight={() => moveAdjacent(instance.instanceId, 1)}
-            canMoveLeft={idx > 0}
-            canMoveRight={idx < order.length - 1}
             wasConfigRestored={restoredInstanceIds?.has(instance.instanceId)}
             onResetConfig={
               onResetConfig
                 ? () => onResetConfig(instance.instanceId)
                 : undefined
             }
+            tileTutorialTargetId={tileTutorialTargetId}
+            moreActionsTutorialTargetId={moreActionsTutorialTargetId}
+            containerOffset={containerOffset}
             {...rest}
           />
         );
@@ -305,15 +395,20 @@ interface SortableTileProps {
   rect: TileRect;
   findOverId: (cx: number, cy: number, excludeId: string) => string | null;
   onSwap: (activeId: string, overId: string) => void;
+  onDragStart: () => void;
   onCommit: () => void;
   onRemove: () => void;
+  /** Tutorial: when set, this tile's rect is registered with the engine
+   *  under this id. Used by the home-widget-added step. We register via
+   *  the rect prop (window coords = containerOffset + rect.x/y) rather
+   *  than measureInWindow on the Animated.View, because RN's measure can
+   *  be unreliable through transformed parents. */
+  tileTutorialTargetId?: string;
+  moreActionsTutorialTargetId?: string;
+  containerOffset?: { x: number; y: number } | null;
   onConfigure?: (instanceId: string) => void;
   onMoreActions?: (instanceId: string) => void;
   onResize?: (instanceId: string) => void;
-  onMoveLeft: () => void;
-  onMoveRight: () => void;
-  canMoveLeft: boolean;
-  canMoveRight: boolean;
   wasConfigRestored?: boolean;
   onResetConfig?: () => void;
 }
@@ -323,18 +418,47 @@ function SortableTile({
   rect,
   findOverId,
   onSwap,
+  onDragStart,
   onCommit,
   onRemove,
   onConfigure,
   onMoreActions,
   onResize,
-  onMoveLeft,
-  onMoveRight,
-  canMoveLeft,
-  canMoveRight,
   wasConfigRestored,
   onResetConfig,
+  tileTutorialTargetId,
+  moreActionsTutorialTargetId,
+  containerOffset,
 }: SortableTileProps) {
+  // Register the tile's rect manually with the tutorial engine when this
+  // tile is the active tutorial target. We use the rect prop (computed by
+  // the parent grid) + the container's window offset rather than
+  // measureInWindow because transformed Animated.Views can report stale
+  // frames during ongoing spring animations.
+  const tutorial = useOptionalTutorial();
+  const registerTarget = tutorial?.registerTarget;
+  const unregisterTarget = tutorial?.unregisterTarget;
+  useEffect(() => {
+    if (!tileTutorialTargetId || !registerTarget || !containerOffset) return;
+    registerTarget(tileTutorialTargetId, {
+      x: containerOffset.x + rect.x,
+      y: containerOffset.y + rect.y,
+      width: rect.w,
+      height: rect.h,
+    });
+    return () => unregisterTarget?.(tileTutorialTargetId);
+  }, [
+    tileTutorialTargetId,
+    registerTarget,
+    unregisterTarget,
+    containerOffset?.x,
+    containerOffset?.y,
+    containerOffset,
+    rect.x,
+    rect.y,
+    rect.w,
+    rect.h,
+  ]);
   // Home rect mirrored into shared values so the gesture worklet always
   // sees the latest target (the rect prop changes when a sibling swaps).
   const homeX = useSharedValue(rect.x);
@@ -386,65 +510,98 @@ function SortableTile({
     onCommit();
   }, [onCommit]);
 
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        // Long-press activation matches the iOS-style "hold to rearrange"
-        // affordance and prevents conflicts with the embedded ScrollView.
-        .activateAfterLongPress(150)
-        .onStart(() => {
-          "worklet";
-          dragging.value = true;
-          startTx.value = tx.value;
-          startTy.value = ty.value;
-        })
-        .onUpdate((e) => {
-          "worklet";
-          tx.value = startTx.value + e.translationX;
-          ty.value = startTy.value + e.translationY;
-          const cx = tx.value + homeW.value / 2;
-          const cy = ty.value + homeH.value / 2;
-          runOnJS(handleSwap)(cx, cy);
-        })
-        .onEnd(() => {
-          "worklet";
+  const pan = useMemo(() => {
+    // Single Pan with activateAfterLongPress(350) — the canonical pickup
+    // contract per MOBILE_WIDGETS_SPEC §3.2. The 350ms hold gates the gesture
+    // so vertical scrolling past a tile does not arm a drag. Once the pan
+    // activates we set isDraggingRef on the JS side via onDragStart, which
+    // suspends the parent ScrollView's scrollEnabled — so the page no longer
+    // competes with the per-tile pan for touch ownership.
+    return Gesture.Pan()
+      .activateAfterLongPress(350)
+      .onStart(() => {
+        "worklet";
+        dragging.value = true;
+        startTx.value = tx.value;
+        startTy.value = ty.value;
+        runOnJS(onDragStart)();
+      })
+      .onUpdate((e) => {
+        "worklet";
+        tx.value = startTx.value + e.translationX;
+        ty.value = startTy.value + e.translationY;
+        const cx = tx.value + homeW.value / 2;
+        const cy = ty.value + homeH.value / 2;
+        runOnJS(handleSwap)(cx, cy);
+      })
+      .onEnd(() => {
+        "worklet";
+        dragging.value = false;
+        tx.value = withSpring(homeX.value, { damping: 22, stiffness: 220 });
+        ty.value = withSpring(homeY.value, { damping: 22, stiffness: 220 });
+        runOnJS(finishDrag)();
+      })
+      .onFinalize((_e, success) => {
+        "worklet";
+        // Cancellation safety net: if another gesture won or the user
+        // lifted before onEnd fired, force-reset to home so the tile
+        // doesn't get stranded.
+        if (!success && dragging.value) {
           dragging.value = false;
-          tx.value = withSpring(homeX.value, { damping: 22, stiffness: 220 });
-          ty.value = withSpring(homeY.value, { damping: 22, stiffness: 220 });
+          tx.value = withSpring(homeX.value);
+          ty.value = withSpring(homeY.value);
           runOnJS(finishDrag)();
-        })
-        .onFinalize((_e, success) => {
-          "worklet";
-          // Gesture cancellation safety net (e.g. another gesture wins).
-          if (!success && dragging.value) {
-            dragging.value = false;
-            tx.value = withSpring(homeX.value);
-            ty.value = withSpring(homeY.value);
-            runOnJS(finishDrag)();
-          }
-        }),
-    [
-      dragging,
-      tx,
-      ty,
-      startTx,
-      startTy,
-      homeX,
-      homeY,
-      homeW,
-      homeH,
-      handleSwap,
-      finishDrag,
-    ],
+        }
+      });
+  }, [
+    dragging,
+    tx,
+    ty,
+    startTx,
+    startTy,
+    homeX,
+    homeY,
+    homeW,
+    homeH,
+    handleSwap,
+    finishDrag,
+    onDragStart,
+  ]);
+
+  // 0 → 1 progress driven by `dragging`. Spring on pickup so the lift feels
+  // physical, slight overshoot on drop so the tile settles instead of
+  // snapping (the 0.6 opacity dip the previous build used was wrong per
+  // MOBILE_WIDGETS_SPEC §2.4 — opacity stays 1.0 while picked up; the
+  // affordance is shadow + scale + rotate, not a fade).
+  const liftProgress = useDerivedValue(() =>
+    withSpring(dragging.value ? 1 : 0, { damping: 18, stiffness: 240 }),
   );
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: tx.value }, { translateY: ty.value }],
-    width: homeW.value,
-    height: homeH.value,
-    zIndex: dragging.value ? 30 : 0,
-    opacity: dragging.value ? 0.6 : 1,
-    elevation: dragging.value ? 12 : 0,
+  const animatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(liftProgress.value, [0, 1], [1, 1.04]);
+    const rotate = interpolate(liftProgress.value, [0, 1], [0, -1.5]);
+    return {
+      transform: [
+        { translateX: tx.value },
+        { translateY: ty.value },
+        { scale },
+        { rotateZ: `${rotate}deg` },
+      ],
+      width: homeW.value,
+      height: homeH.value,
+      zIndex: dragging.value ? 30 : 0,
+    };
+  });
+
+  // Shadow is on the outer animated view — splitting it from `transform` lets
+  // RN's iOS-native shadow renderer cache between frames. shadowOpacity is the
+  // animated dimension; shadowRadius/offset stay static (cheap on mainthread).
+  const shadowStyle = useAnimatedStyle(() => ({
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: interpolate(liftProgress.value, [0, 1], [0, shadow.md.shadowOpacity]),
+    shadowRadius: shadow.md.shadowRadius,
+    elevation: dragging.value ? shadow.md.elevation : 0,
   }));
 
   return (
@@ -453,6 +610,7 @@ function SortableTile({
       style={[
         { position: "absolute", left: 0, top: 0 },
         animatedStyle,
+        shadowStyle,
       ]}
     >
       <WidgetTile
@@ -464,11 +622,8 @@ function SortableTile({
         onConfigure={onConfigure}
         onMoreActions={onMoreActions}
         onResize={onResize}
-        onMoveLeft={onMoveLeft}
-        onMoveRight={onMoveRight}
-        canMoveLeft={canMoveLeft}
-        canMoveRight={canMoveRight}
         dragGesture={pan}
+        moreActionsTutorialTargetId={moreActionsTutorialTargetId}
       />
     </Animated.View>
   );

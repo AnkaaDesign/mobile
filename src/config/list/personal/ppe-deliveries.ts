@@ -1,6 +1,7 @@
 import type { ListConfig } from '@/components/list/types'
 import type { PpeDelivery } from '@/types'
 import { PPE_DELIVERY_STATUS, PPE_DELIVERY_STATUS_LABELS } from '@/constants'
+import { TUTORIAL_TARGETS } from '@/components/tutorial'
 
 
 export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
@@ -201,6 +202,7 @@ export const personalPpeDeliveriesListConfig: ListConfig<PpeDelivery> = {
     create: {
       label: 'Solicitar EPI',
       route: '/(tabs)/pessoal/meus-epis/request',
+      tutorialTargetId: TUTORIAL_TARGETS.pessoalEpisRequestButton,
     },
   },
 

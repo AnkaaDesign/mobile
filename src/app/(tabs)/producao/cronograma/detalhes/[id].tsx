@@ -91,11 +91,69 @@ export default function ScheduleDetailsScreen() {
   // Track screen performance
   const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
 
+  // Scroll ref shared with the tutorial targets so the tutorial can scroll
+  // each card into view when its step activates. Without this, mid-page
+  // cards (taskDatesCard, taskServicesCard) would land below the fold and
+  // the spotlight would render on a card the user can't see.
+  const scrollRef = useRef<ScrollView | null>(null);
+
   // Tutorial targets (task detail)
-  const taskHeaderTarget = useTutorialTarget(TUTORIAL_TARGETS.taskHeader);
-  const taskInfoCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskInfoCard);
-  const taskDatesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskDatesCard);
-  const taskServicesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskServicesCard);
+  const taskHeaderTarget = useTutorialTarget(TUTORIAL_TARGETS.taskHeader, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 16,
+  });
+  const taskInfoCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskInfoCard, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 100,
+  });
+  const taskDatesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskDatesCard, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 100,
+  });
+  const taskServicesCardTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskServicesCard,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskPaintsCardTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskPaintsCard,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskLogoPaintsCardTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskLogoPaintsCard,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskGroundPaintsCardTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskGroundPaintsCard,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskArtworksGalleryTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskArtworksGallery,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskBaseFilesGalleryTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskBaseFilesGallery,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskProjectFilesGalleryTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskProjectFilesGallery,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskCutsTableTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskCutsTable,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskAirbrushingsTableTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskAirbrushingsTable,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskObservationsTableTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskObservationsTable,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
+  const taskChangelogTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.taskChangelog,
+    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+  );
 
   // Performance logging - track screen mount
   const mountTime = useRef(performance.now());
@@ -133,9 +191,17 @@ export default function ScheduleDetailsScreen() {
     staleTime: 1000 * 60 * 10,
   });
 
-  // End navigation loading overlay when Phase 1 data is ready (not just on mount)
-  // This keeps the overlay visible until content is ready, preventing skeleton flash
-  useScreenReady(!isLoading);
+  // Tutorial detection has to happen BEFORE useScreenReady so we can release
+  // the navigation overlay immediately for the tutorial mock path — the page
+  // renders straight from mockTask so there's no real loading to wait for.
+  const tutorial = useOptionalTutorial();
+  const isTutorialActive = tutorial?.isActive ?? false;
+
+  // End navigation loading overlay. In tutorial mode the page renders from
+  // the in-memory mock immediately, so we mark ready right away instead of
+  // waiting on the (potentially flaky) query — that's what was leaving the
+  // user staring at the "loading" overlay until the failsafe fired.
+  useScreenReady(isTutorialActive || !isLoading);
 
   // Phase 2: Full query with all includes (pricing, paints, files, observation) - starts when below-fold is shown
   const { data: fullResponse, refetch: refetchFull } = useTaskDetail(id as string, {
@@ -146,14 +212,6 @@ export default function ScheduleDetailsScreen() {
 
   // Use full data when available, fall back to minimal data
   const realTask = fullResponse?.data ?? minimalResponse?.data;
-
-  // Tutorial-mode bypass: when the tutorial is active and the API hasn't
-  // loaded a real task (the mock task IDs like "tut-00000001-..." won't
-  // resolve from the backend), fall back to the in-memory mock task so the
-  // detail screen still renders sections for the spotlight steps to anchor
-  // to (taskHeader, taskInfoCard, taskDatesCard, taskServicesCard).
-  const tutorial = useOptionalTutorial();
-  const isTutorialActive = tutorial?.isActive ?? false;
   const mockTask = useMemo(() => {
     const m = tutorialMocks.tasks[0] as any;
     // Map the mock's `services` array to the `serviceOrders` shape that the
@@ -370,6 +428,7 @@ export default function ScheduleDetailsScreen() {
   return (
     <>
     <ScrollView
+        ref={scrollRef}
         style={StyleSheet.flatten([styles.scrollView, { backgroundColor: colors.background }])}
         refreshControl={
           <RefreshControl
@@ -382,7 +441,7 @@ export default function ScheduleDetailsScreen() {
       >
         <View style={styles.content}>
           {/* Task Name Header Card */}
-          <View ref={taskHeaderTarget.ref} onLayout={taskHeaderTarget.onLayout}>
+          <View ref={taskHeaderTarget.ref} onLayout={taskHeaderTarget.onLayout} collapsable={false}>
             <Card style={styles.headerCard}>
               <View style={styles.headerContent}>
                 <View style={styles.headerLeft}>
@@ -415,7 +474,7 @@ export default function ScheduleDetailsScreen() {
           </View>
 
           {/* Overview Card - Informações Gerais */}
-          <View ref={taskInfoCardTarget.ref} onLayout={taskInfoCardTarget.onLayout}>
+          <View ref={taskInfoCardTarget.ref} onLayout={taskInfoCardTarget.onLayout} collapsable={false}>
             <TaskInfoCard task={{
               ...task,
               truck: task.truck,
@@ -426,7 +485,7 @@ export default function ScheduleDetailsScreen() {
           </View>
 
           {/* Dates Card - Datas */}
-          <View ref={taskDatesCardTarget.ref} onLayout={taskDatesCardTarget.onLayout}>
+          <View ref={taskDatesCardTarget.ref} onLayout={taskDatesCardTarget.onLayout} collapsable={false}>
             <TaskDatesCard task={{
               ...task,
               createdBy: task.createdBy,
@@ -451,7 +510,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* Services */}
           {task.serviceOrders && task.serviceOrders.length > 0 && (
-            <View ref={taskServicesCardTarget.ref} onLayout={taskServicesCardTarget.onLayout}>
+            <View ref={taskServicesCardTarget.ref} onLayout={taskServicesCardTarget.onLayout} collapsable={false}>
               <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
             </View>
           )}
@@ -480,38 +539,49 @@ export default function ScheduleDetailsScreen() {
 
           {/* General Painting - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
           {canViewPaintSections && (task as any)?.generalPainting && (
-            <TaskGeneralPaintCard
-              paint={(task as any).generalPainting}
-              onPaintPress={(_paintId) => {
-                // Navigate to paint details if needed
-                // router.push(`/painting/catalog/details/${paintId}`);
-              }}
-            />
+            <View ref={taskPaintsCardTarget.ref} onLayout={taskPaintsCardTarget.onLayout} collapsable={false}>
+              <TaskGeneralPaintCard
+                paint={(task as any).generalPainting}
+                onPaintPress={(_paintId) => {
+                  // Navigate to paint details if needed
+                  // router.push(`/painting/catalog/details/${paintId}`);
+                }}
+              />
+            </View>
+          )}
+
+          {/* Ground Paints - Fundos Recomendados. Belong right under the general
+              painting card because primers/fundos are a property of the
+              general paint, not a separate aesthetic choice. */}
+          {canViewPaintSections && (task as any)?.generalPainting?.paintGrounds &&
+           (task as any).generalPainting.paintGrounds.length > 0 && (
+            <View ref={taskGroundPaintsCardTarget.ref} onLayout={taskGroundPaintsCardTarget.onLayout} collapsable={false}>
+              <TaskGroundPaintsCard
+                groundPaints={(task as any).generalPainting.paintGrounds.map(
+                  (pg: any) => pg.groundPaint
+                )}
+              />
+            </View>
           )}
 
           {/* Logo Paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {canViewLogoPaints && (task as any)?.logoPaints && (task as any).logoPaints.length > 0 && (
-            <TaskLogoPaintsCard
-              paints={(task as any).logoPaints}
-              onPaintPress={(_paintId) => {
-                // Navigate to paint details if needed
-                // router.push(`/painting/catalog/details/${paintId}`);
-              }}
-            />
+            <View ref={taskLogoPaintsCardTarget.ref} onLayout={taskLogoPaintsCardTarget.onLayout} collapsable={false}>
+              <TaskLogoPaintsCard
+                paints={(task as any).logoPaints}
+                onPaintPress={(_paintId) => {
+                  // Navigate to paint details if needed
+                  // router.push(`/painting/catalog/details/${paintId}`);
+                }}
+              />
+            </View>
           )}
 
-          {/* Ground Paints - Fundos Recomendados - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
-          {canViewPaintSections && (task as any)?.generalPainting?.paintGrounds &&
-           (task as any).generalPainting.paintGrounds.length > 0 && (
-            <TaskGroundPaintsCard
-              groundPaints={(task as any).generalPainting.paintGrounds.map(
-                (pg: any) => pg.groundPaint
-              )}
-            />
-          )}
-
-          {/* Observation Card - Only for COMPLETED tasks, hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL */}
-          {canViewObservation && (task as any)?.status === 'COMPLETED' && (task as any)?.observation && (
+          {/* Observation Card - Only for COMPLETED tasks, hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL.
+              During the tutorial, the COMPLETED gate is bypassed so the
+              walkthrough can spotlight this section on a mock task that
+              stays in IN_PRODUCTION (to keep the cronograma list realistic). */}
+          {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (task as any)?.observation && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -562,10 +632,15 @@ export default function ScheduleDetailsScreen() {
           )}
 
           {/* Observations Table - Only for COMPLETED tasks */}
-          {canViewObservation && (task as any)?.status === 'COMPLETED' && <ObservationsTable taskId={id as string} maxHeight={400} />}
+          {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (
+            <View ref={taskObservationsTableTarget.ref} onLayout={taskObservationsTableTarget.onLayout} collapsable={false}>
+              <ObservationsTable taskId={id as string} maxHeight={400} />
+            </View>
+          )}
 
           {/* Base Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewBaseFiles && (task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
+            <View ref={taskBaseFilesGalleryTarget.ref} onLayout={taskBaseFilesGalleryTarget.onLayout} collapsable={false}>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -637,6 +712,7 @@ export default function ScheduleDetailsScreen() {
                 </View>
               </View>
             </Card>
+            </View>
           )}
 
           {/* Artworks Section - Visible to ALL sectors. Only ADMIN/COMMERCIAL see non-approved. */}
@@ -652,6 +728,7 @@ export default function ScheduleDetailsScreen() {
             const artworkFiles = filteredArtworks.map((artwork: any) => artwork.file || artwork).filter((f: any) => f && f.id);
 
             return (
+              <View ref={taskArtworksGalleryTarget.ref} onLayout={taskArtworksGalleryTarget.onLayout} collapsable={false}>
               <Card style={styles.sectionCard}>
                 <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                   <View style={styles.sectionHeaderLeft}>
@@ -736,11 +813,13 @@ export default function ScheduleDetailsScreen() {
                   </View>
                 </View>
               </Card>
+              </View>
             );
           })()}
 
           {/* Project Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewProjectFiles && (task as any)?.projectFiles && (task as any).projectFiles.length > 0 && (
+            <View ref={taskProjectFilesGalleryTarget.ref} onLayout={taskProjectFilesGalleryTarget.onLayout} collapsable={false}>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -812,6 +891,7 @@ export default function ScheduleDetailsScreen() {
                 </View>
               </View>
             </Card>
+            </View>
           )}
 
           {/* Dossiê Card - Proof of services organized by service order with check-in/check-out files */}
@@ -1095,10 +1175,22 @@ export default function ScheduleDetailsScreen() {
 
           {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {/* Team leaders can swipe to request new cuts for tasks in their led sector */}
-          {canViewCuts && <CutsTable taskId={id as string} taskSectorId={task.sectorId} maxHeight={400} />}
+          {canViewCuts && (
+            <View ref={taskCutsTableTarget.ref} onLayout={taskCutsTableTarget.onLayout} collapsable={false}>
+              <CutsTable
+                taskId={id as string}
+                taskSectorId={task.sectorId}
+                maxHeight={400}
+              />
+            </View>
+          )}
 
           {/* Airbrushings Table - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
-          {canViewAirbrushing && <AirbrushingsTable taskId={id as string} maxHeight={400} />}
+          {canViewAirbrushing && (
+            <View ref={taskAirbrushingsTableTarget.ref} onLayout={taskAirbrushingsTableTarget.onLayout} collapsable={false}>
+              <AirbrushingsTable taskId={id as string} maxHeight={400} />
+            </View>
+          )}
 
           </>}
           {/* === End below-fold sections === */}
@@ -1106,6 +1198,7 @@ export default function ScheduleDetailsScreen() {
           {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
           {/* Team leadership is now determined by ledSector relationship */}
           {(canViewDocuments || isTeamLeaderUser) && (
+            <View ref={taskChangelogTarget.ref} onLayout={taskChangelogTarget.onLayout} collapsable={false}>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -1129,6 +1222,7 @@ export default function ScheduleDetailsScreen() {
                 )}
               </View>
             </Card>
+            </View>
           )}
 
           {/* Bottom spacing for mobile navigation */}

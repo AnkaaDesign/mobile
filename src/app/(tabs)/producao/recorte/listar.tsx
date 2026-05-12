@@ -251,12 +251,13 @@ export default function CuttingListScreen() {
 
   return (
     <>
-      <View ref={listTarget.ref} onLayout={listTarget.onLayout} style={{ flex: 1 }}>
+      <View ref={listTarget.ref} onLayout={listTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
         {/* recorteFirstItem shares the wrapper since the shared Layout renders
             rows internally. Spotlight will highlight the top of the list. */}
         <View
           ref={firstItemTarget.ref}
           onLayout={firstItemTarget.onLayout}
+          collapsable={false}
           style={{ flex: 1 }}
         >
           <Layout config={dynamicConfig} />

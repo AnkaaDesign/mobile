@@ -7,7 +7,7 @@ import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 export default function MyHolidaysScreen() {
   const feriadosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalFeriados);
   return (
-    <View ref={feriadosTarget.ref} onLayout={feriadosTarget.onLayout} style={{ flex: 1 }}>
+    <View ref={feriadosTarget.ref} onLayout={feriadosTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
       <Layout config={personalHolidaysListConfig} />
     </View>
   )

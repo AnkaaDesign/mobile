@@ -14,17 +14,20 @@
 // the packed grid stays put while dragging, only the active tile lifts
 // (opacity + zIndex), and other tiles spring to make room. Implemented in
 // sortable-grid.tsx on top of gesture-handler + Reanimated 4 (RN has no
-// drop-in dnd-kit equivalent for 2-D grids).
+// drop-in dnd-kit equivalent for 2-D grids). Reordering is drag-and-drop
+// only — no arrow buttons (web doesn't have them either).
 // VIEW MODE: same packed grid, no drag chrome.
 
 import { useMemo } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { IconLayoutGrid } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import { WidgetTile } from "./widget-tile";
 import { SortableGrid } from "./sortable-grid";
 import { logFrameworkWarning } from "../internal/logger";
 import type { WidgetInstance, WidgetSpan } from "../types";
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 /**
  * Slots-per-row scales with viewport width:
@@ -48,9 +51,8 @@ interface DashboardGridProps {
   items: WidgetInstance[];
   isEditing: boolean;
   onRemove: (instanceId: string) => void;
-  /** Called whenever the user finishes a drag-reorder OR uses arrow swaps
-   *  while editing. Receives the new linear order; the grid re-packs on
-   *  next render. */
+  /** Called whenever the user finishes a drag-reorder while editing.
+   *  Receives the new linear order; the grid re-packs on next render. */
   onReorder?: (items: WidgetInstance[]) => void;
   /** Open the per-widget configuration modal. Threaded to each tile's gear
    *  button. Only rendered while in edit mode. */
@@ -74,10 +76,24 @@ interface DashboardGridProps {
   /** Reset a single instance's config to the widget's defaultConfig (wired
    *  by the parent to `configureWidget(id, def.defaultConfig)`). */
   onResetConfig?: (instanceId: string) => void;
-  /** Spacing between rows. Default matches the existing home padding. */
+  /** Fires (true) when a tile drag begins and (false) when it ends/cancels.
+   *  The home screen wires this to ScrollView.scrollEnabled so the page
+   *  scroll is disabled while a widget is being dragged — necessary because
+   *  on RN the parent ScrollView would otherwise compete with the per-tile
+   *  pan gesture and frequently win on first finger movement. */
+  onDragActiveChange?: (active: boolean) => void;
+  /** Spacing between rows. Default matches web's `gap-4` (16px). */
   rowGap?: number;
-  /** Spacing between widgets inside a row. */
+  /** Spacing between widgets inside a row. Default matches web's `gap-4`
+   *  (16px) so 1/3 widgets sit at the same proportional distance from
+   *  their 2/3 neighbour as the web shows. The previous 12px value created
+   *  a slight asymmetry that read as "the right column floats away from
+   *  the left one". */
   columnGap?: number;
+  /** Extra padding below the last row in edit mode. Defaults to 8 because
+   *  the EditToolbar is inline (sits ABOVE the grid, not floating); set this
+   *  higher only if the host re-introduces a floating bottom toolbar. */
+  editModeBottomInset?: number;
 }
 
 interface PackedRow {
@@ -138,18 +154,6 @@ interface GridRowProps {
   onMoreActions?: (instanceId: string) => void;
   onResize?: (instanceId: string) => void;
   onEnterEditMode?: () => void;
-  /** When set, the row is in edit mode and tiles render edit chrome. */
-  isEditing?: boolean;
-  /** Drag callback received from DraggableFlatList. In edit mode the list's
-   *  items are individual widgets, so this drags only the tile it's wired
-   *  to. Unused in view mode. */
-  onRowDrag?: () => void;
-  /** Reorder callbacks (within and across rows). Implemented at the parent
-   *  by swapping linear positions; packRows re-runs on next render. */
-  onMoveLeft?: (instanceId: string) => void;
-  onMoveRight?: (instanceId: string) => void;
-  canMoveLeft?: (instanceId: string) => boolean;
-  canMoveRight?: (instanceId: string) => boolean;
   /** Forwarded to each tile so it can render the config-restored banner. */
   restoredInstanceIds?: ReadonlySet<string>;
   onResetConfig?: (instanceId: string) => void;
@@ -160,11 +164,11 @@ interface GridRowProps {
 }
 
 /**
- * One row of the grid. Each widget gets `flex: span` so widths scale with
- * the row's slot count — a span-1 next to a span-2 ends up at 1/3 + 2/3.
- * If the row has unused slots (e.g. a single span-1 alone), an invisible
- * spacer fills them so the widget keeps its proportional width instead of
- * stretching to fill.
+ * One row of the grid (view mode). Each widget gets `flex: span` so widths
+ * scale with the row's slot count — a span-1 next to a span-2 ends up at
+ * 1/3 + 2/3. If the row has unused slots (e.g. a single span-1 alone), an
+ * invisible spacer fills them so the widget keeps its proportional width
+ * instead of stretching to fill.
  */
 function GridRow({
   row,
@@ -175,12 +179,6 @@ function GridRow({
   onMoreActions,
   onResize,
   onEnterEditMode,
-  isEditing,
-  onRowDrag,
-  onMoveLeft,
-  onMoveRight,
-  canMoveLeft,
-  canMoveRight,
   slotsPerRow,
   columnGap,
 }: GridRowProps) {
@@ -190,54 +188,102 @@ function GridRow({
   );
   const remaining = slotsPerRow - used;
   return (
-    <View style={{ flexDirection: "row", gap: columnGap }}>
+    <View
+      style={{
+        flexDirection: "row",
+        gap: columnGap,
+        // Top-align the cells so short tiles render at their natural height
+        // instead of stretching to match the tallest neighbour. Without this
+        // a 1/3 tile next to a 2/3 tile would inherit the latter's height
+        // and show empty space below — the "too much spacing between
+        // widgets" complaint.
+        alignItems: "flex-start",
+      }}
+    >
       {row.items.map((instance) => {
         const span = clampSpanToSlots(instance.size?.span ?? 3);
+        // Spotlight the Favoritos widget specifically when the tutorial's
+        // home-favorites step is active. Other widgets render plain.
+        const tutorialTargetId =
+          instance.widgetId === "home.favorites"
+            ? TUTORIAL_TARGETS.homeFavorites
+            : undefined;
         return (
-          <View
+          <GridCell
             key={instance.instanceId}
-            style={{ flex: span, minWidth: 0 }}
-          >
-            <WidgetTile
-              instance={instance}
-              isEditing={!!isEditing}
-              wasConfigRestored={restoredInstanceIds?.has(instance.instanceId)}
-              onResetConfig={
-                onResetConfig
-                  ? () => onResetConfig(instance.instanceId)
-                  : undefined
-              }
-              onRemove={() => onRemove(instance.instanceId)}
-              onConfigure={onConfigure}
-              onMoreActions={onMoreActions}
-              onResize={isEditing ? onResize : undefined}
-              onEnterEditMode={onEnterEditMode}
-              onDragHandlePressIn={isEditing ? onRowDrag : undefined}
-              onMoveLeft={
-                isEditing && onMoveLeft
-                  ? () => onMoveLeft(instance.instanceId)
-                  : undefined
-              }
-              onMoveRight={
-                isEditing && onMoveRight
-                  ? () => onMoveRight(instance.instanceId)
-                  : undefined
-              }
-              canMoveLeft={
-                isEditing && canMoveLeft
-                  ? canMoveLeft(instance.instanceId)
-                  : false
-              }
-              canMoveRight={
-                isEditing && canMoveRight
-                  ? canMoveRight(instance.instanceId)
-                  : false
-              }
-            />
-          </View>
+            instance={instance}
+            span={span}
+            tutorialTargetId={tutorialTargetId}
+            restoredInstanceIds={restoredInstanceIds}
+            onResetConfig={onResetConfig}
+            onRemove={onRemove}
+            onConfigure={onConfigure}
+            onMoreActions={onMoreActions}
+            onResize={onResize}
+            onEnterEditMode={onEnterEditMode}
+          />
         );
       })}
       {remaining > 0 && <View style={{ flex: remaining }} />}
+    </View>
+  );
+}
+
+interface GridCellProps {
+  instance: WidgetInstance;
+  span: number;
+  tutorialTargetId: string | undefined;
+  restoredInstanceIds?: ReadonlySet<string>;
+  onResetConfig?: (instanceId: string) => void;
+  onRemove: (instanceId: string) => void;
+  onConfigure?: (instanceId: string) => void;
+  onMoreActions?: (instanceId: string) => void;
+  onResize?: (instanceId: string) => void;
+  onEnterEditMode?: () => void;
+}
+
+/**
+ * Single tile cell in view mode. Always calls useTutorialTarget (hooks rules)
+ * but only attaches the ref/onLayout when a target is requested. Passing a
+ * per-instance sentinel id keeps registrations isolated when no tutorial step
+ * is targeting this cell.
+ */
+function GridCell({
+  instance,
+  span,
+  tutorialTargetId,
+  restoredInstanceIds,
+  onResetConfig,
+  onRemove,
+  onConfigure,
+  onMoreActions,
+  onResize,
+  onEnterEditMode,
+}: GridCellProps) {
+  const target = useTutorialTarget(
+    tutorialTargetId ?? `noop.tile.${instance.instanceId}`,
+  );
+  const hasTarget = !!tutorialTargetId;
+  return (
+    <View
+      ref={hasTarget ? target.ref : undefined}
+      onLayout={hasTarget ? target.onLayout : undefined}
+      collapsable={hasTarget ? false : undefined}
+      style={{ flex: span, minWidth: 0 }}
+    >
+      <WidgetTile
+        instance={instance}
+        isEditing={false}
+        wasConfigRestored={restoredInstanceIds?.has(instance.instanceId)}
+        onResetConfig={
+          onResetConfig ? () => onResetConfig(instance.instanceId) : undefined
+        }
+        onRemove={() => onRemove(instance.instanceId)}
+        onConfigure={onConfigure}
+        onMoreActions={onMoreActions}
+        onResize={onResize}
+        onEnterEditMode={onEnterEditMode}
+      />
     </View>
   );
 }
@@ -253,39 +299,44 @@ export function DashboardGrid({
   onEnterEditMode,
   restoredInstanceIds,
   onResetConfig,
+  onDragActiveChange,
   rowGap = 16,
-  columnGap = 12,
+  columnGap = 16,
+  editModeBottomInset = 8,
 }: DashboardGridProps) {
   const slotsPerRow = useSlotsPerRow();
   const rows = useMemo(() => packRows(items, slotsPerRow), [items, slotsPerRow]);
+  const { colors } = useTheme();
 
   if (items.length === 0) {
     return <EmptyDashboardState isEditing={isEditing} />;
   }
 
-  // Edit mode: SortableGrid implements the same per-tile-drag-with-reflow
-  // behaviour as web's @dnd-kit/sortable, so widgets stay in their packed
-  // layout while the user reorders them.
-  if (isEditing) {
-    return (
-      <SortableGrid
-        items={items}
-        slotsPerRow={slotsPerRow}
-        rowGap={rowGap}
-        columnGap={columnGap}
-        onReorder={(next) => onReorder?.(next)}
-        onRemove={onRemove}
-        onConfigure={onConfigure}
-        onMoreActions={onMoreActions}
-        onResize={onResize}
-        onResetConfig={onResetConfig}
-        restoredInstanceIds={restoredInstanceIds}
-      />
-    );
-  }
-
-  // View mode: 3-slot row-packed grid.
-  return (
+  // Edit-mode chrome: a soft tint behind the grid so the mode change reads as
+  // a visible beat — not just a per-tile jiggle. Padding inside the tint
+  // breathes the tiles away from the surrounding cards (greeting / legacy
+  // section) so the grouping is unambiguous. The tint slides in/out via
+  // Reanimated entering/exiting layout animations on the UI thread.
+  const grid = isEditing ? (
+    // SortableGrid mirrors web's @dnd-kit/sortable behaviour — tiles stay in
+    // their packed positions while dragging, only the active tile lifts.
+    <SortableGrid
+      items={items}
+      slotsPerRow={slotsPerRow}
+      rowGap={rowGap}
+      columnGap={columnGap}
+      onReorder={(next) => onReorder?.(next)}
+      onRemove={onRemove}
+      onConfigure={onConfigure}
+      onMoreActions={onMoreActions}
+      onResize={onResize}
+      onResetConfig={onResetConfig}
+      restoredInstanceIds={restoredInstanceIds}
+      onDragActiveChange={onDragActiveChange}
+      firstTileMoreActionsTutorialTargetId={TUTORIAL_TARGETS.homeWidgetMoreActions}
+      lastTileTutorialTargetId={TUTORIAL_TARGETS.homeFirstWidgetTile}
+    />
+  ) : (
     <View style={{ gap: rowGap }}>
       {rows.map((row) => (
         <GridRow
@@ -294,6 +345,7 @@ export function DashboardGrid({
           onRemove={onRemove}
           onConfigure={onConfigure}
           onMoreActions={onMoreActions}
+          onResize={onResize}
           onEnterEditMode={onEnterEditMode}
           restoredInstanceIds={restoredInstanceIds}
           onResetConfig={onResetConfig}
@@ -302,6 +354,25 @@ export function DashboardGrid({
         />
       ))}
     </View>
+  );
+
+  if (!isEditing) return grid;
+
+  return (
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(160)}
+      style={{
+        backgroundColor: `${colors.primary}10`,
+        borderWidth: 1,
+        borderColor: `${colors.primary}33`,
+        borderRadius: 14,
+        padding: 12,
+        paddingBottom: 12 + editModeBottomInset,
+      }}
+    >
+      {grid}
+    </Animated.View>
   );
 }
 

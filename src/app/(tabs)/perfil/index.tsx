@@ -70,8 +70,18 @@ export default function ProfileScreen() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [originalValues, setOriginalValues] = useState<ProfileFormData | null>(null);
 
-  const photoTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilPhoto);
-  const sizesTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilSizes);
+  const photoTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilPhoto, {
+    scrollContainer: refs.scrollViewRef,
+    scrollOffsetTop: 16,
+  });
+  const sizesTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilSizes, {
+    scrollContainer: refs.scrollViewRef,
+    scrollOffsetTop: 80,
+  });
+  const addressTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilAddress, {
+    scrollContainer: refs.scrollViewRef,
+    scrollOffsetTop: 80,
+  });
 
   // Force-render fallback for tutorial steps whose target sections are
   // conditionally hidden (e.g. measures card hidden when user has no
@@ -343,7 +353,7 @@ export default function ProfileScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Profile Photo Card */}
-        <View ref={photoTarget.ref} onLayout={photoTarget.onLayout}>
+        <View ref={photoTarget.ref} onLayout={photoTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Foto de Perfil</ThemedText>
 
@@ -479,7 +489,7 @@ export default function ProfileScreen() {
             spotlights this section so the engine can find a target even
             when the user has no ppeSize stored. */}
         {(user.ppeSize || tutorialSizesActive) && (
-          <View ref={sizesTarget.ref} onLayout={sizesTarget.onLayout}>
+          <View ref={sizesTarget.ref} onLayout={sizesTarget.onLayout} collapsable={false}>
           <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <ThemedText style={styles.cardTitle}>Medidas</ThemedText>
             <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
@@ -542,6 +552,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Address Card */}
+        <View ref={addressTarget.ref} onLayout={addressTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Endereço</ThemedText>
 
@@ -695,6 +706,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
+        </View>
 
         </KeyboardAwareFormProvider>
         </ScrollView>

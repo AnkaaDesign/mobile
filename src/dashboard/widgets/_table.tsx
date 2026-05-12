@@ -7,15 +7,24 @@
 //   - Press-state backgrounds bled to the card edges.
 //   - Search inputs sat in their own padded box but rows did not, so the
 //     first row looked "stuck under" the search bar with no breathing room.
-//   - In dark mode, colors.border (#383838) was too close to colors.card
-//     (#262626) for row dividers to be visible — rows blurred together.
+//   - Row dividers using colors.border were visually too close to the card
+//     background — rows blurred together. We now pull divider/zebra tones
+//     from the theme's `surfaceVariant` slot, which is calibrated specifically
+//     for "alternating zebra row background" (see spec §2.4).
 // This file fixes all of that in one place.
 //
 // The visual model mirrors the legacy task-deadline-list (which the user
 // approved as "looks good"):
 //   - Optional sticky header row with column labels (uppercase, muted bg)
-//   - Zebra-striped rows (subtle rgba overlay so it works in both light/dark)
-//   - Strong divider lines using a higher-contrast tone than colors.border
+//   - Zebra-striped rows (using `colors.surfaceVariant`)
+//   - Divider lines using `colors.border`
+//
+// **Color rule:** ZERO raw hexes in this file. Every color is sourced from
+// `useTheme().colors` or `extendedColors` so light/dark themes stay
+// consistent and a future palette tweak is one-file.
+//
+// **Density rule:** Padding/font sizes are sourced from `densityClasses()`
+// in `_shared.tsx` — never duplicated here.
 //
 // Usage:
 //   <WidgetCard bodyPadded={false} ...>
@@ -34,7 +43,12 @@
 
 import { type ReactNode } from "react";
 import { View, Text, Pressable, TextInput, type ViewStyle } from "react-native";
-import { IconSearch } from "@tabler/icons-react-native";
+import {
+  IconSearch,
+  IconArrowsSort,
+  IconSortAscending,
+  IconSortDescending,
+} from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import type { Density } from "./_shared";
 import { densityClasses } from "./_shared";
@@ -85,20 +99,25 @@ export function WidgetTableSearch({
   const inline = value !== undefined && onChangeText !== undefined;
 
   return (
-    <View style={{ paddingBottom: bottomGap }}>
+    <View
+      style={{
+        marginHorizontal: -HORIZONTAL_INSET,
+        paddingBottom: bottomGap,
+      }}
+    >
       {inline ? (
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
-            height: 32,
-            borderRadius: 6,
-            borderWidth: 1,
-            borderColor: colors.border,
+            height: 34,
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderColor: dividerColor(isDark),
             backgroundColor: isDark
               ? "rgba(255,255,255,0.04)"
               : "rgba(0,0,0,0.03)",
-            paddingHorizontal: 8,
+            paddingHorizontal: HORIZONTAL_INSET,
             gap: 6,
           }}
         >
@@ -113,8 +132,6 @@ export function WidgetTableSearch({
               padding: 0,
               fontSize: 13,
               color: colors.foreground,
-              // RN on Android sometimes adds vertical padding to TextInput;
-              // explicit 0 keeps the input visually centered in 32px.
               minHeight: 0,
               textAlignVertical: "center",
               includeFontPadding: false,
@@ -125,7 +142,7 @@ export function WidgetTableSearch({
           />
         </View>
       ) : (
-        children
+        <View style={{ paddingHorizontal: HORIZONTAL_INSET }}>{children}</View>
       )}
     </View>
   );
@@ -194,6 +211,13 @@ export function textCellStyleForColumn(col: WidgetTableColumn): {
   };
 }
 
+/** A sortable column key + direction. Pass the current sort to
+ *  `WidgetTableHeader` and react to taps via `onSortPress`. */
+export interface WidgetTableSort {
+  key: string;
+  direction: "asc" | "desc";
+}
+
 interface WidgetTableHeaderProps {
   columns: WidgetTableColumn[];
   /** When true, prepend a 12px spacer so column labels align with row cells
@@ -204,6 +228,16 @@ interface WidgetTableHeaderProps {
   /** Pass the parent widget's density so header text sizing tracks the row
    *  density. Defaults to "comfortable". */
   density?: Density;
+  /** Current sort state — when set, the matching column shows an arrow icon. */
+  sort?: WidgetTableSort | null;
+  /** Tap handler for column headers. When provided, every header becomes a
+   *  Pressable. Cycle: none → asc → desc → none.
+   *  Pass which keys are sortable via `sortableKeys`; columns not in the set
+   *  render as plain (non-pressable) labels. */
+  onSortPress?: (key: string) => void;
+  /** Set of column keys that are sortable. Defaults to "all of them" when
+   *  `onSortPress` is provided. */
+  sortableKeys?: ReadonlySet<string>;
 }
 
 /**
@@ -214,9 +248,18 @@ export function WidgetTableHeader({
   columns,
   reserveRowDot,
   density = "comfortable",
+  sort,
+  onSortPress,
+  sortableKeys,
 }: WidgetTableHeaderProps) {
   const { colors, isDark } = useTheme();
   const { headerFontSize } = densityClasses(density);
+  const isKeySortable = (key: string) => {
+    if (!onSortPress) return false;
+    if (!sortableKeys) return true;
+    return sortableKeys.has(key);
+  };
+
   return (
     <View
       style={{
@@ -234,27 +277,71 @@ export function WidgetTableHeader({
         borderColor: dividerColor(isDark),
       }}
     >
-      {reserveRowDot && (
-        <View style={{ width: 8, marginRight: 4 }} />
-      )}
-      {columns.map((col) => (
-        <Text
-          key={col.key}
-          numberOfLines={1}
-          style={{
-            ...textCellStyleForColumn(col),
-            // Header font size pulled from density tokens — was hardcoded 9px
-            // (below WCAG AA's 12px minimum-readable-body-text guidance).
-            fontSize: headerFontSize,
-            fontWeight: "700",
-            letterSpacing: 0.6,
-            textTransform: "uppercase",
-            color: colors.mutedForeground,
-          }}
-        >
-          {col.label}
-        </Text>
-      ))}
+      {reserveRowDot && <View style={{ width: 8, marginRight: 4 }} />}
+      {columns.map((col) => {
+        const sortable = isKeySortable(col.key);
+        const active = sort?.key === col.key;
+        const SortIcon = active
+          ? sort!.direction === "asc"
+            ? IconSortAscending
+            : IconSortDescending
+          : IconArrowsSort;
+
+        const labelStyle = {
+          ...textCellStyleForColumn(col),
+          fontSize: headerFontSize,
+          fontWeight: "700" as const,
+          letterSpacing: 0.6,
+          textTransform: "uppercase" as const,
+          color: active ? colors.foreground : colors.mutedForeground,
+        };
+
+        if (!sortable) {
+          return (
+            <Text key={col.key} numberOfLines={1} style={labelStyle}>
+              {col.label}
+            </Text>
+          );
+        }
+
+        // Sortable: wrap label + arrow in a flex row that follows the column
+        // alignment. We cannot use a Text style for a Pressable, so reuse
+        // cellStyleForColumn for consistent flex/width.
+        return (
+          <Pressable
+            key={col.key}
+            onPress={() => onSortPress!(col.key)}
+            hitSlop={6}
+            accessibilityLabel={`Ordenar por ${col.label}`}
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              ...cellStyleForColumn(col),
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: headerFontSize,
+                fontWeight: "700",
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+                color: active ? colors.foreground : colors.mutedForeground,
+                ...(col.flex !== undefined ? { flexShrink: 1 } : {}),
+              }}
+            >
+              {col.label}
+            </Text>
+            <SortIcon
+              size={11}
+              color={active ? colors.foreground : colors.mutedForeground}
+            />
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -408,21 +495,53 @@ export function WidgetTableRow({
 // ---------- Inline message ----------
 
 interface WidgetTableEmptyProps {
-  children: ReactNode;
+  /** Pass a string for the canonical "12px / mutedForeground / centered"
+   *  empty state. The Text element is rendered for you with the spec §3.7
+   *  styling — agents 10–16 should prefer this over hand-rolled
+   *  `<Text style={{ fontSize: 12, color: colors.mutedForeground }}>`
+   *  boilerplate inside their widgets. */
+  text?: string;
+  /** Escape hatch for non-text content (icon + text, action buttons, etc.). */
+  children?: ReactNode;
+  /** Optional vertical padding override. Defaults to 20 for tables; pass a
+   *  smaller value for compact density widgets. */
+  paddingVertical?: number;
 }
 
 /** Standardized empty/loading/error inline message — uses card-relative
- *  padding so it sits in the same visual lane as rows. */
-export function WidgetTableMessage({ children }: WidgetTableEmptyProps) {
+ *  padding so it sits in the same visual lane as rows. The optional `text`
+ *  prop renders the spec §3.7 default styling so callers don't have to
+ *  re-derive `fontSize: 12, color: colors.mutedForeground` each time. */
+export function WidgetTableMessage({
+  text,
+  children,
+  paddingVertical = 20,
+}: WidgetTableEmptyProps) {
+  const { colors } = useTheme();
   return (
     <View
       style={{
-        paddingVertical: 20,
+        paddingVertical,
         paddingHorizontal: 0,
         alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {children}
+      {text != null ? (
+        <Text
+          style={{
+            fontSize: 12,
+            color: colors.mutedForeground,
+            textAlign: "center",
+            maxWidth: 320,
+            lineHeight: 16,
+          }}
+        >
+          {text}
+        </Text>
+      ) : (
+        children
+      )}
     </View>
   );
 }

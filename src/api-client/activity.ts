@@ -1,6 +1,10 @@
 // packages/api-client/src/activity.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   ActivityGetManyFormData,
@@ -37,6 +41,8 @@ export class ActivityService {
   // =====================
 
   async getActivities(params?: ActivityGetManyFormData): Promise<ActivityGetManyResponse> {
+    const mock = getTutorialMockList("activities", params ?? {});
+    if (mock) return mock as unknown as ActivityGetManyResponse;
     const response = await apiClient.get<ActivityGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +50,10 @@ export class ActivityService {
   }
 
   async getActivityById(id: string, params?: Omit<ActivityGetByIdFormData, "id">): Promise<ActivityGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("activities", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as ActivityGetUniqueResponse;
+    }
     const response = await apiClient.get<ActivityGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

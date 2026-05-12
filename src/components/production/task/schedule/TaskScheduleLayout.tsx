@@ -35,6 +35,7 @@ import { SectorSelectModal } from '@/components/production/task/modals'
 import { AddArtworksModal } from './add-artworks-modal'
 import { useTable } from '@/hooks/list/useTable'
 import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial'
+import { isTutorialRuntimeActive } from '@/components/tutorial/tutorial-runtime-state'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
@@ -66,21 +67,23 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
   // Track page access for recents/most accessed
   usePageTracker({ title: config.title })
 
-  // Tutorial targets - only active for cronograma pathname (not agenda).
-  // The first-task target carries an `onAction` (via ref, since handleRowPress
-  // is declared further down) so the overlay's spotlight tap drives navigation
-  // even when the dim layer would otherwise block the tap.
+  // Tutorial targets — wired with the REAL ids unconditionally. The
+  // previous conditional-id pattern toggled ids on every pathname change,
+  // forcing the hook to unregister/re-register on transitions and racing
+  // against the engine's "phase: active" lookup at step entry. Since the
+  // agenda screen uses a separate route, only ONE TaskScheduleLayout is
+  // ever mounted at a time, so registering the same ids unconditionally
+  // is safe — the cronograma's refs are the only ones that ever resolve.
   const isCronogramaPath = pathname?.includes('cronograma') ?? false
   const firstTaskActionRef = useRef<(() => void) | null>(null)
-  const cronogramaSearchTarget = useTutorialTarget(
-    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaSearch : 'cronograma.search.inactive'
-  )
-  const cronogramaFiltersTarget = useTutorialTarget(
-    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFilters : 'cronograma.filters.inactive'
-  )
+  const cronogramaSearchTarget = useTutorialTarget(TUTORIAL_TARGETS.cronogramaSearch)
+  const cronogramaFiltersTarget = useTutorialTarget(TUTORIAL_TARGETS.cronogramaFilters)
   const cronogramaFirstTaskTarget = useTutorialTarget(
-    isCronogramaPath ? TUTORIAL_TARGETS.cronogramaFirstTask : 'cronograma.firstTask.inactive',
+    TUTORIAL_TARGETS.cronogramaFirstTask,
     { onAction: () => firstTaskActionRef.current?.() }
+  )
+  const cronogramaColumnVisibilityTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.cronogramaColumnVisibility
   )
 
   // ============================================================================
@@ -633,9 +636,21 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     perfLog.navigationClick('TaskScheduleLayout', 'ScheduleDetailsScreen', item.id)
     perfLog.mark(`Row pressed: ${item.name || item.id}`)
 
+    // Tutorial bypass — during the demo flow the detail page is fed entirely
+    // from in-memory mocks (no real network roundtrip), so the
+    // navigation-loading overlay just sits on top blocking the view for its
+    // 1.5–3s timeout window. Skip the overlay entirely and push directly so
+    // the detail screen lands instantly and the tutorial can advance its
+    // spotlight onto the taskHeader card.
+    const inTutorial = isTutorialRuntimeActive()
+
     if (config.table.onRowPress) {
-      startNavigation()
-      requestAnimationFrame(() => config.table.onRowPress!(item, router))
+      if (inTutorial) {
+        config.table.onRowPress!(item, router)
+      } else {
+        startNavigation()
+        requestAnimationFrame(() => config.table.onRowPress!(item, router))
+      }
       return
     }
 
@@ -654,11 +669,19 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     perfLog.mark(`Navigating via action: ${action.key}`)
 
     if (action.onPress) {
-      startNavigation()
-      requestAnimationFrame(() => action!.onPress!(item, router, {}))
+      if (inTutorial) {
+        action.onPress(item, router, {})
+      } else {
+        startNavigation()
+        requestAnimationFrame(() => action!.onPress!(item, router, {}))
+      }
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
-      pushWithLoading(route)
+      if (inTutorial) {
+        router.push(route as any)
+      } else {
+        pushWithLoading(route)
+      }
     }
   }, [config.table.actions, config.table.onRowPress, router, startNavigation, pushWithLoading])
 
@@ -741,8 +764,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
       {/* Header with Search and Actions — always rendered to preserve focus */}
       <View style={styles.header}>
         <View
-          ref={isCronogramaPath ? cronogramaSearchTarget.ref : undefined}
-          onLayout={isCronogramaPath ? cronogramaSearchTarget.onLayout : undefined}
+          ref={cronogramaSearchTarget.ref}
+          onLayout={cronogramaSearchTarget.onLayout}
+          collapsable={false}
           style={styles.searchContainer}
         >
           <Search
@@ -775,16 +799,23 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
             </TouchableOpacity>
           )}
 
-          <ColumnVisibilityButton
-            columns={config.table.columns}
-            visibleColumns={visibleColumns}
-            onOpen={onOpenColumnPanel}
-          />
+          <View
+            ref={cronogramaColumnVisibilityTarget.ref}
+            onLayout={cronogramaColumnVisibilityTarget.onLayout}
+            collapsable={false}
+          >
+            <ColumnVisibilityButton
+              columns={config.table.columns}
+              visibleColumns={visibleColumns}
+              onOpen={onOpenColumnPanel}
+            />
+          </View>
 
           {config.filters && (
             <View
-              ref={isCronogramaPath ? cronogramaFiltersTarget.ref : undefined}
-              onLayout={isCronogramaPath ? cronogramaFiltersTarget.onLayout : undefined}
+              ref={cronogramaFiltersTarget.ref}
+              onLayout={cronogramaFiltersTarget.onLayout}
+              collapsable={false}
             >
               <TouchableOpacity
                 onPress={() => {
@@ -1010,6 +1041,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 <View
                   ref={tutorialRef}
                   onLayout={tutorialOnLayout}
+                  collapsable={isFirstTask ? false : undefined}
                   style={[styles.rowContainer, { borderColor: colors.border }]}
                 >
                   <TableRow

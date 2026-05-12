@@ -16,7 +16,9 @@ import { getDefaultVisibleColumns } from "./column-visibility-manager";
 import { formatDate, formatCurrency } from "@/utils";
 import { formatTruckSpotShort } from "@/utils/task";
 import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
-import { TASK_STATUS } from "@/constants";
+import { TASK_STATUS, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
+import { canViewTaskFinancialColumns, isTaskFinancialColumn } from "@/utils/permissions/task-column-permissions";
 import type { SortConfig } from "@/lib/sort-utils";
 import { TaskSectorModal } from "../modals/task-sector-modal";
 import { TaskStatusModal } from "../modals/task-status-modal";
@@ -65,8 +67,17 @@ const isOverdue = (task: Task) => {
   return new Date(task.term) < new Date();
 };
 
-// Define all available columns with their renderers
-export const createColumnDefinitions = (): TableColumn[] => [
+// Define all available columns with their renderers.
+// Pass `sectorPrivilege` to strip financial columns (price/quoteTotal/
+// quoteStatus) from sectors that aren't allowed to see them. Omit the
+// argument only when you've already gated the display elsewhere.
+export const createColumnDefinitions = (sectorPrivilege?: SECTOR_PRIVILEGES): TableColumn[] => {
+  const all = createAllColumnDefinitions();
+  if (canViewTaskFinancialColumns(sectorPrivilege)) return all;
+  return all.filter((c) => !isTaskFinancialColumn(c.key));
+};
+
+const createAllColumnDefinitions = (): TableColumn[] => [
   {
     key: "name",
     header: "LOGOMARCA",
@@ -365,16 +376,31 @@ export const TaskTable = React.memo<TaskTableProps>(
       [tasks, selectedTaskId]
     );
 
-    // Column visibility - use prop if provided, otherwise use default
-    const visibleColumns = useMemo(() => {
-      if (visibleColumnKeys && visibleColumnKeys.length > 0) {
-        return new Set(visibleColumnKeys);
-      }
-      return getDefaultVisibleColumns();
-    }, [visibleColumnKeys]);
+    // Financial columns (price) are gated per-sector. Sectors outside
+    // ADMIN/COMMERCIAL/FINANCIAL never see them, regardless of saved
+    // visibleColumnKeys.
+    const { user } = useAuth();
+    const sectorPrivilege = user?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
+    const canSeeFinancials = canViewTaskFinancialColumns(sectorPrivilege);
 
-    // Get all column definitions
-    const allColumns = useMemo(() => createColumnDefinitions(), []);
+    // Column visibility - use prop if provided, otherwise use default.
+    // Strip financial keys when the user is not allowed to see them.
+    const visibleColumns = useMemo(() => {
+      const base =
+        visibleColumnKeys && visibleColumnKeys.length > 0
+          ? new Set(visibleColumnKeys)
+          : getDefaultVisibleColumns();
+      if (canSeeFinancials) return base;
+      const filtered = new Set<string>();
+      base.forEach((key) => {
+        if (!isTaskFinancialColumn(key)) filtered.add(key);
+      });
+      return filtered;
+    }, [visibleColumnKeys, canSeeFinancials]);
+
+    // Get all column definitions (already drops financial columns for
+    // restricted sectors when sectorPrivilege is passed).
+    const allColumns = useMemo(() => createColumnDefinitions(sectorPrivilege), [sectorPrivilege]);
 
     // Build visible columns with dynamic widths
     const displayColumns = useMemo(() => {

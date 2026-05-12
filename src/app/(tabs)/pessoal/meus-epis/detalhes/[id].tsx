@@ -1,4 +1,5 @@
-import { View, StyleSheet, Alert, Linking } from "react-native";
+import { useRef } from "react";
+import { View, StyleSheet, Alert, Linking, ScrollView } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
 import { usePpeDelivery } from "@/hooks";
@@ -27,6 +28,11 @@ import {
 export default function PpeDeliveryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
+  // Forwarded into DetailScreen + SignDeliveryButton so the tutorial step that
+  // spotlights the sign button can scroll it into view on small screens — the
+  // sign card sits below the item / certificate cards and would otherwise stay
+  // off-screen.
+  const scrollRef = useRef<ScrollView | null>(null);
 
   const query = usePpeDelivery(id || "", {
     include: {
@@ -59,6 +65,7 @@ export default function PpeDeliveryDetailScreen() {
       // Read-only mirror — user signs from card actions, no edit page.
       editGuard={{ editable: [] }}
       notFoundFallback={mobileRoute(routes.personal.myPpes.root)}
+      scrollRef={scrollRef}
     >
       {(delivery) => (
         <View style={styles.body}>
@@ -69,7 +76,7 @@ export default function PpeDeliveryDetailScreen() {
           {/* In-App Signature — Sign or show evidence */}
           {(delivery.status === PPE_DELIVERY_STATUS.DELIVERED ||
             delivery.status === PPE_DELIVERY_STATUS.WAITING_SIGNATURE) && (
-            <SignDeliveryButton delivery={delivery} />
+            <SignDeliveryButton delivery={delivery} scrollContainer={scrollRef} />
           )}
           {delivery.status === PPE_DELIVERY_STATUS.COMPLETED &&
             delivery.signature && (

@@ -443,14 +443,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [fetchAndUpdateUserData, isAuthReady, decodeToken]);
 
+  // Stable refs that always point at the latest function. The actual function
+  // identities of validateSession/fetchAndUpdateUserData change every time user
+  // state changes (their deps include `user`). Without these refs, every long-lived
+  // subscription below would tear down and re-subscribe whenever any user field
+  // changed — costing real CPU on every render of the auth tree.
+  const validateSessionRef = useRef(validateSession);
+  const fetchAndUpdateUserDataRef = useRef(fetchAndUpdateUserData);
+  useEffect(() => {
+    validateSessionRef.current = validateSession;
+  }, [validateSession]);
+  useEffect(() => {
+    fetchAndUpdateUserDataRef.current = fetchAndUpdateUserData;
+  }, [fetchAndUpdateUserData]);
+
   // Initial mount effect
   useEffect(() => {
-    const timeoutId = setTimeout(() => validateSession(), 100);
+    const timeoutId = setTimeout(() => validateSessionRef.current(), 100);
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // Handle app state changes - validate session when coming back to foreground
-  // FIXED: Added validateSession to dependencies to avoid stale closure
+  // Handle app state changes - validate session when coming back to foreground.
+  // Subscribed once on mount; uses validateSessionRef so it never resubscribes.
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       const previousState = appStateRef.current;
@@ -459,17 +473,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Only validate when coming FROM background TO active
       if (previousState.match(/inactive|background/) && nextAppState === "active") {
         console.log('[Auth] App resumed from background, validating session');
-        // Delay slightly to let the app fully resume
-        setTimeout(() => validateSession(), 200);
+        setTimeout(() => validateSessionRef.current(), 200);
       }
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
     return () => subscription.remove();
-  }, [validateSession]); // FIXED: Now properly includes validateSession
+  }, []);
 
-  // Handle network connectivity changes - revalidate when coming back online
-  // This ensures user stays logged in even after extended offline periods
+  // Handle network connectivity changes - revalidate when coming back online.
+  // Subscribed once; reads latest user/token via refs to avoid re-subscribing.
+  const userRef = useRef(user);
+  const accessTokenRef = useRef(accessToken);
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
+
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const isConnected = state.isConnected && state.isInternetReachable !== false;
@@ -477,17 +495,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsOffline(!isConnected);
 
       // If we just came back online and have a user, validate the session
-      if (isConnected && wasOfflineRef.current && user && accessToken) {
+      const currentUser = userRef.current;
+      const currentToken = accessTokenRef.current;
+      if (isConnected && wasOfflineRef.current && currentUser && currentToken) {
         console.log('[Auth] Device came back online, validating session in background');
-        // Delay to let network stabilize
         setTimeout(() => {
-          fetchAndUpdateUserData(accessToken, true)
+          fetchAndUpdateUserDataRef.current(currentToken, true)
             .then(() => {
               console.log('[Auth] Session validated after coming online');
               setLastValidatedAt(Date.now());
             })
             .catch(() => {
-              // Don't logout on error - network might still be flaky
               console.log('[Auth] Background validation failed, keeping cached session');
             });
         }, 2000);
@@ -497,20 +515,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return () => unsubscribe();
-  }, [user, accessToken, fetchAndUpdateUserData]);
+  }, []);
 
-  // Periodic refresh (5 minutes)
+  // Periodic refresh (5 minutes). Depends only on the existence of user+token,
+  // not their identity, so a user-data refresh doesn't tear the interval down
+  // and recreate it (which previously thrashed every privilege/profile update).
+  const hasAuthedSession = Boolean(user && accessToken);
   useEffect(() => {
-    if (!user || !accessToken) return;
+    if (!hasAuthedSession) return;
 
     const refreshInterval = setInterval(() => {
-      if (AppState.currentState === "active") {
-        fetchAndUpdateUserData(accessToken, true).catch(() => {});
+      const currentToken = accessTokenRef.current;
+      if (AppState.currentState === "active" && currentToken) {
+        fetchAndUpdateUserDataRef.current(currentToken, true).catch(() => {});
       }
     }, 5 * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
-  }, [user, accessToken, fetchAndUpdateUserData]);
+  }, [hasAuthedSession]);
 
   useEffect(() => {
     if (accessToken) {

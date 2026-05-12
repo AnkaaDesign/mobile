@@ -66,14 +66,17 @@ export const WIDGET_ROW_LONG_LABELS: Record<WidgetRows, string> = {
   4: "Muito alta",
 };
 
-/** Concrete max-height in pixels for each rows token. Used by WidgetTile to
- *  clamp the rendered widget body height. Content that overflows scrolls
- *  internally via the widget's own scroll surface. */
+/** Concrete max-height in pixels for each rows token. Web uses 180px row
+ *  units on a ~1080px desktop viewport — proportionally ~17% per unit.
+ *  Mobile uses the same arithmetic but with a 140px row unit so a
+ *  rows-3 widget lands at ~452px (≈ 60-65% of a typical mobile content
+ *  area) instead of "filling the entire screen", matching web's *visual
+ *  proportion* on the smaller viewport. Formula: `140·N + 16·(N-1)`. */
 export const WIDGET_ROW_MAX_HEIGHT: Record<WidgetRows, number> = {
-  1: 240,
-  2: 360,
-  3: 520,
-  4: 720,
+  1: 140,
+  2: 296,
+  3: 452,
+  4: 608,
 };
 
 // ---------- Categories ----------

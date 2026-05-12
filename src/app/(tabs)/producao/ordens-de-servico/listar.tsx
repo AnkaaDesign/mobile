@@ -8,7 +8,7 @@ export default function ServiceOrderListScreen() {
   const listTarget = useTutorialTarget(TUTORIAL_TARGETS.ordensList)
 
   return (
-    <View ref={listTarget.ref} onLayout={listTarget.onLayout} style={{ flex: 1 }}>
+    <View ref={listTarget.ref} onLayout={listTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
       <Layout config={serviceOrdersListConfig} />
     </View>
   )

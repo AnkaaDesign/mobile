@@ -1,6 +1,10 @@
 // packages/api-client/src/warning.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   WarningGetManyFormData,
@@ -37,6 +41,8 @@ export class WarningService {
   // =====================
 
   async getWarnings(params?: WarningGetManyFormData): Promise<WarningGetManyResponse> {
+    const mock = getTutorialMockList("warnings", params ?? {});
+    if (mock) return mock as unknown as WarningGetManyResponse;
     const response = await apiClient.get<WarningGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +50,10 @@ export class WarningService {
   }
 
   async getWarningById(id: string, params?: Omit<WarningGetByIdFormData, "id">): Promise<WarningGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("warnings", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as WarningGetUniqueResponse;
+    }
     const response = await apiClient.get<WarningGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });
@@ -51,6 +61,8 @@ export class WarningService {
   }
 
   async getMyWarnings(params?: WarningGetManyFormData): Promise<WarningGetManyResponse> {
+    const mock = getTutorialMockList("warnings", params ?? {});
+    if (mock) return mock as unknown as WarningGetManyResponse;
     const response = await apiClient.get<WarningGetManyResponse>(`${this.basePath}/my-warnings`, {
       params,
     });
@@ -58,6 +70,8 @@ export class WarningService {
   }
 
   async getTeamWarnings(params?: WarningGetManyFormData): Promise<WarningGetManyResponse> {
+    const mock = getTutorialMockList("warnings", params ?? {});
+    if (mock) return mock as unknown as WarningGetManyResponse;
     const response = await apiClient.get<WarningGetManyResponse>(`${this.basePath}/team-warnings`, {
       params,
     });

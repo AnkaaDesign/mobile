@@ -1,18 +1,41 @@
-// Recent-messages widget — wraps the existing mobile RecentMessagesList. The
-// underlying list pulls data from the same `useHomeDashboard` query used
-// elsewhere on the home screen, so dropping this widget alongside other data
-// widgets does not double the network cost (react-query dedupes the request).
+// Recent-messages widget — stylized stub cards (title + skeleton-bar preview)
+// modeled after web's MessageStubCard. Each card renders a deterministic
+// sequence of "blocks" (heading, paragraphs, list, divider, image, button)
+// derived from the message id, so previews stay stable per message but vary
+// between messages. Tap a card to open the message modal; unread messages
+// are marked as viewed on tap.
+//
+// Configurable: title, accent, itemsPerRow (1–3 on mobile — web allows up to
+// 8 but anything above 3 is unreadable on a phone), itemsPerColumn (1–6),
+// density, display.showHeader, showCount. `display.showHeader` is nested to
+// match web's schema so saved configs round-trip across platforms.
 
+import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
-import { View, Text } from "react-native";
-import { IconMessage } from "@tabler/icons-react-native";
-import { useHomeDashboard } from "@/hooks/dashboard";
-import { RecentMessagesList } from "@/components/home-dashboard/recent-messages-list";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import {
+  IconMessage,
+  IconMessageOff,
+  IconClock,
+} from "@tabler/icons-react-native";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/lib/theme";
-import { Section, ToggleRow, LabeledField } from "./_shared";
+import { useHomeDashboard } from "@/hooks/dashboard";
+import { useMarkMessageAsViewed } from "@/hooks/useMyMessages";
+import { MessageModal } from "@/components/message/MessageModal";
+import {
+  Section,
+  ToggleRow,
+  LabeledField,
+  DENSITY_VALUES,
+  type Density,
+} from "./_shared";
 import { SkeletonRows } from "./_skeleton";
 import { WidgetErrorState } from "./_error-state";
+import { lightImpactHaptic } from "@/utils/haptics";
 import { Input } from "@/components/ui/input";
+import { routes } from "@/constants/routes";
 import { WidgetCard } from "../components/widget-card";
 import {
   AccentPicker,
@@ -23,20 +46,474 @@ import {
   type WidgetAccentIcon,
   type WidgetBorderColor,
 } from "../components/widget-accent";
+import type { HomeDashboardMessage } from "@/types";
 import type {
   WidgetConfigProps,
   WidgetDefinition,
   WidgetRenderProps,
 } from "../types";
 
-const configSchema = z.object({
-  title: z.string().min(1).max(80).default("Mensagens Recentes"),
-  showHeader: z.boolean().default(true),
-  accent: makeAccentSchema({ color: "indigo", icon: "Message", borderColor: "none" }),
-});
+// ---------- Schema ----------
+
+// Nested `display.showHeader` mirrors web's `recent-messages.tsx` schema so
+// cross-platform configs round-trip cleanly. Earlier mobile builds stored
+// `showHeader` flat at the top level; the `z.preprocess` below promotes the
+// legacy flat key into `display.showHeader` so saved layouts keep their
+// user-chosen value after the schema reshape.
+const configSchema = z.preprocess(
+  (raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+    const r = raw as Record<string, unknown>;
+    if ("showHeader" in r && (r.display == null || typeof r.display !== "object")) {
+      return {
+        ...r,
+        display: { showHeader: !!r.showHeader },
+      };
+    }
+    return r;
+  },
+  z.object({
+    title: z
+      .string()
+      .min(1)
+      .max(80)
+      .default("Mensagens Recentes")
+      .describe("Título exibido no cabeçalho do widget."),
+    accent: makeAccentSchema({ color: "indigo", icon: "Message", borderColor: "none" }),
+    /** Mobile caps perRow at 3 — anything denser is illegible on phones. Web
+     *  allows up to 8; saved configs round-trip clamped at render time. */
+    itemsPerRow: z
+      .number()
+      .int()
+      .min(1)
+      .max(3)
+      .default(2)
+      .describe("Quantos cartões de mensagem por linha."),
+    itemsPerColumn: z
+      .number()
+      .int()
+      .min(1)
+      .max(6)
+      .default(2)
+      .describe("Quantas linhas de cartões empilhar verticalmente."),
+    density: z
+      .enum(DENSITY_VALUES)
+      .default("comfortable")
+      .describe("Densidade dos blocos visuais dentro de cada cartão."),
+    display: z
+      .object({
+        showHeader: z.boolean().default(true),
+      })
+      .default({ showHeader: true })
+      .describe("Visibilidade do cabeçalho do widget."),
+    showCount: z
+      .boolean()
+      .default(true)
+      .describe("Exibe a contagem de mensagens não lidas no cabeçalho."),
+  }),
+);
 type Config = z.infer<typeof configSchema>;
 
-function Render({ config }: WidgetRenderProps<Config>) {
+// ---------- Block preview generator (port of web file lines 117+) ----------
+
+type BlockKind = "heading" | "paragraph" | "list" | "divider" | "button" | "image";
+
+interface PreviewBlock {
+  kind: BlockKind;
+  /** width % for paragraph / list / heading lines */
+  width: number;
+}
+
+/** Deterministic PRNG seeded from a string. */
+function seededRng(seed: string): () => number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h ^ seed.charCodeAt(i)) * 16777619) >>> 0;
+  }
+  return () => {
+    h = (h * 1664525 + 1013904223) >>> 0;
+    return h / 0x100000000;
+  };
+}
+
+function generateBlocks(seed: string, density: Density = "comfortable"): PreviewBlock[] {
+  const rng = seededRng(seed);
+  const blocks: PreviewBlock[] = [];
+  const totalBlocks =
+    density === "compact"
+      ? 5 + Math.floor(rng() * 4)
+      : density === "spacious"
+        ? 11 + Math.floor(rng() * 5)
+        : 8 + Math.floor(rng() * 5);
+  blocks.push({ kind: "heading", width: 55 + Math.floor(rng() * 35) });
+  if (rng() < 0.3) {
+    blocks.push({ kind: "image", width: 100 });
+  }
+  let i = blocks.length;
+  let consecutiveParagraph = 0;
+  let lastListIndex = -3;
+  while (i < totalBlocks - 1) {
+    const r = rng();
+    let kind: BlockKind;
+    if (r < 0.18 && i - lastListIndex > 2) {
+      const runLen = 2 + Math.floor(rng() * 3);
+      for (let j = 0; j < runLen && i < totalBlocks - 1; j++) {
+        blocks.push({ kind: "list", width: 45 + Math.floor(rng() * 45) });
+        i++;
+      }
+      lastListIndex = i;
+      consecutiveParagraph = 0;
+      continue;
+    }
+    if (consecutiveParagraph >= 3 && r < 0.35) {
+      blocks.push({ kind: "divider", width: 100 });
+      consecutiveParagraph = 0;
+      i++;
+      continue;
+    }
+    if (r < 0.78) {
+      kind = "paragraph";
+      consecutiveParagraph += 1;
+    } else if (r < 0.9) {
+      kind = "list";
+      consecutiveParagraph = 0;
+      lastListIndex = i;
+    } else if (r < 0.97) {
+      kind = "image";
+      consecutiveParagraph = 0;
+    } else {
+      kind = "divider";
+      consecutiveParagraph = 0;
+    }
+    let width = 55 + Math.floor(rng() * 40);
+    if (kind === "list") width = 45 + Math.floor(rng() * 45);
+    if (kind === "image") width = 70 + Math.floor(rng() * 30);
+    if (kind === "divider") width = 100;
+    blocks.push({ kind, width });
+    i++;
+  }
+  if (rng() < 0.3) {
+    blocks.push({ kind: "button", width: 30 + Math.floor(rng() * 25) });
+  } else {
+    blocks.push({ kind: "paragraph", width: 30 + Math.floor(rng() * 35) });
+  }
+  return blocks;
+}
+
+// Density-driven sizing (mobile pixel values, mirrors web's tailwind classes).
+const DENSITY_BLOCK_PX = {
+  compact: { heading: 6, paragraph: 4, list: 4, listDot: 3, button: 10 },
+  comfortable: { heading: 8, paragraph: 5, list: 5, listDot: 5, button: 12 },
+  spacious: { heading: 10, paragraph: 7, list: 7, listDot: 7, button: 14 },
+} as const;
+
+const DENSITY_CARD_PX = {
+  compact: { padding: 8, gap: 5, blockGap: 2, titleSize: 11, badgeSize: 8, footerSize: 9 },
+  comfortable: {
+    padding: 10,
+    gap: 6,
+    blockGap: 3,
+    titleSize: 13,
+    badgeSize: 9,
+    footerSize: 10,
+  },
+  spacious: {
+    padding: 12,
+    gap: 8,
+    blockGap: 4,
+    titleSize: 14,
+    badgeSize: 10,
+    footerSize: 11,
+  },
+} as const;
+
+// ---------- Block renderer ----------
+
+function PreviewBlockNode({
+  block,
+  isUnread,
+  density,
+  fgColor,
+  primaryColor,
+  borderColor,
+  mutedColor,
+}: {
+  block: PreviewBlock;
+  isUnread: boolean;
+  density: Density;
+  fgColor: string;
+  primaryColor: string;
+  borderColor: string;
+  mutedColor: string;
+}) {
+  const sizes = DENSITY_BLOCK_PX[density];
+  // Hex+alpha shorthand. fg-15% / fg-25% / primary-45% / primary-65% mimic
+  // web's bg-foreground/15 etc. Keep these inline rather than reaching for
+  // theme tokens — the fades are intentionally lower than any semantic color.
+  const baseBg = isUnread ? primaryColor + "73" : fgColor + "26"; // 45% / 15%
+  const buttonBg = isUnread ? primaryColor + "A6" : fgColor + "40"; // 65% / 25%
+
+  if (block.kind === "divider") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          minHeight: 0,
+          justifyContent: "center",
+        }}
+      >
+        <View style={{ height: 1, width: "100%", backgroundColor: borderColor }} />
+      </View>
+    );
+  }
+
+  if (block.kind === "list") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          minHeight: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        <View
+          style={{
+            width: sizes.listDot,
+            height: sizes.listDot,
+            borderRadius: sizes.listDot / 2,
+            backgroundColor: baseBg,
+          }}
+        />
+        <View
+          style={{
+            height: sizes.list,
+            width: `${block.width}%`,
+            borderRadius: sizes.list / 2,
+            backgroundColor: baseBg,
+          }}
+        />
+      </View>
+    );
+  }
+
+  if (block.kind === "image") {
+    return (
+      <View
+        style={{
+          flex: 1,
+          minHeight: 0,
+          justifyContent: "center",
+        }}
+      >
+        <View
+          style={{
+            width: `${block.width}%`,
+            minHeight: 18,
+            height: "100%",
+            borderRadius: 4,
+            borderWidth: 1,
+            backgroundColor: isUnread ? primaryColor + "33" : mutedColor + "B3",
+            borderColor: isUnread ? primaryColor + "66" : borderColor,
+          }}
+        />
+      </View>
+    );
+  }
+
+  // heading / paragraph / button
+  // Type as `number` (not the inferred `4 | 5 | 7` literal-union from
+  // `as const`) so the heading / button branches don't trip TS2322.
+  let height: number = sizes.paragraph;
+  let bg = baseBg;
+  let radius: number = sizes.paragraph / 2;
+  if (block.kind === "heading") {
+    height = sizes.heading;
+    radius = 4;
+  } else if (block.kind === "button") {
+    height = sizes.button;
+    bg = buttonBg;
+    radius = 4;
+  }
+  return (
+    <View
+      style={{
+        flex: 1,
+        minHeight: 0,
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          height,
+          width: `${block.width}%`,
+          borderRadius: radius,
+          backgroundColor: bg,
+        }}
+      />
+    </View>
+  );
+}
+
+// ---------- Stub card ----------
+
+interface MessageStubCardProps {
+  message: HomeDashboardMessage;
+  onPress: () => void;
+  density: Density;
+  cardHeight: number;
+}
+
+function MessageStubCard({ message, onPress, density, cardHeight }: MessageStubCardProps) {
+  const { colors } = useTheme();
+  const isUnread = !message.viewedAt;
+  const blocks = useMemo(
+    () => generateBlocks(message.id, density),
+    [message.id, density],
+  );
+  const timeAgo = message.publishedAt
+    ? formatDistanceToNow(new Date(message.publishedAt), {
+        addSuffix: true,
+        locale: ptBR,
+      })
+    : null;
+  const sizes = DENSITY_CARD_PX[density];
+
+  // Cardinal-rule fix: Pressable's style function on iOS does not reliably
+  // apply layout props (flex:1 etc) OR visual props (border, bg, radius).
+  // Move ALL chrome to an outer View; Pressable becomes a transparent tap
+  // surface filling its parent. Symptom this fixes: with itemsPerRow=1 the
+  // card was rendering at intrinsic-content width instead of stretching to
+  // the row's full width.
+  return (
+    <View
+      style={{
+        flex: 1,
+        height: cardHeight,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: isUnread ? colors.primary + "66" : colors.border,
+        backgroundColor: isUnread ? colors.primary + "0F" : colors.card,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Mensagem: ${message.title || "Sem título"}${
+          isUnread ? ", não lida" : ""
+        }`}
+        android_ripple={{ color: "rgba(0,0,0,0.08)" }}
+        // PLAIN style object (not a function). Pressable's style-function
+        // form does not reliably apply layout props on iOS — without flex:1
+        // here, the Pressable collapses to intrinsic content height and the
+        // inner flex:1 content View loses its frame, causing the title +
+        // skeleton blocks to overlap each other at zero height.
+        style={{ flex: 1 }}
+      >
+        {/* Top accent stripe — primary for unread, muted gradient stub for read */}
+        <View
+          style={{
+            height: 3,
+            backgroundColor: isUnread ? colors.primary : colors.mutedForeground + "40",
+          }}
+        />
+        <View style={{ flex: 1, padding: sizes.padding, gap: sizes.gap }}>
+          {/* Title row — the leading unread-dot was removed per design feedback;
+              the "Novo" pill on the right already signals unread state and the
+              dot was visual noise inside the already-narrow card. */}
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, minWidth: 0 }}>
+            <Text
+              numberOfLines={2}
+              style={{
+                flex: 1,
+                fontSize: sizes.titleSize,
+                fontWeight: "600",
+                lineHeight: sizes.titleSize + 3,
+                color: isUnread ? colors.foreground : colors.foreground + "BF",
+              }}
+            >
+              {message.title || "Sem título"}
+            </Text>
+            {isUnread && (
+              <View
+                style={{
+                  paddingHorizontal: 5,
+                  paddingVertical: 1,
+                  borderRadius: 999,
+                  backgroundColor: colors.primary,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: sizes.badgeSize,
+                    fontWeight: "700",
+                    color: colors.primaryForeground,
+                    letterSpacing: 0.6,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Novo
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Block preview — flex:1 so blocks share remaining height equally. */}
+          <View style={{ flex: 1, minHeight: 0, gap: sizes.blockGap }}>
+            {blocks.map((b, i) => (
+              <PreviewBlockNode
+                key={i}
+                block={b}
+                isUnread={isUnread}
+                density={density}
+                fgColor={colors.foreground}
+                primaryColor={colors.primary}
+                borderColor={colors.border}
+                mutedColor={colors.muted}
+              />
+            ))}
+          </View>
+
+          {timeAgo && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                borderTopWidth: 1,
+                borderTopColor: colors.border + "66",
+                paddingTop: 4,
+              }}
+            >
+              <IconClock
+                size={sizes.footerSize}
+                color={colors.mutedForeground}
+                style={{ opacity: 0.6 }}
+              />
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: sizes.footerSize,
+                  color: colors.mutedForeground,
+                  fontVariant: ["tabular-nums"],
+                  flex: 1,
+                }}
+              >
+                {timeAgo}
+              </Text>
+            </View>
+          )}
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+// ---------- Render ----------
+
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -46,44 +523,273 @@ function Render({ config }: WidgetRenderProps<Config>) {
   const { data, isLoading, isError, refetch, isRefetching } = useHomeDashboard({
     platform: "mobile",
   });
-  const messages = data?.data?.recentMessages ?? [];
+  const messages = (data?.data?.recentMessages ?? []) as HomeDashboardMessage[];
   const unreadCount = data?.data?.counts?.unreadMessages ?? 0;
+  const density = (config.density ?? "comfortable") as Density;
+
+  // Span-aware perRow override (web 4-up grid is unreadable on phones). Spec:
+  // span 1 → 1 col; span 2 → max 2 cols; span 3 → max 3 cols.
+  const span = size?.span ?? 2;
+  const maxPerRow = span === 1 ? 1 : span === 2 ? 2 : 3;
+  const perRow = Math.max(1, Math.min(maxPerRow, config.itemsPerRow ?? 2));
+  const perCol = Math.max(1, Math.min(6, config.itemsPerColumn ?? 2));
+  const totalCells = perRow * perCol;
+
+  // Tap → open MessageModal. Mark unread messages as viewed.
+  const { mutate: markAsViewed } = useMarkMessageAsViewed();
+  const [selected, setSelected] = useState<HomeDashboardMessage | null>(null);
+  const onPress = useCallback(
+    (m: HomeDashboardMessage) => {
+      lightImpactHaptic();
+      if (!m.viewedAt) markAsViewed(m.id);
+      setSelected(m);
+    },
+    [markAsViewed],
+  );
+
+  // Cap displayed messages at perRow*perCol so the grid is fully populated.
+  const visible = useMemo(() => messages.slice(0, totalCells), [messages, totalCells]);
+
+  // Approximate body budget: row token (140) * size.rows minus header/footer.
+  // The grid auto-fills via flex; estimate per-card height for stable previews.
+  const rowsTall = size?.rows ?? 2;
+  const bodyBudget = Math.max(140, 140 * rowsTall + 16 * (rowsTall - 1) - 70);
+  const cardHeight = Math.max(80, Math.floor((bodyBudget - 8 * (perCol - 1)) / perCol));
 
   return (
-    <WidgetCard
-      title={config.title || "Mensagens Recentes"}
-      icon={<Icon size={16} color={accent.hex} />}
-      showHeader={config.showHeader}
-      count={unreadCount > 0 ? unreadCount : null}
-      borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
-    >
-      <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+    <View style={{ flex: 1 }}>
+      <WidgetCard
+        title={config.title || "Mensagens Recentes"}
+        icon={<Icon size={16} color={accent.hex} />}
+        showHeader={config.display?.showHeader ?? true}
+        count={config.showCount && unreadCount > 0 ? unreadCount : null}
+        accentColor={accent.hex}
+        borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
+        viewAllHref={routes.administration.messages.root}
+        onRefresh={refetch}
+        refreshing={isRefetching}
+      >
         {isLoading ? (
-          // Skeleton placeholder rows so users see content shape during fetch
-          // instead of a blank patch with "Carregando..." text.
-          <SkeletonRows count={3} density="comfortable" />
+          <View style={{ padding: 12 }}>
+            <SkeletonRows count={3} density={density} />
+          </View>
         ) : isError ? (
-          <WidgetErrorState
-            message="Não foi possível carregar mensagens."
-            onRetry={() => refetch()}
-          />
-        ) : messages.length === 0 ? (
-          <Text
-            style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}
+          <View style={{ padding: 12, flex: 1, justifyContent: "center" }}>
+            <WidgetErrorState
+              message="Não foi possível carregar mensagens."
+              onRetry={() => refetch()}
+            />
+          </View>
+        ) : visible.length === 0 ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              gap: 6,
+            }}
           >
-            Nenhuma mensagem recente.
-          </Text>
+            <IconMessageOff size={24} color={colors.mutedForeground} style={{ opacity: 0.5 }} />
+            <Text style={{ fontSize: 12, color: colors.mutedForeground, textAlign: "center" }}>
+              Nenhuma mensagem recente.
+            </Text>
+          </View>
         ) : (
-          <RecentMessagesList messages={messages} unreadCount={unreadCount} />
+          <ScrollView
+            // ScrollView so very tall configs (perCol=6) still scroll inside
+            // the tile body — without it, oversized grids would clip.
+            // Padding reduced (12 → 8) so the message cards visually breathe
+            // closer to the WidgetCard chrome and the content area feels less
+            // boxed-in.
+            contentContainerStyle={{ padding: 8, gap: 8 }}
+          >
+            {/* Pack messages into rows of `perRow` cards each. Use flex inside
+             *  each row so cards share width; height is fixed per cardHeight
+             *  so block previews keep their proportions. */}
+            {Array.from({ length: Math.ceil(visible.length / perRow) }).map((_, rIdx) => {
+              const rowSlice = visible.slice(rIdx * perRow, (rIdx + 1) * perRow);
+              return (
+                <View
+                  key={`row-${rIdx}`}
+                  style={{
+                    flexDirection: "row",
+                    gap: 8,
+                  }}
+                >
+                  {rowSlice.map((m) => (
+                    <MessageStubCard
+                      key={m.id}
+                      message={m}
+                      onPress={() => onPress(m)}
+                      density={density}
+                      cardHeight={cardHeight}
+                    />
+                  ))}
+                  {/* Pad incomplete row with invisible flex spacers so the
+                   *  last row's cards don't stretch to fill the slot. */}
+                  {rowSlice.length < perRow &&
+                    Array.from({ length: perRow - rowSlice.length }).map((_, i) => (
+                      <View key={`spacer-${i}`} style={{ flex: 1 }} />
+                    ))}
+                </View>
+              );
+            })}
+          </ScrollView>
         )}
-      </View>
-    </WidgetCard>
+      </WidgetCard>
+
+      {/* MessageModal — adapts HomeDashboardMessage to the modal's expected
+       *  shape. The modal's `Notification` type is structurally compatible
+       *  for the fields we pass; cast through `any` to bypass strict typing
+       *  rather than mapping every field. */}
+      {selected && (
+        <MessageModal
+          visible
+          onClose={() => setSelected(null)}
+          messages={[selected as any]}
+        />
+      )}
+    </View>
+  );
+}
+
+// ---------- Config ----------
+
+// Pill button identical to the SizeSelector's Largura/Altura pills so the
+// "Mensagens por linha" + "Linhas visíveis" selectors feel like part of
+// the same form family. Outer View owns the layout flex (Pressable's
+// style function can't be trusted with flex on iOS); inner Pressable
+// owns visual chrome (border, fill, opacity).
+function NumberPill({
+  value,
+  active,
+  fill,
+  onPress,
+}: {
+  value: number;
+  active: boolean;
+  fill?: boolean;
+  onPress: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const outlineColor = isDark
+    ? "rgba(217,217,217,0.28)"
+    : "rgba(64,64,64,0.22)";
+  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  // All chrome on outer View. Pressable sizes to content (no height:100%
+  // — that caused indeterminate height loops that stretched pills to
+  // hundreds of pixels tall when the parent row had alignItems:stretch).
+  return (
+    <View
+      style={{
+        ...(fill ? { flex: 1 } : { minWidth: 44 }),
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: active ? colors.primary : outlineColor,
+        backgroundColor: active ? colors.primary : inactiveBg,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        style={{
+          minHeight: 40,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 13,
+            fontWeight: active ? "700" : "500",
+            color: active ? colors.primaryForeground : colors.foreground,
+          }}
+        >
+          {value}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const DENSITY_PILL_OPTIONS: { value: Density; label: string }[] = [
+  { value: "compact", label: "Compacta" },
+  { value: "comfortable", label: "Confortável" },
+  { value: "spacious", label: "Espaçosa" },
+];
+
+function DensityPill({
+  active,
+  label,
+  onPress,
+}: {
+  value: Density;
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const outlineColor = isDark
+    ? "rgba(217,217,217,0.28)"
+    : "rgba(64,64,64,0.22)";
+  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  return (
+    <View
+      style={{
+        flex: 1,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: active ? colors.primary : outlineColor,
+        backgroundColor: active ? colors.primary : inactiveBg,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={`Densidade ${label}`}
+        style={{
+          minHeight: 40,
+          paddingHorizontal: 8,
+          paddingVertical: 8,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 12,
+            fontWeight: active ? "700" : "500",
+            color: active ? colors.primaryForeground : colors.foreground,
+          }}
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
     onChange({ ...config, [key]: value });
+  const setDisplay = <K extends keyof Config["display"]>(
+    key: K,
+    value: Config["display"][K],
+  ) =>
+    onChange({
+      ...config,
+      display: { ...(config.display ?? { showHeader: true }), [key]: value },
+    });
+
   return (
     <View style={{ gap: 12 }}>
       <LabeledField label="Título">
@@ -93,6 +799,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           placeholder="Mensagens Recentes"
         />
       </LabeledField>
+
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -102,26 +809,96 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           }}
           onChange={(next) => set("accent", next as Config["accent"])}
         />
+      </Section>
+
+      <Section title="Cabeçalho">
         <ToggleRow
           label="Exibir cabeçalho"
-          checked={config.showHeader}
-          onCheckedChange={(v) => set("showHeader", v)}
+          checked={config.display?.showHeader ?? true}
+          onCheckedChange={(v) => setDisplay("showHeader", v)}
         />
+        <ToggleRow
+          label="Exibir contagem de não lidas"
+          checked={config.showCount}
+          onCheckedChange={(v) => set("showCount", v)}
+        />
+      </Section>
+
+      <Section title="Densidade" defaultOpen>
+        <LabeledField
+          label="Densidade"
+          helper="Define o tamanho dos blocos de prévia em cada cartão."
+        >
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {DENSITY_PILL_OPTIONS.map((opt) => (
+              <DensityPill
+                key={opt.value}
+                value={opt.value}
+                label={opt.label}
+                active={(config.density ?? "comfortable") === opt.value}
+                onPress={() => set("density", opt.value)}
+              />
+            ))}
+          </View>
+        </LabeledField>
+      </Section>
+
+      <Section title="Grade" defaultOpen>
+        <LabeledField label="Mensagens por linha" helper="1 a 3 — limite mobile.">
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 8,
+            }}
+          >
+            {[1, 2, 3].map((n) => (
+              <NumberPill
+                key={n}
+                value={n}
+                active={config.itemsPerRow === n}
+                fill
+                onPress={() => set("itemsPerRow", n)}
+              />
+            ))}
+          </View>
+        </LabeledField>
+
+        <LabeledField label="Linhas visíveis" helper="1 a 6.">
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <NumberPill
+                key={n}
+                value={n}
+                active={config.itemsPerColumn === n}
+                onPress={() => set("itemsPerColumn", n)}
+              />
+            ))}
+          </View>
+        </LabeledField>
       </Section>
     </View>
   );
 }
 
+// ---------- Definition ----------
+
 export const recentMessagesWidget: WidgetDefinition<Config> = {
   id: "home.recent-messages",
   name: "Mensagens Recentes",
   description:
-    "Últimas mensagens recebidas pelo usuário. Exibe contagem de não lidas e abre o modal de visualização ao tocar.",
+    "Últimas mensagens recebidas. Toque em um cartão para abrir a mensagem completa. Configurável: título, aparência, mensagens por linha, linhas visíveis, densidade.",
   icon: IconMessage,
   category: "other",
   allowedSectors: "*",
-  // Message list with multi-line preview blocks — needs at least 2/3 width
-  // to keep titles readable.
+  // Stub-card grid needs at least 2/3 width to keep titles + previews readable.
   allowedSpans: [2, 3],
   defaultSpan: 2,
   allowedHeights: [2, 3, 4],
@@ -129,8 +906,12 @@ export const recentMessagesWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Mensagens Recentes",
-    showHeader: true,
     accent: { color: "indigo", icon: "Message", borderColor: "none" },
+    itemsPerRow: 2,
+    itemsPerColumn: 2,
+    density: "comfortable",
+    display: { showHeader: true },
+    showCount: true,
   },
   RenderComponent: Render,
   ConfigComponent: ConfigComp,

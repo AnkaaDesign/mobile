@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert, Image } from "react-native";
 import { SvgXml } from "react-native-svg";
 import Animated, {
   useSharedValue,
@@ -448,6 +448,22 @@ export function TruckLayoutPreview({ truckId, taskName }: TruckLayoutPreviewProp
         </View>
       )}
 
+      {/* Layout photo. When the layout has an attached `assetSource` (a
+          local bundled require — used by the tutorial mock to ship the
+          Ankaa truck render without a backend roundtrip), render it as an
+          Image above the SVG dimensions preview. Real-data layouts only
+          have `photo.id`/`photo.url`; the SVG preview below stays the
+          primary visual for them. */}
+      {(currentLayout as any)?.photo?.assetSource && (
+        <View style={[styles.previewWrapper, { borderColor: colors.border, backgroundColor: colors.muted }]}>
+          <Image
+            source={(currentLayout as any).photo.assetSource}
+            style={styles.layoutPhoto}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+
       {/* SVG Preview with Zoom */}
       {svgContent && (
         <View style={[styles.previewWrapper, { borderColor: colors.border, backgroundColor: colors.muted }]}>
@@ -523,6 +539,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: borderRadius.md,
     overflow: 'hidden',
+  },
+  layoutPhoto: {
+    width: '100%',
+    height: 200,
   },
   zoomControls: {
     flexDirection: 'row',

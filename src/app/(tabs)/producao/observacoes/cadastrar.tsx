@@ -29,11 +29,13 @@ export default function CreateObservationScreen() {
   return (
     <PrivilegeGate
       required={{
+        // PRODUCTION sector users cannot create observations (per business
+        // rule: only ADMIN and COMMERCIAL author them). Excluded here so
+        // direct URL navigation is blocked, not just the list FAB.
         any: [
           SECTOR_PRIVILEGES.ADMIN,
           SECTOR_PRIVILEGES.FINANCIAL,
           SECTOR_PRIVILEGES.COMMERCIAL,
-          SECTOR_PRIVILEGES.PRODUCTION,
           SECTOR_PRIVILEGES.WAREHOUSE,
           SECTOR_PRIVILEGES.PRODUCTION_MANAGER,
         ],
@@ -385,10 +387,7 @@ function CreateObservationScreenInner() {
               <ThemedText style={{ fontSize: fontSize.lg, fontWeight: "500" }}>Informações da Observação</ThemedText>
             </View>
 
-            <View
-              ref={taskSelectTarget.ref}
-              onLayout={taskSelectTarget.onLayout}
-            >
+            <View ref={taskSelectTarget.ref} onLayout={taskSelectTarget.onLayout} collapsable={false}>
               <SimpleFormField label="Tarefa" required error={errors.taskId}>
                 <Controller
                   control={control}
@@ -410,10 +409,7 @@ function CreateObservationScreenInner() {
               </SimpleFormField>
             </View>
 
-            <View
-              ref={descriptionTarget.ref}
-              onLayout={descriptionTarget.onLayout}
-            >
+            <View ref={descriptionTarget.ref} onLayout={descriptionTarget.onLayout} collapsable={false}>
               <SimpleFormField label="Descrição" required error={errors.description}>
                 <Controller
                   control={control}
@@ -442,7 +438,7 @@ function CreateObservationScreenInner() {
             <Button variant="outline" style={{ flex: 1 }} onPress={handleCancel} disabled={isSubmitting}>
               <ThemedText>Cancelar</ThemedText>
             </Button>
-            <View ref={saveTarget.ref} onLayout={saveTarget.onLayout} style={{ flex: 1 }}>
+            <View ref={saveTarget.ref} onLayout={saveTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
               <Button
                 style={{ flex: 1 }}
                 onPress={handleSave}

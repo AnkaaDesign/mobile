@@ -2,6 +2,7 @@ import * as React from "react";
 import { BackHandler, Dimensions, Modal, Platform, Pressable,
   StyleSheet, View, ViewStyle } from "react-native";
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -14,7 +15,7 @@ import {
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import { useTheme } from "@/lib/theme";
-import { borderRadius, shadow, spacing, transitions } from "@/constants/design-system";
+import { borderRadius, shadow, spacing } from "@/constants/design-system";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -82,22 +83,24 @@ const Sheet: React.FC<SheetProps> = ({
     }
   }, [open, onOpenChange]);
 
-  // Animate in/out when open changes
+  // Animate in/out when open changes. We use timing (not spring) for the
+  // initial slide so the sheet lands cleanly without an overshoot — the
+  // previous spring (damping 28 / stiffness 200) overshot enough to read
+  // as a noticeable bounce on tall sheets like the configure modal. Drag
+  // snaps below still use spring because the user has the sheet under
+  // their finger and a little spring there feels alive, not janky.
   React.useEffect(() => {
     if (open) {
-      opacity.value = withTiming(1, { duration: transitions.fast });
-      translateY.value = withSpring(
+      opacity.value = withTiming(1, { duration: 220 });
+      translateY.value = withTiming(
         maxSnapHeight - snapHeights[currentSnapIndex],
-        {
-          damping: 28,
-          stiffness: 200,
-        }
+        { duration: 280, easing: Easing.out(Easing.cubic) },
       );
     } else {
-      opacity.value = withTiming(0, { duration: transitions.fast });
-      translateY.value = withSpring(maxSnapHeight, {
-        damping: 28,
-        stiffness: 200,
+      opacity.value = withTiming(0, { duration: 180 });
+      translateY.value = withTiming(maxSnapHeight, {
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
       });
     }
   }, [open, currentSnapIndex, snapHeights, maxSnapHeight, opacity, translateY]);
@@ -111,11 +114,15 @@ const Sheet: React.FC<SheetProps> = ({
       if (index < 0 || index >= snapHeights.length) return;
 
       setCurrentSnapIndex(index);
+      // Snap-from-drag uses a firmly-damped spring so the sheet feels
+      // attached to the user's finger but doesn't overshoot at the
+      // resting position. Damping 36 / stiffness 320 → ratio ~1.01
+      // (critically damped, no visible bounce).
       translateY.value = withSpring(
         maxSnapHeight - snapHeights[index],
         {
-          damping: 28,
-          stiffness: 200,
+          damping: 36,
+          stiffness: 320,
         }
       );
     },

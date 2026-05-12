@@ -20,6 +20,7 @@ import {
   IconBrandWhatsapp,
 } from "@tabler/icons-react-native";
 import { TRUCK_CATEGORY_LABELS, IMPLEMENT_TYPE_LABELS, COMMISSION_STATUS_LABELS } from "@/constants/enum-labels";
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 // Format phone number for display
 const formatPhoneDisplay = (phone: string): string => {
@@ -62,6 +63,7 @@ interface TaskInfoCardProps {
 
 export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, truckDimensions, canViewFinancialFields = false, canViewRestrictedFields = false, canViewTruckDetails = true, isDesignerUser = false }) => {
   const { colors } = useTheme();
+  const commissionTarget = useTutorialTarget(TUTORIAL_TARGETS.taskCommissionBadge);
 
   // Handle phone call
   const handleCallPhone = useCallback((phone: string) => {
@@ -166,11 +168,13 @@ export const TaskInfoCard: React.FC<TaskInfoCardProps> = React.memo(({ task, tru
 
       {/* Commission Status */}
       {canViewFinancialFields && task.commission && (
-        <DetailField
-          label="Comissão"
-          icon="coins"
-          value={COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
-        />
+        <View ref={commissionTarget.ref} onLayout={commissionTarget.onLayout} collapsable={false}>
+          <DetailField
+            label="Comissão"
+            icon="coins"
+            value={COMMISSION_STATUS_LABELS[task.commission as keyof typeof COMMISSION_STATUS_LABELS] || task.commission}
+          />
+        </View>
       )}
 
       {/* Serial Number */}

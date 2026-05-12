@@ -28,6 +28,7 @@ export function useSystemHealth() {
     queryKey: monitoringKeys.health(),
     queryFn: () => systemHealthService.getSystemHealth(),
     refetchInterval: 30000, // Refresh every 30 seconds
+    refetchIntervalInBackground: false,
     staleTime: 20000, // Data becomes stale after 20 seconds
   });
 }
@@ -37,6 +38,7 @@ export function useSystemHealthHistory(hours: number = 24) {
     queryKey: monitoringKeys.healthHistory(hours),
     queryFn: () => systemHealthService.getHealthHistory(hours),
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    refetchIntervalInBackground: false,
     staleTime: 2 * 60 * 1000, // Data becomes stale after 2 minutes
   });
 }
@@ -47,6 +49,7 @@ export function useSystemMetrics() {
     queryKey: monitoringKeys.metrics(),
     queryFn: () => serverMonitoringService.getMetrics(),
     refetchInterval: 15000, // Refresh every 15 seconds
+    refetchIntervalInBackground: false,
     staleTime: 10000, // Data becomes stale after 10 seconds
   });
 }
@@ -57,6 +60,7 @@ export function useSystemServices() {
     queryKey: monitoringKeys.services(),
     queryFn: () => serverMonitoringService.getServices(),
     refetchInterval: 30000, // Refresh every 30 seconds
+    refetchIntervalInBackground: false,
     staleTime: 20000, // Data becomes stale after 20 seconds
   });
 }
@@ -66,6 +70,7 @@ export function useServiceLogs(serviceName: string, lines: number = 100, enabled
     queryKey: monitoringKeys.serviceLogs(serviceName, lines),
     queryFn: () => serverMonitoringService.getServiceLogs(serviceName, lines),
     refetchInterval: 5000, // Refresh every 5 seconds for logs
+    refetchIntervalInBackground: false,
     staleTime: 3000, // Data becomes stale after 3 seconds
     enabled, // Only fetch when enabled
   });
@@ -77,6 +82,7 @@ export function useSsdHealthData() {
     queryKey: monitoringKeys.ssdHealth(),
     queryFn: () => ssdHealthService.getSsdHealthData(),
     refetchInterval: 60000, // Refresh every minute
+    refetchIntervalInBackground: false,
     staleTime: 45000, // Data becomes stale after 45 seconds
   });
 }
@@ -86,6 +92,7 @@ export function useRaidStatus() {
     queryKey: monitoringKeys.raidStatus(),
     queryFn: () => raidStatusService.getRaidStatus(),
     refetchInterval: 60000, // Refresh every minute
+    refetchIntervalInBackground: false,
     staleTime: 45000, // Data becomes stale after 45 seconds
   });
 }
@@ -96,6 +103,7 @@ export function useBackupMetadata() {
     queryKey: monitoringKeys.backups(),
     queryFn: () => backupService.getBackupMetadata(),
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    refetchIntervalInBackground: false,
     staleTime: 2 * 60 * 1000, // Data becomes stale after 2 minutes
   });
 }
@@ -106,6 +114,7 @@ export function useWebDavInfo() {
     queryKey: monitoringKeys.webdav(),
     queryFn: () => webDavService.getWebDavInfo(),
     refetchInterval: 60000, // Refresh every minute
+    refetchIntervalInBackground: false,
     staleTime: 45000, // Data becomes stale after 45 seconds
   });
 }

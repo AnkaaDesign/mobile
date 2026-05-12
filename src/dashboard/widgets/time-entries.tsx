@@ -17,6 +17,7 @@ import { useMySecullumCalculations } from "@/hooks/secullum";
 import {
   Section,
   ToggleRow,
+  LabeledField,
   densityClasses,
   type Density,
   TABLE_DISPLAY_DEFAULTS,
@@ -161,7 +162,7 @@ const TIME_ENTRY_COLUMNS: WidgetTableColumn[] = [
 // ---------- Schema ----------
 
 const configSchema = z.object({
-  title: z.string().min(1).max(80).default("Meu Ponto"),
+  title: z.string().min(1).max(80).default("Ponto da Semana"),
   showHeader: z.boolean().default(true),
   display: makeTableDisplaySchema({ density: "comfortable", showRowDot: false }),
   accent: makeAccentSchema({ color: "teal", icon: "Clock", borderColor: "none" }),
@@ -199,49 +200,63 @@ function Render({ config }: WidgetRenderProps<Config>) {
     [data],
   );
 
+  const isPlaceholder =
+    isLoading || notRegistered || isError || entries.length === 0;
+
   return (
-    <WidgetCard
-      title={config.title || "Meu Ponto"}
-      icon={<Icon size={16} color={accent.hex} />}
-      viewAllHref="/(tabs)/pessoal/meus-pontos"
-      showHeader={config.showHeader}
-      bodyPadded={false}
-      borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
-    >
-      <WidgetTableContainer density={density}>
-        {isLoading ? (
-          <SkeletonRows count={3} density={density} />
-        ) : notRegistered ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Sem cadastro no sistema de ponto.
-            </Text>
-          </WidgetTableMessage>
-        ) : isError ? (
-          <WidgetErrorState
-            message="Sem dados de ponto disponíveis."
-            onRetry={() => refetch()}
-          />
-        ) : entries.length === 0 ? (
-          <WidgetTableMessage>
-            <Text
-              style={{
-                fontSize: 12,
-                color: colors.mutedForeground,
-                textAlign: "center",
-              }}
-            >
-              Sem registros de ponto.
-            </Text>
-          </WidgetTableMessage>
-        ) : (
-          <>
+    <View style={{ flex: 1 }}>
+      <WidgetCard
+        title={config.title || "Ponto da Semana"}
+        icon={<Icon size={16} color={accent.hex} />}
+        viewAllHref="/(tabs)/pessoal/meus-pontos"
+        showHeader={config.showHeader}
+        bodyPadded={false}
+        accentColor={accent.hex}
+        borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
+      >
+        {/* flex:1 wrapper around the table container so empty/error states
+         *  center vertically inside oversized tiles instead of hugging the
+         *  top of the body. The container retains its own horizontal inset. */}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: isPlaceholder ? "center" : "flex-start",
+          }}
+        >
+          <WidgetTableContainer density={density}>
+            {isLoading ? (
+              <SkeletonRows count={3} density={density} />
+            ) : notRegistered ? (
+              <WidgetTableMessage>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                    textAlign: "center",
+                  }}
+                >
+                  Sem cadastro no sistema de ponto.
+                </Text>
+              </WidgetTableMessage>
+            ) : isError ? (
+              <WidgetErrorState
+                message="Sem dados de ponto disponíveis."
+                onRetry={() => refetch()}
+              />
+            ) : entries.length === 0 ? (
+              <WidgetTableMessage>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                    textAlign: "center",
+                  }}
+                >
+                  Sem registros de ponto.
+                </Text>
+              </WidgetTableMessage>
+            ) : (
+              <>
             <WidgetTableHeader columns={TIME_ENTRY_COLUMNS} density={density} />
             {entries.map((e, i) => {
               const weekendTone = e.isSunday || e.isSaturday;
@@ -293,28 +308,28 @@ function Render({ config }: WidgetRenderProps<Config>) {
             })}
           </>
         )}
-      </WidgetTableContainer>
-    </WidgetCard>
+          </WidgetTableContainer>
+        </View>
+      </WidgetCard>
+    </View>
   );
 }
 
 // ---------- Config ----------
 
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
-  const { colors } = useTheme();
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
     onChange({ ...config, [key]: value });
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, color: colors.foreground }}>Título</Text>
+      <LabeledField label="Título">
         <Input
           value={config.title}
           onChangeText={(v: string) => set("title", v)}
-          placeholder="Meu Ponto"
+          placeholder="Ponto da Semana"
         />
-      </View>
+      </LabeledField>
       <Section title="Aparência" defaultOpen>
         <AccentPicker
           value={{
@@ -324,6 +339,8 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           }}
           onChange={(next) => set("accent", next as Config["accent"])}
         />
+      </Section>
+      <Section title="Cabeçalho">
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.showHeader}
@@ -333,7 +350,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
       <TableDisplayConfigSection
         value={config.display as TableDisplay}
         onChange={(next) => set("display", next as Config["display"])}
-        features={{ showSearchBox: false, showRowDot: false }}
+        features={{ showSearchBox: false }}
       />
     </View>
   );
@@ -341,7 +358,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
 export const timeEntriesWidget: WidgetDefinition<Config> = {
   id: "home.time-entries",
-  name: "Meu Ponto",
+  name: "Ponto da Semana",
   description:
     "Suas batidas de ponto do dia útil anterior até hoje. Para usuários sem cadastro no Secullum exibe uma mensagem amigável.",
   icon: IconClock,
@@ -358,7 +375,7 @@ export const timeEntriesWidget: WidgetDefinition<Config> = {
   defaultRows: 2,
   configSchema,
   defaultConfig: {
-    title: "Meu Ponto",
+    title: "Ponto da Semana",
     showHeader: true,
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "teal", icon: "Clock", borderColor: "none" },

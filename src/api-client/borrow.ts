@@ -1,6 +1,10 @@
 // packages/api-client/src/borrow.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   BorrowGetManyFormData,
@@ -37,6 +41,8 @@ export class BorrowService {
   // =====================
 
   async getBorrows(params?: BorrowGetManyFormData): Promise<BorrowGetManyResponse> {
+    const mock = getTutorialMockList("borrows", params ?? {});
+    if (mock) return mock as unknown as BorrowGetManyResponse;
     const response = await apiClient.get<BorrowGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +50,10 @@ export class BorrowService {
   }
 
   async getBorrowById(id: string, params?: Omit<BorrowGetByIdFormData, "id">): Promise<BorrowGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("borrows", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as BorrowGetUniqueResponse;
+    }
     const response = await apiClient.get<BorrowGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

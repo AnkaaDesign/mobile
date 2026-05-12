@@ -1,4 +1,11 @@
 import { apiClient } from "../axiosClient";
+import {
+  getTutorialMockSecullumMissingDays,
+  getTutorialMockSecullumJustificativas,
+  getTutorialMockSecullumBatidasForDate,
+  getTutorialMockSecullumSolicitacaoByDate,
+  getTutorialMockSecullumCalculations,
+} from "@/components/tutorial/tutorial-runtime-state";
 
 export interface SecullumAuthCredentials {
   email: string;
@@ -88,15 +95,24 @@ export const secullumService = {
     }),
 
   // Personal calculations - automatically filtered by current user
-  getMyCalculations: (params?: { startDate?: string; endDate?: string; page?: number; take?: number }) =>
-    apiClient.get<{ success: boolean; data: any; meta?: any }>("/personal/my-secullum-calculations", {
-      params: {
-        startDate: params?.startDate,
-        endDate: params?.endDate,
-        page: params?.page,
-        take: params?.take,
-      }
-    }),
+  getMyCalculations: (params?: { startDate?: string; endDate?: string; page?: number; take?: number }) => {
+    const real = () =>
+      apiClient.get<{ success: boolean; data: any; meta?: any }>("/personal/my-secullum-calculations", {
+        params: {
+          startDate: params?.startDate,
+          endDate: params?.endDate,
+          page: params?.page,
+          take: params?.take,
+        }
+      });
+    // In tutorial mode the hook's own queryFn beats `setQueryDefaults`, so
+    // we have to short-circuit at the service layer. Without this, real
+    // users see real Secullum data inside the tutorial — and unregistered
+    // users get an error page that hides the icons the tutorial spotlights.
+    const mock = getTutorialMockSecullumCalculations();
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
 
   // Departments & Positions
   getDepartments: () => apiClient.get<{ success: boolean; data: any }>("/integrations/secullum/departments"),
@@ -298,48 +314,63 @@ export const secullumService = {
   // Routes live under /personal because they're scoped to the authenticated user.
   // =====================
 
-  getMyMissingDays: (params: { startDate: string; endDate: string }) =>
-    apiClient.get<{
-      success: boolean;
-      message: string;
-      data?: Array<{
-        date: string;
-        weekdayPt: string;
-        saldo?: string | null;
-        totalFaltas?: string | null;
-        existePeriodoEncerrado: boolean;
-      }>;
-    }>("/personal/my-missing-days", { params }),
+  getMyMissingDays: (params: { startDate: string; endDate: string }) => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data?: Array<{
+          date: string;
+          weekdayPt: string;
+          saldo?: string | null;
+          totalFaltas?: string | null;
+          existePeriodoEncerrado: boolean;
+        }>;
+      }>("/personal/my-missing-days", { params });
+    const mock = getTutorialMockSecullumMissingDays();
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
 
-  getMyJustificativas: () =>
-    apiClient.get<{
-      success: boolean;
-      message: string;
-      data: Array<{
-        id: number;
-        nomeCompleto: string;
-        exigirFotoAtestado: boolean;
-        naoPermitirFuncionariosUtilizar: boolean;
-      }>;
-    }>("/personal/my-secullum-justificativas"),
+  getMyJustificativas: () => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data: Array<{
+          id: number;
+          nomeCompleto: string;
+          exigirFotoAtestado: boolean;
+          naoPermitirFuncionariosUtilizar: boolean;
+        }>;
+      }>("/personal/my-secullum-justificativas");
+    const mock = getTutorialMockSecullumJustificativas();
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
 
-  getMySolicitacaoByDate: (date: string) =>
-    apiClient.get<{
-      success: boolean;
-      message: string;
-      data?: {
-        data: string;
-        funcionarioId: number;
-        justificativaId: number | null;
-        tipo: number;
-        observacoes: string | null;
-        temFoto: boolean;
-        registroPendente: boolean;
-        existePeriodoEncerrado: boolean;
-        tipoAusencia: number;
-        dataSolicitacao: string | null;
-      } | null;
-    }>(`/personal/my-secullum-solicitacoes/${date}`),
+  getMySolicitacaoByDate: (date: string) => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data?: {
+          data: string;
+          funcionarioId: number;
+          justificativaId: number | null;
+          tipo: number;
+          observacoes: string | null;
+          temFoto: boolean;
+          registroPendente: boolean;
+          existePeriodoEncerrado: boolean;
+          tipoAusencia: number;
+          dataSolicitacao: string | null;
+        } | null;
+      }>(`/personal/my-secullum-solicitacoes/${date}`);
+    const mock = getTutorialMockSecullumSolicitacaoByDate(date);
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
 
   createMyJustifyAbsence: (body: {
     date: string;
@@ -352,4 +383,48 @@ export const secullumService = {
       message: string;
       validationErrors?: Array<{ property: string; message: string; data: unknown }>;
     }>("/personal/my-secullum-solicitacoes/ausencia", body),
+
+  getMyBatidasForDate: (date: string) => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data?: {
+          entrada1: string | null;
+          saida1: string | null;
+          entrada2: string | null;
+          saida2: string | null;
+          entrada3: string | null;
+          saida3: string | null;
+          entrada4: string | null;
+          saida4: string | null;
+          entrada5: string | null;
+          saida5: string | null;
+          existePeriodoEncerrado: boolean;
+        };
+      }>(`/personal/my-batidas/${date}`);
+    const mock = getTutorialMockSecullumBatidasForDate(date);
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
+
+  createMyAjustePonto: (body: {
+    date: string;
+    entrada1?: string | null;
+    saida1?: string | null;
+    entrada2?: string | null;
+    saida2?: string | null;
+    entrada3?: string | null;
+    saida3?: string | null;
+    entrada4?: string | null;
+    saida4?: string | null;
+    entrada5?: string | null;
+    saida5?: string | null;
+    observacoes?: string;
+  }) =>
+    apiClient.post<{
+      success: boolean;
+      message: string;
+      validationErrors?: Array<{ property: string; message: string; data: unknown }>;
+    }>("/personal/my-secullum-solicitacoes/ajuste-ponto", body),
 };

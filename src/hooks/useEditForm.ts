@@ -2,7 +2,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import type { UseFormProps, UseFormReturn, FieldValues, Resolver, DefaultValues } from "react-hook-form";
-import _ from "lodash";
+import isEqual from "lodash/isEqual";
 
 interface UseEditFormProps<TFieldValues extends FieldValues = FieldValues, TContext = unknown, TApiData = unknown> {
   resolver?: Resolver<TFieldValues, TContext>;
@@ -146,16 +146,16 @@ function deepCompare(value1: any, value2: any): boolean {
 
     // For arrays of objects, use lodash for deep comparison
     if (value1.length > 0 && typeof value1[0] === "object" && value1[0] !== null) {
-      return _.isEqual(value1, value2);
+      return isEqual(value1, value2);
     }
 
     // For arrays of primitives, compare directly
-    return _.isEqual(value1, value2);
+    return isEqual(value1, value2);
   }
 
   // Handle objects (but not arrays or dates)
   if (typeof value1 === "object" && typeof value2 === "object" && value1 !== null && value2 !== null) {
-    return _.isEqual(value1, value2);
+    return isEqual(value1, value2);
   }
 
   // Handle numeric comparisons (0 === "0" should be false)
@@ -195,7 +195,7 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
       const formData = mapDataToForm ? mapDataToForm(originalData) : (originalData as unknown as TFieldValues);
 
       // Only reset if the data has actually changed (deep comparison)
-      if (!_.isEqual(originalRef.current, formData)) {
+      if (!isEqual(originalRef.current, formData)) {
         // Reset form with new data
         originalRef.current = formData;
         lastResetData.current = formData;
@@ -248,7 +248,7 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
           const strippedCurrent = { ...currentQuote, services: filteredCurrentServices };
           const strippedOriginal = { ...originalQuote, services: filteredOriginalServices };
 
-          if (!_.isEqual(strippedCurrent, strippedOriginal)) {
+          if (!isEqual(strippedCurrent, strippedOriginal)) {
             // Only include if there are actual changes (not just empty defaults)
             if (filteredCurrentServices.length > 0 || filteredOriginalServices.length > 0) {
               changedFields[typedKey] = { ...currentQuote, services: filteredCurrentServices } as any;
@@ -271,7 +271,7 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
         const filteredOriginal = filterEmptyItems(strippedOriginal, key);
 
         // Compare the filtered/stripped arrays
-        if (!_.isEqual(filteredCurrent, filteredOriginal)) {
+        if (!isEqual(filteredCurrent, filteredOriginal)) {
           // Include the filtered current value (only non-empty items)
           changedFields[typedKey] = filteredCurrent as any;
         }

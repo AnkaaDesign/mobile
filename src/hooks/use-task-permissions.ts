@@ -64,8 +64,8 @@ export function useTaskPermissions() {
   const canViewLogoPaint = canViewPaint && !isCommercial;
   const canViewCuts = !isFinancial && !isLogistic && !isProductionManager && !isCommercial;
   const canViewAirbrushing = !isWarehouse && !isFinancial && !isDesigner && !isLogistic && !isProductionManager && !isCommercial;
-  const canViewBaseFiles = !isWarehouse && !isFinancial;
-  const canViewProjectFiles = !isWarehouse && !isFinancial;
+  const canViewBaseFiles = !isWarehouse && !isFinancial && !isProduction;
+  const canViewProjectFiles = !isWarehouse && !isFinancial && !isProduction;
   const canViewCheckinCheckout = isAdmin || isLogistic || isProductionManager || (isProduction && isTeamLeaderUser);
   const canViewDossie = isAdmin || isLogistic || isProductionManager || isCommercial || (isProduction && isTeamLeaderUser);
   const canViewReimbursement = !isWarehouse && !isFinancial && !isLogistic && !isProductionManager;

@@ -1,57 +1,102 @@
 // Centralized status color tokens for dashboard widgets.
 //
-// Replaces hardcoded STATUS_TONES / STOCK_TONES / BUCKET_TONES /
-// daily-ponto's toneFor() palettes scattered across widget files. Every
-// helper takes the theme's `isDark` flag and returns dark-mode-appropriate
-// hues — the previous palettes were tuned for light card backgrounds and
-// failed WCAG AA contrast on dark cards.
+// Replaces the hardcoded STATUS_TONES / STOCK_TONES / BUCKET_TONES /
+// daily-ponto's `toneFor()` palettes that used to be scattered across widget
+// files. Every helper takes the theme's `isDark` flag and returns dark-mode-
+// appropriate hues — the previous palettes were tuned for light card
+// backgrounds and failed WCAG AA contrast on dark cards.
+//
+// **Rule:** ZERO raw hexes in this file. Every color is sourced from
+// `extendedColors` in `@/lib/theme/extended-colors` so the widget palette
+// stays in lockstep with web's Tailwind shades.
 //
 // Strategy: Tailwind 600/700 on light, Tailwind 400/500 on dark. Foreground
-// is always white-on-dark-shade to keep contrast simple.
+// is always white-on-dark-shade for solid badges (matches web's badgeColors
+// convention).
+//
+// Tone shape: `{ bg, fg, border, dot }`. Most consumers read `bg` for the
+// pill/dot color and `fg` for the contrast text on it. `border` is identical
+// to `bg` for solid badges (use a darker shade if you want an outline style).
+// `dot` aliases `bg` — it exists so callers reading "the dot color of this
+// status" don't have to remember which property to pull.
 
 import {
   BORROW_STATUS,
   TASK_STATUS,
   PPE_DELIVERY_STATUS,
   INSTALLMENT_STATUS,
+  BANK_SLIP_STATUS,
+  TASK_QUOTE_STATUS,
+  COMMISSION_STATUS,
   STOCK_LEVEL,
 } from "@/constants/enums";
+import { extendedColors, badgeColors } from "@/lib/theme/extended-colors";
 
 export interface Tone {
+  /** Solid background color of the badge. */
   bg: string;
+  /** Foreground (text) color used on top of `bg`. White for solid badges. */
   fg: string;
+  /** Border color — same as `bg` for solid badges. */
   border: string;
+  /** Convenience alias of `bg` — used when callers want "the dot color of
+   *  this status" without having to remember which property to pull. */
+  dot: string;
 }
 
-const WHITE = "#ffffff";
+// Foreground for every solid badge — sourced from badgeColors so we don't
+// hardcode "#ffffff" anywhere.
+const BADGE_FG = badgeColors.primary.text;
 
-// Central palette. Each row is { light, dark } — "light" used when isDark=false,
-// "dark" used when isDark=true. Foreground is always white for solid badges.
-const PALETTE = {
-  red:    { light: "#b91c1c", dark: "#ef4444" }, // red-700  / red-500
-  rose:   { light: "#7f1d1d", dark: "#dc2626" }, // red-900  / red-600  (severe)
-  orange: { light: "#ea580c", dark: "#fb923c" }, // orange-600 / orange-400
-  amber:  { light: "#d97706", dark: "#f59e0b" }, // amber-600 / amber-500
-  yellow: { light: "#ca8a04", dark: "#facc15" }, // yellow-600 / yellow-400
-  green:  { light: "#15803d", dark: "#22c55e" }, // green-700 / green-500
-  blue:   { light: "#1d4ed8", dark: "#3b82f6" }, // blue-700  / blue-500
-  cyan:   { light: "#0891b2", dark: "#22d3ee" }, // cyan-600  / cyan-400
-  indigo: { light: "#4f46e5", dark: "#6366f1" }, // indigo-600 / indigo-500
-  violet: { light: "#7c3aed", dark: "#8b5cf6" }, // violet-600 / violet-500
-  gray:   { light: "#6b7280", dark: "#9ca3af" }, // gray-500  / gray-400
-} as const;
+// Central palette mapping a semantic key to a Tailwind shade for {light,dark}.
+// The values are pulled live from `extendedColors`, never inlined.
+type PaletteKey =
+  | "red"
+  | "rose"
+  | "orange"
+  | "amber"
+  | "yellow"
+  | "green"
+  | "blue"
+  | "cyan"
+  | "indigo"
+  | "violet"
+  | "gray";
 
-type PaletteKey = keyof typeof PALETTE;
+interface PaletteEntry {
+  light: string;
+  dark: string;
+}
+
+const PALETTE: Record<PaletteKey, PaletteEntry> = {
+  red: { light: extendedColors.red[700], dark: extendedColors.red[500] },
+  // "rose" is our severity-elevated red — darker on light, slightly more
+  // saturated on dark. Kept distinct so PPE rejection / lost-borrow show
+  // visibly worse than plain "error".
+  rose: { light: extendedColors.red[900], dark: extendedColors.red[600] },
+  orange: { light: extendedColors.orange[600], dark: extendedColors.orange[400] },
+  amber: { light: extendedColors.amber[600], dark: extendedColors.amber[500] },
+  yellow: { light: extendedColors.yellow[600], dark: extendedColors.yellow[400] },
+  green: { light: extendedColors.green[700], dark: extendedColors.green[500] },
+  blue: { light: extendedColors.blue[700], dark: extendedColors.blue[500] },
+  cyan: { light: extendedColors.teal[600], dark: extendedColors.teal[400] },
+  indigo: { light: extendedColors.indigo[600], dark: extendedColors.indigo[500] },
+  // "violet" maps to Tailwind `purple` (we don't have a separate violet scale
+  // in `extendedColors`) — purple-600/500 are the closest to web's violet.
+  violet: { light: extendedColors.purple[600], dark: extendedColors.purple[500] },
+  gray: { light: extendedColors.gray[500], dark: extendedColors.gray[400] },
+};
 
 function tone(key: PaletteKey, isDark: boolean): Tone {
   const c = PALETTE[key][isDark ? "dark" : "light"];
-  return { bg: c, fg: WHITE, border: c };
+  return { bg: c, fg: BADGE_FG, border: c, dot: c };
 }
 
 const NEUTRAL: Tone = {
-  bg: "#737373",
-  fg: WHITE,
-  border: "#737373",
+  bg: extendedColors.gray[500],
+  fg: BADGE_FG,
+  border: extendedColors.gray[500],
+  dot: extendedColors.gray[500],
 };
 
 // ---------- Borrow (loan tracking) ----------
@@ -139,6 +184,78 @@ export function toneForInstallmentStatus(
   }
 }
 
+// ---------- Bank slip (financial — boleto issuance pipeline) ----------
+
+export function toneForBankSlipStatus(
+  status: BANK_SLIP_STATUS,
+  isDark: boolean,
+): Tone {
+  switch (status) {
+    case BANK_SLIP_STATUS.CREATING:
+    case BANK_SLIP_STATUS.REGISTERING:
+      return tone("amber", isDark);
+    case BANK_SLIP_STATUS.ACTIVE:
+      return tone("blue", isDark);
+    case BANK_SLIP_STATUS.PAID:
+      return tone("green", isDark);
+    case BANK_SLIP_STATUS.OVERDUE:
+      return tone("red", isDark);
+    case BANK_SLIP_STATUS.CANCELLED:
+      return tone("gray", isDark);
+    case BANK_SLIP_STATUS.REJECTED:
+    case BANK_SLIP_STATUS.ERROR:
+      return tone("rose", isDark);
+    default:
+      return NEUTRAL;
+  }
+}
+
+// ---------- Task quote (financial — quote approval pipeline) ----------
+
+export function toneForTaskQuoteStatus(
+  status: TASK_QUOTE_STATUS,
+  isDark: boolean,
+): Tone {
+  switch (status) {
+    case TASK_QUOTE_STATUS.PENDING:
+      return tone("amber", isDark);
+    case TASK_QUOTE_STATUS.BUDGET_APPROVED:
+    case TASK_QUOTE_STATUS.COMMERCIAL_APPROVED:
+    case TASK_QUOTE_STATUS.BILLING_APPROVED:
+      return tone("blue", isDark);
+    case TASK_QUOTE_STATUS.UPCOMING:
+      return tone("indigo", isDark);
+    case TASK_QUOTE_STATUS.DUE:
+      return tone("orange", isDark);
+    case TASK_QUOTE_STATUS.PARTIAL:
+      return tone("yellow", isDark);
+    case TASK_QUOTE_STATUS.SETTLED:
+      return tone("green", isDark);
+    default:
+      return NEUTRAL;
+  }
+}
+
+// ---------- Commission (production — billing commission tier) ----------
+
+export function toneForCommissionStatus(
+  status: COMMISSION_STATUS,
+  isDark: boolean,
+): Tone {
+  switch (status) {
+    case COMMISSION_STATUS.NO_COMMISSION:
+      return tone("gray", isDark);
+    case COMMISSION_STATUS.PARTIAL_COMMISSION:
+      return tone("amber", isDark);
+    case COMMISSION_STATUS.FULL_COMMISSION:
+      return tone("green", isDark);
+    case COMMISSION_STATUS.SUSPENDED_COMMISSION:
+      return tone("red", isDark);
+    default:
+      return NEUTRAL;
+  }
+}
+
 // ---------- Stock level (inventory) ----------
 
 export function toneForStockLevel(level: STOCK_LEVEL, isDark: boolean): Tone {
@@ -162,8 +279,8 @@ export function toneForStockLevel(level: STOCK_LEVEL, isDark: boolean): Tone {
 
 // ---------- Installment-table buckets (due-date filter chips) ----------
 
-// Bucket type lives in installment-table.tsx; use string literal to avoid
-// a circular import between this file and the widget.
+// Bucket type lives in installment-table.tsx; use a string literal to avoid a
+// circular import between this file and the widget.
 export type InstallmentBucket =
   | "all"
   | "overdue"

@@ -13,13 +13,23 @@ import { quickNoteWidget } from "./quick-note";
 // HR.
 import { ppeDeliveryTableWidget } from "./ppe-delivery-table";
 import { dailyPontoWidget } from "./daily-ponto";
+import { leaderPontoWidget } from "./leader-ponto";
+// HR — agent 15 additions (NEW widgets, missing on mobile until now).
+import { hrCalendarWidget } from "./hr-calendar";
+import { hrRequestsTableWidget } from "./hr-requests-table";
+// END AGENT 15 IMPORTS
 // Inventory.
 import { itemTableWidget } from "./item-table";
 import { borrowTableWidget } from "./borrow-table";
 // Production.
 import { taskTableWidget } from "./task-table";
+import { productionCalendarWidget } from "./production-calendar";
 // Financial.
 import { installmentTableWidget } from "./installment-table";
+// Quick-action — registered (importable for re-enable) but kept out of the
+// gallery list initially. Mirrors web/src/dashboard/widgets/index.ts which
+// likewise excludes quick-budget while it's pending sign-off.
+import { quickBudgetWidget } from "./quick-budget";
 
 const allWidgets: any[] = [
   // Workhorse data widgets first (most-used surface area).
@@ -27,9 +37,14 @@ const allWidgets: any[] = [
   itemTableWidget,
   borrowTableWidget,
   installmentTableWidget,
-  // HR approval queues.
+  // HR approval queues + new HR widgets.
   ppeDeliveryTableWidget,
   dailyPontoWidget,
+  leaderPontoWidget,
+  hrRequestsTableWidget,
+  hrCalendarWidget,
+  // Production calendars.
+  productionCalendarWidget,
   // Quick-action.
   quickNoteWidget,
   // Personal.
@@ -38,11 +53,20 @@ const allWidgets: any[] = [
   timeEntriesWidget,
 ];
 
+// Side-channel registration of widgets we don't put in the gallery yet.
+// The registry needs to know about them so existing layouts referencing
+// the IDs can still render — but `allWidgets` (which is what the gallery
+// pulls from via `widgetRegistry.all()`) excludes them.
+const hiddenWidgets: any[] = [quickBudgetWidget];
+
 let registered = false;
 export function registerAllWidgets(): void {
   if (registered) return;
   registered = true;
   for (const w of allWidgets) {
+    widgetRegistry.register(w);
+  }
+  for (const w of hiddenWidgets) {
     widgetRegistry.register(w);
   }
 }

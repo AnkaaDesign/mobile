@@ -37,9 +37,11 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
 
-  // Use only status and price columns for task detail view (price only for ADMIN/FINANCIAL)
+  // Show status + start/finish dates by default, plus price for ADMIN/FINANCIAL users
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
-    return canViewFinancials ? ["status", "price"] : ["status"];
+    return canViewFinancials
+      ? ["status", "startDate", "finishDate", "price"]
+      : ["status", "startDate", "finishDate"];
   });
 
   // Search state
@@ -90,7 +92,9 @@ export function AirbrushingsTable({ taskId, maxHeight = 400 }: AirbrushingsTable
 
   // Get default visible columns (for the task detail view) - price only for ADMIN/FINANCIAL
   const getDefaultVisibleColumns = useCallback(() => {
-    return canViewFinancials ? ["status", "price"] : ["status"];
+    return canViewFinancials
+      ? ["status", "startDate", "finishDate", "price"]
+      : ["status", "startDate", "finishDate"];
   }, [canViewFinancials]);
 
   // Handle opening column panel

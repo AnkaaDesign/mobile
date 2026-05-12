@@ -32,15 +32,23 @@ focusManager.setEventListener((handleFocus) => {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Keep data fresh for 10 minutes (increased for better performance)
-      staleTime: 1000 * 60 * 10,
-      // Keep data in cache for 24 hours
-      gcTime: 1000 * 60 * 60 * 24,
-      // Refetch when the app regains connectivity
-      refetchOnReconnect: true,
+      // Keep data fresh for 5 minutes. Lower than before (10m) so screens that
+      // re-enter view get reasonably fresh data without paying for a refetch
+      // every visit — the previous value made the app feel stuck.
+      staleTime: 1000 * 60 * 5,
+      // Keep data in cache for 2 hours. The previous 24h value kept a huge
+      // working set in memory on long sessions, and `refetchOnReconnect`
+      // (when set to `true`) would refetch ALL of it on a network blip.
+      gcTime: 1000 * 60 * 60 * 2,
+      // Only refetch on reconnect for queries that have actually gone stale.
+      refetchOnReconnect: 'always',
       // Disable auto-refetch on window focus for better performance
       // Users can manually refresh with pull-to-refresh when needed
       refetchOnWindowFocus: false,
+      // Default to NOT refetching on mount when there's cached data — this
+      // removes the flash of loading every time you navigate back to a list.
+      // List screens that need always-fresh data can opt-in per-query.
+      refetchOnMount: false,
       // Retry failed queries less aggressively
       retry: (failureCount, error: any) => {
         if (error?.isOffline) return false
@@ -51,6 +59,9 @@ export const queryClient = new QueryClient({
         return failureCount < 2 // Reduced from 3 to 2 for faster failure
       },
       retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 5000), // Faster exponential backoff
+      // Reuse cached data across reference identities — fewer re-renders for
+      // consumers when a refetch returns logically-equivalent data.
+      structuralSharing: true,
     },
     mutations: {
       retry: (failureCount, error: any) => {

@@ -336,6 +336,9 @@ const ALL_ROUTES = [
   { name: "pessoal/meu-bonus/detalhes/[id]", title: "Detalhes do Bônus" },
   { name: "pessoal/minhas-mensagens/index", title: "Minhas Mensagens" },
   { name: "pessoal/meus-pontos/index", title: "Meus Pontos" },
+  { name: "pessoal/meus-pontos/justificar-ausencia/index", title: "Justificar Ausência" },
+  { name: "pessoal/meus-pontos/justificar-ausencia/[date]", title: "Justificar Ausência" },
+  { name: "pessoal/meus-pontos/ajustar-ponto/index", title: "Ajustar Ponto" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
   { name: "pessoal/minhas-notificacoes/detalhes/[id]", title: "Detalhes da Notificação" },
@@ -443,28 +446,44 @@ ALL_ROUTES.forEach(route => {
   ROUTE_TITLE_MAP.set(route.name, route.title);
 });
 
+// Per-route resolution cache. The fallback suffix walk is O(n) over ~400 routes;
+// each route is hit many times during navigation, so caching the resolution turns
+// the worst case from O(n) per render into O(1) after the first resolution.
+const ROUTE_TITLE_CACHE = new Map<string, string>();
+
 /**
  * Fast O(1) route title lookup - replaces O(n) array.find() in screenOptions
  * Handles both normalized route names and (tabs) prefixed routes
  */
 function getRouteTitle(routeName: string): string {
+  const cached = ROUTE_TITLE_CACHE.get(routeName);
+  if (cached !== undefined) return cached;
+
   // Try direct lookup first (most common case)
   const directTitle = ROUTE_TITLE_MAP.get(routeName);
-  if (directTitle) return directTitle;
+  if (directTitle) {
+    ROUTE_TITLE_CACHE.set(routeName, directTitle);
+    return directTitle;
+  }
 
   // Try without (tabs) prefix
   const normalizedName = routeName.replace(/^\(tabs\)\//, '');
   const normalizedTitle = ROUTE_TITLE_MAP.get(normalizedName);
-  if (normalizedTitle) return normalizedTitle;
+  if (normalizedTitle) {
+    ROUTE_TITLE_CACHE.set(routeName, normalizedTitle);
+    return normalizedTitle;
+  }
 
   // Try to find by suffix match (for deeply nested dynamic routes)
   for (const [name, title] of ROUTE_TITLE_MAP) {
     if (routeName.endsWith(name)) {
+      ROUTE_TITLE_CACHE.set(routeName, title);
       return title;
     }
   }
 
   // Fallback to normalized name if no title found
+  ROUTE_TITLE_CACHE.set(routeName, normalizedName);
   return normalizedName;
 }
 
@@ -652,6 +671,17 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
 
   const { ref: backRef, onLayout: backOnLayout, onPress: backOnPress } = useTutorialTarget(
     TUTORIAL_TARGETS.chromeHeaderBack,
+    {
+      // Drives the actual back navigation when the tutorial's spotlight
+      // tap-capture fires — without this, the spotlight tap only fires
+      // `notifyAction("tap")` (advancing the tutorial) but the user stays
+      // on the current page, so the next step's "you're on the previous
+      // screen" assumption breaks.
+      onAction: () => {
+        if (!isNavigatingRef.current) startNavigation();
+        requestAnimationFrame(() => goBack());
+      },
+    },
   );
 
   if (!showBackButton) {
@@ -724,9 +754,21 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
 }: HeaderRightButtonsProps) {
   const { ref: drawerToggleRef, onLayout: drawerToggleOnLayout } = useTutorialTarget(
     TUTORIAL_TARGETS.chromeDrawerToggle,
+    {
+      // Drives the underlying drawer open from the tutorial overlay's
+      // tap-capture so the step works even when the touch can't pass
+      // through to the header button.
+      onAction: () => openMenuDrawer(navigation),
+    },
   );
   const { ref: notifBellRef, onLayout: notifBellOnLayout, onPress: notifBellOnPress } = useTutorialTarget(
     TUTORIAL_TARGETS.chromeNotificationsBell,
+    {
+      // Open the notifications drawer from the tutorial spotlight's
+      // tap-capture so the step works even when the dim overlay would
+      // otherwise swallow the touch on the real bell icon.
+      onAction: () => openNotificationsDrawer(navigation),
+    },
   );
   // Use the optional tutorial hook so this header still works when the
   // TutorialProvider is not mounted (e.g. login screen, error states).
@@ -851,6 +893,47 @@ function InnerLayout() {
     active: "#15803d", // primary color (green-700)
   }), [isDark]);
 
+  // Pre-compute all header style primitives. Keeping these as stable refs by isDark
+  // means screenOptions doesn't allocate new objects/strings per call per route.
+  const headerStyles = useMemo(() => {
+    const headerBackground = isDark ? "#262626" : "#fafafa";
+    const headerText = isDark ? "#d9d9d9" : "#404040";
+    const headerBorder = isDark ? "#3a3a3a" : "#e3e3e3";
+    const buttonPressed = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
+    const sceneBackground = isDark ? "#1c1c1c" : "#e8e8e8";
+
+    return {
+      headerBackground,
+      headerText,
+      headerBorder,
+      buttonPressed,
+      sceneBackground,
+      headerTitleStyle: {
+        color: headerText,
+        fontSize: 18,
+        fontWeight: "600" as const,
+      },
+      headerStyle: {
+        backgroundColor: headerBackground,
+        borderBottomWidth: 1,
+        borderBottomColor: headerBorder,
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+      drawerStyle: {
+        backgroundColor: drawerColors.background,
+        width: 280,
+      },
+      contentStyle: {
+        backgroundColor: sceneBackground,
+      },
+      sceneContainerStyle: {
+        backgroundColor: sceneBackground,
+        paddingHorizontal: Platform.OS === 'ios' ? 16 : 12,
+      },
+    };
+  }, [isDark, drawerColors.background]);
+
   // Handle authentication redirect at the root level
   // (Done at root via useNav.replace to avoid issues with replace from inside
   // nested Drawer navigators.)
@@ -879,6 +962,34 @@ function InnerLayout() {
 
   // Timestamp-based debounce for drawer operations (100ms)
   const lastDrawerOpenRef = useRef(0);
+  // Set true on AppState 'active' to force the next openDrawer call to first
+  // dispatch a close. After backgrounding, React Navigation's drawer state
+  // sometimes desynchronizes from the rendered UI (state believes the drawer
+  // is already open, so an `openDrawer` dispatch becomes a no-op — which is
+  // exactly the "menu button doesn't open the drawer after resume" symptom).
+  // Dispatching close first puts the reducer back into the known-closed
+  // branch so the subsequent open reliably triggers the animation.
+  const needsDrawerResetRef = useRef(false);
+
+  // Robustly dispatch open-drawer. If we just came back from background, do
+  // a close→RAF→open dance to reset state. Swipe-to-open never had this bug
+  // because the gesture interpolates progress directly; only the imperative
+  // dispatch hits the desync.
+  const robustOpenDrawer = useCallback((navigation: any) => {
+    if (needsDrawerResetRef.current) {
+      needsDrawerResetRef.current = false;
+      try {
+        navigation.dispatch(DrawerActions.closeDrawer());
+      } catch {}
+      requestAnimationFrame(() => {
+        try {
+          navigation.dispatch(DrawerActions.openDrawer());
+        } catch {}
+      });
+      return;
+    }
+    navigation.dispatch(DrawerActions.openDrawer());
+  }, []);
 
   // Handler to open notifications drawer
   // IMPORTANT: These hooks must be called BEFORE any conditional returns to avoid
@@ -888,8 +999,8 @@ function InnerLayout() {
     if (now - lastDrawerOpenRef.current < 100) return;
     lastDrawerOpenRef.current = now;
     setDrawerMode('notifications');
-    navigation.dispatch(DrawerActions.openDrawer());
-  }, [setDrawerMode]);
+    robustOpenDrawer(navigation);
+  }, [setDrawerMode, robustOpenDrawer]);
 
   // Handler to open menu drawer
   const openMenuDrawer = useCallback((navigation: any) => {
@@ -897,15 +1008,17 @@ function InnerLayout() {
     if (now - lastDrawerOpenRef.current < 100) return;
     lastDrawerOpenRef.current = now;
     setDrawerMode('menu');
-    navigation.dispatch(DrawerActions.openDrawer());
-  }, [setDrawerMode]);
+    robustOpenDrawer(navigation);
+  }, [setDrawerMode, robustOpenDrawer]);
 
   // Reset stale state when app returns from background
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        // Reset debounce so drawer can open immediately after returning
+        // Reset debounce so drawer can open immediately after returning,
+        // and arm the close-then-open reset for the next user-initiated tap.
         lastDrawerOpenRef.current = 0;
+        needsDrawerResetRef.current = true;
       }
     });
     return () => subscription.remove();
@@ -917,6 +1030,102 @@ function InnerLayout() {
     return <LoadingScreen />;
   }
 
+  // Stable screenOptions factory. Memoized so React Navigation receives the same
+  // function reference across renders, and the returned option objects reuse the
+  // same memoized style objects. This is the single biggest fix for transition
+  // jank: previously every render of InnerLayout rebuilt headerStyle/drawerStyle/
+  // headerLeft/headerRight for every screen.
+  const screenOptions = useCallback(
+    ({ navigation, route }: { navigation: any; route: any }) => ({
+      headerTitle: getRouteTitle(route.name),
+      headerTitleAlign: 'center' as const,
+      headerTitleStyle: headerStyles.headerTitleStyle,
+      headerStyle: headerStyles.headerStyle,
+      // Disable drawer swipe on notifications screen to allow notification item swipes
+      swipeEnabled: !route.name.includes('notifications'),
+      headerLeft: () => {
+        // Back-navigation strategy:
+        // Use the custom-history goBack first — it tracks every pathname
+        // change via usePathname and pops the most-recent entry, falling
+        // back to `computeParentRoute(current)` when the history is shallow.
+        // For deep drawer routes like
+        //   /pessoal/meus-pontos/justificar-ausencia
+        // react-navigation's `navigation.goBack()` sometimes dismisses the
+        // entire chain back to the initial drawer route (inicio), which
+        // leaves the tutorial flow stranded. The custom history reliably
+        // returns to /pessoal/meus-pontos in that case. We still fall back
+        // to `navigation.goBack()` when the custom history has no idea —
+        // but only when canGoBack is true *and* we're at a fresh route.
+        const onBack = () => {
+          if (canGoBack()) {
+            goBack();
+            return;
+          }
+          if (navigation.canGoBack && navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            goBack();
+          }
+        };
+        return (
+          <HeaderBackButton
+            routeName={route.name}
+            goBack={onBack}
+            isNavigatingRef={isNavigatingRef}
+            startNavigation={startNavigation}
+            isDark={isDark}
+            headerText={headerStyles.headerText}
+            buttonPressed={headerStyles.buttonPressed}
+          />
+        );
+      },
+      headerRight: () => (
+        <HeaderRightButtons
+          headerText={headerStyles.headerText}
+          buttonPressed={headerStyles.buttonPressed}
+          isDark={isDark}
+          openNotificationsDrawer={openNotificationsDrawer}
+          openMenuDrawer={openMenuDrawer}
+          navigation={navigation}
+        />
+      ),
+      drawerPosition: 'right' as const,
+      drawerStyle: headerStyles.drawerStyle,
+      drawerActiveTintColor: drawerColors.activeText,
+      drawerActiveBackgroundColor: drawerColors.active,
+      drawerInactiveTintColor: drawerColors.text,
+      contentStyle: headerStyles.contentStyle,
+      sceneContainerStyle: headerStyles.sceneContainerStyle,
+      unmountOnBlur: false,
+      detachInactiveScreens: true,
+      // Freezing inactive screens keeps them in memory but suspends their render
+      // tree — which is exactly what we want during drawer/screen transitions.
+      // Previously `false`, which caused off-screen layout work during animations.
+      freezeOnBlur: true,
+    }),
+    [
+      headerStyles,
+      drawerColors.activeText,
+      drawerColors.active,
+      drawerColors.text,
+      goBack,
+      isNavigatingRef,
+      startNavigation,
+      isDark,
+      openNotificationsDrawer,
+      openMenuDrawer,
+    ],
+  );
+
+  const renderDrawerContent = useCallback(
+    (props: any) => (
+      <Suspense fallback={<LoadingScreen />}>
+        <CombinedDrawerContent {...props} />
+      </Suspense>
+    ),
+    [],
+  );
+
   return (
     // CRITICAL: Key the entire Drawer by user ID to force complete destruction and
     // recreation when switching accounts. React Navigation caches drawer content
@@ -926,83 +1135,8 @@ function InnerLayout() {
     // (all screens, drawer content, internal state) is rebuilt from scratch.
     <Drawer
       key={`drawer-${user?.id}`}
-      drawerContent={(props) => (
-        <Suspense fallback={<LoadingScreen />}>
-          <CombinedDrawerContent {...props} />
-        </Suspense>
-      )}
-      screenOptions={({ navigation, route }) => {
-        // Use optimized O(1) route title lookup instead of O(n) array.find()
-        // This significantly improves navigation performance on Android
-        const title = getRouteTitle(route.name);
-
-        // Header theme colors - matching your app's theme palette
-        const headerBackground = isDark ? "#262626" : "#fafafa"; // card/surface colors
-        const headerText = isDark ? "#d9d9d9" : "#404040"; // foreground colors
-        const headerBorder = isDark ? "#3a3a3a" : "#e3e3e3"; // border colors
-        const buttonPressed = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)";
-
-        return {
-          headerTitle: title, // Use the proper title, not the route name
-          headerTitleAlign: 'center', // Center title on both iOS and Android
-          headerTitleStyle: {
-            color: headerText,
-            fontSize: 18,
-            fontWeight: "600",
-          },
-          headerStyle: {
-            backgroundColor: headerBackground,
-            borderBottomWidth: 1,
-            borderBottomColor: headerBorder,
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          // Disable drawer swipe on notifications screen to allow notification item swipes
-          swipeEnabled: !route.name.includes('notifications'),
-          headerLeft: () => (
-            <HeaderBackButton
-              routeName={route.name}
-              goBack={goBack}
-              isNavigatingRef={isNavigatingRef}
-              startNavigation={startNavigation}
-              isDark={isDark}
-              headerText={headerText}
-              buttonPressed={buttonPressed}
-            />
-          ),
-          headerRight: () => (
-            <HeaderRightButtons
-              headerText={headerText}
-              buttonPressed={buttonPressed}
-              isDark={isDark}
-              openNotificationsDrawer={openNotificationsDrawer}
-              openMenuDrawer={openMenuDrawer}
-              navigation={navigation}
-            />
-          ),
-          drawerPosition: "right",
-          drawerStyle: {
-            backgroundColor: drawerColors.background,
-            width: 280,
-          },
-          drawerActiveTintColor: drawerColors.activeText,
-          drawerActiveBackgroundColor: drawerColors.active,
-          drawerInactiveTintColor: drawerColors.text,
-          // Content insets to add padding from screen edges
-          contentStyle: {
-            backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8", // background colors
-          },
-          sceneContainerStyle: {
-            backgroundColor: isDark ? "#1c1c1c" : "#e8e8e8", // background colors
-            paddingHorizontal: Platform.OS === 'ios' ? 16 : 12,
-          },
-          // Keep screens mounted for better performance
-          // Use detachInactiveScreens for memory optimization while keeping state
-          unmountOnBlur: false,
-          detachInactiveScreens: true, // Detach from view hierarchy but keep in memory
-          freezeOnBlur: false, // Prevent screen freeze on Drawer navigation
-        };
-      }}
+      drawerContent={renderDrawerContent}
+      screenOptions={screenOptions}
     >
       {/* Let Expo Router auto-discover routes from file system */}
       {/* Don't manually register routes - this causes "property is not configurable" error */}

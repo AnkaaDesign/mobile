@@ -1,6 +1,7 @@
 // packages/api-client/src/observation.ts
 
 import { apiClient } from "./axiosClient";
+import { getTutorialMockList, getTutorialMockDetail } from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   ObservationGetManyFormData,
@@ -37,6 +38,11 @@ export class ObservationService {
   // =====================
 
   async getObservations(params?: ObservationGetManyFormData): Promise<ObservationGetManyResponse> {
+    // Tutorial bypass — seeded demo observations so the task-detail
+    // walkthrough has data to spotlight.
+    const tutorialResponse = getTutorialMockList("observations", params);
+    if (tutorialResponse) return tutorialResponse as unknown as ObservationGetManyResponse;
+
     const response = await apiClient.get<ObservationGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +50,10 @@ export class ObservationService {
   }
 
   async getObservationById(id: string, params?: Omit<ObservationGetByIdFormData, "id">): Promise<ObservationGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("observations", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as ObservationGetUniqueResponse;
+    }
     const response = await apiClient.get<ObservationGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

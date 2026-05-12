@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -36,6 +36,8 @@ import {
 } from "@/api-client";
 import { NOTIFICATION_CHANNEL } from "@/constants";
 import { useAuth } from "@/contexts/auth-context";
+import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
+import { tutorialMocks } from "@/components/tutorial/tutorial-mocks";
 
 // =====================
 // Types and Constants
@@ -257,6 +259,19 @@ export default function NotificationPreferencesScreen() {
   const { colors, isDark } = useTheme();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView | null>(null);
+  const legendTarget = useTutorialTarget(TUTORIAL_TARGETS.notifPrefsLegend, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 100,
+  });
+  const firstSectionTarget = useTutorialTarget(TUTORIAL_TARGETS.notifPrefsFirstSection, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 100,
+  });
+  const channelTogglesTarget = useTutorialTarget(TUTORIAL_TARGETS.notifPrefsChannelToggles, {
+    scrollContainer: scrollRef,
+    scrollOffsetTop: 100,
+  });
 
   // State
   const [configurations, setConfigurations] = useState<GroupedConfigurationsResponse | null>(null);
@@ -274,9 +289,36 @@ export default function NotificationPreferencesScreen() {
   // Load Configurations
   // =====================
 
+  const tutorialActive = useOptionalTutorial()?.isActive ?? false;
   const loadConfigurations = useCallback(async () => {
     try {
       setIsLoading(true);
+
+      // Tutorial-mode bypass: short-circuit the real API and use the
+      // in-memory mock dataset. The service call would otherwise hit a
+      // network endpoint that's unmocked at the axios layer (this screen
+      // isn't fed by React Query, so the tutorial-mocks queryClient
+      // injection doesn't reach it). Without this branch the tutorial
+      // step lands on the empty / loading state and can't demonstrate
+      // the 5 categories or channel toggles.
+      if (tutorialActive) {
+        const mockData = tutorialMocks.notificationConfigurations as any;
+        setConfigurations(mockData);
+        const userPrefs: Record<string, NotificationChannel[]> = {};
+        for (const group of mockData) {
+          for (const config of group.configurations) {
+            const enabledChannels = config.channels
+              .filter((ch: any) => ch.userEnabled || ch.mandatory)
+              .map((ch: any) => ch.channel as NotificationChannel);
+            userPrefs[config.configKey] = enabledChannels;
+          }
+        }
+        setPreferences(userPrefs);
+        setOriginalPreferences(JSON.parse(JSON.stringify(userPrefs)));
+        setIsLoading(false);
+        return;
+      }
+
       const response = await notificationUserPreferenceService.getAvailableConfigurations();
 
       if (response.data?.success && response.data?.data) {
@@ -318,7 +360,7 @@ export default function NotificationPreferencesScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tutorialActive]);
 
   useEffect(() => {
     loadConfigurations();
@@ -532,6 +574,7 @@ export default function NotificationPreferencesScreen() {
       <Stack.Screen options={{ title: "Preferências de Notificações" }} />
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={[]}>
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollContent,
@@ -556,7 +599,7 @@ export default function NotificationPreferencesScreen() {
           </View>
 
           {/* Channel Legend */}
-          <View style={[styles.legend, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View ref={legendTarget.ref} onLayout={legendTarget.onLayout} collapsable={false} style={[styles.legend, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <ThemedText style={[styles.legendLabel, { color: colors.mutedForeground }]}>
               Canais:
             </ThemedText>
@@ -592,11 +635,27 @@ export default function NotificationPreferencesScreen() {
             )}
           </View>
 
-          {/* Notification Sections */}
-          <Accordion type="multiple" collapsible className="w-full">
-            {groupedSections.map((section) => (
+          {/* Notification Sections.
+              In tutorial mode the first section opens by default so the
+              walkthrough can spotlight the channel toggles inside — without
+              this, the accordion stays collapsed and the user only sees
+              section headers, never learning HOW to configure. */}
+          <Accordion
+            type="multiple"
+            collapsible
+            className="w-full"
+            defaultValue={
+              tutorialActive && groupedSections.length > 0
+                ? [groupedSections[0].type]
+                : undefined
+            }
+          >
+            {groupedSections.map((section, sectionIndex) => (
               <Card
                 key={section.type}
+                ref={sectionIndex === 0 ? (firstSectionTarget.ref as any) : undefined}
+                onLayout={sectionIndex === 0 ? firstSectionTarget.onLayout : undefined}
+                collapsable={false}
                 style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
                 <AccordionItem value={section.type}>
@@ -617,14 +676,28 @@ export default function NotificationPreferencesScreen() {
                   </AccordionTrigger>
                   <AccordionContent>
                     <View style={styles.sectionContent}>
-                      {section.configs.map((config) => (
-                        <PreferenceRow
+                      {section.configs.map((config, configIndex) => (
+                        <View
                           key={config.configKey}
+                          ref={
+                            sectionIndex === 0 && configIndex === 0
+                              ? (channelTogglesTarget.ref as any)
+                              : undefined
+                          }
+                          onLayout={
+                            sectionIndex === 0 && configIndex === 0
+                              ? channelTogglesTarget.onLayout
+                              : undefined
+                          }
+                          collapsable={false}
+                        >
+                        <PreferenceRow
                           config={config}
                           userChannels={preferences[config.configKey] || []}
                           onChange={handlePreferenceChange}
                           isSaving={savingKeys.has(config.configKey)}
                         />
+                        </View>
                       ))}
                     </View>
                   </AccordionContent>

@@ -123,13 +123,31 @@ export const Row = memo(function Row<T extends { id: string }>({
     borderless: false,
   }), [colors.primary])
 
+  // Pre-build stable per-column press handlers. Without this, the map() below
+  // creates a fresh arrow function per column per Row render, defeating any
+  // memoization inside CellContent — every row scroll caused every cell to
+  // re-render.
+  const cellPressHandlers = useMemo(() => {
+    const handlers: Record<string, (() => void) | undefined> = {}
+    for (const column of columns) {
+      handlers[column.key] = column.onCellPress
+        ? () => column.onCellPress!(item)
+        : undefined
+    }
+    return handlers
+  }, [columns, item])
+
+  const handleCheckboxToggle = useCallback(() => {
+    selection?.onToggle(item.id)
+  }, [selection, item.id])
+
   const rowContent = (
     <>
       {selection?.enabled && (
         <View style={styles.checkboxCell}>
           <Checkbox
             checked={isSelected}
-            onCheckedChange={() => selection.onToggle(item.id)}
+            onCheckedChange={handleCheckboxToggle}
           />
         </View>
       )}
@@ -154,7 +172,7 @@ export const Row = memo(function Row<T extends { id: string }>({
               rawValue={rawValue}
               badgeVariant={badgeVariant}
               component={column.component}
-              onCellPress={column.onCellPress ? () => column.onCellPress!(item) : undefined}
+              onCellPress={cellPressHandlers[column.key]}
             />
           </Cell>
         )

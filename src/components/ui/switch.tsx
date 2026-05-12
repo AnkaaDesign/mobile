@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Pressable, View, ViewStyle , StyleSheet} from "react-native";
+import { Pressable, View, ViewStyle } from "react-native";
 import Animated, {  interpolateColor, useAnimatedStyle, useDerivedValue, withSpring, withTiming, Easing  } from "react-native-reanimated";
 import { useTheme } from "@/lib/theme";
 
@@ -56,6 +56,14 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked, onCheckedChange, 
     borderRadius: 16,
     padding: 2,
     justifyContent: "center",
+    // 1px hairline border so the unchecked state stays visible against
+    // card / section backgrounds in dark mode (where colors.muted is very
+    // close to colors.card, leaving the track invisible without the
+    // outline). When checked, the primary fill covers the border anyway.
+    borderWidth: 1,
+    borderColor: isDark
+      ? "rgba(255,255,255,0.16)"
+      : "rgba(0,0,0,0.12)",
     // Base shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -99,8 +107,14 @@ const Switch = React.forwardRef<View, SwitchProps>(({ checked, onCheckedChange, 
       accessibilityState={{ checked: isChecked, disabled }}
       {...props}
     >
-      <Animated.View style={StyleSheet.flatten([trackStyles, animatedTrackStyle])}>
-        <Animated.View style={StyleSheet.flatten([thumbStyles, animatedThumbStyle])} />
+      {/* Reanimated styles must be passed as array elements, NOT through
+          StyleSheet.flatten. Flatten serializes the worklet-backed shared
+          value to a plain object at render time and the resulting bg color
+          can fail to resolve — which is why the unchecked-state Switch
+          rendered invisible (no track, no thumb visible) in dark mode even
+          after adding the hairline border. */}
+      <Animated.View style={[trackStyles, animatedTrackStyle]}>
+        <Animated.View style={[thumbStyles, animatedThumbStyle]} />
       </Animated.View>
     </Pressable>
   );

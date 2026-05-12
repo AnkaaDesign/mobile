@@ -9,7 +9,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconClipboardList, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Customer, Task } from '../../../../types';
-import { routes } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
 import { mobileRoute } from '@/constants/routes.types';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
@@ -25,6 +26,8 @@ interface TasksTableProps {
 
 export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
   const { colors } = useTheme();
+  const { user: currentUser } = useAuth();
+  const currentSectorPrivilege = currentUser?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -78,8 +81,11 @@ export function TasksTable({ customer, maxHeight = 500 }: TasksTableProps) {
     });
   }, [tasks, debouncedSearch]);
 
-  // Get all column definitions
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
+  // Get all column definitions (sector-aware: strips financial columns).
+  const allColumns = useMemo(
+    () => createColumnDefinitions(currentSectorPrivilege),
+    [currentSectorPrivilege],
+  );
 
   // Handle columns change
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {

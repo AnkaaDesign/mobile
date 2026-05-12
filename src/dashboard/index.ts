@@ -12,6 +12,7 @@ export { WidgetTile } from "./components/widget-tile";
 export { WidgetCard } from "./components/widget-card";
 export { ConfigureWidgetModal } from "./components/configure-widget-modal";
 export { SizeSelector } from "./components/size-selector";
+export { EditToolbar } from "./components/edit-toolbar";
 export { getDefaultLayoutForSector } from "./presets";
 
 // Side-effect: register all widgets with the registry on import.

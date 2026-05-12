@@ -1,6 +1,10 @@
 // packages/api-client/src/holiday.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   HolidayGetManyFormData,
@@ -37,6 +41,8 @@ export class HolidayService {
   // =====================
 
   async getHolidays(params?: HolidayGetManyFormData): Promise<HolidayGetManyResponse> {
+    const mock = getTutorialMockList("holidays", params ?? {});
+    if (mock) return mock as unknown as HolidayGetManyResponse;
     const response = await apiClient.get<HolidayGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +50,10 @@ export class HolidayService {
   }
 
   async getHolidayById(id: string, params?: Omit<HolidayGetByIdFormData, "id">): Promise<HolidayGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("holidays", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as HolidayGetUniqueResponse;
+    }
     const response = await apiClient.get<HolidayGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Button } from '@/components/ui/button';
@@ -10,16 +11,51 @@ import { PPE_DELIVERY_STATUS } from '@/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { PpeDelivery } from '@/types/ppe';
 import { DetailCard } from '@/components/ui/detail-page-layout';
+import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial';
+import { isTutorialRuntimeActive } from '@/components/tutorial/tutorial-runtime-state';
 
 const LGPD_CONSENT_KEY = 'ppe_lgpd_consent_given';
 
 interface SignDeliveryButtonProps {
   delivery: PpeDelivery;
+  /**
+   * Optional ScrollView ref of the surrounding detail page. When provided,
+   * the tutorial scrolls the page so the sign card / button is visible when
+   * the relevant step activates — without this the button sits below the
+   * fold on smaller phones and the user can't see what to tap.
+   */
+  scrollContainer?: React.RefObject<any>;
 }
 
-export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
+export function SignDeliveryButton({ delivery, scrollContainer }: SignDeliveryButtonProps) {
   const { colors } = useTheme();
   const { state, sign, reset, isLoading } = usePpeSignature();
+  const signTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalEpisDetailSign, {
+    scrollContainer,
+    scrollOffsetTop: 80,
+  });
+
+  // ── Tutorial mode mock state ────────────────────────────────────────
+  // When the tutorial is active we skip the real LGPD/biometric flow and
+  // just fake the state transitions locally so the user can practice the
+  // sign action without triggering Face ID / Touch ID, AsyncStorage, or
+  // backend mutations.
+  const tutorialActive = isTutorialRuntimeActive();
+  type TutorialStep = 'idle' | 'verifying' | 'completed';
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('idle');
+
+  // onAction lets the tutorial overlay's spotlight tap drive the fake
+  // sign flow. Without it the overlay's Pressable swallows the press and
+  // the Button's onPress never fires — the tutorial would advance to the
+  // "Recibo digital" step while the button still shows "Confirmar".
+  const biometricTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalEpisBiometric, {
+    onAction: () => {
+      setTutorialStep('verifying');
+      setTimeout(() => setTutorialStep('completed'), 1400);
+    },
+    scrollContainer,
+    scrollOffsetTop: 80,
+  });
 
   // Only show for deliveries that can be signed
   const canSign =
@@ -29,6 +65,13 @@ export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
   if (!canSign) return null;
 
   const handleSign = async () => {
+    if (tutorialActive) {
+      // Fake the biometric flow: brief "Verificando..." then "completed".
+      setTutorialStep('verifying');
+      setTimeout(() => setTutorialStep('completed'), 1400);
+      return;
+    }
+
     // Check LGPD consent
     const consentGiven = await AsyncStorage.getItem(LGPD_CONSENT_KEY);
 
@@ -77,7 +120,7 @@ export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
     );
   };
 
-  if (state.step === 'completed') {
+  if (state.step === 'completed' || tutorialStep === 'completed') {
     return (
       <DetailCard title="Recebimento Confirmado" icon="circle-check" iconColor="#16a34a">
         <View style={styles.completedContent}>
@@ -105,25 +148,39 @@ export function SignDeliveryButton({ delivery }: SignDeliveryButtonProps) {
   }
 
   return (
-    <DetailCard title="Confirmar Recebimento" icon="fingerprint">
-      <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
-        Assinatura eletrônica com biometria
-      </ThemedText>
+    <View
+      ref={signTarget.ref}
+      onLayout={signTarget.onLayout}
+      collapsable={false}
+    >
+      <DetailCard title="Confirmar Recebimento" icon="fingerprint">
+        <ThemedText style={[styles.subtitle, { color: colors.mutedForeground }]}>
+          Assinatura eletrônica com biometria
+        </ThemedText>
 
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary} />
-          <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
-            {PPE_SIGNING_STEP_LABELS[state.step] || 'Processando...'}
-          </ThemedText>
-        </View>
-      ) : (
-        <Button onPress={handleSign} style={StyleSheet.flatten([styles.signButton, { backgroundColor: colors.primary }])}>
-          <IconFingerprint size={18} color="#ffffff" />
-          <ThemedText style={styles.signButtonText}>Confirmar Recebimento</ThemedText>
-        </Button>
-      )}
-    </DetailCard>
+        {isLoading || tutorialStep === 'verifying' ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <ThemedText style={[styles.loadingText, { color: colors.mutedForeground }]}>
+              {tutorialStep === 'verifying'
+                ? 'Verificando biometria…'
+                : PPE_SIGNING_STEP_LABELS[state.step] || 'Processando...'}
+            </ThemedText>
+          </View>
+        ) : (
+          <View
+            ref={biometricTarget.ref}
+            onLayout={biometricTarget.onLayout}
+            collapsable={false}
+          >
+            <Button onPress={handleSign} style={StyleSheet.flatten([styles.signButton, { backgroundColor: colors.primary }])}>
+              <IconFingerprint size={18} color="#ffffff" />
+              <ThemedText style={styles.signButtonText}>Confirmar Recebimento</ThemedText>
+            </Button>
+          </View>
+        )}
+      </DetailCard>
+    </View>
   );
 }
 

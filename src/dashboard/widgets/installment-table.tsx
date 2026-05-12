@@ -1,8 +1,12 @@
-// Installment widget — surfaces upcoming bank-slip / installment due dates
-// so financial / commercial users can react quickly. Mirrors the web widget
-// in spirit (bucket chips on top, card list below) but adapted to mobile:
-// chips scroll horizontally, rows are compact cards, tap to push to the
-// underlying task's billing screen.
+// Installment widget — surfaces upcoming bank-slip / installment due dates so
+// financial / commercial users can react quickly. Mirrors the web widget in
+// spirit and now in feature set: bucket chips on top, search box, layoutMode
+// (flat / grouped-by-bucket / grouped-by-status), six filters, multi-sort,
+// configurable column visibility, refetch interval, and per-widget accent.
+//
+// Backend: read-only — flattens Task → Quote → CustomerConfig → Installment
+// from the existing /tasks endpoint. Web does the same; once a dedicated
+// /installments endpoint exists, swap `useFlatInstallments` for it.
 
 import { useMemo, useState } from "react";
 import { z } from "zod";
@@ -13,7 +17,7 @@ import {
   IconAlertTriangle,
   IconCalendarDue,
   IconCircleCheck,
-  IconRefresh,
+  IconCash,
 } from "@tabler/icons-react-native";
 import { useTheme } from "@/lib/theme";
 import {
@@ -22,8 +26,13 @@ import {
   TASK_QUOTE_STATUS,
   SECTOR_PRIVILEGES,
 } from "@/constants/enums";
-import { INSTALLMENT_STATUS_LABELS } from "@/constants/enum-labels";
+import {
+  INSTALLMENT_STATUS_LABELS,
+  BANK_SLIP_STATUS_LABELS,
+  TASK_QUOTE_STATUS_LABELS,
+} from "@/constants/enum-labels";
 import { useTasks } from "@/hooks/useTask";
+import { useCustomers } from "@/hooks/useCustomer";
 import {
   Section,
   ToggleRow,
@@ -32,14 +41,12 @@ import {
   TableRefreshSection,
   computeBodyMaxHeight,
   densityClasses,
+  DENSITY_VALUES,
   type Density,
-  makeTableDisplaySchema,
-  makeTableSortSchema,
-  TABLE_DISPLAY_DEFAULTS,
-  TableDisplayConfigSection,
-  TableSortConfigSection,
-  type TableDisplay,
+  LabeledField,
 } from "./_shared";
+import { ColumnPicker } from "../components/column-picker";
+import { Input } from "@/components/ui/input";
 import {
   WidgetTableContainer,
   WidgetTableSearch,
@@ -49,12 +56,19 @@ import {
   cellStyleForColumn,
   type WidgetTableColumn,
 } from "./_table";
-import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
-import { toneForBucket, toneForInstallmentStatus } from "./_status-tones";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollView } from "react-native-gesture-handler";
+import {
+  toneForBucket,
+  toneForInstallmentStatus,
+  toneForBankSlipStatus,
+  toneForTaskQuoteStatus,
+  type Tone,
+} from "./_status-tones";
 import { SkeletonRows } from "./_skeleton";
 import { WidgetErrorState } from "./_error-state";
-import { selectionHaptic, lightImpactHaptic } from "@/utils/haptics";
+import { selectionHaptic } from "@/utils/haptics";
 import { WidgetCard } from "../components/widget-card";
 import {
   AccentPicker,
@@ -81,17 +95,67 @@ const BUCKETS = [
   "next-7-days",
   "next-30-days",
   "this-month",
+  "paid-recent",
 ] as const;
 type Bucket = (typeof BUCKETS)[number];
 
 const BUCKET_LABELS: Record<Bucket, string> = {
-  all: "Todos",
-  overdue: "Atrasados",
+  all: "Todas",
+  overdue: "Vencidas",
   today: "Hoje",
   tomorrow: "Amanhã",
   "next-7-days": "7 dias",
   "next-30-days": "30 dias",
   "this-month": "Mês",
+  "paid-recent": "Pagas",
+};
+
+// ---------- Layout mode ----------
+
+const LAYOUT_MODES = ["flat", "grouped-by-bucket", "grouped-by-status"] as const;
+type LayoutMode = (typeof LAYOUT_MODES)[number];
+
+const LAYOUT_LABELS: Record<LayoutMode, string> = {
+  flat: "Lista única",
+  "grouped-by-bucket": "Agrupar por vencimento",
+  "grouped-by-status": "Agrupar por status",
+};
+
+// ---------- Columns ----------
+
+// 12 keys, mirrors web. The mobile renderer can't fit all of them on a phone
+// at once; the user picks 2–4 in the column picker. The defaults are the same
+// composite ones the legacy mobile widget shipped with so existing layouts
+// migrate cleanly.
+const COLUMN_KEYS = [
+  "customer",
+  "task",
+  "installment",
+  "dueDate",
+  "countdown",
+  "amount",
+  "paidAmount",
+  "installmentStatus",
+  "bankSlipStatus",
+  "nossoNumero",
+  "paymentMethod",
+  "quoteStatus",
+] as const;
+type ColumnKey = (typeof COLUMN_KEYS)[number];
+
+const COLUMN_LABELS: Record<ColumnKey, string> = {
+  customer: "Cliente",
+  task: "Tarefa",
+  installment: "Parcela",
+  dueDate: "Vencimento",
+  countdown: "Restante",
+  amount: "Valor",
+  paidAmount: "Valor pago",
+  installmentStatus: "Status parcela",
+  bankSlipStatus: "Status boleto",
+  nossoNumero: "Nosso nº",
+  paymentMethod: "Forma",
+  quoteStatus: "Status orç.",
 };
 
 // Quote statuses that yield meaningful installments. Mirrors web's intent
@@ -107,20 +171,167 @@ const RELEVANT_QUOTE_STATUSES = [
 
 // ---------- Schema ----------
 
+// Display schema mirrors web's installment-table where bucket chips, count
+// toggle, layoutMode, and empty-state copy live UNDER `display` (not as
+// top-level config keys). Extends the shared TableDisplay shape with the
+// installment-specific extras so saved configs round-trip with web.
+interface InstallmentDisplay {
+  density: Density;
+  striping: boolean;
+  gridLines: boolean;
+  hoverHighlight: boolean;
+  stickyHeader: boolean;
+  showHeader: boolean;
+  showSearchBox: boolean;
+  showRowDot: boolean;
+  showColumnHeaders: boolean;
+  showBucketChips: boolean;
+  showCount: boolean;
+  showViewAllLink: boolean;
+  layoutMode: LayoutMode;
+  emptyStateMessage: string;
+  refetchInterval: string;
+}
+
+const INSTALLMENT_DISPLAY_DEFAULTS: InstallmentDisplay = {
+  density: "comfortable",
+  striping: true,
+  gridLines: true,
+  hoverHighlight: true,
+  stickyHeader: false,
+  showHeader: true,
+  showSearchBox: true,
+  showRowDot: false,
+  showColumnHeaders: true,
+  showBucketChips: true,
+  showCount: true,
+  showViewAllLink: true,
+  layoutMode: "flat",
+  emptyStateMessage: "",
+  refetchInterval: "0",
+};
+
+const installmentDisplaySchema = z
+  .object({
+    density: z.enum(DENSITY_VALUES).default("comfortable"),
+    striping: z.boolean().default(true),
+    gridLines: z.boolean().default(true),
+    hoverHighlight: z.boolean().default(true),
+    stickyHeader: z.boolean().default(false),
+    showHeader: z.boolean().default(true),
+    showSearchBox: z.boolean().default(true),
+    showRowDot: z.boolean().default(false),
+    showColumnHeaders: z.boolean().default(true),
+    showBucketChips: z.boolean().default(true),
+    showCount: z.boolean().default(true),
+    showViewAllLink: z.boolean().default(true),
+    layoutMode: z.enum(LAYOUT_MODES).default("flat"),
+    emptyStateMessage: z.string().max(160).default(""),
+    refetchInterval: z
+      .string()
+      .regex(/^\d+$/, "Intervalo inválido")
+      .default("0"),
+  })
+  .default(INSTALLMENT_DISPLAY_DEFAULTS) as z.ZodType<InstallmentDisplay>;
+
 const configSchema = z.object({
-  title: z.string().min(1).max(80).default("Boletos / Parcelas"),
-  showHeader: z.boolean().default(true),
-  showBucketChips: z.boolean().default(true),
+  title: z
+    .string()
+    .min(1)
+    .max(80)
+    .default("Boletos")
+    .describe("Título exibido no cabeçalho do widget."),
+
+  display: installmentDisplaySchema.describe(
+    "Aparência da tabela: densidade, listras, divisórias, busca, chips de prazo, modo de exibição, mensagem vazia, refresh.",
+  ),
+
+  /** Visible column keys, in display order. Default mirrors web (8 columns). */
+  columns: z
+    .array(z.enum(COLUMN_KEYS))
+    .default([
+      "customer",
+      "task",
+      "installment",
+      "dueDate",
+      "countdown",
+      "amount",
+      "installmentStatus",
+      "bankSlipStatus",
+    ])
+    .describe("Colunas visíveis no widget. Ordem da esquerda para a direita.")
+    .transform((cols) =>
+      cols.length > 0
+        ? cols
+        : [
+            "customer",
+            "task",
+            "installment",
+            "dueDate",
+            "countdown",
+            "amount",
+            "installmentStatus",
+            "bankSlipStatus",
+          ],
+    ),
+
   filters: z
     .object({
-      defaultBucket: z.enum(BUCKETS).default("next-30-days"),
-      hideFullyPaid: z.boolean().default(false),
+      defaultBucket: z
+        .enum(BUCKETS)
+        .default("next-30-days")
+        .describe("Filtro de vencimento aplicado ao abrir."),
+      installmentStatuses: z
+        .array(z.nativeEnum(INSTALLMENT_STATUS))
+        .default([])
+        .describe("Restringe a parcelas com estes status."),
+      bankSlipStatuses: z
+        .array(z.nativeEnum(BANK_SLIP_STATUS))
+        .default([])
+        .describe("Restringe a parcelas com boleto nestes status."),
+      customerIds: z
+        .array(z.string())
+        .default([])
+        .describe("Restringe a parcelas destes clientes."),
+      hideFullyPaid: z
+        .boolean()
+        .default(false)
+        .describe("Esconde parcelas já pagas."),
+      hideMissingBankSlip: z
+        .boolean()
+        .default(false)
+        .describe("Esconde parcelas sem boleto emitido."),
     })
-    .default({ defaultBucket: "next-30-days", hideFullyPaid: false }),
-  limit: z.number().int().min(5).max(50).default(20),
-  sort: makeTableSortSchema(["dueDate", "amount"] as const, "dueDate", "asc"),
-  display: makeTableDisplaySchema({ density: "comfortable", showRowDot: true }),
-  accent: makeAccentSchema({ color: "cyan", icon: "Receipt", borderColor: "none" }),
+    .default({
+      defaultBucket: "next-30-days",
+      installmentStatuses: [],
+      bankSlipStatuses: [],
+      customerIds: [],
+      hideFullyPaid: false,
+      hideMissingBankSlip: false,
+    })
+    .describe("Filtros aplicados antes da ordenação."),
+
+  /** Multi-sort. Limit 3 entries on mobile to keep the UI sane (web allows 5). */
+  sorts: z
+    .array(
+      z.object({
+        key: z.string(),
+        direction: z.enum(["asc", "desc"]),
+      }),
+    )
+    .default([{ key: "dueDate", direction: "asc" }])
+    .describe("Ordenação multi-coluna. A primeira chave tem maior prioridade."),
+
+  limit: z
+    .number()
+    .int()
+    .min(5)
+    .max(200)
+    .default(50)
+    .describe("Número máximo de parcelas exibidas."),
+
+  accent: makeAccentSchema({ color: "blue", icon: "Receipt", borderColor: "none" }),
 });
 type Config = z.infer<typeof configSchema>;
 
@@ -128,18 +339,25 @@ type Config = z.infer<typeof configSchema>;
 
 interface FlatInstallment {
   id: string;
-  number: number;
-  total: number;
+  installmentNumber: number;
+  totalInstallments: number;
   taskId: string;
   taskName: string;
+  taskSerial: string | null;
+  quoteStatus: TASK_QUOTE_STATUS | null;
+  customerId: string;
   customerName: string;
   dueDate: Date;
   amount: number;
   paidAmount: number;
+  paidAt: Date | null;
   installmentStatus: INSTALLMENT_STATUS;
+  paymentMethod: string | null;
+  bankSlipId: string | null;
+  nossoNumero: string | null;
   bankSlipStatus: BANK_SLIP_STATUS | null;
   daysUntilDue: number;
-  bucket: Exclude<Bucket, "all">;
+  bucket: Exclude<Bucket, "all" | "paid-recent">;
 }
 
 const startOfToday = () => {
@@ -158,7 +376,7 @@ function bucketFor(
   installmentStatus: INSTALLMENT_STATUS,
   bankSlipStatus: BANK_SLIP_STATUS | null,
   daysUntilDue: number,
-): Exclude<Bucket, "all"> {
+): FlatInstallment["bucket"] {
   if (
     installmentStatus === INSTALLMENT_STATUS.OVERDUE ||
     bankSlipStatus === BANK_SLIP_STATUS.OVERDUE ||
@@ -198,15 +416,22 @@ function flattenTasksToInstallments(tasks: any[] | undefined): FlatInstallment[]
         const bsStatus = (bs?.status ?? null) as BANK_SLIP_STATUS | null;
         out.push({
           id: inst.id,
-          number: inst.number,
-          total: totalForTask,
+          installmentNumber: inst.number,
+          totalInstallments: totalForTask,
           taskId: task.id,
           taskName: task.name ?? "—",
+          taskSerial: task.serialNumber ?? null,
+          quoteStatus: (quote.status ?? null) as TASK_QUOTE_STATUS | null,
+          customerId: cfg.customer?.id ?? cfg.customerId ?? "",
           customerName: customerLabel(cfg.customer),
           dueDate: due,
           amount: Number(inst.amount ?? 0),
           paidAmount: Number(inst.paidAmount ?? 0),
+          paidAt: inst.paidAt ? new Date(inst.paidAt) : null,
           installmentStatus: status,
+          paymentMethod: inst.paymentMethod ?? null,
+          bankSlipId: bs?.id ?? null,
+          nossoNumero: bs?.nossoNumero ?? null,
           bankSlipStatus: bsStatus,
           daysUntilDue: days,
           bucket: bucketFor(status, bsStatus, days),
@@ -227,7 +452,7 @@ const formatDate = (d: Date) =>
   d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
 function countdownText(days: number): string {
-  if (days < 0) return `${Math.abs(days)}d atrasado`;
+  if (days < 0) return `${Math.abs(days)}d atraso`;
   if (days === 0) return "vence hoje";
   if (days === 1) return "vence amanhã";
   return `em ${days}d`;
@@ -255,15 +480,317 @@ const TASK_INCLUDE = {
   },
 };
 
-const INSTALLMENT_COLUMNS: WidgetTableColumn[] = [
-  { key: "customer", label: "Cliente / Tarefa", flex: 1 },
-  { key: "amount", label: "Valor", width: 90, align: "right" },
-];
+// ---------- Filtering / sorting / grouping ----------
 
-const INSTALLMENT_SORT_OPTIONS = [
-  { value: "dueDate", label: "Vencimento" },
-  { value: "amount", label: "Valor" },
-];
+function applyFilters(
+  rows: FlatInstallment[],
+  config: Config,
+  bucket: Bucket,
+  search: string,
+): FlatInstallment[] {
+  const term = search.trim().toLowerCase();
+  const f = config.filters;
+  const today = startOfToday();
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const lastDayDays = diffDays(lastDay, today);
+  return rows.filter((r) => {
+    // Bucket
+    if (bucket === "overdue" && r.bucket !== "overdue") return false;
+    if (bucket === "today" && r.bucket !== "today") return false;
+    if (bucket === "tomorrow" && r.bucket !== "tomorrow") return false;
+    if (bucket === "next-7-days" && (r.daysUntilDue < 0 || r.daysUntilDue > 7))
+      return false;
+    if (bucket === "next-30-days" && (r.daysUntilDue < 0 || r.daysUntilDue > 30))
+      return false;
+    if (bucket === "this-month") {
+      if (r.daysUntilDue < 0 || r.daysUntilDue > lastDayDays) return false;
+    }
+    if (bucket === "paid-recent") {
+      if (r.installmentStatus !== INSTALLMENT_STATUS.PAID) return false;
+      if (!r.paidAt) return false;
+      if (diffDays(r.paidAt, today) < -30) return false;
+    }
+    // Filter chips
+    if (
+      f.installmentStatuses.length &&
+      !f.installmentStatuses.includes(r.installmentStatus)
+    ) {
+      return false;
+    }
+    if (f.bankSlipStatuses.length) {
+      if (!r.bankSlipStatus || !f.bankSlipStatuses.includes(r.bankSlipStatus))
+        return false;
+    }
+    if (f.customerIds.length && !f.customerIds.includes(r.customerId)) return false;
+    if (f.hideFullyPaid && r.installmentStatus === INSTALLMENT_STATUS.PAID)
+      return false;
+    if (f.hideMissingBankSlip && !r.bankSlipId) return false;
+    if (term) {
+      const hay =
+        `${r.customerName} ${r.taskName} ${r.taskSerial ?? ""} ${r.nossoNumero ?? ""}`.toLowerCase();
+      if (!hay.includes(term)) return false;
+    }
+    return true;
+  });
+}
+
+function compareRows(a: FlatInstallment, b: FlatInstallment, key: string): number {
+  switch (key) {
+    case "dueDate":
+      return a.dueDate.getTime() - b.dueDate.getTime();
+    case "amount":
+      return a.amount - b.amount;
+    case "customer":
+      return a.customerName.localeCompare(b.customerName);
+    case "installmentStatus":
+      return a.installmentStatus.localeCompare(b.installmentStatus);
+    case "bankSlipStatus":
+      return (a.bankSlipStatus ?? "ZZZ").localeCompare(b.bankSlipStatus ?? "ZZZ");
+    default:
+      return 0;
+  }
+}
+
+function applySort(
+  rows: FlatInstallment[],
+  sorts: Config["sorts"],
+): FlatInstallment[] {
+  if (!sorts || sorts.length === 0) return rows;
+  return [...rows].sort((a, b) => {
+    for (const s of sorts) {
+      const sign = s.direction === "asc" ? 1 : -1;
+      const c = compareRows(a, b, s.key);
+      if (c !== 0) return sign * c;
+    }
+    return 0;
+  });
+}
+
+// Group key extractor for layoutMode. "flat" returns a single empty-string
+// group so the renderer collapses to a non-grouped pass.
+function groupKeyFor(
+  row: FlatInstallment,
+  mode: LayoutMode,
+): { key: string; label: string } {
+  if (mode === "grouped-by-bucket") {
+    return { key: row.bucket, label: BUCKET_LABELS[row.bucket] };
+  }
+  if (mode === "grouped-by-status") {
+    return {
+      key: row.installmentStatus,
+      label: INSTALLMENT_STATUS_LABELS[row.installmentStatus] ?? String(row.installmentStatus),
+    };
+  }
+  return { key: "__flat__", label: "" };
+}
+
+// ---------- Column rendering ----------
+
+interface CellRender {
+  col: WidgetTableColumn;
+  render: (r: FlatInstallment, fontSize: number, metaFontSize: number, fgColor: string, mutedColor: string) => React.ReactNode;
+}
+
+// Small inline status pill — solid-tone background with white text, sized for
+// dense table rows. Mirrors the visual weight of web's Badge components without
+// pulling in a heavy badge primitive on mobile.
+function StatusPill({
+  label,
+  tone,
+  fontSize,
+}: {
+  label: string;
+  tone: Tone;
+  fontSize: number;
+}) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        backgroundColor: tone.bg,
+        alignSelf: "flex-start",
+        maxWidth: "100%",
+      }}
+    >
+      <Text
+        numberOfLines={1}
+        style={{
+          fontSize: Math.max(10, fontSize - 1),
+          fontWeight: "600",
+          color: tone.fg,
+          letterSpacing: 0.2,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function makeCellRenders(isDark: boolean): Record<ColumnKey, CellRender> {
+  return {
+    customer: {
+      col: { key: "customer", label: COLUMN_LABELS.customer, flex: 1.6 },
+      render: (r, fs, _ms, fg) => (
+        <Text
+          numberOfLines={1}
+          style={{ fontSize: fs, fontWeight: "600", color: fg }}
+        >
+          {r.customerName}
+        </Text>
+      ),
+    },
+    task: {
+      col: { key: "task", label: COLUMN_LABELS.task, flex: 1.4 },
+      render: (r, fs, ms, fg, muted) => (
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ fontSize: fs, color: fg }}>
+            {r.taskName}
+          </Text>
+          {r.taskSerial && (
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: ms, color: muted, fontVariant: ["tabular-nums"] }}
+            >
+              {r.taskSerial}
+            </Text>
+          )}
+        </View>
+      ),
+    },
+    installment: {
+      col: { key: "installment", label: COLUMN_LABELS.installment, width: 56, align: "center" },
+      render: (r, fs, _ms, fg) => (
+        <Text style={{ fontSize: fs, color: fg, fontVariant: ["tabular-nums"] }}>
+          {r.installmentNumber}/{r.totalInstallments}
+        </Text>
+      ),
+    },
+    dueDate: {
+      col: { key: "dueDate", label: COLUMN_LABELS.dueDate, width: 70 },
+      render: (r, fs, _ms, fg) => (
+        <Text style={{ fontSize: fs, color: fg, fontVariant: ["tabular-nums"] }}>
+          {formatDate(r.dueDate)}
+        </Text>
+      ),
+    },
+    countdown: {
+      col: { key: "countdown", label: COLUMN_LABELS.countdown, width: 80, align: "center" },
+      render: (r, fs, _ms) => {
+        const isPaid = r.installmentStatus === INSTALLMENT_STATUS.PAID;
+        const color = countdownColor(r.daysUntilDue, r.installmentStatus);
+        return (
+          <Text style={{ fontSize: fs, color, fontWeight: "600" }} numberOfLines={1}>
+            {isPaid ? "Pago" : countdownText(r.daysUntilDue)}
+          </Text>
+        );
+      },
+    },
+    amount: {
+      col: { key: "amount", label: COLUMN_LABELS.amount, width: 90, align: "right" },
+      render: (r, fs, _ms, fg) => (
+        <Text
+          style={{
+            fontSize: fs,
+            fontWeight: "700",
+            color: fg,
+            fontVariant: ["tabular-nums"],
+          }}
+          numberOfLines={1}
+        >
+          {formatBRL(r.amount)}
+        </Text>
+      ),
+    },
+    paidAmount: {
+      col: { key: "paidAmount", label: COLUMN_LABELS.paidAmount, width: 90, align: "right" },
+      render: (r, fs, _ms, fg, muted) => (
+        <Text
+          style={{
+            fontSize: fs,
+            color: r.paidAmount > 0 ? fg : muted,
+            fontVariant: ["tabular-nums"],
+          }}
+          numberOfLines={1}
+        >
+          {formatBRL(r.paidAmount)}
+        </Text>
+      ),
+    },
+    installmentStatus: {
+      col: { key: "installmentStatus", label: COLUMN_LABELS.installmentStatus, width: 110 },
+      render: (r, fs) => (
+        <StatusPill
+          label={INSTALLMENT_STATUS_LABELS[r.installmentStatus] ?? r.installmentStatus}
+          tone={toneForInstallmentStatus(r.installmentStatus, isDark)}
+          fontSize={fs}
+        />
+      ),
+    },
+    bankSlipStatus: {
+      col: { key: "bankSlipStatus", label: COLUMN_LABELS.bankSlipStatus, width: 110 },
+      render: (r, fs, _ms, _fg, muted) =>
+        r.bankSlipStatus ? (
+          <StatusPill
+            label={BANK_SLIP_STATUS_LABELS[r.bankSlipStatus] ?? r.bankSlipStatus}
+            tone={toneForBankSlipStatus(r.bankSlipStatus, isDark)}
+            fontSize={fs}
+          />
+        ) : (
+          <Text numberOfLines={1} style={{ fontSize: fs, color: muted, fontStyle: "italic" }}>
+            Sem boleto
+          </Text>
+        ),
+    },
+    nossoNumero: {
+      col: { key: "nossoNumero", label: COLUMN_LABELS.nossoNumero, width: 100 },
+      render: (r, fs, _ms, fg, muted) => (
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: fs,
+            color: r.nossoNumero ? fg : muted,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {r.nossoNumero ?? "—"}
+        </Text>
+      ),
+    },
+    paymentMethod: {
+      col: { key: "paymentMethod", label: COLUMN_LABELS.paymentMethod, width: 90 },
+      render: (r, fs, _ms, fg, muted) => (
+        <Text numberOfLines={1} style={{ fontSize: fs, color: r.paymentMethod ? fg : muted }}>
+          {r.paymentMethod ?? "—"}
+        </Text>
+      ),
+    },
+    quoteStatus: {
+      col: { key: "quoteStatus", label: COLUMN_LABELS.quoteStatus, width: 100 },
+      render: (r, fs, _ms, _fg, muted) =>
+        r.quoteStatus ? (
+          <StatusPill
+            label={TASK_QUOTE_STATUS_LABELS[r.quoteStatus] ?? r.quoteStatus}
+            tone={toneForTaskQuoteStatus(r.quoteStatus, isDark)}
+            fontSize={fs}
+          />
+        ) : (
+          <Text numberOfLines={1} style={{ fontSize: fs, color: muted }}>
+            —
+          </Text>
+        ),
+    },
+  };
+}
+
+// Tone helper for buckets that includes paid-recent (the shared helper's
+// type doesn't list it; treat paid-recent as emerald/green visually).
+function bucketChipColor(bucket: Bucket, isDark: boolean): string {
+  if (bucket === "paid-recent") return isDark ? "#34d399" : "#059669";
+  return toneForBucket(bucket as any, isDark).bg;
+}
 
 // ---------- Render ----------
 
@@ -275,8 +802,23 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     icon: config.accent?.icon as WidgetAccentIcon,
   });
   const Icon = accent.Icon;
-  const display = config.display ?? TABLE_DISPLAY_DEFAULTS;
+  const display = config.display ?? INSTALLMENT_DISPLAY_DEFAULTS;
   const density = display.density as Density;
+  const layoutMode = (display.layoutMode ?? "flat") as LayoutMode;
+  const showBucketChips = display.showBucketChips !== false;
+  const showCount = display.showCount !== false;
+  const visibleColumns: ColumnKey[] = (config.columns?.length
+    ? config.columns
+    : ([
+        "customer",
+        "task",
+        "installment",
+        "dueDate",
+        "countdown",
+        "amount",
+        "installmentStatus",
+        "bankSlipStatus",
+      ] as ColumnKey[])) as ColumnKey[];
 
   const [search, setSearch] = useState("");
   const [bucket, setBucket] = useState<Bucket>(config.filters.defaultBucket);
@@ -297,55 +839,43 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     queryParams as any,
     refetchMs > 0 ? { refetchInterval: refetchMs } : undefined,
   );
+
   const allRows = useMemo(
     () => flattenTasksToInstallments(data?.data),
     [data?.data],
   );
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return allRows.filter((r) => {
-      // Bucket filter
-      if (bucket !== "all") {
-        if (bucket === "this-month") {
-          const lastDay = new Date(
-            startOfToday().getFullYear(),
-            startOfToday().getMonth() + 1,
-            0,
-          );
-          const lastDayDays = diffDays(lastDay, startOfToday());
-          if (r.daysUntilDue < 0 || r.daysUntilDue > lastDayDays) return false;
-        } else if (bucket === "next-7-days") {
-          if (r.daysUntilDue > 7 || r.daysUntilDue < 0) return false;
-        } else if (bucket === "next-30-days") {
-          if (r.daysUntilDue > 30 || r.daysUntilDue < 0) return false;
-        } else if (r.bucket !== bucket) {
-          return false;
-        }
-      }
-      if (config.filters.hideFullyPaid && r.installmentStatus === INSTALLMENT_STATUS.PAID)
-        return false;
-      if (term) {
-        const haystack =
-          `${r.customerName} ${r.taskName}`.toLowerCase();
-        if (!haystack.includes(term)) return false;
-      }
-      return true;
-    });
-  }, [allRows, bucket, search, config.filters.hideFullyPaid]);
+  const filtered = useMemo(
+    () => applyFilters(allRows, config, bucket, search),
+    [allRows, config, bucket, search],
+  );
 
-  const sorted = useMemo(() => {
-    const dir = config.sort.direction === "desc" ? -1 : 1;
-    const cmp =
-      config.sort.key === "amount"
-        ? (a: FlatInstallment, b: FlatInstallment) => (a.amount - b.amount) * dir
-        : (a: FlatInstallment, b: FlatInstallment) =>
-            (a.dueDate.getTime() - b.dueDate.getTime()) * dir;
-    return [...filtered].sort(cmp);
-  }, [filtered, config.sort.key, config.sort.direction]);
-  const visible = sorted.slice(0, config.limit);
+  const sorted = useMemo(() => applySort(filtered, config.sorts), [filtered, config.sorts]);
+  const visibleRows = sorted.slice(0, config.limit);
+
+  // Group rows by layoutMode for sectioned rendering. Empty group => flat.
+  const grouped = useMemo(() => {
+    if (layoutMode === "flat") {
+      return [{ key: "__flat__", label: "", rows: visibleRows }];
+    }
+    const map = new Map<string, { label: string; rows: FlatInstallment[] }>();
+    for (const r of visibleRows) {
+      const g = groupKeyFor(r, layoutMode);
+      const bucketEntry = map.get(g.key);
+      if (bucketEntry) bucketEntry.rows.push(r);
+      else map.set(g.key, { label: g.label, rows: [r] });
+    }
+    return Array.from(map.entries()).map(([key, v]) => ({
+      key,
+      label: v.label,
+      rows: v.rows,
+    }));
+  }, [visibleRows, layoutMode]);
 
   const bucketCounts = useMemo(() => {
+    const today = startOfToday();
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const lastDayDays = diffDays(lastDay, today);
     const map: Record<Bucket, number> = {
       all: allRows.length,
       overdue: 0,
@@ -354,6 +884,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       "next-7-days": 0,
       "next-30-days": 0,
       "this-month": 0,
+      "paid-recent": 0,
     };
     for (const r of allRows) {
       if (r.bucket === "overdue") map.overdue++;
@@ -361,69 +892,61 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
       if (r.bucket === "tomorrow") map.tomorrow++;
       if (r.daysUntilDue >= 0 && r.daysUntilDue <= 7) map["next-7-days"]++;
       if (r.daysUntilDue >= 0 && r.daysUntilDue <= 30) map["next-30-days"]++;
+      if (r.daysUntilDue >= 0 && r.daysUntilDue <= lastDayDays) map["this-month"]++;
+      if (
+        r.installmentStatus === INSTALLMENT_STATUS.PAID &&
+        r.paidAt &&
+        diffDays(r.paidAt, today) >= -30
+      ) {
+        map["paid-recent"]++;
+      }
     }
     return map;
   }, [allRows]);
 
+  const cells = useMemo(() => makeCellRenders(isDark), [isDark]);
+  const tableColumns = visibleColumns.map((k) => cells[k].col);
+
   return (
     <WidgetCard
-      title={config.title || "Boletos / Parcelas"}
+      title={config.title || "Boletos"}
       icon={<Icon size={16} color={accent.hex} />}
-      viewAllHref="/(tabs)/financeiro/boletos"
-      showHeader={config.showHeader}
+      viewAllHref={
+        display.showViewAllLink !== false ? "/(tabs)/financeiro/boletos" : undefined
+      }
+      showHeader={display.showHeader !== false}
       density={density}
       bodyPadded={false}
       bodyMaxHeight={computeBodyMaxHeight(size.rows)}
       onRefresh={refetch}
       refreshing={isRefetching}
+      accentColor={accent.hex}
       borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
-      headerExtra={
-        <Pressable
-          onPress={() => {
-            lightImpactHaptic();
-            refetch();
-          }}
-          hitSlop={6}
-          accessibilityLabel="Atualizar parcelas"
-          accessibilityRole="button"
-          style={({ pressed }) => ({ padding: 4, opacity: pressed ? 0.5 : 1 })}
-        >
-          <IconRefresh
-            size={16}
-            color={isRefetching ? colors.primary : colors.mutedForeground}
-          />
-        </Pressable>
-      }
-      count={visible.length}
+      count={showCount ? visibleRows.length : null}
     >
       <WidgetTableContainer density={density}>
         {display.showSearchBox && (
           <WidgetTableSearch
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar cliente ou tarefa..."
+            placeholder="Buscar cliente, tarefa ou nosso nº..."
           />
         )}
 
-        {config.showBucketChips && (
-          // Wrapping container — replaces a horizontal ScrollView. The
-          // ScrollView nested a horizontal scroll inside widget-card's vertical
-          // ScrollView and the page-level DraggableFlatList; on iOS the gesture
-          // chain occasionally hijacked the parent vertical scroll when the
-          // user swiped within the chip strip. flex-wrap fits all 7 chips on
-          // 1-2 rows on phones and a single row on tablets, with no gesture
-          // conflict.
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 6,
-              paddingBottom: 8,
-            }}
+        {showBucketChips && (
+          // Horizontal scroll strip — fits the 8 buckets without forcing a
+          // wrap on phones. The previous wrap implementation collapsed to two
+          // rows and felt more like a tag cloud than a filter.
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 6, paddingBottom: 8, paddingRight: 8 }}
+            // Disable nested scroll-gesture conflict with parent dashboard scroll.
+            // The chips are a single horizontal row.
           >
             {BUCKETS.map((b) => {
               const active = b === bucket;
-              const tone = toneForBucket(b, isDark).bg;
+              const tone = bucketChipColor(b, isDark);
               return (
                 <Pressable
                   key={b}
@@ -443,7 +966,11 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                     borderRadius: 14,
                     borderWidth: 1,
                     borderColor: active ? tone : colors.border,
-                    backgroundColor: active ? tone : pressed ? colors.muted : "transparent",
+                    backgroundColor: active
+                      ? tone
+                      : pressed
+                        ? colors.muted
+                        : "transparent",
                   })}
                 >
                   {b === "overdue" && (
@@ -451,6 +978,9 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                   )}
                   {b === "today" && (
                     <IconCalendarDue size={11} color={active ? "#fff" : tone} />
+                  )}
+                  {b === "paid-recent" && (
+                    <IconCircleCheck size={11} color={active ? "#fff" : tone} />
                   )}
                   <Text
                     style={{
@@ -461,11 +991,12 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                   >
                     {BUCKET_LABELS[b]}
                   </Text>
-                  {b !== "all" && bucketCounts[b] > 0 && (
+                  {bucketCounts[b] > 0 && (
                     <Text
                       style={{
                         fontSize: 10,
                         color: active ? "#fff" : colors.mutedForeground,
+                        fontVariant: ["tabular-nums"],
                       }}
                     >
                       {bucketCounts[b]}
@@ -474,12 +1005,12 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         )}
 
-        {display.showColumnHeaders && (
+        {display.showColumnHeaders && layoutMode === "flat" && (
           <WidgetTableHeader
-            columns={INSTALLMENT_COLUMNS}
+            columns={tableColumns}
             reserveRowDot={display.showRowDot}
             density={density}
           />
@@ -492,7 +1023,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
             message="Erro ao carregar parcelas."
             onRetry={() => refetch()}
           />
-        ) : visible.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <WidgetTableMessage>
             <Text
               style={{
@@ -505,88 +1036,92 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
             </Text>
           </WidgetTableMessage>
         ) : (
-          visible.map((r, idx) => {
-            const cdColor = countdownColor(r.daysUntilDue, r.installmentStatus);
-            const isPaid = r.installmentStatus === INSTALLMENT_STATUS.PAID;
-            const cellFontSize = densityClasses(density).fontSize;
-            const metaFontSize = Math.max(10, cellFontSize - 2);
-            const paidIconColor = toneForInstallmentStatus(
-              INSTALLMENT_STATUS.PAID,
-              isDark,
-            ).bg;
-            return (
-              <WidgetTableRow
-                key={r.id}
-                density={density}
-                index={idx}
-                striping={display.striping}
-                gridLines={display.gridLines}
-                hoverHighlight={display.hoverHighlight}
-                // Row dot reflects the installment's status (paid/overdue/etc),
-                // not the accent — gives the user instant visual signal of
-                // which rows need attention without parsing the badge.
-                rowDotColor={
-                  display.showRowDot
-                    ? toneForInstallmentStatus(r.installmentStatus, isDark).bg
-                    : undefined
-                }
-                onPress={() =>
-                  router.push(`/(tabs)/financeiro/orcamento/detalhes/${r.taskId}` as any)
-                }
-              >
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    numberOfLines={1}
-                    style={{
-                      fontSize: cellFontSize,
-                      fontWeight: "600",
-                      color: colors.foreground,
-                    }}
-                  >
-                    {r.customerName}
-                  </Text>
-                  <Text
-                    numberOfLines={1}
-                    style={{ fontSize: metaFontSize, color: colors.mutedForeground }}
-                  >
-                    {r.taskName}
-                    {r.total > 1 ? ` · ${r.number}/${r.total}` : ""}
-                  </Text>
-                </View>
+          grouped.map((group) => (
+            <View key={group.key}>
+              {/* Group header — only render when grouping is enabled. */}
+              {layoutMode !== "flat" && group.label !== "" && (
                 <View
                   style={{
-                    ...cellStyleForColumn(INSTALLMENT_COLUMNS[1]),
-                    flexDirection: "column",
-                    alignItems: "flex-end",
+                    paddingHorizontal: 12,
+                    paddingTop: 10,
+                    paddingBottom: 4,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
                   }}
                 >
                   <Text
                     style={{
-                      fontSize: cellFontSize,
+                      fontSize: 11,
                       fontWeight: "700",
-                      color: colors.foreground,
+                      color: colors.mutedForeground,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.6,
+                    }}
+                  >
+                    {group.label}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: colors.mutedForeground,
                       fontVariant: ["tabular-nums"],
                     }}
                   >
-                    {formatBRL(r.amount)}
+                    {group.rows.length}
                   </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    {isPaid ? (
-                      <IconCircleCheck size={11} color={paidIconColor} />
-                    ) : null}
-                    <Text
-                      style={{ fontSize: metaFontSize, color: cdColor, fontWeight: "600" }}
-                      numberOfLines={1}
-                    >
-                      {isPaid
-                        ? INSTALLMENT_STATUS_LABELS[r.installmentStatus]
-                        : `${formatDate(r.dueDate)} · ${countdownText(r.daysUntilDue)}`}
-                    </Text>
-                  </View>
                 </View>
-              </WidgetTableRow>
-            );
-          })
+              )}
+              {/* Per-group header row — only when columns are visible AND
+                  grouping mode (top header rendered above otherwise). */}
+              {display.showColumnHeaders && layoutMode !== "flat" && (
+                <WidgetTableHeader
+                  columns={tableColumns}
+                  reserveRowDot={display.showRowDot}
+                  density={density}
+                />
+              )}
+              {group.rows.map((r, idx) => {
+                const cellFontSize = densityClasses(density).fontSize;
+                const metaFontSize = Math.max(10, cellFontSize - 2);
+                return (
+                  <WidgetTableRow
+                    key={r.id}
+                    density={density}
+                    index={idx}
+                    striping={display.striping}
+                    gridLines={display.gridLines}
+                    hoverHighlight={display.hoverHighlight}
+                    rowDotColor={
+                      display.showRowDot
+                        ? toneForInstallmentStatus(r.installmentStatus, isDark).bg
+                        : undefined
+                    }
+                    onPress={() =>
+                      router.push(
+                        `/(tabs)/financeiro/orcamento/detalhes/${r.taskId}` as any,
+                      )
+                    }
+                  >
+                    {visibleColumns.map((key) => {
+                      const cell = cells[key];
+                      return (
+                        <View key={key} style={cellStyleForColumn(cell.col)}>
+                          {cell.render(
+                            r,
+                            cellFontSize,
+                            metaFontSize,
+                            colors.foreground,
+                            colors.mutedForeground,
+                          )}
+                        </View>
+                      );
+                    })}
+                  </WidgetTableRow>
+                );
+              })}
+            </View>
+          ))
         )}
       </WidgetTableContainer>
     </WidgetCard>
@@ -594,6 +1129,86 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
 }
 
 // ---------- Config ----------
+
+const INSTALLMENT_STATUS_OPTIONS = Object.values(INSTALLMENT_STATUS).map((v) => ({
+  value: v,
+  label: INSTALLMENT_STATUS_LABELS[v as INSTALLMENT_STATUS] ?? String(v),
+}));
+
+const BANK_SLIP_STATUS_OPTIONS = Object.values(BANK_SLIP_STATUS).map((v) => ({
+  value: v,
+  label: BANK_SLIP_STATUS_LABELS[v as BANK_SLIP_STATUS] ?? String(v),
+}));
+
+const LAYOUT_MODE_OPTIONS = LAYOUT_MODES.map((m) => ({
+  value: m,
+  label: LAYOUT_LABELS[m],
+}));
+
+const BUCKET_OPTIONS = BUCKETS.map((b) => ({ value: b, label: BUCKET_LABELS[b] }));
+
+const DENSITY_PILL_OPTIONS: { value: Density; label: string }[] = [
+  { value: "compact", label: "Compacta" },
+  { value: "comfortable", label: "Confortável" },
+  { value: "spacious", label: "Espaçosa" },
+];
+
+// Outer-View-with-chrome + inner-Pressable density pill. Matches the canonical
+// pattern established in `recent-messages.tsx` (per cardinal rule: any
+// Pressable that owns layout/visual props must be refactored to this shape).
+function DensityPill({
+  active,
+  label,
+  onPress,
+}: {
+  value: Density;
+  active: boolean;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const outlineColor = isDark
+    ? "rgba(217,217,217,0.28)"
+    : "rgba(64,64,64,0.22)";
+  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  return (
+    <View
+      style={{
+        flex: 1,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: active ? colors.primary : outlineColor,
+        backgroundColor: active ? colors.primary : inactiveBg,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={`Densidade ${label}`}
+        style={{
+          minHeight: 40,
+          paddingHorizontal: 8,
+          paddingVertical: 8,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 12,
+            fontWeight: active ? "700" : "500",
+            color: active ? colors.primaryForeground : colors.foreground,
+          }}
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
 
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const { colors } = useTheme();
@@ -603,84 +1218,282 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
     key: K,
     value: Config["filters"][K],
   ) => onChange({ ...config, filters: { ...config.filters, [key]: value } });
+  const display = (config.display ?? INSTALLMENT_DISPLAY_DEFAULTS) as InstallmentDisplay;
+  const setDisplay = <K extends keyof InstallmentDisplay>(
+    key: K,
+    value: InstallmentDisplay[K],
+  ) =>
+    onChange({
+      ...config,
+      display: { ...display, [key]: value } as Config["display"],
+    });
+
+  // Customer dropdown — fetches a small slice for the picker. Empty on error.
+  const { data: customersData } = useCustomers(
+    { take: 200, orderBy: { fantasyName: "asc" } } as any,
+  );
+  const customerOptions = useMemo(
+    () =>
+      ((customersData?.data as any[]) ?? []).map((c) => ({
+        value: c.id as string,
+        label: (c.corporateName || c.fantasyName || "—") as string,
+      })),
+    [customersData?.data],
+  );
 
   return (
     <View style={{ gap: 12 }}>
       <ConfigTitleInput
         value={config.title}
         onChange={(v) => set("title", v)}
-        placeholder="Boletos / Parcelas"
+        placeholder="Boletos"
       />
-      <Section title="Aparência" defaultOpen>
-        <AccentPicker
-          value={{
-            color: (config.accent?.color ?? "cyan") as WidgetAccentColor,
-            icon: (config.accent?.icon ?? "Receipt") as WidgetAccentIcon,
-            borderColor: (config.accent?.borderColor ?? "none") as WidgetBorderColor,
-          }}
-          onChange={(next) => set("accent", next as Config["accent"])}
-        />
-        <ToggleRow
-          label="Exibir cabeçalho"
-          checked={config.showHeader}
-          onCheckedChange={(v) => set("showHeader", v)}
-        />
-        <ToggleRow
-          label="Filtros rápidos por prazo"
-          hint="Mostra os botões Hoje / 7 dias / 30 dias / atrasados."
-          checked={config.showBucketChips}
-          onCheckedChange={(v) => set("showBucketChips", v)}
-        />
-      </Section>
-      <TableDisplayConfigSection
-        value={config.display as TableDisplay}
-        onChange={(next) => set("display", next as any)}
-      />
-      <Section title="Filtros" defaultOpen>
-        <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 12, color: colors.foreground }}>
-            Filtro inicial
-          </Text>
-          <Combobox
-            value={config.filters.defaultBucket}
-            onValueChange={(v: any) =>
-              setFilter("defaultBucket", (typeof v === "string" ? v : "next-30-days") as Bucket)
+
+      <Tabs defaultValue="appearance">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TabsList style={{ minWidth: 360 }}>
+            <TabsTrigger value="appearance">Aparência</TabsTrigger>
+            <TabsTrigger value="columns">Colunas</TabsTrigger>
+            <TabsTrigger value="filters">Filtros</TabsTrigger>
+            <TabsTrigger value="behavior">Comportamento</TabsTrigger>
+          </TabsList>
+        </ScrollView>
+
+        <TabsContent value="appearance">
+          <Section title="Aparência" defaultOpen>
+            <AccentPicker
+              value={{
+                color: (config.accent?.color ?? "blue") as WidgetAccentColor,
+                icon: (config.accent?.icon ?? "Receipt") as WidgetAccentIcon,
+                borderColor: (config.accent?.borderColor ?? "none") as WidgetBorderColor,
+              }}
+              onChange={(next) => set("accent", next as Config["accent"])}
+            />
+          </Section>
+
+          <Section title="Cabeçalho">
+            <ToggleRow
+              label="Exibir cabeçalho"
+              checked={display.showHeader !== false}
+              onCheckedChange={(v) => setDisplay("showHeader", v)}
+            />
+            <ToggleRow
+              label="Exibir contagem"
+              hint="Mostra o número de parcelas no cabeçalho."
+              checked={display.showCount}
+              onCheckedChange={(v) => setDisplay("showCount", v)}
+            />
+            <ToggleRow
+              label='Link "Ver todos"'
+              hint="Mostra o rodapé com atalho para a tela completa."
+              checked={display.showViewAllLink !== false}
+              onCheckedChange={(v) => setDisplay("showViewAllLink", v)}
+            />
+            <ToggleRow
+              label="Caixa de busca"
+              checked={display.showSearchBox}
+              onCheckedChange={(v) => setDisplay("showSearchBox", v)}
+            />
+          </Section>
+
+          <Section title="Densidade" defaultOpen>
+            <LabeledField label="Densidade">
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {DENSITY_PILL_OPTIONS.map((opt) => (
+                  <DensityPill
+                    key={opt.value}
+                    value={opt.value}
+                    label={opt.label}
+                    active={display.density === opt.value}
+                    onPress={() => setDisplay("density", opt.value)}
+                  />
+                ))}
+              </View>
+            </LabeledField>
+          </Section>
+
+          <Section title="Aparência da tabela" defaultOpen>
+            <LabeledField
+              label="Modo de exibição"
+              helper="Lista única ou agrupada por vencimento / status."
+            >
+              <Combobox
+                value={display.layoutMode}
+                onValueChange={(v: any) =>
+                  setDisplay(
+                    "layoutMode",
+                    (typeof v === "string" ? v : "flat") as LayoutMode,
+                  )
+                }
+                options={LAYOUT_MODE_OPTIONS}
+              />
+            </LabeledField>
+            <ToggleRow
+              label="Listras zebra"
+              checked={display.striping}
+              onCheckedChange={(v) => setDisplay("striping", v)}
+            />
+            <ToggleRow
+              label="Linhas divisórias"
+              checked={display.gridLines}
+              onCheckedChange={(v) => setDisplay("gridLines", v)}
+            />
+            <ToggleRow
+              label="Cabeçalho fixo"
+              checked={display.stickyHeader}
+              onCheckedChange={(v) => setDisplay("stickyHeader", v)}
+            />
+            <ToggleRow
+              label="Cabeçalho de colunas"
+              checked={display.showColumnHeaders}
+              onCheckedChange={(v) => setDisplay("showColumnHeaders", v)}
+            />
+            <ToggleRow
+              label="Filtros rápidos por prazo"
+              checked={display.showBucketChips}
+              onCheckedChange={(v) => setDisplay("showBucketChips", v)}
+            />
+            <LabeledField
+              label="Mensagem quando vazio"
+              helper="Texto exibido quando os filtros não retornam linhas. Deixe em branco para usar o padrão."
+            >
+              <Input
+                placeholder="Nenhuma parcela neste filtro."
+                value={display.emptyStateMessage}
+                onChangeText={(v: string) =>
+                  setDisplay("emptyStateMessage", v.slice(0, 160))
+                }
+              />
+            </LabeledField>
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="columns">
+          <ColumnPicker
+            catalog={(COLUMN_KEYS as readonly ColumnKey[]).map((k) => ({
+              key: k,
+              label: COLUMN_LABELS[k],
+            }))}
+            selected={
+              (config.columns ?? [
+                "customer",
+                "task",
+                "installment",
+                "dueDate",
+                "countdown",
+                "amount",
+                "installmentStatus",
+                "bankSlipStatus",
+              ]) as ColumnKey[]
             }
-            options={BUCKETS.map((b) => ({ value: b, label: BUCKET_LABELS[b] }))}
+            onChange={(next) => set("columns", next as Config["columns"])}
+            sorts={
+              (config.sorts ?? []) as { key: ColumnKey; direction: "asc" | "desc" }[]
+            }
+            onSortsChange={(next) => set("sorts", next as Config["sorts"])}
+            maxSorts={3}
+            minVisible={1}
+            title="Colunas e ordenação"
           />
-        </View>
-        <ToggleRow
-          label="Ocultar parcelas pagas"
-          checked={config.filters.hideFullyPaid}
-          onCheckedChange={(v) => setFilter("hideFullyPaid", v)}
-        />
-        <LimitInput
-          value={config.limit}
-          onChange={(v) => set("limit", v)}
-          min={5}
-          max={50}
-        />
-      </Section>
-      <TableSortConfigSection
-        value={config.sort}
-        onChange={(next) => set("sort", next as any)}
-        keyOptions={INSTALLMENT_SORT_OPTIONS}
-      />
-      <TableRefreshSection
-        value={(config.display as TableDisplay).refetchInterval ?? "0"}
-        onChange={(v) =>
-          set("display", { ...(config.display as TableDisplay), refetchInterval: v } as any)
-        }
-      />
+        </TabsContent>
+
+        <TabsContent value="filters">
+          <Section title="Filtros" defaultOpen>
+            <View style={{ gap: 4 }}>
+              <Text style={{ fontSize: 12, color: colors.foreground }}>
+                Filtro inicial
+              </Text>
+              <Combobox
+                value={config.filters.defaultBucket}
+                onValueChange={(v: any) =>
+                  setFilter(
+                    "defaultBucket",
+                    (typeof v === "string" ? v : "next-30-days") as Bucket,
+                  )
+                }
+                options={BUCKET_OPTIONS}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={{ fontSize: 12, color: colors.foreground }}>
+                Status da parcela
+              </Text>
+              <Combobox
+                mode="multiple"
+                value={config.filters.installmentStatuses as any}
+                onValueChange={(v: any) =>
+                  setFilter("installmentStatuses", (Array.isArray(v) ? v : []) as any)
+                }
+                options={INSTALLMENT_STATUS_OPTIONS}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={{ fontSize: 12, color: colors.foreground }}>
+                Status do boleto
+              </Text>
+              <Combobox
+                mode="multiple"
+                value={config.filters.bankSlipStatuses as any}
+                onValueChange={(v: any) =>
+                  setFilter("bankSlipStatuses", (Array.isArray(v) ? v : []) as any)
+                }
+                options={BANK_SLIP_STATUS_OPTIONS}
+              />
+            </View>
+
+            <View style={{ gap: 4 }}>
+              <Text style={{ fontSize: 12, color: colors.foreground }}>Clientes</Text>
+              <Combobox
+                mode="multiple"
+                value={config.filters.customerIds as any}
+                onValueChange={(v: any) =>
+                  setFilter("customerIds", (Array.isArray(v) ? v : []) as any)
+                }
+                options={customerOptions}
+              />
+            </View>
+
+            <ToggleRow
+              label="Ocultar parcelas pagas"
+              checked={config.filters.hideFullyPaid}
+              onCheckedChange={(v) => setFilter("hideFullyPaid", v)}
+            />
+            <ToggleRow
+              label="Ocultar parcelas sem boleto"
+              checked={config.filters.hideMissingBankSlip}
+              onCheckedChange={(v) => setFilter("hideMissingBankSlip", v)}
+            />
+
+            <LimitInput
+              value={config.limit}
+              onChange={(v) => set("limit", v)}
+              min={5}
+              max={200}
+            />
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="behavior">
+          <TableRefreshSection
+            value={display.refetchInterval ?? "0"}
+            onChange={(v) => setDisplay("refetchInterval", v)}
+          />
+        </TabsContent>
+      </Tabs>
     </View>
   );
 }
 
+// ---------- Definition ----------
+
 export const installmentTableWidget: WidgetDefinition<Config> = {
+  // Keep web's id so existing layouts persist cleanly.
   id: "financial.installments",
-  name: "Boletos / Parcelas",
+  name: "Boletos",
   description:
-    "Acompanhe parcelas por vencimento — atrasados, hoje, 7/30 dias. Toque em uma parcela para abrir o orçamento da tarefa.",
+    "Acompanhe parcelas e boletos por vencimento. Filtros rápidos, busca, ordenação e colunas configuráveis. Toque em uma linha para abrir o orçamento.",
   icon: IconReceipt,
   category: "financial",
   // Mirror /financeiro/orcamento page privileges.
@@ -692,18 +1505,33 @@ export const installmentTableWidget: WidgetDefinition<Config> = {
   allowedSpans: [3],
   defaultSpan: 3,
   allowedHeights: [2, 3],
-  defaultRows: 3,
+  defaultRows: 2,
   configSchema,
   defaultConfig: {
-    title: "Boletos / Parcelas",
-    showHeader: true,
-    showBucketChips: true,
-    filters: { defaultBucket: "next-30-days", hideFullyPaid: false },
-    limit: 20,
-    sort: { key: "dueDate", direction: "asc" },
-    display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
-    accent: { color: "cyan", icon: "Receipt", borderColor: "none" },
-  },
+    title: "Boletos",
+    columns: [
+      "customer",
+      "task",
+      "installment",
+      "dueDate",
+      "countdown",
+      "amount",
+      "installmentStatus",
+      "bankSlipStatus",
+    ],
+    filters: {
+      defaultBucket: "next-30-days",
+      installmentStatuses: [],
+      bankSlipStatuses: [],
+      customerIds: [],
+      hideFullyPaid: false,
+      hideMissingBankSlip: false,
+    },
+    sorts: [{ key: "dueDate", direction: "asc" }],
+    limit: 50,
+    display: { ...INSTALLMENT_DISPLAY_DEFAULTS },
+    accent: { color: "blue", icon: "Receipt", borderColor: "none" },
+  } as Config,
   RenderComponent: Render,
   ConfigComponent: ConfigComp,
 };

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { View, Pressable, Text, ViewStyle, TextStyle } from "react-native";
+import { useTheme } from "@/lib/theme";
 
 // Tabs Context
 interface TabsContextValue {
@@ -40,17 +41,23 @@ interface TabsListProps {
   children: React.ReactNode;
   style?: ViewStyle;
   className?: string;
+  /** When true, the list is horizontally scrollable. Useful when there are
+   *  many tabs that don't fit on a phone viewport. */
+  scrollable?: boolean;
 }
 
 export const TabsList = React.forwardRef<View, TabsListProps>(({ children, style, className }, ref) => {
+  const { colors, isDark } = useTheme();
   const listStyles: ViewStyle = {
     flexDirection: "row",
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 6,
-    backgroundColor: "#e5e5e5",
+    minHeight: 42,
+    alignItems: "stretch",
+    borderRadius: 10,
+    backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
     padding: 4,
+    gap: 4,
     ...style,
   };
 
@@ -73,44 +80,71 @@ interface TabsTriggerProps {
 }
 
 export const TabsTrigger = React.forwardRef<View, TabsTriggerProps>(({ value, children, disabled = false, style, className }, ref) => {
+  const { colors, isDark } = useTheme();
   const { value: selectedValue, onValueChange } = React.useContext(TabsContext);
   const isSelected = selectedValue === value;
 
-  const triggerStyles: ViewStyle = {
+  const outerStyle: ViewStyle = {
     flex: 1,
+    minWidth: 84,
+    ...style,
+  };
+
+  const innerStyle = ({ pressed }: { pressed: boolean }): ViewStyle => ({
+    flex: 1,
+    minHeight: 34,
+    borderRadius: 7,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: isSelected
+      ? colors.card
+      : pressed
+        ? isDark
+          ? "rgba(255,255,255,0.06)"
+          : "rgba(0,0,0,0.04)"
+        : "transparent",
     ...(isSelected && {
-      backgroundColor: "#ffffff",
-      // Shadow for selected tab
       shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.35 : 0.12,
+      shadowRadius: 3,
+      elevation: 3,
     }),
     ...(disabled && {
       opacity: 0.5,
     }),
-    ...style,
-  };
+  });
 
   const textStyles: TextStyle = {
-    fontSize: 14,
-    fontWeight: "500",
-    color: isSelected ? "#171717" : "#737373",
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: isSelected ? "700" : "600",
+    color: isSelected ? colors.primary : colors.mutedForeground,
+    textAlign: "center",
+    textAlignVertical: "center",
+    includeFontPadding: false,
     ...(disabled && {
-      color: "#737373",
+      color: colors.mutedForeground,
     }),
   };
 
   return (
-    <Pressable ref={ref} style={triggerStyles} className={className} onPress={disabled ? undefined : () => onValueChange(value)} disabled={disabled}>
-      {typeof children === "string" ? <Text style={textStyles}>{children}</Text> : children}
-    </Pressable>
+    <View style={outerStyle}>
+      <Pressable
+        ref={ref}
+        style={innerStyle}
+        className={className}
+        onPress={disabled ? undefined : () => onValueChange(value)}
+        disabled={disabled}
+      >
+        {typeof children === "string" ? (
+          <Text style={textStyles} numberOfLines={1}>{children}</Text>
+        ) : (
+          children
+        )}
+      </Pressable>
+    </View>
   );
 });
 
@@ -132,7 +166,8 @@ export const TabsContent = React.forwardRef<View, TabsContentProps>(({ value, ch
   }
 
   const contentStyles: ViewStyle = {
-    marginTop: 8,
+    marginTop: 12,
+    gap: 12,
     ...style,
   };
 

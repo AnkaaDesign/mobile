@@ -1,6 +1,6 @@
 import type { ListConfig } from '@/components/list/types'
 import type { Cut } from '@/types'
-import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN } from '@/constants/enums'
+import { CUT_STATUS, CUT_TYPE, CUT_ORIGIN, SECTOR_PRIVILEGES } from '@/constants/enums'
 import { canEditCuts, canDeleteCuts } from '@/utils/permissions/entity-permissions'
 import { isTabletWidth } from '@/lib/table-utils'
 
@@ -269,7 +269,12 @@ export const cutsListConfig: ListConfig<Cut> = {
     create: {
       label: 'Novo Corte',
       route: '/(tabs)/producao/recorte/cadastrar',
-      canCreate: canEditCuts,
+      // Production-sector users (non-leaders) cannot create cuts. Hide the
+      // FAB for them entirely; team leaders use the per-task "request cut"
+      // swipe action on the cuts table inside task detail.
+      canCreate: (user: any) =>
+        canEditCuts(user) &&
+        user?.sector?.privileges !== SECTOR_PRIVILEGES.PRODUCTION,
     },
     bulk: [
       {

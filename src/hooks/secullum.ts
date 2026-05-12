@@ -88,6 +88,7 @@ export const useSecullumDailySummary = () => {
     queryFn: () => secullumService.getDailySummary(),
     staleTime: 60 * 1000, // 1 minute
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchIntervalInBackground: false,
   });
 };
 
@@ -303,7 +304,8 @@ export const useSecullumSyncStatus = () => {
     queryKey: [...secullumKeys.all, "sync-status"],
     queryFn: () => secullumService.getSyncStatus(),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 5 * 1000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 10 * 1000, // Refetch every 10s — was 5s, but UI didn't need that resolution
+    refetchIntervalInBackground: false,
   });
 };
 
@@ -422,7 +424,8 @@ export const useSecullumSyncJobs = () => {
     queryKey: [...secullumKeys.all, "sync-jobs"],
     queryFn: () => secullumService.getSyncJobs(),
     staleTime: 10 * 1000, // 10 seconds for real-time monitoring
-    refetchInterval: 2 * 1000, // Refetch every 2 seconds for live updates
+    refetchInterval: 5 * 1000, // Refetch every 5s — was 2s, which thrashed the JS thread
+    refetchIntervalInBackground: false,
   });
 };
 
@@ -431,7 +434,8 @@ export const useSecullumSystemMetrics = () => {
     queryKey: [...secullumKeys.all, "system-metrics"],
     queryFn: () => secullumService.getSystemMetrics(),
     staleTime: 5 * 1000, // 5 seconds
-    refetchInterval: 5 * 1000, // Refetch every 5 seconds
+    refetchInterval: 15 * 1000, // Refetch every 15s — was 5s
+    refetchIntervalInBackground: false,
   });
 };
 
@@ -580,6 +584,7 @@ const myAbsenceKeys = {
     [...secullumKeys.all, "my-missing-days", params] as const,
   justificativas: () => [...secullumKeys.all, "my-justificativas"] as const,
   existing: (date: string) => [...secullumKeys.all, "my-solicitacao", date] as const,
+  batidasForDate: (date: string) => [...secullumKeys.all, "my-batidas", date] as const,
 };
 
 export const useMyMissingDays = (
@@ -625,6 +630,41 @@ export const useCreateMyJustifyAbsence = () => {
       // Refresh missing-days list, the just-submitted date, and any calculations cache.
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-missing-days"] });
       queryClient.invalidateQueries({ queryKey: myAbsenceKeys.existing(variables.date) });
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-calculations"] });
+    },
+  });
+};
+
+export const useMyBatidasForDate = (date: string, options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: myAbsenceKeys.batidasForDate(date),
+    queryFn: () => secullumService.getMyBatidasForDate(date),
+    enabled: options?.enabled !== false && !!date,
+    staleTime: 30 * 1000,
+  });
+};
+
+export const useCreateMyAjustePonto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      date: string;
+      entrada1?: string | null;
+      saida1?: string | null;
+      entrada2?: string | null;
+      saida2?: string | null;
+      entrada3?: string | null;
+      saida3?: string | null;
+      entrada4?: string | null;
+      saida4?: string | null;
+      entrada5?: string | null;
+      saida5?: string | null;
+      observacoes?: string;
+    }) => secullumService.createMyAjustePonto(body),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-missing-days"] });
+      queryClient.invalidateQueries({ queryKey: myAbsenceKeys.existing(variables.date) });
+      queryClient.invalidateQueries({ queryKey: myAbsenceKeys.batidasForDate(variables.date) });
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-calculations"] });
     },
   });

@@ -9,7 +9,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconFileText, IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { User } from '../../../../types';
-import { routes } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
 import { mobileRoute } from '@/constants/routes.types';
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
 
@@ -26,6 +27,8 @@ interface UserCreatedTasksTableProps {
 export function UserCreatedTasksTable({ user, maxHeight = 500 }: UserCreatedTasksTableProps) {
   const { colors } = useTheme();
   const nav = useNav();
+  const { user: currentUser } = useAuth();
+  const currentSectorPrivilege = currentUser?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
 
   // Column panel state
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
@@ -96,8 +99,11 @@ export function UserCreatedTasksTable({ user, maxHeight = 500 }: UserCreatedTask
     );
   }, [tasks, debouncedSearch]);
 
-  // Get all column definitions
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
+  // Get all column definitions (sector-aware: strips financial columns).
+  const allColumns = useMemo(
+    () => createColumnDefinitions(currentSectorPrivilege),
+    [currentSectorPrivilege],
+  );
 
   // Handle columns change
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {

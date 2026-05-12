@@ -9,6 +9,10 @@ import { useTheme } from "@/lib/theme";
 import { lightImpactHaptic } from "@/utils/haptics";
 
 interface WidgetErrorStateProps {
+  /** Optional bold title above the message. Use only when the error needs an
+   *  attention-grabbing label (e.g. "Sem conexão" / "Acesso negado"). For
+   *  most cases, message alone is enough. */
+  title?: string;
   /** Default: "Erro ao carregar dados." Pass a widget-specific message when
    *  the source of the error is meaningful to the user (e.g. "Erro ao
    *  carregar empréstimos."). */
@@ -19,6 +23,7 @@ interface WidgetErrorStateProps {
 }
 
 export function WidgetErrorState({
+  title,
   message = "Erro ao carregar dados.",
   onRetry,
 }: WidgetErrorStateProps) {
@@ -40,12 +45,25 @@ export function WidgetErrorState({
       }}
     >
       <IconAlertTriangle size={20} color={colors.warning} />
+      {title && (
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.foreground,
+            textAlign: "center",
+          }}
+        >
+          {title}
+        </Text>
+      )}
       <Text
         style={{
           fontSize: 12,
           color: colors.mutedForeground,
           textAlign: "center",
           maxWidth: 320,
+          lineHeight: 16,
         }}
       >
         {message}

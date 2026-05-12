@@ -17,7 +17,7 @@ import {
   IconHandClick,
   IconConfetti,
 } from "@tabler/icons-react-native";
-import type { TutorialStep, TutorialTargetRect } from "./types";
+import type { TutorialPhase, TutorialStep, TutorialTargetRect } from "./types";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const TOOLTIP_WIDTH = Math.min(SCREEN_W - 32, 380);
@@ -31,6 +31,10 @@ interface Props {
   currentIndex: number;
   totalSteps: number;
   awaitingAction: boolean;
+  /** Engine phase — when `fallback`, even interactive steps show an advance button (target unreachable). */
+  phase: TutorialPhase;
+  /** SG2 — set 5s after entering an interactive step with no notifyAction. Shows the escape link. */
+  interactiveStuck: boolean;
   onAdvance: () => void;
   onSkip: () => void;
 }
@@ -53,29 +57,51 @@ function computeAnchoredPosition(
   const maxTop = SCREEN_H - bottomInset - TOOLTIP_ESTIMATED_HEIGHT - 16;
 
   if (step.placement === "top") {
-    return {
-      top: Math.max(minTop, Math.min(rect.y - TOOLTIP_ESTIMATED_HEIGHT - ARROW_GAP, maxTop)),
-      left,
-    };
+    const desiredTop = rect.y - TOOLTIP_ESTIMATED_HEIGHT - ARROW_GAP;
+    if (desiredTop < minTop) {
+      // Not enough room above — flip below the target so the tooltip
+      // doesn't end up overlapping the button it's pointing at.
+      const fallbackTop = rect.y + rect.height + ARROW_GAP;
+      return { top: Math.min(fallbackTop, maxTop), left };
+    }
+    return { top: Math.min(desiredTop, maxTop), left };
   }
 
   // bottom (default)
   const desiredTop = rect.y + rect.height + ARROW_GAP;
   const overflow = desiredTop + TOOLTIP_ESTIMATED_HEIGHT > SCREEN_H - bottomInset - 16;
   if (overflow) {
-    return {
-      top: Math.max(minTop, Math.min(rect.y - TOOLTIP_ESTIMATED_HEIGHT - ARROW_GAP, maxTop)),
-      left,
-    };
+    const fallbackTop = rect.y - TOOLTIP_ESTIMATED_HEIGHT - ARROW_GAP;
+    if (fallbackTop >= minTop) {
+      return { top: fallbackTop, left };
+    }
+    // Neither side fits cleanly — keep the tooltip below and clamp.
+    return { top: Math.min(desiredTop, maxTop), left };
   }
   return { top: Math.min(desiredTop, maxTop), left };
 }
 
 export function TutorialTooltip(props: Props) {
-  const { step, targetRect, currentIndex, totalSteps, awaitingAction, onAdvance, onSkip } = props;
+  const { step, targetRect, currentIndex, totalSteps, awaitingAction, phase, interactiveStuck, onAdvance, onSkip } = props;
 
   const insets = useSafeAreaInsets();
-  const isCentered = !targetRect || step.placement === "center";
+  // Pin-to-screen-top short-circuits target-relative anchoring entirely.
+  // Use the same "isCentered" path so the tooltip lays out inside the
+  // top-aligned wrapper, regardless of where the spotlight lands.
+  const pinToScreenTop = !!step.tooltipPinToScreenTop;
+  const isCentered = !targetRect || step.placement === "center" || pinToScreenTop;
+  // When a step opts out of the global dim mask (drawer/sheet narrations
+  // sit ABOVE the global overlay), the tooltip needs to dodge the
+  // surrounding UI. Honour the step's `placement`:
+  //  - "top" → anchor at the top so bottom-anchored content (newly added
+  //    widget tile, action sheets) stays visible
+  //  - "bottom" / default → anchor at the bottom (original drawer/sheet
+  //    narration behaviour, keeps top content readable)
+  // Pin-to-top behaves like a panel-context top anchor — we want the
+  // tooltip docked at the top, with the spotlight still visible below.
+  const isPanelContext = step.dimBackground === false || pinToScreenTop;
+  const panelAnchor: "top" | "bottom" =
+    pinToScreenTop || step.placement === "top" ? "top" : "bottom";
   const anchoredPos = !isCentered && targetRect
     ? computeAnchoredPosition(step, targetRect, insets.top, insets.bottom)
     : null;
@@ -100,6 +126,15 @@ export function TutorialTooltip(props: Props) {
 
   const advanceStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
+  // Strict gating for interactive steps: NO advance button is ever shown
+  // while awaitingAction is true. The user must perform the actual action
+  // (tap the target, open the drawer, etc.) to proceed. The "Pular" X at
+  // the top-right remains as a last-resort whole-tutorial escape, but
+  // there is no per-step bypass — by design, so users don't habit-skip
+  // important interactive steps. The engine relies on multiple advance
+  // pathways (notifyAction via real button chain, ghost-layer tap relay,
+  // SG3 route-change detection, drawer-open listener) so a genuine
+  // interaction always advances.
   const showAdvanceBtn = step.kind !== "interactive" || !awaitingAction;
   const advanceLabel =
     step.ctaLabel ?? (currentIndex === totalSteps - 1 ? "Concluir" : "Continuar");
@@ -120,16 +155,22 @@ export function TutorialTooltip(props: Props) {
       pointerEvents="box-none"
       style={[
         StyleSheet.absoluteFill,
-        isCentered && styles.centerWrap,
+        isCentered &&
+          (isPanelContext
+            ? panelAnchor === "top"
+              ? styles.topWrap
+              : styles.bottomWrap
+            : styles.centerWrap),
         isCentered && {
           paddingTop: insets.top + 24,
           paddingBottom: insets.bottom + 24,
+          paddingHorizontal: 16,
         },
       ]}
     >
       <Animated.View
-        entering={FadeIn.duration(220)}
-        exiting={FadeOut.duration(160)}
+        entering={FadeIn.duration(140)}
+        exiting={FadeOut.duration(100)}
         style={[
           styles.tooltip,
           { width: TOOLTIP_WIDTH },
@@ -181,6 +222,19 @@ export function TutorialTooltip(props: Props) {
 const styles = StyleSheet.create({
   centerWrap: {
     justifyContent: "center",
+    alignItems: "center",
+  },
+  // Top placement for panel-context narrations whose related content sits
+  // at the bottom of the screen (e.g. newly added widget tile).
+  topWrap: {
+    justifyContent: "flex-start",
+    alignItems: "center",
+  },
+  // Bottom placement for panel-context narrations (drawer/sheet open).
+  // Tooltip sits at the bottom edge so the panel content fills the top of
+  // the screen and stays readable.
+  bottomWrap: {
+    justifyContent: "flex-end",
     alignItems: "center",
   },
   tooltip: {

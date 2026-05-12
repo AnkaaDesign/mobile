@@ -151,7 +151,10 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
     },
     {
       enabled: !!authUser?.id,
-      refetchInterval: 30000,
+      // Only poll while the drawer is actually visible. Previously polled
+      // every 30s forever, even with the drawer closed — wasted bandwidth
+      // and woke the JS thread regularly for nothing visible to the user.
+      refetchInterval: drawerStatus === 'open' ? 30000 : false,
       refetchIntervalInBackground: false,
     }
   );
@@ -183,9 +186,24 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
     }));
   }, [data, authUser?.id]);
 
-  // Calculate unread count
-  const unreadCount = useMemo(() => {
-    return notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).length;
+  // Split notifications into unread/read once per change. Previously the
+  // render path filtered the same array FOUR times (twice for length check,
+  // twice for mapping); on a list of hundreds of notifications this added up.
+  const { unreadNotifications, readNotifications, unreadCount } = useMemo(() => {
+    const unread: (Notification & { isSeenByUser: boolean })[] = [];
+    const read: (Notification & { isSeenByUser: boolean })[] = [];
+    for (const n of notifications) {
+      if ((n as Notification & { isSeenByUser: boolean }).isSeenByUser) {
+        read.push(n as Notification & { isSeenByUser: boolean });
+      } else {
+        unread.push(n as Notification & { isSeenByUser: boolean });
+      }
+    }
+    return {
+      unreadNotifications: unread,
+      readNotifications: read,
+      unreadCount: unread.length,
+    };
   }, [notifications]);
 
   // Extract mobile deep link from notification (checks metadata first, then actionUrl)
@@ -591,30 +609,26 @@ export default function NotificationDrawerContent(props: DrawerContentComponentP
         ) : (
           <>
             {/* Unread Notifications Section */}
-            {notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).length > 0 && (
+            {unreadNotifications.length > 0 && (
               <View style={{ marginBottom: SPACING.xs }}>
                 <View style={styles.sectionHeader}>
                   <Text style={[styles.sectionTitle, { color: isDarkMode ? "#8c8c8c" : "#737373" }]}>
                     NÃO LIDAS
                   </Text>
                 </View>
-                {notifications.filter((n: Notification & { isSeenByUser: boolean }) => !n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }) =>
-                  renderNotificationItem(notification)
-                )}
+                {unreadNotifications.map((notification) => renderNotificationItem(notification))}
               </View>
             )}
 
             {/* Read Notifications Section */}
-            {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).length > 0 && (
+            {readNotifications.length > 0 && (
               <View style={{ marginBottom: SPACING.xs }}>
                 <View style={styles.sectionHeader}>
                   <Text style={[styles.sectionTitle, { color: isDarkMode ? "#8c8c8c" : "#737373" }]}>
                     LIDAS
                   </Text>
                 </View>
-                {notifications.filter((n: Notification & { isSeenByUser: boolean }) => n.isSeenByUser).map((notification: Notification & { isSeenByUser: boolean }) =>
-                  renderNotificationItem(notification)
-                )}
+                {readNotifications.map((notification) => renderNotificationItem(notification))}
               </View>
             )}
 

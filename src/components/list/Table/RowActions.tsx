@@ -1,6 +1,14 @@
-import { memo, useRef, useEffect, useCallback, useState } from 'react'
-import { View, TouchableOpacity, StyleSheet, Alert, Animated, ActivityIndicator } from 'react-native'
-import { Swipeable } from 'react-native-gesture-handler'
+import { memo, useRef, useEffect, useCallback, useMemo, useState } from 'react'
+import { View, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native'
+// ReanimatedSwipeable runs the swipe animation on the UI thread via Reanimated
+// worklets. The legacy `Swipeable` from gesture-handler is JS-thread driven and
+// stutters whenever the JS thread is busy (which on a list screen is most of
+// the time — re-renders, query refetches, icon decoding all contend for the
+// same thread). Migrating drops the swipe animation off the JS thread entirely.
+import ReanimatedSwipeable, {
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable'
+import type { SharedValue } from 'react-native-reanimated'
 import { ThemedText } from '@/components/ui/themed-text'
 import { useTheme } from '@/lib/theme'
 import { useSwipeRow } from '@/contexts/swipe-row-context'
@@ -72,27 +80,24 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
     // Last resort fallback
     return '/(tabs)/inicio'
   }, [router, renderContext])
-  const swipeableRef = useRef<Swipeable>(null)
+  const swipeableRef = useRef<SwipeableMethods>(null)
   const { activeRowId, setActiveRowId, closeActiveRow } = useSwipeRow()
   const autoCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [activeActionKey, setActiveActionKey] = useState<string | null>(null)
 
-  // Filter visible actions, excluding 'view' since it's handled by row click
-  // Pass user to visible function for permission checks
-  // Also check canPerform for permission-based action filtering
-  const visibleActions = actions.filter(
-    (action) => {
-      // Always exclude 'view' action (handled by row click)
-      if (action.key === 'view') return false
-
-      // Check item-level visibility
-      if (action.visible && !action.visible(item, user)) return false
-
-      // Check user permission (canPerform)
-      if (action.canPerform && !action.canPerform(user)) return false
-
-      return true
-    }
+  // Filter visible actions, excluding 'view' since it's handled by row click.
+  // Memoized so the filtered array keeps a stable reference across renders —
+  // otherwise `renderRightActions` re-creates on every Row render and the
+  // Swipeable would re-mount its action buttons mid-swipe.
+  const visibleActions = useMemo(
+    () =>
+      actions.filter((action) => {
+        if (action.key === 'view') return false
+        if (action.visible && !action.visible(item, user)) return false
+        if (action.canPerform && !action.canPerform(user)) return false
+        return true
+      }),
+    [actions, item, user],
   )
 
   const handleOpen = useCallback(() => {
@@ -206,7 +211,7 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   )
 
   const renderRightActions = useCallback(
-    (progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
+    (_progress: SharedValue<number>, _translation: SharedValue<number>, _swipeable: SwipeableMethods) => {
       return (
         <View style={styles.actionsContainer}>
           {visibleActions.map((action, index) => {
@@ -297,16 +302,17 @@ export const RowActions = memo(function RowActions<T extends { id: string }>({
   }
 
   return (
-    <Swipeable
+    <ReanimatedSwipeable
       ref={swipeableRef}
       renderRightActions={renderRightActions}
       onSwipeableOpen={handleOpen}
       onSwipeableClose={handleClose}
       rightThreshold={40}
-      overshootRight={false}
+      overshootFriction={8}
+      friction={2}
     >
       {children(closeActions)}
-    </Swipeable>
+    </ReanimatedSwipeable>
   )
 })
 

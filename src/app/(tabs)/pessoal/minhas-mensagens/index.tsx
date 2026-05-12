@@ -22,6 +22,7 @@ import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { transformMessageContent } from "@/utils/message-transformer";
 import { useMyMessages, useMarkMessageAsViewed } from "@/hooks/useMyMessages";
 import { useScreenReady } from '@/hooks/use-screen-ready';
+import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 type MessageWithViewStatus = any;
 
@@ -37,11 +38,28 @@ export default function MinhasMensagensScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const { data: messages, isLoading, error, refetch } = useMyMessages();
+  const mensagensTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalMensagens);
 
   useScreenReady(!isLoading);
   const { mutate: markAsViewed } = useMarkMessageAsViewed();
   const [selectedMessage, setSelectedMessage] = useState<MessageWithViewStatus | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // onAction lets the tutorial overlay's spotlight tap open the first
+  // message in a modal — the overlay's Pressable swallows touches, so the
+  // TouchableOpacity's onPress alone wouldn't fire during the interactive
+  // step.
+  const firstMessageTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.pessoalMensagensFirstItem,
+    {
+      onAction: () => {
+        const first = messages?.[0];
+        if (!first) return;
+        if (!first.viewedAt) markAsViewed(first.id);
+        setSelectedMessage(first);
+      },
+    },
+  );
 
   // 2 columns with padding accounted for
   const gridPadding = spacing.md; // outer padding
@@ -155,13 +173,25 @@ export default function MinhasMensagensScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View style={styles.grid}>
-          {messages.map((message: MessageWithViewStatus) => {
+        <View
+          ref={mensagensTarget.ref}
+          onLayout={mensagensTarget.onLayout}
+          collapsable={false}
+          style={styles.grid}
+        >
+          {messages.map((message: MessageWithViewStatus, index: number) => {
             const isViewed = !!message.viewedAt;
             const transformedBlocks = transformMessageContent(message.content);
+            const isFirst = index === 0;
 
             return (
-              <View key={message.id} style={[styles.cardWrapper, { width: cardWidth }]}>
+              <View
+                key={message.id}
+                ref={isFirst ? (firstMessageTarget.ref as any) : undefined}
+                onLayout={isFirst ? firstMessageTarget.onLayout : undefined}
+                collapsable={isFirst ? false : undefined}
+                style={[styles.cardWrapper, { width: cardWidth }]}
+              >
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => handleCardPress(message)}

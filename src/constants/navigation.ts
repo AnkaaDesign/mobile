@@ -916,15 +916,11 @@ export const NAVIGATION_MENU: MenuItem[] = [
   // since ADMIN already sees these items inside the "Producao" menu
   // ============================================================
 
-  // Barracões - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
-  {
-    id: "barracoes-production",
-    title: "Barracões",
-    icon: "warehouse",
-    path: "/producao/garagens",
-    requiredPrivilege: [SECTOR_PRIVILEGES.PRODUCTION],
-    sortOrder: 10,
-  },
+  // Barracões removed for PRODUCTION users — the route filter in
+  // privilege-optimized-full-fixed.tsx blocks `/producao/garagens/*` for the
+  // PRODUCTION privilege, so showing this drawer entry led to a dead link.
+  // Garages are visible to LOGISTIC/PRODUCTION_MANAGER/COMMERCIAL via the
+  // separate menu group higher in this file.
 
   // Cronograma - Direct access for PRODUCTION users (not ADMIN - they see it in Producao menu)
   {

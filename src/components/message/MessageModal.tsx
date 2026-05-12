@@ -22,6 +22,7 @@ import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, shadow } from "@/constants/design-system";
 import { transformMessageContent, extractPlainTextFromContent } from "@/utils/message-transformer";
 import type { Notification } from "@/types";
+import { useOptionalTutorial } from "@/components/tutorial";
 
 export interface MessageModalProps {
   visible: boolean;
@@ -43,6 +44,15 @@ export function MessageModal({
 }: MessageModalProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  // When the tutorial is running, render an in-modal banner that tells the
+  // user to close the modal before continuing. RN `<Modal>` lives in a
+  // separate native window above all React-rendered siblings — the root
+  // TutorialOverlay can't reach it via zIndex/elevation, so the next
+  // tutorial step (the back-button spotlight) is invisible until the user
+  // closes the modal. The banner is the only way to surface that hint
+  // while the modal is in front.
+  const tutorial = useOptionalTutorial();
+  const showTutorialBanner = !!tutorial?.isActive && visible;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
@@ -169,6 +179,38 @@ export function MessageModal({
           activeOpacity={1}
           onPress={handleClose}
         />
+
+        {/* Tutorial banner — only rendered while the tutorial is active.
+            Sits at the BOTTOM of the native modal window (top is where
+            the X close button lives — we don't want to occlude it). The
+            banner instructs the user to close the modal before
+            proceeding (the next tutorial step's spotlight is on the
+            Voltar button, which lives BEHIND this modal). */}
+        {showTutorialBanner && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              bottom: insets.bottom + 12,
+              left: 16,
+              right: 16,
+              backgroundColor: "#7C2D12",
+              borderWidth: 2,
+              borderColor: "#FCD34D",
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              zIndex: 1,
+            }}
+          >
+            <ThemedText style={{ color: "#FFF7ED", fontWeight: "700", fontSize: 14, marginBottom: 4 }}>
+              Tutorial em andamento
+            </ThemedText>
+            <ThemedText style={{ color: "#FFF7ED", fontSize: 13, lineHeight: 18 }}>
+              Leia o comunicado e toque no X (canto superior direito) para fechar este modal antes de continuar com o tutorial. O próximo passo destaca o botão Voltar — que fica atrás deste modal enquanto ele estiver aberto.
+            </ThemedText>
+          </View>
+        )}
 
         {/* Modal Content */}
         <View

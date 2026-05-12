@@ -8,7 +8,8 @@ import { useTheme } from "@/lib/theme";
 import { spacing, fontSize } from "@/constants/design-system";
 import { IconAlertCircle, IconList } from "@tabler/icons-react-native";
 import type { Paint, Task } from "@/types";
-import { routes } from "@/constants";
+import { routes, SECTOR_PRIVILEGES } from "@/constants";
+import { useAuth } from "@/contexts/auth-context";
 import { mobileRoute } from "@/constants/routes.types";
 import { useNav } from "@/contexts/nav";
 import { TaskTable, createColumnDefinitions } from "@/components/production/task/list/task-table";
@@ -25,6 +26,8 @@ interface PaintTasksCardProps {
 export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) {
   const { colors } = useTheme();
   const nav = useNav();
+  const { user: currentUser } = useAuth();
+  const currentSectorPrivilege = currentUser?.sector?.privileges as SECTOR_PRIVILEGES | undefined;
 
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
@@ -70,7 +73,10 @@ export function PaintTasksCard({ paint, maxHeight = 500 }: PaintTasksCardProps) 
     );
   }, [tasks, debouncedSearch]);
 
-  const allColumns = useMemo(() => createColumnDefinitions(), []);
+  const allColumns = useMemo(
+    () => createColumnDefinitions(currentSectorPrivilege),
+    [currentSectorPrivilege],
+  );
 
   const handleColumnsChange = useCallback((newColumns: Set<string>) => {
     setVisibleColumnKeys(Array.from(newColumns));

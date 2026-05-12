@@ -14,7 +14,13 @@
  * source of confusing UX during slow mutations).
  */
 import React, { ReactNode, useMemo } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from "react-native";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -52,6 +58,8 @@ export interface FormScreenProps<TForm extends Record<string, any>, TResult> {
   submitLabel?: string;
   /** Label shown on the submit button while the mutation is pending. */
   submittingLabel: string;
+  /** Hide the in-page PageHeader. Use when the route already provides chrome. */
+  hideHeader?: boolean;
   children: ReactNode;
 }
 
@@ -114,7 +122,9 @@ function InnerFormScreen<TForm extends Record<string, any>, TResult>(
   if (blocked) {
     return (
       <ThemedView style={styles.root}>
-        <PageHeader title={props.title} subtitle={props.subtitle} variant="list" />
+        {!props.hideHeader && (
+          <PageHeader title={props.title} subtitle={props.subtitle} variant="list" />
+        )}
         <View style={[styles.banner, { backgroundColor: colors.muted }]}>
           <ThemedText style={styles.bannerText}>
             {guard.message ??
@@ -137,10 +147,17 @@ function InnerFormScreen<TForm extends Record<string, any>, TResult>(
 
   return (
     <ThemedView style={styles.root}>
-      <PageHeader title={props.title} subtitle={props.subtitle} variant="list" />
+      {!props.hideHeader && (
+        <PageHeader title={props.title} subtitle={props.subtitle} variant="list" />
+      )}
       <FormProvider {...props.form}>
         <KeyboardAwareFormProvider value={keyboardContextValue}>
-          <View style={styles.body}>{props.children}</View>
+          <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+          >
+            <View style={styles.body}>{props.children}</View>
+          </TouchableWithoutFeedback>
           <FormActionBar
             onCancel={onCancel}
             onSubmit={() => props.flow.submit()}

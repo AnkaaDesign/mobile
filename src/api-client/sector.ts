@@ -1,6 +1,10 @@
 // packages/api/src/sector.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   SectorGetManyFormData,
@@ -37,6 +41,11 @@ export class SectorService {
   // =====================
 
   async getSectors(params?: SectorGetManyFormData): Promise<SectorGetManyResponse> {
+    // Tutorial bypass — without this, the cronograma list groups tasks
+    // by sector using an empty sectors array, so every task lands in the
+    // "undefined" group and the section list renders zero visible rows.
+    const mock = getTutorialMockList("sectors", params ?? {});
+    if (mock) return mock as unknown as SectorGetManyResponse;
     const response = await apiClient.get<SectorGetManyResponse>(this.basePath, {
       params,
     });
@@ -44,6 +53,10 @@ export class SectorService {
   }
 
   async getSectorById(id: string, params?: Omit<SectorGetByIdFormData, "id">): Promise<SectorGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("sectors", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as SectorGetUniqueResponse;
+    }
     const response = await apiClient.get<SectorGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

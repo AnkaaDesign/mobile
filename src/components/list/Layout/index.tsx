@@ -325,6 +325,7 @@ export const Layout = memo(function Layout({
         <FAB
           icon="plus"
           onPress={handleCreate}
+          tutorialTargetId={config.actions.create.tutorialTargetId}
         />
       )}
 

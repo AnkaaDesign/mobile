@@ -88,6 +88,12 @@ export interface DetailScreenProps<T extends BaseEntity> {
    * status-change actions without re-implementing the predicate.
    */
   children: (entity: T, ctx: DetailScreenChildContext) => ReactNode;
+  /**
+   * Optional ref to the internal ScrollView. Use this when a tutorial step
+   * targets an element below the fold and needs to scroll it into view via
+   * `useTutorialTarget({ scrollContainer })`.
+   */
+  scrollRef?: React.RefObject<ScrollView | null>;
 }
 
 function unwrapEntity<T extends BaseEntity>(q: DetailScreenProps<T>["query"]): T | undefined {
@@ -158,6 +164,14 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.query.isLoading, props.query.isError, entity]);
 
+  // Filter overflow actions on `hidden` flag (consumer should also pre-filter
+  // on privilege/status; this is a defensive last pass).
+  // Must run before the early returns below to keep hook order stable.
+  const overflowActions = useMemo(
+    () => (props.actions ?? []).filter((a) => !a.hidden),
+    [props.actions],
+  );
+
   if (props.query.isLoading || !phasesLoaded) {
     return (
       <ThemedView style={styles.centered}>
@@ -180,13 +194,6 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
 
   const resolvedTitle = props.title ? props.title(entity) : entity.name ?? "";
 
-  // Filter overflow actions on `hidden` flag (consumer should also pre-filter
-  // on privilege/status; this is a defensive last pass).
-  const overflowActions = useMemo(
-    () => (props.actions ?? []).filter((a) => !a.hidden),
-    [props.actions],
-  );
-
   const childContext: DetailScreenChildContext = {
     isEditable: editGuardActive ? guard.isEditable : true,
     isTerminal: editGuardActive ? guard.isTerminal : false,
@@ -195,7 +202,9 @@ function InnerDetailScreen<T extends BaseEntity>(props: DetailScreenProps<T>) {
 
   return (
     <ScrollView
-      style={styles.root}
+      ref={props.scrollRef}
+      style={[styles.root, { backgroundColor: colors.background }]}
+      contentContainerStyle={{ backgroundColor: colors.background }}
       refreshControl={
         <RefreshControl
           refreshing={props.query.isRefetching}

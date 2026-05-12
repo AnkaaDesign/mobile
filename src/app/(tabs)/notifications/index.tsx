@@ -233,6 +233,7 @@ export default function NotificationCenterScreen() {
       <View
         ref={notificationsListTarget.ref}
         onLayout={notificationsListTarget.onLayout}
+        collapsable={false}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
         <SectionList

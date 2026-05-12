@@ -7,7 +7,7 @@ const VERSION_KEY = (userId: string) => `@ankaa:tutorial:version:${userId}`;
  * Bump this whenever the step library changes meaningfully — older completed
  * users get re-invited through the new walkthrough.
  */
-export const TUTORIAL_VERSION = 2;
+export const TUTORIAL_VERSION = 3;
 
 export const tutorialStorage = {
   async isCompleted(userId: string): Promise<boolean> {

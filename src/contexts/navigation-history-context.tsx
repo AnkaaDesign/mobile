@@ -105,11 +105,17 @@ function computeParentRoute(pathname: string): string {
 function addToHistory(prev: string[], newPath: string, isQuickTransition: boolean): string[] {
   const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
 
-  // Detect redirect: sub-route of last entry AND happened very quickly.
-  // index.tsx redirects (e.g., /observacoes → /observacoes/listar) happen within
-  // a single render cycle (<50ms). User navigations (tap → animation → render)
-  // always take longer. Only replace if both conditions are met.
-  if (isQuickTransition && lastEntry && newPath.startsWith(lastEntry + '/')) {
+  // Detect redirect: sub-route of last entry AND happened very quickly AND
+  // looks like a default-child redirect (parent → parent/listar or parent/index).
+  // index.tsx redirects happen within a single render cycle. The path-pattern
+  // guard prevents fast user clicks from being misclassified — e.g., a user
+  // who clicks a button on /pessoal/meus-pontos within 500ms of arriving was
+  // previously losing /pessoal/meus-pontos from history (back jumped to /inicio).
+  const looksLikeRedirect =
+    !!lastEntry &&
+    newPath.startsWith(lastEntry + '/') &&
+    (newPath.endsWith('/listar') || newPath.endsWith('/index'));
+  if (isQuickTransition && looksLikeRedirect) {
     return [...prev.slice(0, -1), newPath].slice(-10);
   }
 
@@ -189,19 +195,30 @@ export function NavigationHistoryProvider({ children }: NavigationHistoryProvide
     const currentHistory = historyRef.current;
     const r = routerRef.current;
 
-    // Prefer dismissTo() over navigate() — it pops the navigation stack to
-    // the target href when present (cleaner than navigate(), which leaks
-    // intermediate stack frames and causes "press back twice" bugs) and
-    // falls back to replace() inside the target stack when the href lives
-    // in a different drawer screen (preserving cross-drawer correctness).
-    // Defensive fallback to navigate() for SDKs that don't expose dismissTo.
+    // Navigate to the explicit target from our maintained history. We can't
+    // rely on router.back() because expo-router's URL history doesn't always
+    // align with drawer-navigations: clicking a drawer menu item navigates
+    // without adding a URL history entry, so router.back() skips that step
+    // and ends up at /inicio instead of the previously viewed drawer screen.
+    //
+    // router.dismissTo() is a Stack-only action that silently no-ops for
+    // Drawer-sibling screens, so we use navigate() which works for both:
+    // it focuses an existing route when present (no stale frames in Stack),
+    // or switches the active drawer screen.
+    //
+    // We always include the `(tabs)` group prefix — the maintained history
+    // stores `pathname` values (which omit it), but expo-router resolves the
+    // route more reliably when the prefix is explicit.
+    const normalizeTarget = (target: string): string => {
+      if (target.startsWith("/(tabs)") || target.startsWith("/(autenticacao)")) {
+        return target;
+      }
+      const withSlash = target.startsWith("/") ? target : `/${target}`;
+      return `/(tabs)${withSlash}`;
+    };
     const dismissOrNavigate = (target: string) => {
       const router: any = r;
-      if (typeof router.dismissTo === "function") {
-        router.dismissTo(target);
-      } else {
-        router.navigate(target);
-      }
+      router.navigate(normalizeTarget(target));
     };
 
     if (currentHistory.length > 1) {

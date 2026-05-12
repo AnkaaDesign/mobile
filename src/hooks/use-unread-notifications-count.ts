@@ -1,33 +1,47 @@
-import { useMemo } from 'react';
 import { useNotifications } from './useNotification';
 import { useAuth } from './useAuth';
 
 /**
- * Hook to get the count of unread notifications for the current user
- * Uses the same approach as web - fetches notifications with seenBy and calculates client-side
+ * Unread notifications count, used in the header bell.
+ *
+ * Two perf-relevant choices here:
+ *   1. `select` runs inside React Query and produces a primitive count, so
+ *      consumers re-render only when the integer changes — not whenever the
+ *      underlying notifications array reference changes (e.g. after a refetch
+ *      that returned the same logical data).
+ *   2. We cap fetched payload at 30 records. The badge displays "99+" anyway,
+ *      and on the server side `seenBy` includes are expensive to hydrate.
  */
 export function useUnreadNotificationsCount() {
   const { user } = useAuth();
+  const userId = user?.id;
 
-  const { data, isLoading } = useNotifications({
-    take: 50, // Fetch enough to get accurate count
-    orderBy: { createdAt: 'desc' },
-    include: {
-      seenBy: true,
+  const { data: count = 0, isLoading } = useNotifications(
+    {
+      take: 30,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        seenBy: true,
+      },
     },
-  });
-
-  const count = useMemo(() => {
-    if (!user?.id || !data?.data) return 0;
-
-    // Count notifications that haven't been seen by the current user
-    return data.data.filter(notification =>
-      !notification.seenBy?.some((seen: any) => seen.userId === user.id)
-    ).length;
-  }, [data, user?.id]);
+    {
+      enabled: !!userId,
+      // Keep the badge responsive without thrashing on every focus.
+      staleTime: 1000 * 60, // 1 minute
+      // Avoid serving stale-and-forgotten data once the hook unmounts.
+      gcTime: 1000 * 60 * 10,
+      select: (response: any) => {
+        if (!userId || !response?.data) return 0;
+        return response.data.reduce((acc: number, n: any) => {
+          const seen = n.seenBy?.some((s: any) => s.userId === userId);
+          return seen ? acc : acc + 1;
+        }, 0);
+      },
+    } as any,
+  );
 
   return {
-    count,
+    count: typeof count === 'number' ? count : 0,
     isLoading,
   };
 }

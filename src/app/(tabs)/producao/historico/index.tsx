@@ -30,8 +30,8 @@ export default function ProductionHistoryScreen() {
   // area at the top so the tutorial has a sensible spotlight. If a real
   // tab switcher gets introduced later, rewire historicoTabs to it.
   return (
-    <View ref={tabsTarget.ref} onLayout={tabsTarget.onLayout} style={{ flex: 1 }}>
-      <View ref={listTarget.ref} onLayout={listTarget.onLayout} style={{ flex: 1 }}>
+    <View ref={tabsTarget.ref} onLayout={tabsTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
+      <View ref={listTarget.ref} onLayout={listTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
         <Layout config={historyListConfig} />
       </View>
     </View>

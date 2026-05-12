@@ -566,6 +566,8 @@ export const routes = {
     myPoints: {
       root: "/pessoal/meus-pontos",
       list: "/pessoal/meus-pontos",
+      justifyAbsence: "/pessoal/meus-pontos/justificar-ausencia",
+      adjustEntry: "/pessoal/meus-pontos/ajustar-ponto",
     },
     myMessages: {
       root: "/pessoal/minhas-mensagens",

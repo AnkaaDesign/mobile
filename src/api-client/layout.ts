@@ -1,6 +1,10 @@
 // packages/api-client/src/layout.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   Layout,
   LayoutGetUniqueResponse,
@@ -75,6 +79,26 @@ export class LayoutService {
   }
 
   async getByTruckId(truckId: string, params?: { include?: any }): Promise<LayoutsByTruckResponse> {
+    // Tutorial bypass — the layout queries hit a dedicated endpoint that
+    // setQueryDefaults can't intercept (the hook passes its own queryFn).
+    // Look up the mock layout for this truck and return it directly so the
+    // detail screen's TruckLayoutPreview renders the Ankaa truck render
+    // bundled in assets/ without a backend roundtrip.
+    const mockList = getTutorialMockList("layouts", {}) as any;
+    if (mockList) {
+      const records = mockList.data ?? [];
+      const match =
+        records.find((l: any) => l?.truckId === truckId) ??
+        records[0] ??
+        null;
+      if (match) {
+        return {
+          success: true,
+          message: "ok",
+          data: match,
+        } as unknown as LayoutsByTruckResponse;
+      }
+    }
     const response = await apiClient.get<LayoutsByTruckResponse>(`${this.basePath}/truck/${truckId}`, { params });
     return response.data;
   }

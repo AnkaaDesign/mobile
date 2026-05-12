@@ -1,6 +1,10 @@
 // packages/api-client/src/ppe.ts
 
 import { apiClient } from "./axiosClient";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // PpeSize Schema types
   PpeSizeGetManyFormData,
@@ -170,6 +174,8 @@ export class PpeDeliveryService {
   // =====================
 
   async getPpeDeliveries(params: PpeDeliveryGetManyFormData = {}): Promise<PpeDeliveryGetManyResponse> {
+    const mock = getTutorialMockList("ppeDeliveries", params);
+    if (mock) return mock as unknown as PpeDeliveryGetManyResponse;
     const response = await apiClient.get<PpeDeliveryGetManyResponse>(this.basePath, { params });
     return response.data;
   }
@@ -179,11 +185,17 @@ export class PpeDeliveryService {
    * Only returns deliveries for users in the leader's sector
    */
   async getMyTeamPpeDeliveries(params: PpeDeliveryGetManyFormData = {}): Promise<PpeDeliveryGetManyResponse> {
+    const mock = getTutorialMockList("ppeDeliveries", params);
+    if (mock) return mock as unknown as PpeDeliveryGetManyResponse;
     const response = await apiClient.get<PpeDeliveryGetManyResponse>(`${this.basePath}/my-team`, { params });
     return response.data;
   }
 
   async getPpeDeliveryById(id: string, params?: Omit<PpeDeliveryGetByIdFormData, "id">): Promise<PpeDeliveryGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("ppeDeliveries", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as PpeDeliveryGetUniqueResponse;
+    }
     const response = await apiClient.get<PpeDeliveryGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });
@@ -273,6 +285,8 @@ export class PpeDeliveryService {
   }
 
   async getMyPpeDeliveries(params?: PpeDeliveryGetManyFormData): Promise<PpeDeliveryGetManyResponse> {
+    const mock = getTutorialMockList("ppeDeliveries", params ?? {});
+    if (mock) return mock as unknown as PpeDeliveryGetManyResponse;
     const response = await apiClient.get<PpeDeliveryGetManyResponse>(`${this.basePath}/my-requests`, { params });
     return response.data;
   }

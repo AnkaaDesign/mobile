@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode, useCallback, useRef } from 'react';
 import { Platform, AppState, AppStateStatus, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -133,10 +133,11 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
       if (notificationId && user?.id) {
         try {
           await markAsRead(notificationId, user.id);
-          // Invalidate notification queries to update the unread count
+          // Targeted invalidation: only refetch the user's notification lists.
+          // Previously we also nuked `notificationKeys.all`, which evicted every
+          // notification cache entry in the app and forced cold refetches.
           queryClient.invalidateQueries({ queryKey: notificationKeys.unread(user.id) });
           queryClient.invalidateQueries({ queryKey: notificationKeys.byUser(user.id) });
-          queryClient.invalidateQueries({ queryKey: notificationKeys.all });
         } catch (error) {
           // Silently fail - don't block navigation if marking as read fails
           console.warn('[Push Notification] Failed to mark notification as read:', error);
@@ -364,15 +365,29 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     });
   }, []);
 
-  // Setup notification listeners
+  // Setup notification listeners.
+  //
+  // The handlers reference user.id, queryClient, etc., so their identities
+  // churn. Without ref-stabilization, we'd tear down and re-register native
+  // notification listeners on every user-data update — which both costs
+  // bridge calls and can lose notifications fired during the gap.
+  const handleNotificationReceivedRef = useRef(handleNotificationReceived);
+  const handleNotificationResponseRef = useRef(handleNotificationResponse);
+  useEffect(() => {
+    handleNotificationReceivedRef.current = handleNotificationReceived;
+  }, [handleNotificationReceived]);
+  useEffect(() => {
+    handleNotificationResponseRef.current = handleNotificationResponse;
+  }, [handleNotificationResponse]);
+
   useEffect(() => {
     const cleanup = setupNotificationListeners(
-      handleNotificationReceived,
-      handleNotificationResponse
+      (n) => handleNotificationReceivedRef.current(n),
+      (r) => handleNotificationResponseRef.current(r),
     );
 
     return cleanup;
-  }, [handleNotificationReceived, handleNotificationResponse]);
+  }, []);
 
   // Handle app launch from notification (cold start)
   useEffect(() => {
@@ -430,13 +445,18 @@ export const PushNotificationsProvider = ({ children }: PushNotificationsProvide
     };
   }, []);
 
-  const contextValue = {
-    expoPushToken,
-    notification,
-    isRegistered,
-    registerToken,
-    unregisterToken,
-  };
+  // Memoizing prevents every consumer of usePushNotifications from re-rendering
+  // every time this provider re-renders for unrelated reasons.
+  const contextValue = useMemo(
+    () => ({
+      expoPushToken,
+      notification,
+      isRegistered,
+      registerToken,
+      unregisterToken,
+    }),
+    [expoPushToken, notification, isRegistered, registerToken, unregisterToken],
+  );
 
   return (
     <PushNotificationsContext.Provider value={contextValue}>

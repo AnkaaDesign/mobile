@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
-import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff, IconClockEdit } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -58,6 +58,23 @@ export default function MeusPontosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const pontosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontos);
+  // onAction makes the tutorial spotlight tap navigate: the overlay's
+  // Pressable swallows the press so the underlying TouchableOpacity's
+  // onPress never fires. Registering onAction lets `invokeTargetAction`
+  // drive the navigation as if the user had tapped the real button.
+  const justifyTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.pessoalPontosJustifyButton,
+    {
+      onAction: () =>
+        nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia")),
+    },
+  );
+  const adjustTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.pessoalPontosAdjustButton,
+    {
+      onAction: () => nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto")),
+    },
+  );
   const tutorial = useOptionalTutorial();
   const tutorialIsTargetingPontos =
     !!tutorial?.isActive &&
@@ -93,7 +110,12 @@ export default function MeusPontosScreen() {
     endDate,
   });
 
-  useScreenReady(!isLoading);
+  // In tutorial mode the page renders from in-memory mocks — release the
+  // navigation overlay immediately so a slow react-query state transition
+  // doesn't latch `overlayClaimedRef.current` and trap subsequent nav.push
+  // calls (the "infinite loading" the dev step picker was hitting).
+  const isTutorialActive = tutorial?.isActive ?? false;
+  useScreenReady(isTutorialActive || !isLoading);
 
   // Parse calculation data (same approach as web version)
   const calculations: CalculationRow[] = useMemo(() => {
@@ -236,7 +258,7 @@ export default function MeusPontosScreen() {
     <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Header: Month Navigator + Column Button */}
-        <View ref={pontosTarget.ref} onLayout={pontosTarget.onLayout} style={styles.headerContainer}>
+        <View ref={pontosTarget.ref} onLayout={pontosTarget.onLayout} collapsable={false} style={styles.headerContainer}>
           {/* Month Navigator */}
           <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <TouchableOpacity
@@ -247,10 +269,18 @@ export default function MeusPontosScreen() {
             </TouchableOpacity>
 
             <View style={styles.monthDisplay}>
-              <ThemedText style={styles.monthLabel}>
-                {selectedDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+              <ThemedText
+                style={styles.monthLabel}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {`${selectedDate.toLocaleDateString("pt-BR", { month: "long" })} ${selectedDate.getFullYear()}`}
               </ThemedText>
-              <ThemedText style={[styles.periodLabel, { color: colors.mutedForeground }]}>
+              <ThemedText
+                style={[styles.periodLabel, { color: colors.mutedForeground }]}
+                numberOfLines={1}
+              >
                 {periodDates.startDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} - {periodDates.endDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
               </ThemedText>
             </View>
@@ -264,15 +294,30 @@ export default function MeusPontosScreen() {
           </View>
 
           {/* Justificar Ausência shortcut */}
-          <TouchableOpacity
-            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() =>
-              nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
-            }
-            accessibilityLabel="Justificar Ausência"
-          >
-            <IconCalendarOff size={20} color={colors.foreground} />
-          </TouchableOpacity>
+          <View ref={justifyTarget.ref} onLayout={justifyTarget.onLayout} collapsable={false}>
+            <TouchableOpacity
+              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() =>
+                nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
+              }
+              accessibilityLabel="Justificar Ausência"
+            >
+              <IconCalendarOff size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Ajustar Ponto shortcut */}
+          <View ref={adjustTarget.ref} onLayout={adjustTarget.onLayout} collapsable={false}>
+            <TouchableOpacity
+              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() =>
+                nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto"))
+              }
+              accessibilityLabel="Ajustar Ponto"
+            >
+              <IconClockEdit size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
 
           {/* Column Visibility Button - matches month selector height */}
           <TouchableOpacity
@@ -353,23 +398,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 8,
     paddingVertical: 8,
-    gap: 8,
+    gap: 6,
     alignItems: "stretch",
   },
   monthSelector: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
+    gap: 4,
     minHeight: 56,
   },
   navButton: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
@@ -378,9 +423,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     gap: 2,
+    paddingHorizontal: 2,
   },
   monthLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     textTransform: "capitalize",
   },
@@ -389,7 +435,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   columnButton: {
-    width: 56,
+    width: 44,
     minHeight: 56,
     borderRadius: 12,
     borderWidth: 1,
@@ -399,14 +445,14 @@ const styles = StyleSheet.create({
   },
   columnBadge: {
     position: "absolute",
-    top: 6,
-    right: 6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 4,
+    right: 4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
   columnBadgeText: {
     color: "#fff",

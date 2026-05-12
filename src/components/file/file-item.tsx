@@ -64,7 +64,11 @@ const FileItemGrid: React.FC<FileItemProps> = ({
   const [thumbnailError, setThumbnailError] = useState(false);
   const [thumbnailLoading, setThumbnailLoading] = useState(true);
 
-  const hasThumbnail = !!getThumbnailUrl(file, "medium", baseUrl);
+  // Tutorial mocks attach a bundled `require(...)` asset so the gallery
+  // renders the real Ankaa layout image instead of hitting the API thumbnail
+  // endpoint (which would 404).
+  const bundledAsset = (file as any).assetSource;
+  const hasThumbnail = !!bundledAsset || !!getThumbnailUrl(file, "medium", baseUrl);
 
   const handlePress = () => {
     if (onPress) {
@@ -101,11 +105,8 @@ const FileItemGrid: React.FC<FileItemProps> = ({
         {hasThumbnail && !thumbnailError ? (
           <View style={styles.thumbnailWrapper}>
             <Image
-              key={`thumbnail-${file.id}-${thumbnailUrl}`}
-              source={{
-                uri: thumbnailUrl,
-                cache: 'reload'
-              }}
+              key={`thumbnail-${file.id}-${bundledAsset ? "bundled" : thumbnailUrl}`}
+              source={bundledAsset ? bundledAsset : { uri: thumbnailUrl, cache: 'reload' }}
               style={styles.thumbnailImage}
               onLoad={handleThumbnailLoad}
               onError={handleThumbnailError}
@@ -162,7 +163,8 @@ const FileItemList: React.FC<FileItemProps> = ({
   const [thumbnailError, setThumbnailError] = useState(false);
   const [thumbnailLoading, setThumbnailLoading] = useState(true);
 
-  const hasThumbnail = !!getThumbnailUrl(file, "small", baseUrl);
+  const bundledAsset = (file as any).assetSource;
+  const hasThumbnail = !!bundledAsset || !!getThumbnailUrl(file, "small", baseUrl);
 
   const handlePress = () => {
     if (onPress) {
@@ -199,11 +201,8 @@ const FileItemList: React.FC<FileItemProps> = ({
         {hasThumbnail && !thumbnailError ? (
           <View style={styles.listThumbnailWrapper}>
             <Image
-              key={`thumbnail-${file.id}-${thumbnailUrl}`}
-              source={{
-                uri: thumbnailUrl,
-                cache: 'reload'
-              }}
+              key={`thumbnail-${file.id}-${bundledAsset ? "bundled" : thumbnailUrl}`}
+              source={bundledAsset ? bundledAsset : { uri: thumbnailUrl, cache: 'reload' }}
               style={styles.listThumbnailImage}
               onLoad={handleThumbnailLoad}
               onError={handleThumbnailError}

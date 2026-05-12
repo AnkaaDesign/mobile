@@ -1,6 +1,7 @@
 // packages/api-client/src/cut.ts
 
 import { apiClient } from "./axiosClient";
+import { getTutorialMockList, getTutorialMockDetail } from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   CutGetManyFormData,
@@ -36,11 +37,20 @@ export class CutService {
   // =====================
 
   async getCuts(params?: CutGetManyFormData): Promise<CutGetManyResponse> {
+    // Tutorial bypass — seeded demo cuts so the task-detail walkthrough
+    // has data to spotlight instead of an empty list.
+    const tutorialResponse = getTutorialMockList("cuts", params);
+    if (tutorialResponse) return tutorialResponse as unknown as CutGetManyResponse;
+
     const response = await apiClient.get<CutGetManyResponse>(this.basePath, { params });
     return response.data;
   }
 
   async getCutById(id: string, params?: CutQueryFormData): Promise<CutGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("cuts", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as CutGetUniqueResponse;
+    }
     const response = await apiClient.get<CutGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

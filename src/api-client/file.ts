@@ -3,6 +3,10 @@
 import { apiClient, axios } from "./axiosClient";
 import type { AxiosRequestConfig, CancelTokenSource } from "axios";
 import { safeFileDownload } from "./platform-utils";
+import {
+  getTutorialMockList,
+  getTutorialMockDetail,
+} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   FileGetManyFormData,
@@ -194,11 +198,17 @@ export class FileService {
   // =====================
 
   async getFiles(params: FileGetManyFormData = {}): Promise<FileGetManyResponse> {
+    const mock = getTutorialMockList("files", params);
+    if (mock) return mock as unknown as FileGetManyResponse;
     const response = await apiClient.get<FileGetManyResponse>(this.basePath, { params });
     return response.data;
   }
 
   async getFileById(id: string, params?: Omit<FileGetByIdFormData, "id">): Promise<FileGetUniqueResponse> {
+    const mockDetail = getTutorialMockDetail<any>("files", id);
+    if (mockDetail) {
+      return { success: true, message: "ok", data: mockDetail } as unknown as FileGetUniqueResponse;
+    }
     const response = await apiClient.get<FileGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

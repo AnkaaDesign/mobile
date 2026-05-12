@@ -57,6 +57,7 @@ export default function SettingsScreen() {
           <View
             ref={configListTarget.ref}
             onLayout={configListTarget.onLayout}
+            collapsable={false}
             className="space-y-2"
           >
             {settingsItems.map((item) => (
