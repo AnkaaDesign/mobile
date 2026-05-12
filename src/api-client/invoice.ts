@@ -107,13 +107,19 @@ export class InvoiceService {
     return response.data;
   }
 
-  async markBoletoPaid(installmentId: string, data: { paymentMethod: string; receiptFileId?: string }): Promise<any> {
+  async markBoletoPaid(
+    installmentId: string,
+    data: { paymentMethod: string; receiptFileIds?: string[]; observations?: string | null },
+  ): Promise<any> {
     const response = await apiClient.put(`${this.basePath}/${installmentId}/boleto/mark-paid`, data);
     return response.data;
   }
 
-  async updateInstallmentReceipt(installmentId: string, receiptFileId: string): Promise<any> {
-    const response = await apiClient.put(`${this.basePath}/${installmentId}/receipt`, { receiptFileId });
+  async updateInstallmentReceipts(
+    installmentId: string,
+    data: { receiptFileIds?: string[]; observations?: string | null },
+  ): Promise<any> {
+    const response = await apiClient.put(`${this.basePath}/${installmentId}/receipts`, data);
     return response.data;
   }
 }
@@ -140,5 +146,11 @@ export const cancelBoleto = (installmentId: string, data?: any) => invoiceServic
 export const emitNfse = (invoiceId: string) => invoiceService.emitNfse(invoiceId);
 export const cancelNfse = (invoiceId: string, nfseDocumentId: string, data: { reason: string; reasonCode?: number }) => invoiceService.cancelNfse(invoiceId, nfseDocumentId, data);
 export const changeBankSlipDueDate = (installmentId: string, newDueDate: string) => invoiceService.changeBankSlipDueDate(installmentId, newDueDate);
-export const markBoletoPaid = (installmentId: string, data: { paymentMethod: string; receiptFileId?: string }) => invoiceService.markBoletoPaid(installmentId, data);
-export const updateInstallmentReceipt = (installmentId: string, receiptFileId: string) => invoiceService.updateInstallmentReceipt(installmentId, receiptFileId);
+export const markBoletoPaid = (
+  installmentId: string,
+  data: { paymentMethod: string; receiptFileIds?: string[]; observations?: string | null },
+) => invoiceService.markBoletoPaid(installmentId, data);
+export const updateInstallmentReceipts = (
+  installmentId: string,
+  data: { receiptFileIds?: string[]; observations?: string | null },
+) => invoiceService.updateInstallmentReceipts(installmentId, data);

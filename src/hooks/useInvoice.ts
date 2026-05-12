@@ -12,7 +12,7 @@ import {
   cancelNfse,
   changeBankSlipDueDate,
   markBoletoPaid,
-  updateInstallmentReceipt,
+  updateInstallmentReceipts,
 } from '@/api-client';
 
 // =====================================================
@@ -166,11 +166,12 @@ export function useMarkBoletoPaid() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ installmentId, paymentMethod, receiptFileId }: {
+    mutationFn: ({ installmentId, paymentMethod, receiptFileIds, observations }: {
       installmentId: string;
       paymentMethod: string;
-      receiptFileId?: string;
-    }) => markBoletoPaid(installmentId, { paymentMethod, receiptFileId }),
+      receiptFileIds?: string[];
+      observations?: string | null;
+    }) => markBoletoPaid(installmentId, { paymentMethod, receiptFileIds, observations }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
     },
@@ -178,16 +179,17 @@ export function useMarkBoletoPaid() {
 }
 
 // -------------------------------------
-// UPDATE INSTALLMENT RECEIPT
+// UPDATE INSTALLMENT RECEIPTS
 // -------------------------------------
-export function useUpdateInstallmentReceipt() {
+export function useUpdateInstallmentReceipts() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ installmentId, receiptFileId }: {
+    mutationFn: ({ installmentId, receiptFileIds, observations }: {
       installmentId: string;
-      receiptFileId: string;
-    }) => updateInstallmentReceipt(installmentId, receiptFileId),
+      receiptFileIds?: string[];
+      observations?: string | null;
+    }) => updateInstallmentReceipts(installmentId, { receiptFileIds, observations }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
     },
