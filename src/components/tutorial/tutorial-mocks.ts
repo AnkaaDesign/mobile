@@ -2555,6 +2555,12 @@ export function injectTutorialMocks(
     });
   });
 
+  // Consolidated cache walk. Previously this file did `cache.getAll()` THREE
+  // times — once for the snapshot/grouping, once inside the customEntries
+  // loop, once for the secullum special case. On a fully-warmed dashboard
+  // with ~50 cached queries that's ~150 iterations on tutorial start.
+  // We now reuse the `allQueries` list captured above for both the
+  // customEntries prefix-match and the secullum sweep.
   customEntries.forEach(({ key, payload }) => {
     const root = key[0] as string;
     queryClient.setQueryDefaults(key as readonly unknown[], {
@@ -2569,7 +2575,7 @@ export function injectTutorialMocks(
     if (!registeredRoots.includes(root)) registeredRoots.push(root);
 
     queryClient.setQueryData(key, payload);
-    cache.getAll().forEach((q) => {
+    allQueries.forEach((q) => {
       const matches = key.every((seg, i) => q.queryKey[i] === seg);
       if (matches) {
         queryClient.setQueryData(q.queryKey, payload);
@@ -2588,7 +2594,7 @@ export function injectTutorialMocks(
     refetchOnReconnect: false,
   } as any);
   if (!registeredRoots.includes("secullum")) registeredRoots.push("secullum");
-  cache.getAll().forEach((q) => {
+  allQueries.forEach((q) => {
     if (q.queryKey[0] === "secullum" && q.queryKey[1] === "my-calculations") {
       queryClient.setQueryData(q.queryKey, mockSecullumMyCalculations);
     }

@@ -1,12 +1,18 @@
-import { useEffect, useRef } from "react";
-import { Dimensions, StyleSheet, Pressable } from "react-native";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { Dimensions, StyleSheet, Pressable, View } from "react-native";
+import {
+  getActiveTargetRect,
+  subscribeActiveTargetRect,
+} from "./tutorial-store";
 
-const olog = (msg: string, ...args: any[]) => {
-  if (__DEV__) console.log(`[tutorial/overlay] ${msg}`, ...args);
-};
+const VERBOSE = false;
+const olog = VERBOSE
+  ? (msg: string, ...args: any[]) => {
+      if (__DEV__) console.log(`[tutorial/overlay] ${msg}`, ...args);
+    }
+  : (_msg: string, ..._args: any[]) => {};
 import Animated, {
   useSharedValue,
-  useAnimatedProps,
   useAnimatedStyle,
   withTiming,
   withRepeat,
@@ -16,23 +22,38 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from "react-native-reanimated";
-import Svg, { Defs, Mask, Rect } from "react-native-svg";
-import { useTutorial, TUTORIAL_TIMINGS } from "./tutorial-context";
+import {
+  useTutorial,
+  useTutorialIsActive,
+  TUTORIAL_TIMINGS,
+} from "./tutorial-context";
 import { TutorialTooltip } from "./tutorial-tooltip";
 import { TutorialDevStepPicker } from "./tutorial-dev-step-picker";
-
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const SPOTLIGHT_PADDING = 8;
 const SPOTLIGHT_RADIUS = 14;
+const DIM_COLOR = "rgba(0, 0, 0, 0.78)";
 
+/**
+ * Lazy host. Subscribes only to the boolean `isActive` flag, so it
+ * re-renders ~twice per session (start + stop). Mounts the heavy overlay
+ * body only while the tutorial is running — SVG, Reanimated shared values,
+ * tooltip, dev step picker, all of it. When idle, the cost of having a
+ * tutorial system installed is one boolean read per re-render of the
+ * root layout.
+ */
 export function TutorialOverlay() {
+  const isActive = useTutorialIsActive();
+  if (!isActive) return null;
+  return <TutorialOverlayBody />;
+}
+
+function TutorialOverlayBody() {
   const tutorial = useTutorial();
   const {
     isActive,
     currentStep,
-    currentTargetRect,
     currentStepIndex,
     totalSteps,
     awaitingAction,
@@ -43,6 +64,19 @@ export function TutorialOverlay() {
     notifyAction,
     invokeTargetAction,
   } = tutorial;
+
+  // Subscribe directly to the rect store. This bypasses the React state
+  // path that previously gated spotlight rendering — registerTarget pushes
+  // to the store BEFORE its setState, so the cutout updates instantly even
+  // if React's setState happens to flush on a delayed frame. Closes the
+  // class of bugs where a successful measure didn't visibly render the
+  // spotlight until something unrelated (AppState foreground, Passos modal
+  // open) forced a re-render.
+  const currentTargetRect = useSyncExternalStore(
+    useCallback((cb) => subscribeActiveTargetRect(cb), []),
+    useCallback(() => getActiveTargetRect(), []),
+    () => null,
+  );
 
   // Cutout coordinates and opacity. Coords JUMP between rects (no tween),
   // opacity fades — together this produces a clean "old spotlight fades out,
@@ -71,10 +105,29 @@ export function TutorialOverlay() {
     }
 
     if (!currentTargetRect) {
-      cutoutOpacity.value = withTiming(0, {
-        duration: TUTORIAL_TIMINGS.spotlightFadeOut,
-        easing: Easing.out(Easing.cubic),
-      });
+      // Fade the cover out, then collapse the spotlight rect to 0×0 so the
+      // 4 curved corners of the rounded cover view don't leak the screen
+      // through after the cutout has gone away. Without this collapse, the
+      // 4 dim frame Views (which have SQUARE corners) tile around the OLD
+      // spotlight position and leave 4 small transparent quadrants where
+      // the cover's borderRadius cut its corners — which read together as
+      // a faint rectangular outline at the OLD spotlight position. Setting
+      // cw/ch to 0 after the fade makes the cover invisible and lets the
+      // top + bottom frames cover the full screen with no gap.
+      cutoutOpacity.value = withTiming(
+        0,
+        {
+          duration: TUTORIAL_TIMINGS.spotlightFadeOut,
+          easing: Easing.out(Easing.cubic),
+        },
+        (finished) => {
+          "worklet";
+          if (finished) {
+            cw.value = 0;
+            ch.value = 0;
+          }
+        },
+      );
       prevRectRef.current = null;
       return;
     }
@@ -93,10 +146,23 @@ export function TutorialOverlay() {
         Math.abs(prev.h - nh) > 0.5);
 
     if (isSwap) {
-      cutoutOpacity.value = withTiming(0, {
-        duration: TUTORIAL_TIMINGS.spotlightFadeOut,
-        easing: Easing.out(Easing.cubic),
-      });
+      // Fade the OLD cutout out, then collapse coords so the rounded-corner
+      // leak doesn't show during the brief gap before the new rect lands.
+      // The swapTimer then jumps to the new rect and fades in.
+      cutoutOpacity.value = withTiming(
+        0,
+        {
+          duration: TUTORIAL_TIMINGS.spotlightFadeOut,
+          easing: Easing.out(Easing.cubic),
+        },
+        (finished) => {
+          "worklet";
+          if (finished) {
+            cw.value = 0;
+            ch.value = 0;
+          }
+        },
+      );
       swapTimerRef.current = setTimeout(() => {
         cx.value = nx;
         cy.value = ny;
@@ -152,39 +218,87 @@ export function TutorialOverlay() {
     }
   }, [currentStep?.pulseTarget, currentStep?.kind, pulseScale]);
 
-  const cutoutProps = useAnimatedProps(() => ({
-    x: cx.value,
-    y: cy.value,
+  // 4-View dim frame + 1 cover view. Replaces the old SVG Mask + AnimatedRect
+  // setup. All five views run on the UI thread via Reanimated shared values;
+  // there's no SVG rendering or mask compositing cost, and no JS-side
+  // re-evaluation of the cutout coords on every step.
+  //
+  // Frame layout (cutoutOpacity drives only the cover view; the 4 frame
+  // views stay at 0.78 dim):
+  //
+  //   ┌─────────── top ──────────┐
+  //   │                          │
+  //   │ left │ SPOTLIGHT │ right │
+  //   │                          │
+  //   └────────── bottom ────────┘
+  //
+  // The cover view is positioned exactly over the spotlight rect and
+  // fades 0 ↔ 0.78 in lockstep with cutoutOpacity. When cutoutOpacity=0
+  // (between steps), the cover is fully dim → screen reads as full dim.
+  // When cutoutOpacity=1 the cover is fully transparent → spotlight is
+  // visible underneath. Border-radius on the cover preserves the
+  // rounded-corner look from the old SVG mask cutout.
+  const topStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: 0,
+    top: 0,
+    width: SCREEN_W,
+    height: Math.max(0, cy.value),
+  }));
+  const bottomStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: 0,
+    top: Math.max(0, cy.value + ch.value),
+    width: SCREEN_W,
+    height: Math.max(0, SCREEN_H - (cy.value + ch.value)),
+  }));
+  const leftStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: 0,
+    top: Math.max(0, cy.value),
+    width: Math.max(0, cx.value),
+    height: Math.max(0, ch.value),
+  }));
+  const rightStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: Math.max(0, cx.value + cw.value),
+    top: Math.max(0, cy.value),
+    width: Math.max(0, SCREEN_W - (cx.value + cw.value)),
+    height: Math.max(0, ch.value),
+  }));
+  const coverStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: cx.value,
+    top: cy.value,
     width: cw.value,
     height: ch.value,
-    opacity: cutoutOpacity.value,
+    borderRadius: SPOTLIGHT_RADIUS,
+    opacity: 1 - cutoutOpacity.value,
   }));
 
-  // Outer dim layer's mask follows the cutout — but we also need its opacity
-  // to follow so that during the fade-out window the dim layer doesn't briefly
-  // show full darkness with no cutout. Animate the overall mask in lockstep.
-  const maskedRectAnimatedProps = useAnimatedProps(() => ({
-    opacity: 0.78,
-  }));
+  // Pulse ring entirely on the UI thread — reads ONLY shared values, no
+  // dependency on `currentTargetRect`. Previously this was a JS-side
+  // computed style that recomputed on every React re-render; now it
+  // only re-evaluates when one of its shared-value dependencies changes,
+  // off the JS thread.
+  const interactivePulseActive = useSharedValue(0);
+  useEffect(() => {
+    interactivePulseActive.value =
+      currentStep?.pulseTarget && currentStep?.kind === "interactive" ? 1 : 0;
+  }, [currentStep?.pulseTarget, currentStep?.kind, interactivePulseActive]);
 
-  const pulseStyle = useAnimatedStyle(() => {
-    if (!currentTargetRect) return { opacity: 0 };
-    return {
-      position: "absolute" as const,
-      left: currentTargetRect.x - SPOTLIGHT_PADDING,
-      top: currentTargetRect.y - SPOTLIGHT_PADDING,
-      width: currentTargetRect.width + SPOTLIGHT_PADDING * 2,
-      height: currentTargetRect.height + SPOTLIGHT_PADDING * 2,
-      borderRadius: SPOTLIGHT_RADIUS,
-      borderWidth: 3,
-      borderColor: "#FCD34D",
-      transform: [{ scale: pulseScale.value }],
-      opacity:
-        currentStep?.pulseTarget && currentStep?.kind === "interactive"
-          ? cutoutOpacity.value
-          : 0,
-    };
-  });
+  const pulseStyle = useAnimatedStyle(() => ({
+    position: "absolute" as const,
+    left: cx.value,
+    top: cy.value,
+    width: cw.value,
+    height: ch.value,
+    borderRadius: SPOTLIGHT_RADIUS,
+    borderWidth: 3,
+    borderColor: "#FCD34D",
+    transform: [{ scale: pulseScale.value }],
+    opacity: interactivePulseActive.value * cutoutOpacity.value,
+  }));
 
   if (!isActive || !currentStep) return null;
 
@@ -246,35 +360,16 @@ export function TutorialOverlay() {
     >
       {/* Background dim — opted out by `dimBackground: false` on narration
           steps that describe a panel/drawer the user already opened. Keeps
-          the underlying content clearly visible behind the tooltip. */}
+          the underlying content clearly visible behind the tooltip.
+          Four frame Views + one cutout cover replace the old SVG Mask. */}
       {currentStep.dimBackground !== false ? (
-        <Svg
-          width={SCREEN_W}
-          height={SCREEN_H}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        >
-          <Defs>
-            <Mask id="tutorial-mask">
-              <Rect x={0} y={0} width={SCREEN_W} height={SCREEN_H} fill="white" />
-              <AnimatedRect
-                animatedProps={cutoutProps}
-                rx={SPOTLIGHT_RADIUS}
-                ry={SPOTLIGHT_RADIUS}
-                fill="black"
-              />
-            </Mask>
-          </Defs>
-          <AnimatedRect
-            animatedProps={maskedRectAnimatedProps}
-            x={0}
-            y={0}
-            width={SCREEN_W}
-            height={SCREEN_H}
-            fill="#000000"
-            mask="url(#tutorial-mask)"
-          />
-        </Svg>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Animated.View style={[styles.dimFrame, topStyle]} />
+          <Animated.View style={[styles.dimFrame, bottomStyle]} />
+          <Animated.View style={[styles.dimFrame, leftStyle]} />
+          <Animated.View style={[styles.dimFrame, rightStyle]} />
+          <Animated.View style={[styles.dimFrame, coverStyle]} />
+        </View>
       ) : null}
 
       {/* Pulsing yellow ring around interactive targets */}
@@ -377,5 +472,8 @@ const styles = StyleSheet.create({
   root: {
     zIndex: 10000,
     elevation: 1000,
+  },
+  dimFrame: {
+    backgroundColor: DIM_COLOR,
   },
 });

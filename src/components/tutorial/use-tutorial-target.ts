@@ -1,10 +1,19 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Dimensions, type View } from "react-native";
-import { useOptionalTutorial } from "./tutorial-context";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { Dimensions, InteractionManager, type View } from "react-native";
+import { useOptionalTutorialActions } from "./tutorial-context";
+import {
+  getActiveTargetId,
+  getMeasureTick,
+  subscribeIsActiveTarget,
+  subscribeMeasureTick,
+} from "./tutorial-store";
 
-const log = (msg: string, ...args: any[]) => {
-  if (__DEV__) console.log(`[tutorial/target] ${msg}`, ...args);
-};
+const VERBOSE = false;
+const log = VERBOSE
+  ? (msg: string, ...args: any[]) => {
+      if (__DEV__) console.log(`[tutorial/target] ${msg}`, ...args);
+    }
+  : (_msg: string, ..._args: any[]) => {};
 
 interface Options {
   /**
@@ -39,20 +48,63 @@ interface Options {
  *   - On external bumpMeasureTick (drawer open animation, scroll settle).
  */
 export function useTutorialTarget(id: string, options?: Options) {
-  const tutorial = useOptionalTutorial();
+  // Subscribe ONLY to the stable actions bag. This hook used to subscribe
+  // to the entire composed context, which re-rendered all 140+ mounted
+  // targets on every state mutation (phase, rect, awaiting, measureTick).
+  // Now register/unregister/notify identities are stable across the
+  // tutorial's lifetime — no re-render churn from this access.
+  const actions = useOptionalTutorialActions();
   const ref = useRef<View | null>(null);
 
-  const registerTarget = tutorial?.registerTarget;
-  const unregisterTarget = tutorial?.unregisterTarget;
-  const registerAction = tutorial?.registerAction;
-  const unregisterAction = tutorial?.unregisterAction;
-  const notifyAction = tutorial?.notifyAction;
-  const isActive = tutorial?.isActive ?? false;
-  const measureTick = tutorial?.measureTick ?? 0;
-  const isActiveTarget = tutorial?.currentStep?.targetId === id;
+  const registerTarget = actions?.registerTarget;
+  const unregisterTarget = actions?.unregisterTarget;
+  const registerAction = actions?.registerAction;
+  const unregisterAction = actions?.unregisterAction;
+  const notifyAction = actions?.notifyAction;
+
+  // Per-id external-store subscription. Only the two affected hooks
+  // re-render on activeTargetId change (the old active + the new active).
+  // The other 138+ hooks stay quiet.
+  const isActiveTarget = useSyncExternalStore(
+    useCallback((cb) => subscribeIsActiveTarget(id, cb), [id]),
+    useCallback(() => getActiveTargetId() === id, [id]),
+    () => false,
+  );
+
+  // measureTick: gate the subscription on `isActiveTarget` so 139 idle
+  // hooks don't re-render on every bump. The active hook re-renders 4×
+  // per step (the cascade), reads the tick, re-runs its measure effect.
+  const measureTick = useSyncExternalStore(
+    useCallback(
+      (cb) => (isActiveTarget ? subscribeMeasureTick(cb) : () => {}),
+      [isActiveTarget],
+    ),
+    useCallback(
+      () => (isActiveTarget ? getMeasureTick() : 0),
+      [isActiveTarget],
+    ),
+    () => 0,
+  );
+
+  // Local `isActive` flag is used solely to gate the measure effect's
+  // first call. It can be derived from whether actions are available —
+  // when the provider mounts they're non-null; when no provider exists
+  // the hook is a no-op.
+  const isActive = actions != null;
 
   const onActionRef = useRef<(() => void) | undefined>(options?.onAction);
   onActionRef.current = options?.onAction;
+
+  // Tracks whether THIS hook has ever successfully registered a rect for
+  // its id during the current active span. Drives the polling cadence —
+  // we stay at 300ms while we've never measured, downshifting only after
+  // a real registration. The previous unconditional 4s downshift meant
+  // that a hook whose target was racing the navigator's first layout
+  // commit (chrome header children are the main offender) dropped to
+  // 1.5s polling before its first measure ever landed; users saw the
+  // spotlight stuck blank for several seconds with no obvious path to
+  // recovery.
+  const hasRegisteredRef = useRef(false);
 
   const measure = useCallback(() => {
     if (!registerTarget || !ref.current) {
@@ -81,6 +133,7 @@ export function useTutorialTarget(id: string, options?: Options) {
         return;
       }
       log(`measure OK id=${id} rect=`, { x, y, width, height }, `→ calling registerTarget`);
+      hasRegisteredRef.current = true;
       registerTarget(id, { x, y, width, height });
     });
   }, [registerTarget, id]);
@@ -121,6 +174,81 @@ export function useTutorialTarget(id: string, options?: Options) {
     const handle = setTimeout(() => measure(), 60);
     return () => clearTimeout(handle);
   }, [isActive, isActiveTarget, measureTick, measure]);
+
+  // Continuous re-measure loop. The provider's cascade fires bumps at 80/
+  // 200/400/800/1500/2500/4000ms, but if all of those fired BEFORE the
+  // target view was laid out (chrome-header targets in particular suffer
+  // this — the navigation header's children mount with placeholder 0-dim
+  // layout that settles hundreds of ms later, and measureInWindow returns
+  // junk until then), no further re-measure happens until something
+  // external (modal open, scroll, orientation change) triggers an
+  // onLayout. The user-visible symptom is "spotlight missing, but opening
+  // the Passos modal brings it back".
+  //
+  // Cadence is adaptive:
+  //   - While `hasRegisteredRef` is false (we've never successfully
+  //     measured this active span), poll every 300ms forever. Spotlight
+  //     recovery is the priority — steady-state cost is irrelevant if
+  //     the spotlight is missing.
+  //   - After the first successful registration, downshift to 1500ms
+  //     so the active hook self-heals stale rects (layout shifts from
+  //     async data, font swap, etc.) without per-second measure churn.
+  //   - We re-arm `hasRegisteredRef` to false on every active span entry
+  //     so the next time this id becomes active it starts in fast mode
+  //     again. Important for header-chrome targets that appear on
+  //     multiple steps — the second appearance can race the navigator
+  //     just like the first did.
+  useEffect(() => {
+    if (!isActive || !isActiveTarget) return;
+    hasRegisteredRef.current = false;
+    // Triple-strategy first measure:
+    //   - Immediate: catches the easy case where the View is already laid out.
+    //   - Double-RAF: schedules a measure two frames out so Yoga reflows and
+    //     any in-flight layout from the step transition have a chance to
+    //     commit before we read window coords.
+    //   - InteractionManager: defers until any in-flight gestures or
+    //     navigation animations have completed. Some screen transitions
+    //     leave intermediate layout state for 100–300ms; without this,
+    //     measureInWindow returned the mid-animation rect which SG1
+    //     rejected as off-screen.
+    // The first one to succeed registers; subsequent successes are
+    // state-level no-ops via the `sameInState` guard in registerTarget.
+    measure();
+    requestAnimationFrame(() => requestAnimationFrame(() => measure()));
+    const interactionHandle = InteractionManager.runAfterInteractions(() => {
+      measure();
+    });
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let downshiftTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+    const startPolling = (ms: number) => {
+      if (interval) clearInterval(interval);
+      interval = setInterval(() => measure(), ms);
+    };
+    startPolling(300);
+    // Schedule the downshift check after the initial settle window.
+    // Only downshift if a measure has actually landed — otherwise keep
+    // polling at 300ms until one does. Re-arms the timer until success.
+    const armDownshift = () => {
+      if (cancelled) return;
+      downshiftTimer = setTimeout(() => {
+        if (cancelled) return;
+        if (hasRegisteredRef.current) {
+          startPolling(1500);
+        } else {
+          // Still no rect — keep aggressive cadence and re-check later.
+          armDownshift();
+        }
+      }, 4000);
+    };
+    armDownshift();
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+      if (downshiftTimer) clearTimeout(downshiftTimer);
+      interactionHandle.cancel();
+    };
+  }, [isActive, isActiveTarget, measure]);
 
   const scrollContainer = options?.scrollContainer;
   const scrollOffsetTop = options?.scrollOffsetTop ?? 100;

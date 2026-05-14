@@ -631,9 +631,19 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Observations Table - Only for COMPLETED tasks */}
+          {/* Observations Table - Only for COMPLETED tasks. The wrapper View
+              has an explicit minHeight so the tutorial spotlight has a
+              measurable rect even while ObservationsTable is still loading
+              or returns null for an empty result set — without this the
+              `task-observations-table` step would fall back to a centered
+              tooltip with no spotlight on tasks that had no observations. */}
           {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (
-            <View ref={taskObservationsTableTarget.ref} onLayout={taskObservationsTableTarget.onLayout} collapsable={false}>
+            <View
+              ref={taskObservationsTableTarget.ref}
+              onLayout={taskObservationsTableTarget.onLayout}
+              collapsable={false}
+              style={{ minHeight: 80 }}
+            >
               <ObservationsTable taskId={id as string} maxHeight={400} />
             </View>
           )}

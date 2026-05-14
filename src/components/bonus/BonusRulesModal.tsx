@@ -7,6 +7,7 @@ import {
   IconCalendarOff,
   IconHeartbeat,
   IconCheckbox,
+  IconBan,
 } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText } from "@/components/ui";
@@ -25,6 +26,7 @@ function detectSection(ref?: string): string | null {
   if (lower.includes("falta")) return "faltas";
   if (lower.includes("atestado")) return "atestado";
   if (lower.includes("assiduidade")) return "assiduidade";
+  if (lower.includes("suspensa") || lower.includes("suspens")) return "suspensas";
   return null;
 }
 
@@ -186,6 +188,42 @@ export function BonusRulesModal({ visible, onClose, highlightReference }: BonusR
             <IconTrendingDown size={13} color={colors.destructive} />
             <ThemedText style={[styles.sectionLabel, { color: colors.destructive }]}>DESCONTOS</ThemedText>
           </View>
+
+          <Section
+            icon={IconBan}
+            title="Tarefas Suspensas"
+            badge="Excluído do cálculo"
+            badgeBg="#f9731618"
+            badgeColor="#c2410c"
+            highlighted={highlighted === "suspensas"}
+            colors={colors}
+          >
+            <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
+              Quando uma tarefa é marcada com{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>comissão suspensa</ThemedText>
+              , ela é{' '}
+              <ThemedText style={{ color: colors.destructive, fontWeight: '700' }}>removida do cálculo do bônus</ThemedText>
+              .
+            </ThemedText>
+            <ThemedText style={[styles.bodyText, { color: colors.mutedForeground }]}>
+              Tarefas suspensas{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>não contam</ThemedText>
+              {' '}na média ponderada por colaborador e portanto não geram bônus para nenhum dos elegíveis. O valor que seria recebido por aquela tarefa aparece como{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600' }}>desconto "Tarefas Suspensas"</ThemedText>
+              {' '}no bônus.
+            </ThemedText>
+            <ThemedText style={[styles.bodyText, { color: colors.mutedForeground, fontSize: 12, fontStyle: 'italic' }]}>
+              Tarefas com{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>comissão integral</ThemedText>
+              {' '}contam como 1.0 e{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>comissão parcial</ThemedText>
+              {' '}conta como 0.5 na ponderação.{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>Sem comissão</ThemedText>
+              {' '}e{' '}
+              <ThemedText style={{ color: colors.foreground, fontWeight: '600', fontStyle: 'italic' }}>suspensa</ThemedText>
+              {' '}contam como 0.
+            </ThemedText>
+          </Section>
 
           <Section
             icon={IconCalendarOff}

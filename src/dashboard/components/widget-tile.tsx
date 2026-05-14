@@ -85,7 +85,7 @@ import { lightImpactHaptic } from "@/utils/haptics";
 import { widgetRegistry } from "../registry";
 import { WIDGET_ROW_MAX_HEIGHT } from "../types";
 import type { WidgetInstance, WidgetRows } from "../types";
-import { useTutorialTarget } from "@/components/tutorial";
+import { useTutorialTarget, useTutorialIsActive } from "@/components/tutorial";
 
 interface WidgetTileProps {
   instance: WidgetInstance;
@@ -191,8 +191,17 @@ export function WidgetTile({
   // fighting the outer sortable wrapper's bigger 1.04 lift.
   const dragProgress = useSharedValue(0);
 
+  // Pause jiggle during tutorial. The ±0.4° rotation oscillation desyncs the
+  // tile from a captured tutorial spotlight rect (which is static window
+  // coordinates), so the user sees the tile's contents — especially the
+  // 3-dots Pressable — slipping in and out of the cutout's clear area. On
+  // home-widget-options that read as a "circle blinking inside the spotlight"
+  // because the three dots of IconDotsVertical rotated into the dim band.
+  // Edit-mode signalling is still carried by the persistent primary ring +
+  // editScale ramp; the jiggle is purely decorative.
+  const tutorialActive = useTutorialIsActive();
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && !tutorialActive) {
       const offset = (instance.instanceId.charCodeAt(0) % 5) * 30;
       jiggle.value = withRepeat(
         withSequence(
@@ -217,6 +226,14 @@ export function WidgetTile({
         easing: Easing.out(Easing.cubic),
       });
       ringOpacity.value = withTiming(1, { duration: 220 });
+    } else if (isEditing) {
+      // Tutorial active: hold edit-mode visual state but freeze the jiggle.
+      jiggle.value = withTiming(0, { duration: 120 });
+      editScale.value = withTiming(0.97, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
+      ringOpacity.value = withTiming(1, { duration: 220 });
     } else {
       jiggle.value = withTiming(0, { duration: 120 });
       editScale.value = withTiming(1, {
@@ -225,7 +242,7 @@ export function WidgetTile({
       });
       ringOpacity.value = withTiming(0, { duration: 160 });
     }
-  }, [isEditing, instance.instanceId, jiggle, editScale, ringOpacity]);
+  }, [isEditing, tutorialActive, instance.instanceId, jiggle, editScale, ringOpacity]);
 
   useEffect(() => {
     dragProgress.value = withTiming(isDragging ? 1 : 0, {

@@ -15,8 +15,17 @@ export {
   TutorialProvider,
   useTutorial,
   useOptionalTutorial,
+  useTutorialActions,
+  useOptionalTutorialActions,
+  useTutorialIsActive,
 } from "./tutorial-context";
 export { TutorialOverlay } from "./tutorial-overlay";
+export {
+  getMeasureTick,
+  subscribeMeasureTick,
+  getActiveTargetId as getTutorialActiveTargetId,
+  subscribeIsActiveTarget as subscribeTutorialActiveTargetId,
+} from "./tutorial-store";
 export { TutorialFirstLaunchTrigger } from "./tutorial-trigger";
 export { useTutorialTarget } from "./use-tutorial-target";
 export { TUTORIAL_TARGETS } from "./target-ids";

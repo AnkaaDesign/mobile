@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
-import { useTutorial } from "./tutorial-context";
+import { useTutorialActions } from "./tutorial-context";
 import { tutorialStorage } from "./tutorial-storage";
 
 /**
@@ -13,7 +13,7 @@ import { tutorialStorage } from "./tutorial-storage";
  */
 export function TutorialFirstLaunchTrigger() {
   const { user, isAuthReady } = useAuth() as any;
-  const tutorial = useTutorial();
+  const tutorial = useTutorialActions();
   const triggeredRef = useRef(false);
 
   useEffect(() => {

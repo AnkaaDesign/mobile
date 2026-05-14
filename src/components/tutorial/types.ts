@@ -71,6 +71,30 @@ export interface TutorialStep {
   expectedAction?: TutorialActionType;
   expectedEventId?: string;
   navigateOnEnter?: string;
+  /**
+   * Declares the route that the user's `expectedAction` (tap on a card,
+   * drawer-open, etc.) will push next. The engine uses this when the user
+   * jumps to a later step via the dev step picker — so it can REPLAY the
+   * navigation chain that would naturally have been built up by walking
+   * through every preceding step.
+   *
+   * Example: "cronograma-tap-task" has `navigatesTo: "/cronograma/detalhes/{id}"`.
+   * The step itself stays interactive and waits for the tap, but if the user
+   * jumps directly to a later step like "task-dates-card" (which has no
+   * `screen` of its own), the engine now knows the expected navigation
+   * stack is `[/cronograma, /cronograma/detalhes/{id}]` — it pushes both
+   * so the user lands on the right screen AND the back stack matches what
+   * the tutorial expects (so back-button steps work correctly).
+   */
+  navigatesTo?: string;
+  /**
+   * When the step's expected action is "tap" on a back button (i.e. it
+   * pops the navigation stack), set this to true so jump replay knows
+   * the post-step stack is one route shorter. The dev step picker uses
+   * this to reconstruct the expected stack when landing on a step whose
+   * prior step pops.
+   */
+  popsOnAction?: boolean;
   openDrawerOnEnter?: boolean;
   /**
    * When true, close any open drawer (menu or notifications) as the step

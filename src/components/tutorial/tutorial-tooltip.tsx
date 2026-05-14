@@ -127,17 +127,27 @@ export function TutorialTooltip(props: Props) {
   const advanceStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
   // Strict gating for interactive steps: NO advance button is ever shown
-  // while awaitingAction is true. The user must perform the actual action
-  // (tap the target, open the drawer, etc.) to proceed. The "Pular" X at
-  // the top-right remains as a last-resort whole-tutorial escape, but
-  // there is no per-step bypass — by design, so users don't habit-skip
-  // important interactive steps. The engine relies on multiple advance
-  // pathways (notifyAction via real button chain, ghost-layer tap relay,
-  // SG3 route-change detection, drawer-open listener) so a genuine
-  // interaction always advances.
-  const showAdvanceBtn = step.kind !== "interactive" || !awaitingAction;
-  const advanceLabel =
-    step.ctaLabel ?? (currentIndex === totalSteps - 1 ? "Concluir" : "Continuar");
+  // while awaitingAction is true AND the engine is healthy. The user must
+  // perform the actual action (tap the target, open the drawer, etc.).
+  // Two exits from "strict mode":
+  //   - phase === "fallback": the spotlight target never registered, so
+  //     there's nothing to tap. Show an escape button so the user isn't
+  //     trapped on a step the engine can't deliver.
+  //   - interactiveStuck (SG2, 30s of no action): a safety net for users
+  //     who got disoriented. Surface the per-step skip rather than force
+  //     them to abandon the whole tutorial.
+  // For both bypasses we relabel the button "Pular este passo" so the
+  // user knows they're skipping the intended interaction, not advancing
+  // it normally. Tracked via a derived `bypassReason` instead of a single
+  // boolean so the label stays accurate when both conditions overlap.
+  const bypassActive =
+    step.kind === "interactive" &&
+    awaitingAction &&
+    (phase === "fallback" || interactiveStuck);
+  const showAdvanceBtn = step.kind !== "interactive" || !awaitingAction || bypassActive;
+  const advanceLabel = bypassActive
+    ? "Pular este passo"
+    : step.ctaLabel ?? (currentIndex === totalSteps - 1 ? "Concluir" : "Continuar");
 
   // Single, stable wrapper for both centered and anchored placements: a flex
   // container that fills the screen. Centered cards rely on flex centering;
@@ -201,7 +211,9 @@ export function TutorialTooltip(props: Props) {
           >
             <IconHandClick size={18} color="#FCD34D" />
             <Text style={styles.interactiveCtaText}>
-              {step.hint ?? step.ctaLabel ?? "Toque no elemento destacado"}
+              {bypassActive
+                ? "Não conseguimos destacar este elemento agora. Você pode pular ou tentar manualmente."
+                : step.hint ?? step.ctaLabel ?? "Toque no elemento destacado"}
             </Text>
           </Animated.View>
         ) : null}

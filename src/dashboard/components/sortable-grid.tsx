@@ -46,6 +46,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentProps,
 } from "react";
 import { View } from "react-native";
@@ -64,7 +65,12 @@ import { shadow } from "@/constants/design-system";
 import { WidgetTile } from "./widget-tile";
 import { WIDGET_ROW_MAX_HEIGHT } from "../types";
 import type { WidgetInstance, WidgetRows, WidgetSpan } from "../types";
-import { useOptionalTutorial } from "@/components/tutorial";
+import {
+  useOptionalTutorial,
+  useOptionalTutorialActions,
+  getMeasureTick as getTutorialMeasureTick,
+  subscribeMeasureTick as subscribeTutorialMeasureTick,
+} from "@/components/tutorial";
 
 function clampSpan(span: WidgetSpan | number): WidgetSpan {
   if (span <= 1) return 1;
@@ -305,7 +311,17 @@ export function SortableGrid({
   // register tutorial target rects in window coordinates rather than
   // relying on measureInWindow through a transformed Animated.View.
   const tutorial = useOptionalTutorial();
-  const measureTick = tutorial?.measureTick ?? 0;
+  // The provider's composed context exposes `measureTick` as a backwards-
+  // compatibility shim that is always 0 (tick lives in the external store
+  // now to avoid re-rendering every consumer). Subscribe directly so the
+  // measureContainer effect re-fires on every bump from the engine cascade,
+  // AppState foreground, and scroll-driven bumps — without that this grid
+  // was capturing stale window offsets after scrollToEnd on home-widget-added.
+  const measureTick = useSyncExternalStore(
+    subscribeTutorialMeasureTick,
+    getTutorialMeasureTick,
+    () => 0,
+  );
   const containerRef = useRef<View | null>(null);
   const [containerOffset, setContainerOffset] = useState<{ x: number; y: number } | null>(null);
   const measureContainer = useCallback(() => {
@@ -435,9 +451,35 @@ function SortableTile({
   // the parent grid) + the container's window offset rather than
   // measureInWindow because transformed Animated.Views can report stale
   // frames during ongoing spring animations.
-  const tutorial = useOptionalTutorial();
-  const registerTarget = tutorial?.registerTarget;
-  const unregisterTarget = tutorial?.unregisterTarget;
+  //
+  // Subscribes via `useOptionalTutorialActions` (stable identity, no
+  // re-renders on phase/rect/awaiting churn). The previous use of
+  // `useOptionalTutorial` re-rendered every tile on every tutorial state
+  // mutation — at 8 tiles that's an 8× render fan-out per setState.
+  const tutorialActions = useOptionalTutorialActions();
+  const registerTarget = tutorialActions?.registerTarget;
+  const unregisterTarget = tutorialActions?.unregisterTarget;
+  // Bump tick from the external store — re-fires the registration effect
+  // on every engine bump (cascade, AppState foreground, scroll-driven), so
+  // a stale containerOffset captured at step entry self-heals once the
+  // scrolling/layout has actually settled.
+  //
+  // Gated on `tileTutorialTargetId` so non-active tiles don't re-render
+  // on every bump. Without this gate, all 8 tiles would re-render on
+  // every measureTick bump (cascade fires ~7×/step + scroll bumps), and
+  // the registration effect would no-op early for inactive tiles anyway.
+  const hasTutorialTarget = !!tileTutorialTargetId;
+  const measureTick = useSyncExternalStore(
+    useCallback(
+      (cb) => (hasTutorialTarget ? subscribeTutorialMeasureTick(cb) : () => {}),
+      [hasTutorialTarget],
+    ),
+    useCallback(
+      () => (hasTutorialTarget ? getTutorialMeasureTick() : 0),
+      [hasTutorialTarget],
+    ),
+    () => 0,
+  );
   useEffect(() => {
     if (!tileTutorialTargetId || !registerTarget || !containerOffset) return;
     registerTarget(tileTutorialTargetId, {
@@ -458,6 +500,7 @@ function SortableTile({
     rect.y,
     rect.w,
     rect.h,
+    measureTick,
   ]);
   // Home rect mirrored into shared values so the gesture worklet always
   // sees the latest target (the rect prop changes when a sibling swaps).

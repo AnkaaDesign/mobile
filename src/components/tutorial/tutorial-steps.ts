@@ -343,6 +343,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /cronograma onto the stack.
+    navigatesTo: ROUTES.cronograma,
     pulseTarget: true,
     hint: "Toque em Cronograma",
   });
@@ -425,6 +427,11 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na primeira tarefa da lista para ver todos os detalhes.",
     placement: "top",
     expectedAction: "tap",
+    // Tapping the first mockTask row pushes the task detail route.
+    // Hardcoded to mockTasks[0].id (task0 = id(1)) so the replay engine
+    // can reconstruct the stack when jumping to a task-detail showcase.
+    navigatesTo:
+      "/(tabs)/producao/cronograma/detalhes/00000001-aaaa-4bbb-acac-000000000001",
     pulseTarget: true,
     hint: "Toque na primeira tarefa",
   });
@@ -647,6 +654,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /historico onto the stack.
+    navigatesTo: ROUTES.historico,
     pulseTarget: true,
     hint: "Toque em Histórico",
   });
@@ -675,6 +684,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /observacoes onto the stack.
+    navigatesTo: ROUTES.observacoes,
     pulseTarget: true,
     hint: "Toque em Observações",
   });
@@ -713,6 +724,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /recorte onto the stack.
+    navigatesTo: ROUTES.recorte,
     pulseTarget: true,
     hint: "Toque em Recorte",
   });
@@ -801,6 +814,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /pessoal onto the stack.
+    navigatesTo: ROUTES.pessoal,
     pulseTarget: true,
     hint: "Toque em Pessoal",
   });
@@ -826,6 +841,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque em Meus Pontos para ver o seu controle de ponto.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalPontos,
     pulseTarget: true,
     hint: "Toque em Meus Pontos",
   });
@@ -862,6 +879,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Quando faltou o dia inteiro (não registrou nenhuma batida), use este ícone de calendário com X. Toque nele para abrir o formulário de Justificativa de Ausência.",
     placement: "bottom",
     expectedAction: "tap",
+    // Justify button pushes the missing-days list route.
+    navigatesTo: ROUTES.pessoalPontosJustificar,
     pulseTarget: true,
     hint: "Toque em Justificar",
   });
@@ -886,6 +905,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na primeira linha (em destaque) para abrir o formulário de justificativa daquele dia.",
     placement: "bottom",
     expectedAction: "tap",
+    // Row tap pushes the dynamic justify-form route (first missing day).
+    navigatesTo: justifyFormRoute(),
     pulseTarget: true,
     hint: "Toque no dia",
   });
@@ -946,6 +967,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Depois de fechar o alerta, toque na seta voltar para retornar à lista de dias sem batida.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops the form route off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -959,6 +982,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na seta voltar de novo para retornar ao espelho de ponto. Em seguida vamos ver Ajustar Ponto.",
     placement: "bottom",
     expectedAction: "tap",
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -978,6 +1002,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Quando faltou apenas uma batida (esqueceu a entrada, intervalo ou saída), use este ícone de relógio com lápis. Toque para abrir o formulário de Ajuste de Ponto.",
     placement: "bottom",
     expectedAction: "tap",
+    // Adjust button pushes the ajustar-ponto form route.
+    navigatesTo: ROUTES.pessoalPontosAjustar,
     pulseTarget: true,
     hint: "Toque em Ajustar",
   });
@@ -1035,6 +1061,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na seta voltar para retornar ao espelho de ponto.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops the ajustar-ponto route off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1062,6 +1090,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque na seta de voltar no topo para retornar ao hub Pessoal.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /meus-pontos off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1076,6 +1106,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque em Meus Feriados para ver o calendário oficial.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalFeriados,
     pulseTarget: true,
     hint: "Toque em Meus Feriados",
   });
@@ -1098,6 +1130,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque na seta voltar.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /meus-feriados off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1112,6 +1146,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque em Meus EPIs para ver suas entregas de equipamento.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalEpis,
     pulseTarget: true,
     hint: "Toque em Meus EPIs",
   });
@@ -1137,6 +1173,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Para pedir um EPI, toque no botão Solicitar EPI (canto inferior direito). Ele abre o formulário de solicitação.",
     placement: "top",
     expectedAction: "tap",
+    // Solicitar EPI FAB pushes the /request form route.
+    navigatesTo: "/(tabs)/pessoal/meus-epis/request",
     pulseTarget: true,
     hint: "Toque em Solicitar EPI",
   });
@@ -1172,6 +1210,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na seta voltar para retornar à lista de EPIs. Vamos seguir para o passo de assinatura de uma entrega.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops the /request form off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1260,6 +1300,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque na seta voltar para retornar à lista de EPIs.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops the EPI detail off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1272,6 +1314,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque na seta voltar de novo para retornar ao hub Pessoal e ver Mensagens.",
     placement: "bottom",
     expectedAction: "tap",
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1291,6 +1334,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque em Mensagens para ver os comunicados da liderança.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalMensagens,
     pulseTarget: true,
     hint: "Toque em Minhas Mensagens",
   });
@@ -1338,6 +1383,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Volte ao hub.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /minhas-mensagens off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1352,6 +1399,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque para ver seu histórico disciplinar.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalAdvertencias,
     pulseTarget: true,
     hint: "Toque em Minhas Advertências",
   });
@@ -1374,6 +1423,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Volte ao hub.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /minhas-advertencias off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1388,6 +1439,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque para ver itens emprestados da empresa.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalEmprestimos,
     pulseTarget: true,
     hint: "Toque em Meus Empréstimos",
   });
@@ -1409,6 +1462,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Volte ao hub.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /meus-emprestimos off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1423,6 +1478,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque para ver suas retiradas de estoque.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the subsection route.
+    navigatesTo: ROUTES.pessoalMovimentacoes,
     pulseTarget: true,
     hint: "Toque em Minhas Movimentações",
   });
@@ -1444,6 +1501,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Volte ao hub.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops /minhas-movimentacoes off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
@@ -1473,6 +1532,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description: "Toque para abrir seu painel de bônus.",
     placement: "top",
     expectedAction: "tap",
+    // Pessoal grid card tap pushes the bonus hub route.
+    navigatesTo: ROUTES.pessoalBonus,
     pulseTarget: true,
     hint: "Toque em Meu Bônus",
     condition: bonifiableOnly,
@@ -1559,6 +1620,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque em Histórico para ver os bônus dos meses anteriores: períodos confirmados, pagos e detalhamentos.",
     placement: "top",
     expectedAction: "tap",
+    // Bonus sub-nav tap pushes the histórico route.
+    navigatesTo: ROUTES.pessoalBonusHistorico,
     pulseTarget: true,
     hint: "Toque em Histórico",
     condition: bonifiableOnly,
@@ -1584,6 +1647,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na seta voltar para retornar ao painel atual e depois ao hub Pessoal. Você pode revisitar o bônus a qualquer momento pelo cartão Meu Bônus.",
     placement: "bottom",
     expectedAction: "tap",
+    // Back-button tap pops the bonus route off the stack.
+    popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
     condition: bonifiableOnly,
@@ -1612,6 +1677,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer item tap pushes /meu-pessoal onto the stack.
+    navigatesTo: ROUTES.meuPessoal,
     pulseTarget: true,
     hint: "Toque em Minha Equipe",
     condition: leaderOnly,
@@ -1696,6 +1763,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     placement: "bottom",
     openDrawerOnEnter: true,
     expectedAction: "tap",
+    // Drawer submenu item tap pushes /preferencias onto the stack.
+    navigatesTo: ROUTES.preferencias,
     pulseTarget: true,
     hint: "Toque em Preferências",
   });
@@ -1720,6 +1789,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Em Notificações você escolhe quais eventos vão te alertar e por quais canais (In-App, Push, Email, WhatsApp). Toque para abrir.",
     placement: "bottom",
     expectedAction: "tap",
+    // Card tap pushes the notification-preferences route.
+    navigatesTo: ROUTES.notificationPreferences,
     pulseTarget: true,
     hint: "Toque em Notificações",
   });
@@ -1794,6 +1865,8 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Com o menu aberto, toque no seu avatar para abrir o sub-menu (se ainda não estiver aberto) e depois em Meu Perfil para ver e editar seus dados.",
     placement: "bottom",
     expectedAction: "tap",
+    // Drawer submenu item tap pushes /perfil onto the stack.
+    navigatesTo: ROUTES.perfil,
     pulseTarget: true,
     hint: "Toque em Meu Perfil",
   });
