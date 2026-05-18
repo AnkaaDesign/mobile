@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { Dimensions, InteractionManager, type View } from "react-native";
+import { InteractionManager, useWindowDimensions, type View } from "react-native";
 import { useOptionalTutorialActions } from "./tutorial-context";
 import {
   getActiveTargetId,
@@ -9,7 +9,7 @@ import {
 } from "./tutorial-store";
 
 // Temporarily ENABLED while we hunt the spotlight-stuck bug.
-const VERBOSE = true;
+const VERBOSE = false;
 const log = VERBOSE
   ? (msg: string, ...args: any[]) => {
       if (__DEV__) console.log(`[tutorial/target ${Date.now() % 100000}] ${msg}`, ...args);
@@ -49,6 +49,7 @@ interface Options {
  *   - On external bumpMeasureTick (drawer open animation, scroll settle).
  */
 export function useTutorialTarget(id: string, options?: Options) {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   // Subscribe ONLY to the stable actions bag. This hook used to subscribe
   // to the entire composed context, which re-rendered all 140+ mounted
   // targets on every state mutation (phase, rect, awaiting, measureTick).
@@ -120,14 +121,13 @@ export function useTutorialTarget(id: string, options?: Options) {
       // to the screen automatically, so a rect that extends off-screen
       // still renders a spotlight where it intersects the viewport.
       const MIN_DIM = 8;
-      const screen = Dimensions.get("window");
       const bad =
         width < MIN_DIM ||
         height < MIN_DIM ||
         y + height <= 0 ||
-        y >= screen.height ||
+        y >= windowHeight ||
         x + width <= 0 ||
-        x >= screen.width;
+        x >= windowWidth;
       if (bad) {
         log(`measure REJECT id=${id} rect=`, { x, y, width, height });
         return;
@@ -136,7 +136,7 @@ export function useTutorialTarget(id: string, options?: Options) {
       hasRegisteredRef.current = true;
       registerTarget(id, { x, y, width, height });
     });
-  }, [registerTarget, id]);
+  }, [registerTarget, id, windowWidth, windowHeight]);
 
   // 2-attempt measure: immediate + 1 follow-up RAF, gated by
   // hasRegisteredRef. measureInWindow is async — the callback may not
@@ -159,6 +159,9 @@ export function useTutorialTarget(id: string, options?: Options) {
   // triggered by the same render pass (Yoga reflow + child re-mount) have
   // a chance to settle before we read window coordinates.
   const onLayout = useCallback(() => {
+    // Guard: skip inactive targets so 140+ hooks don't each schedule
+    // double-RAF measureAttempt calls on every layout event in the app.
+    if (!isActiveTarget) return;
     log(`onLayout fired id=${id} isActiveTarget=${isActiveTarget}`);
     requestAnimationFrame(() =>
       requestAnimationFrame(() => measure()),
@@ -230,7 +233,17 @@ export function useTutorialTarget(id: string, options?: Options) {
     let cancelled = false;
     const startPolling = (ms: number) => {
       if (interval) clearInterval(interval);
-      interval = setInterval(() => measure(), ms);
+      interval = setInterval(() => {
+        if (cancelled) return;
+        // Immediately downshift when first registration arrives so we don't
+        // burn 4000ms worth of 500ms polls waiting for armDownshift to fire.
+        if (ms === 500 && hasRegisteredRef.current) {
+          startPolling(1500);
+          return;
+        }
+        fastPollCount++;
+        measure();
+      }, ms);
     };
     // Initial 500ms polling cadence (was 300ms). The triple-strategy
     // first measure (immediate + double-RAF + InteractionManager) covers
@@ -241,19 +254,19 @@ export function useTutorialTarget(id: string, options?: Options) {
     // bridge for the dozens of mounted target hooks during long
     // tutorial sessions, which was the main contributor to the engine
     // feeling sluggish after the task-detail screen.
+    // Adaptive polling: 500ms until first registration, then 1500ms.
+    // Self-downshifts the moment `hasRegisteredRef` flips — no 4s wait.
+    // Also caps retries so a permanently-invisible element never polls forever.
+    let fastPollCount = 0;
+    const MAX_FAST_POLLS = 20; // 20 × 500ms = 10s max before forced downshift
     startPolling(500);
-    // Schedule the downshift check after the initial settle window.
-    // Only downshift if a measure has actually landed — otherwise keep
-    // polling at the fast cadence until one does. Re-arms the timer until
-    // success.
     const armDownshift = () => {
       if (cancelled) return;
       downshiftTimer = setTimeout(() => {
         if (cancelled) return;
-        if (hasRegisteredRef.current) {
+        if (hasRegisteredRef.current || fastPollCount >= MAX_FAST_POLLS) {
           startPolling(1500);
         } else {
-          // Still no rect — keep aggressive cadence and re-check later.
           armDownshift();
         }
       }, 4000);

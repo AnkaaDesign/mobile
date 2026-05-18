@@ -19,7 +19,20 @@ export const productionAnalyticsKeys = {
 
 export function useTaskProductionStats(filters: TaskProductionFilters) {
   return useQuery<TaskProductionResponse, Error>({
-    queryKey: productionAnalyticsKeys.taskProduction(filters),
+    // Serialize Date objects to ISO strings so TanStack Query compares keys by
+    // value rather than by reference. Without this, a new `filters` object on
+    // every render produces a new cache key, triggering an infinite refetch loop.
+    queryKey: [
+      ...productionAnalyticsKeys.all,
+      "task-production",
+      {
+        ...filters,
+        startDate: filters.startDate?.toISOString(),
+        endDate: filters.endDate?.toISOString(),
+      },
+    ] as const,
+    // Keep the original `filters` (with Date objects) for the API call —
+    // serialization is only needed for the stable query key above.
     queryFn: () => getTaskProductionStats(filters),
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

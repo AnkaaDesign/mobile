@@ -35,7 +35,10 @@ export function nearestPerimeter(
   foraDoPerimetro: boolean;
 } | null {
   const candidates = perimetros.filter(
-    (p) => typeof p.latitude === "number" && typeof p.longitude === "number",
+    (p) =>
+      typeof p.latitude === "number" && Number.isFinite(p.latitude) &&
+      typeof p.longitude === "number" && Number.isFinite(p.longitude) &&
+      typeof p.raio === "number" && p.raio > 0,
   );
   if (candidates.length === 0) return null;
 
@@ -50,11 +53,10 @@ export function nearestPerimeter(
     }
   }
 
-  const radius = typeof best.raio === "number" ? best.raio : 0;
   return {
     distanceMeters: bestDistance,
     perimetro: best,
-    foraDoPerimetro: bestDistance > radius,
+    foraDoPerimetro: bestDistance > best.raio!,
   };
 }
 

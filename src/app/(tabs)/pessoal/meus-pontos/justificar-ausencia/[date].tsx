@@ -35,6 +35,8 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 import { isTutorialRuntimeActive } from "@/components/tutorial/tutorial-runtime-state";
 
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB base64 length cap
+
 const weekdayPt = (d: Date): string => {
   const names = [
     "Domingo",
@@ -307,13 +309,20 @@ export default function JustificarAusenciaFormScreen() {
     const asset = result.assets[0];
     if (!asset?.uri) return;
     try {
-      const base64 =
+      const base64String =
         asset.base64 ??
         (await FileSystem.readAsStringAsync(asset.uri, {
           encoding: FileSystem.EncodingType.Base64,
         }));
+      if (base64String.length > MAX_PHOTO_BYTES) {
+        Alert.alert(
+          "Foto muito grande",
+          "A imagem selecionada é muito grande. Por favor, escolha uma com menor resolução.",
+        );
+        return;
+      }
       setPhotoUri(asset.uri);
-      setPhotoBase64(base64);
+      setPhotoBase64(base64String);
     } catch {
       Alert.alert("Erro", "Falha ao ler a foto. Tente novamente.");
     }

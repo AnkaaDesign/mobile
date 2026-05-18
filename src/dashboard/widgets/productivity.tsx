@@ -31,6 +31,7 @@ import type {
   TaskProductionYAxisMode,
   TaskProductionItem,
 } from "@/types/production-analytics";
+import type { Sector } from "@/types/sector";
 
 import { WidgetCard } from "../components/widget-card";
 import {
@@ -267,7 +268,11 @@ function MiniChart({
   const plotW = Math.max(0, width - padLeft - padRight);
   const plotH = Math.max(0, height - padTop - padBottom);
 
-  const rawMax = Math.max(...data.map((d) => d.value), goalValue ?? 0, 1);
+  const rawMax = Math.max(
+    data.reduce((a, d) => Math.max(a, d.value), 0),
+    goalValue ?? 0,
+    1,
+  );
   const niceMax = niceCeil(rawMax);
   const yScale = (v: number) => padTop + plotH - (v / niceMax) * plotH;
 
@@ -528,7 +533,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
     if (xAxisMode !== "year") return rawItems;
     const groups = new Map<string, TaskProductionItem[]>();
     for (const item of rawItems) {
-      const yearPart = item.period.split("-")[0];
+      const yearPart = item.period?.split("-")?.[0] ?? "";
       if (!groups.has(yearPart)) groups.set(yearPart, []);
       groups.get(yearPart)!.push(item);
     }
@@ -568,7 +573,9 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
   const avgPerDisplayPeriod = periodsWithData.length
     ? periodsWithData.reduce((s, i) => s + i.totalCount, 0) / periodsWithData.length
     : 0;
-  const peakCount = items.length ? Math.max(...items.map((i) => i.totalCount)) : 0;
+  const peakCount = items.length
+    ? items.reduce((a, i) => Math.max(a, i.totalCount), 0)
+    : 0;
 
   // The chart's pixel dimensions are measured in ProductivityBody via onLayout
   // — the parent doesn't need to know them.
@@ -581,6 +588,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         showHeader={config.display.showHeader}
         accentColor={accent.hex}
         borderColor={accent.hex}
+        onRefresh={refetch}
       >
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.md ?? 12 }}>
           <Text style={{ color: colors.destructive, fontSize: typography?.body?.sm ?? 13 }}>
@@ -659,7 +667,7 @@ function ProductivityBody({
   xAxisMode: TaskProductionXAxisMode;
   goalValue: number | null;
   accentHex: string;
-  colors: any;
+  colors: ReturnType<typeof useTheme>["colors"];
   isLoading: boolean;
 }) {
   const [plot, setPlot] = useState({ width: 0, height: 0 });
@@ -775,14 +783,14 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const accentShade = (config.accent?.shade ?? "500") as WidgetAccentShade;
   const borderColor = (config.accent?.borderColor ?? "none") as WidgetBorderColor;
 
-  const sectorsQ = useSectors({ take: 200 } as any);
+  const sectorsQ = useSectors({ take: 200 });
   const sectorOptions = useMemo(
     () =>
-      ((sectorsQ as any)?.data?.data ?? []).map((s: any) => ({
+      (sectorsQ.data?.data ?? []).map((s: Sector) => ({
         value: s.id,
         label: s.name,
       })),
-    [sectorsQ],
+    [sectorsQ.data],
   );
 
   return (

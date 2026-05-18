@@ -83,7 +83,6 @@ export interface StockBadgeProps {
 export interface StockStatusIndicatorProps {
   quantity: number;
   minQuantity?: number;
-  maxQuantity?: number;
   style?: ViewStyle;
 }
 

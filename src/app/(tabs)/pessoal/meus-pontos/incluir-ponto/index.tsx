@@ -139,6 +139,7 @@ export default function IncluirPontoListScreen() {
     pollWhilePending: true,
   });
   const openComprovante = useOpenInclusaoPontoComprovante();
+  const [loadingComprovanteId, setLoadingComprovanteId] = useState<number | null>(null);
 
   const pageTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosIncluirPage);
   const ctaTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosIncluirCta);
@@ -208,6 +209,7 @@ export default function IncluirPontoListScreen() {
 
   const handleOpenComprovante = useCallback(
     async (registroPendenciaId: number) => {
+      setLoadingComprovanteId(registroPendenciaId);
       try {
         await openComprovante.mutateAsync(registroPendenciaId);
       } catch (e: any) {
@@ -215,6 +217,8 @@ export default function IncluirPontoListScreen() {
           "Erro",
           e?.response?.data?.message ?? e?.message ?? "Não foi possível abrir o comprovante.",
         );
+      } finally {
+        setLoadingComprovanteId(null);
       }
     },
     [openComprovante],
@@ -293,9 +297,7 @@ export default function IncluirPontoListScreen() {
               const isOpen = expanded === p.id;
               const isLast = idx === orderedList.length - 1;
               const canOpenDoc = p.status === 1 && !!p.fonteDadosId;
-              const showingPdfLoader =
-                openComprovante.isPending &&
-                (openComprovante.variables as number | undefined) === p.id;
+              const showingPdfLoader = loadingComprovanteId === p.id;
               const showDocCol = canOpenDoc || showingPdfLoader;
               const label = statusLabel(p);
               const isLongLabel = label.length > 14;

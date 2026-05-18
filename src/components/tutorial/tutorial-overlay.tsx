@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ActivityIndicator, Dimensions, StyleSheet, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Pressable, Text, useWindowDimensions, View } from "react-native";
 import {
   bumpMeasureTickStore,
   getActiveTargetRect,
@@ -7,7 +7,7 @@ import {
 } from "./tutorial-store";
 
 // Temporarily ENABLED while we hunt the spotlight-stuck bug.
-const VERBOSE = true;
+const VERBOSE = false;
 const olog = VERBOSE
   ? (msg: string, ...args: any[]) => {
       if (__DEV__) console.log(`[tutorial/overlay ${Date.now() % 100000}] ${msg}`, ...args);
@@ -33,7 +33,6 @@ import {
 import { TutorialTooltip } from "./tutorial-tooltip";
 import { TutorialDevStepPicker } from "./tutorial-dev-step-picker";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const SPOTLIGHT_PADDING = 8;
 const SPOTLIGHT_RADIUS = 14;
 const DIM_COLOR = "rgba(0, 0, 0, 0.78)";
@@ -53,6 +52,7 @@ export function TutorialOverlay() {
 }
 
 function TutorialOverlayBody() {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const tutorial = useTutorial();
   const {
     isActive,
@@ -87,8 +87,8 @@ function TutorialOverlayBody() {
   // travel between rects. The old engine tweened coords with a 320ms
   // duration, which both kept the old rect partially visible *and* showed
   // the spotlight drifting across the screen on every step change.
-  const cx = useSharedValue(SCREEN_W / 2);
-  const cy = useSharedValue(SCREEN_H / 2);
+  const cx = useSharedValue(windowWidth / 2);
+  const cy = useSharedValue(windowHeight / 2);
   const cw = useSharedValue(0);
   const ch = useSharedValue(0);
   const cutoutOpacity = useSharedValue(0);
@@ -232,15 +232,15 @@ function TutorialOverlayBody() {
     position: "absolute" as const,
     left: 0,
     top: 0,
-    width: SCREEN_W,
+    width: windowWidth,
     height: Math.max(0, cy.value),
   }));
   const bottomStyle = useAnimatedStyle(() => ({
     position: "absolute" as const,
     left: 0,
     top: Math.max(0, cy.value + ch.value),
-    width: SCREEN_W,
-    height: Math.max(0, SCREEN_H - (cy.value + ch.value)),
+    width: windowWidth,
+    height: Math.max(0, windowHeight - (cy.value + ch.value)),
   }));
   const leftStyle = useAnimatedStyle(() => ({
     position: "absolute" as const,
@@ -253,7 +253,7 @@ function TutorialOverlayBody() {
     position: "absolute" as const,
     left: Math.max(0, cx.value + cw.value),
     top: Math.max(0, cy.value),
-    width: Math.max(0, SCREEN_W - (cx.value + cw.value)),
+    width: Math.max(0, windowWidth - (cx.value + cw.value)),
     height: Math.max(0, ch.value),
   }));
   const coverStyle = useAnimatedStyle(() => ({
@@ -448,7 +448,7 @@ function TutorialOverlayBody() {
               position: "absolute",
               left: 0,
               top: 0,
-              width: SCREEN_W,
+              width: windowWidth,
               height: Math.max(0, sy),
             }}
           />
@@ -458,8 +458,8 @@ function TutorialOverlayBody() {
               position: "absolute",
               left: 0,
               top: sy + sh,
-              width: SCREEN_W,
-              height: Math.max(0, SCREEN_H - (sy + sh)),
+              width: windowWidth,
+              height: Math.max(0, windowHeight - (sy + sh)),
             }}
           />
           <Pressable
@@ -478,7 +478,7 @@ function TutorialOverlayBody() {
               position: "absolute",
               left: sx + sw,
               top: Math.max(0, sy),
-              width: Math.max(0, SCREEN_W - (sx + sw)),
+              width: Math.max(0, windowWidth - (sx + sw)),
               height: sh,
             }}
           />

@@ -235,7 +235,12 @@ export default function IncluirPontoCaptureScreen() {
     [],
   );
 
+  // W16: guard against duplicate submit on fast double-tap. Reset only on
+  // error so the user can retry; on success, navigation removes the screen.
+  const submittedRef = useRef(false);
+
   const handleSubmit = useCallback(async () => {
+    if (submittedRef.current) return;
     if (!coords) {
       Alert.alert("Atenção", "Aguarde a localização ser obtida.");
       return;
@@ -246,6 +251,7 @@ export default function IncluirPontoCaptureScreen() {
       return;
     }
 
+    submittedRef.current = true;
     try {
       const res = await createMutation.mutateAsync({
         latitude: coords.latitude,
@@ -265,11 +271,25 @@ export default function IncluirPontoCaptureScreen() {
         // any error.
         nav.replace(mobileRoute("/pessoal/meus-pontos/incluir-ponto"));
       } else {
-        Alert.alert("Erro", body?.message || "Falha ao incluir ponto.");
+        // W17: include validationErrors in the alert so they are never
+        // silently discarded.
+        const detail = [
+          body?.message,
+          ...(Array.isArray(body?.validationErrors)
+            ? body.validationErrors
+                .map((e: { message?: string }) => e.message)
+                .filter(Boolean)
+            : []),
+        ]
+          .filter(Boolean)
+          .join("\n");
+        Alert.alert("Erro", detail || "Falha ao incluir ponto.");
+        submittedRef.current = false;
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Erro ao incluir ponto.";
       Alert.alert("Erro", msg);
+      submittedRef.current = false;
     }
   }, [coords, config, photoBase64, address, foraDoPerimetro, deviceId, createMutation, nav]);
 

@@ -57,5 +57,5 @@ export interface TaskProductionData {
 }
 
 export interface TaskProductionResponse extends BaseResponse {
-  data: TaskProductionData;
+  data?: TaskProductionData;
 }

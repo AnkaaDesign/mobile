@@ -70,13 +70,13 @@ export function setActiveTargetId(id: string | null): void {
   // (useSyncExternalStore re-reads snapshot, sees same value, no
   // re-render — but the polling effect re-runs because `isActiveTarget`
   // is read fresh inside).
-  if (prev != null) {
-    const prevSet = _activeIdSubscribers.get(prev);
-    if (prevSet) prevSet.forEach((fn) => { try { fn(); } catch {} });
-  }
-  if (id != null && id !== prev) {
+  if (id != null) {
     const nextSet = _activeIdSubscribers.get(id);
     if (nextSet) nextSet.forEach((fn) => { try { fn(); } catch {} });
+  }
+  if (prev != null && prev !== id) {
+    const prevSet = _activeIdSubscribers.get(prev);
+    if (prevSet) prevSet.forEach((fn) => { try { fn(); } catch {} });
   }
 }
 

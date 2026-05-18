@@ -98,7 +98,7 @@ export function useTutorialIsActive(): boolean {
 // Temporarily ENABLED while we hunt the spotlight-stuck bug. Set back
 // to false once stable. Logs are tagged so the user can grep `[tutorial]`
 // in Metro's console to capture the full transition trace.
-const TUTORIAL_VERBOSE = true;
+const TUTORIAL_VERBOSE = false;
 const tlog = TUTORIAL_VERBOSE
   ? (msg: string, ...args: any[]) => {
       if (__DEV__) console.log(`[tutorial ${Date.now() % 100000}] ${msg}`, ...args);
@@ -451,6 +451,15 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   const jumpHandlersRef = useRef<Map<string, () => void | Promise<void>>>(new Map());
   // `currentStepRef` mirrors state for use inside callbacks (avoids stale closure).
   const currentStepRef = useRef<TutorialStep | null>(null);
+  // Refs that mirror step-navigation state so next() doesn't close over `state`.
+  // Without these, next → notifyAction → navigation-listener effect all rebuild
+  // on every setState, re-subscribing the drawer-state listener ~7× per step.
+  const stepsRef = useRef<TutorialStep[]>([]);
+  const currentIndexRef = useRef<number>(0);
+  const completedStepIdsRef = useRef<string[]>([]);
+  stepsRef.current = state.steps;
+  currentIndexRef.current = state.currentStepIndex;
+  completedStepIdsRef.current = state.completedStepIds;
 
   // Measure tick lives in the external store, not React state — so bumping
   // it only re-renders the SINGLE currently-active target hook (via
@@ -536,8 +545,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
         if (ret && typeof (ret as Promise<void>).then === "function") {
           await ret;
         }
-      } catch {
+      } catch (err) {
         // Don't let a broken handler trap the jump.
+        if (__DEV__) console.error('[tutorial] jump setup handler threw:', err);
       }
     }
   }, []);
@@ -551,6 +561,11 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   // generic cascade-flush in clearTimers doesn't kill it prematurely
   // before it gets a chance to rescue a stuck phase.
   const phaseWatchdogTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Recovery interval ref — the persistent 1000ms rescue interval from the
+  // phase-driven recovery effect. Stored here so clearTimers() (called by
+  // stop/next/goToStep) can cancel it, preventing a stale interval from
+  // bumping the measure tick after the tutorial ends or advances.
+  const recoveryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimers = useCallback(() => {
     const cancelled: string[] = [];
@@ -587,6 +602,13 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     if (pendingUnregisterRef.current.size) {
       pendingUnregisterRef.current.forEach((t) => clearTimeout(t));
       pendingUnregisterRef.current.clear();
+    }
+    // Cancel the persistent recovery interval. Without this, stop()/next()/
+    // goToStep() would leave it ticking — bumping bumpMeasureTickStore after
+    // the step has already changed or the tutorial has ended.
+    if (recoveryIntervalRef.current) {
+      clearInterval(recoveryIntervalRef.current);
+      recoveryIntervalRef.current = null;
     }
   }, []);
 
@@ -627,15 +649,17 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   }, []);
 
   const complete = useCallback(async () => {
-    if (user?.id) await tutorialStorage.markCompleted(user.id);
+    const uid = userRef.current?.id;
+    if (uid) await tutorialStorage.markCompleted(uid);
     haptic("success");
     await stop();
-  }, [stop, user?.id]);
+  }, [stop]);
 
   const skip = useCallback(async () => {
-    if (user?.id) await tutorialStorage.markCompleted(user.id);
+    const uid = userRef.current?.id;
+    if (uid) await tutorialStorage.markCompleted(uid);
     await stop();
-  }, [stop, user?.id]);
+  }, [stop]);
 
   const goToStep = useCallback((index: number) => {
     tlog(`goToStep → ${index}`);
@@ -767,70 +791,50 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     tlog(`next() called`);
     clearTimers();
     haptic("light");
-    // Mirror goToStep's defensive cleanup of the navigation-loading overlay
-    // state. Without this, a `claimOverlay()` from a previous screen's
-    // useScreenReady can survive a cross-route step transition and trap the
-    // user behind the dim overlay forever, with no tutorial UI surfacing.
     try {
       navLoadingRef.current.endNavigation();
     } catch {}
-    // Detect tutorial completion (current step is the last one) BEFORE
-    // the setState updater, so side-effects (storage write, mock clear,
-    // ref cleanup) don't live inside a React updater (which is required
-    // to be pure and may run twice in StrictMode).
-    let didComplete = false;
-    setState((s) => {
-      const currentStep = s.steps[s.currentStepIndex];
-      const nextIndex = s.currentStepIndex + 1;
-      const completedStepIds = currentStep
-        ? Array.from(new Set([...s.completedStepIds, currentStep.id]))
-        : s.completedStepIds;
+    // Read from refs, NOT from closed-over `state`. This is the key fix for
+    // the stutter/lag: previously `state` in deps caused next() to rebuild on
+    // every setState → notifyAction rebuilt → navigation-state listener
+    // re-subscribed ~7× per step advance, flooding the JS thread.
+    const steps = stepsRef.current;
+    const currentIndex = currentIndexRef.current;
+    const currentStep = steps[currentIndex];
+    const nextIndex = currentIndex + 1;
+    const completedStepIds = currentStep
+      ? Array.from(new Set([...completedStepIdsRef.current, currentStep.id]))
+      : completedStepIdsRef.current;
+    const didComplete = nextIndex >= steps.length;
+    const nextStep = steps[nextIndex];
+    const nextRoute = nextStep?.navigateOnEnter ?? nextStep?.screen;
+    const willNavigate =
+      !!nextRoute &&
+      normalizeRoute(pathnameRef.current) !== normalizeRoute(nextRoute);
 
-      if (nextIndex >= s.steps.length) {
-        didComplete = true;
-        return {
-          ...INITIAL_STATE,
-          completedStepIds,
-        };
-      }
-
-      // Clear the spotlight rect on step change. The next step's effect will
-      // either pick up a cached rect (same-screen transition) or wait for the
-      // target to register (cross-screen transition). This guarantees no
-      // "previous step's rect lingers under the new step's tooltip" bug.
-      //
-      // Phase: "navigating" hides the tooltip; use it only when the next step
-      // actually crosses routes. Same-screen advances get "waiting" so the
-      // engine's transitions feel snappy (the step-entry effect promotes
-      // to "active" within a frame of a cache hit).
-      const nextStep = s.steps[nextIndex];
-      const nextRoute = nextStep?.navigateOnEnter ?? nextStep?.screen;
-      const willNavigate =
-        !!nextRoute &&
-        normalizeRoute(pathnameRef.current) !== normalizeRoute(nextRoute);
-      return {
-        ...s,
-        currentStepIndex: nextIndex,
-        awaitingAction: false,
-        isCelebrating: false,
-        completedStepIds,
-        activeTargetRect: null,
-        phase: willNavigate ? "navigating" : "waiting",
-        interactiveStuck: false,
-      };
-    });
-    // Completion side-effects: run AFTER setState commits the new
-    // INITIAL_STATE (and after the updater has run — even twice in
-    // StrictMode). Null the step ref so any in-flight measureInWindow
-    // callback that races the tutorial-end doesn't write a stale rect
-    // into the store on next start().
     if (didComplete) {
+      // setState first so isActive flips before the store clears — prevents a
+      // brief blank-overlay window where the overlay is still mounted but the
+      // store has no active rect.
+      setState({ ...INITIAL_STATE, completedStepIds });
       currentStepRef.current = null;
       const uid = userRef.current?.id;
       if (uid) tutorialStorage.markCompleted(uid).catch(() => {});
       cachedMocksModule?.clearTutorialMocks(queryClient);
       resetTutorialStore();
+      return;
     }
+
+    setState((s) => ({
+      ...s,
+      currentStepIndex: nextIndex,
+      awaitingAction: false,
+      isCelebrating: false,
+      completedStepIds,
+      activeTargetRect: null,
+      phase: willNavigate ? "navigating" : "waiting",
+      interactiveStuck: false,
+    }));
   }, [clearTimers, queryClient]);
 
   const start = useCallback(
@@ -896,8 +900,9 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   );
 
   const reset = useCallback(async () => {
-    if (user?.id) await tutorialStorage.reset(user.id);
-  }, [user?.id]);
+    const uid = userRef.current?.id;
+    if (uid) await tutorialStorage.reset(uid);
+  }, []);
 
   // Register: the cache is always updated. State (activeTargetRect) is only
   // updated when the registered id is the active step's target — that's the
@@ -1249,10 +1254,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       // would stack the destination twice. After the deferred frame we
       // re-check the live pathname — push only if still wrong.
       requestAnimationFrame(() => {
-        if (
-          currentStepRef.current?.id !== currentStep.id ||
-          !state.isActive
-        ) {
+        if (currentStepRef.current?.id !== currentStep.id) {
           tlog(`step-entry RAF abort (step changed or inactive)`);
           return;
         }
@@ -1401,7 +1403,12 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     // onLayout bursts emitted from the same frame; the step-entry cascade
     // already controls its own timing.
     if (currentStep.targetId) {
-      [80, 320, 900, 1800].forEach((ms) => {
+      // 3-bump cascade covers: fast-path route mount (~80ms), medium settle
+      // (~300ms), and slow chrome-header race (~750ms). The active hook's
+      // 500ms polling loop is the long-tail safety net beyond 750ms, so
+      // additional bumps at 900/1800ms would overlap with the poller and
+      // produce redundant measureInWindow calls with no benefit.
+      [80, 300, 750].forEach((ms) => {
         const t = setTimeout(() => bumpMeasureTickStore(), ms);
         cascadeTimersRef.current.push(t);
       });
@@ -1588,27 +1595,24 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   useEffect(() => {
     if (!state.isActive) return;
     tlog(`recovery effect ARMED stepIdx=${state.currentStepIndex} target=${currentStepRef.current?.targetId}`);
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    [60, 180, 380, 700, 1200, 1800, 2500, 3500].forEach((ms) => {
-      timers.push(setTimeout(() => {
-        tlog(`recovery bump fire ms=${ms} phase=${phaseRef.current}`);
-        bumpMeasureTickStore();
-      }, ms));
-    });
-    // Persistent rescue interval: fires every 1000ms but skips when
-    // phase is already "active" (spotlight working — no need to nudge).
-    // When phase is waiting/fallback/navigating, bumps continue
-    // indefinitely until the step changes or phase reaches active.
-    // This mirrors the AppState foreground workaround continuously.
-    const intervalHandle = setInterval(() => {
+    // Persistent rescue interval. Fires every 1200ms but only when phase is
+    // not "active". The prior version also front-loaded 8 burst-bumps at
+    // 60/180/.../3500ms which overlapped with the step-entry cascade's 3
+    // bumps AND the hook's 500ms polling — producing ~15 measureInWindow
+    // calls in 3.5s per step. Removed: the hook's polling loop is the
+    // recovery mechanism; this interval is only the long-tail safety net for
+    // genuine layout-never-settled cases (budget devices, slow header rehydration).
+    recoveryIntervalRef.current = setInterval(() => {
       if (phaseRef.current === "active") return;
       tlog(`recovery interval bump phase=${phaseRef.current}`);
       bumpMeasureTickStore();
-    }, 1000);
+    }, 1200);
     return () => {
       tlog(`recovery effect CLEANUP stepIdx=${state.currentStepIndex}`);
-      timers.forEach((t) => clearTimeout(t));
-      clearInterval(intervalHandle);
+      if (recoveryIntervalRef.current) {
+        clearInterval(recoveryIntervalRef.current);
+        recoveryIntervalRef.current = null;
+      }
     };
   }, [state.isActive, state.currentStepIndex]);
 

@@ -19,7 +19,7 @@ export function CalculationBreakdown({ item }: CalculationBreakdownProps) {
   const monthlyConsumption = item?.monthlyConsumption ?? 0;
   const estimatedLeadTime = watch("estimatedLeadTime") ?? item?.estimatedLeadTime ?? null;
   const reorderPoint = watch("reorderPoint") ?? item?.reorderPoint ?? null;
-  const maxQuantity = watch("maxQuantity") ?? item?.maxQuantity ?? null;
+  const maxQuantity = item?.maxQuantity ?? null;
   const abcCategory = item?.abcCategory ?? null;
   const xyzCategory = item?.xyzCategory ?? null;
 
