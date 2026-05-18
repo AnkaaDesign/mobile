@@ -991,7 +991,7 @@ const task7 = {
   sector: mockSector,
   paintId: mockPaintVerdeMatte.id,
   paint: { id: mockPaintVerdeMatte.id, name: mockPaintVerdeMatte.name, hex: mockPaintVerdeMatte.hex },
-  truck: truckOf(task7Id, 6, "DEMO-7G34", "Truck Urgente", "MERCEDES", "TRUCK", "DRY_CARGO", "G-04"),
+  truck: truckOf(task7Id, 6, "DEMO-7G34", "Truck Urgente", "MERCEDES_BENZ", "TRUCK", "DRY_CARGO", "G-04"),
   generalPainting: mockPaintVerdeMatte,
   logoPaints: [],
   artworks: [],
@@ -1445,6 +1445,80 @@ export const mockSecullumBatidasForDate = {
 
 // No previous solicitação — the absence form should render fresh.
 export const mockSecullumSolicitacao = null;
+
+// ===========================================================================
+// INCLUSÃO DE PONTO — config + sample pendências covering all 3 statuses
+// ===========================================================================
+
+// Server-side config consumed by the capture screen. Photo isn't required and
+// no perimeter restriction so the tutorial mock can render the list without
+// camera/GPS infra. The tutorial NEVER navigates to capture (it stays on the
+// list and narrates the capture flow), but the config still needs to exist
+// since the list screen mounts the hook with `enabled: true`.
+export const mockSecullumInclusaoConfig = {
+  horaServidor: new Date().toISOString(),
+  origemHorario: "Servidor",
+  justificativaAutomatica: false,
+  funcionarioAfastado: false,
+  exigirCapturaFotoPonto: false,
+  reconhecerFace: false,
+  tipoCameraCapturaFotoPonto: 1 as 0 | 1 | 2,
+  somentePerimetrosAutorizados: false,
+  perimetrosAutorizados: [],
+  atividades: [],
+};
+
+// Three pendências so the tutorial can teach all status states from a single
+// list view: status 1 = Aceita (green), 0 = Processando (orange + spinner),
+// 2 = Rejeitada (red, includes motivo). The first row has `fonteDadosId` so
+// the file/document icon renders next to it — that's the Comprovante shortcut.
+const isoOffsetMinutes = (m: number): string => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - m);
+  return d.toISOString();
+};
+
+export const mockSecullumInclusaoPendencias = [
+  {
+    id: 901,
+    dataHora: isoOffsetMinutes(45),
+    latitude: -23.5505,
+    longitude: -46.6333,
+    precisao: 4.5,
+    endereco: "Av. Paulista, 1000 — Bela Vista, São Paulo - SP",
+    status: 1 as 0 | 1 | 2,
+    motivoRejeicao: null,
+    foraDoPerimetro: false,
+    atividadeId: null,
+    fonteDadosId: 555001,
+  },
+  {
+    id: 902,
+    dataHora: isoOffsetMinutes(8),
+    latitude: -23.5510,
+    longitude: -46.6320,
+    precisao: 7.8,
+    endereco: "Av. Paulista, 1100 — Bela Vista, São Paulo - SP",
+    status: 0 as 0 | 1 | 2,
+    motivoRejeicao: null,
+    foraDoPerimetro: false,
+    atividadeId: null,
+    fonteDadosId: null,
+  },
+  {
+    id: 903,
+    dataHora: isoOffsetMinutes(180),
+    latitude: -23.5500,
+    longitude: -46.6300,
+    precisao: 15.2,
+    endereco: "Rua Augusta, 500 — Consolação, São Paulo - SP",
+    status: 2 as 0 | 1 | 2,
+    motivoRejeicao: "Nenhuma pessoa encontrada na foto",
+    foraDoPerimetro: false,
+    atividadeId: null,
+    fonteDadosId: null,
+  },
+];
 
 // ===========================================================================
 // PPE DELIVERIES — every status the UI knows about
@@ -2417,6 +2491,39 @@ export function injectTutorialMocks(
           : t.sector,
       }))
     : tasksFilteredByStatus;
+
+  // Child entities (cuts, observations, airbrushings, serviceOrders) embed
+  // a snapshot of their parent task — `record.task.sectorId` was frozen at
+  // mock-module load to `mockSector.id`. Without this rewrite the recorte
+  // listing's `where: { task: { sectorId: userSectorId } }` filter (resolved
+  // by `buildMockQueryFn` → matchesWhere) drops every cut for production
+  // users whose real sector differs, leaving the cuts list empty and the
+  // tutorial spotlight on the first item with nothing to anchor to.
+  const rewriteChildTaskSector = <T extends { task?: any }>(records: T[]): T[] =>
+    realSectorId
+      ? records.map((r: any) =>
+          r?.task
+            ? {
+                ...r,
+                task: {
+                  ...r.task,
+                  sectorId: realSectorId,
+                  sector: realSector
+                    ? {
+                        ...(r.task.sector ?? {}),
+                        id: realSectorId,
+                        name: realSector.name,
+                      }
+                    : r.task.sector,
+                },
+              }
+            : r,
+        )
+      : records;
+  const cutsWithRealSector = rewriteChildTaskSector(mockCuts as any[]);
+  const observationsWithRealSector = rewriteChildTaskSector(mockObservations as any[]);
+  const airbrushingsWithRealSector = rewriteChildTaskSector(mockAirbrushings as any[]);
+  const serviceOrdersWithRealSector = rewriteChildTaskSector(mockServiceOrders as any[]);
   // Only keep production-privileged sectors in the runtime registry — the
   // cronograma's sector query filters by `privileges: PRODUCTION`, and a
   // stray commercial sector would otherwise appear in the production user's
@@ -2436,10 +2543,10 @@ export function injectTutorialMocks(
 
   setTutorialRuntimeActive(true, {
     tasks: tasksWithRealSector,
-    cuts: mockCuts,
-    observations: mockObservations,
-    airbrushings: mockAirbrushings,
-    serviceOrders: mockServiceOrders,
+    cuts: cutsWithRealSector,
+    observations: observationsWithRealSector,
+    airbrushings: airbrushingsWithRealSector,
+    serviceOrders: serviceOrdersWithRealSector,
     customers: mockCustomers,
     paints: mockPaints,
     paintBrands: mockPaintBrands,
@@ -2464,6 +2571,11 @@ export function injectTutorialMocks(
     // `useMySecullumCalculations` provides its own queryFn, which beats the
     // setQueryDefaults mock fallback below.
     secullumCalculations: (mockSecullumMyCalculations as any).data,
+    // Inclusão de Ponto — the list screen pulls config + pendências on mount
+    // and both have their own queryFn (not generated by createEntityHooks),
+    // so they need the same per-entity short-circuit treatment.
+    inclusaoPontoConfig: mockSecullumInclusaoConfig,
+    inclusaoPontoPendencias: mockSecullumInclusaoPendencias,
   });
 
   // Cache priming is one-shot: snapshot the original cache, prime mocked
@@ -2491,6 +2603,21 @@ export function injectTutorialMocks(
         payload: wrap(sectorsForRuntime),
         records: sectorsForRuntime,
       };
+    }
+    // Child entities embed a `task` snapshot — use the sector-rewritten
+    // versions so `buildMockQueryFn`'s `matchesWhere` honors the recorte
+    // / observacoes screens' `where: { task: { sectorId: ... } }` filter.
+    if (entry.root === "cuts") {
+      return { ...entry, payload: wrap(cutsWithRealSector), records: cutsWithRealSector };
+    }
+    if (entry.root === "observations") {
+      return { ...entry, payload: wrap(observationsWithRealSector), records: observationsWithRealSector };
+    }
+    if (entry.root === "airbrushings") {
+      return { ...entry, payload: wrap(airbrushingsWithRealSector), records: airbrushingsWithRealSector };
+    }
+    if (entry.root === "serviceOrders") {
+      return { ...entry, payload: wrap(serviceOrdersWithRealSector), records: serviceOrdersWithRealSector };
     }
     return entry;
   });
@@ -2680,6 +2807,8 @@ export const tutorialMocks = {
   files: mockFiles,
   homeDashboard: mockHomeDashboardData,
   secullumMyCalculations: mockSecullumMyCalculations,
+  secullumInclusaoConfig: mockSecullumInclusaoConfig,
+  secullumInclusaoPendencias: mockSecullumInclusaoPendencias,
   favorites: TUTORIAL_FAVORITES_PAYLOAD,
   notificationConfigurations: mockNotificationConfigurations,
 };

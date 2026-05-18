@@ -68,6 +68,7 @@ interface TutorialActionsValue {
   ) => void;
   registerOpenDrawerCallback: (fn: (() => void) | null) => void;
   registerCloseDrawerCallback: (fn: (() => void) | null) => void;
+  registerJumpHandler: (name: string, fn: (() => void | Promise<void>) | null) => void;
   bumpMeasureTick: () => void;
 }
 
@@ -94,10 +95,13 @@ export function useTutorialIsActive(): boolean {
  * meaningful amount once the user is inside the tutorial. Flip to true
  * locally when diagnosing a specific tutorial behavior.
  */
-const TUTORIAL_VERBOSE = false;
+// Temporarily ENABLED while we hunt the spotlight-stuck bug. Set back
+// to false once stable. Logs are tagged so the user can grep `[tutorial]`
+// in Metro's console to capture the full transition trace.
+const TUTORIAL_VERBOSE = true;
 const tlog = TUTORIAL_VERBOSE
   ? (msg: string, ...args: any[]) => {
-      if (__DEV__) console.log(`[tutorial] ${msg}`, ...args);
+      if (__DEV__) console.log(`[tutorial ${Date.now() % 100000}] ${msg}`, ...args);
     }
   : (_msg: string, ..._args: any[]) => {};
 
@@ -160,6 +164,37 @@ function normalizeRoute(path: string | undefined | null): string {
   if (!path) return "";
   const stripped = path.replace(/\/\([^)]+\)/g, "") || "/";
   return stripped.replace(/\/listar$/, "") || "/";
+}
+
+/**
+ * Find the route a step lands on. Walks BACKWARD from the step looking
+ * for the first hint of an intended route: the step's own `navigateOnEnter`,
+ * its `screen`, or — for steps that piggy-back on the prior tap action —
+ * the previous step's `navigatesTo`. Returns null if no route can be
+ * inferred (rare; only narration intros).
+ *
+ * Used by `goToStep` for single-shot navigation. The prior approach walked
+ * FORWARD reconstructing the entire stack, which leaked stale pushes
+ * (e.g. `/cronograma/detalhes/{id}` never popped because `task-back-to-list`
+ * was a showcase without `popsOnAction`) and stranded jumps on whatever
+ * screen the leaked push landed on.
+ */
+function findStepLandingRoute(
+  steps: TutorialStep[],
+  index: number,
+): string | null {
+  if (index < 0 || index >= steps.length) return null;
+  for (let i = index; i >= 0; i--) {
+    const step = steps[i];
+    if (!step) continue;
+    if (step.navigateOnEnter) return step.navigateOnEnter;
+    if (step.screen) return step.screen;
+    // The step at i lives on the route the prior interactive step
+    // navigated to (e.g. `task-info-card` inherits the route from
+    // `cronograma-tap-task.navigatesTo`).
+    if (i > 0 && steps[i - 1]?.navigatesTo) return steps[i - 1]!.navigatesTo!;
+  }
+  return null;
 }
 
 /**
@@ -389,6 +424,15 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   routerRef.current = router;
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
+  // Same pattern for `user`: useAuth often returns a fresh object on
+  // every auth-context render (token refresh, profile poll). If we put
+  // `user` in `start`'s deps directly, `start` rebuilds on every auth
+  // re-render → the `actions` memo rebuilds → all 140 `useTutorialTarget`
+  // hooks re-render → some hooks' polling effect tears down + restarts +
+  // resets `hasRegisteredRef.current = false`, throwing away any
+  // in-flight successful measure. Stable callback identity matters here.
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const [state, setState] = useState<TutorialState>(INITIAL_STATE);
 
@@ -400,6 +444,11 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   const actionsRef = useRef<Map<string, () => void>>(new Map());
   const openDrawerCallbackRef = useRef<(() => void) | null>(null);
   const closeDrawerCallbackRef = useRef<(() => void) | null>(null);
+  // Registry of screen-local "do this state setup" handlers. Used exclusively
+  // by `goToStep` to reproduce the side-effects the natural walk-forward
+  // path would have built up. Keys are the names declared in step
+  // `jumpSetup` arrays (e.g. "open-side-drawer", "dashboard-edit-mode").
+  const jumpHandlersRef = useRef<Map<string, () => void | Promise<void>>>(new Map());
   // `currentStepRef` mirrors state for use inside callbacks (avoids stale closure).
   const currentStepRef = useRef<TutorialStep | null>(null);
 
@@ -410,16 +459,37 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   // bumps in the same frame collapses to one re-measure.
   const pendingMeasureBumpRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bumpMeasureTick = useCallback(() => {
+    // 100ms debounce. The previous 50ms window let a cascade of 7 bumps
+    // (the old step-entry tail + AppState foreground + drawer state
+    // bumps + per-screen onLayout bumps) collapse to maybe 5 distinct
+    // ticks. 100ms collapses them to 2–3 — measurable JSI-call savings
+    // on the dozens of active hooks that re-measureInWindow on each
+    // tick, and a key contributor to keeping the engine responsive
+    // after many step transitions on lower-end devices.
     if (pendingMeasureBumpRef.current) return;
     pendingMeasureBumpRef.current = setTimeout(() => {
       pendingMeasureBumpRef.current = null;
       bumpMeasureTickStore();
-    }, 50);
+    }, 100);
   }, []);
 
   // Cascade timer refs — tracked so `clearTimers` can cancel them on stop
   // (was previously leaking past tutorial end).
   const cascadeTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  // Pending deferred-unregister timers, keyed by target id. Used to suppress
+  // the "unregister-clobbers-register" race on dynamic-target steps (the
+  // home-widget-added flow is the canonical case: the previously-active
+  // tile cleanup runs in the same commit as the newly-mounted tile setup,
+  // and if the new tile's prerequisites aren't ready on the first effect
+  // tick its registerTarget is delayed — the unregister already cleared
+  // the spotlight by then, and the next register may take a measureTick
+  // bump to fire). Deferring the destructive transition by one tick lets a
+  // same-commit register win; if no register lands, the deferred clear
+  // proceeds as before.
+  const pendingUnregisterRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   const registerOpenDrawerCallback = useCallback(
     (fn: (() => void) | null) => {
@@ -435,14 +505,65 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     [],
   );
 
+  const registerJumpHandler = useCallback(
+    (name: string, fn: (() => void | Promise<void>) | null) => {
+      if (fn == null) {
+        jumpHandlersRef.current.delete(name);
+        return;
+      }
+      jumpHandlersRef.current.set(name, fn);
+    },
+    [],
+  );
+
+  /**
+   * Run a step's `jumpSetup` hooks in declared order. Missing handlers are
+   * a no-op (the relevant screen may not be mounted yet, or the hook was
+   * declared optimistically). Errors are isolated per hook so one
+   * misbehaving handler can't prevent subsequent ones from running.
+   *
+   * Hooks may be awaitable — long-running ones (e.g. add-widget that
+   * needs a frame for the new tile to mount) can return a Promise and
+   * the engine will yield before invoking the next hook.
+   */
+  const runJumpSetup = useCallback(async (hooks: ReadonlyArray<string> | undefined) => {
+    if (!hooks || hooks.length === 0) return;
+    for (const name of hooks) {
+      const fn = jumpHandlersRef.current.get(name);
+      if (!fn) continue;
+      try {
+        const ret = fn();
+        if (ret && typeof (ret as Promise<void>).then === "function") {
+          await ret;
+        }
+      } catch {
+        // Don't let a broken handler trap the jump.
+      }
+    }
+  }, []);
+
   const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drawerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fallbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stuckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Watchdog stored in a dedicated ref (not cascadeTimersRef) so the
+  // generic cascade-flush in clearTimers doesn't kill it prematurely
+  // before it gets a chance to rescue a stuck phase.
+  const phaseWatchdogTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearTimers = useCallback(() => {
-    [autoAdvanceTimer, navTimer, drawerTimer, fallbackTimer, stuckTimer].forEach((t) => {
+    const cancelled: string[] = [];
+    if (autoAdvanceTimer.current) cancelled.push("autoAdvance");
+    if (navTimer.current) cancelled.push("nav");
+    if (drawerTimer.current) cancelled.push("drawer");
+    if (fallbackTimer.current) cancelled.push("fallback");
+    if (stuckTimer.current) cancelled.push("stuck");
+    if (cascadeTimersRef.current.length) cancelled.push(`cascade(${cascadeTimersRef.current.length})`);
+    if (pendingMeasureBumpRef.current) cancelled.push("measureBump");
+    if (pendingUnregisterRef.current.size) cancelled.push(`unreg(${pendingUnregisterRef.current.size})`);
+    if (cancelled.length) tlog(`clearTimers cancelled=[${cancelled.join(",")}]`);
+    [autoAdvanceTimer, navTimer, drawerTimer, fallbackTimer, stuckTimer, phaseWatchdogTimer].forEach((t) => {
       if (t.current) {
         clearTimeout(t.current);
         t.current = null;
@@ -460,10 +581,23 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       clearTimeout(pendingMeasureBumpRef.current);
       pendingMeasureBumpRef.current = null;
     }
+    // Cancel any deferred unregister-clear timers — otherwise a tutorial
+    // stop() mid-step would let them fire after `phase` was already reset
+    // to "idle", scheduling a stale setState into the next session.
+    if (pendingUnregisterRef.current.size) {
+      pendingUnregisterRef.current.forEach((t) => clearTimeout(t));
+      pendingUnregisterRef.current.clear();
+    }
   }, []);
 
   const stop = useCallback(async () => {
     clearTimers();
+    // Clear the active step ref BEFORE resetting the store — an in-flight
+    // measureInWindow callback that lands during stop() reads the ref in
+    // registerTarget; if the ref still points at the dead session's step,
+    // the callback would re-populate setStoreActiveTargetRect AFTER
+    // resetTutorialStore() ran, leaking a stale rect into the next start().
+    currentStepRef.current = null;
     setState((s) => ({
       ...s,
       isActive: false,
@@ -474,6 +608,14 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       activeTargetRect: null,
     }));
     targetsRef.current.clear();
+    // Don't leak per-target action handlers and jump handlers across
+    // tutorial sessions. Without these clears, an unregistered hook
+    // (e.g. on a screen the user navigated away from) could leave a
+    // stale closure in the map, and the next tutorial run would
+    // invoke that closure (referencing a stale `ref`) when the same
+    // target id was hit. Harmless in practice but conceptually a leak.
+    actionsRef.current.clear();
+    jumpHandlersRef.current.clear();
     resetTutorialStore();
     cachedMocksModule?.clearTutorialMocks(queryClient);
   }, [clearTimers, queryClient]);
@@ -507,7 +649,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     // and the next nav.push appears to "infinitely load".
     if (cachedMocksModule && !isTutorialRuntimeActive()) {
       try {
-        cachedMocksModule.injectTutorialMocks(queryClient, user);
+        cachedMocksModule.injectTutorialMocks(queryClient, userRef.current);
       } catch {}
     }
     // Wipe the navigation-loading overlay state up-front. The dev step picker
@@ -523,51 +665,103 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       navLoadingRef.current.endNavigation();
     } catch {}
-    // Compute the expected navigation chain by walking forward from the
-    // first step. This is the REAL fix for "jump to a deep step":
-    // previously goToStep would only push the most-recent preceding
-    // screen, but interactive tap-then-navigate sequences left implicit
-    // pushes that the walker missed — so jumping to e.g. a task-detail
-    // step landed on /cronograma with no back-stack to /detail, and
-    // jumping to a back-button step landed on /home so back went home
-    // instead of the section hub.
-    //
-    // The walker simulates each preceding step:
-    //   - The first step's `screen` (or "/" if none) seeds the stack.
-    //   - For each subsequent step i:
-    //       * If steps[i-1].navigatesTo: the previous step's expected
-    //         action would have pushed a route → push it.
-    //       * If steps[i-1].popsOnAction: the previous step popped → pop.
-    //       * If step i has navigateOnEnter: engine pushes on entry.
-    //       * Else if step i has a `screen` differing from the top of
-    //         the stack: treat as an implicit push (gives older un-
-    //         annotated steps a sensible default).
-    //
-    // Result is the expected stack at the target step. We REPLACE the
-    // current navigation with the first route then PUSH the rest so the
-    // back stack ends up exactly as the tutorial expects.
-    let plannedStack: string[] = [];
+    // SINGLE-SHOT navigation (was: walked-forward stack reconstruction).
+    // The walker (`computeNavigationStack`) tried to rebuild the entire
+    // back-stack from step 0 to the target step, then replay it via
+    // `router.replace(stack[0])` followed by `router.push(...)` for each
+    // remaining route 80ms apart. This approach was fragile:
+    //   - Any step that pushed a route without a paired pop (e.g.
+    //     `task-back-to-list` was showcase, not interactive popsOnAction)
+    //     leaked the route into every subsequent jump's planned stack.
+    //   - Once stale `/cronograma/detalhes/{id}` lived in the stack,
+    //     expo-router couldn't push tab routes (`/historico`, `/pessoal`,
+    //     etc.) on top of a stack child — pushes silently failed and the
+    //     user stranded on the detail screen (the "Sobre o Bônus → lands
+    //     on detalhes" bug).
+    // The picker promised the user "jump to this step." A single replace
+    // to the target route honors that promise robustly regardless of
+    // upstream step annotations. The back-stack is shallower but the
+    // dev-jump affordance doesn't need a deep history.
+    let targetRoute: string | null = null;
+    let cumulativeHooks: string[] = [];
     setState((s) => {
       if (!s.isActive) return s;
       if (index < 0 || index >= s.steps.length) return s;
       if (index === s.currentStepIndex) return s;
 
-      plannedStack = computeNavigationStack(s.steps, index);
+      // Use the backward-walking landing-route resolver so steps that
+      // inherit their route from a prior tap (the task-detail showcase
+      // chain, all the `pessoal-*-page` showcases, etc.) still resolve
+      // to a concrete route. Without this, those steps would have
+      // targetRoute=null and the jump would be a no-op.
+      targetRoute = findStepLandingRoute(s.steps, index);
 
+      // Walk forward through every preceding step's jumpSetup hooks so
+      // cumulative state (entered edit mode → added widget → opened
+      // panel) is rebuilt in the order the natural walk would have
+      // produced it. Even when the TARGET step itself declares no
+      // jumpSetup, earlier steps may have set up state the target
+      // depends on (e.g. the home grid steps that follow widget-added
+      // all need edit mode active).
+      //
+      // Dedupe-keep-last while preserving relative order, so a chain
+      // like [enter-edit, open-sheet, enter-edit, close-sheet] collapses
+      // to [open-sheet, enter-edit, close-sheet] — the terminal
+      // occurrence of each hook wins so a later-step close isn't undone
+      // by an earlier-step open.
+      const raw: string[] = [];
+      for (let i = 0; i <= index; i++) {
+        const step = s.steps[i];
+        if (step?.jumpSetup) raw.push(...step.jumpSetup);
+      }
+      const seen = new Set<string>();
+      const reversed: string[] = [];
+      for (let i = raw.length - 1; i >= 0; i--) {
+        const name = raw[i];
+        if (seen.has(name)) continue;
+        seen.add(name);
+        reversed.push(name);
+      }
+      cumulativeHooks = reversed.reverse();
+
+      const willNavigate =
+        !!targetRoute &&
+        normalizeRoute(pathnameRef.current) !== normalizeRoute(targetRoute);
       return {
         ...s,
         currentStepIndex: index,
         awaitingAction: false,
         isCelebrating: false,
         activeTargetRect: null,
-        phase: "navigating",
+        phase: willNavigate ? "navigating" : "waiting",
         interactiveStuck: false,
       };
     });
-    if (plannedStack.length > 0) {
-      replayNavigationStack(routerRef.current, plannedStack, pathnameRef.current);
+    if (
+      targetRoute &&
+      normalizeRoute(pathnameRef.current) !== normalizeRoute(targetRoute)
+    ) {
+      tlog(`goToStep single-shot replace → ${targetRoute}`);
+      try {
+        routerRef.current.replace(targetRoute as any);
+      } catch (e) {
+        tlog(`goToStep replace EXCEPTION`, e);
+      }
+    } else {
+      tlog(`goToStep no nav needed (already on ${pathnameRef.current})`);
     }
-  }, [clearTimers, queryClient, user]);
+    if (cumulativeHooks.length > 0) {
+      // Wait for the route to commit + first paint before running setup
+      // hooks. 300ms is enough for expo-router's mount + a first render
+      // cycle on most devices; the hooks (e.g. open-drawer, enter-edit-
+      // mode) need the destination screen mounted to find their target
+      // refs.
+      const handle = setTimeout(() => {
+        void runJumpSetup(cumulativeHooks);
+      }, 300);
+      cascadeTimersRef.current.push(handle);
+    }
+  }, [clearTimers, queryClient, runJumpSetup]);
 
   const next = useCallback(() => {
     tlog(`next() called`);
@@ -580,6 +774,11 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       navLoadingRef.current.endNavigation();
     } catch {}
+    // Detect tutorial completion (current step is the last one) BEFORE
+    // the setState updater, so side-effects (storage write, mock clear,
+    // ref cleanup) don't live inside a React updater (which is required
+    // to be pure and may run twice in StrictMode).
+    let didComplete = false;
     setState((s) => {
       const currentStep = s.steps[s.currentStepIndex];
       const nextIndex = s.currentStepIndex + 1;
@@ -588,8 +787,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
         : s.completedStepIds;
 
       if (nextIndex >= s.steps.length) {
-        if (user?.id) tutorialStorage.markCompleted(user.id).catch(() => {});
-        cachedMocksModule?.clearTutorialMocks(queryClient);
+        didComplete = true;
         return {
           ...INITIAL_STATE,
           completedStepIds,
@@ -600,6 +798,16 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       // either pick up a cached rect (same-screen transition) or wait for the
       // target to register (cross-screen transition). This guarantees no
       // "previous step's rect lingers under the new step's tooltip" bug.
+      //
+      // Phase: "navigating" hides the tooltip; use it only when the next step
+      // actually crosses routes. Same-screen advances get "waiting" so the
+      // engine's transitions feel snappy (the step-entry effect promotes
+      // to "active" within a frame of a cache hit).
+      const nextStep = s.steps[nextIndex];
+      const nextRoute = nextStep?.navigateOnEnter ?? nextStep?.screen;
+      const willNavigate =
+        !!nextRoute &&
+        normalizeRoute(pathnameRef.current) !== normalizeRoute(nextRoute);
       return {
         ...s,
         currentStepIndex: nextIndex,
@@ -607,11 +815,23 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
         isCelebrating: false,
         completedStepIds,
         activeTargetRect: null,
-        phase: "navigating",
+        phase: willNavigate ? "navigating" : "waiting",
         interactiveStuck: false,
       };
     });
-  }, [clearTimers, queryClient, user?.id]);
+    // Completion side-effects: run AFTER setState commits the new
+    // INITIAL_STATE (and after the updater has run — even twice in
+    // StrictMode). Null the step ref so any in-flight measureInWindow
+    // callback that races the tutorial-end doesn't write a stale rect
+    // into the store on next start().
+    if (didComplete) {
+      currentStepRef.current = null;
+      const uid = userRef.current?.id;
+      if (uid) tutorialStorage.markCompleted(uid).catch(() => {});
+      cachedMocksModule?.clearTutorialMocks(queryClient);
+      resetTutorialStore();
+    }
+  }, [clearTimers, queryClient]);
 
   const start = useCallback(
     async (opts?: { fromStepIndex?: number }) => {
@@ -623,28 +843,56 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
         loadMocksModule(),
       ]);
 
+      // Read user from ref so this callback's identity stays stable
+      // across auth-context re-renders. See userRef declaration for the
+      // full rationale.
+      const liveUser = userRef.current;
       const ctx: TutorialUserContext = {
-        user,
-        isLeader: !!user?.ledSector?.id,
+        user: liveUser,
+        isLeader: !!liveUser?.ledSector?.id,
         isBonifiable:
-          !!user?.position?.bonifiable && user?.status === "EFFECTED",
+          !!liveUser?.position?.bonifiable && liveUser?.status === "EFFECTED",
       };
       const allSteps = stepsModule.buildTutorialSteps(ctx);
       // Filter the leader-only steps when not a leader (or any other
       // conditional steps a step author marks).
       const steps = allSteps.filter((s) => !s.condition || s.condition(ctx));
 
-      mocksModule.injectTutorialMocks(queryClient, user);
+      mocksModule.injectTutorialMocks(queryClient, liveUser);
       haptic("medium");
+      const startIndex = opts?.fromStepIndex ?? 0;
+      const firstStep = steps[startIndex] ?? null;
+      // Prime the step ref + store target id synchronously BEFORE the
+      // setState. The hooks listening via useSyncExternalStore react to
+      // the store immediately when their snapshot changes; without this
+      // priming, a measureInWindow callback racing the layout-effect
+      // would read `currentStepRef.current = null` and silently drop the
+      // registration (line ~815: refActiveId=undefined, storeActiveId
+      // also null since setActiveTargetId hasn't run yet).
+      currentStepRef.current = firstStep;
+      setActiveTargetId(firstStep?.targetId ?? null);
+      // Phase: if the first step has a target AND we're not already on the
+      // target screen, "navigating". If we're already on the right screen,
+      // "waiting" (target pending). If no target at all (narration step),
+      // jump straight to "active" so the tooltip surfaces immediately.
+      const firstRoute = firstStep?.navigateOnEnter ?? firstStep?.screen;
+      const willNavigate =
+        !!firstRoute &&
+        normalizeRoute(pathnameRef.current) !== normalizeRoute(firstRoute);
+      const initialPhase: TutorialPhase = !firstStep?.targetId
+        ? "active"
+        : willNavigate
+        ? "navigating"
+        : "waiting";
       setState({
         ...INITIAL_STATE,
         isActive: true,
-        currentStepIndex: opts?.fromStepIndex ?? 0,
+        currentStepIndex: startIndex,
         steps,
-        phase: "navigating",
+        phase: initialPhase,
       });
     },
-    [queryClient, user],
+    [queryClient],
   );
 
   const reset = useCallback(async () => {
@@ -657,6 +905,20 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   // every register call re-rendered the whole provider subtree (140+ consumers).
   const registerTarget = useCallback(
     (id: string, rect: TutorialTargetRect) => {
+      // Cancel any deferred unregister-clear for this id. Without this, a
+      // sibling-component cleanup that fired moments earlier (e.g. the
+      // previous last-widget tile losing its `tileTutorialTargetId` prop
+      // when a new widget gets added at the end of the SortableGrid) would
+      // still flush a phase=waiting + rect=null state update after our
+      // re-registration — leaving the engine in waiting until the next
+      // measureTick bump. This is the precise race that left the
+      // "Widget adicionado" spotlight invisible until the user minimized
+      // and restored the app.
+      const pending = pendingUnregisterRef.current.get(id);
+      if (pending) {
+        clearTimeout(pending);
+        pendingUnregisterRef.current.delete(id);
+      }
       const existing = targetsRef.current.get(id);
       const sameRect = !!existing && rectsAreEqual(existing, rect);
       if (!sameRect) {
@@ -693,6 +955,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       // waiting for the React setState below to flush through context.
       // This is what closes the persistent "rect committed to provider
       // state but spotlight still missing" gap on slow JS frames.
+      tlog(`registerTarget setStoreRect id=${id} rect=${JSON.stringify(rect)}`);
       setStoreActiveTargetRect(rect);
       setState((s) => {
         const sameInState = rectsAreEqual(s.activeTargetRect, rect) && s.phase === "active";
@@ -710,41 +973,83 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   const unregisterTarget = useCallback((id: string) => {
     if (!targetsRef.current.has(id)) return;
     targetsRef.current.delete(id);
-    // If the active target is the one being unregistered, drop it from state
-    // and re-arm the fallback + stuck timers so the user isn't left in
-    // limbo (waiting phase with no tooltip, no escape). Without re-arming,
-    // a target that unmounts mid-step is a permanent soft-trap.
+    // If the active target is the one being unregistered, schedule the
+    // destructive state transition for ONE TICK out — not synchronously.
+    // Why: dynamic-target steps (canonical case: home-widget-added, where
+    // the `homeFirstWidgetTile` id moves from the previous last tile to
+    // the newly-added one) commit a sibling-cleanup of the old owner
+    // followed by a fresh setup of the new owner in the same effect
+    // flush. The old owner's cleanup must NOT clobber the new owner's
+    // registration. By deferring, a registerTarget that lands within the
+    // same tick cancels the pending clear via the timer-cancellation in
+    // registerTarget, and the spotlight stays continuous across the
+    // ownership swap.
+    //
+    // If no registerTarget shows up, the deferred handler proceeds to
+    // transition phase to "waiting" + re-arm the fallback / stuck
+    // timers, exactly like before — same end state, just one tick later.
     const liveStep = currentStepRef.current;
     tlog(`unregisterTarget id=${id} liveStepTarget=${liveStep?.targetId} isLive=${liveStep?.targetId === id}`);
     if (!liveStep || liveStep.targetId !== id) return;
-    // Clear the store rect too — spotlight overlay subscribes to the
-    // store, so without this the cutout would linger over the unmounted
-    // target's last position.
-    setStoreActiveTargetRect(null);
-    // Always transition to waiting + clear rect. The previous guard
-    // (`s.activeTargetRect == null ? s : ...`) skipped the phase update
-    // when the rect was already null — leaving the engine stuck in
-    // `navigating` (no tooltip visible) with the fallback timer never
-    // advancing it, since the inner `s.phase === "waiting"` check fails.
-    setState((s) =>
-      s.activeTargetRect == null && s.phase === "waiting"
-        ? s
-        : { ...s, activeTargetRect: null, phase: "waiting" },
-    );
-    if (fallbackTimer.current) clearTimeout(fallbackTimer.current);
-    fallbackTimer.current = setTimeout(() => {
-      if (currentStepRef.current?.id !== liveStep.id) return;
-      setState((s) => (s.phase === "waiting" ? { ...s, phase: "fallback" } : s));
-    }, TUTORIAL_TIMINGS.fallbackAfter);
-    if (liveStep.kind === "interactive") {
-      if (stuckTimer.current) clearTimeout(stuckTimer.current);
-      stuckTimer.current = setTimeout(() => {
-        if (currentStepRef.current?.id !== liveStep.id) return;
-        setState((s) =>
-          s.interactiveStuck ? s : { ...s, interactiveStuck: true },
-        );
-      }, TUTORIAL_TIMINGS.interactiveStuckAfter);
-    }
+    const liveStepId = liveStep.id;
+    const liveStepKind = liveStep.kind;
+    const existing = pendingUnregisterRef.current.get(id);
+    if (existing) clearTimeout(existing);
+    const handle = setTimeout(() => {
+      pendingUnregisterRef.current.delete(id);
+      if (targetsRef.current.has(id)) {
+        tlog(`unregister deferred fire id=${id} CANCELLED (re-registered in same tick)`);
+        return;
+      }
+      if (currentStepRef.current?.id !== liveStepId) {
+        tlog(`unregister deferred fire id=${id} CANCELLED (step changed from ${liveStepId})`);
+        return;
+      }
+      tlog(`unregister deferred fire id=${id} → clearing rect + arming fallbackTimer? ${!fallbackTimer.current}`);
+      // Clear the store rect too — spotlight overlay subscribes to the
+      // store, so without this the cutout would linger over the
+      // unmounted target's last position.
+      setStoreActiveTargetRect(null);
+      setState((s) =>
+        s.activeTargetRect == null && s.phase === "waiting"
+          ? s
+          : { ...s, activeTargetRect: null, phase: "waiting" },
+      );
+      // DON'T reset the in-flight fallbackTimer. Re-arming on every
+      // unregister cycle would push out the deadline indefinitely when
+      // a target's hook mounts and unmounts repeatedly (a freshly
+      // pushed screen with lazy-loaded children does this: shimmer
+      // mounts → registers → unmounts → real content mounts → registers
+      // again, and so on for a couple seconds). The single canonical
+      // fallbackTimer set by step-entry is the deadline; this branch
+      // only ARMS it if step-entry didn't (the dynamic-target swap path
+      // from home-widget-added enters here without going through the
+      // step-entry cache-miss branch). Pairs with the post-fire null-out
+      // below so a fired-but-still-set fallbackTimer doesn't block a
+      // legitimate re-arm on the NEXT step.
+      if (!fallbackTimer.current) {
+        fallbackTimer.current = setTimeout(() => {
+          fallbackTimer.current = null;
+          if (currentStepRef.current?.id !== liveStepId) return;
+          setState((s) => (s.phase === "waiting" ? { ...s, phase: "fallback" } : s));
+        }, TUTORIAL_TIMINGS.fallbackAfter);
+      }
+      if (liveStepKind === "interactive") {
+        // Same idempotence rule for the SG2 stuck banner — repeated
+        // unregister cycles shouldn't keep pushing out the "still on
+        // the same step?" timer.
+        if (!stuckTimer.current) {
+          stuckTimer.current = setTimeout(() => {
+            stuckTimer.current = null;
+            if (currentStepRef.current?.id !== liveStepId) return;
+            setState((s) =>
+              s.interactiveStuck ? s : { ...s, interactiveStuck: true },
+            );
+          }, TUTORIAL_TIMINGS.interactiveStuckAfter);
+        }
+      }
+    }, 0);
+    pendingUnregisterRef.current.set(id, handle);
   }, []);
 
   const registerAction = useCallback((id: string, fn: () => void) => {
@@ -771,6 +1076,23 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     try {
       navLoadingRef.current.endNavigation();
     } catch {}
+    // CRITICAL: close the drawer BEFORE firing the action — but ONLY
+    // for steps whose action is a navigation (`navigatesTo` set). The
+    // drawer-item taps that route to a new screen need this because
+    // the user's tap on the spotlight Pressable doesn't pass through
+    // to the underlying drawer item, so React Navigation never gets
+    // the close signal and expo-router won't commit the navigation
+    // while the drawer is open. By contrast, `drawer-avatar-tap` opens
+    // a sub-menu INSIDE the drawer — closing the drawer would dismiss
+    // exactly the UI the next step needs to spotlight. The
+    // `navigatesTo` gate distinguishes the two cases cleanly.
+    const liveStep = currentStepRef.current;
+    if (liveStep?.openDrawerOnEnter && liveStep?.navigatesTo) {
+      tlog(`invokeTargetAction id=${id} step opens drawer + navigates → closing drawer first`);
+      try {
+        closeDrawerCallbackRef.current?.();
+      } catch {}
+    }
     try {
       fn();
     } catch (e) {
@@ -853,14 +1175,24 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
   // hooks (the one losing active status, the one gaining it) re-render
   // per step change; the other 138+ stay quiet. This is the single
   // biggest re-render reduction in the engine.
+  const prevTargetIdRef = useRef<string | null>(null);
   useLayoutEffect(() => {
+    const nextTargetId = currentStep?.targetId ?? null;
+    tlog(`useLayoutEffect step.id=${currentStep?.id} target=${nextTargetId} prevTarget=${prevTargetIdRef.current}`);
     currentStepRef.current = currentStep;
-    setActiveTargetId(currentStep?.targetId ?? null);
-    // Clear the store rect on step change. The new step's hook will repopulate
-    // it via registerTarget once its measure lands. Without this clear the
-    // spotlight would briefly paint at the previous step's rect under the new
-    // step's tooltip.
-    setStoreActiveTargetRect(null);
+    setActiveTargetId(nextTargetId);
+    // Only clear the store rect when the target id ACTUALLY changes between
+    // steps. The unconditional clear that used to live here would clobber
+    // a freshly-registered rect on the rare same-target consecutive steps,
+    // AND would race against an in-flight measure callback from the new
+    // step's hook that happened to land in the same task as this effect.
+    // The next-step's hook will repopulate the rect via registerTarget
+    // either way; this gate avoids the brief null window that briefly
+    // collapsed the spotlight cover view to 0×0 between rect transitions.
+    if (prevTargetIdRef.current !== nextTargetId) {
+      setStoreActiveTargetRect(null);
+      prevTargetIdRef.current = nextTargetId;
+    }
   }, [currentStep]);
 
   // ─── Step entry effect ───────────────────────────────────────────────────
@@ -887,7 +1219,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     // also a steady recovery point during a long tutorial session.
     if (cachedMocksModule && !isTutorialRuntimeActive()) {
       try {
-        cachedMocksModule.injectTutorialMocks(queryClient, user);
+        cachedMocksModule.injectTutorialMocks(queryClient, userRef.current);
       } catch {}
     }
 
@@ -940,7 +1272,16 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       });
     }
 
-    // 2. Drawer
+    // 2. Drawer — gated close. The previous blanket-close-on-every-step
+    // implementation broke legitimate panel-context narrations
+    // (`drawer-overview`, `notifications-list`, `notifications-close`)
+    // which need the drawer/panel to STAY open. The actual bug we're
+    // fixing is "previous step opened drawer + user's spotlight tap
+    // navigated via router.push but the drawer didn't close, blocking
+    // the destination from mounting" — that's already handled by the
+    // close-drawer call inside `invokeTargetAction`. This step-entry
+    // close only fires when the legacy `closeDrawerOnEnter` flag is
+    // set, preserving the original semantics.
     if (currentStep.openDrawerOnEnter) {
       drawerTimer.current = setTimeout(() => {
         try {
@@ -985,13 +1326,26 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
             ? s
             : { ...s, activeTargetRect: null, phase: "waiting" },
         );
+        tlog(`fallbackTimer ARMED (1200ms) step=${currentStep.id} target=${currentStep.targetId}`);
         fallbackTimer.current = setTimeout(() => {
+          // Null the ref AS the timer fires so the unregister deferred
+          // handler's `if (!fallbackTimer.current)` idempotence check
+          // sees a clean slot if it fires later in this step. Without
+          // the null-out, fallbackTimer.current stayed set forever
+          // after firing, defeating any future idempotence.
+          fallbackTimer.current = null;
           if (currentStepRef.current?.id !== currentStep.id) {
-            tlog(`fallback fire ABORT (step changed)`);
+            tlog(`fallback fire ABORT (step changed from ${currentStep.id} to ${currentStepRef.current?.id})`);
             return;
           }
-          tlog(`fallback fire → phase=fallback (target ${currentStep.targetId} never registered)`);
-          setState((s) => (s.phase === "waiting" ? { ...s, phase: "fallback" } : s));
+          setState((s) => {
+            if (s.phase === "waiting") {
+              tlog(`fallback FIRE → phase=fallback step=${currentStep.id} target=${currentStep.targetId} (never registered)`);
+              return { ...s, phase: "fallback" };
+            }
+            tlog(`fallback fire noop step=${currentStep.id} currentPhase=${s.phase}`);
+            return s;
+          });
         }, TUTORIAL_TIMINGS.fallbackAfter);
       }
     } else {
@@ -1006,6 +1360,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     if (currentStep.kind === "interactive") {
       setState((s) => (s.awaitingAction ? s : { ...s, awaitingAction: true }));
       stuckTimer.current = setTimeout(() => {
+        stuckTimer.current = null;
         if (currentStepRef.current?.id !== currentStep.id) return;
         setState((s) =>
           s.interactiveStuck ? s : { ...s, interactiveStuck: true },
@@ -1029,22 +1384,56 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
     // measure effect, so the spotlight pins to the previous step's rect (or
     // never resolves).
     //
-    // Extended cascade (7 bumps over 4s) covers a known race: chrome-header
-    // targets like `chromeHeaderMenu` can have a window-relative measure
-    // returning 0×0 if the navigation header is still settling. The old
-    // 4-bump cascade ending at 1500ms wasn't long enough — measures fired
-    // before the layout had truly settled, the bad rect was rejected by
-    // SG1, and no further re-measure happened until SOMETHING external
-    // triggered an onLayout (e.g. opening the dev step picker modal). The
-    // user's workaround of "open the picker to get the spotlight back" is
-    // a symptom of that race; the 2500ms and 4000ms bumps below remove it.
+    // Tight cascade (4 bumps over 2.5s) — narration steps with no targetId
+    // get NO cascade since there's nothing to measure. The earlier 7-bump
+    // cascade ran for every step regardless of kind and contributed to
+    // the performance degradation users saw after long step sessions.
+    // The per-target polling loop (use-tutorial-target.ts) is the
+    // long-tail safety net for slow-settling layouts; the cascade only
+    // needs to cover the typical-case route transition (~80–400ms) and
+    // the slow chrome-header layout race (~1500ms).
     //
     // Tracked in `cascadeTimersRef` so `clearTimers` can cancel them when
-    // the tutorial stops mid-step.
-    [80, 200, 400, 800, 1500, 2500, 4000].forEach((ms) => {
-      const t = setTimeout(() => bumpMeasureTick(), ms);
-      cascadeTimersRef.current.push(t);
-    });
+    // the tutorial stops mid-step. We call `bumpMeasureTickStore` directly
+    // (NOT the debounced `bumpMeasureTick`) so the 100ms collapse-window
+    // doesn't swallow legitimate cascade bumps when rapid step transitions
+    // queue overlapping schedules. The debounce only ever made sense for
+    // onLayout bursts emitted from the same frame; the step-entry cascade
+    // already controls its own timing.
+    if (currentStep.targetId) {
+      [80, 320, 900, 1800].forEach((ms) => {
+        const t = setTimeout(() => bumpMeasureTickStore(), ms);
+        cascadeTimersRef.current.push(t);
+      });
+    }
+
+    // 8. Hard ceiling on non-active phases. Covers two failure modes:
+    //   (a) phase stuck in "navigating" (RAF push didn't update pathname,
+    //       step-entry effect's nav check loops, etc.)
+    //   (b) phase stuck in "waiting" (target's hook keeps mounting and
+    //       unmounting, each unregister cycles fallbackTimer — even with
+    //       the idempotence fix this safety net is the last line)
+    // Both produce a dim screen with no tooltip and no spotlight, which
+    // is the exact symptom the user reports needing to fix via minimize
+    // workaround. Force-promote to "fallback" after the ceiling so the
+    // tooltip always surfaces and the user has a clear path forward.
+    // 2200ms is longer than fallbackAfter (1200ms) so the primary
+    // mechanism gets first crack; this only fires if it failed.
+    phaseWatchdogTimer.current = setTimeout(() => {
+      phaseWatchdogTimer.current = null;
+      if (currentStepRef.current?.id !== currentStep.id) {
+        tlog(`phaseWatchdog ABORT (step changed from ${currentStep.id})`);
+        return;
+      }
+      setState((s) => {
+        if (s.phase === "navigating" || s.phase === "waiting") {
+          tlog(`phaseWatchdog FIRE step=${currentStep.id} target=${currentStep.targetId} phase=${s.phase} → fallback`);
+          return { ...s, phase: "fallback" };
+        }
+        tlog(`phaseWatchdog noop step=${currentStep.id} phase=${s.phase}`);
+        return s;
+      });
+    }, 2200);
     // pathname / router / clearTimers / next intentionally NOT in deps:
     // pathname is read via ref above; router via refs; clearTimers and next
     // are stable useCallbacks. Including them caused this effect to run on
@@ -1180,24 +1569,60 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
 
   // Phase-driven recovery. When the engine flips into `waiting` (target
   // not yet measured) or `fallback` (target unreachable), kick the
-  // measure tick on a short delay so a hook that missed its initial
-  // measure window gets another nudge without depending on the
-  // per-target polling cadence. Cheap — one notify to the active hook
-  // only — and decouples spotlight recovery from the polling loop,
-  // which was the only retry path before.
+  // measure tick AGGRESSIVELY — multiple bumps over a wide horizon plus
+  // a persistent interval during fallback. This is the same mechanism
+  // users discovered by accident: minimize → restore triggers an
+  // AppState foreground bump, which causes the active hook to re-measure
+  // successfully. Doing it continuously here means the user never has to
+  // perform the minimize workaround. Bumps are cheap (one notify to the
+  // currently-active hook only) so we can afford to be generous.
+  // Per-step recovery cascade — runs ONCE per step transition. Deps
+  // reduced to `[state.isActive, state.currentStepIndex]`; the prior
+  // implementation included `state.phase` and the cleanup ran on every
+  // waiting↔active oscillation, killing the cascade before it could
+  // fire. The persistent rescue interval inside checks phase via a ref
+  // each tick and skips when phase is already "active" (no need to
+  // nudge a working spotlight), preserving perf during normal flow.
+  const phaseRef = useRef(state.phase);
+  phaseRef.current = state.phase;
   useEffect(() => {
     if (!state.isActive) return;
-    if (state.phase !== "waiting" && state.phase !== "fallback") return;
-    const t = setTimeout(() => bumpMeasureTickStore(), 120);
-    cascadeTimersRef.current.push(t);
-    return () => clearTimeout(t);
-  }, [state.isActive, state.phase]);
+    tlog(`recovery effect ARMED stepIdx=${state.currentStepIndex} target=${currentStepRef.current?.targetId}`);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    [60, 180, 380, 700, 1200, 1800, 2500, 3500].forEach((ms) => {
+      timers.push(setTimeout(() => {
+        tlog(`recovery bump fire ms=${ms} phase=${phaseRef.current}`);
+        bumpMeasureTickStore();
+      }, ms));
+    });
+    // Persistent rescue interval: fires every 1000ms but skips when
+    // phase is already "active" (spotlight working — no need to nudge).
+    // When phase is waiting/fallback/navigating, bumps continue
+    // indefinitely until the step changes or phase reaches active.
+    // This mirrors the AppState foreground workaround continuously.
+    const intervalHandle = setInterval(() => {
+      if (phaseRef.current === "active") return;
+      tlog(`recovery interval bump phase=${phaseRef.current}`);
+      bumpMeasureTickStore();
+    }, 1000);
+    return () => {
+      tlog(`recovery effect CLEANUP stepIdx=${state.currentStepIndex}`);
+      timers.forEach((t) => clearTimeout(t));
+      clearInterval(intervalHandle);
+    };
+  }, [state.isActive, state.currentStepIndex]);
 
   // Unmount cleanup.
   useEffect(() => {
     return () => {
       clearTimers();
       cachedMocksModule?.clearTutorialMocks(queryClient);
+      // Reset the module-scope store so a re-mounted provider doesn't
+      // inherit stale active-target-id or active-rect. Hooks managed
+      // their own subscriptions, so unsubscribes already ran via the
+      // useSyncExternalStore lifecycle — this just clears values.
+      resetTutorialStore();
+      currentStepRef.current = null;
     };
   }, [clearTimers, queryClient]);
 
@@ -1226,6 +1651,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       notifyAction,
       registerOpenDrawerCallback,
       registerCloseDrawerCallback,
+      registerJumpHandler,
       bumpMeasureTick,
     }),
     [
@@ -1245,6 +1671,7 @@ export function TutorialProvider({ children }: TutorialProviderProps) {
       notifyAction,
       registerOpenDrawerCallback,
       registerCloseDrawerCallback,
+      registerJumpHandler,
       bumpMeasureTick,
     ],
   );

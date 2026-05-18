@@ -8,10 +8,11 @@ import {
   subscribeMeasureTick,
 } from "./tutorial-store";
 
-const VERBOSE = false;
+// Temporarily ENABLED while we hunt the spotlight-stuck bug.
+const VERBOSE = true;
 const log = VERBOSE
   ? (msg: string, ...args: any[]) => {
-      if (__DEV__) console.log(`[tutorial/target] ${msg}`, ...args);
+      if (__DEV__) console.log(`[tutorial/target ${Date.now() % 100000}] ${msg}`, ...args);
     }
   : (_msg: string, ..._args: any[]) => {};
 
@@ -106,7 +107,7 @@ export function useTutorialTarget(id: string, options?: Options) {
   // recovery.
   const hasRegisteredRef = useRef(false);
 
-  const measure = useCallback(() => {
+  const measureAttempt = useCallback(() => {
     if (!registerTarget || !ref.current) {
       log(`measure ABORT id=${id} registerTarget=${!!registerTarget} ref=${!!ref.current}`);
       return;
@@ -123,7 +124,6 @@ export function useTutorialTarget(id: string, options?: Options) {
       const bad =
         width < MIN_DIM ||
         height < MIN_DIM ||
-        // Fully off-screen on any axis.
         y + height <= 0 ||
         y >= screen.height ||
         x + width <= 0 ||
@@ -137,6 +137,23 @@ export function useTutorialTarget(id: string, options?: Options) {
       registerTarget(id, { x, y, width, height });
     });
   }, [registerTarget, id]);
+
+  // 2-attempt measure: immediate + 1 follow-up RAF, gated by
+  // hasRegisteredRef. measureInWindow is async — the callback may not
+  // fire by the time this function returns — so we fire the immediate
+  // attempt unconditionally, then check hasRegisteredRef on the next
+  // frame: if a previous measure already registered, skip the retry to
+  // avoid duplicate JSI calls. This catches the common "View just
+  // committed, layout settling" case (95%+ of recoveries) without the
+  // 3x measureInWindow cost across the cascade + polling that the
+  // earlier 3-RAF chain produced (degraded perf after long sessions).
+  const measure = useCallback(() => {
+    measureAttempt();
+    requestAnimationFrame(() => {
+      if (hasRegisteredRef.current) return;
+      measureAttempt();
+    });
+  }, [measureAttempt]);
 
   // Double-RAF — schedule the measure two frames out so layout shifts
   // triggered by the same render pass (Yoga reflow + child re-mount) have
@@ -200,22 +217,12 @@ export function useTutorialTarget(id: string, options?: Options) {
   //     just like the first did.
   useEffect(() => {
     if (!isActive || !isActiveTarget) return;
+    log(`polling effect ACTIVE id=${id} (isActiveTarget flipped true)`);
     hasRegisteredRef.current = false;
-    // Triple-strategy first measure:
-    //   - Immediate: catches the easy case where the View is already laid out.
-    //   - Double-RAF: schedules a measure two frames out so Yoga reflows and
-    //     any in-flight layout from the step transition have a chance to
-    //     commit before we read window coords.
-    //   - InteractionManager: defers until any in-flight gestures or
-    //     navigation animations have completed. Some screen transitions
-    //     leave intermediate layout state for 100–300ms; without this,
-    //     measureInWindow returned the mid-animation rect which SG1
-    //     rejected as off-screen.
-    // The first one to succeed registers; subsequent successes are
-    // state-level no-ops via the `sameInState` guard in registerTarget.
     measure();
     requestAnimationFrame(() => requestAnimationFrame(() => measure()));
     const interactionHandle = InteractionManager.runAfterInteractions(() => {
+      log(`polling effect InteractionManager.runAfterInteractions fire id=${id}`);
       measure();
     });
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -225,10 +232,20 @@ export function useTutorialTarget(id: string, options?: Options) {
       if (interval) clearInterval(interval);
       interval = setInterval(() => measure(), ms);
     };
-    startPolling(300);
+    // Initial 500ms polling cadence (was 300ms). The triple-strategy
+    // first measure (immediate + double-RAF + InteractionManager) covers
+    // the typical-case fast paths; the polling loop only matters for
+    // genuinely slow layouts (Reanimated transforms still settling,
+    // navigator header rehydrating after a deep jump). 500ms is enough
+    // to catch those without hammering measureInWindow on the JSI
+    // bridge for the dozens of mounted target hooks during long
+    // tutorial sessions, which was the main contributor to the engine
+    // feeling sluggish after the task-detail screen.
+    startPolling(500);
     // Schedule the downshift check after the initial settle window.
     // Only downshift if a measure has actually landed — otherwise keep
-    // polling at 300ms until one does. Re-arms the timer until success.
+    // polling at the fast cadence until one does. Re-arms the timer until
+    // success.
     const armDownshift = () => {
       if (cancelled) return;
       downshiftTimer = setTimeout(() => {
@@ -243,11 +260,13 @@ export function useTutorialTarget(id: string, options?: Options) {
     };
     armDownshift();
     return () => {
+      log(`polling effect CLEANUP id=${id}`);
       cancelled = true;
       if (interval) clearInterval(interval);
       if (downshiftTimer) clearTimeout(downshiftTimer);
       interactionHandle.cancel();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, isActiveTarget, measure]);
 
   const scrollContainer = options?.scrollContainer;

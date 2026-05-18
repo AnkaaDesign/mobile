@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
-import { Dimensions, StyleSheet, Pressable, View } from "react-native";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ActivityIndicator, Dimensions, StyleSheet, Pressable, Text, View } from "react-native";
 import {
+  bumpMeasureTickStore,
   getActiveTargetRect,
   subscribeActiveTargetRect,
 } from "./tutorial-store";
 
-const VERBOSE = false;
+// Temporarily ENABLED while we hunt the spotlight-stuck bug.
+const VERBOSE = true;
 const olog = VERBOSE
   ? (msg: string, ...args: any[]) => {
-      if (__DEV__) console.log(`[tutorial/overlay] ${msg}`, ...args);
+      if (__DEV__) console.log(`[tutorial/overlay ${Date.now() % 100000}] ${msg}`, ...args);
     }
   : (_msg: string, ..._args: any[]) => {};
 import Animated, {
@@ -18,6 +20,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withSpring,
+  cancelAnimation,
   Easing,
   FadeIn,
   FadeOut,
@@ -105,29 +108,23 @@ function TutorialOverlayBody() {
     }
 
     if (!currentTargetRect) {
-      // Fade the cover out, then collapse the spotlight rect to 0×0 so the
-      // 4 curved corners of the rounded cover view don't leak the screen
-      // through after the cutout has gone away. Without this collapse, the
-      // 4 dim frame Views (which have SQUARE corners) tile around the OLD
-      // spotlight position and leave 4 small transparent quadrants where
-      // the cover's borderRadius cut its corners — which read together as
-      // a faint rectangular outline at the OLD spotlight position. Setting
-      // cw/ch to 0 after the fade makes the cover invisible and lets the
-      // top + bottom frames cover the full screen with no gap.
-      cutoutOpacity.value = withTiming(
-        0,
-        {
-          duration: TUTORIAL_TIMINGS.spotlightFadeOut,
-          easing: Easing.out(Easing.cubic),
-        },
-        (finished) => {
-          "worklet";
-          if (finished) {
-            cw.value = 0;
-            ch.value = 0;
-          }
-        },
-      );
+      // Fade the cover out. The OLD code also collapsed cw/ch to 0 inside
+      // the worklet's `finished` callback, which produced a nasty race:
+      // if a new rect arrived AFTER the worklet zeroed cw/ch but BEFORE
+      // the rect-branch's coord assignment landed on the UI thread, the
+      // spotlight cover stayed at 0×0 and the user saw a uniformly-dim
+      // screen with no cutout — even though `phase: "active"` and the
+      // rect was correct. We now leave cw/ch at the previous rect's
+      // size; the cover's opacity going to 0 already makes it invisible,
+      // and the dim frames re-cover the full screen automatically on the
+      // next render via the top/bottom/left/right view layout math. The
+      // rounded-corner "leak" the original code worried about is invisible
+      // at opacity 0 anyway.
+      cancelAnimation(cutoutOpacity);
+      cutoutOpacity.value = withTiming(0, {
+        duration: TUTORIAL_TIMINGS.spotlightFadeOut,
+        easing: Easing.out(Easing.cubic),
+      });
       prevRectRef.current = null;
       return;
     }
@@ -145,48 +142,41 @@ function TutorialOverlayBody() {
         Math.abs(prev.w - nw) > 0.5 ||
         Math.abs(prev.h - nh) > 0.5);
 
-    if (isSwap) {
-      // Fade the OLD cutout out, then collapse coords so the rounded-corner
-      // leak doesn't show during the brief gap before the new rect lands.
-      // The swapTimer then jumps to the new rect and fades in.
-      cutoutOpacity.value = withTiming(
-        0,
-        {
-          duration: TUTORIAL_TIMINGS.spotlightFadeOut,
-          easing: Easing.out(Easing.cubic),
-        },
-        (finished) => {
-          "worklet";
-          if (finished) {
-            cw.value = 0;
-            ch.value = 0;
-          }
-        },
-      );
-      swapTimerRef.current = setTimeout(() => {
-        cx.value = nx;
-        cy.value = ny;
-        cw.value = nw;
-        ch.value = nh;
-        cutoutOpacity.value = withTiming(1, {
-          duration: TUTORIAL_TIMINGS.spotlightFadeIn,
-          easing: Easing.out(Easing.cubic),
-        });
-        prevRectRef.current = { x: nx, y: ny, w: nw, h: nh };
-        swapTimerRef.current = null;
-      }, TUTORIAL_TIMINGS.spotlightFadeOut + 10);
-    } else {
-      // First appearance OR re-measure of same rect.
-      cx.value = nx;
-      cy.value = ny;
-      cw.value = nw;
-      ch.value = nh;
-      cutoutOpacity.value = withTiming(1, {
-        duration: TUTORIAL_TIMINGS.spotlightFadeIn,
-        easing: Easing.out(Easing.cubic),
-      });
-      prevRectRef.current = { x: nx, y: ny, w: nw, h: nh };
-    }
+    // Update prevRectRef SYNCHRONOUSLY for both branches. The old code
+    // updated prevRectRef inside the swap-timer callback (~130ms later);
+    // a rect change A→B→C arriving during the swap timer's window would
+    // compare C against A (the stale prev) instead of B, mis-classifying
+    // the transition and leaving cutoutOpacity stuck mid-animation.
+    prevRectRef.current = { x: nx, y: ny, w: nw, h: nh };
+
+    // Coords are ALWAYS set synchronously — never deferred into the swap
+    // timer. The previous code set cx/cy/cw/ch inside a 130ms setTimeout
+    // for the swap branch, which means a same-step measure that arrived
+    // at +50ms (when cw/ch had been zeroed by the prior fade-out callback)
+    // would leave the cover at 0×0 until the timer fired. If anything
+    // cancelled the timer in that window (parent re-render → effect
+    // cleanup at the top of this function), the coords stayed at 0×0 and
+    // the spotlight was permanently invisible despite phase: "active".
+    cancelAnimation(cutoutOpacity);
+    cx.value = nx;
+    cy.value = ny;
+    cw.value = nw;
+    ch.value = nh;
+
+    // Always fade in. The previous "isSwap → fade-out then fade-in via a
+    // 130ms setTimeout" approach was responsible for the spotlight-stuck
+    // bug: if the timer was cancelled before firing (any effect re-run
+    // does that), cutoutOpacity stayed at 0 and the cover stayed opaque.
+    // With coords already set synchronously above, a single fade-in
+    // produces a clean appearance whether this is the first rect, a
+    // same-rect re-measure, or a swap from a prior rect. The unused
+    // `isSwap` is left as documentation of the prior intent in case the
+    // visual cross-fade is reintroduced later.
+    void isSwap;
+    cutoutOpacity.value = withTiming(1, {
+      duration: TUTORIAL_TIMINGS.spotlightFadeIn,
+      easing: Easing.out(Easing.cubic),
+    });
 
     return () => {
       if (swapTimerRef.current) {
@@ -351,6 +341,37 @@ function TutorialOverlayBody() {
   //   - navigating → hide
   const showTooltip = phase === "active" || phase === "fallback";
 
+  // Loading indicator for waiting/navigating phases. Shows AFTER a 250ms
+  // delay so fast transitions (the common case) don't flash. This is the
+  // key UX fix for the "user minimizes thinking it's stuck" bug: instead
+  // of staring at a dim screen with no feedback during the ~300-800ms
+  // it takes to navigate cross-screen + mount the destination + measure
+  // the new target, the user sees "Carregando próximo passo..." and
+  // waits instead of minimizing the app (which suspends JS and stalls
+  // the navigation indefinitely).
+  const [showLoadingHint, setShowLoadingHint] = useState(false);
+  useEffect(() => {
+    if (phase === "navigating") {
+      setShowLoadingHint(true);
+      return undefined;
+    }
+    if (phase === "waiting") {
+      const handle = setTimeout(() => setShowLoadingHint(true), 120);
+      return () => clearTimeout(handle);
+    }
+    setShowLoadingHint(false);
+    return undefined;
+  }, [phase]);
+
+  // (RAF-driven rescue loop removed — was redundant with the recovery
+  // effect in tutorial-context.tsx which already bumps measure tick at
+  // 1000ms cadence during non-active phases, AND with the tap-anywhere
+  // Pressable that fires bumps on any user touch. Three independent
+  // recovery mechanisms added measureInWindow churn without adding
+  // recovery capability — `bumpMeasureTickStore` only matters when a
+  // hook is subscribed, and bumps from all three paths achieve the
+  // same thing when subscribers exist.)
+
   return (
     <Animated.View
       style={[StyleSheet.absoluteFill, styles.root]}
@@ -370,6 +391,23 @@ function TutorialOverlayBody() {
           <Animated.View style={[styles.dimFrame, rightStyle]} />
           <Animated.View style={[styles.dimFrame, coverStyle]} />
         </View>
+      ) : null}
+
+      {/* Tap-anywhere rescue during waiting/navigating. The user has no
+          interactive target yet (rect not measured, tooltip hidden), so
+          taps would otherwise hit dead screen below the dim. Capturing
+          taps here gives the user a reliable "tap anywhere to nudge the
+          engine" affordance — equivalent to opening the dev picker but
+          discoverable. Pressed BEFORE the loading hint in JSX so the
+          hint (rendered later) sits on top and gets its taps first. */}
+      {(phase === "waiting" || phase === "navigating") ? (
+        <Pressable
+          onPress={() => {
+            olog(`waiting/navigating screen TAP → bump measure tick`);
+            bumpMeasureTickStore();
+          }}
+          style={StyleSheet.absoluteFill}
+        />
       ) : null}
 
       {/* Pulsing yellow ring around interactive targets */}
@@ -461,6 +499,37 @@ function TutorialOverlayBody() {
           onAdvance={next}
           onSkip={skip}
         />
+      ) : showLoadingHint ? (
+        // TAPPABLE loading indicator. The bumpMeasureTickStore call here
+        // is the SAME recovery mechanism as the dev-step-picker's open
+        // handler and the AppState foreground handler — the only three
+        // mechanisms confirmed working when the engine appears stuck.
+        // Making it user-tappable closes the perception gap: the user
+        // sees a clear "tap to retry" affordance instead of feeling
+        // forced to minimize the app or open the dev picker.
+        // (Underlying root cause is JS-thread setTimeout throttling
+        // — Chrome remote debugger or iOS background suspension can
+        // pause the recovery cascade indefinitely. A tap reliably wakes
+        // the JS thread.)
+        <Animated.View
+          entering={FadeIn.duration(120)}
+          exiting={FadeOut.duration(80)}
+          style={styles.loadingHintWrap}
+        >
+          <Pressable
+            onPress={() => {
+              olog(`loading hint TAP → bump measure tick`);
+              bumpMeasureTickStore();
+            }}
+            style={styles.loadingHint}
+            hitSlop={20}
+          >
+            <ActivityIndicator color="#FCD34D" size="small" />
+            <Text style={styles.loadingHintText}>
+              Carregando… toque para tentar
+            </Text>
+          </Pressable>
+        </Animated.View>
       ) : null}
 
       <TutorialDevStepPicker />
@@ -475,5 +544,32 @@ const styles = StyleSheet.create({
   },
   dimFrame: {
     backgroundColor: DIM_COLOR,
+  },
+  loadingHintWrap: {
+    position: "absolute",
+    // 140 instead of 80: clears the dev step picker FAB (left:8,
+    // bottom:~42) on narrow devices where the centered pill would
+    // otherwise extend across the FAB's tap region.
+    bottom: 140,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    backgroundColor: "#0F172AEE",
+    borderColor: "#FCD34D55",
+    borderWidth: 1,
+    borderRadius: 999,
+  },
+  loadingHintText: {
+    color: "#FCD34D",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

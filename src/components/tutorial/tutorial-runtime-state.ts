@@ -188,3 +188,34 @@ export function getTutorialMockSecullumCalculations(): {
   const records = recordsByEntity.get("secullumCalculations") as any;
   return { data: records };
 }
+
+/**
+ * Mock the Inclusão de Ponto config endpoint. Returns a believable shape with
+ * no `funcionarioAfastado` flag and an empty perimeter list so the capture
+ * screen would render in "no perimeter restriction" mode if the user ever
+ * lands there. The tutorial deliberately stays on the list screen — capture
+ * needs real GPS/camera and isn't safe to drive from the tutorial.
+ */
+export function getTutorialMockInclusaoPontoConfig(): {
+  data: { success: boolean; message: string; data: any };
+} | null {
+  if (!active) return null;
+  if (!recordsByEntity.has("inclusaoPontoConfig")) return null;
+  const records = recordsByEntity.get("inclusaoPontoConfig") as any;
+  return { data: { success: true, message: "ok", data: records } };
+}
+
+/**
+ * Mock the Inclusão de Ponto pendências endpoint. Returns a list with one
+ * Aceita, one Processando and one Rejeitada entry so the tutorial can teach
+ * all three badge states from the same screen.
+ */
+export function getTutorialMockInclusaoPontoPendencias(): {
+  data: { success: boolean; message: string; data: any[] };
+} | null {
+  if (!active) return null;
+  if (!recordsByEntity.has("inclusaoPontoPendencias")) return null;
+  const records = recordsByEntity.get("inclusaoPontoPendencias") as any[] | undefined;
+  if (!records) return null;
+  return { data: { success: true, message: "ok", data: records } };
+}

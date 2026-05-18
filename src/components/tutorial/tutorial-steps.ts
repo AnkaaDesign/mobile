@@ -32,6 +32,7 @@ const ROUTES = {
   pessoalPontos: "/(tabs)/pessoal/meus-pontos",
   pessoalPontosJustificar: "/(tabs)/pessoal/meus-pontos/justificar-ausencia",
   pessoalPontosAjustar: "/(tabs)/pessoal/meus-pontos/ajustar-ponto",
+  pessoalPontosIncluir: "/(tabs)/pessoal/meus-pontos/incluir-ponto",
   pessoalFeriados: "/(tabs)/pessoal/meus-feriados",
   pessoalEpis: "/(tabs)/pessoal/meus-epis",
   pessoalMensagens: "/(tabs)/pessoal/minhas-mensagens",
@@ -146,6 +147,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description:
       "Você está em modo de edição. A barra mostra três botões: Adicionar (novo widget), Descartar em vermelho (cancela tudo) e Salvar em verde (confirma as mudanças). Nenhuma alteração é permanente até você tocar em Salvar.",
     placement: "bottom",
+    jumpSetup: ["home-enter-edit-mode"],
   });
 
   steps.push({
@@ -157,6 +159,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description:
       "Em modo de edição, mantenha o dedo pressionado em qualquer widget por cerca de 0,3 segundos para começar a arrastar. Solte na nova posição. Os outros widgets se reorganizam automaticamente.",
     placement: "top",
+    jumpSetup: ["home-enter-edit-mode"],
   });
 
   // Spotlight the FIRST widget's ⋮ overflow button. SortableGrid wires the
@@ -174,6 +177,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Em modo de edição, cada widget mostra um ícone de três pontinhos (⋮) no canto inferior direito (destacado). Toque para abrir um painel com três ações: Configurar widget, Tamanho (escolher entre as opções permitidas) e Remover do painel.",
     placement: "top",
     tooltipPinToScreenTop: true,
+    jumpSetup: ["home-enter-edit-mode"],
   });
 
   steps.push({
@@ -188,6 +192,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     expectedAction: "tap",
     pulseTarget: true,
     hint: "Toque em Adicionar",
+    jumpSetup: ["home-enter-edit-mode"],
   });
 
   steps.push({
@@ -201,6 +206,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     expectedAction: "tap",
     pulseTarget: true,
     hint: "Toque no widget Tarefas",
+    jumpSetup: ["home-enter-edit-mode", "home-open-add-widget"],
   });
 
   // Spotlight the newly added widget (the LAST tile in the sortable grid).
@@ -218,6 +224,11 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Pronto — o widget Tarefas (destacado) foi adicionado ao final da lista. Ainda não foi salvo: você pode arrastá-lo para outra posição ou tocar em Descartar (botão vermelho) para cancelar antes de salvar.",
     placement: "top",
     tooltipPinToScreenTop: true,
+    jumpSetup: [
+      "home-enter-edit-mode",
+      "home-add-widget-tarefas",
+      "home-close-add-widget",
+    ],
   });
 
   steps.push({
@@ -232,6 +243,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     expectedAction: "tap",
     pulseTarget: true,
     hint: "Toque em Salvar",
+    jumpSetup: ["home-enter-edit-mode"],
   });
 
   steps.push({
@@ -282,6 +294,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Aqui você vê suas mensagens agrupadas por data (Hoje, Ontem, Últimos 7 dias e mais antigas). Toque em qualquer notificação para abrir a tela relacionada. Para marcar uma como lida sem abri-la, deslize a notificação para a esquerda.",
     placement: "center",
     dimBackground: false,
+    jumpSetup: ["open-side-drawer-notifications"],
   });
 
   // Interactive — teach the close gesture by spotlighting the dim backdrop
@@ -301,6 +314,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     pulseTarget: true,
     hint: "Toque na área escurecida à esquerda",
     dimBackground: false,
+    jumpSetup: ["open-side-drawer-notifications"],
   });
 
   // ═══ ACT 4 — Menu lateral (drawer) ═══════════════════════════════════════
@@ -330,6 +344,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "O menu mostra todas as áreas que seu setor pode acessar: Início, Cronograma, Recorte, Observações, Histórico, Pessoal, Meu Perfil e Configurações. Líderes de setor também veem Minha Equipe. Para fechar o menu, toque na área escurecida à esquerda dele ou deslize-o para a direita.",
     placement: "center",
     dimBackground: false,
+    jumpSetup: ["close-side-drawer", "open-side-drawer-menu"],
   });
 
   // ═══ ACT 4 — Cronograma ═════════════════════════════════════════════════
@@ -577,13 +592,25 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
   });
 
   steps.push({
+    // Made interactive + popsOnAction so the natural walk-forward path
+    // pops the /detalhes/{id} route off the back stack. Used to be a
+    // pure showcase; without the pop annotation, every step after this
+    // (~100+ steps) carried the stale detail route in any computed
+    // navigation chain — which fed `goToStep`'s old replay-pushes logic
+    // and stranded the user on detalhes. goToStep is now single-shot,
+    // but this annotation also keeps the natural forward flow's stack
+    // honest (e.g. for users who tap the back arrow as suggested).
     id: "task-back-to-list",
-    kind: "showcase",
+    kind: "interactive",
     targetId: TUTORIAL_TARGETS.chromeHeaderBack,
     title: "Voltar ao cronograma",
     description:
-      "Para voltar à lista de tarefas, use esta seta no canto superior esquerdo. Você pode tocar nela agora para prosseguir, ou tocar em Continuar.",
+      "Para voltar à lista de tarefas, toque na seta no canto superior esquerdo. Vamos prosseguir para o próximo passo assim que você voltar.",
     placement: "bottom",
+    expectedAction: "tap",
+    popsOnAction: true,
+    pulseTarget: true,
+    hint: "Toque na seta voltar",
   });
 
   // ═══ ACT 6 — Líder: extras (conditional) ════════════════════════════════
@@ -613,13 +640,17 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
   });
 
   steps.push({
+    // Narration, not showcase: the changelog lives on the task DETAIL screen
+    // but the preceding leader steps stay on /cronograma. Spotlighting the
+    // changelog target from /cronograma left it permanently unregistered
+    // and the engine fell through to the centred fallback tooltip with no
+    // spotlight. Describing it in narration sidesteps the target requirement.
     id: "leader-changelog",
-    kind: "showcase",
-    targetId: TUTORIAL_TARGETS.taskChangelog,
+    kind: "narration",
     title: "Histórico de Alterações (Líder)",
     description:
-      "Lista cronológica de todas as alterações: mudanças de status, atualizações de prazo, edições nos serviços, etc. Quem fez, o que mudou e quando.",
-    placement: "top",
+      "Na tela de detalhes da tarefa, líderes encontram o Histórico de Alterações: lista cronológica com mudanças de status, atualizações de prazo, edições nos serviços, etc. Quem fez, o que mudou e quando.",
+    placement: "center",
     condition: leaderOnly,
   });
 
@@ -847,39 +878,139 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     hint: "Toque em Meus Pontos",
   });
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // CONTROLE DE PONTO — DEEP DIVE
+  // Heavily expanded walkthrough that teaches the espelho de ponto page,
+  // each column, the column visibility panel, and the three sub-flows:
+  // Justificar Ausência (full day off), Ajustar Ponto (missed batida),
+  // Incluir Ponto (mobile self-service punch with GPS + photo).
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── Espelho de Ponto: visão geral + colunas ─────────────────────────
   steps.push({
     id: "pessoal-pontos-overview",
     kind: "showcase",
     screen: ROUTES.pessoalPontos,
     targetId: TUTORIAL_TARGETS.pessoalPontos,
-    title: "Seu ponto eletrônico",
+    title: "Espelho de Ponto",
     description:
-      "Tabela com entradas, saídas e cálculos do Secullum. Você navega por mês usando o seletor superior. Os totais ficam visíveis e podem ser comparados dia a dia.",
-    placement: "top",
+      "Esta é a sua tabela de Controle de Ponto — o \"espelho\" oficial gerado pelo Secullum. Cada linha é um dia; cada coluna é uma batida ou um cálculo. Os atalhos no topo (Incluir, Justificar, Ajustar e Colunas) cuidam de tudo que você pode precisar fazer aqui.",
+    placement: "bottom",
   });
 
   steps.push({
-    id: "pessoal-pontos-columns",
-    kind: "narration",
-    title: "Colunas disponíveis",
+    id: "pessoal-pontos-month-selector",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosMonthSelector,
+    title: "Navegação por período",
     description:
-      "Cerca de 15 colunas: Data, Entrada/Saída 1 e 2, Normais, Faltas, Extras (50%/100%/150%), DSR, Noturno, Atraso, Abonos e Ajuste. Use o seletor de colunas para mostrar apenas as que importam para você.",
+      "Use as setas para trocar de mês. O nome do mês aparece no centro com o intervalo do período logo abaixo (ex. 26/04 - 25/05).",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-month-period",
+    kind: "narration",
+    title: "Por que o período vai do dia 26 ao 25?",
+    description:
+      "O fechamento da folha e do bônus segue o ciclo bancário: começa no dia 26 do mês anterior e termina no dia 25 do mês atual. Tudo que você fizer (justificar, ajustar, incluir) dentro desse intervalo é o que entra naquele fechamento.",
     placement: "center",
   });
 
-  // ── Justificar Ausência walkthrough — DEEP interactive flow ─────────
-  // Walks the user through the entire form: tap button → tap a missing
-  // day row → spotlight each field → tap Enviar (mocked submit) → return.
+  steps.push({
+    id: "pessoal-pontos-batidas-explained",
+    kind: "narration",
+    title: "Entradas e Saídas",
+    description:
+      "As colunas Entrada 1 / Saída 1, Entrada 2 / Saída 2, Entrada 3 / Saída 3 mostram seus registros do dia em pares. Em geral: E1=entrou no trabalho, S1=saiu para o almoço, E2=voltou do almoço, S2=saiu no fim do dia. Quando faltou uma batida, aparece um traço (—) no lugar.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-col-normais-faltas",
+    kind: "narration",
+    title: "Normais e Faltas",
+    description:
+      "Normais é o total de horas trabalhadas dentro da jornada do dia (ex. 08:00). Faltas é o tempo que faltou cumprir — se você bateu menos que a jornada, a diferença aparece aqui. Esses dois valores são o coração do cálculo de salário.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-col-extras",
+    kind: "narration",
+    title: "Horas Extras (Ex 50%, Ex 100%, Ex 150%)",
+    description:
+      "Ex 50% são extras em dia útil (acréscimo de 50% sobre a hora normal). Ex 100% são extras em domingo, feriado ou após o limite diário (em dobro). Ex 150% é a faixa adicional para alguns acordos coletivos. Quanto maior a porcentagem, mais cara é aquela hora para a empresa — e mais alta na sua folha.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-col-dsr",
+    kind: "narration",
+    title: "DSR e DSR Déb",
+    description:
+      "DSR (Descanso Semanal Remunerado) é o pagamento do domingo proporcional às horas extras da semana — quanto mais extras, maior o DSR. DSR Déb (débito) é o desconto do DSR quando a semana teve falta sem justificativa: a empresa tira do DSR para compensar.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-col-noturno-abonos",
+    kind: "narration",
+    title: "Noturno e Abonos",
+    description:
+      "Noturno e Ex Not. somam o trabalho entre 22h e 5h (com adicional de 20%). Abono 2/3/4 são lançamentos de horas pagas que o RH adicionou (banco de horas, treinamento interno, etc.) — não vêm das suas batidas, vêm de cima.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-col-atraso-ajuste",
+    kind: "narration",
+    title: "Atraso, Ajuste, T+/- e mais",
+    description:
+      "Atraso conta o tempo que você chegou depois do horário. Ajuste mostra correções manuais lançadas pelo RH. T+/- é o saldo do dia (positivo = horas extras a receber, negativo = horas a compensar). Folga, Carga, Just. PA e Refeição completam o cálculo e quase nunca precisam ser conferidas no dia-a-dia.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-column-toggle",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosColumnToggle,
+    title: "Mostrar / esconder colunas",
+    description:
+      "Toque neste ícone de lista (com a contagem em badge) para abrir o painel de colunas. Lá você pode buscar, ligar/desligar individualmente cada coluna, ou voltar ao padrão. Por padrão aparecem 10 colunas — o resto fica oculto para a tabela caber confortavelmente na tela.",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-refresh",
+    kind: "narration",
+    title: "Atualizar dados (pull-to-refresh)",
+    description:
+      "Puxe a tabela para baixo a qualquer momento para sincronizar com o Secullum. É a maneira mais rápida quando você acabou de bater o ponto ou de receber uma aprovação e quer ver o reflexo na tabela.",
+    placement: "center",
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // JUSTIFICAR AUSÊNCIA — for when the whole day is missed
+  // ═══════════════════════════════════════════════════════════════════════
+  steps.push({
+    id: "pessoal-pontos-justify-when",
+    kind: "narration",
+    title: "Quando usar Justificar Ausência",
+    description:
+      "Use Justificar Ausência quando faltou o dia inteiro — nenhuma batida registrada. É o caminho certo para atestado médico, licença paternidade/maternidade, banco de horas, falta justificada e afastamentos de vários dias. Se faltou só UMA batida do dia, use Ajustar Ponto (vamos ver depois).",
+    placement: "center",
+  });
+
   steps.push({
     id: "pessoal-pontos-justify-tap",
     kind: "interactive",
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifyButton,
-    title: "Justificar ausência",
+    title: "Abra o Justificar Ausência",
     description:
-      "Quando faltou o dia inteiro (não registrou nenhuma batida), use este ícone de calendário com X. Toque nele para abrir o formulário de Justificativa de Ausência.",
+      "Toque no ícone de calendário com X para abrir a lista de dias sem batida.",
     placement: "bottom",
     expectedAction: "tap",
-    // Justify button pushes the missing-days list route.
     navigatesTo: ROUTES.pessoalPontosJustificar,
     pulseTarget: true,
     hint: "Toque em Justificar",
@@ -892,8 +1023,26 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifyPage,
     title: "Dias sem batida",
     description:
-      "A lista mostra os dias dos últimos 90 dias em que você não bateu o ponto. Para justificar um deles, toque na linha correspondente. Vamos abrir o primeiro da lista no próximo passo.",
+      "A lista mostra todos os dias dos últimos 90 dias em que você não registrou ponto. Sábado e domingo não aparecem (você não trabalha nesses dias). Cada linha mostra a data, o dia da semana e o total de Faltas em badge vermelho. Use pull-to-refresh para atualizar.",
     placement: "top",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-list-grouping",
+    kind: "narration",
+    title: "Dias específicos × Período de Afastamento",
+    description:
+      "Dias avulsos aparecem como linhas individuais (\"Dia Específico\"). Quando faltam vários dias seguidos, eles são agrupados automaticamente em um \"Período de Afastamento\" com um badge azul e ícone de calendário. Tocar no grupo abre o formulário já em modo período, com o intervalo pré-preenchido — você justifica todos de uma vez.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-list-encerrado",
+    kind: "narration",
+    title: "Dias acinzentados = período encerrado",
+    description:
+      "Se uma linha aparecer translúcida (mais clara) com \"período encerrado\" na descrição, significa que o RH já fechou aquela folha e ela não aceita mais alterações. Para corrigir, fale diretamente com o RH/líder.",
+    placement: "center",
   });
 
   steps.push({
@@ -905,7 +1054,6 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Toque na primeira linha (em destaque) para abrir o formulário de justificativa daquele dia.",
     placement: "bottom",
     expectedAction: "tap",
-    // Row tap pushes the dynamic justify-form route (first missing day).
     navigatesTo: justifyFormRoute(),
     pulseTarget: true,
     hint: "Toque no dia",
@@ -918,7 +1066,37 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifyForm,
     title: "Formulário de Justificativa",
     description:
-      "Esta é a tela para enviar a justificativa. \"Ausência em\", \"Data\" e \"Período\" são preenchidos automaticamente. Vamos olhar cada campo que você precisa preencher.",
+      "Esta é a tela para enviar a justificativa. Vamos ver cada campo do alto para baixo: Ausência em, Data, Período da Ausência, Motivo, Foto (se exigida) e Observação.",
+    placement: "top",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-ausencia-em",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosJustifyAusenciaEm,
+    title: "Ausência em",
+    description:
+      "Escolha entre \"Dia Específico\" (uma data só) e \"Período de Afastamento\" (intervalo de várias datas). Se você abriu o formulário a partir de um grupo de Período, ele já vem selecionado em Período de Afastamento e com as datas pré-preenchidas.",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-data",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosJustifyData,
+    title: "Data",
+    description:
+      "Mostra o dia escolhido (Segunda-Feira, 14/05/2026, por exemplo). Toque para abrir um calendário e mudar se precisar — você pode voltar até o limite do período aberto. Em modo Período de Afastamento, aparecem dois campos: Início e Fim.",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-periodo-ausencia",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosJustifyPeriodoAusencia,
+    title: "Período da Ausência",
+    description:
+      "Especifica o que faltou dentro do dia: Dia Inteiro (mais comum), Período 1 (manhã), Período 2 (tarde), Período 3 (turno extra/noite), ou Período Específico para informar um intervalo de horários customizado. Só aparece em Dia Específico — em Período de Afastamento, ele assume Dia Inteiro automaticamente.",
     placement: "top",
   });
 
@@ -928,8 +1106,26 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifyMotivo,
     title: "Motivo",
     description:
-      "Toque no campo Motivo para abrir o seletor e escolher o tipo da justificativa: Atestado Médico, Licença Paternidade, Falta Justificada, Compensação de Banco de Horas, etc. Alguns motivos (como Atestado Médico) exigem foto do atestado — neste caso, um campo de foto aparece logo abaixo.",
+      "Toque para abrir o seletor com a lista de justificativas configuradas pelo seu RH. Cada motivo é uma categoria oficial reconhecida pelo Secullum — não inventamos motivos novos aqui.",
     placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-motivos-list",
+    kind: "narration",
+    title: "Os principais motivos",
+    description:
+      "Atestado Médico — consulta, doença ou exames; exige foto do atestado. Licença Paternidade/Maternidade — primeiros dias após nascimento do filho(a). Falta Justificada — quando você combinou previamente com o líder. Compensação de Banco de Horas — usar horas extras acumuladas para folgar. Outros motivos aparecem conforme o seu RH configura.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-justify-foto-required",
+    kind: "narration",
+    title: "Foto obrigatória (para alguns motivos)",
+    description:
+      "Quando o motivo escolhido exige comprovação (Atestado Médico, por exemplo), um botão \"Adicionar foto\" aparece logo abaixo do Motivo. Toque, escolha entre Câmera (tirar agora) ou Galeria (foto já salva) e fotografe o documento bem iluminado e centralizado. Sem a foto, o botão Enviar fica bloqueado.",
+    placement: "center",
   });
 
   steps.push({
@@ -938,7 +1134,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifyObservacao,
     title: "Observação",
     description:
-      "Use o campo Observação para escrever detalhes adicionais — por exemplo o nome do médico, número do atestado, ou contexto da ausência. É opcional, mas ajuda na aprovação.",
+      "Campo opcional, mas RECOMENDADO. Escreva o contexto: nome do médico, número do atestado, motivo da licença, etc. Quanto mais informação útil, mais rápido o líder aprova — não force ele a pedir esclarecimentos depois.",
     placement: "top",
   });
 
@@ -948,7 +1144,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosJustifySubmit,
     title: "Envie a solicitação",
     description:
-      "Toque em Enviar para mandar a justificativa para aprovação no Secullum. No tutorial vamos simular o envio — vai aparecer um alerta de confirmação. Toque em OK no alerta, depois siga para o próximo passo. Em produção, sua solicitação aparece com status Pendente até o líder/RH aprovar.",
+      "Toque em Enviar para mandar a justificativa para aprovação no Secullum. No tutorial vamos simular o envio — vai aparecer um alerta de confirmação. Toque em OK no alerta e siga para o próximo passo.",
     placement: "top",
     tooltipPinToScreenTop: true,
     expectedAction: "tap",
@@ -956,8 +1152,15 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     hint: "Toque em Enviar",
   });
 
-  // Two-step back: form → list, then list → meus-pontos. Each step has its
-  // own interactive chromeHeaderBack target and requires the user to tap.
+  steps.push({
+    id: "pessoal-pontos-justify-post-submit",
+    kind: "narration",
+    title: "O que acontece depois do envio",
+    description:
+      "A solicitação fica com status PENDENTE no Secullum até o seu líder ou o RH aprovar. Enquanto pendente, o formulário fica bloqueado para edição naquela data e um aviso aparece no topo: \"Já existe uma solicitação para esta data\". Se for rejeitada, você verá a razão e pode abrir uma nova solicitação ajustada.",
+    placement: "center",
+  });
+
   steps.push({
     id: "pessoal-pontos-justify-back-from-form",
     kind: "interactive",
@@ -967,7 +1170,6 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
       "Depois de fechar o alerta, toque na seta voltar para retornar à lista de dias sem batida.",
     placement: "bottom",
     expectedAction: "tap",
-    // Back-button tap pops the form route off the stack.
     popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
@@ -976,6 +1178,12 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
   steps.push({
     id: "pessoal-pontos-justify-back-from-list",
     kind: "interactive",
+    // Explicit `screen` so dev-picker jumps to this step land on the
+    // justify LIST page (where the back button actually lives). Without
+    // it, `findStepLandingRoute` walked back past several no-route
+    // narration/showcase steps and resolved to the FORM route — the
+    // user would land in the form with no back button to tap.
+    screen: ROUTES.pessoalPontosJustificar,
     targetId: TUTORIAL_TARGETS.chromeHeaderBack,
     title: "Voltar para Meus Pontos",
     description:
@@ -987,22 +1195,29 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     hint: "Toque na seta voltar",
   });
 
-  // ── Ajustar Ponto walkthrough — DEEP interactive flow ───────────────
-  // The screen field is the same safety net we use on the pessoal-grid tap
-  // steps: if the justify back chain left the user on a stale route, we
-  // re-assert /meus-pontos so the Ajustar Ponto shortcut is actually on
-  // screen when this step activates.
+  // ═══════════════════════════════════════════════════════════════════════
+  // AJUSTAR PONTO — for when one batida is missing
+  // ═══════════════════════════════════════════════════════════════════════
+  steps.push({
+    id: "pessoal-pontos-adjust-when",
+    kind: "narration",
+    screen: ROUTES.pessoalPontos,
+    title: "Quando usar Ajustar Ponto",
+    description:
+      "Use Ajustar Ponto quando esqueceu UMA batida específica do dia — você bateu E1 e S1 mas esqueceu E2 (retorno do almoço), por exemplo. As outras batidas continuam corretas; você só está corrigindo a que faltou. Se faltou o dia inteiro, volte para Justificar Ausência.",
+    placement: "center",
+  });
+
   steps.push({
     id: "pessoal-pontos-adjust-tap",
     kind: "interactive",
     screen: ROUTES.pessoalPontos,
     targetId: TUTORIAL_TARGETS.pessoalPontosAdjustButton,
-    title: "Ajustar ponto",
+    title: "Abra o Ajustar Ponto",
     description:
-      "Quando faltou apenas uma batida (esqueceu a entrada, intervalo ou saída), use este ícone de relógio com lápis. Toque para abrir o formulário de Ajuste de Ponto.",
+      "Toque no ícone de relógio com lápis para abrir o formulário de Ajuste de Ponto.",
     placement: "bottom",
     expectedAction: "tap",
-    // Adjust button pushes the ajustar-ponto form route.
     navigatesTo: ROUTES.pessoalPontosAjustar,
     pulseTarget: true,
     hint: "Toque em Ajustar",
@@ -1015,7 +1230,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosAdjustPage,
     title: "Formulário de Ajuste",
     description:
-      "Esta é a tela para corrigir batidas faltantes. Vamos olhar cada parte: primeiro a Data, depois os horários (entrada/saída), e por fim o botão Enviar.",
+      "Tela para corrigir batidas faltantes. Tem três blocos: a Data no topo, os slots de Entrada/Saída no meio, e a Observação no final, com o botão Enviar fixo na parte de baixo.",
     placement: "top",
   });
 
@@ -1023,20 +1238,57 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     id: "pessoal-pontos-adjust-date",
     kind: "showcase",
     targetId: TUTORIAL_TARGETS.pessoalPontosAdjustDate,
-    title: "Escolha a Data",
+    title: "Data do ajuste",
     description:
-      "Toque no cabeçalho Data para abrir um seletor de calendário e escolher o dia que tem batida faltante. Por padrão começa em hoje, mas você pode voltar até o limite do período aberto no Secullum.",
+      "Toque para abrir o calendário. Por padrão começa em hoje, mas você pode voltar até o limite do período aberto no Secullum. Mudou a data? Os slots abaixo recarregam automaticamente com as batidas reais daquele dia (pre-preenchidas).",
     placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-adjust-prefill",
+    kind: "narration",
+    title: "Pré-preenchimento inteligente",
+    description:
+      "Os slots vêm preenchidos com o que você JÁ tem no dia — assim você só edita o que faltou. Se já existe um ajuste pendente para a data, o formulário mostra os horários propostos por você (em vez dos canônicos), permitindo refinar. Se já existe uma justificativa pendente, cada slot mostra uma abreviação de 3 letras do motivo (ATE=Atestado, ESQ=Esqueceu, etc.) sinalizando que aquela data não precisa de horários.",
+    placement: "center",
   });
 
   steps.push({
     id: "pessoal-pontos-adjust-slots",
     kind: "showcase",
     targetId: TUTORIAL_TARGETS.pessoalPontosAdjustFirstSlot,
-    title: "Informe a batida que faltou",
+    title: "Slots de Entrada e Saída",
     description:
-      "Toque em qualquer slot (Entrada 1, Saída 1, Entrada 2…) para abrir o relógio e informar o horário correto da batida faltante. Se quiser limpar, toque no X. Quando o slot tem horário, ele aparece em destaque; vazios mostram --:--.",
+      "Cada linha é uma batida. Toque na linha que tem o horário errado/faltante para abrir o relógio e escolher a hora. Linha vazia mostra --:--; linha preenchida mostra o horário em destaque com um X ao lado.",
     placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-adjust-pairs-system",
+    kind: "narration",
+    title: "Como funcionam os pares E/S",
+    description:
+      "Por padrão aparecem 3 pares (Entrada 1 → Saída 3). Se você precisar de mais (por exemplo um dia com 4 ou 5 intervalos), o quarto e quinto par aparecem automaticamente ao preencher os anteriores. Os pares devem ser preenchidos em ordem cronológica — Entrada 1 vem antes de Saída 1, que vem antes de Entrada 2, e assim por diante.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-adjust-clear",
+    kind: "narration",
+    title: "Limpando um slot",
+    description:
+      "Tocou em um slot por engano? O X que aparece no canto direito de um slot preenchido limpa aquele horário e volta para --:--. Você também pode tocar de novo no slot e escolher um horário diferente — não precisa limpar antes.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-adjust-observacao",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosAdjustObservacao,
+    title: "Observação (obrigatória)",
+    description:
+      "Diferente da justificativa, aqui a Observação é OBRIGATÓRIA. Sem ela, o botão Enviar bloqueia. Explique o porquê do ajuste em uma frase: \"esqueci de bater na saída do almoço\", \"sistema travou na entrada\", \"saí mais cedo combinado com o líder\". Isso justifica a alteração para quem vai aprovar.",
+    placement: "top",
   });
 
   steps.push({
@@ -1045,7 +1297,7 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.pessoalPontosAdjustSubmit,
     title: "Envie o ajuste",
     description:
-      "Toque em Enviar para mandar o ajuste para aprovação no Secullum. No tutorial vamos simular o envio — nada real será alterado. Em produção, a solicitação fica com status Pendente até o líder/RH aprovar.",
+      "Toque em Enviar para mandar o ajuste para aprovação. No tutorial vamos simular o envio — nada real será alterado. Em produção, a solicitação fica com status Pendente até o líder/RH aprovar. Enquanto pendente, o formulário fica bloqueado para edição naquela data.",
     placement: "top",
     expectedAction: "tap",
     pulseTarget: true,
@@ -1058,39 +1310,165 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     targetId: TUTORIAL_TARGETS.chromeHeaderBack,
     title: "Voltar para Meus Pontos",
     description:
-      "Toque na seta voltar para retornar ao espelho de ponto.",
+      "Toque na seta voltar para retornar ao espelho de ponto. Em seguida vamos ver o Incluir Ponto.",
     placement: "bottom",
     expectedAction: "tap",
-    // Back-button tap pops the ajustar-ponto route off the stack.
+    popsOnAction: true,
+    pulseTarget: true,
+    hint: "Toque na seta voltar",
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // INCLUIR PONTO — mobile self-service punch (GPS + photo)
+  // ═══════════════════════════════════════════════════════════════════════
+  steps.push({
+    id: "pessoal-pontos-incluir-when",
+    kind: "narration",
+    screen: ROUTES.pessoalPontos,
+    title: "Quando usar Incluir Ponto",
+    description:
+      "Use Incluir Ponto para registrar uma batida AGORA, pelo celular, quando você não tem acesso ao relógio físico — você está em obra externa, na rua, em treinamento fora, ou o relógio está com defeito. O sistema captura sua localização GPS e (se exigido) uma selfie como prova.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-tap",
+    kind: "interactive",
+    screen: ROUTES.pessoalPontos,
+    targetId: TUTORIAL_TARGETS.pessoalPontosIncluirButton,
+    title: "Abra o Incluir Ponto",
+    description:
+      "Toque no ícone de localização com + (à esquerda do Justificar Ausência) para abrir a tela de Incluir Ponto.",
+    placement: "bottom",
+    expectedAction: "tap",
+    navigatesTo: ROUTES.pessoalPontosIncluir,
+    pulseTarget: true,
+    hint: "Toque em Incluir Ponto",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-overview",
+    kind: "showcase",
+    screen: ROUTES.pessoalPontosIncluir,
+    targetId: TUTORIAL_TARGETS.pessoalPontosIncluirPage,
+    title: "Tela Incluir Ponto",
+    description:
+      "Aqui você vê o botão grande Nova Inclusão no topo e o card Últimos Registros com suas inclusões recentes. Cada inclusão passa por um workflow automático no servidor antes de virar uma batida oficial — vamos entender como funciona.",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-list-card",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosIncluirListCard,
+    title: "Últimos Registros",
+    description:
+      "Card com as últimas inclusões. Cada linha mostra a data/hora, um ícone de pino (localização) e um badge colorido com o status. A lista atualiza sozinha enquanto houver inclusão sendo processada — você não precisa ficar puxando.",
+    placement: "top",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-status-badges",
+    kind: "narration",
+    title: "Os três status",
+    description:
+      "PROCESSANDO (laranja, com mini-spinner): o servidor está validando — geralmente leva 5 a 15 segundos. ACEITA (verde, polegar para cima): batida aprovada, virou ponto oficial no Secullum e aparece na sua tabela. REJEITADA (vermelho, polegar para baixo): batida recusada — o motivo aparece abaixo (ex. \"Nenhuma pessoa na foto\", \"Fora do perímetro\"). Você pode corrigir e bater de novo.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-row-expand",
+    kind: "interactive",
+    targetId: TUTORIAL_TARGETS.pessoalPontosIncluirFirstRow,
+    title: "Toque para ver detalhes",
+    description:
+      "Toque na primeira linha (em destaque) para expandir. Você vai ver um mini-mapa com o local exato da batida, a precisão do GPS em metros, e o endereço.",
+    placement: "bottom",
+    expectedAction: "tap",
+    pulseTarget: true,
+    hint: "Toque na linha",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-row-details",
+    kind: "narration",
+    title: "Detalhes expandidos",
+    description:
+      "Quando você expande uma linha, aparece: o mini-mapa centralizado na coordenada (pino azul pulsante + raio de precisão), a data/hora completa com segundos, a precisão em metros (quanto menor, melhor — abaixo de 10m é excelente) e o endereço reverso. Se a inclusão foi feita fora do perímetro autorizado pela empresa, um aviso laranja aparece. Em status Rejeitada, o motivo da rejeição aparece em vermelho abaixo de tudo.",
+    placement: "center",
+    dimBackground: false,
+    jumpSetup: ["incluir-ponto-expand-first-row"],
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-comprovante",
+    kind: "narration",
+    title: "Comprovante (PDF oficial)",
+    description:
+      "Para inclusões com status ACEITA, um ícone de documento aparece no início da linha. Toque nele para abrir o comprovante oficial gerado pelo Secullum — o mesmo PDF que o relógio físico geraria. Use sempre que precisar de prova formal da batida (auditoria, dúvida do RH).",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-cta",
+    kind: "showcase",
+    targetId: TUTORIAL_TARGETS.pessoalPontosIncluirCta,
+    title: "Nova Inclusão",
+    description:
+      "Este é o botão principal — toque para começar uma nova batida. Vamos só descrever o que acontece em seguida; no tutorial NÃO vamos abrir a câmera nem ativar o GPS de verdade.",
+    placement: "bottom",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-capture-flow",
+    kind: "narration",
+    title: "Tela de captura — passo a passo",
+    description:
+      "Ao tocar em Nova Inclusão, abre uma tela com um mapa grande mostrando você (pino azul pulsante) e os perímetros autorizados pela empresa (círculos verdes pontilhados). Abaixo do mapa: data/hora ao vivo, precisão do GPS em metros, e seu endereço reverso. Um botão de mira (canto inferior direito do mapa) recentraliza no seu ponto se o mapa rolar.",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-capture-photo",
+    kind: "narration",
+    title: "Foto (quando exigida)",
+    description:
+      "Se sua empresa exige foto/reconhecimento facial, o botão na parte de baixo aparece como \"Tirar Foto\" em vez de \"Incluir Ponto\". Toque, abre a câmera frontal (selfie) em tela cheia com um botão grande de obturador. Tirou? Volta para a tela anterior com miniatura da foto + botão Refazer; só então o botão muda para \"Incluir Ponto\".",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-capture-submit",
+    kind: "narration",
+    title: "Enviando a batida",
+    description:
+      "Toque em Incluir Ponto para enviar coordenadas + foto + horário do servidor. Você volta automaticamente para a tela de Últimos Registros, e a nova linha aparece com status Processando (laranja, com spinner). Em 5-15 segundos vira Aceita ou Rejeitada — a lista atualiza sozinha. Avisos importantes: se aparecer \"Fora do perímetro permitido pela empresa\", a empresa pode rejeitar; se aparecer \"Você está em afastamento\", você não pode bater (volte e fale com o RH).",
+    placement: "center",
+  });
+
+  steps.push({
+    id: "pessoal-pontos-incluir-back",
+    kind: "interactive",
+    targetId: TUTORIAL_TARGETS.chromeHeaderBack,
+    title: "Voltar para Meus Pontos",
+    description:
+      "Toque na seta voltar para retornar ao espelho de ponto e fechar o módulo de Controle de Ponto.",
+    placement: "bottom",
+    expectedAction: "tap",
     popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
   });
 
   steps.push({
-    id: "pessoal-pontos-refresh",
-    kind: "narration",
-    // Re-assert the route: after the back-from-form step the user may end
-    // up on a stale screen (history popping is non-deterministic when the
-    // tutorial has pushed the same route multiple times). Forcing the
-    // screen on this narration brings the user back to meus-pontos so the
-    // refresh instructions match the page they're staring at.
-    screen: ROUTES.pessoalPontos,
-    title: "Atualizar dados",
-    description:
-      "Puxe a tabela para baixo (pull-to-refresh) para sincronizar com o Secullum. É a maneira mais rápida quando o ponto acabou de ser registrado.",
-    placement: "center",
-  });
-
-  steps.push({
     id: "pessoal-pontos-back",
     kind: "interactive",
+    screen: ROUTES.pessoalPontos,
     targetId: TUTORIAL_TARGETS.chromeHeaderBack,
-    title: "Voltar",
+    title: "Voltar para Pessoal",
     description: "Toque na seta de voltar no topo para retornar ao hub Pessoal.",
     placement: "bottom",
     expectedAction: "tap",
-    // Back-button tap pops /meus-pontos off the stack.
     popsOnAction: true,
     pulseTarget: true,
     hint: "Toque na seta voltar",
@@ -1248,7 +1626,10 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
   steps.push({
     id: "pessoal-epis-sign-card",
     kind: "showcase",
-    screen: "/(tabs)/pessoal/meus-epis/detalhes/[id]",
+    // The `screen` field used to literally contain `[id]` — a placeholder
+    // never present in `usePathname()` — so normalizeRoute(pathname) never
+    // matched and the step-entry effect would attempt a re-push. The actual
+    // route is provided by `navigateOnEnter` below (resolved UUID).
     targetId: TUTORIAL_TARGETS.pessoalEpisDetailSign,
     title: "Confirmar Recebimento — passo 2",
     description:
@@ -1309,6 +1690,11 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
   steps.push({
     id: "pessoal-epis-back-from-list",
     kind: "interactive",
+    // Explicit `screen` so dev-picker jumps to this step land on the
+    // EPI list page (where the back button actually lives). Without it
+    // the backward walker resolves to the detail UUID from
+    // `pessoal-epis-sign-card.navigateOnEnter` — wrong page.
+    screen: ROUTES.pessoalEpis,
     targetId: TUTORIAL_TARGETS.chromeHeaderBack,
     title: "Voltar ao hub Pessoal",
     description: "Toque na seta voltar de novo para retornar ao hub Pessoal e ver Mensagens.",
@@ -1851,7 +2237,10 @@ export function buildTutorialSteps(_ctx?: TutorialUserContext): TutorialStep[] {
     description:
       "Para acessar Meu Perfil, vamos abrir o menu lateral novamente. Toque no ícone de menu (três linhas) no canto superior direito.",
     placement: "bottom",
-    expectedAction: "tap",
+    // chromeDrawerToggle's Pressable in privilege-optimized-full-fixed
+    // fires notifyAction("drawer-open") — not "tap" — when pressed.
+    // Mirrors `drawer-intro` (the first drawer-open step).
+    expectedAction: "drawer-open",
     pulseTarget: true,
     hint: "Toque no ícone de menu",
   });

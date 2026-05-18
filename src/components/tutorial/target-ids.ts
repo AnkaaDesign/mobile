@@ -157,16 +157,25 @@ export const TUTORIAL_TARGETS = {
   pessoalPontosColumnToggle: "pessoal.pontos.columnToggle",
   pessoalPontosJustifyButton: "pessoal.pontos.justifyButton",
   pessoalPontosAdjustButton: "pessoal.pontos.adjustButton",
+  pessoalPontosIncluirButton: "pessoal.pontos.incluirButton",
   pessoalPontosJustifyPage: "pessoal.pontos.justifyPage",
   pessoalPontosAdjustPage: "pessoal.pontos.adjustPage",
   pessoalPontosJustifyFirstRow: "pessoal.pontos.justifyFirstRow",
   pessoalPontosJustifyForm: "pessoal.pontos.justifyForm",
+  pessoalPontosJustifyAusenciaEm: "pessoal.pontos.justifyAusenciaEm",
+  pessoalPontosJustifyData: "pessoal.pontos.justifyData",
+  pessoalPontosJustifyPeriodoAusencia: "pessoal.pontos.justifyPeriodoAusencia",
   pessoalPontosJustifyMotivo: "pessoal.pontos.justifyMotivo",
   pessoalPontosJustifyObservacao: "pessoal.pontos.justifyObservacao",
   pessoalPontosJustifySubmit: "pessoal.pontos.justifySubmit",
   pessoalPontosAdjustDate: "pessoal.pontos.adjustDate",
   pessoalPontosAdjustFirstSlot: "pessoal.pontos.adjustFirstSlot",
+  pessoalPontosAdjustObservacao: "pessoal.pontos.adjustObservacao",
   pessoalPontosAdjustSubmit: "pessoal.pontos.adjustSubmit",
+  pessoalPontosIncluirPage: "pessoal.pontos.incluirPage",
+  pessoalPontosIncluirCta: "pessoal.pontos.incluirCta",
+  pessoalPontosIncluirListCard: "pessoal.pontos.incluirListCard",
+  pessoalPontosIncluirFirstRow: "pessoal.pontos.incluirFirstRow",
 
   pessoalFeriados: "pessoal.feriados",
   pessoalFeriadosFirstItem: "pessoal.feriados.firstItem",
@@ -204,9 +213,6 @@ export const TUTORIAL_TARGETS = {
   pessoalBonusSimulacaoControls: "pessoal.bonus.simulacao.controls",
   pessoalBonusHistoricoList: "pessoal.bonus.historico.list",
   pessoalBonusHistoricoFirstEntry: "pessoal.bonus.historico.firstEntry",
-
-  // Perfil
-  perfilAddress: "perfil.address",
 
   // Avatar dropdown in side drawer
   drawerAvatarButton: "drawer.avatarButton",

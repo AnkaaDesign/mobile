@@ -127,6 +127,29 @@ export interface TutorialStep {
    * panel the user already opened in the previous interactive step.
    */
   dimBackground?: boolean;
+  /**
+   * Side-effect hooks that the engine must invoke (in order) when JUMPING
+   * to this step via the dev step picker. They reproduce screen-local state
+   * that the natural step-by-step walk would have built up — e.g. open the
+   * side drawer, enter dashboard edit mode, add a widget that subsequent
+   * steps reference, open the column-visibility panel, etc.
+   *
+   * Each hook name maps to a handler registered by a screen via
+   * `registerJumpHandler(name, fn)`. The engine invokes them AFTER the
+   * navigation chain commits but BEFORE the step entry effect arms its
+   * fallback timer, so the screen has a chance to mount the target the
+   * hook just made visible.
+   *
+   * Hooks are SAFE to invoke even when no handler is registered (no-op).
+   * On the natural forward walk they are NEVER invoked — they only fire
+   * for `goToStep`. This keeps the production tutorial path identical
+   * to what the user would experience without the dev picker.
+   *
+   * Naming convention: kebab-case verb-noun pairs, scoped by feature.
+   * Examples: `open-side-drawer`, `dashboard-edit-mode`,
+   * `dashboard-add-widget:table.tasks`, `home-pontos-open-column-panel`.
+   */
+  jumpSetup?: string[];
 }
 
 export interface TutorialState {
@@ -178,6 +201,16 @@ export interface TutorialActions {
   notifyAction: (action: TutorialActionType, payload?: { targetId?: string; eventId?: string }) => void;
   registerOpenDrawerCallback: (fn: (() => void) | null) => void;
   registerCloseDrawerCallback: (fn: (() => void) | null) => void;
+  /**
+   * Register a side-effect handler keyed by a string name. Used by the
+   * dev step picker's jump replay to reproduce screen-local state (open
+   * a panel, enter edit mode, add a widget, etc.) when landing on a
+   * step that depends on it. Pass `null` to unregister.
+   *
+   * Handlers can return void or a Promise — the engine awaits before
+   * running the next setup hook for the target step.
+   */
+  registerJumpHandler: (name: string, fn: (() => void | Promise<void>) | null) => void;
   measureTick: number;
   bumpMeasureTick: () => void;
 }

@@ -28,19 +28,22 @@ const _activeRectSubscribers = new Set<() => void>();
 
 export function setActiveTargetRect(rect: TutorialTargetRect | null): void {
   const prev = _activeTargetRect;
-  if (
-    prev === rect ||
-    (prev != null &&
-      rect != null &&
-      prev.x === rect.x &&
-      prev.y === rect.y &&
-      prev.width === rect.width &&
-      prev.height === rect.height)
-  ) {
-    return;
-  }
+  // Reference-identical early return — cheap deduplication for the common
+  // case where a polling tick re-reads the same rect object. Value-equal
+  // but reference-different rects DO trigger a notify so the overlay
+  // re-runs its effect; in practice the effect's no-op guard
+  // (`prevRectRef.current` comparison) suppresses any visual change.
+  // Skipping notify on value-equal rects had been a subtle source of
+  // "spotlight invisible" — if the overlay missed its first measure
+  // notification because of a useSyncExternalStore subscribe race,
+  // subsequent identical measurements would never re-trigger the effect.
+  if (prev === rect) return;
   _activeTargetRect = rect;
-  _activeRectSubscribers.forEach((fn) => fn());
+  _activeRectSubscribers.forEach((fn) => {
+    try {
+      fn();
+    } catch {}
+  });
 }
 
 export function getActiveTargetRect(): TutorialTargetRect | null {
@@ -56,15 +59,24 @@ export function subscribeActiveTargetRect(cb: () => void): () => void {
 
 export function setActiveTargetId(id: string | null): void {
   const prev = _activeTargetId;
-  if (prev === id) return;
   _activeTargetId = id;
+  // ALWAYS notify both prev and new id subscribers, even when they're
+  // the same. Re-entering the same target (same id consecutive steps,
+  // or a step transition that doesn't change targetId) used to skip the
+  // notify — meaning the hook's `isActiveTarget` snapshot didn't change,
+  // its measure-effect didn't re-run, and the spotlight could remain
+  // stale or invisible. The notify is cheap (one call to the currently-
+  // active hook); same-id re-notifies are idempotent at the consumer
+  // (useSyncExternalStore re-reads snapshot, sees same value, no
+  // re-render — but the polling effect re-runs because `isActiveTarget`
+  // is read fresh inside).
   if (prev != null) {
     const prevSet = _activeIdSubscribers.get(prev);
-    if (prevSet) prevSet.forEach((fn) => fn());
+    if (prevSet) prevSet.forEach((fn) => { try { fn(); } catch {} });
   }
-  if (id != null) {
+  if (id != null && id !== prev) {
     const nextSet = _activeIdSubscribers.get(id);
-    if (nextSet) nextSet.forEach((fn) => fn());
+    if (nextSet) nextSet.forEach((fn) => { try { fn(); } catch {} });
   }
 }
 
@@ -100,7 +112,11 @@ const _measureSubscribers = new Set<() => void>();
 
 export function bumpMeasureTickStore(): void {
   _measureTick++;
-  _measureSubscribers.forEach((fn) => fn());
+  _measureSubscribers.forEach((fn) => {
+    try {
+      fn();
+    } catch {}
+  });
 }
 
 export function getMeasureTick(): number {
@@ -123,13 +139,10 @@ export function resetTutorialStore(): void {
   _activeTargetId = null;
   if (prev != null) {
     const prevSet = _activeIdSubscribers.get(prev);
-    if (prevSet) prevSet.forEach((fn) => fn());
+    if (prevSet) prevSet.forEach((fn) => { try { fn(); } catch {} });
   }
   if (_activeTargetRect != null) {
     _activeTargetRect = null;
-    _activeRectSubscribers.forEach((fn) => fn());
+    _activeRectSubscribers.forEach((fn) => { try { fn(); } catch {} });
   }
-  // measureTick is monotonic — no reset needed; the subscriber count is
-  // also unchanged because hooks manage their own (un)subscriptions on
-  // active→inactive transitions.
 }
