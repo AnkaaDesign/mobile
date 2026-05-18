@@ -62,6 +62,41 @@ export default function CombinedDrawerContent(props: DrawerContentComponentProps
     return () => registerCloseDrawerCallback(null);
   }, [registerCloseDrawerCallback, props.navigation]);
 
+  // Jump-replay handlers — used by the dev step picker so jumping into a
+  // step that expects the drawer (menu or notifications) to be open
+  // actually opens it. Idempotent: re-firing while already open is a no-op
+  // at the navigator level.
+  const registerJumpHandler = tutorial?.registerJumpHandler;
+  useEffect(() => {
+    if (!registerJumpHandler) return;
+    registerJumpHandler("open-side-drawer-menu", async () => {
+      try {
+        setDrawerMode("menu");
+        props.navigation.dispatch(DrawerActions.openDrawer());
+        // Give the slide-in a frame so the menu items have rects.
+        await new Promise<void>((r) => setTimeout(r, 280));
+      } catch {}
+    });
+    registerJumpHandler("open-side-drawer-notifications", async () => {
+      try {
+        setDrawerMode("notifications");
+        props.navigation.dispatch(DrawerActions.openDrawer());
+        await new Promise<void>((r) => setTimeout(r, 280));
+      } catch {}
+    });
+    registerJumpHandler("close-side-drawer", async () => {
+      try {
+        props.navigation.dispatch(DrawerActions.closeDrawer());
+        await new Promise<void>((r) => setTimeout(r, 200));
+      } catch {}
+    });
+    return () => {
+      registerJumpHandler("open-side-drawer-menu", null);
+      registerJumpHandler("open-side-drawer-notifications", null);
+      registerJumpHandler("close-side-drawer", null);
+    };
+  }, [registerJumpHandler, props.navigation, setDrawerMode]);
+
   // Re-measure all tutorial targets when the drawer transitions to "open".
   // Drawer items mount before the slide-in animation completes; without
   // this bump the rects captured by useTutorialTarget land at the

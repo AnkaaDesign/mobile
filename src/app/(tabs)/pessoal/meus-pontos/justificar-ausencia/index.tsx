@@ -4,7 +4,7 @@ import { Stack } from "expo-router";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconChevronRight, IconCalendarOff, IconInfoCircle } from "@tabler/icons-react-native";
+import { IconChevronRight, IconInfoCircle, IconCalendarTime } from "@tabler/icons-react-native";
 import { ThemedView, ThemedText, ErrorScreen, EmptyState } from "@/components/ui";
 import { useTheme } from "@/lib/theme";
 import { useMyMissingDays } from "@/hooks/secullum";
@@ -23,6 +23,95 @@ const formatDayDisplay = (ymd: string) => {
   const [y, m, d] = ymd.split("-").map(Number);
   return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 };
+
+// Diff in days between two YYYY-MM-DD strings, ignoring DST and timezones.
+const daysBetween = (a: string, b: string): number => {
+  const [ya, ma, da] = a.split("-").map(Number);
+  const [yb, mb, db] = b.split("-").map(Number);
+  // Use UTC to avoid DST jumps adding a fractional day.
+  const ta = Date.UTC(ya, ma - 1, da);
+  const tb = Date.UTC(yb, mb - 1, db);
+  return Math.round((tb - ta) / (24 * 60 * 60 * 1000));
+};
+
+// Weekday helper: 0 = Sunday, 6 = Saturday. Used to filter out weekend
+// non-workdays from the missing-days list (the user's schedule is Mon-Fri).
+const dayOfWeek = (ymd: string): number => {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return new Date(y, m - 1, d).getDay();
+};
+const isWeekend = (ymd: string) => {
+  const dow = dayOfWeek(ymd);
+  return dow === 0 || dow === 6;
+};
+
+type MissingDay = {
+  date: string;
+  weekdayPt: string;
+  saldo?: string | null;
+  totalFaltas?: string | null;
+  existePeriodoEncerrado: boolean;
+};
+
+type Group =
+  | {
+      kind: "single";
+      key: string;
+      day: MissingDay;
+    }
+  | {
+      kind: "period";
+      key: string;
+      start: MissingDay;
+      end: MissingDay;
+      days: MissingDay[];
+      length: number;
+    };
+
+/**
+ * Collapse consecutive missing days into "Período de Afastamento" groups.
+ * Two days are part of the same period when their dates are exactly 1 calendar
+ * day apart AND both share the same `existePeriodoEncerrado` flag (so an open
+ * day doesn't get bundled with a frozen one). Solitary days surface as
+ * "Dia Específico" rows.
+ *
+ * Input must be sorted descending (newest first) — that's how the screen
+ * presents them. We build groups by walking the sorted list and emitting a
+ * group when the next entry is no longer the prior date - 1.
+ */
+function groupMissingDays(sortedDesc: MissingDay[]): Group[] {
+  const groups: Group[] = [];
+  let i = 0;
+  while (i < sortedDesc.length) {
+    const start = sortedDesc[i];
+    let end = start;
+    let j = i + 1;
+    while (
+      j < sortedDesc.length &&
+      daysBetween(sortedDesc[j].date, end.date) === 1 &&
+      sortedDesc[j].existePeriodoEncerrado === start.existePeriodoEncerrado
+    ) {
+      end = sortedDesc[j];
+      j++;
+    }
+    if (j - i === 1) {
+      groups.push({ kind: "single", key: `s-${start.date}`, day: start });
+    } else {
+      const days = sortedDesc.slice(i, j);
+      groups.push({
+        kind: "period",
+        key: `p-${end.date}-${start.date}`,
+        // For display: oldest → newest within the period.
+        start: end,
+        end: start,
+        days,
+        length: j - i,
+      });
+    }
+    i = j;
+  }
+  return groups;
+}
 
 export default function JustificarAusenciaListScreen() {
   const { colors } = useTheme();
@@ -49,27 +138,41 @@ export default function JustificarAusenciaListScreen() {
   const isTutorialActive = useOptionalTutorial()?.isActive ?? false;
   useScreenReady(isTutorialActive || !isLoading);
 
-  const missingDays = useMemo(() => {
+  const missingDays = useMemo<MissingDay[]>(() => {
     const apiData = response?.data;
     if (apiData && "data" in apiData && Array.isArray(apiData.data)) {
-      return apiData.data;
+      // Newest first + exclude weekends — Mon-Fri schedule, Saturday and
+      // Sunday are never "missing batidas" because they're scheduled off.
+      // Without this filter the list fills up with Saturdays the user can
+      // never meaningfully justify.
+      return [...apiData.data]
+        .filter((d) => !isWeekend(d.date))
+        .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     }
     return [];
   }, [response]);
 
+  const groups = useMemo(() => groupMissingDays(missingDays), [missingDays]);
+
   // First-row target — the tutorial spotlights this row and the user taps
-  // it to open the form for that specific date. onAction drives the same
-  // navigation the row's TouchableOpacity does, since the spotlight
-  // overlay's Pressable swallows the underlying touch.
+  // it to open the form. onAction drives the same navigation the row's
+  // TouchableOpacity does, since the spotlight overlay's Pressable swallows
+  // the underlying touch.
   const firstRowTarget = useTutorialTarget(
     TUTORIAL_TARGETS.pessoalPontosJustifyFirstRow,
     {
       onAction: () => {
-        const first = missingDays[0];
+        const first = groups[0];
         if (!first) return;
-        nav.push(
-          mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${first.date}`),
-        );
+        if (first.kind === "single") {
+          nav.push(mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${first.day.date}`));
+        } else {
+          nav.push(
+            mobileRoute(
+              `/pessoal/meus-pontos/justificar-ausencia/${first.start.date}?end=${first.end.date}`,
+            ),
+          );
+        }
       },
     },
   );
@@ -104,12 +207,14 @@ export default function JustificarAusenciaListScreen() {
           </ThemedText>
         </View>
 
-        {/* List */}
+        {/* List — single dates render as "Dia Específico" rows, runs of
+            consecutive dates collapse into "Período de Afastamento" rows
+            so the user picks once and justifies the whole span at once. */}
         <FlatList
-          data={missingDays}
-          keyExtractor={(item) => item.date}
+          data={groups}
+          keyExtractor={(g) => g.key}
           contentContainerStyle={
-            missingDays.length === 0
+            groups.length === 0
               ? styles.emptyContent
               : { paddingHorizontal: 12, paddingBottom: 24 }
           }
@@ -133,45 +238,105 @@ export default function JustificarAusenciaListScreen() {
               />
             )
           }
-          renderItem={({ item, index }) => {
-            const disabled = item.existePeriodoEncerrado;
+          renderItem={({ item: group, index }) => {
+            const disabled =
+              group.kind === "single"
+                ? group.day.existePeriodoEncerrado
+                : group.start.existePeriodoEncerrado;
             const isFirst = index === 0;
-            const row = (
-              <TouchableOpacity
-                disabled={disabled}
-                onPress={() =>
-                  nav.push(mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${item.date}`))
-                }
-                style={[
-                  styles.row,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                    opacity: disabled ? 0.55 : 1,
-                  },
-                ]}
-              >
-                <View style={styles.rowLeft}>
-                  <ThemedText style={styles.rowDate}>
-                    {formatDayDisplay(item.date)}
-                  </ThemedText>
-                  <ThemedText style={[styles.rowWeekday, { color: colors.mutedForeground }]}>
-                    {item.weekdayPt}
-                    {disabled ? " · período encerrado" : ""}
-                  </ThemedText>
-                </View>
-                <View style={styles.rowRight}>
-                  {item.totalFaltas ? (
-                    <View style={[styles.faltaBadge, { backgroundColor: colors.destructive + "22" }]}>
-                      <ThemedText style={[styles.faltaText, { color: colors.destructive }]}>
-                        {item.totalFaltas}
+            const onPress = () => {
+              if (group.kind === "single") {
+                nav.push(
+                  mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${group.day.date}`),
+                );
+              } else {
+                nav.push(
+                  mobileRoute(
+                    `/pessoal/meus-pontos/justificar-ausencia/${group.start.date}?end=${group.end.date}`,
+                  ),
+                );
+              }
+            };
+
+            const row =
+              group.kind === "single" ? (
+                <TouchableOpacity
+                  disabled={disabled}
+                  onPress={onPress}
+                  style={[
+                    styles.row,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      opacity: disabled ? 0.55 : 1,
+                    },
+                  ]}
+                >
+                  <View style={styles.rowLeft}>
+                    <ThemedText style={styles.rowDate}>
+                      {formatDayDisplay(group.day.date)}
+                    </ThemedText>
+                    <ThemedText style={[styles.rowWeekday, { color: colors.mutedForeground }]}>
+                      {group.day.weekdayPt}
+                      {disabled ? " · período encerrado" : ""}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.rowRight}>
+                    {group.day.totalFaltas ? (
+                      <View
+                        style={[styles.faltaBadge, { backgroundColor: colors.destructive + "22" }]}
+                      >
+                        <ThemedText
+                          style={[styles.faltaText, { color: colors.destructive }]}
+                        >
+                          {group.day.totalFaltas}
+                        </ThemedText>
+                      </View>
+                    ) : null}
+                    <IconChevronRight size={20} color={colors.mutedForeground} />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  disabled={disabled}
+                  onPress={onPress}
+                  style={[
+                    styles.row,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      opacity: disabled ? 0.55 : 1,
+                    },
+                  ]}
+                >
+                  <View style={styles.periodIcon}>
+                    <IconCalendarTime size={22} color={colors.primary} />
+                  </View>
+                  <View style={styles.rowLeft}>
+                    <ThemedText style={styles.rowDate}>
+                      {formatDayDisplay(group.start.date)} → {formatDayDisplay(group.end.date)}
+                    </ThemedText>
+                    <ThemedText style={[styles.rowWeekday, { color: colors.mutedForeground }]}>
+                      Período de Afastamento · {group.length} dias
+                      {disabled ? " · período encerrado" : ""}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.rowRight}>
+                    <View
+                      style={[
+                        styles.faltaBadge,
+                        { backgroundColor: colors.primary + "1f" },
+                      ]}
+                    >
+                      <ThemedText style={[styles.faltaText, { color: colors.primary }]}>
+                        {group.length}d
                       </ThemedText>
                     </View>
-                  ) : null}
-                  <IconChevronRight size={20} color={colors.mutedForeground} />
-                </View>
-              </TouchableOpacity>
-            );
+                    <IconChevronRight size={20} color={colors.mutedForeground} />
+                  </View>
+                </TouchableOpacity>
+              );
+
             if (!isFirst) return row;
             return (
               <View
@@ -218,4 +383,11 @@ const styles = StyleSheet.create({
   rowRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   faltaBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   faltaText: { fontSize: 12, fontWeight: "700" },
+  periodIcon: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
 });

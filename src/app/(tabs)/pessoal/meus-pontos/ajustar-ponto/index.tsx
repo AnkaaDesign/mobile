@@ -23,6 +23,7 @@ import {
   useCreateMyAjustePonto,
   useMyBatidasForDate,
   useMyExistingSolicitacao,
+  useMyJustificativas,
 } from "@/hooks/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
@@ -116,6 +117,7 @@ export default function AjustarPontoScreen() {
   const nav = useNav();
   const pageTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustPage);
   const dateTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustDate);
+  const observacaoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustObservacao);
   const firstSlotTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustFirstSlot);
   const tutorialActive = isTutorialRuntimeActive();
   const submitTarget = useTutorialTarget(
@@ -151,6 +153,11 @@ export default function AjustarPontoScreen() {
 
   const batidasQuery = useMyBatidasForDate(dateYmd);
   const existingQuery = useMyExistingSolicitacao(dateYmd);
+  // Used to derive the 3-char abbreviation that fills the entrada/saida
+  // slots when the date has a pending justificativa (Esqueceu → ESQ etc).
+  // The /Solicitacoes response only carries justificativaId, so we join
+  // with the full justificativa list to recover the name.
+  const justificativasQuery = useMyJustificativas();
   const createMutation = useCreateMyAjustePonto();
 
   // In tutorial mode the screen renders straight from in-memory mocks — release
@@ -161,10 +168,84 @@ export default function AjustarPontoScreen() {
       !(batidasQuery.isLoading || existingQuery.isLoading),
   );
 
-  // Pre-fill from server-side batidas when the date changes / data lands.
-  // Resets local edits on date change — explicit by design so the user
-  // always sees the canonical Secullum values for the chosen date.
+  // Pre-fill priority:
+  //   1. Pending ajuste (tipo=0): show the user's own pending edits +
+  //      observação as editable. Native Secullum behaves this way too.
+  //   2. Pending justificativa (tipo=2/3, justificativaId set): show its
+  //      observação read-only and leave entradas blank — the day is being
+  //      justified so individual batidas don't apply, but the user still
+  //      wants to see WHAT they wrote in the existing request.
+  //   3. No pending request: pre-fill from canonical batidas.
+  const existing = existingQuery.data?.data?.data ?? null;
+  const isExisting = !!existing && existing.justificativaId !== null;
+
+  const pendingAjuste = useMemo(() => {
+    if (!existing) return null;
+    if (existing.justificativaId != null) return null;
+    if (existing.tipo !== 0) return null;
+    const anyBatida =
+      existing.entrada1 || existing.saida1 ||
+      existing.entrada2 || existing.saida2 ||
+      existing.entrada3 || existing.saida3 ||
+      existing.entrada4 || existing.saida4 ||
+      existing.entrada5 || existing.saida5 ||
+      (existing.observacoes ?? '').trim();
+    return anyBatida ? existing : null;
+  }, [existing]);
+
+  // Native Secullum fills every entrada/saida slot with a 3-char uppercase
+  // abbreviation of the chosen justificativa (Esqueceu → ESQ, Atestado
+  // Médico → ATE, Treinamento → TRE…) when the date is being justified.
+  // It's a visual cue that the slot doesn't need a time.
+  const justAbbreviation = useMemo<string | null>(() => {
+    if (!isExisting || existing?.justificativaId == null) return null;
+    const list = justificativasQuery.data?.data?.data ?? [];
+    const just = list.find((j) => j.id === existing.justificativaId);
+    if (!just) return null;
+    return just.nomeCompleto
+      .trim()
+      .replace(/[^A-Za-zÀ-ÿ]/g, '')
+      .slice(0, 3)
+      .toUpperCase();
+  }, [isExisting, existing, justificativasQuery.data]);
+
   useEffect(() => {
+    if (pendingAjuste) {
+      setBatidas({
+        entrada1: pendingAjuste.entrada1 ?? null,
+        saida1: pendingAjuste.saida1 ?? null,
+        entrada2: pendingAjuste.entrada2 ?? null,
+        saida2: pendingAjuste.saida2 ?? null,
+        entrada3: pendingAjuste.entrada3 ?? null,
+        saida3: pendingAjuste.saida3 ?? null,
+        entrada4: pendingAjuste.entrada4 ?? null,
+        saida4: pendingAjuste.saida4 ?? null,
+        entrada5: pendingAjuste.entrada5 ?? null,
+        saida5: pendingAjuste.saida5 ?? null,
+      });
+      setObservacoes(pendingAjuste.observacoes ?? '');
+      return;
+    }
+    // Pending justificativa: fill every slot with the justificativa's
+    // 3-char abbreviation (ESQ / ATE / TRE…) so the UI matches native
+    // Secullum's "this slot is justified" visual. Surface the existing
+    // observação read-only too.
+    if (isExisting) {
+      const abbr = justAbbreviation;
+      if (abbr) {
+        setBatidas({
+          entrada1: abbr, saida1: abbr,
+          entrada2: abbr, saida2: abbr,
+          entrada3: abbr, saida3: abbr,
+          entrada4: abbr, saida4: abbr,
+          entrada5: abbr, saida5: abbr,
+        });
+      } else {
+        setBatidas(EMPTY_BATIDAS);
+      }
+      setObservacoes(existing?.observacoes ?? '');
+      return;
+    }
     const apiData = batidasQuery.data?.data;
     if (!apiData || !("data" in apiData) || !apiData.data) return;
     const d = apiData.data;
@@ -180,14 +261,21 @@ export default function AjustarPontoScreen() {
       entrada5: d.entrada5,
       saida5: d.saida5,
     });
-  }, [batidasQuery.data, dateYmd]);
-
-  const existing = existingQuery.data?.data?.data ?? null;
-  const isExisting = !!existing && existing.justificativaId !== null;
+    setObservacoes('');
+  }, [pendingAjuste, isExisting, existing, justAbbreviation, batidasQuery.data, dateYmd]);
   const periodoEncerrado =
     !!batidasQuery.data?.data?.data?.existePeriodoEncerrado;
-  const disabled =
+  // Two distinct disabled states:
+  //   • dateDisabled — only true while submitting. The user must always
+  //     be able to navigate to other dates, even when an existing
+  //     solicitação locks the current one.
+  //   • editDisabled — the original "this form is read-only" flag.
+  //     Drives the time-slot pickers, observação textarea, and submit btn.
+  const dateDisabled = createMutation.isPending;
+  const editDisabled =
     isExisting || periodoEncerrado || createMutation.isPending;
+  // Back-compat alias: many call sites used `disabled` for editing.
+  const disabled = editDisabled;
 
   const openTimePicker = (key: SlotKey) => {
     if (disabled) return;
@@ -227,6 +315,11 @@ export default function AjustarPontoScreen() {
   const handleSubmit = async () => {
     if (!hasAnyBatida) {
       Alert.alert("Atenção", "Informe pelo menos uma batida para ajustar.");
+      return;
+    }
+
+    if (!observacoes.trim()) {
+      Alert.alert("Atenção", "Informe uma observação justificando o ajuste.");
       return;
     }
 
@@ -367,11 +460,11 @@ export default function AjustarPontoScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={openDatePicker}
-            disabled={disabled}
+            disabled={dateDisabled}
             style={[
               styles.field,
               { backgroundColor: colors.card, borderColor: colors.border },
-              disabled ? { opacity: 0.6 } : null,
+              dateDisabled ? { opacity: 0.6 } : null,
             ]}
           >
             <View style={styles.fieldText}>
@@ -449,7 +542,12 @@ export default function AjustarPontoScreen() {
         })}
 
         {/* Observação */}
-        <View style={styles.observationWrap}>
+        <View
+          ref={observacaoTarget.ref as any}
+          onLayout={observacaoTarget.onLayout}
+          collapsable={false}
+          style={styles.observationWrap}
+        >
           <ThemedText style={[styles.fieldLabel, { color: colors.primary }]}>
             Observação
           </ThemedText>
@@ -463,7 +561,10 @@ export default function AjustarPontoScreen() {
         </View>
       </ScrollView>
 
-      {/* Action bar — matches the standard form footer used across the app */}
+      {/* Action bar — matches the standard form footer used across the app.
+          FormActionBar already applies `marginBottom: insets.bottom +
+          cardMarginBottom` internally, so DON'T add another paddingBottom
+          here or the bar floats too high. */}
       <View
         ref={submitTarget.ref as any}
         onLayout={submitTarget.onLayout}

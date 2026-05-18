@@ -339,6 +339,8 @@ const ALL_ROUTES = [
   { name: "pessoal/meus-pontos/justificar-ausencia/index", title: "Justificar Ausência" },
   { name: "pessoal/meus-pontos/justificar-ausencia/[date]", title: "Justificar Ausência" },
   { name: "pessoal/meus-pontos/ajustar-ponto/index", title: "Ajustar Ponto" },
+  { name: "pessoal/meus-pontos/incluir-ponto/index", title: "Incluir Ponto" },
+  { name: "pessoal/meus-pontos/incluir-ponto/capture", title: "Incluir Ponto" },
   { name: "pessoal/minhas-notificacoes/index", title: "Notificações" },
   { name: "pessoal/minhas-notificacoes/configuracoes", title: "Configurações de Notificações" },
   { name: "pessoal/minhas-notificacoes/detalhes/[id]", title: "Detalhes da Notificação" },
@@ -1024,12 +1026,6 @@ function InnerLayout() {
     return () => subscription.remove();
   }, []);
 
-  // Show loading screen while auth is being determined or during logout redirect
-  // This must come AFTER all hooks are called
-  if (!isAuthReady || isLoading || !user) {
-    return <LoadingScreen />;
-  }
-
   // Stable screenOptions factory. Memoized so React Navigation receives the same
   // function reference across renders, and the returned option objects reuse the
   // same memoized style objects. This is the single biggest fix for transition
@@ -1125,6 +1121,14 @@ function InnerLayout() {
     ),
     [],
   );
+
+  // Show loading screen while auth is being determined or during logout redirect.
+  // MUST come after all hooks above — early-returning before any hook causes
+  // "Rendered fewer hooks than expected" on the next render that takes the
+  // happy path (e.g. user logs back in).
+  if (!isAuthReady || isLoading || !user) {
+    return <LoadingScreen />;
+  }
 
   return (
     // CRITICAL: Key the entire Drawer by user ID to force complete destruction and

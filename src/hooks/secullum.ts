@@ -625,6 +625,9 @@ export const useCreateMyJustifyAbsence = () => {
       justificativaId: number;
       observacoes?: string;
       photoBase64?: string;
+      tipoAusencia?: 0 | 1 | 2 | 3 | 4;
+      dataInicioAfastamento?: string;
+      dataFimAfastamento?: string;
     }) => secullumService.createMyJustifyAbsence(body),
     onSuccess: (_data, variables) => {
       // Refresh missing-days list, the just-submitted date, and any calculations cache.
@@ -666,6 +669,144 @@ export const useCreateMyAjustePonto = () => {
       queryClient.invalidateQueries({ queryKey: myAbsenceKeys.existing(variables.date) });
       queryClient.invalidateQueries({ queryKey: myAbsenceKeys.batidasForDate(variables.date) });
       queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-calculations"] });
+    },
+  });
+};
+
+// ============================================================================
+// Inclusão de Ponto
+// ============================================================================
+
+export const inclusaoPontoKeys = {
+  all: [...secullumKeys.all, "inclusao-ponto"] as const,
+  config: () => [...inclusaoPontoKeys.all, "config"] as const,
+  pendencias: () => [...inclusaoPontoKeys.all, "pendencias"] as const,
+};
+
+/**
+ * Loads the IncluirPonto configuration (server time, perimeters, photo rules,
+ * activities). Cached for 30s so opening the screen and immediately tapping
+ * "Nova Inclusão" doesn't re-hit the network.
+ */
+export const useInclusaoPontoConfig = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: inclusaoPontoKeys.config(),
+    queryFn: async () => {
+      const res = await secullumService.getMyInclusaoPontoConfig();
+      return res.data;
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 30 * 1000,
+  });
+};
+
+/**
+ * Loads the user's last 10 inclusão pendências. When `pollWhilePending` is
+ * true, refetches every 4 seconds so long as any record has status=0
+ * (Em processamento) — used right after a submission so the UI transitions
+ * to Aceita/Rejeitada without a manual refresh.
+ */
+export const useInclusaoPontoPendencias = (options?: {
+  enabled?: boolean;
+  pollWhilePending?: boolean;
+}) => {
+  return useQuery({
+    queryKey: inclusaoPontoKeys.pendencias(),
+    queryFn: async () => {
+      const res = await secullumService.getMyInclusaoPontoPendencias();
+      return res.data;
+    },
+    enabled: options?.enabled !== false,
+    // Drop staleTime so each poll surfaces the freshest state immediately and
+    // the next interval tick isn't held off as "still fresh".
+    staleTime: 0,
+    // Poll every 2.5s while ANY entry is Em processamento (status=0). 4s felt
+    // too sluggish given face-recognition usually finishes in 5-15s. Keep
+    // polling in the background so a brief app-switch doesn't pause it.
+    refetchInterval: (query) => {
+      if (!options?.pollWhilePending) return false;
+      const data = query.state.data;
+      const list = data?.data ?? [];
+      const hasPending = list.some((p) => p.status === 0);
+      return hasPending ? 2500 : false;
+    },
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+};
+
+export const useCreateMyInclusaoPonto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      latitude?: number | null;
+      longitude?: number | null;
+      precisao?: number | null;
+      endereco?: string | null;
+      photoBase64?: string | null;
+      justificativa?: string | null;
+      atividadeId?: number | null;
+      foraDoPerimetro?: boolean;
+      identificacaoDispositivo?: string;
+      utilizaLocalizacaoFicticia?: boolean;
+    }) => secullumService.createMyInclusaoPonto(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inclusaoPontoKeys.pendencias() });
+      // The user's batidas may show the new entry after acceptance — invalidate
+      // calculations and missing-days so the rest of the app picks it up too.
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-missing-days"] });
+      queryClient.invalidateQueries({ queryKey: [...secullumKeys.all, "my-calculations"] });
+    },
+  });
+};
+
+export const useReverseGeocode = () => {
+  return useMutation({
+    mutationFn: ({ latitude, longitude }: { latitude: number; longitude: number }) =>
+      secullumService.reverseGeocode(latitude, longitude),
+  });
+};
+
+/**
+ * Opens the comprovante in the system in-app browser, matching native Secullum
+ * mobile UX (Safari opens pontowebapp.secullum.com.br/{db}/Batidas/Comprovante
+ * with a one-shot `axpw` Basic-auth token in the query string).
+ *
+ * Two phases:
+ *  1. POST to the backend to mint a short-lived comprovante URL (the backend
+ *     wraps the funcionário's Secullum credentials so we never embed them in
+ *     the mobile bundle).
+ *  2. Open that URL in expo-web-browser so the user sees the rendered receipt
+ *     exactly like the native Secullum mobile app does.
+ *
+ * Previously we proxied the PDF through the backend and shared it via
+ * expo-sharing — but the dynamic `await import("expo-file-system")` didn't
+ * preserve `EncodingType`, producing the "Cannot read property Base64 of
+ * undefined" error users were seeing. Routing through the URL also matches
+ * the screenshots the user provided of native Secullum.
+ */
+export const useOpenInclusaoPontoComprovante = () => {
+  return useMutation({
+    mutationFn: async (registroPendenciaId: number) => {
+      const WebBrowser = await import("expo-web-browser");
+
+      const urlRes = await secullumService.getMyInclusaoPontoComprovanteUrl(
+        registroPendenciaId,
+      );
+      const url = urlRes?.data?.data?.url;
+      if (!url) {
+        throw new Error(
+          urlRes?.data?.message || "Não foi possível abrir o comprovante.",
+        );
+      }
+      await WebBrowser.openBrowserAsync(url, {
+        dismissButtonStyle: "close",
+        readerMode: false,
+        showTitle: true,
+        toolbarColor: undefined,
+      });
+      return url;
     },
   });
 };

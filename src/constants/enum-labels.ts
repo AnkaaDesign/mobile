@@ -637,14 +637,7 @@ export const RISK_LEVEL_LABELS: Record<RISK_LEVEL, string> = {
   [RISK_LEVEL.CRITICAL]: "Critical",
 };
 
-export const STOCK_LEVEL_LABELS: Record<STOCK_LEVEL, string> = {
-  [STOCK_LEVEL.NEGATIVE_STOCK]: "Estoque Negativo",
-  [STOCK_LEVEL.OUT_OF_STOCK]: "Sem Estoque",
-  [STOCK_LEVEL.CRITICAL]: "Critical",
-  [STOCK_LEVEL.LOW]: "Baixo",
-  [STOCK_LEVEL.OPTIMAL]: "Ótimo",
-  [STOCK_LEVEL.OVERSTOCKED]: "Excesso de Estoque",
-};
+// STOCK_LEVEL_LABELS lives in `./stock-thresholds` to keep band copy in one place.
 
 export const ABC_CATEGORY_LABELS: Record<ABC_CATEGORY, string> = {
   [ABC_CATEGORY.A]: "Categoria A - Alto Valor",

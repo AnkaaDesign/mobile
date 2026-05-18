@@ -289,6 +289,48 @@ export default function HomeScreen() {
   const tutorialStepId = tutorial?.currentStep?.id;
   const tutorialActive = tutorial?.isActive ?? false;
 
+  // Jump-replay handlers — invoked by the dev step picker so jumping into
+  // a step that depends on screen-local state (edit mode entered, add-
+  // widget sheet open, a specific widget already added) actually
+  // reproduces that state instead of leaving the user on the resting
+  // dashboard view. Each handler is idempotent (re-firing while already
+  // in the desired state is a no-op).
+  const registerJumpHandler = tutorial?.registerJumpHandler;
+  useEffect(() => {
+    if (!registerJumpHandler) return;
+    registerJumpHandler("home-enter-edit-mode", async () => {
+      if (!isEditing) enterEdit();
+      // Give edit chrome (toolbar, jiggle) a frame to mount.
+      await new Promise<void>((r) => setTimeout(r, 120));
+    });
+    registerJumpHandler("home-open-add-widget", async () => {
+      if (!isEditing) enterEdit();
+      setAddSheetOpen(true);
+      await new Promise<void>((r) => setTimeout(r, 220));
+    });
+    registerJumpHandler("home-add-widget-tarefas", async () => {
+      if (!isEditing) enterEdit();
+      // Add the widget once. Skip if it's already in the layout — replay
+      // is meant to be idempotent.
+      const already = layout.items.some((it) => it.widgetId === "table.tasks");
+      if (!already) addWidget("table.tasks");
+      setAddSheetOpen(false);
+      // Two RAFs so the new tile mounts + registers before the spotlight
+      // tries to resolve its rect.
+      await new Promise<void>((r) => setTimeout(r, 240));
+    });
+    registerJumpHandler("home-close-add-widget", async () => {
+      setAddSheetOpen(false);
+      await new Promise<void>((r) => setTimeout(r, 120));
+    });
+    return () => {
+      registerJumpHandler("home-enter-edit-mode", null);
+      registerJumpHandler("home-open-add-widget", null);
+      registerJumpHandler("home-add-widget-tarefas", null);
+      registerJumpHandler("home-close-add-widget", null);
+    };
+  }, [registerJumpHandler, isEditing, enterEdit, addWidget, layout.items]);
+
   // Scroll management for tutorial steps. Most spotlighted elements on this
   // screen sit near the top of the page, so we scroll to y=0 for those.
   // The exception is the "home-widget-added" step, which spotlights the

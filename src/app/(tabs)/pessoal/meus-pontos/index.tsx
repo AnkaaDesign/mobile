@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
-import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff, IconClockEdit } from "@tabler/icons-react-native";
+import { IconChevronLeft, IconChevronRight, IconList, IconFingerprint, IconCalendarOff, IconClockEdit, IconMapPinPlus } from "@tabler/icons-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedView, ThemedText, ErrorScreen } from "@/components/ui";
 import { SlideInPanel } from "@/components/ui/slide-in-panel";
@@ -58,6 +58,13 @@ export default function MeusPontosScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
   const pontosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontos);
+  const monthSelectorTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosMonthSelector);
+  const columnToggleTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.pessoalPontosColumnToggle,
+    {
+      onAction: () => setIsColumnPanelOpen(true),
+    },
+  );
   // onAction makes the tutorial spotlight tap navigate: the overlay's
   // Pressable swallows the press so the underlying TouchableOpacity's
   // onPress never fires. Registering onAction lets `invokeTargetAction`
@@ -73,6 +80,13 @@ export default function MeusPontosScreen() {
     TUTORIAL_TARGETS.pessoalPontosAdjustButton,
     {
       onAction: () => nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto")),
+    },
+  );
+  const incluirTarget = useTutorialTarget(
+    TUTORIAL_TARGETS.pessoalPontosIncluirButton,
+    {
+      onAction: () =>
+        nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto")),
     },
   );
   const tutorial = useOptionalTutorial();
@@ -260,7 +274,12 @@ export default function MeusPontosScreen() {
         {/* Header: Month Navigator + Column Button */}
         <View ref={pontosTarget.ref} onLayout={pontosTarget.onLayout} collapsable={false} style={styles.headerContainer}>
           {/* Month Navigator */}
-          <View style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            ref={monthSelectorTarget.ref as any}
+            onLayout={monthSelectorTarget.onLayout}
+            collapsable={false}
+            style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
             <TouchableOpacity
               style={[styles.navButton, { backgroundColor: colors.muted }]}
               onPress={handlePreviousMonth}
@@ -293,6 +312,19 @@ export default function MeusPontosScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Incluir Ponto shortcut */}
+          <View ref={incluirTarget.ref} onLayout={incluirTarget.onLayout} collapsable={false}>
+            <TouchableOpacity
+              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() =>
+                nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto"))
+              }
+              accessibilityLabel="Incluir Ponto"
+            >
+              <IconMapPinPlus size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+
           {/* Justificar Ausência shortcut */}
           <View ref={justifyTarget.ref} onLayout={justifyTarget.onLayout} collapsable={false}>
             <TouchableOpacity
@@ -320,15 +352,17 @@ export default function MeusPontosScreen() {
           </View>
 
           {/* Column Visibility Button - matches month selector height */}
-          <TouchableOpacity
-            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setIsColumnPanelOpen(true)}
-          >
-            <IconList size={20} color={colors.foreground} />
-            <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
-              <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
-            </View>
-          </TouchableOpacity>
+          <View ref={columnToggleTarget.ref} onLayout={columnToggleTarget.onLayout} collapsable={false}>
+            <TouchableOpacity
+              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setIsColumnPanelOpen(true)}
+            >
+              <IconList size={20} color={colors.foreground} />
+              <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
+                <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Table */}

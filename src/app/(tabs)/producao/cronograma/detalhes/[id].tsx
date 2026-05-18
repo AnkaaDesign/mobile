@@ -98,61 +98,69 @@ export default function ScheduleDetailsScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
 
   // Tutorial targets (task detail)
+  //
+  // scrollOffsetTop tuning: cards on this screen are tall, so 100px from
+  // the viewport top was leaving the target's lower half (and any tooltip
+  // anchored below) clipped off-screen. 40px positions the spotlight just
+  // under the chrome header — the tooltip then has the full lower screen
+  // to breathe. Header target keeps its 16px so the navbar back arrow
+  // doesn't get scrolled under the status bar.
+  const TASK_CARD_OFFSET = 40;
   const taskHeaderTarget = useTutorialTarget(TUTORIAL_TARGETS.taskHeader, {
     scrollContainer: scrollRef,
     scrollOffsetTop: 16,
   });
   const taskInfoCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskInfoCard, {
     scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
+    scrollOffsetTop: TASK_CARD_OFFSET,
   });
   const taskDatesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskDatesCard, {
     scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
+    scrollOffsetTop: TASK_CARD_OFFSET,
   });
   const taskServicesCardTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskServicesCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskPaintsCardTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskLogoPaintsCardTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskLogoPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskGroundPaintsCardTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskGroundPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskArtworksGalleryTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskArtworksGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskBaseFilesGalleryTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskBaseFilesGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskProjectFilesGalleryTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskProjectFilesGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskCutsTableTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskCutsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskAirbrushingsTableTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskAirbrushingsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskObservationsTableTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskObservationsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
   const taskChangelogTarget = useTutorialTarget(
     TUTORIAL_TARGETS.taskChangelog,
-    { scrollContainer: scrollRef, scrollOffsetTop: 100 },
+    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
   );
 
   // Performance logging - track screen mount
@@ -631,18 +639,17 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Observations Table - Only for COMPLETED tasks. The wrapper View
-              has an explicit minHeight so the tutorial spotlight has a
-              measurable rect even while ObservationsTable is still loading
-              or returns null for an empty result set — without this the
-              `task-observations-table` step would fall back to a centered
-              tooltip with no spotlight on tasks that had no observations. */}
+          {/* Observations Table - Only for COMPLETED tasks. The minHeight is
+              gated on isTutorialActive because it only exists to give the
+              tutorial spotlight a measurable rect on a task with no
+              observations; outside the tutorial it would just leave an
+              empty gap when ObservationsTable returns null. */}
           {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (
             <View
               ref={taskObservationsTableTarget.ref}
               onLayout={taskObservationsTableTarget.onLayout}
               collapsable={false}
-              style={{ minHeight: 80 }}
+              style={isTutorialActive ? { minHeight: 80 } : undefined}
             >
               <ObservationsTable taskId={id as string} maxHeight={400} />
             </View>

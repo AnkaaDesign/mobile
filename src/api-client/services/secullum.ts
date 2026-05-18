@@ -5,6 +5,8 @@ import {
   getTutorialMockSecullumBatidasForDate,
   getTutorialMockSecullumSolicitacaoByDate,
   getTutorialMockSecullumCalculations,
+  getTutorialMockInclusaoPontoConfig,
+  getTutorialMockInclusaoPontoPendencias,
 } from "@/components/tutorial/tutorial-runtime-state";
 
 export interface SecullumAuthCredentials {
@@ -365,6 +367,25 @@ export const secullumService = {
           existePeriodoEncerrado: boolean;
           tipoAusencia: number;
           dataSolicitacao: string | null;
+          // Pending ajuste-de-ponto solicitations carry the user's proposed
+          // entrada/saida values on these fields. The Ajustar Ponto screen
+          // pre-fills from THESE when present (matches native Secullum), so
+          // the user sees their own pending edits rather than the canonical
+          // batidas underneath.
+          entrada1?: string | null;
+          saida1?: string | null;
+          entrada2?: string | null;
+          saida2?: string | null;
+          entrada3?: string | null;
+          saida3?: string | null;
+          entrada4?: string | null;
+          saida4?: string | null;
+          entrada5?: string | null;
+          saida5?: string | null;
+          // Período de Afastamento range — present when this is a multi-day
+          // justificativa request (Justificar Ausência período mode).
+          dataInicioAfastamento?: string | null;
+          dataFimAfastamento?: string | null;
         } | null;
       }>(`/personal/my-secullum-solicitacoes/${date}`);
     const mock = getTutorialMockSecullumSolicitacaoByDate(date);
@@ -377,6 +398,12 @@ export const secullumService = {
     justificativaId: number;
     observacoes?: string;
     photoBase64?: string;
+    /** 0 = Dia inteiro, 1/2/3 = Período N, 4 = Período Específico. Ignored when dataInicio/FimAfastamento are set. */
+    tipoAusencia?: 0 | 1 | 2 | 3 | 4;
+    /** YYYY-MM-DD; set together with dataFimAfastamento for Período de Afastamento (multi-day) mode. */
+    dataInicioAfastamento?: string;
+    /** YYYY-MM-DD; see dataInicioAfastamento. */
+    dataFimAfastamento?: string;
   }) =>
     apiClient.post<{
       success: boolean;
@@ -427,4 +454,116 @@ export const secullumService = {
       message: string;
       validationErrors?: Array<{ property: string; message: string; data: unknown }>;
     }>("/personal/my-secullum-solicitacoes/ajuste-ponto", body),
+
+  // ==========================================================================
+  // Inclusão de Ponto (mobile self-service)
+  // ==========================================================================
+
+  getMyInclusaoPontoConfig: () => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data?: {
+          horaServidor: string;
+          origemHorario: string;
+          justificativaAutomatica: boolean;
+          funcionarioAfastado: boolean;
+          exigirCapturaFotoPonto: boolean;
+          reconhecerFace: boolean;
+          tipoCameraCapturaFotoPonto: 0 | 1 | 2;
+          somentePerimetrosAutorizados: boolean;
+          perimetrosAutorizados: Array<{
+            id?: number;
+            nome?: string;
+            latitude?: number;
+            longitude?: number;
+            raio?: number;
+            [k: string]: unknown;
+          }>;
+          atividades: Array<{
+            id: number;
+            descricao: string;
+            descricaoAbreviada: string;
+          }>;
+        };
+      }>("/personal/my-inclusao-ponto/config");
+    const mock = getTutorialMockInclusaoPontoConfig();
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
+
+  getMyInclusaoPontoPendencias: () => {
+    const real = () =>
+      apiClient.get<{
+        success: boolean;
+        message: string;
+        data?: Array<{
+          id: number;
+          dataHora: string;
+          latitude: number;
+          longitude: number;
+          precisao: number;
+          endereco: string;
+          status: 0 | 1 | 2;
+          motivoRejeicao: string | null;
+          foraDoPerimetro: boolean;
+          atividadeId: number | null;
+          fonteDadosId: number | null;
+        }>;
+      }>("/personal/my-inclusao-ponto/pendencias");
+    const mock = getTutorialMockInclusaoPontoPendencias();
+    if (mock) return Promise.resolve(mock as unknown as Awaited<ReturnType<typeof real>>);
+    return real();
+  },
+
+  createMyInclusaoPonto: (body: {
+    latitude?: number | null;
+    longitude?: number | null;
+    precisao?: number | null;
+    endereco?: string | null;
+    photoBase64?: string | null;
+    justificativa?: string | null;
+    atividadeId?: number | null;
+    foraDoPerimetro?: boolean;
+    identificacaoDispositivo?: string;
+    utilizaLocalizacaoFicticia?: boolean;
+  }) =>
+    apiClient.post<{
+      success: boolean;
+      message: string;
+      validationErrors?: Array<{ property: string; message: string; data: unknown }>;
+      data?: { id?: number };
+    }>("/personal/my-inclusao-ponto", body),
+
+  reverseGeocode: (latitude: number, longitude: number) =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data?: { endereco: string };
+    }>("/personal/my-inclusao-ponto/reverse-geocode", {
+      params: { latitude, longitude },
+    }),
+
+  /**
+   * Returns the absolute URL the mobile app should hand to a WebView to render
+   * the signed comprovante PDF. The backend streams the PDF authenticated as
+   * the funcionário, so the URL itself doesn't need to carry credentials.
+   */
+  getInclusaoPontoComprovanteUrl: (registroPendenciaId: number): string => {
+    const base = (apiClient.defaults.baseURL ?? "").replace(/\/$/, "");
+    return `${base}/personal/my-inclusao-ponto/comprovante/${registroPendenciaId}`;
+  },
+
+  /**
+   * Mints a one-shot Secullum-hosted comprovante URL (with the embedded `axpw`
+   * Basic-auth token) so the mobile app can open the rendered receipt in the
+   * system in-app browser, exactly like native Secullum mobile does.
+   */
+  getMyInclusaoPontoComprovanteUrl: (registroPendenciaId: number) =>
+    apiClient.get<{
+      success: boolean;
+      message: string;
+      data?: { url: string };
+    }>(`/personal/my-inclusao-ponto/comprovante-url/${registroPendenciaId}`),
 };
