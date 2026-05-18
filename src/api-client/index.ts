@@ -2,6 +2,7 @@
 
 export * from "./activity";
 export * from "./consumption-analytics";
+export * from "./production-analytics";
 export * from "./airbrushing";
 export * from "./auth";
 export {
