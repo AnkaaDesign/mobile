@@ -210,10 +210,6 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
   // PPE fields that should be sent together when any of them changes
   const ppeFields = ['ppeType', 'ppeSize', 'ppeCA', 'ppeDeliveryMode', 'ppeStandardQuantity', 'measures'];
 
-  // Stock control fields that should be sent together (manual flag + value)
-  const maxQuantityFields = ['maxQuantity', 'isManualMaxQuantity'];
-  const reorderPointFields = ['reorderPoint', 'isManualReorderPoint'];
-
   // Get changed fields
   const getChangedFields = useCallback(() => {
     const formData = form.getValues();
@@ -295,28 +291,6 @@ export function useEditForm<TFieldValues extends FieldValues = FieldValues, TCon
     const hasPpeFieldChanged = ppeFields.some(field => field in changedFields);
     if (hasPpeFieldChanged) {
       ppeFields.forEach(field => {
-        const typedField = field as keyof TFieldValues;
-        if (!(typedField in changedFields) && typedField in formData) {
-          changedFields[typedField] = formData[typedField];
-        }
-      });
-    }
-
-    // If maxQuantity or isManualMaxQuantity changed, include both fields
-    const hasMaxQuantityFieldChanged = maxQuantityFields.some(field => field in changedFields);
-    if (hasMaxQuantityFieldChanged) {
-      maxQuantityFields.forEach(field => {
-        const typedField = field as keyof TFieldValues;
-        if (!(typedField in changedFields) && typedField in formData) {
-          changedFields[typedField] = formData[typedField];
-        }
-      });
-    }
-
-    // If reorderPoint or isManualReorderPoint changed, include both fields
-    const hasReorderPointFieldChanged = reorderPointFields.some(field => field in changedFields);
-    if (hasReorderPointFieldChanged) {
-      reorderPointFields.forEach(field => {
         const typedField = field as keyof TFieldValues;
         if (!(typedField in changedFields) && typedField in formData) {
           changedFields[typedField] = formData[typedField];

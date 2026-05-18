@@ -22,8 +22,8 @@ import { BrandSelector } from "./brand-selector";
 import { CategorySelector } from "./category-selector";
 import { SupplierSelector } from "./supplier-selector";
 import { QuantityInput } from "./quantity-input";
-import { MaxQuantityInput } from "./max-quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
+import { CalculationBreakdown } from "./calculation-breakdown";
 import { LeadTimeInput } from "./lead-time-input";
 import { IcmsInput } from "./icms-input";
 import { IpiInput } from "./ipi-input";
@@ -237,7 +237,6 @@ export function ItemForm(props: ItemFormProps) {
             <FormCard title="Controle de Estoque" icon="IconClipboardList">
               <View style={styles.fieldGroup}>
                 <QuantityInput disabled={isSubmitting} required={isRequired} />
-                <MaxQuantityInput disabled={isSubmitting} />
                 <BoxQuantityInput disabled={isSubmitting} />
                 <LeadTimeInput disabled={isSubmitting} />
               </View>
@@ -277,6 +276,11 @@ export function ItemForm(props: ItemFormProps) {
                 <AssignToUserToggle disabled={isSubmitting} />
                 <StatusToggle disabled={isSubmitting} />
               </View>
+            </FormCard>
+
+            {/* Stock Calculation Breakdown (read-only) */}
+            <FormCard title="Cálculo de Estoque" icon="IconCalculator">
+              <CalculationBreakdown />
             </FormCard>
             </KeyboardAwareFormProvider>
           </ScrollView>

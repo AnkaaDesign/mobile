@@ -23,8 +23,8 @@ import { BrandSelector } from "./brand-selector";
 import { CategorySelector } from "./category-selector";
 import { SupplierSelector } from "./supplier-selector";
 import { QuantityInput } from "./quantity-input";
-import { MaxQuantityInput } from "./max-quantity-input";
 import { BoxQuantityInput } from "./box-quantity-input";
+import { CalculationBreakdown } from "./calculation-breakdown";
 import { LeadTimeInput } from "./lead-time-input";
 import { IcmsInput } from "./icms-input";
 import { IpiInput } from "./ipi-input";
@@ -70,8 +70,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
       reorderPoint: apiData.reorderPoint,
       reorderQuantity: apiData.reorderQuantity,
       maxQuantity: apiData.maxQuantity,
-      isManualMaxQuantity: apiData.isManualMaxQuantity ?? false,
-      isManualReorderPoint: apiData.isManualReorderPoint ?? false,
       boxQuantity: apiData.boxQuantity,
       icms: apiData.icms,
       ipi: apiData.ipi,
@@ -186,7 +184,6 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
           <FormCard title="Controle de Estoque" icon="IconClipboardList">
             <View style={styles.fieldGroup}>
               <QuantityInput disabled={isSubmitting} required={false} />
-              <MaxQuantityInput disabled={isSubmitting} isManual={item.isManualMaxQuantity ?? false} />
               <BoxQuantityInput disabled={isSubmitting} />
               <LeadTimeInput disabled={isSubmitting} />
             </View>
@@ -225,6 +222,11 @@ export function ItemEditForm({ item, onSubmit, onCancel, isSubmitting }: ItemEdi
               <PpeConfigSection disabled={isSubmitting} />
             </FormCard>
           )}
+
+          {/* Stock Calculation Breakdown (read-only) */}
+          <FormCard title="Cálculo de Estoque" icon="IconCalculator">
+            <CalculationBreakdown item={item} />
+          </FormCard>
             </KeyboardAwareFormProvider>
           </ScrollView>
 

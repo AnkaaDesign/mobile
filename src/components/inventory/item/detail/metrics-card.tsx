@@ -9,16 +9,19 @@ import {
   IconTags,
   IconAlertTriangle,
   IconActivity,
+  IconCalculator,
+  IconClock,
+  IconTrendingUp,
+  IconTrendingDown,
 } from "@tabler/icons-react-native";
 import type { Item } from "../../../../types";
-import { formatCurrency, formatQuantity, itemUtils, determineStockLevel, getStockLevelMessage } from "@/utils";
+import { formatCurrency, formatQuantity, itemUtils } from "@/utils";
 import {
   STOCK_LEVEL,
   STOCK_LEVEL_LABELS,
   ABC_CATEGORY_LABELS,
   XYZ_CATEGORY_LABELS,
   ACTIVITY_OPERATION,
-  ORDER_STATUS,
 } from "@/constants";
 import { useTheme } from "@/lib/theme";
 import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-system";
@@ -26,6 +29,15 @@ import { spacing, borderRadius, fontSize, fontWeight } from "@/constants/design-
 interface MetricsCardProps {
   item: Item;
 }
+
+const STOCK_STATUS_COLORS: Record<STOCK_LEVEL, string> = {
+  [STOCK_LEVEL.NEGATIVE_STOCK]: "#737373", // neutral-500
+  [STOCK_LEVEL.OUT_OF_STOCK]: "#dc2626", // red-600
+  [STOCK_LEVEL.CRITICAL]: "#f97316", // orange-500
+  [STOCK_LEVEL.LOW]: "#eab308", // yellow-500
+  [STOCK_LEVEL.OPTIMAL]: "#16a34a", // green-600
+  [STOCK_LEVEL.OVERSTOCKED]: "#9333ea", // purple-600
+};
 
 export function MetricsCard({ item }: MetricsCardProps) {
   const { colors } = useTheme();
@@ -48,21 +60,9 @@ export function MetricsCard({ item }: MetricsCardProps) {
     const currentPrice = item.prices && item.prices.length > 0 ? item.prices[0].value : 0;
     const stockValue = currentPrice * item.quantity;
 
-    // Check if there's an active order (for stock level calculation)
-    const hasActiveOrder =
-      (item as any).orders?.some(
-        (order: any) => order.status !== ORDER_STATUS.CREATED && order.status !== ORDER_STATUS.CANCELLED
-      ) || false;
-
-    // Determine stock level using the utility
-    const stockLevel = determineStockLevel(
-      item.quantity || 0,
-      item.reorderPoint || null,
-      item.maxQuantity || null,
-      hasActiveOrder
-    );
-
-    const stockPercentage = item.maxQuantity ? Math.min((item.quantity / item.maxQuantity) * 100, 100) : 0;
+    // Stock level is computed authoritative by the API.
+    const stockLevel = item.stockLevel ?? STOCK_LEVEL.OPTIMAL;
+    const hasActiveOrder = item.hasActiveOrder ?? false;
 
     return {
       totalEntries,
@@ -71,34 +71,13 @@ export function MetricsCard({ item }: MetricsCardProps) {
       currentPrice,
       movementCount: recentActivities.length,
       stockLevel,
-      stockPercentage,
       hasActiveOrder,
     };
   }, [item]);
 
-  const getStockStatusColor = () => {
-    switch (metrics.stockLevel) {
-      case STOCK_LEVEL.NEGATIVE_STOCK:
-      case STOCK_LEVEL.OUT_OF_STOCK:
-        return "#dc2626"; // red-600
-      case STOCK_LEVEL.CRITICAL:
-        return "#ea580c"; // orange-600
-      case STOCK_LEVEL.LOW:
-        return "#ca8a04"; // yellow-600
-      case STOCK_LEVEL.OPTIMAL:
-        return "#16a34a"; // green-600
-      case STOCK_LEVEL.OVERSTOCKED:
-        return "#9333ea"; // purple-600
-      default:
-        return colors.mutedForeground;
-    }
-  };
-
-  const getStockStatusLabel = () => {
-    return STOCK_LEVEL_LABELS[metrics.stockLevel] || "Status Desconhecido";
-  };
-
-  const stockStatusColor = getStockStatusColor();
+  const stockStatusColor = STOCK_STATUS_COLORS[metrics.stockLevel] ?? colors.mutedForeground;
+  const stockStatusLabel = STOCK_LEVEL_LABELS[metrics.stockLevel] ?? "Status Desconhecido";
+  const trendPercent = item.monthlyConsumptionTrendPercent;
 
   return (
     <DetailCard title="Métricas e Análises" icon="chart-line">
@@ -108,7 +87,6 @@ export function MetricsCard({ item }: MetricsCardProps) {
           Métricas Financeiras
         </ThemedText>
         <View style={styles.metricsGrid}>
-          {/* Current Price - 5/12 width */}
           <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardSmall, { backgroundColor: colors.muted + "50" }])}>
             <View style={styles.metricHeader}>
               <IconCurrencyDollar size={16} color={colors.mutedForeground} />
@@ -124,7 +102,6 @@ export function MetricsCard({ item }: MetricsCardProps) {
             </ThemedText>
           </View>
 
-          {/* Stock Value - 7/12 width */}
           <View style={StyleSheet.flatten([styles.metricCard, styles.metricCardLarge, { backgroundColor: colors.muted + "50" }])}>
             <View style={styles.metricHeader}>
               <IconCurrencyDollar size={16} color={colors.mutedForeground} />
@@ -196,12 +173,16 @@ export function MetricsCard({ item }: MetricsCardProps) {
           <View style={styles.stockStatusHeader}>
             <View style={StyleSheet.flatten([styles.stockStatusIndicator, { backgroundColor: stockStatusColor }])} />
             <ThemedText style={StyleSheet.flatten([styles.stockStatusText, { color: stockStatusColor }])}>
-              {getStockStatusLabel()}
+              {stockStatusLabel}
             </ThemedText>
+            {metrics.hasActiveOrder && (
+              <View style={StyleSheet.flatten([styles.pendingBadge, { backgroundColor: "#3b82f6" + "20", borderColor: "#3b82f6" }])}>
+                <ThemedText style={StyleSheet.flatten([styles.pendingBadgeText, { color: "#3b82f6" }])}>
+                  Pedido em aberto
+                </ThemedText>
+              </View>
+            )}
           </View>
-          <ThemedText style={StyleSheet.flatten([styles.stockStatusDetail, { color: colors.mutedForeground }])}>
-            {getStockLevelMessage(metrics.stockLevel, item.quantity || 0, item.reorderPoint || null)}
-          </ThemedText>
         </View>
 
         {/* Stock Levels */}
@@ -213,7 +194,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
           />
           {item.maxQuantity !== null && (
             <DetailField
-              label="Máximo"
+              label="Quantidade Máxima"
               value={formatQuantity(item.maxQuantity)}
               icon="arrow-bar-to-up"
             />
@@ -228,7 +209,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
         </View>
 
         {/* Visual Stock Level Indicator */}
-        {item.maxQuantity !== null && (
+        {item.maxQuantity !== null && item.maxQuantity > 0 && (
           <View style={styles.progressContainer}>
             <View style={StyleSheet.flatten([styles.progressTrack, { backgroundColor: colors.muted + "50" }])}>
               <View
@@ -251,6 +232,67 @@ export function MetricsCard({ item }: MetricsCardProps) {
             </View>
           </View>
         )}
+      </View>
+
+      {/* Stock Calculation Breakdown */}
+      <View style={[styles.section, styles.sectionBorder, { borderTopColor: colors.border + "50" }]}>
+        <View style={styles.sectionTitleRow}>
+          <IconCalculator size={16} color={colors.mutedForeground} />
+          <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.foreground }])}>
+            Cálculo de Estoque
+          </ThemedText>
+        </View>
+        <View style={styles.breakdownGrid}>
+          <BreakdownRow
+            label="Consumo Mensal"
+            value={`${formatQuantity(item.monthlyConsumption ?? 0)} un/mês`}
+            colors={colors}
+          />
+          {trendPercent !== null && trendPercent !== undefined && (
+            <BreakdownRow
+              label="Tendência do Consumo"
+              value={`${trendPercent > 0 ? "+" : ""}${trendPercent.toFixed(1)}%`}
+              valueColor={trendPercent > 0 ? "#dc2626" : trendPercent < 0 ? "#16a34a" : colors.foreground}
+              icon={trendPercent > 0 ? IconTrendingUp : trendPercent < 0 ? IconTrendingDown : undefined}
+              colors={colors}
+            />
+          )}
+          <BreakdownRow
+            label="Prazo de Entrega"
+            value={item.estimatedLeadTime !== null ? `${item.estimatedLeadTime} dias` : "—"}
+            icon={IconClock}
+            colors={colors}
+          />
+          <BreakdownRow
+            label="Ponto de Reposição"
+            value={item.reorderPoint !== null ? formatQuantity(item.reorderPoint) : "—"}
+            colors={colors}
+          />
+          <BreakdownRow
+            label="Quantidade Máxima"
+            value={item.maxQuantity !== null ? formatQuantity(item.maxQuantity) : "—"}
+            colors={colors}
+          />
+          <BreakdownRow
+            label="Quantidade de Reposição"
+            value={item.reorderQuantity !== null ? formatQuantity(item.reorderQuantity) : "—"}
+            colors={colors}
+          />
+          <BreakdownRow
+            label="Categoria ABC"
+            value={item.abcCategory ? ABC_CATEGORY_LABELS[item.abcCategory] : "—"}
+            colors={colors}
+            isLast={!item.xyzCategory}
+          />
+          {item.xyzCategory && (
+            <BreakdownRow
+              label="Categoria XYZ"
+              value={XYZ_CATEGORY_LABELS[item.xyzCategory]}
+              colors={colors}
+              isLast
+            />
+          )}
+        </View>
       </View>
 
       {/* ABC/XYZ Categorization */}
@@ -296,6 +338,38 @@ export function MetricsCard({ item }: MetricsCardProps) {
   );
 }
 
+interface BreakdownRowProps {
+  label: string;
+  value: string;
+  valueColor?: string;
+  icon?: React.ComponentType<{ size?: number; color?: string }>;
+  colors: any;
+  isLast?: boolean;
+}
+
+function BreakdownRow({ label, value, valueColor, icon: Icon, colors, isLast }: BreakdownRowProps) {
+  return (
+    <View
+      style={StyleSheet.flatten([
+        styles.breakdownRow,
+        !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border + "40" },
+      ])}
+    >
+      <View style={styles.breakdownLabelRow}>
+        {Icon && <Icon size={14} color={colors.mutedForeground} />}
+        <ThemedText style={StyleSheet.flatten([styles.breakdownLabel, { color: colors.mutedForeground }])}>
+          {label}
+        </ThemedText>
+      </View>
+      <ThemedText
+        style={StyleSheet.flatten([styles.breakdownValue, { color: valueColor ?? colors.foreground }])}
+      >
+        {value}
+      </ThemedText>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
@@ -324,10 +398,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   metricCardSmall: {
-    flex: 5, // 5/12
+    flex: 5,
   },
   metricCardLarge: {
-    flex: 7, // 7/12
+    flex: 7,
   },
   metricHeader: {
     flexDirection: "row",
@@ -381,6 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
+    flexWrap: "wrap",
   },
   stockStatusIndicator: {
     width: 10,
@@ -391,9 +466,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
   },
-  stockStatusDetail: {
-    fontSize: fontSize.sm,
-    marginLeft: spacing.sm + 10,
+  pendingBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+  },
+  pendingBadgeText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
   },
   stockLevelsContainer: {
     gap: spacing.md,
@@ -418,6 +499,28 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+  },
+  breakdownGrid: {
+    gap: 0,
+  },
+  breakdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+  },
+  breakdownLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flex: 1,
+  },
+  breakdownLabel: {
+    fontSize: fontSize.sm,
+  },
+  breakdownValue: {
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
   },
   categorizationGrid: {

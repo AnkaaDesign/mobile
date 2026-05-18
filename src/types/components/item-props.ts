@@ -174,11 +174,6 @@ export interface MinQuantityInputProps {
   disabled?: boolean;
 }
 
-export interface MaxQuantityInputProps {
-  form: UseFormReturn<ItemCreateFormData | ItemUpdateFormData>;
-  disabled?: boolean;
-}
-
 export interface BoxQuantityInputProps {
   form: UseFormReturn<ItemCreateFormData | ItemUpdateFormData>;
   disabled?: boolean;

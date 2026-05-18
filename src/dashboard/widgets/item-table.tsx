@@ -27,8 +27,8 @@ import {
   XYZ_CATEGORY,
   SECTOR_PRIVILEGES,
 } from "@/constants/enums";
+import { STOCK_LEVEL_LABELS } from "@/constants/stock-thresholds";
 import {
-  STOCK_LEVEL_LABELS,
   ABC_CATEGORY_LABELS,
   XYZ_CATEGORY_LABELS,
 } from "@/constants/enum-labels";
