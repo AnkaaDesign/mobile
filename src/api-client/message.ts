@@ -1,11 +1,6 @@
 // packages/api-client/src/message.ts
 
 import { apiClient } from "./axiosClient";
-import {
-  getTutorialMockList,
-  getTutorialMockDetail,
-  isTutorialRuntimeActive,
-} from "@/components/tutorial/tutorial-runtime-state";
 
 // Temporary type placeholders until Message schemas are generated
 type MessageGetManyFormData = any;
@@ -56,17 +51,11 @@ export class MessageService {
   // =====================
 
   async getMessages(params: MessageGetManyFormData = {}): Promise<MessageGetManyResponse> {
-    const mock = getTutorialMockList("messages", params);
-    if (mock) return mock as unknown as MessageGetManyResponse;
     const response = await apiClient.get<MessageGetManyResponse>(this.basePath, { params });
     return response.data;
   }
 
   async getMessageById(id: string, params?: Omit<MessageGetByIdFormData, "id">): Promise<MessageGetUniqueResponse> {
-    const mockDetail = getTutorialMockDetail<any>("messages", id);
-    if (mockDetail) {
-      return { success: true, message: "ok", data: mockDetail } as unknown as MessageGetUniqueResponse;
-    }
     const response = await apiClient.get<MessageGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });
@@ -129,24 +118,11 @@ export class MessageService {
   }
 
   async getMyMessages(): Promise<(Message & { viewedAt?: Date | null; dismissedAt?: Date | null })[]> {
-    if (isTutorialRuntimeActive()) {
-      const mock = getTutorialMockList("messages");
-      if (mock) return mock.data as any;
-    }
     const response = await apiClient.get<{ success: boolean; data: (Message & { viewedAt?: Date | null; dismissedAt?: Date | null })[]; meta: { count: number } }>(`${this.basePath}/my-messages`);
     return response.data.data;
   }
 
   async markAsViewed(messageId: string): Promise<ViewedMessageCreateResponse> {
-    // Tutorial mock messages aren't backed by real DB rows; calling the real
-    // endpoint surfaces a "não encontrado" alert during the walkthrough.
-    if (isTutorialRuntimeActive()) {
-      return {
-        success: true,
-        message: "ok",
-        data: { id: messageId, viewedAt: new Date() } as any,
-      } as ViewedMessageCreateResponse;
-    }
     const response = await apiClient.post<ViewedMessageCreateResponse>(`${this.basePath}/${messageId}/mark-viewed`);
     return response.data;
   }

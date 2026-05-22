@@ -51,9 +51,6 @@ const ResponsiblesSection = lazy(
 const DatesSection = lazy(
   () => import("@/components/production/task/form/sections/DatesSection"),
 );
-const ServicesSection = lazy(
-  () => import("@/components/production/task/form/sections/ServicesSection"),
-);
 const FilesSection = lazy(
   () => import("@/components/production/task/form/sections/FilesSection"),
 );
@@ -115,7 +112,7 @@ export function BudgetCreateWizard() {
       paintId: null as string | null,
       paintIds: [] as string[],
       serviceOrders: [
-        { description: "Em Negociação", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
+        { description: "Em Negociação", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.IN_PROGRESS, statusOrder: 2, assignedToId: null, startedAt: new Date() },
         { description: "Elaborar Layout", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Elaborar Projeto", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
         { description: "Preparar Arquivos para Plotagem", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
@@ -534,12 +531,13 @@ export function BudgetCreateWizard() {
   // ---------------------------------------------------------------------------
   const renderStepContent = () => {
     if (currentStep === 1) {
-      // Step 1 – Task form sections (matching TaskForm layout)
+      // Step 1 – Task form sections (matching TaskForm layout). Services
+      // are entered in Step 3 ("Serviços e preços") — quote services drive
+      // PRODUCTION SO creation via the bidirectional sync on the API.
       return (
         <Suspense fallback={<ActivityIndicator style={{ marginTop: 40 }} />}>
           <BasicInfoSection mode="create" />
           <DatesSection mode="create" />
-          <ServicesSection />
           <FilesSection mode="create" />
         </Suspense>
       );

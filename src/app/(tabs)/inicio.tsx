@@ -25,11 +25,6 @@ import { useTheme } from "@/lib/theme";
 import { Icon } from "@/components/ui/icon";
 import { useAuth } from "@/contexts/auth-context";
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
-import {
-  useTutorialTarget,
-  useOptionalTutorial,
-  TUTORIAL_TARGETS,
-} from "@/components/tutorial";
 // Side-effect import: registers all widgets with the registry on first load.
 // Must come before useDashboardLayout so the registry is populated.
 import "@/dashboard";
@@ -264,182 +259,7 @@ export default function HomeScreen() {
     refetch();
   }, [refetch]);
 
-  // Tutorial spotlights for the widget-first home. Interactive `tap` steps
-  // also pass `onAction` so the overlay can drive the underlying behavior
-  // even when the dim layer would otherwise swallow the tap.
-  const greetingTarget = useTutorialTarget(TUTORIAL_TARGETS.homeGreeting);
-  const widgetListTarget = useTutorialTarget(TUTORIAL_TARGETS.homeWidgetList);
-  const editButtonTarget = useTutorialTarget(TUTORIAL_TARGETS.homeEditPanelButton, {
-    onAction: () => enterEdit(),
-  });
-  const editToolbarTarget = useTutorialTarget(TUTORIAL_TARGETS.homeEditToolbar);
-  const addWidgetTarget = useTutorialTarget(TUTORIAL_TARGETS.homeAddWidgetButton, {
-    onAction: () => setAddSheetOpen(true),
-  });
-  const cancelEditTarget = useTutorialTarget(TUTORIAL_TARGETS.homeCancelEditButton, {
-    onAction: () => discardAndExit(),
-  });
-  const saveEditTarget = useTutorialTarget(TUTORIAL_TARGETS.homeSaveEditButton, {
-    onAction: () => {
-      void saveAndExit();
-    },
-  });
-
-  const tutorial = useOptionalTutorial();
-  const tutorialStepId = tutorial?.currentStep?.id;
-  const tutorialActive = tutorial?.isActive ?? false;
-
-  // Jump-replay handlers — invoked by the dev step picker so jumping into
-  // a step that depends on screen-local state (edit mode entered, add-
-  // widget sheet open, a specific widget already added) actually
-  // reproduces that state instead of leaving the user on the resting
-  // dashboard view. Each handler is idempotent (re-firing while already
-  // in the desired state is a no-op).
-  const registerJumpHandler = tutorial?.registerJumpHandler;
-  useEffect(() => {
-    if (!registerJumpHandler) return;
-    registerJumpHandler("home-enter-edit-mode", async () => {
-      if (!isEditing) enterEdit();
-      // Give edit chrome (toolbar, jiggle) a frame to mount.
-      await new Promise<void>((r) => setTimeout(r, 120));
-    });
-    registerJumpHandler("home-open-add-widget", async () => {
-      if (!isEditing) enterEdit();
-      setAddSheetOpen(true);
-      await new Promise<void>((r) => setTimeout(r, 220));
-    });
-    registerJumpHandler("home-add-widget-tarefas", async () => {
-      if (!isEditing) enterEdit();
-      // Add the widget once. Skip if it's already in the layout — replay
-      // is meant to be idempotent.
-      const already = layout.items.some((it) => it.widgetId === "table.tasks");
-      if (!already) addWidget("table.tasks");
-      setAddSheetOpen(false);
-      // Two RAFs so the new tile mounts + registers before the spotlight
-      // tries to resolve its rect.
-      await new Promise<void>((r) => setTimeout(r, 240));
-    });
-    registerJumpHandler("home-close-add-widget", async () => {
-      setAddSheetOpen(false);
-      await new Promise<void>((r) => setTimeout(r, 120));
-    });
-    return () => {
-      registerJumpHandler("home-enter-edit-mode", null);
-      registerJumpHandler("home-open-add-widget", null);
-      registerJumpHandler("home-add-widget-tarefas", null);
-      registerJumpHandler("home-close-add-widget", null);
-    };
-  }, [registerJumpHandler, isEditing, enterEdit, addWidget, layout.items]);
-
-  // Scroll management for tutorial steps. Most spotlighted elements on this
-  // screen sit near the top of the page, so we scroll to y=0 for those.
-  // The exception is the "home-widget-added" step, which spotlights the
-  // newly-added widget at the BOTTOM of the grid — for that one we scroll
-  // to the end so the user actually sees the change.
   const scrollRef = useRef<ScrollView | null>(null);
-  useEffect(() => {
-    if (!tutorialActive || !tutorialStepId) return;
-    // Re-measure all tutorial targets a beat after each scroll so cards
-    // that moved on screen (because the page scrolled) get the correct
-    // window-relative rect for spotlights/tooltips. Without this, the
-    // rect stays at the position cached on the previous step and the next
-    // step's spotlight ends up off-screen — that's why the save step was
-    // showing just a dim layer with no tooltip.
-    const bump = () => tutorial?.bumpMeasureTick?.();
-    if (tutorialStepId === "home-widget-added") {
-      // Defer so the new widget has time to render before we scroll. Two
-      // RAFs because the layout pass for the appended tile lands a frame
-      // after the state commit.
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          scrollRef.current?.scrollToEnd({ animated: true });
-          // animated scroll → wait for it to settle before re-measuring
-          setTimeout(bump, 350);
-          setTimeout(bump, 700);
-        }),
-      );
-      return;
-    }
-    if (
-      tutorialStepId === "home-greeting" ||
-      tutorialStepId === "home-widgets-intro" ||
-      tutorialStepId === "home-edit-panel" ||
-      tutorialStepId === "home-edit-toolbar" ||
-      tutorialStepId === "home-widget-drag" ||
-      tutorialStepId === "home-widget-options" ||
-      tutorialStepId === "home-add-widget" ||
-      tutorialStepId === "home-save-edit" ||
-      tutorialStepId === "drawer-intro"
-    ) {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ y: 0, animated: false });
-        // Instant scroll → bump on next tick + a longer one for safety.
-        setTimeout(bump, 50);
-        setTimeout(bump, 350);
-      });
-    }
-  }, [tutorialActive, tutorialStepId, tutorial]);
-
-  // Tutorial flow management for the widget walkthrough:
-  //  - "home-edit-toolbar" / "home-widget-drag" / "home-widget-options" /
-  //    "home-add-widget" / "home-widget-catalog" / "home-save-edit"
-  //    require edit mode to be on and (where relevant) the catalog sheet to be open.
-  //  - When the tutorial *transitions* from active → inactive, restore clean state.
-  //
-  // We track the previous tutorial-active state with a ref so the cleanup only
-  // fires on that transition. Without this, the effect would run on every
-  // render where tutorialActive is false (the normal case), and entering edit
-  // mode by tapping "Editar painel" would immediately get cancelled by
-  // discardAndExit() — the bug that made the toolbar blink and disappear.
-  const prevTutorialActiveRef = useRef(tutorialActive);
-  useEffect(() => {
-    const wasActive = prevTutorialActiveRef.current;
-    prevTutorialActiveRef.current = tutorialActive;
-
-    if (wasActive && !tutorialActive) {
-      // Tutorial just ended — clean up edit mode and the add-widget sheet so
-      // the user isn't stranded with a half-open UI.
-      if (isEditing) discardAndExit();
-      if (addSheetOpen) setAddSheetOpen(false);
-      return;
-    }
-
-    if (!tutorialActive) return;
-
-    // Auto-close the catalog sheet once the tutorial moves past it.
-    if (
-      addSheetOpen &&
-      tutorialStepId !== "home-add-widget" &&
-      tutorialStepId !== "home-widget-catalog"
-    ) {
-      setAddSheetOpen(false);
-    }
-    // Previously this effect auto-reopened the sheet if the user dismissed
-    // it during home-widget-catalog — trapping users who didn't want to
-    // add a widget. Now we respect their dismissal: SG2 (the 5s "Pular
-    // este passo" link) plus the in-modal escape button in
-    // CatalogTutorialOverlay let users advance manually if they prefer.
-  }, [tutorialActive, tutorialStepId, isEditing, addSheetOpen, discardAndExit]);
-
-  // When the user dismisses the catalog sheet DURING the home-widget-catalog
-  // step, auto-advance the tutorial — their dismissal is the signal that
-  // they don't want to interact with the catalog. The next steps (added,
-  // save) gracefully describe what the user just bypassed.
-  const prevAddSheetOpenRef = useRef(addSheetOpen);
-  useEffect(() => {
-    const wasOpen = prevAddSheetOpenRef.current;
-    prevAddSheetOpenRef.current = addSheetOpen;
-    if (!tutorialActive) return;
-    if (
-      wasOpen &&
-      !addSheetOpen &&
-      tutorialStepId === "home-widget-catalog" &&
-      tutorial
-    ) {
-      tutorial.next();
-    }
-  }, [addSheetOpen, tutorialActive, tutorialStepId, tutorial]);
-
 
   if (!user) return null;
 
@@ -467,9 +287,6 @@ export default function HomeScreen() {
             full toolbar in its own row below this card (it has 3 buttons
             and doesn't fit alongside the clock without crowding). */}
         <View
-          ref={greetingTarget.ref}
-          onLayout={greetingTarget.onLayout}
-          collapsable={false}
           style={{
             backgroundColor: colors.card,
             borderRadius: 12,
@@ -524,7 +341,6 @@ export default function HomeScreen() {
                 }}
                 onDiscard={discardAndExit}
                 onAddWidget={() => setAddSheetOpen(true)}
-                editButtonTarget={editButtonTarget}
               />
             )}
           </View>
@@ -543,15 +359,11 @@ export default function HomeScreen() {
             }}
             onDiscard={discardAndExit}
             onAddWidget={() => setAddSheetOpen(true)}
-            editToolbarTarget={editToolbarTarget}
-            addWidgetTarget={addWidgetTarget}
-            cancelEditTarget={cancelEditTarget}
-            saveEditTarget={saveEditTarget}
           />
         )}
 
         {/* Widget grid — renders the user's current layout. */}
-        <View ref={widgetListTarget.ref} onLayout={widgetListTarget.onLayout} collapsable={false}>
+        <View>
           <DashboardGrid
             items={layout.items}
             isEditing={isEditing}

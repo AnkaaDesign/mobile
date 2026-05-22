@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from "react-native";
 import { useNav } from "@/contexts/nav";
 import { mobileRoute } from "@/constants/routes.types";
@@ -19,7 +19,8 @@ import { BonusRulesModal } from "@/components/bonus/BonusRulesModal";
 import { Icon } from "@/components/ui/icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Task, Bonus } from "@/types";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";// Month names in Portuguese
+
+// Month names in Portuguese
 const MONTH_NAMES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -121,54 +122,11 @@ export default function CurrentBonusScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const nav = useNav();
-  const scrollRef = useRef<ScrollView | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [tasksModalVisible, setTasksModalVisible] = useState(false);
   const [selectedCommissionStatus, setSelectedCommissionStatus] = useState<string | null>(null);
   const [rulesModalVisible, setRulesModalVisible] = useState(false);
   const [rulesHighlightRef, setRulesHighlightRef] = useState<string | undefined>();
-
-  // Tutorial targets. Each tap-driven onAction mirrors the underlying
-  // button so the spotlight tap advances the tour (the overlay swallows
-  // the press from the real button beneath it).
-  const periodTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusPeriodCard, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 80,
-  });
-  const rulesTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusRules, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 80,
-    onAction: () => {
-      setRulesHighlightRef(undefined);
-      setRulesModalVisible(true);
-    },
-  });
-  const amountTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusAmount, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-  });
-  const discountsTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusDiscounts, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-  });
-  const performanceTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusPerformance, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-  });
-  const commissionTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusCommission, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-  });
-  const navHistoricoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusNavHistorico, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-    onAction: () => nav.push(mobileRoute('/pessoal/meu-bonus/historico')),
-  });
-  const navSimulacaoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalBonusNavSimulacao, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 100,
-    onAction: () => nav.push(mobileRoute('/pessoal/meu-bonus/simulacao')),
-  });
 
   const openRulesModal = (reference?: string) => {
     setRulesHighlightRef(reference);
@@ -456,36 +414,28 @@ export default function CurrentBonusScreen() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-      <ScrollView ref={scrollRef} style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
+      <ScrollView style={styles.scrollView} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}>
         {/* Period Info Card */}
-        <View ref={periodTarget.ref} onLayout={periodTarget.onLayout} collapsable={false}>
-          <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.periodInfo}>
-              <ThemedText style={[styles.periodLabel, { color: colors.mutedForeground }]}>Período</ThemedText>
-              <ThemedText style={styles.periodMonth}>{currentPeriod.monthName}/{currentPeriod.year}</ThemedText>
-              <ThemedText style={[styles.periodDates, { color: colors.mutedForeground }]}>
-                {formatShortDate(currentPeriod.startDate)} - {formatShortDate(currentPeriod.endDate)}
-              </ThemedText>
-            </View>
-          </Card>
-        </View>
+        <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.periodInfo}>
+            <ThemedText style={[styles.periodLabel, { color: colors.mutedForeground }]}>Período</ThemedText>
+            <ThemedText style={styles.periodMonth}>{currentPeriod.monthName}/{currentPeriod.year}</ThemedText>
+            <ThemedText style={[styles.periodDates, { color: colors.mutedForeground }]}>
+              {formatShortDate(currentPeriod.startDate)} - {formatShortDate(currentPeriod.endDate)}
+            </ThemedText>
+          </View>
+        </Card>
 
         {/* Rules Button */}
-        <View ref={rulesTarget.ref} onLayout={rulesTarget.onLayout} collapsable={false}>
-          <TouchableOpacity
-            style={[styles.rulesButton, { backgroundColor: colors.primary }]}
-            onPress={() => {
-              rulesTarget.onPress();
-              openRulesModal();
-            }}
-            activeOpacity={0.8}
-          >
-            <ThemedText style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Regras do Bônus</ThemedText>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.rulesButton, { backgroundColor: colors.primary }]}
+          onPress={() => openRulesModal()}
+          activeOpacity={0.8}
+        >
+          <ThemedText style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>Regras do Bônus</ThemedText>
+        </TouchableOpacity>
 
         {/* Bonus Amount Card */}
-        <View ref={amountTarget.ref} onLayout={amountTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Valor do Bônus</ThemedText>
           <View style={styles.detailsContainer}>
@@ -516,9 +466,6 @@ export default function CurrentBonusScreen() {
                 </TouchableOpacity>
               );
             })}
-            {hasDiscounts && (
-              <View ref={discountsTarget.ref} onLayout={discountsTarget.onLayout} collapsable={false} />
-            )}
             {hasDiscounts && bonus.bonusDiscounts!.map((discount: any, index: number) => {
               const percentageValue = getNumericValue(discount.percentage);
               const hasPercentage = percentageValue > 0;
@@ -560,10 +507,8 @@ export default function CurrentBonusScreen() {
             </View>
           </View>
         </Card>
-        </View>
 
         {/* Performance Details Card */}
-        <View ref={performanceTarget.ref} onLayout={performanceTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Detalhes de Performance</ThemedText>
           <View style={styles.detailsContainer}>
@@ -601,10 +546,8 @@ export default function CurrentBonusScreen() {
             </View>
           </View>
         </Card>
-        </View>
 
         {/* Commission Status Section - Clickable badges */}
-        <View ref={commissionTarget.ref} onLayout={commissionTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.sectionTitle}>Status das Comissões</ThemedText>
           {commissionStats.hasDetails ? (
@@ -670,39 +613,28 @@ export default function CurrentBonusScreen() {
             </TouchableOpacity>
           </View>
         </Card>
-        </View>
 
         {/* Navigation Buttons - Side by side */}
         <View style={styles.navigationButtons}>
-          <View ref={navSimulacaoTarget.ref} onLayout={navSimulacaoTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
-            <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => {
-                navSimulacaoTarget.onPress();
-                nav.push(mobileRoute('/pessoal/meu-bonus/simulacao'));
-              }}
-            >
-              <IconCalculator size={24} color={colors.primary} />
-              <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
-                Simulação
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
+            onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/simulacao'))}
+          >
+            <IconCalculator size={24} color={colors.primary} />
+            <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
+              Simulação
+            </ThemedText>
+          </TouchableOpacity>
 
-          <View ref={navHistoricoTarget.ref} onLayout={navHistoricoTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
-            <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => {
-                navHistoricoTarget.onPress();
-                nav.push(mobileRoute('/pessoal/meu-bonus/historico'));
-              }}
-            >
-              <IconHistory size={24} color={colors.primary} />
-              <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
-                Histórico
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.navButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
+            onPress={() => nav.push(mobileRoute('/pessoal/meu-bonus/historico'))}
+          >
+            <IconHistory size={24} color={colors.primary} />
+            <ThemedText style={[styles.navButtonText, { color: colors.foreground }]}>
+              Histórico
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

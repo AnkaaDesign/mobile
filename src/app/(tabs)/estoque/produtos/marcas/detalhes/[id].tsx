@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useItemBrand, useScreenReady } from "@/hooks";
-import { routes, CHANGE_LOG_ENTITY_TYPE, ORDER_STATUS, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
+import { routes, CHANGE_LOG_ENTITY_TYPE, STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 import { formatDate, formatCurrency, determineStockLevel } from "@/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { SkeletonCard } from "@/components/ui/loading";
@@ -105,16 +105,10 @@ export default function BrandDetailScreen() {
   // Sort items by quantity (low stock first) and name
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
-      // Check if items have active orders
-      const activeOrderStatuses = [ORDER_STATUS.CREATED, ORDER_STATUS.PARTIALLY_FULFILLED, ORDER_STATUS.FULFILLED, ORDER_STATUS.PARTIALLY_RECEIVED];
-
-      const aHasActiveOrder = a.orderItems?.some((orderItem) => orderItem.order && activeOrderStatuses.includes(orderItem.order.status)) || false;
-
-      const bHasActiveOrder = b.orderItems?.some((orderItem) => orderItem.order && activeOrderStatuses.includes(orderItem.order.status)) || false;
-
+      // Pending-order state is a UI overlay only and does not shift thresholds.
       // First sort by stock level priority (critical items first)
-      const aLevel = determineStockLevel(a.quantity || 0, a.reorderPoint || null, a.maxQuantity || null, aHasActiveOrder);
-      const bLevel = determineStockLevel(b.quantity || 0, b.reorderPoint || null, b.maxQuantity || null, bHasActiveOrder);
+      const aLevel = determineStockLevel(a.quantity || 0, a.reorderPoint || null, a.maxQuantity || null, false, a.category?.type ?? null);
+      const bLevel = determineStockLevel(b.quantity || 0, b.reorderPoint || null, b.maxQuantity || null, false, b.category?.type ?? null);
 
       const levelPriority = { NEGATIVE_STOCK: 0, OUT_OF_STOCK: 1, CRITICAL: 2, LOW: 3, OPTIMAL: 4, OVERSTOCKED: 5 };
       const aPriority = levelPriority[aLevel] ?? 6;
@@ -137,12 +131,7 @@ export default function BrandDetailScreen() {
 
     const stockLevels = items.reduce(
       (acc, item) => {
-        // Check if item has active orders
-        const activeOrderStatuses = [ORDER_STATUS.CREATED, ORDER_STATUS.PARTIALLY_FULFILLED, ORDER_STATUS.FULFILLED, ORDER_STATUS.PARTIALLY_RECEIVED];
-
-        const hasActiveOrder = item.orderItems?.some((orderItem) => orderItem.order && activeOrderStatuses.includes(orderItem.order.status)) || false;
-
-        const level = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
+        const level = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, false, item.category?.type ?? null);
         acc[level] = (acc[level] || 0) + 1;
         return acc;
       },
@@ -397,12 +386,7 @@ export default function BrandDetailScreen() {
                   {/* Items Horizontal Scroll */}
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsScrollContainer} contentContainerStyle={styles.itemsScrollContent}>
                     {sortedItems.map((item) => {
-                      // Check if item has active orders
-                      const activeOrderStatuses = [ORDER_STATUS.CREATED, ORDER_STATUS.PARTIALLY_FULFILLED, ORDER_STATUS.FULFILLED, ORDER_STATUS.PARTIALLY_RECEIVED];
-
-                      const hasActiveOrder = item.orderItems?.some((orderItem) => orderItem.order && activeOrderStatuses.includes(orderItem.order.status)) || false;
-
-                      const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
+                      const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, false, item.category?.type ?? null);
                       const quantity = item.quantity || 0;
 
                       // Get proper stock color

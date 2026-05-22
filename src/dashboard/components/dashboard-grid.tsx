@@ -27,7 +27,6 @@ import { WidgetTile } from "./widget-tile";
 import { SortableGrid } from "./sortable-grid";
 import { logFrameworkWarning } from "../internal/logger";
 import type { WidgetInstance, WidgetSpan } from "../types";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 /**
  * Slots-per-row scales with viewport width:
@@ -202,18 +201,11 @@ function GridRow({
     >
       {row.items.map((instance) => {
         const span = clampSpanToSlots(instance.size?.span ?? 3);
-        // Spotlight the Favoritos widget specifically when the tutorial's
-        // home-favorites step is active. Other widgets render plain.
-        const tutorialTargetId =
-          instance.widgetId === "home.favorites"
-            ? TUTORIAL_TARGETS.homeFavorites
-            : undefined;
         return (
           <GridCell
             key={instance.instanceId}
             instance={instance}
             span={span}
-            tutorialTargetId={tutorialTargetId}
             restoredInstanceIds={restoredInstanceIds}
             onResetConfig={onResetConfig}
             onRemove={onRemove}
@@ -232,7 +224,6 @@ function GridRow({
 interface GridCellProps {
   instance: WidgetInstance;
   span: number;
-  tutorialTargetId: string | undefined;
   restoredInstanceIds?: ReadonlySet<string>;
   onResetConfig?: (instanceId: string) => void;
   onRemove: (instanceId: string) => void;
@@ -243,15 +234,11 @@ interface GridCellProps {
 }
 
 /**
- * Single tile cell in view mode. Always calls useTutorialTarget (hooks rules)
- * but only attaches the ref/onLayout when a target is requested. Passing a
- * per-instance sentinel id keeps registrations isolated when no tutorial step
- * is targeting this cell.
+ * Single tile cell in view mode.
  */
 function GridCell({
   instance,
   span,
-  tutorialTargetId,
   restoredInstanceIds,
   onResetConfig,
   onRemove,
@@ -260,17 +247,8 @@ function GridCell({
   onResize,
   onEnterEditMode,
 }: GridCellProps) {
-  const target = useTutorialTarget(
-    tutorialTargetId ?? `noop.tile.${instance.instanceId}`,
-  );
-  const hasTarget = !!tutorialTargetId;
   return (
-    <View
-      ref={hasTarget ? target.ref : undefined}
-      onLayout={hasTarget ? target.onLayout : undefined}
-      collapsable={hasTarget ? false : undefined}
-      style={{ flex: span, minWidth: 0 }}
-    >
+    <View style={{ flex: span, minWidth: 0 }}>
       <WidgetTile
         instance={instance}
         isEditing={false}
@@ -333,8 +311,6 @@ export function DashboardGrid({
       onResetConfig={onResetConfig}
       restoredInstanceIds={restoredInstanceIds}
       onDragActiveChange={onDragActiveChange}
-      firstTileMoreActionsTutorialTargetId={TUTORIAL_TARGETS.homeWidgetMoreActions}
-      lastTileTutorialTargetId={TUTORIAL_TARGETS.homeFirstWidgetTile}
     />
   ) : (
     <View style={{ gap: rowGap }}>

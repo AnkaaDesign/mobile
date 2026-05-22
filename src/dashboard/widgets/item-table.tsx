@@ -481,6 +481,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
           item.reorderPoint ?? null,
           item.maxQuantity ?? null,
           false,
+          item.category?.type ?? null,
         );
         return { ...item, _stockLevel: level as STOCK_LEVEL };
       })

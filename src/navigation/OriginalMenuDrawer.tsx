@@ -42,13 +42,6 @@ import { mobileRoute } from '@/constants/routes.types';
 import { maskPhone } from '@/utils';
 import type { DrawerContentComponentProps } from "@react-navigation/drawer";
 import { useDrawerStatus } from "@react-navigation/drawer";
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
-
-type TutorialTargetHandle = {
-  ref: React.RefObject<View | null>;
-  onLayout: () => void;
-  onPress: () => void;
-};
 
 // Spacing constants
 const SPACING = {
@@ -85,90 +78,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const { navigation } = props;
   const drawerStatus = useDrawerStatus();
-
-  // Tutorial targets — declare up-front so hook order is stable across renders.
-  // Scope: PRODUCTION sector users only. drawerProducao is registered for the
-  // grouped admin menu; PRODUCTION users see direct items at root level.
-  // The Cronograma item is interactive in the tutorial; pass `onAction` so the
-  // overlay can drive navigation when the dim layer would block the touch.
-  const navigateToPathRef = useRef<((path: string) => void) | null>(null);
-  const tInicio = useTutorialTarget(TUTORIAL_TARGETS.drawerInicio, {
-    onAction: () => navigateToPathRef.current?.("/inicio"),
-  });
-  const tProducao = useTutorialTarget(TUTORIAL_TARGETS.drawerProducao);
-  const tCronograma = useTutorialTarget(TUTORIAL_TARGETS.drawerCronograma, {
-    onAction: () =>
-      navigateToPathRef.current?.("/producao/cronograma/listar"),
-  });
-  const tRecorte = useTutorialTarget(TUTORIAL_TARGETS.drawerRecorte, {
-    onAction: () => navigateToPathRef.current?.("/producao/recorte/listar"),
-  });
-  const tObservacoes = useTutorialTarget(TUTORIAL_TARGETS.drawerObservacoes, {
-    onAction: () => navigateToPathRef.current?.("/producao/observacoes/listar"),
-  });
-  const tHistorico = useTutorialTarget(TUTORIAL_TARGETS.drawerHistorico, {
-    onAction: () => navigateToPathRef.current?.("/producao/historico"),
-  });
-  const tPessoal = useTutorialTarget(TUTORIAL_TARGETS.drawerPessoal, {
-    onAction: () => navigateToPathRef.current?.("/pessoal"),
-  });
-  const tDrawerPerfil = useTutorialTarget(TUTORIAL_TARGETS.drawerPerfil, {
-    onAction: () => navigateToPathRef.current?.("/perfil"),
-  });
-  // The drawer entry labelled "Preferências" navigates to
-  // `routes.personal.preferences.root` (`/pessoal/preferencias`), NOT
-  // `/configuracoes`. Mirror that here so the tutorial spotlight tap takes
-  // the user to the same destination as a real tap on the button — the
-  // earlier mismatch landed them on `/configuracoes` (which is a personal
-  // shortcuts page with Empréstimos / Movimentações / EPIs) and looked
-  // like the preferences page was showing wrong items.
-  const tDrawerConfiguracoes = useTutorialTarget(TUTORIAL_TARGETS.drawerConfiguracoes, {
-    onAction: () => navigateToPathRef.current?.("/pessoal/preferencias"),
-  });
-  const tDrawerMinhaEquipe = useTutorialTarget(TUTORIAL_TARGETS.drawerMinhaEquipe, {
-    onAction: () => navigateToPathRef.current?.("/meu-pessoal"),
-  });
-  // Avatar button — taps open the user dropdown that exposes
-  // Perfil / Preferências / Tema / Sair. The tutorial uses this to
-  // teach the entry point to those personal settings.
-  const tDrawerAvatar = useTutorialTarget(TUTORIAL_TARGETS.drawerAvatarButton, {
-    onAction: () => {
-      setShowUserMenu(true);
-      Animated.timing(dropdownAnimation, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    },
-  });
-
-  // Map menu-item id (or production-variant id) to the tutorial target handle.
-  // Non-mapped items render normally.
-  const tutorialHandlesByMenuId = useMemo<Record<string, TutorialTargetHandle | undefined>>(() => ({
-    home: tInicio,
-    // Producao parent (admin/non-production sectors)
-    producao: tProducao,
-    // Cronograma — both nested-under-producao and direct PRODUCTION variant
-    cronograma: tCronograma,
-    "cronograma-production": tCronograma,
-    // Recorte — both nested and direct PRODUCTION variant
-    recorte: tRecorte,
-    "recorte-production": tRecorte,
-    "recorte-direct": tRecorte,
-    // Observacoes — both nested and direct variants
-    observacoes: tObservacoes,
-    "observacoes-production": tObservacoes,
-    "observacoes-direct": tObservacoes,
-    // Histórico — nested and direct PRODUCTION variant
-    historico: tHistorico,
-    "historico-production": tHistorico,
-    "historico-direct": tHistorico,
-    // Pessoal — top-level item (production variant exists at root)
-    pessoal: tPessoal,
-    "pessoal-production": tPessoal,
-    // Minha Equipe — team-leader-only (filtered by `position` in navigation.ts)
-    "minha-equipe": tDrawerMinhaEquipe,
-  }), [tInicio, tProducao, tCronograma, tRecorte, tObservacoes, tHistorico, tPessoal, tDrawerMinhaEquipe]);
 
   // State
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
@@ -219,65 +128,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       dropdownAnimation.setValue(0);
     }
   }, [drawerStatus, dropdownAnimation]);
-
-  // Tutorial-aware drawer cleanup. When the active tutorial step targets a
-  // drawer item, collapse the favorites section (it sits above the menu and
-  // would push the spotlighted item off-screen) and close the user
-  // dropdown. Also expand the parent group so the spotlighted nested item
-  // is actually visible (admins see Cronograma nested under "Produção").
-  const tutorial = useOptionalTutorial();
-  const tutorialStepTargetId = tutorial?.currentStep?.targetId;
-  useEffect(() => {
-    if (!tutorial?.isActive) return;
-    if (!tutorialStepTargetId) return;
-    if (!String(tutorialStepTargetId).startsWith("drawer.")) return;
-
-    setShowFavorites(false);
-
-    // Meu Perfil and Configurações live INSIDE the user dropdown — expand
-    // it when those targets are active; collapse otherwise so the spotlight
-    // lands on the right row.
-    const isUserMenuTarget =
-      tutorialStepTargetId === TUTORIAL_TARGETS.drawerPerfil ||
-      tutorialStepTargetId === TUTORIAL_TARGETS.drawerConfiguracoes;
-    if (isUserMenuTarget) {
-      setShowUserMenu(true);
-      Animated.timing(dropdownAnimation, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      setShowUserMenu(false);
-      dropdownAnimation.setValue(0);
-    }
-
-    // Map drawer-X target IDs to the parent group that needs to be
-    // expanded for the item to be visible. PRODUCTION users see these at
-    // root, so the expand is a no-op for them.
-    const parentByTarget: Record<string, string> = {
-      [TUTORIAL_TARGETS.drawerCronograma]: "producao",
-      [TUTORIAL_TARGETS.drawerRecorte]: "producao",
-      [TUTORIAL_TARGETS.drawerHistorico]: "producao",
-      [TUTORIAL_TARGETS.drawerObservacoes]: "producao",
-    };
-    const parentId = parentByTarget[tutorialStepTargetId as string];
-    if (parentId) {
-      setExpandedMenus((prev) =>
-        prev[parentId] ? prev : { ...prev, [parentId]: true },
-      );
-    }
-
-    // Bump the tutorial measure tick after a beat so the (now-visible)
-    // item rect gets re-measured with its real on-screen position.
-    const handle = setTimeout(() => tutorial?.bumpMeasureTick?.(), 200);
-    return () => clearTimeout(handle);
-  }, [
-    tutorial,
-    tutorial?.isActive,
-    tutorialStepTargetId,
-    dropdownAnimation,
-  ]);
 
   // Create user object for navigation
   const navUser = useMemo(() => {
@@ -450,9 +300,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
     [nav, isNavigatingRef, props.navigation, closeUserMenu],
   );
 
-  // Expose navigateToPath to the tutorial onAction registered above.
-  navigateToPathRef.current = navigateToPath;
-
   // Get first submenu path for navigation
   const getFirstSubmenuPath = (item: MenuItem): string | null => {
     if (item.path) return item.path;
@@ -550,11 +397,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       const isInPath = isInActivePath(item);
       const chevronAnimation = hasChildren ? getChevronAnimation(item.id) : null;
 
-      // Tutorial target handle for this drawer item, if any.
-      // Only attach to top-level rendering so the spotlight matches the row
-      // the user actually sees in the drawer.
-      const tutorialHandle = level === 0 ? tutorialHandlesByMenuId[item.id] : undefined;
-
       const chevronRotation = chevronAnimation?.interpolate({
         inputRange: [0, 1],
         outputRange: ["0deg", "90deg"],
@@ -594,8 +436,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
       return (
         <View
           key={item.id}
-          ref={tutorialHandle?.ref}
-          onLayout={tutorialHandle?.onLayout}
           style={styles.menuItem}
         >
           <View
@@ -614,8 +454,6 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
           >
             <Pressable
               onPress={() => {
-                // Notify tutorial engine of tap on this drawer entry, if any
-                tutorialHandle?.onPress();
                 if (hasChildren && item.path) {
                   handleMainItemClick(item);
                 } else if (!hasChildren) {
@@ -735,7 +573,7 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         </View>
       );
     },
-    [expandedMenus, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers, tutorialHandlesByMenuId],
+    [expandedMenus, isDarkMode, isItemActive, isInActivePath, getChevronAnimation, toggleSubmenu, handleMainItemClick, navigateToPath, isFavorite, toggleFavorite, longPressTimers],
   );
 
   return (
@@ -744,13 +582,11 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
         {/* Header Section - User Profile & Theme Toggle */}
         <View style={[styles.header, { paddingTop: Platform.OS === "ios" ? Math.max(insets.top, 20) : Math.max(insets.top, 16) }]}>
           <View style={styles.headerContent}>
-            <View ref={tDrawerAvatar.ref} onLayout={tDrawerAvatar.onLayout} collapsable={false} style={{ width: "100%" }}>
+            <View collapsable={false} style={{ width: "100%" }}>
               <Pressable
                 onPress={() => {
                   // INSTANT haptic feedback
                   selectionHaptic();
-                  // Notify tutorial engine that the user opened the menu.
-                  tDrawerAvatar.onPress();
                   const newValue = !showUserMenu;
                   setShowUserMenu(newValue);
                   Animated.timing(dropdownAnimation, {
@@ -854,15 +690,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 ],
               }
             ]}>
-              <View
-                ref={tDrawerPerfil.ref}
-                onLayout={tDrawerPerfil.onLayout}
-                collapsable={false}
-              >
+              <View collapsable={false}>
                 <Pressable
                   onPress={() => {
-                    // Notify tutorial engine of tap on the perfil drawer entry
-                    tDrawerPerfil.onPress();
                     // INSTANT haptic feedback
                     impactHaptic();
                     closeUserMenu();
@@ -886,15 +716,9 @@ export default function OriginalMenuDrawer(props: DrawerContentComponentProps) {
                 </Pressable>
               </View>
 
-              <View
-                ref={tDrawerConfiguracoes.ref}
-                onLayout={tDrawerConfiguracoes.onLayout}
-                collapsable={false}
-              >
+              <View collapsable={false}>
                 <Pressable
                   onPress={() => {
-                    // Notify tutorial engine of tap on the configuracoes drawer entry
-                    tDrawerConfiguracoes.onPress();
                     // INSTANT haptic feedback
                     impactHaptic();
                     closeUserMenu();

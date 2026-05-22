@@ -10,14 +10,12 @@ import { ThemedSafeAreaView } from "@/components/ui/themed-safe-area-view";
 import { useColorScheme } from "nativewind";
 import { routes } from "@/constants";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 export default function SettingsScreen() {
   useScreenReady();
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const isDarkMode = colorScheme === "dark";
-  const configListTarget = useTutorialTarget(TUTORIAL_TARGETS.configList);
 
   const settingsItems = [
     {
@@ -54,12 +52,7 @@ export default function SettingsScreen() {
           className="flex-1 px-4 py-4"
           contentContainerStyle={{ paddingBottom: 32 }}
         >
-          <View
-            ref={configListTarget.ref}
-            onLayout={configListTarget.onLayout}
-            collapsable={false}
-            className="space-y-2"
-          >
+          <View className="space-y-2">
             {settingsItems.map((item) => (
               <TouchableOpacity
                 key={item.id}

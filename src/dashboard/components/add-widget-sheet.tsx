@@ -33,27 +33,17 @@
 //     apply automatically — we read `useSafeAreaInsets().bottom` and
 //     pad the scroll content with it.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   Pressable,
   ScrollView,
-  StyleSheet,
   TextInput,
   useWindowDimensions,
 } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  IconHandClick,
   IconSearch,
   IconStar,
   IconX,
@@ -64,9 +54,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { lightImpactHaptic } from "@/utils/haptics";
 import { borderRadius, spacing } from "@/constants/design-system";
-import { useOptionalTutorial } from "@/components/tutorial/tutorial-context";
-import { useTutorialTarget } from "@/components/tutorial/use-tutorial-target";
-import { TUTORIAL_TARGETS } from "@/components/tutorial/target-ids";
 import { widgetRegistry } from "../registry";
 import {
   WIDGET_CATEGORY_LABELS,
@@ -170,14 +157,6 @@ export function AddWidgetSheet({
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const searchRef = useRef<TextInput>(null);
-  const tutorial = useOptionalTutorial();
-  const tutorialActive = tutorial?.isActive ?? false;
-  // Spotlight target for the "Tarefas" widget card during the catalog
-  // tutorial step. The hook always runs (rules-of-hooks), but only the
-  // table.tasks card actually wires the ref/onLayout below.
-  const tarefasTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.homeAddWidgetCatalogTarefas,
-  );
 
   const allWidgets = useMemo(
     () => widgetRegistry.getAvailableWidgets(sector),
@@ -204,39 +183,17 @@ export function AddWidgetSheet({
 
   // Reset filters & focus search when the sheet opens. Delay the focus
   // call slightly so the slide-in animation doesn't fight the keyboard.
-  // Skip the auto-focus during the tutorial so the keyboard doesn't pop up
-  // and cover the catalog walkthrough tooltip.
   useEffect(() => {
-    if (!open || tutorialActive) return;
+    if (!open) return;
     const handle = setTimeout(() => {
       searchRef.current?.focus();
     }, 320);
     return () => clearTimeout(handle);
-  }, [open, tutorialActive]);
-
-  // During the tutorial's catalog step, pre-filter to the "production"
-  // category so the recommended widget ("Tarefas") is the first thing the
-  // user sees — no hunting through 30+ widgets to find it.
-  const tutorialStepId = tutorial?.currentStep?.id;
-  useEffect(() => {
-    if (!open) return;
-    if (tutorialStepId === "home-widget-catalog") {
-      setActiveCategory("production");
-    }
-  }, [open, tutorialStepId]);
+  }, [open]);
 
   const handleAdd = (widgetId: string) => {
     void lightImpactHaptic();
     onAdd(widgetId);
-    // While the catalog tutorial step is open, advancing on widget-add lets
-    // the tutorial close the loop on the "tap to add" instruction without
-    // requiring the user to also dismiss a Continue button.
-    if (
-      tutorial?.isActive &&
-      tutorial.currentStep?.id === "home-widget-catalog"
-    ) {
-      tutorial.next();
-    }
     setQuery("");
     setActiveCategory("all");
     onOpenChange(false);
@@ -489,313 +446,20 @@ export function AddWidgetSheet({
                 gap: GRID_GAP,
               }}
             >
-              {filtered.map((def) => {
-                const isTarefas = def.id === "table.tasks";
-                return (
-                  <View
-                    key={def.id}
-                    ref={isTarefas ? tarefasTarget.ref : undefined}
-                    onLayout={
-                      isTarefas ? tarefasTarget.onLayout : undefined
-                    }
-                    collapsable={isTarefas ? false : undefined}
-                  >
-                    <WidgetGalleryCard
-                      def={def}
-                      width={resolvedCardWidth}
-                      isDark={isDark}
-                      onPress={() => handleAdd(def.id)}
-                    />
-                  </View>
-                );
-              })}
+              {filtered.map((def) => (
+                <WidgetGalleryCard
+                  key={def.id}
+                  def={def}
+                  width={resolvedCardWidth}
+                  isDark={isDark}
+                  onPress={() => handleAdd(def.id)}
+                />
+              ))}
             </View>
           </ScrollView>
         )}
-        <CatalogTutorialOverlay />
       </View>
     </Sheet>
-  );
-}
-
-/**
- * Tutorial overlay rendered INSIDE the catalog sheet's modal layer (the
- * root TutorialOverlay sits below RN Modals so its own spotlight is
- * invisible while the catalog is open). Mirrors the visual language of
- * the root overlay: dim everything except the spotlighted "Tarefas"
- * widget card, draw a pulsing yellow border around it, and float a
- * tutorial-tooltip-styled card at the top with progress, title,
- * description, hint and skip button.
- *
- * Coordinate handling: useTutorialTarget hands us window-relative coords
- * via measureInWindow. We render the overlay inside the sheet content,
- * so before drawing we measure that container's window offset and
- * subtract it — that way the spotlight cutout lines up with the card the
- * user actually sees.
- */
-function CatalogTutorialOverlay() {
-  const tutorial = useOptionalTutorial();
-  const containerRef = useRef<View | null>(null);
-  const [containerOffset, setContainerOffset] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-
-  const measureContainer = useCallback(() => {
-    if (!containerRef.current) return;
-    containerRef.current.measureInWindow((x, y) => {
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-      setContainerOffset((prev) =>
-        prev && Math.abs(prev.x - x) < 0.5 && Math.abs(prev.y - y) < 0.5
-          ? prev
-          : { x, y },
-      );
-    });
-  }, []);
-
-  // Pulsing border on the spotlight (uses the same easing/duration as the
-  // root TutorialOverlay so the catalog step feels indistinguishable).
-  const pulseScale = useSharedValue(1);
-  useEffect(() => {
-    pulseScale.value = withRepeat(
-      withSequence(
-        withTiming(1.08, {
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(1, {
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ),
-      -1,
-      true,
-    );
-  }, [pulseScale]);
-
-  const isActive =
-    !!tutorial?.isActive &&
-    tutorial.currentStep?.id === "home-widget-catalog";
-
-  // Re-measure container on activation. We deliberately do NOT depend on
-  // the global measureTick — the catalog modal is its own layer and
-  // doesn't shift when the underlying app scrolls. Listening to the
-  // global tick caused redundant measure cycles and visible jank.
-  useEffect(() => {
-    if (!isActive) return;
-    measureContainer();
-    const t1 = setTimeout(measureContainer, 200);
-    const t2 = setTimeout(measureContainer, 600);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [isActive, measureContainer]);
-
-  const rect = tutorial?.currentTargetRect ?? null;
-  const haveSpotlight = !!rect && !!containerOffset;
-
-  // Compute spotlight rect in container-local coords (px from the top-left
-  // of the overlay container). Padding kept TIGHT (2px) so the cutout
-  // doesn't bleed into the widget above the Tarefas card.
-  const PAD = 2;
-  const sx = haveSpotlight && rect ? rect.x - containerOffset!.x - PAD : 0;
-  const sy = haveSpotlight && rect ? rect.y - containerOffset!.y - PAD : 0;
-  const sw = haveSpotlight && rect ? rect.width + PAD * 2 : 0;
-  const sh = haveSpotlight && rect ? rect.height + PAD * 2 : 0;
-
-  const pulseStyle = useAnimatedStyle(() => ({
-    position: "absolute" as const,
-    left: sx,
-    top: sy,
-    width: sw,
-    height: sh,
-    borderRadius: 14,
-    borderWidth: 3,
-    borderColor: "#FCD34D",
-    transform: [{ scale: pulseScale.value }],
-    opacity: haveSpotlight ? 1 : 0,
-  }));
-
-  if (!isActive || !tutorial?.currentStep) return null;
-  const step = tutorial.currentStep;
-  const progressLabel = `${tutorial.currentStepIndex + 1} / ${tutorial.totalSteps}`;
-  const dimColor = "rgba(0,0,0,0.78)";
-
-  return (
-    <View
-      ref={containerRef}
-      onLayout={measureContainer}
-      pointerEvents="box-none"
-      style={[StyleSheet.absoluteFill, { zIndex: 1000 }]}
-    >
-      {haveSpotlight ? (
-        <>
-          {/* Four dim strips around the spotlight rect. The spotlight area
-              itself stays open so taps reach the underlying widget card. */}
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              right: 0,
-              height: Math.max(0, sy),
-              backgroundColor: dimColor,
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: sy + sh,
-              right: 0,
-              bottom: 0,
-              backgroundColor: dimColor,
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: Math.max(0, sy),
-              width: Math.max(0, sx),
-              height: sh,
-              backgroundColor: dimColor,
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              left: sx + sw,
-              top: Math.max(0, sy),
-              right: 0,
-              height: sh,
-              backgroundColor: dimColor,
-            }}
-          />
-          <Animated.View pointerEvents="none" style={pulseStyle} />
-        </>
-      ) : (
-        // No rect yet — dim the whole modal so the user sees that something
-        // tutorial-ish is happening, then the spotlight pops in once the
-        // Tarefas card measures.
-        <View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: dimColor }]}
-        />
-      )}
-
-      {/* Tutorial card pinned to the very top of the sheet (above the
-          sheet's own title). pointerEvents="auto" so the skip button is
-          reachable through the dim strips. */}
-      <View
-        pointerEvents="auto"
-        style={{
-          position: "absolute",
-          top: 4,
-          left: 8,
-          right: 8,
-          backgroundColor: "#0F172A",
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: "#1E293B",
-          paddingHorizontal: 12,
-          paddingVertical: 10,
-          shadowColor: "#000",
-          shadowOpacity: 0.5,
-          shadowOffset: { width: 0, height: 8 },
-          shadowRadius: 18,
-          elevation: 12,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 6,
-          }}
-        >
-          <Text
-            style={{
-              color: "#94A3B8",
-              fontSize: 11,
-              fontWeight: "600",
-              letterSpacing: 0.5,
-            }}
-          >
-            {progressLabel}
-          </Text>
-          <Pressable
-            onPress={() => {
-              void tutorial.skip();
-            }}
-            hitSlop={12}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-          >
-            <IconX size={12} color="#FFFFFFAA" />
-            <Text
-              style={{
-                color: "#FFFFFFAA",
-                fontSize: 11,
-                fontWeight: "500",
-              }}
-            >
-              Pular
-            </Text>
-          </Pressable>
-        </View>
-        <Text
-          style={{
-            color: "#F8FAFC",
-            fontSize: 14,
-            fontWeight: "700",
-            marginBottom: 2,
-          }}
-        >
-          {step.title}
-        </Text>
-        <Text
-          style={{
-            color: "#CBD5E1",
-            fontSize: 11,
-            lineHeight: 15,
-            marginBottom: 6,
-          }}
-        >
-          {step.description}
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            backgroundColor: "#422006",
-            borderColor: "#FCD34D55",
-            borderWidth: 1,
-            paddingHorizontal: 10,
-            paddingVertical: 8,
-            borderRadius: 10,
-          }}
-        >
-          <IconHandClick size={16} color="#FCD34D" />
-          <Text
-            style={{
-              color: "#FCD34D",
-              fontSize: 12,
-              fontWeight: "600",
-              flex: 1,
-            }}
-          >
-            {step.hint ?? step.ctaLabel ?? "Toque no card destacado"}
-          </Text>
-        </View>
-        {/* Strict gating: no in-modal escape button. Users must tap the
-            highlighted "Tarefas" card (or any widget) to advance. The
-            sheet-dismissal handler in inicio.tsx auto-advances when the
-            user closes the sheet, so they're never truly trapped. */}
-      </View>
-    </View>
   );
 }
 

@@ -1,4 +1,5 @@
 export { MetricsCard } from "./metrics-card";
+export { CalculationBreakdownCard } from "./calculation-breakdown-card";
 export { ActivityHistoryCard } from "./activity-history-card";
 export { RelatedItemsCard } from "./related-items-card";
 export { SpecificationsCard } from "./specifications-card";

@@ -90,6 +90,7 @@ export * from "./useItemCategory";
 export * from "./useSupplier";
 export * from "./useExternalWithdrawal";
 export * from "./useMaintenance";
+export * from "./use-auto-order-analysis";
 
 // =====================================================
 // Common Module Hooks

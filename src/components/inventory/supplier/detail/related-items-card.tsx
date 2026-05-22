@@ -85,7 +85,8 @@ export function RelatedItemsCard({ items, supplierId, className }: RelatedItemsC
               item.quantity,
               ((item as any).minimumQuantity),
               item.maxQuantity,
-              false
+              false,
+              item.category?.type ?? null
             );
             const stockLevelColor = getStockLevelTextColor(stockLevel);
 

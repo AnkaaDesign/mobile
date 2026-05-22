@@ -21,7 +21,6 @@ import { navigationTracker } from "@/utils/navigation-tracker";
 import { TaskInfoCard } from "@/components/production/task/detail/task-info-card";
 import { TaskDatesCard } from "@/components/production/task/detail/task-dates-card";
 import { TruckLayoutPreview } from "@/components/production/layout/truck-layout-preview";
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 
 import { TaskGeneralPaintCard } from "@/components/production/task/detail/task-general-paint-card";
 import { TaskLogoPaintsCard } from "@/components/production/task/detail/task-logo-paints-card";
@@ -36,7 +35,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithServiceOrdersChangelog, ChangelogSkeleton } from "@/components/ui/task-with-service-orders-changelog";
 import { FileItem, useFileViewer} from "@/components/file";
-import { tutorialMocks } from "@/components/tutorial/tutorial-mocks";
 import {
   IconFileText,
   IconCalendarEvent,
@@ -91,77 +89,7 @@ export default function ScheduleDetailsScreen() {
   // Track screen performance
   const { trackDataLoaded, trackRenderComplete } = useScreenPerformance('ScheduleDetailsScreen');
 
-  // Scroll ref shared with the tutorial targets so the tutorial can scroll
-  // each card into view when its step activates. Without this, mid-page
-  // cards (taskDatesCard, taskServicesCard) would land below the fold and
-  // the spotlight would render on a card the user can't see.
   const scrollRef = useRef<ScrollView | null>(null);
-
-  // Tutorial targets (task detail)
-  //
-  // scrollOffsetTop tuning: cards on this screen are tall, so 100px from
-  // the viewport top was leaving the target's lower half (and any tooltip
-  // anchored below) clipped off-screen. 40px positions the spotlight just
-  // under the chrome header — the tooltip then has the full lower screen
-  // to breathe. Header target keeps its 16px so the navbar back arrow
-  // doesn't get scrolled under the status bar.
-  const TASK_CARD_OFFSET = 40;
-  const taskHeaderTarget = useTutorialTarget(TUTORIAL_TARGETS.taskHeader, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: 16,
-  });
-  const taskInfoCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskInfoCard, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: TASK_CARD_OFFSET,
-  });
-  const taskDatesCardTarget = useTutorialTarget(TUTORIAL_TARGETS.taskDatesCard, {
-    scrollContainer: scrollRef,
-    scrollOffsetTop: TASK_CARD_OFFSET,
-  });
-  const taskServicesCardTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskServicesCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskPaintsCardTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskLogoPaintsCardTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskLogoPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskGroundPaintsCardTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskGroundPaintsCard,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskArtworksGalleryTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskArtworksGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskBaseFilesGalleryTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskBaseFilesGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskProjectFilesGalleryTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskProjectFilesGallery,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskCutsTableTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskCutsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskAirbrushingsTableTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskAirbrushingsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskObservationsTableTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskObservationsTable,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
-  const taskChangelogTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskChangelog,
-    { scrollContainer: scrollRef, scrollOffsetTop: TASK_CARD_OFFSET },
-  );
 
   // Performance logging - track screen mount
   const mountTime = useRef(performance.now());
@@ -199,17 +127,7 @@ export default function ScheduleDetailsScreen() {
     staleTime: 1000 * 60 * 10,
   });
 
-  // Tutorial detection has to happen BEFORE useScreenReady so we can release
-  // the navigation overlay immediately for the tutorial mock path — the page
-  // renders straight from mockTask so there's no real loading to wait for.
-  const tutorial = useOptionalTutorial();
-  const isTutorialActive = tutorial?.isActive ?? false;
-
-  // End navigation loading overlay. In tutorial mode the page renders from
-  // the in-memory mock immediately, so we mark ready right away instead of
-  // waiting on the (potentially flaky) query — that's what was leaving the
-  // user staring at the "loading" overlay until the failsafe fired.
-  useScreenReady(isTutorialActive || !isLoading);
+  useScreenReady(!isLoading);
 
   // Phase 2: Full query with all includes (pricing, paints, files, observation) - starts when below-fold is shown
   const { data: fullResponse, refetch: refetchFull } = useTaskDetail(id as string, {
@@ -219,28 +137,7 @@ export default function ScheduleDetailsScreen() {
   });
 
   // Use full data when available, fall back to minimal data
-  const realTask = fullResponse?.data ?? minimalResponse?.data;
-  const mockTask = useMemo(() => {
-    const m = tutorialMocks.tasks[0] as any;
-    // Map the mock's `services` array to the `serviceOrders` shape that the
-    // detail screen reads from. Most cards on this screen tolerate missing
-    // optional fields, so we only fill what the spotlighted sections need.
-    return {
-      ...m,
-      serviceOrders: (m.services ?? []).map((s: any) => ({
-        id: s.id,
-        description: s.description,
-        status: s.status,
-        type: 'PRODUCTION',
-        position: 0,
-        checkinFiles: [],
-        checkoutFiles: [],
-      })),
-      sectorId: m.sector?.id,
-      details: '',
-    };
-  }, []);
-  const task = realTask ?? (isTutorialActive ? mockTask : undefined);
+  const task = fullResponse?.data ?? minimalResponse?.data;
 
   // Performance logging - track when data is ready
   useEffect(() => {
@@ -399,7 +296,7 @@ export default function ScheduleDetailsScreen() {
     }
   }, [showBelowFold]);
 
-  if (isLoading && !isTutorialActive) {
+  if (isLoading) {
     perfLog.mark('Showing skeleton screen for ScheduleDetailsScreen');
     // Show skeleton that mirrors the actual page structure
     return (
@@ -424,7 +321,7 @@ export default function ScheduleDetailsScreen() {
     );
   }
 
-  if ((error || !task) && !isTutorialActive) {
+  if (error || !task) {
     return (
       <ErrorScreen
         message="Erro ao carregar detalhes da tarefa"
@@ -449,7 +346,7 @@ export default function ScheduleDetailsScreen() {
       >
         <View style={styles.content}>
           {/* Task Name Header Card */}
-          <View ref={taskHeaderTarget.ref} onLayout={taskHeaderTarget.onLayout} collapsable={false}>
+          <View>
             <Card style={styles.headerCard}>
               <View style={styles.headerContent}>
                 <View style={styles.headerLeft}>
@@ -482,7 +379,7 @@ export default function ScheduleDetailsScreen() {
           </View>
 
           {/* Overview Card - Informações Gerais */}
-          <View ref={taskInfoCardTarget.ref} onLayout={taskInfoCardTarget.onLayout} collapsable={false}>
+          <View>
             <TaskInfoCard task={{
               ...task,
               truck: task.truck,
@@ -493,7 +390,7 @@ export default function ScheduleDetailsScreen() {
           </View>
 
           {/* Dates Card - Datas */}
-          <View ref={taskDatesCardTarget.ref} onLayout={taskDatesCardTarget.onLayout} collapsable={false}>
+          <View>
             <TaskDatesCard task={{
               ...task,
               createdBy: task.createdBy,
@@ -518,7 +415,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* Services */}
           {task.serviceOrders && task.serviceOrders.length > 0 && (
-            <View ref={taskServicesCardTarget.ref} onLayout={taskServicesCardTarget.onLayout} collapsable={false}>
+            <View>
               <TaskServicesCard services={task.serviceOrders} taskSectorId={task.sectorId} />
             </View>
           )}
@@ -547,7 +444,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* General Painting - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC (matches web) */}
           {canViewPaintSections && (task as any)?.generalPainting && (
-            <View ref={taskPaintsCardTarget.ref} onLayout={taskPaintsCardTarget.onLayout} collapsable={false}>
+            <View>
               <TaskGeneralPaintCard
                 paint={(task as any).generalPainting}
                 onPaintPress={(_paintId) => {
@@ -563,7 +460,7 @@ export default function ScheduleDetailsScreen() {
               general paint, not a separate aesthetic choice. */}
           {canViewPaintSections && (task as any)?.generalPainting?.paintGrounds &&
            (task as any).generalPainting.paintGrounds.length > 0 && (
-            <View ref={taskGroundPaintsCardTarget.ref} onLayout={taskGroundPaintsCardTarget.onLayout} collapsable={false}>
+            <View>
               <TaskGroundPaintsCard
                 groundPaints={(task as any).generalPainting.paintGrounds.map(
                   (pg: any) => pg.groundPaint
@@ -574,7 +471,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* Logo Paints - Hidden from WAREHOUSE, FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {canViewLogoPaints && (task as any)?.logoPaints && (task as any).logoPaints.length > 0 && (
-            <View ref={taskLogoPaintsCardTarget.ref} onLayout={taskLogoPaintsCardTarget.onLayout} collapsable={false}>
+            <View>
               <TaskLogoPaintsCard
                 paints={(task as any).logoPaints}
                 onPaintPress={(_paintId) => {
@@ -585,11 +482,8 @@ export default function ScheduleDetailsScreen() {
             </View>
           )}
 
-          {/* Observation Card - Only for COMPLETED tasks, hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL.
-              During the tutorial, the COMPLETED gate is bypassed so the
-              walkthrough can spotlight this section on a mock task that
-              stays in IN_PRODUCTION (to keep the cronograma list realistic). */}
-          {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (task as any)?.observation && (
+          {/* Observation Card - Only for COMPLETED tasks, hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL. */}
+          {canViewObservation && (task as any)?.status === 'COMPLETED' && (task as any)?.observation && (
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -639,25 +533,16 @@ export default function ScheduleDetailsScreen() {
             </Card>
           )}
 
-          {/* Observations Table - Only for COMPLETED tasks. The minHeight is
-              gated on isTutorialActive because it only exists to give the
-              tutorial spotlight a measurable rect on a task with no
-              observations; outside the tutorial it would just leave an
-              empty gap when ObservationsTable returns null. */}
-          {canViewObservation && ((task as any)?.status === 'COMPLETED' || isTutorialActive) && (
-            <View
-              ref={taskObservationsTableTarget.ref}
-              onLayout={taskObservationsTableTarget.onLayout}
-              collapsable={false}
-              style={isTutorialActive ? { minHeight: 80 } : undefined}
-            >
+          {/* Observations Table - Only for COMPLETED tasks. */}
+          {canViewObservation && (task as any)?.status === 'COMPLETED' && (
+            <View>
               <ObservationsTable taskId={id as string} maxHeight={400} />
             </View>
           )}
 
           {/* Base Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewBaseFiles && (task as any)?.baseFiles && (task as any).baseFiles.length > 0 && (
-            <View ref={taskBaseFilesGalleryTarget.ref} onLayout={taskBaseFilesGalleryTarget.onLayout} collapsable={false}>
+            <View>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -745,7 +630,7 @@ export default function ScheduleDetailsScreen() {
             const artworkFiles = filteredArtworks.map((artwork: any) => artwork.file || artwork).filter((f: any) => f && f.id);
 
             return (
-              <View ref={taskArtworksGalleryTarget.ref} onLayout={taskArtworksGalleryTarget.onLayout} collapsable={false}>
+              <View>
               <Card style={styles.sectionCard}>
                 <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                   <View style={styles.sectionHeaderLeft}>
@@ -836,7 +721,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* Project Files Section - Only for ADMIN, COMMERCIAL, LOGISTIC, DESIGNER */}
           {canViewProjectFiles && (task as any)?.projectFiles && (task as any).projectFiles.length > 0 && (
-            <View ref={taskProjectFilesGalleryTarget.ref} onLayout={taskProjectFilesGalleryTarget.onLayout} collapsable={false}>
+            <View>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>
@@ -1193,7 +1078,7 @@ export default function ScheduleDetailsScreen() {
           {/* Cuts Table - Hidden from FINANCIAL, LOGISTIC, COMMERCIAL (matches web) */}
           {/* Team leaders can swipe to request new cuts for tasks in their led sector */}
           {canViewCuts && (
-            <View ref={taskCutsTableTarget.ref} onLayout={taskCutsTableTarget.onLayout} collapsable={false}>
+            <View>
               <CutsTable
                 taskId={id as string}
                 taskSectorId={task.sectorId}
@@ -1204,7 +1089,7 @@ export default function ScheduleDetailsScreen() {
 
           {/* Airbrushings Table - Hidden from WAREHOUSE, FINANCIAL, DESIGNER, LOGISTIC, COMMERCIAL (matches web) */}
           {canViewAirbrushing && (
-            <View ref={taskAirbrushingsTableTarget.ref} onLayout={taskAirbrushingsTableTarget.onLayout} collapsable={false}>
+            <View>
               <AirbrushingsTable taskId={id as string} maxHeight={400} />
             </View>
           )}
@@ -1215,7 +1100,7 @@ export default function ScheduleDetailsScreen() {
           {/* Changelog History - Only for Admin/Financial (all changes) or team leaders (sector changes) */}
           {/* Team leadership is now determined by ledSector relationship */}
           {(canViewDocuments || isTeamLeaderUser) && (
-            <View ref={taskChangelogTarget.ref} onLayout={taskChangelogTarget.onLayout} collapsable={false}>
+            <View>
             <Card style={styles.sectionCard}>
               <View style={[styles.sectionHeader, { borderBottomColor: colors.border }]}>
                 <View style={styles.sectionHeaderLeft}>

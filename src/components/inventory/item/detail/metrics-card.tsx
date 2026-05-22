@@ -64,6 +64,14 @@ export function MetricsCard({ item }: MetricsCardProps) {
     const stockLevel = item.stockLevel ?? STOCK_LEVEL.OPTIMAL;
     const hasActiveOrder = item.hasActiveOrder ?? false;
 
+    // Borrowed quantity: prefer _count.borrows from include; fall back to filtering live borrows array.
+    const countBorrows = (item as any)._count?.borrows as number | undefined;
+    const activeBorrowsFromList =
+      Array.isArray(item.borrows)
+        ? item.borrows.filter((b: any) => b?.returnedAt == null).length
+        : 0;
+    const borrowedCount = countBorrows ?? activeBorrowsFromList;
+
     return {
       totalEntries,
       totalExits,
@@ -72,6 +80,7 @@ export function MetricsCard({ item }: MetricsCardProps) {
       movementCount: recentActivities.length,
       stockLevel,
       hasActiveOrder,
+      borrowedCount,
     };
   }, [item]);
 
@@ -179,6 +188,13 @@ export function MetricsCard({ item }: MetricsCardProps) {
               <View style={StyleSheet.flatten([styles.pendingBadge, { backgroundColor: "#3b82f6" + "20", borderColor: "#3b82f6" }])}>
                 <ThemedText style={StyleSheet.flatten([styles.pendingBadgeText, { color: "#3b82f6" }])}>
                   Pedido em aberto
+                </ThemedText>
+              </View>
+            )}
+            {metrics.borrowedCount > 0 && (
+              <View style={StyleSheet.flatten([styles.pendingBadge, { backgroundColor: "#9333ea" + "20", borderColor: "#9333ea" }])}>
+                <ThemedText style={StyleSheet.flatten([styles.pendingBadgeText, { color: "#9333ea" }])}>
+                  Emprestado: {metrics.borrowedCount}
                 </ThemedText>
               </View>
             )}

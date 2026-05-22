@@ -1,14 +1,20 @@
 
 import { View, Text, ViewStyle, TextStyle } from "react-native";
 import { Icon } from "@/components/ui/icon";
+import { IconClockFilled } from "@tabler/icons-react-native";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import { fontSize, spacing } from "@/constants/design-system";
 import type { Item } from '../../../../types';
 import { determineStockLevel, formatQuantity } from "@/utils";
 import { STOCK_LEVEL, STOCK_LEVEL_LABELS } from "@/constants";
 
+type StockBadgeItem = Pick<Item, "quantity" | "reorderPoint" | "maxQuantity"> & {
+  measures?: Item["measures"];
+  category?: Item["category"];
+};
+
 interface StockBadgeProps {
-  item: Pick<Item, "quantity" | "reorderPoint" | "maxQuantity"> & { measures?: Item["measures"] };
+  item: StockBadgeItem;
   size?: BadgeProps["size"];
   showIcon?: boolean;
   showQuantity?: boolean;
@@ -26,8 +32,16 @@ interface StockStatus {
 
 export function StockBadge({ item, size = "default", showIcon = true, showQuantity = false, style, textStyle, hasActiveOrder = false }: StockBadgeProps) {
 
-  // Determine stock level using the utility
-  const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
+  // Determine stock level using the utility.
+  // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
+  // overlay only (the new util ignores it anyway).
+  const stockLevel = determineStockLevel(
+    item.quantity || 0,
+    item.reorderPoint || null,
+    item.maxQuantity || null,
+    false,
+    item.category?.type ?? null,
+  );
 
   // Get stock status based on level
   const getStockStatus = (): StockStatus => {
@@ -113,6 +127,7 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
           </Text>
         )}
         <Text>{stockStatus.label}</Text>
+        {hasActiveOrder && <IconClockFilled size={iconSize} color="#3b82f6" />}
       </View>
     </Badge>
   );
@@ -120,7 +135,7 @@ export function StockBadge({ item, size = "default", showIcon = true, showQuanti
 
 // Helper function to get just the stock status info without rendering the badge
 export function getStockStatus(
-  item: Pick<Item, "quantity" | "reorderPoint" | "maxQuantity">,
+  item: StockBadgeItem,
   hasActiveOrder = false,
 ): {
   label: string;
@@ -129,8 +144,17 @@ export function getStockStatus(
   isLow: boolean;
   isCritical: boolean;
   needsReorder: boolean;
+  hasActiveOrder: boolean;
 } {
-  const stockLevel = determineStockLevel(item.quantity || 0, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
+  // `hasActiveOrder` is intentionally NOT passed to determineStockLevel:
+  // pending-order state is a UI overlay only.
+  const stockLevel = determineStockLevel(
+    item.quantity || 0,
+    item.reorderPoint || null,
+    item.maxQuantity || null,
+    false,
+    item.category?.type ?? null,
+  );
 
   const isLow = stockLevel === STOCK_LEVEL.LOW || stockLevel === STOCK_LEVEL.CRITICAL || stockLevel === STOCK_LEVEL.OUT_OF_STOCK || stockLevel === STOCK_LEVEL.NEGATIVE_STOCK;
   const isCritical = stockLevel === STOCK_LEVEL.CRITICAL || stockLevel === STOCK_LEVEL.OUT_OF_STOCK || stockLevel === STOCK_LEVEL.NEGATIVE_STOCK;
@@ -163,11 +187,12 @@ export function getStockStatus(
     isLow,
     isCritical,
     needsReorder,
+    hasActiveOrder,
   };
 }
 
 // Compact version for list views
-export function StockIndicator({ item, hasActiveOrder = false }: { item: Pick<Item, "quantity" | "reorderPoint" | "maxQuantity">; hasActiveOrder?: boolean }) {
+export function StockIndicator({ item, hasActiveOrder = false }: { item: StockBadgeItem; hasActiveOrder?: boolean }) {
 
   const status = getStockStatus(item, hasActiveOrder);
 
@@ -190,12 +215,21 @@ export function StockIndicator({ item, hasActiveOrder = false }: { item: Pick<It
     }
   };
 
-  const indicatorStyle: ViewStyle = {
+  const dotStyle: ViewStyle = {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: getIndicatorColor(),
   };
 
-  return <View style={indicatorStyle} />;
+  if (!hasActiveOrder) {
+    return <View style={dotStyle} />;
+  }
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+      <View style={dotStyle} />
+      <IconClockFilled size={10} color="#3b82f6" />
+    </View>
+  );
 }

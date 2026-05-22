@@ -8,7 +8,6 @@ import { CutRequestModal } from '@/components/production/cuts/form/cut-request-m
 import { canRequestCutForTask } from '@/utils/permissions/entity-permissions';
 import { useFileViewer } from '@/components/file';
 import { useCutMutations, useScreenReady} from '@/hooks';
-import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial';
 import type { Cut } from '@/types';
 
 export default function CuttingListScreen() {
@@ -17,10 +16,6 @@ export default function CuttingListScreen() {
   const { actions: fileViewerActions } = useFileViewer();
   const { update } = useCutMutations();
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // Tutorial targets
-  const listTarget = useTutorialTarget(TUTORIAL_TARGETS.recorteList);
-  const firstItemTarget = useTutorialTarget(TUTORIAL_TARGETS.recorteFirstItem);
 
   // Cut request modal state
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
@@ -251,17 +246,8 @@ export default function CuttingListScreen() {
 
   return (
     <>
-      <View ref={listTarget.ref} onLayout={listTarget.onLayout} collapsable={false} style={{ flex: 1 }}>
-        {/* recorteFirstItem shares the wrapper since the shared Layout renders
-            rows internally. Spotlight will highlight the top of the list. */}
-        <View
-          ref={firstItemTarget.ref}
-          onLayout={firstItemTarget.onLayout}
-          collapsable={false}
-          style={{ flex: 1 }}
-        >
-          <Layout config={dynamicConfig} />
-        </View>
+      <View style={{ flex: 1 }}>
+        <Layout config={dynamicConfig} />
       </View>
 
       {/* Cut Request Modal */}

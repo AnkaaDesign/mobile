@@ -60,6 +60,11 @@ const SERVICE_ORDER_STATUS_CONFIG: Record<
     color: "#9333ea",
     bgColor: "#faf5ff",
   },
+  [SERVICE_ORDER_STATUS.WAITING_ARTWORK]: {
+    icon: IconClock,
+    color: "#9333ea",
+    bgColor: "#faf5ff",
+  },
 };
 
 function formatActiveTime(totalSeconds: number): string {

@@ -166,7 +166,8 @@ export const itemsListConfig: ListConfig<Item> = {
             quantity,
             item.reorderPoint || null,
             item.maxQuantity || null,
-            false
+            false,
+            item.category?.type ?? null
           )
           const color = getStockLevelColor(stockLevel)
           const formattedQuantity = quantity % 1 === 0

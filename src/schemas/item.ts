@@ -749,6 +749,7 @@ export const itemOrderBySchema = z
         reorderPoint: orderByDirectionSchema.optional(),
         reorderQuantity: orderByDirectionSchema.optional(),
         boxQuantity: orderByDirectionSchema.optional(),
+        lastAutoOrderDate: orderByDirectionSchema.optional(),
         icms: orderByDirectionSchema.optional(),
         ipi: orderByDirectionSchema.optional(),
         totalPrice: orderByDirectionSchema.optional(),
@@ -807,6 +808,7 @@ export const itemOrderBySchema = z
           reorderPoint: orderByDirectionSchema.optional(),
           reorderQuantity: orderByDirectionSchema.optional(),
           boxQuantity: orderByDirectionSchema.optional(),
+          lastAutoOrderDate: orderByDirectionSchema.optional(),
           icms: orderByDirectionSchema.optional(),
           ipi: orderByDirectionSchema.optional(),
           totalPrice: orderByDirectionSchema.optional(),
@@ -1095,6 +1097,20 @@ export const itemWhereSchema: z.ZodSchema = z.lazy(() =>
         ])
         .optional(),
 
+      // PPE Type field
+      ppeType: z
+        .union([
+          z.nativeEnum(PPE_TYPE),
+          z.null(),
+          z.object({
+            equals: z.union([z.nativeEnum(PPE_TYPE), z.null()]).optional(),
+            not: z.union([z.nativeEnum(PPE_TYPE), z.null()]).optional(),
+            in: z.array(z.nativeEnum(PPE_TYPE)).optional(),
+            notIn: z.array(z.nativeEnum(PPE_TYPE)).optional(),
+          }),
+        ])
+        .optional(),
+
       // ABC/XYZ Category fields
       abcCategory: z
         .union([
@@ -1304,6 +1320,9 @@ const itemFilters = {
   isActive: z.boolean().optional(),
   isPpe: z.boolean().optional(), // Backwards compatibility
   shouldAssignToUser: z.boolean().optional(),
+
+  // PPE type filter
+  ppeType: z.nativeEnum(PPE_TYPE).optional(),
   hasBarcode: z.boolean().optional(),
   hasSupplier: z.boolean().optional(),
   hasActivities: z.boolean().optional(),
@@ -1332,6 +1351,20 @@ const itemFilters = {
 
   // Range filters
   quantityRange: z
+    .object({
+      min: z.number().optional(),
+      max: z.number().optional(),
+    })
+    .optional(),
+
+  icmsRange: z
+    .object({
+      min: z.number().optional(),
+      max: z.number().optional(),
+    })
+    .optional(),
+
+  ipiRange: z
     .object({
       min: z.number().optional(),
       max: z.number().optional(),
@@ -1436,6 +1469,15 @@ const itemTransform = (data: any) => {
   } else if (data.where && data.where.isPpe === false) {
     andConditions.push({ category: { type: { not: ITEM_CATEGORY_TYPE.PPE } } });
     delete data.where.isPpe;
+  }
+
+  // ppeType filter - filter items by PPE type (e.g., OTHERS, SHIRT, PANTS, etc.)
+  if (data.ppeType) {
+    andConditions.push({ ppeType: data.ppeType });
+    delete data.ppeType;
+  } else if (data.where && data.where.ppeType) {
+    andConditions.push({ ppeType: data.where.ppeType });
+    delete data.where.ppeType;
   }
 
   // shouldAssignToUser filter
@@ -1673,6 +1715,26 @@ const itemTransform = (data: any) => {
       andConditions.push({ quantity: condition });
     }
     delete data.quantityRange;
+  }
+
+  if (data.icmsRange && typeof data.icmsRange === "object") {
+    const condition: any = {};
+    if (typeof data.icmsRange.min === "number") condition.gte = data.icmsRange.min;
+    if (typeof data.icmsRange.max === "number") condition.lte = data.icmsRange.max;
+    if (Object.keys(condition).length > 0) {
+      andConditions.push({ icms: condition });
+    }
+    delete data.icmsRange;
+  }
+
+  if (data.ipiRange && typeof data.ipiRange === "object") {
+    const condition: any = {};
+    if (typeof data.ipiRange.min === "number") condition.gte = data.ipiRange.min;
+    if (typeof data.ipiRange.max === "number") condition.lte = data.ipiRange.max;
+    if (Object.keys(condition).length > 0) {
+      andConditions.push({ ipi: condition });
+    }
+    delete data.ipiRange;
   }
 
   if (data.monthlyConsumptionRange && typeof data.monthlyConsumptionRange === "object") {
@@ -2064,6 +2126,7 @@ export const itemCreateSchemaBase = z.object({
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
   reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
   boxQuantity: z.number().int().nullable().optional(),
+  lastAutoOrderDate: z.coerce.date().nullable().optional(),
   icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").default(0).optional(),
   ipi: z.number().min(0, "IPI deve ser entre 0 e 100%").max(100, "IPI deve ser entre 0 e 100%").default(0).optional(),
   monthlyConsumption: z.number().min(0, "Consumo mensal deve ser não-negativo").default(0).optional(),
@@ -2141,6 +2204,7 @@ export const itemUpdateSchemaBase = z.object({
   reorderPoint: optionalNonNegativeNumber.refine((val) => val === null || val === undefined || val >= 0, "Ponto de reposição deve ser não-negativo"),
   reorderQuantity: optionalPositiveNumber.refine((val) => val === null || val === undefined || val > 0, "Quantidade de reposição deve ser positiva"),
   boxQuantity: z.number().int().nullable().optional(),
+  lastAutoOrderDate: z.coerce.date().nullable().optional(),
   icms: z.number().min(0, "ICMS deve ser entre 0 e 100%").max(100, "ICMS deve ser entre 0 e 100%").optional(),
   ipi: z.number().min(0, "IPI deve ser entre 0 e 100%").max(100, "IPI deve ser entre 0 e 100%").optional(),
   monthlyConsumption: z.number().min(0, "Consumo mensal deve ser não-negativo").optional(),

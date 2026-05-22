@@ -1,11 +1,10 @@
-import { TouchableOpacity, Text, View, ViewStyle, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, ViewStyle, StyleSheet } from "react-native";
 import { Icon } from "./icon";
 import { useTheme } from "@/lib/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as React from "react";
 import { useCallback } from "react";
 import { impactHaptic } from "@/utils/haptics";
-import { useTutorialTarget } from "@/components/tutorial";
 
 interface FABProps {
   icon?: string;
@@ -16,7 +15,6 @@ interface FABProps {
   disabled?: boolean;
   enableHaptic?: boolean;
   loadingMessage?: string;
-  tutorialTargetId?: string;
 }
 
 export function FAB({
@@ -27,18 +25,9 @@ export function FAB({
   style,
   disabled = false,
   enableHaptic = true,
-  loadingMessage,
-  tutorialTargetId,
 }: FABProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const tutorialTarget = useTutorialTarget(tutorialTargetId ?? "__fab_unused__", {
-    onAction: () => {
-      if (disabled) return;
-      if (enableHaptic) impactHaptic();
-      onPress();
-    },
-  });
 
   const handlePress = useCallback(() => {
     if (disabled) return;
@@ -72,7 +61,7 @@ export function FAB({
     opacity: disabled ? 0.6 : 1,
   };
 
-  const button = (
+  return (
     <TouchableOpacity
       onPress={handlePress}
       style={StyleSheet.flatten([defaultStyle, style])}
@@ -97,48 +86,4 @@ export function FAB({
       )}
     </TouchableOpacity>
   );
-
-  if (tutorialTargetId) {
-    return (
-      <View
-        ref={tutorialTarget.ref}
-        onLayout={tutorialTarget.onLayout}
-        collapsable={false}
-        style={{
-          position: "absolute",
-          bottom: Math.max(24, insets.bottom + 32),
-          right: 16,
-        }}
-      >
-        <TouchableOpacity
-          onPress={handlePress}
-          style={StyleSheet.flatten([
-            { ...defaultStyle, position: "relative", bottom: undefined as any, right: undefined as any },
-            style,
-          ])}
-          disabled={disabled}
-          activeOpacity={0.7}
-        >
-          {children ? (
-            children
-          ) : icon ? (
-            <Icon name={icon} size={24} color="#FFFFFF" />
-          ) : null}
-          {label && (
-            <Text
-              style={{
-                color: colors.background,
-                fontSize: 16,
-                fontWeight: "600",
-              }}
-            >
-              {label}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return button;
 }

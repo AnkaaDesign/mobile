@@ -30,6 +30,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { IconCalendarPlus } from "@tabler/icons-react-native";
+import { OrderMultiItemSelector } from "@/components/inventory/order/form/multi-item-selector";
+import { CycleQuantityPreview } from "@/components/inventory/order-schedule/cycle-quantity-preview";
 
 const DAY_OF_WEEK_OPTIONS = [
   { label: "Domingo", value: "SUNDAY" },
@@ -95,6 +97,8 @@ function OrderScheduleCreateScreenInner() {
   });
 
   const watchedFrequency = form.watch("frequency");
+  const watchedFrequencyCount = form.watch("frequencyCount");
+  const watchedItems = form.watch("items") || [];
 
   const frequencyGroups = useMemo(() => {
     const freq = watchedFrequency;
@@ -410,6 +414,39 @@ function OrderScheduleCreateScreenInner() {
                 />
               )}
             </Card>
+
+            {/* Items */}
+            <Card style={styles.card}>
+              <ThemedText style={[styles.sectionTitle, { color: colors.foreground }]}>
+                Itens do Agendamento
+              </ThemedText>
+
+              <Controller
+                control={form.control}
+                name="items"
+                render={({ field, fieldState }) => (
+                  <View style={styles.field}>
+                    <OrderMultiItemSelector
+                      value={field.value || []}
+                      onValueChange={(v) => field.onChange(v || [])}
+                      label="Itens"
+                      description="Selecione os itens que este agendamento irá pedir automaticamente."
+                      placeholder="Selecione os itens"
+                      error={fieldState.error?.message}
+                    />
+                  </View>
+                )}
+              />
+            </Card>
+
+            {/* Computed Quantity Preview */}
+            {watchedItems.length > 0 && (
+              <CycleQuantityPreview
+                itemIds={watchedItems}
+                frequency={watchedFrequency}
+                frequencyCount={watchedFrequencyCount}
+              />
+            )}
 
             {/* Actions */}
             <View style={styles.actionsRow}>

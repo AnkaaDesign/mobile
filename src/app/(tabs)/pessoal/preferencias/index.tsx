@@ -8,14 +8,9 @@ import { useTheme } from "@/lib/theme";
 import { spacing } from "@/constants/design-system";
 import { IconChevronRight } from "@tabler/icons-react-native";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useAuth } from "@/contexts/auth-context";
-import { hasPrivilege } from "@/utils/user";
-import {
-  TUTORIAL_TARGETS,
-  useOptionalTutorial,
-  useTutorialTarget,
-} from "@/components/tutorial";
+import { SECTOR_PRIVILEGES } from "@/constants/enums";
+import { useTutorialActions } from "@/components/tutorial";
 
 type PreferenceItem = {
   id: string;
@@ -23,45 +18,31 @@ type PreferenceItem = {
   description: string;
   icon: string;
   onPress: () => void;
-  ref?: any;
-  onLayout?: () => void;
 };
 
 export default function PreferencesIndexScreen() {
   useScreenReady();
   const { colors } = useTheme();
   const nav = useNav();
-  const { user } = useAuth();
-  const tutorial = useOptionalTutorial();
+  const { user } = useAuth() as any;
+  const tutorial = useTutorialActions();
 
-  // Show the replay row to PRODUCTION sector users, PRODUCTION_MANAGER (team
-  // leaders), and ADMIN (which `hasPrivilege` auto-allows). Same gate as the
-  // rest of the tutorial system.
   const canReplayTutorial =
-    !!user &&
-    (hasPrivilege(user, SECTOR_PRIVILEGES.PRODUCTION) ||
-      user.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER);
-  const replayTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesReplayButton);
-  const themeCardTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesThemeCard);
-  const notificationsCardTarget = useTutorialTarget(TUTORIAL_TARGETS.preferencesNotificationsCard);
+    user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION ||
+    user?.sector?.privileges === SECTOR_PRIVILEGES.PRODUCTION_MANAGER;
 
   const handleReplayTutorial = () => {
-    if (!tutorial) return;
     Alert.alert(
-      "Repetir Tutorial",
-      "Deseja refazer o tutorial guiado pelo aplicativo?",
+      "Refazer tutorial",
+      "Deseja iniciar o tutorial novamente?",
       [
         { text: "Cancelar", style: "cancel" },
         {
-          text: "Começar",
+          text: "Iniciar",
           onPress: async () => {
             await tutorial.reset();
-            // Send the user to the home screen so the first showcase steps
-            // (greeting, widget panel, edit-painel button) have something to
-            // spotlight. Without this the tutorial would launch on top of
-            // Preferências and the early targets would never measure.
             nav.push(mobileRoute("/inicio"));
-            tutorial.start();
+            setTimeout(() => void tutorial.start(), 200);
           },
         },
       ],
@@ -75,34 +56,26 @@ export default function PreferencesIndexScreen() {
       description: "Aparência do aplicativo",
       icon: "palette",
       onPress: () => nav.push(mobileRoute("/pessoal/preferencias/tema")),
-      ref: themeCardTarget.ref,
-      onLayout: themeCardTarget.onLayout,
     },
     {
       id: "notificacoes",
       title: "Notificações",
       description: "Configurar notificações",
       icon: "bell",
-      onPress: () => {
-        notificationsCardTarget.onPress();
-        nav.push(mobileRoute("/perfil/notification-preferences"));
-      },
-      ref: notificationsCardTarget.ref,
-      onLayout: notificationsCardTarget.onLayout,
+      onPress: () => nav.push(mobileRoute("/perfil/notification-preferences")),
     },
+    ...(canReplayTutorial
+      ? [
+          {
+            id: "tutorial",
+            title: "Repetir tutorial",
+            description: "Reveja o tour guiado do app",
+            icon: "refresh",
+            onPress: handleReplayTutorial,
+          },
+        ]
+      : []),
   ];
-
-  if (canReplayTutorial) {
-    preferences.push({
-      id: "replay-tutorial",
-      title: "Repetir Tutorial",
-      description: "Refaça a apresentação guiada do aplicativo",
-      icon: "repeat",
-      onPress: handleReplayTutorial,
-      ref: replayTarget.ref,
-      onLayout: replayTarget.onLayout,
-    });
-  }
 
   return (
     <ThemedView style={styles.container}>
@@ -119,8 +92,6 @@ export default function PreferencesIndexScreen() {
         {preferences.map((pref, index) => (
           <TouchableOpacity
             key={pref.id}
-            ref={pref.ref}
-            onLayout={pref.onLayout}
             style={[
               styles.preferenceCard,
               { backgroundColor: colors.card, borderColor: colors.border },

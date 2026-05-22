@@ -1,7 +1,6 @@
 // packages/api-client/src/airbrushing.ts
 
 import { apiClient } from "./axiosClient";
-import { getTutorialMockList, getTutorialMockDetail } from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   AirbrushingGetManyFormData,
@@ -38,10 +37,6 @@ export class AirbrushingService {
   // =====================
 
   async getAirbrushings(params?: AirbrushingGetManyFormData): Promise<AirbrushingGetManyResponse> {
-    // Tutorial bypass — seeded demo airbrushings linked to mockTasks[0].
-    const tutorialResponse = getTutorialMockList("airbrushings", params);
-    if (tutorialResponse) return tutorialResponse as unknown as AirbrushingGetManyResponse;
-
     const response = await apiClient.get<AirbrushingGetManyResponse>(this.basePath, {
       params,
     });
@@ -49,10 +44,6 @@ export class AirbrushingService {
   }
 
   async getAirbrushingById(id: string, params?: Omit<AirbrushingGetByIdFormData, "id">): Promise<AirbrushingGetUniqueResponse> {
-    const mockDetail = getTutorialMockDetail<any>("airbrushings", id);
-    if (mockDetail) {
-      return { success: true, message: "ok", data: mockDetail } as unknown as AirbrushingGetUniqueResponse;
-    }
     const response = await apiClient.get<AirbrushingGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

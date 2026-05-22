@@ -413,6 +413,28 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
       }
       const newLayoutFiles = layoutFiles.filter(f => !f.uploaded);
 
+      // Short-circuit: skip sending `quote` in the payload when no quote
+      // form field is dirty. Mobile uses task.update() with a nested quote,
+      // and the inline-quote path on the API still touches services/configs
+      // even on no-op submissions. The API has a defensive filter too, but
+      // skipping the field is cheaper and clearer.
+      const dirty = methods.formState.dirtyFields as Record<string, any>;
+      const dq = (dirty.quote || {}) as Record<string, unknown>;
+      const quoteFieldDirty =
+        newLayoutFiles.length > 0 ||
+        Boolean(
+          dq.expiresAt ||
+            dq.subtotal ||
+            dq.total ||
+            dq.guaranteeYears ||
+            dq.customGuaranteeText ||
+            dq.customForecastDays ||
+            dq.layoutFileId ||
+            dq.simultaneousTasks ||
+            dq.customerConfigs ||
+            dq.services,
+        );
+
       if (newLayoutFiles.length > 0) {
         const formData = new FormData();
         const layoutFile = newLayoutFiles[0];
@@ -427,7 +449,7 @@ export function TaskQuoteWizard({ taskId, mode = 'budget' }: TaskQuoteWizardProp
           id: taskId,
           data: formData as any,
         });
-      } else {
+      } else if (quoteFieldDirty) {
         await updateAsync({
           id: taskId,
           data: { quote: quotePayload } as any,

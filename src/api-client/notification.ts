@@ -1,10 +1,6 @@
 // packages/api-client/src/notification.ts
 
 import { apiClient } from "./axiosClient";
-import {
-  getTutorialMockList,
-  getTutorialMockDetail,
-} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   NotificationGetManyFormData,
@@ -58,17 +54,11 @@ export class NotificationService {
   // =====================
 
   async getNotifications(params: NotificationGetManyFormData = {}): Promise<NotificationGetManyResponse> {
-    const mock = getTutorialMockList("notifications", params);
-    if (mock) return mock as unknown as NotificationGetManyResponse;
     const response = await apiClient.get<NotificationGetManyResponse>(this.basePath, { params });
     return response.data;
   }
 
   async getNotificationById(id: string, params?: Omit<NotificationGetByIdFormData, "id">): Promise<NotificationGetUniqueResponse> {
-    const mockDetail = getTutorialMockDetail<any>("notifications", id);
-    if (mockDetail) {
-      return { success: true, message: "ok", data: mockDetail } as unknown as NotificationGetUniqueResponse;
-    }
     const response = await apiClient.get<NotificationGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

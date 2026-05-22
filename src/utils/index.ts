@@ -103,7 +103,6 @@ export * from "./schedule";
 export * from "./sector";
 export * from "./serviceOrder";
 export * from "./sortOrder";
-export * from "./stock-health";
 export * from "./stock-level";
 export * from "./storage";
 export * from "./supplier";

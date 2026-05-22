@@ -1,65 +1,58 @@
-import { STOCK_LEVEL } from '../constants';
+// Mobile mirror of the API stock-level classifier (algorithm-spec §15).
+// The API is authoritative — components should prefer the `stockLevel` field
+// returned by endpoints. This utility exists for client-side ad-hoc renders
+// (cards, badges, list previews) where a fresh classification is needed
+// against locally edited quantity values.
+
+import { ITEM_CATEGORY_TYPE, STOCK_LEVEL } from "../constants";
+
+/** LOW band upper bound = reorderPoint × this multiplier (spec §15.1). */
+const STOCK_LEVEL_LOW_MULTIPLIER = 1.2;
 
 /**
- * Determines the stock level based on quantity, reorder point, and active order status
+ * Spec §15 band classifier. Active pending orders do NOT shift thresholds —
+ * surface a "pedido em aberto" badge separately in the UI instead.
  *
- * Updated thresholds:
- * - CRITICAL: quantity <= 50% of reorder point (half of safety stock consumed)
- * - LOW: quantity <= 100% of reorder point (at or below reorder trigger)
- * - OPTIMAL: above reorder point and below max quantity
- * - OVERSTOCKED: quantity > max quantity
- *
- * When hasActiveOrder is true, thresholds are adjusted by 1.5x to reduce urgency
+ * The legacy 4th positional `hasActiveOrder` argument is accepted but ignored
+ * to keep existing callers compiling. Pass `categoryType` to enable the TOOL
+ * short-circuit (spec §15.2).
  *
  * @param quantity Current stock quantity
  * @param reorderPoint Minimum stock level that triggers reorder (null if not configured)
  * @param maxQuantity Maximum stock level (null if not configured)
- * @param hasActiveOrder Whether there's an active order (status != CREATED)
+ * @param _hasActiveOrder IGNORED — kept for backward compatibility. Render
+ *   pending-order state as a separate UI overlay.
+ * @param categoryType When `ITEM_CATEGORY_TYPE.TOOL`, qty > 0 always returns OPTIMAL
  * @returns The appropriate stock level
  */
-export function determineStockLevel(quantity: number, reorderPoint: number | null, maxQuantity: number | null, hasActiveOrder: boolean): STOCK_LEVEL {
-  // Validate input
-  if (!Number.isFinite(quantity)) {
-    // For invalid quantities, default to OPTIMAL to avoid false alerts
-    return STOCK_LEVEL.OPTIMAL;
+export function determineStockLevel(
+  quantity: number,
+  reorderPoint: number | null,
+  maxQuantity: number | null,
+  _hasActiveOrder: boolean = false,
+  categoryType: ITEM_CATEGORY_TYPE | null = null,
+): STOCK_LEVEL {
+  if (!Number.isFinite(quantity)) return STOCK_LEVEL.OPTIMAL;
+
+  if (categoryType === ITEM_CATEGORY_TYPE.TOOL) {
+    return quantity > 0 ? STOCK_LEVEL.OPTIMAL : STOCK_LEVEL.OUT_OF_STOCK;
   }
 
-  // Handle negative stock
-  if (quantity < 0) {
-    return STOCK_LEVEL.NEGATIVE_STOCK;
-  }
+  if (quantity < 0) return STOCK_LEVEL.NEGATIVE_STOCK;
+  if (quantity === 0) return STOCK_LEVEL.OUT_OF_STOCK;
 
-  // Handle zero stock
-  if (quantity === 0) {
-    return STOCK_LEVEL.OUT_OF_STOCK;
-  }
+  // No signal yet (mc=0 → rp=0 and max=0): can't classify CRITICAL/LOW/OVERSTOCKED.
+  const hasReorderSignal = reorderPoint !== null && reorderPoint > 0;
+  const hasMaxSignal = maxQuantity !== null && maxQuantity > 0;
+  if (!hasReorderSignal && !hasMaxSignal) return STOCK_LEVEL.OPTIMAL;
 
-  // If no reorder point is configured, we can't calculate thresholds
-  if (reorderPoint === null) {
-    return STOCK_LEVEL.OPTIMAL;
-  }
-
-  // Adjust thresholds if there's an active order (less urgency)
-  const adjustmentFactor = hasActiveOrder ? 1.5 : 1;
-  const adjustedCriticalThreshold = reorderPoint * 0.5 * adjustmentFactor;
-  const adjustedLowThreshold = reorderPoint * 1.0 * adjustmentFactor;
-
-  // Check critical level: quantity at or below 50% of reorder point
-  if (quantity <= adjustedCriticalThreshold) {
-    return STOCK_LEVEL.CRITICAL;
-  }
-
-  // Check low level: quantity at or below reorder point
-  if (quantity <= adjustedLowThreshold) {
+  if (hasReorderSignal && quantity <= (reorderPoint as number)) return STOCK_LEVEL.CRITICAL;
+  if (
+    hasReorderSignal &&
+    quantity <= (reorderPoint as number) * STOCK_LEVEL_LOW_MULTIPLIER
+  )
     return STOCK_LEVEL.LOW;
-  }
-
-  // Check overstocked
-  if (maxQuantity !== null && quantity > maxQuantity) {
-    return STOCK_LEVEL.OVERSTOCKED;
-  }
-
-  // Otherwise, stock is optimal
+  if (hasMaxSignal && quantity > (maxQuantity as number)) return STOCK_LEVEL.OVERSTOCKED;
   return STOCK_LEVEL.OPTIMAL;
 }
 
@@ -189,11 +182,11 @@ export function getStockLevelMessage(level: STOCK_LEVEL, quantity: number, reord
       return "Item sem estoque. Necessário reposição urgente.";
     case STOCK_LEVEL.CRITICAL:
       return reorderPoint !== null
-        ? `Estoque crítico. Quantidade (${quantity}) está em ou abaixo de 50% do ponto de pedido (${reorderPoint}).`
+        ? `Estoque crítico. Quantidade (${quantity}) está em ou abaixo do ponto de pedido (${reorderPoint}).`
         : `Estoque crítico com ${quantity} unidades.`;
     case STOCK_LEVEL.LOW:
       return reorderPoint !== null
-        ? `Estoque baixo. Quantidade (${quantity}) está em ou abaixo do ponto de pedido (${reorderPoint}).`
+        ? `Estoque baixo. Quantidade (${quantity}) está logo acima do ponto de pedido (${reorderPoint}).`
         : `Estoque baixo com ${quantity} unidades.`;
     case STOCK_LEVEL.OPTIMAL:
       return `Estoque em nível adequado com ${quantity} unidades.`;

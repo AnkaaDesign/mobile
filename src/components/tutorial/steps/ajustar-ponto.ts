@@ -1,0 +1,47 @@
+import type { TutorialStep } from "../engine-types";
+
+export const ajustarPontoSteps: TutorialStep[] = [
+  {
+    id: "pessoal-pontos-adjust-page",
+    kind: "showcase",
+    scene: "ajustar-ponto",
+    highlight: "pessoalPontosAdjustPage",
+    title: "Ajustar ponto",
+    description: "Solicite correções nas suas batidas do dia.",
+    placement: "center",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-adjust-date",
+    kind: "showcase",
+    scene: "ajustar-ponto",
+    highlight: "pessoalPontosAdjustDate",
+    title: "Data do ajuste",
+    description: "Escolha o dia que precisa de correção.",
+    placement: "bottom",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-adjust-slots",
+    kind: "showcase",
+    scene: "ajustar-ponto",
+    sceneState: { ajustarPontoPrefilled: true },
+    highlight: "pessoalPontosAdjustFirstSlot",
+    title: "Pares de batidas",
+    description: "Edite as horas de entrada e saída de cada turno.",
+    placement: "bottom",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-adjust-submit",
+    kind: "interactive",
+    scene: "ajustar-ponto",
+    sceneState: { ajustarPontoPrefilled: true },
+    highlight: "pessoalPontosAdjustSubmit",
+    title: "Solicitar ajuste",
+    description: "Toque para enviar a solicitação ao seu líder.",
+    expectedAction: "tap",
+    placement: "top",
+    pulseTarget: true,
+  },
+];

@@ -9,7 +9,6 @@ import { ThemedView, ThemedText, ErrorScreen, EmptyState } from "@/components/ui
 import { useTheme } from "@/lib/theme";
 import { useMyMissingDays } from "@/hooks/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 
 const formatYmd = (d: Date) => {
   const yyyy = d.getFullYear();
@@ -117,7 +116,6 @@ export default function JustificarAusenciaListScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const nav = useNav();
-  const pageTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyPage);
 
   // Default range: last 90 days through today. Secullum's app uses 30 days by
   // default, but that's too narrow when the user is reviewing a previous bonus
@@ -132,11 +130,7 @@ export default function JustificarAusenciaListScreen() {
 
   const { data: response, isLoading, error, refetch, isFetching } = useMyMissingDays(range);
 
-  // Tutorial mock data resolves synchronously through the api-client
-  // short-circuit — release the navigation overlay immediately in tutorial
-  // mode so the user isn't staring at the spinner until the failsafe fires.
-  const isTutorialActive = useOptionalTutorial()?.isActive ?? false;
-  useScreenReady(isTutorialActive || !isLoading);
+  useScreenReady(!isLoading);
 
   const missingDays = useMemo<MissingDay[]>(() => {
     const apiData = response?.data;
@@ -153,29 +147,6 @@ export default function JustificarAusenciaListScreen() {
   }, [response]);
 
   const groups = useMemo(() => groupMissingDays(missingDays), [missingDays]);
-
-  // First-row target — the tutorial spotlights this row and the user taps
-  // it to open the form. onAction drives the same navigation the row's
-  // TouchableOpacity does, since the spotlight overlay's Pressable swallows
-  // the underlying touch.
-  const firstRowTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosJustifyFirstRow,
-    {
-      onAction: () => {
-        const first = groups[0];
-        if (!first) return;
-        if (first.kind === "single") {
-          nav.push(mobileRoute(`/pessoal/meus-pontos/justificar-ausencia/${first.day.date}`));
-        } else {
-          nav.push(
-            mobileRoute(
-              `/pessoal/meus-pontos/justificar-ausencia/${first.start.date}?end=${first.end.date}`,
-            ),
-          );
-        }
-      },
-    },
-  );
 
   if (error) {
     const msg =
@@ -194,9 +165,6 @@ export default function JustificarAusenciaListScreen() {
     <>
       <Stack.Screen options={{ title: "Justificar Ausência" }} />
       <ThemedView
-        ref={pageTarget.ref as any}
-        onLayout={pageTarget.onLayout}
-        collapsable={false}
         style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}
       >
         {/* Info card */}
@@ -238,12 +206,11 @@ export default function JustificarAusenciaListScreen() {
               />
             )
           }
-          renderItem={({ item: group, index }) => {
+          renderItem={({ item: group }) => {
             const disabled =
               group.kind === "single"
                 ? group.day.existePeriodoEncerrado
                 : group.start.existePeriodoEncerrado;
-            const isFirst = index === 0;
             const onPress = () => {
               if (group.kind === "single") {
                 nav.push(
@@ -258,8 +225,7 @@ export default function JustificarAusenciaListScreen() {
               }
             };
 
-            const row =
-              group.kind === "single" ? (
+            return group.kind === "single" ? (
                 <TouchableOpacity
                   disabled={disabled}
                   onPress={onPress}
@@ -336,17 +302,6 @@ export default function JustificarAusenciaListScreen() {
                   </View>
                 </TouchableOpacity>
               );
-
-            if (!isFirst) return row;
-            return (
-              <View
-                ref={firstRowTarget.ref as any}
-                onLayout={firstRowTarget.onLayout}
-                collapsable={false}
-              >
-                {row}
-              </View>
-            );
           }}
         />
       </ThemedView>

@@ -32,8 +32,6 @@ import {
   useCreateMyJustifyAbsence,
 } from "@/hooks/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
-import { isTutorialRuntimeActive } from "@/components/tutorial/tutorial-runtime-state";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB base64 length cap
 
@@ -158,28 +156,8 @@ export default function JustificarAusenciaFormScreen() {
   const existingQuery = useMyExistingSolicitacao(referenceDateYmd);
   const createMutation = useCreateMyJustifyAbsence();
 
-  const tutorialActive = isTutorialRuntimeActive();
   useScreenReady(
-    tutorialActive || !(justQuery.isLoading || existingQuery.isLoading),
-  );
-
-  const formTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyForm);
-  const ausenciaEmTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyAusenciaEm);
-  const dataTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyData);
-  const periodoAusenciaTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyPeriodoAusencia);
-  const motivoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyMotivo);
-  const observacaoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosJustifyObservacao);
-  const submitTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosJustifySubmit,
-    {
-      onAction: () => {
-        if (!tutorialActive) return;
-        Alert.alert(
-          "Solicitação enviada",
-          "Sua solicitação de justificativa foi enviada para aprovação. (Tutorial: nenhuma alteração real foi feita.)",
-        );
-      },
-    },
+    !(justQuery.isLoading || existingQuery.isLoading),
   );
 
   // ScrollView ref + Motivo measurement → scroll Motivo into view when the
@@ -411,9 +389,6 @@ export default function JustificarAusenciaFormScreen() {
     <>
       <Stack.Screen options={{ title: "Justificar Ausência" }} />
       <ThemedView
-        ref={formTarget.ref as any}
-        onLayout={formTarget.onLayout}
-        collapsable={false}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
         <ScrollView
@@ -447,12 +422,7 @@ export default function JustificarAusenciaFormScreen() {
           )}
 
           {/* Ausência em — top-level mode selector. */}
-          <View
-            ref={ausenciaEmTarget.ref as any}
-            onLayout={ausenciaEmTarget.onLayout}
-            collapsable={false}
-            style={styles.field}
-          >
+          <View style={styles.field}>
             <ThemedText style={[styles.label, { color: colors.primary }]}>Ausência em</ThemedText>
             <Combobox
               options={AUSENCIA_EM_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -469,12 +439,7 @@ export default function JustificarAusenciaFormScreen() {
           {ausenciaEm === "specific" ? (
             <>
               {/* Data — free selection */}
-              <View
-                ref={dataTarget.ref as any}
-                onLayout={dataTarget.onLayout}
-                collapsable={false}
-                style={styles.field}
-              >
+              <View style={styles.field}>
                 <ThemedText style={[styles.label, { color: colors.primary }]}>Data</ThemedText>
                 <TouchableOpacity
                   activeOpacity={0.7}
@@ -493,12 +458,7 @@ export default function JustificarAusenciaFormScreen() {
 
               {/* Período da Ausência — combobox (Dia Inteiro / P1/P2/P3 /
                   Período Específico). Only shown in Dia Específico mode. */}
-              <View
-                ref={periodoAusenciaTarget.ref as any}
-                onLayout={periodoAusenciaTarget.onLayout}
-                collapsable={false}
-                style={styles.field}
-              >
+              <View style={styles.field}>
                 <ThemedText style={[styles.label, { color: colors.primary }]}>
                   Período da Ausência
                 </ThemedText>
@@ -573,12 +533,7 @@ export default function JustificarAusenciaFormScreen() {
 
           {/* Motivo */}
           <View
-            ref={(node) => {
-              motivoRowRef.current = node;
-              (motivoTarget.ref as any).current = node;
-            }}
-            onLayout={motivoTarget.onLayout}
-            collapsable={false}
+            ref={motivoRowRef}
             style={styles.field}
           >
             <ThemedText style={[styles.label, { color: colors.primary }]}>Motivo</ThemedText>
@@ -632,12 +587,7 @@ export default function JustificarAusenciaFormScreen() {
           )}
 
           {/* Observação */}
-          <View
-            ref={observacaoTarget.ref as any}
-            onLayout={observacaoTarget.onLayout}
-            collapsable={false}
-            style={styles.field}
-          >
+          <View style={styles.field}>
             <ThemedText style={[styles.label, { color: colors.primary }]}>Observação</ThemedText>
             <Textarea
               value={observacoes}
@@ -652,11 +602,7 @@ export default function JustificarAusenciaFormScreen() {
         {/* Standard form footer — same component used across the app.
             FormActionBar handles safe-area inset internally; don't add
             extra paddingBottom or it floats too high above the home bar. */}
-        <View
-          ref={submitTarget.ref as any}
-          onLayout={submitTarget.onLayout}
-          collapsable={false}
-        >
+        <View>
           <FormActionBar
             onCancel={() => nav.goBack()}
             onSubmit={handleSubmit}

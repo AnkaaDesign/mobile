@@ -46,7 +46,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
   type ComponentProps,
 } from "react";
 import { View } from "react-native";
@@ -65,12 +64,6 @@ import { shadow } from "@/constants/design-system";
 import { WidgetTile } from "./widget-tile";
 import { WIDGET_ROW_MAX_HEIGHT } from "../types";
 import type { WidgetInstance, WidgetRows, WidgetSpan } from "../types";
-import {
-  useOptionalTutorial,
-  useOptionalTutorialActions,
-  getMeasureTick as getTutorialMeasureTick,
-  subscribeMeasureTick as subscribeTutorialMeasureTick,
-} from "@/components/tutorial";
 
 function clampSpan(span: WidgetSpan | number): WidgetSpan {
   if (span <= 1) return 1;
@@ -195,18 +188,7 @@ interface SortableGridProps extends TileForwardProps {
   onResize?: (instanceId: string) => void;
   onResetConfig?: (instanceId: string) => void;
   restoredInstanceIds?: ReadonlySet<string>;
-  /** Tutorial: id to register the FIRST tile's ⋮ overflow button under
-   *  (e.g. TUTORIAL_TARGETS.homeWidgetMoreActions). Wired by the host. */
-  firstTileMoreActionsTutorialTargetId?: string;
-  /** Tutorial: id to register the LAST tile under
-   *  (e.g. TUTORIAL_TARGETS.homeFirstWidgetTile, semantically "the newly
-   *  added widget" which lands at the end of the list). */
-  lastTileTutorialTargetId?: string;
-  /** Fires when a tile drag begins (true) and ends/cancels (false). The
-   *  parent screen wires this to ScrollView.scrollEnabled so the page
-   *  scroll is disabled while a widget is being dragged — without this the
-   *  parent ScrollView steals the touch before the long-press threshold
-   *  fires (the user-reported "page scrolls instead of dragging" bug). */
+  /** Fires when a tile drag begins (true) and ends/cancels (false). */
   onDragActiveChange?: (active: boolean) => void;
 }
 
@@ -223,8 +205,6 @@ export function SortableGrid({
   onResetConfig,
   restoredInstanceIds,
   onDragActiveChange,
-  firstTileMoreActionsTutorialTargetId,
-  lastTileTutorialTargetId,
   ...rest
 }: SortableGridProps) {
   // Local order shadows the parent's items for instant gesture feedback. The
@@ -306,76 +286,17 @@ export function SortableGrid({
     onDragActiveChange?.(false);
   }, [onReorder, onDragActiveChange]);
 
-  // Capture the SortableGrid container's window position so tiles (which
-  // are absolute-positioned inside it and animate via transforms) can
-  // register tutorial target rects in window coordinates rather than
-  // relying on measureInWindow through a transformed Animated.View.
-  const tutorial = useOptionalTutorial();
-  // The provider's composed context exposes `measureTick` as a backwards-
-  // compatibility shim that is always 0 (tick lives in the external store
-  // now to avoid re-rendering every consumer). Subscribe directly so the
-  // measureContainer effect re-fires on every bump from the engine cascade,
-  // AppState foreground, and scroll-driven bumps — without that this grid
-  // was capturing stale window offsets after scrollToEnd on home-widget-added.
-  const measureTick = useSyncExternalStore(
-    subscribeTutorialMeasureTick,
-    getTutorialMeasureTick,
-    () => 0,
-  );
-  const containerRef = useRef<View | null>(null);
-  const [containerOffset, setContainerOffset] = useState<{ x: number; y: number } | null>(null);
-  const measureContainer = useCallback(() => {
-    containerRef.current?.measureInWindow((x, y) => {
-      setContainerOffset((prev) =>
-        prev && prev.x === x && prev.y === y ? prev : { x, y },
-      );
-    });
-  }, []);
-  // Re-measure on (a) every tutorial measure-tick (drawer events / explicit
-  // bumps), and (b) every active step change. Catches the case where the
-  // container shifted after its initial onLayout — page scroll, parent
-  // animation, layout reflow from a new widget arriving — and the
-  // previously captured offset would otherwise point the registered tile
-  // rect at stale coordinates.
-  const activeStepId = tutorial?.currentStep?.id ?? null;
-  useEffect(() => {
-    if (!tutorial?.isActive) return;
-    measureContainer();
-    // Settling RAF — handles the case where the tutorial step transitions
-    // mid-layout and our first measurement caught an interim frame.
-    const t1 = setTimeout(measureContainer, 120);
-    const t2 = setTimeout(measureContainer, 360);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [measureTick, activeStepId, order.length, tutorial?.isActive, measureContainer]);
-
-  const lastInstanceId = order.length > 0 ? order[order.length - 1].instanceId : null;
-  const firstInstanceId = order.length > 0 ? order[0].instanceId : null;
-
   return (
     <View
-      ref={containerRef}
       style={{ position: "relative", width: "100%", height: totalHeight }}
       onLayout={(e) => {
         const w = e.nativeEvent.layout.width;
         if (w !== containerWidth) setContainerWidth(w);
-        measureContainer();
       }}
     >
       {order.map((instance) => {
         const rect = rects.get(instance.instanceId);
         if (!rect) return null;
-        const tileTutorialTargetId =
-          lastTileTutorialTargetId && instance.instanceId === lastInstanceId
-            ? lastTileTutorialTargetId
-            : undefined;
-        const moreActionsTutorialTargetId =
-          firstTileMoreActionsTutorialTargetId &&
-          instance.instanceId === firstInstanceId
-            ? firstTileMoreActionsTutorialTargetId
-            : undefined;
         return (
           <SortableTile
             key={instance.instanceId}
@@ -395,9 +316,6 @@ export function SortableGrid({
                 ? () => onResetConfig(instance.instanceId)
                 : undefined
             }
-            tileTutorialTargetId={tileTutorialTargetId}
-            moreActionsTutorialTargetId={moreActionsTutorialTargetId}
-            containerOffset={containerOffset}
             {...rest}
           />
         );
@@ -414,14 +332,6 @@ interface SortableTileProps {
   onDragStart: () => void;
   onCommit: () => void;
   onRemove: () => void;
-  /** Tutorial: when set, this tile's rect is registered with the engine
-   *  under this id. Used by the home-widget-added step. We register via
-   *  the rect prop (window coords = containerOffset + rect.x/y) rather
-   *  than measureInWindow on the Animated.View, because RN's measure can
-   *  be unreliable through transformed parents. */
-  tileTutorialTargetId?: string;
-  moreActionsTutorialTargetId?: string;
-  containerOffset?: { x: number; y: number } | null;
   onConfigure?: (instanceId: string) => void;
   onMoreActions?: (instanceId: string) => void;
   onResize?: (instanceId: string) => void;
@@ -442,66 +352,7 @@ function SortableTile({
   onResize,
   wasConfigRestored,
   onResetConfig,
-  tileTutorialTargetId,
-  moreActionsTutorialTargetId,
-  containerOffset,
 }: SortableTileProps) {
-  // Register the tile's rect manually with the tutorial engine when this
-  // tile is the active tutorial target. We use the rect prop (computed by
-  // the parent grid) + the container's window offset rather than
-  // measureInWindow because transformed Animated.Views can report stale
-  // frames during ongoing spring animations.
-  //
-  // Subscribes via `useOptionalTutorialActions` (stable identity, no
-  // re-renders on phase/rect/awaiting churn). The previous use of
-  // `useOptionalTutorial` re-rendered every tile on every tutorial state
-  // mutation — at 8 tiles that's an 8× render fan-out per setState.
-  const tutorialActions = useOptionalTutorialActions();
-  const registerTarget = tutorialActions?.registerTarget;
-  const unregisterTarget = tutorialActions?.unregisterTarget;
-  // Bump tick from the external store — re-fires the registration effect
-  // on every engine bump (cascade, AppState foreground, scroll-driven), so
-  // a stale containerOffset captured at step entry self-heals once the
-  // scrolling/layout has actually settled.
-  //
-  // Gated on `tileTutorialTargetId` so non-active tiles don't re-render
-  // on every bump. Without this gate, all 8 tiles would re-render on
-  // every measureTick bump (cascade fires ~7×/step + scroll bumps), and
-  // the registration effect would no-op early for inactive tiles anyway.
-  const hasTutorialTarget = !!tileTutorialTargetId;
-  const measureTick = useSyncExternalStore(
-    useCallback(
-      (cb) => (hasTutorialTarget ? subscribeTutorialMeasureTick(cb) : () => {}),
-      [hasTutorialTarget],
-    ),
-    useCallback(
-      () => (hasTutorialTarget ? getTutorialMeasureTick() : 0),
-      [hasTutorialTarget],
-    ),
-    () => 0,
-  );
-  useEffect(() => {
-    if (!tileTutorialTargetId || !registerTarget || !containerOffset) return;
-    registerTarget(tileTutorialTargetId, {
-      x: containerOffset.x + rect.x,
-      y: containerOffset.y + rect.y,
-      width: rect.w,
-      height: rect.h,
-    });
-    return () => unregisterTarget?.(tileTutorialTargetId);
-  }, [
-    tileTutorialTargetId,
-    registerTarget,
-    unregisterTarget,
-    containerOffset?.x,
-    containerOffset?.y,
-    containerOffset,
-    rect.x,
-    rect.y,
-    rect.w,
-    rect.h,
-    measureTick,
-  ]);
   // Home rect mirrored into shared values so the gesture worklet always
   // sees the latest target (the rect prop changes when a sibling swaps).
   const homeX = useSharedValue(rect.x);
@@ -666,7 +517,6 @@ function SortableTile({
         onMoreActions={onMoreActions}
         onResize={onResize}
         dragGesture={pan}
-        moreActionsTutorialTargetId={moreActionsTutorialTargetId}
       />
     </Animated.View>
   );

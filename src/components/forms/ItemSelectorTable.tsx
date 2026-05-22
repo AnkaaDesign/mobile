@@ -219,7 +219,8 @@ const StockLevelIcon = memo(function StockLevelIcon({
     quantity,
     item.reorderPoint || null,
     item.maxQuantity || null,
-    false
+    false,
+    item.category?.type ?? null
   );
 
   const getColor = () => {

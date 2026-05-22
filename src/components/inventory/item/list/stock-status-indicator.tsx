@@ -1,5 +1,5 @@
 import { View, StyleSheet } from "react-native";
-import { IconAlertTriangleFilled } from "@tabler/icons-react-native";
+import { IconAlertTriangleFilled, IconClockFilled } from "@tabler/icons-react-native";
 import type { Item } from '../../../../types';
 
 import { determineStockLevel } from "@/utils";
@@ -13,8 +13,16 @@ interface StockStatusIndicatorProps {
 export function StockStatusIndicator({ item, hasActiveOrder = false }: StockStatusIndicatorProps) {
   const quantity = item.quantity || 0;
 
-  // Determine stock level using the utility function
-  const stockLevel = determineStockLevel(quantity, item.reorderPoint || null, item.maxQuantity || null, hasActiveOrder);
+  // Determine stock level using the utility function.
+  // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
+  // overlay only (the new util ignores it anyway).
+  const stockLevel = determineStockLevel(
+    quantity,
+    item.reorderPoint || null,
+    item.maxQuantity || null,
+    false,
+    item.category?.type ?? null,
+  );
 
   // Get the appropriate color for the stock level (matching web exactly)
   const getColor = () => {
@@ -39,15 +47,28 @@ export function StockStatusIndicator({ item, hasActiveOrder = false }: StockStat
   const color = getColor();
 
   return (
-    <View style={styles.triangleIcon}>
+    <View style={styles.container}>
       <IconAlertTriangleFilled size={16} color={color} />
+      {hasActiveOrder && (
+        <View style={styles.orderOverlay}>
+          <IconClockFilled size={10} color="#3b82f6" />
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  triangleIcon: {
+  container: {
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
+  },
+  orderOverlay: {
+    position: "absolute",
+    bottom: -3,
+    right: -3,
+    backgroundColor: "#fff",
+    borderRadius: 6,
   },
 });

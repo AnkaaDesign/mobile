@@ -14,6 +14,7 @@ import { spacing, fontSize, fontWeight } from "@/constants/design-system";
 import {
   ActivitiesTable,
   BorrowsTable,
+  CalculationBreakdownCard,
   MetricsCard,
   OrdersTable,
   PpeInfoCard,
@@ -113,6 +114,7 @@ export default function ItemDetailScreen() {
         <View style={styles.body}>
           <SpecificationsCard item={item} />
           <MetricsCard item={item} />
+          <CalculationBreakdownCard item={item} />
           {item.ppeType && <PpeInfoCard item={item} />}
           <RelatedItemsCard item={item} />
 

@@ -1,6 +1,13 @@
-import { Layout } from '@/components/list/Layout'
-import { orderSchedulesListConfig } from '@/config/list/inventory/order-schedules'
+import { PrivilegeGate } from "@/components/auth/privilege-gate";
+import { AutoOrderList } from "@/components/inventory/auto-order";
+import { SECTOR_PRIVILEGES } from "@/constants";
 
 export default function AutomaticOrderListScreen() {
-  return <Layout config={orderSchedulesListConfig} />
+  return (
+    <PrivilegeGate
+      required={{ any: [SECTOR_PRIVILEGES.WAREHOUSE, SECTOR_PRIVILEGES.ADMIN] }}
+    >
+      <AutoOrderList />
+    </PrivilegeGate>
+  );
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -28,9 +28,7 @@ import {
   useInclusaoPontoConfig,
   useOpenInclusaoPontoComprovante,
 } from "@/hooks/secullum";
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { isTutorialRuntimeActive } from "@/components/tutorial/tutorial-runtime-state";
 
 type Pendencia = {
   id: number;
@@ -141,41 +139,7 @@ export default function IncluirPontoListScreen() {
   const openComprovante = useOpenInclusaoPontoComprovante();
   const [loadingComprovanteId, setLoadingComprovanteId] = useState<number | null>(null);
 
-  const pageTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosIncluirPage);
-  const ctaTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosIncluirCta);
-  const listCardTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosIncluirListCard);
-  // The expand action runs inline (no navigation involved), so onAction
-  // toggles the first row open — exactly what tapping the underlying
-  // TouchableOpacity would do.
-  const firstRowExpandIdRef = useRef<number | null>(null);
-  const firstRowTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosIncluirFirstRow,
-    {
-      onAction: () => {
-        const id = firstRowExpandIdRef.current;
-        if (id == null) return;
-        setExpanded((prev) => (prev === id ? null : id));
-      },
-    },
-  );
-  const tutorialActive = isTutorialRuntimeActive();
-  useScreenReady(tutorialActive || !pendenciasQuery.isLoading);
-
-  // Jump-replay handler for the row-details narration step (which assumes
-  // a row is already expanded). Idempotent: re-firing while already
-  // expanded is a no-op.
-  const tutorial = useOptionalTutorial();
-  const registerJumpHandler = tutorial?.registerJumpHandler;
-  useEffect(() => {
-    if (!registerJumpHandler) return;
-    registerJumpHandler("incluir-ponto-expand-first-row", async () => {
-      const id = firstRowExpandIdRef.current;
-      if (id == null) return;
-      setExpanded((prev) => (prev === id ? prev : id));
-      await new Promise<void>((r) => setTimeout(r, 160));
-    });
-    return () => registerJumpHandler("incluir-ponto-expand-first-row", null);
-  }, [registerJumpHandler]);
+  useScreenReady(!pendenciasQuery.isLoading);
 
   const isLoading = pendenciasQuery.isLoading;
   const responseOk = pendenciasQuery.data?.success ?? false;
@@ -226,9 +190,6 @@ export default function IncluirPontoListScreen() {
 
   return (
     <ThemedView
-      ref={pageTarget.ref as any}
-      onLayout={pageTarget.onLayout}
-      collapsable={false}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Stack.Screen options={{ title: "Incluir Ponto", headerTitle: "Incluir Ponto" }} />
@@ -245,7 +206,7 @@ export default function IncluirPontoListScreen() {
         }
       >
         {/* Primary CTA */}
-        <View ref={ctaTarget.ref} onLayout={ctaTarget.onLayout} collapsable={false}>
+        <View>
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={goToCapture}
@@ -262,9 +223,6 @@ export default function IncluirPontoListScreen() {
 
         {/* List card */}
         <View
-          ref={listCardTarget.ref as any}
-          onLayout={listCardTarget.onLayout}
-          collapsable={false}
           style={[
             styles.card,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -301,16 +259,9 @@ export default function IncluirPontoListScreen() {
               const showDocCol = canOpenDoc || showingPdfLoader;
               const label = statusLabel(p);
               const isLongLabel = label.length > 14;
-              const isFirstRow = idx === 0;
-              if (isFirstRow) {
-                firstRowExpandIdRef.current = p.id;
-              }
               return (
                 <View
                   key={p.id}
-                  ref={isFirstRow ? (firstRowTarget.ref as any) : undefined}
-                  onLayout={isFirstRow ? firstRowTarget.onLayout : undefined}
-                  collapsable={false}
                 >
                   <View
                     style={[

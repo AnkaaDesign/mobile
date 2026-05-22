@@ -94,11 +94,13 @@ export interface BonusCalculationResult {
 
 export const bonusService = {
   // Standard CRUD operations using proper types
-  getMany: (params?: BonusGetManyParamsType) =>
-    apiClient.get<BonusGetManyResponseType>('/bonus', { params }),
+  getMany: async (params?: BonusGetManyParamsType) => {
+    return apiClient.get<BonusGetManyResponseType>('/bonus', { params });
+  },
 
-  getById: (id: string, params?: BonusGetByIdParams) =>
-    apiClient.get<Bonus>(`/bonus/${id}`, { params }),
+  getById: async (id: string, params?: BonusGetByIdParams) => {
+    return apiClient.get<Bonus>(`/bonus/${id}`, { params });
+  },
 
   create: (data: BonusCreateFormData) =>
     apiClient.post<Bonus>('/bonus', data),

@@ -17,7 +17,6 @@ import { DrawerModeProvider, useDrawerMode } from "@/contexts/drawer-mode-contex
 // `useNav` doesn't expose either (foundation TODO).
 import { useNavigationLoading } from "@/contexts/navigation-loading-context";
 import { useUnreadNotificationsCount } from "@/hooks/use-unread-notifications-count";
-import { useTutorialTarget, useOptionalTutorial, TUTORIAL_TARGETS } from "@/components/tutorial";
 import * as Haptics from 'expo-haptics';
 import { authRoute } from "@/components/auth/auth-routes";
 import { routes } from "@/constants/routes";
@@ -671,21 +670,6 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
   // Use route.name from screenOptions — synchronously correct, not stale like pathname
   const showBackButton = routeName !== 'inicio';
 
-  const { ref: backRef, onLayout: backOnLayout, onPress: backOnPress } = useTutorialTarget(
-    TUTORIAL_TARGETS.chromeHeaderBack,
-    {
-      // Drives the actual back navigation when the tutorial's spotlight
-      // tap-capture fires — without this, the spotlight tap only fires
-      // `notifyAction("tap")` (advancing the tutorial) but the user stays
-      // on the current page, so the next step's "you're on the previous
-      // screen" assumption breaks.
-      onAction: () => {
-        if (!isNavigatingRef.current) startNavigation();
-        requestAnimationFrame(() => goBack());
-      },
-    },
-  );
-
   if (!showBackButton) {
     // Add spacing even when there's no back button for consistency
     return <View style={{ width: Platform.OS === 'ios' ? 24 : 20 }} />;
@@ -693,15 +677,10 @@ const HeaderBackButton = React.memo(function HeaderBackButton({
 
   return (
     <View
-      ref={backRef}
-      onLayout={backOnLayout}
       style={{ paddingLeft: Platform.OS === 'ios' ? 12 : 8 }}
     >
       <Pressable
         onPress={() => {
-          // Notify tutorial engine of tap on this target
-          backOnPress();
-
           // Haptic feedback for immediate tactile response
           if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -754,49 +733,19 @@ const HeaderRightButtons = React.memo(function HeaderRightButtons({
   openMenuDrawer,
   navigation,
 }: HeaderRightButtonsProps) {
-  const { ref: drawerToggleRef, onLayout: drawerToggleOnLayout } = useTutorialTarget(
-    TUTORIAL_TARGETS.chromeDrawerToggle,
-    {
-      // Drives the underlying drawer open from the tutorial overlay's
-      // tap-capture so the step works even when the touch can't pass
-      // through to the header button.
-      onAction: () => openMenuDrawer(navigation),
-    },
-  );
-  const { ref: notifBellRef, onLayout: notifBellOnLayout, onPress: notifBellOnPress } = useTutorialTarget(
-    TUTORIAL_TARGETS.chromeNotificationsBell,
-    {
-      // Open the notifications drawer from the tutorial spotlight's
-      // tap-capture so the step works even when the dim overlay would
-      // otherwise swallow the touch on the real bell icon.
-      onAction: () => openNotificationsDrawer(navigation),
-    },
-  );
-  // Use the optional tutorial hook so this header still works when the
-  // TutorialProvider is not mounted (e.g. login screen, error states).
-  const tutorial = useOptionalTutorial();
   return (
     <View style={styles.headerRight}>
-      <View ref={notifBellRef} onLayout={notifBellOnLayout}>
+      <View>
         <NotificationBell
           color={headerText}
           onPress={() => {
-            notifBellOnPress();
             openNotificationsDrawer(navigation);
           }}
         />
       </View>
-      <View ref={drawerToggleRef} onLayout={drawerToggleOnLayout}>
+      <View>
         <Pressable
           onPress={() => {
-            // Notify the tutorial engine that the menu drawer is being opened.
-            // The drawer is a react-navigation drawer (DrawerActions.openDrawer)
-            // so the engine's "state" listener should also fire — but we forward
-            // the action explicitly to be robust against the listener attaching
-            // to a navigator that doesn't see the drawer's state changes.
-            tutorial?.notifyAction("drawer-open", {
-              targetId: TUTORIAL_TARGETS.chromeDrawerToggle,
-            });
             openMenuDrawer(navigation);
           }}
           style={({ pressed }) => [

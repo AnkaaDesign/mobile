@@ -1,0 +1,45 @@
+import type { TutorialStep } from "../engine-types";
+
+export const meusPontosSteps: TutorialStep[] = [
+  {
+    id: "pessoal-pontos-overview",
+    kind: "showcase",
+    scene: "meus-pontos",
+    highlight: "pessoalPontos",
+    title: "Espelho de ponto",
+    description: "Aqui você vê todas as batidas do mês.",
+    placement: "center",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-month-selector",
+    kind: "showcase",
+    scene: "meus-pontos",
+    highlight: "pessoalPontosMonthSelector",
+    title: "Seletor de mês",
+    description: "Navegue entre meses pelas setas.",
+    placement: "bottom",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-column-toggle",
+    kind: "showcase",
+    scene: "meus-pontos",
+    highlight: "pessoalPontosColumnToggle",
+    title: "Visibilidade de colunas",
+    description: "Escolha quais colunas exibir na tabela.",
+    placement: "bottom",
+    autoAdvanceMs: 3000,
+  },
+  {
+    id: "pessoal-pontos-justify-tap",
+    kind: "interactive",
+    scene: "meus-pontos",
+    highlight: "pessoalPontosJustifyButton",
+    title: "Justificar ausência",
+    description: "Toque para registrar uma justificativa de falta.",
+    expectedAction: "tap",
+    placement: "bottom",
+    pulseTarget: true,
+  },
+];

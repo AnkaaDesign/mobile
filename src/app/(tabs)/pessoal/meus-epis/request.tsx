@@ -22,12 +22,10 @@ import { useTheme } from "@/lib/theme";
 
 import { FormScreen } from "@/components/screens/form-screen";
 import { useFormFlow } from "@/hooks/use-form-flow";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 export default function RequestPPEScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const requestFormTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalEpisRequestForm);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [stockAvailable, setStockAvailable] = useState<number | null>(null);
   const loadedItemsRef = useRef<Map<string, Item>>(new Map());
@@ -201,12 +199,7 @@ export default function RequestPPEScreen() {
       submittingLabel="Enviando..."
       hideHeader
     >
-      <View
-        ref={requestFormTarget.ref}
-        onLayout={requestFormTarget.onLayout}
-        collapsable={false}
-        style={{ gap: 16 }}
-      >
+      <View style={{ gap: 16 }}>
         <Controller
           control={form.control}
           name="itemId"

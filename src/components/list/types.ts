@@ -364,7 +364,6 @@ export interface ListConfig<T extends { id: string }> {
       route: string
       icon?: string
       canCreate?: (user: any) => boolean
-      tutorialTargetId?: string
     }
     bulk?: BulkAction[]
     toolbar?: Array<{

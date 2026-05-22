@@ -8,7 +8,6 @@ import { View, StyleSheet, ActivityIndicator, Pressable, BackHandler } from 'rea
 import { useTheme } from '@/lib/theme';
 import { router, usePathname } from 'expo-router';
 import { useNavigationHistory } from '@/contexts/navigation-history-context';
-import { isTutorialRuntimeActive } from '@/components/tutorial/tutorial-runtime-state';
 
 interface NavigationLoadingContextType {
   /** Ref for synchronous navigation-in-progress checks (no re-renders) */
@@ -83,16 +82,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     // Set ref immediately for synchronous double-click guard
     isNavigatingRef.current = true;
     overlayClaimedRef.current = false; // Reset claim for new navigation
-    // Tutorial-mode bypass: never show the dim/spinner overlay while the
-    // tutorial is running. Mocked screens render synchronously, so the
-    // overlay would only flash on every step transition; worse, a screen
-    // whose `useScreenReady(false)` claims it can permanently trap the
-    // user after a dev-picker jump. Keeping the ref-side state (so the
-    // double-click guard still works) is fine — just don't render the
-    // overlay or arm its timers.
-    if (!isTutorialRuntimeActive()) {
-      setOverlayVisible(true);
-    }
+    setOverlayVisible(true);
 
     // Clear any existing timeout
     if (timeoutRef.current) {
@@ -184,16 +174,7 @@ export function NavigationLoadingProvider({ children }: { children: React.ReactN
     options?: { timeout?: number }
   ) => {
     // Use ref for instant synchronous check — no stale closure issues.
-    // Tutorial mode bypass: the visual overlay is suppressed (line 93) but
-    // `showOverlay` still flips `isNavigatingRef.current = true`. If the
-    // auto-hide effect later skips (because `overlayClaimedRef` latched
-    // from some screen's `useScreenReady(false)`), the ref stays true
-    // forever — and every subsequent tap on a tutorial-target's button
-    // (Justificar, Ajustar, the pessoal grid cards) silently drops here
-    // and the user can't navigate. Tutorial flows are guarded by the
-    // tutorial overlay's own double-tap protection (spotlight Pressable
-    // is single-fire per step), so skipping this guard is safe.
-    if (isNavigatingRef.current && !isTutorialRuntimeActive()) {
+    if (isNavigatingRef.current) {
       return;
     }
 

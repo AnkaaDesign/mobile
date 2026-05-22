@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback, useState, useEffect, useRef } from 'react'
+import React, { memo, useMemo, useCallback, useState, useEffect } from 'react'
 import {
   View,
   SectionList,
@@ -34,8 +34,6 @@ import { SectorSelectModal } from '@/components/production/task/modals'
 // CopyFromTaskModal removed - copy from task now uses page navigation
 import { AddArtworksModal } from './add-artworks-modal'
 import { useTable } from '@/hooks/list/useTable'
-import { useTutorialTarget, TUTORIAL_TARGETS } from '@/components/tutorial'
-import { isTutorialRuntimeActive } from '@/components/tutorial/tutorial-runtime-state'
 import type { ListConfig, TableColumn, SortConfig, FilterValue, TableAction, RenderContext } from '@/components/list/types'
 import type { Task, Sector } from '@/types'
 
@@ -66,25 +64,6 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
 
   // Track page access for recents/most accessed
   usePageTracker({ title: config.title })
-
-  // Tutorial targets — wired with the REAL ids unconditionally. The
-  // previous conditional-id pattern toggled ids on every pathname change,
-  // forcing the hook to unregister/re-register on transitions and racing
-  // against the engine's "phase: active" lookup at step entry. Since the
-  // agenda screen uses a separate route, only ONE TaskScheduleLayout is
-  // ever mounted at a time, so registering the same ids unconditionally
-  // is safe — the cronograma's refs are the only ones that ever resolve.
-  const isCronogramaPath = pathname?.includes('cronograma') ?? false
-  const firstTaskActionRef = useRef<(() => void) | null>(null)
-  const cronogramaSearchTarget = useTutorialTarget(TUTORIAL_TARGETS.cronogramaSearch)
-  const cronogramaFiltersTarget = useTutorialTarget(TUTORIAL_TARGETS.cronogramaFilters)
-  const cronogramaFirstTaskTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.cronogramaFirstTask,
-    { onAction: () => firstTaskActionRef.current?.() }
-  )
-  const cronogramaColumnVisibilityTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.cronogramaColumnVisibility
-  )
 
   // ============================================================================
   // State
@@ -626,8 +605,6 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     }
   }, [refreshTasks])
 
-  // Keep the tutorial first-task action pointed at the latest first row + handler.
-  // (handleRowPress is defined right below; sections is defined further up.)
   const handleRowPress = useCallback((item: Task) => {
     // Prevent double-clicks while navigating
     if (isNavigatingRef.current) return
@@ -636,21 +613,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     perfLog.navigationClick('TaskScheduleLayout', 'ScheduleDetailsScreen', item.id)
     perfLog.mark(`Row pressed: ${item.name || item.id}`)
 
-    // Tutorial bypass — during the demo flow the detail page is fed entirely
-    // from in-memory mocks (no real network roundtrip), so the
-    // navigation-loading overlay just sits on top blocking the view for its
-    // 1.5–3s timeout window. Skip the overlay entirely and push directly so
-    // the detail screen lands instantly and the tutorial can advance its
-    // spotlight onto the taskHeader card.
-    const inTutorial = isTutorialRuntimeActive()
-
     if (config.table.onRowPress) {
-      if (inTutorial) {
-        config.table.onRowPress!(item, router)
-      } else {
-        startNavigation()
-        requestAnimationFrame(() => config.table.onRowPress!(item, router))
-      }
+      startNavigation()
+      requestAnimationFrame(() => config.table.onRowPress!(item, router))
       return
     }
 
@@ -669,28 +634,13 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     perfLog.mark(`Navigating via action: ${action.key}`)
 
     if (action.onPress) {
-      if (inTutorial) {
-        action.onPress(item, router, {})
-      } else {
-        startNavigation()
-        requestAnimationFrame(() => action!.onPress!(item, router, {}))
-      }
+      startNavigation()
+      requestAnimationFrame(() => action!.onPress!(item, router, {}))
     } else if (action.route) {
       const route = typeof action.route === 'function' ? action.route(item) : action.route
-      if (inTutorial) {
-        router.push(route as any)
-      } else {
-        pushWithLoading(route)
-      }
+      pushWithLoading(route)
     }
   }, [config.table.actions, config.table.onRowPress, router, startNavigation, pushWithLoading])
-
-  // Tutorial: keep the registered first-task action in sync with the latest
-  // sections + handler so the overlay's spotlight tap navigates correctly.
-  firstTaskActionRef.current = () => {
-    const firstTask = sections[0]?.data?.[0] as Task | undefined
-    if (firstTask) handleRowPress(firstTask)
-  }
 
   const handleCreate = useCallback(() => {
     if (config.actions?.create?.route) {
@@ -763,12 +713,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
     <ThemedView style={styles.container}>
       {/* Header with Search and Actions — always rendered to preserve focus */}
       <View style={styles.header}>
-        <View
-          ref={cronogramaSearchTarget.ref}
-          onLayout={cronogramaSearchTarget.onLayout}
-          collapsable={false}
-          style={styles.searchContainer}
-        >
+        <View style={styles.searchContainer}>
           <Search
             value={displaySearchText}
             onChangeText={handleSearchTextChange}
@@ -799,11 +744,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
             </TouchableOpacity>
           )}
 
-          <View
-            ref={cronogramaColumnVisibilityTarget.ref}
-            onLayout={cronogramaColumnVisibilityTarget.onLayout}
-            collapsable={false}
-          >
+          <View>
             <ColumnVisibilityButton
               columns={config.table.columns}
               visibleColumns={visibleColumns}
@@ -812,14 +753,9 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
           </View>
 
           {config.filters && (
-            <View
-              ref={cronogramaFiltersTarget.ref}
-              onLayout={cronogramaFiltersTarget.onLayout}
-              collapsable={false}
-            >
+            <View>
               <TouchableOpacity
                 onPress={() => {
-                  if (isCronogramaPath) cronogramaFiltersTarget.onPress()
                   setFiltersOpen(true)
                 }}
                 style={[
@@ -1027,21 +963,8 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                 user: user ?? undefined,
                 rowIndex: index,
               }
-              // Tutorial: spotlight first task of the very first section on cronograma path
-              const isFirstTask = isCronogramaPath && index === 0 && sections[0]?.sectorId === section.sectorId
-              const tutorialRef = isFirstTask ? cronogramaFirstTaskTarget.ref : undefined
-              const tutorialOnLayout = isFirstTask ? cronogramaFirstTaskTarget.onLayout : undefined
-              const handleRowPressWithTutorial = isFirstTask
-                ? (i: Task) => {
-                    cronogramaFirstTaskTarget.onPress()
-                    handleRowPress(i)
-                  }
-                : handleRowPress
               return (
                 <View
-                  ref={tutorialRef}
-                  onLayout={tutorialOnLayout}
-                  collapsable={isFirstTask ? false : undefined}
                   style={[styles.rowContainer, { borderColor: colors.border }]}
                 >
                   <TableRow
@@ -1054,7 +977,7 @@ export const TaskScheduleLayout = memo(function TaskScheduleLayout({
                       onToggle: handleToggleSelection,
                     }}
                     actions={filteredTableActions as any}
-                    onPress={handleRowPressWithTutorial as any}
+                    onPress={handleRowPress as any}
                     getRowStyle={config.table.getRowStyle as any}
                     renderContext={renderContext}
                   />

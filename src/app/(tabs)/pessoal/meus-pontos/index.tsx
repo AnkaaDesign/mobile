@@ -12,7 +12,6 @@ import { getBonusPeriod } from "@/utils";
 import { CalculationsTable, CalculationsColumnDrawer } from "@/components/personal/calculations";
 import type { CalculationRow } from "@/types/secullum";
 import { useScreenReady } from '@/hooks/use-screen-ready';
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 
 const COLUMN_DEFINITIONS = [
   { key: "date", label: "Data" },
@@ -57,42 +56,6 @@ export default function MeusPontosScreen() {
   const nav = useNav();
   const [refreshing, setRefreshing] = useState(false);
   const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
-  const pontosTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontos);
-  const monthSelectorTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosMonthSelector);
-  const columnToggleTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosColumnToggle,
-    {
-      onAction: () => setIsColumnPanelOpen(true),
-    },
-  );
-  // onAction makes the tutorial spotlight tap navigate: the overlay's
-  // Pressable swallows the press so the underlying TouchableOpacity's
-  // onPress never fires. Registering onAction lets `invokeTargetAction`
-  // drive the navigation as if the user had tapped the real button.
-  const justifyTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosJustifyButton,
-    {
-      onAction: () =>
-        nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia")),
-    },
-  );
-  const adjustTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosAdjustButton,
-    {
-      onAction: () => nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto")),
-    },
-  );
-  const incluirTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosIncluirButton,
-    {
-      onAction: () =>
-        nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto")),
-    },
-  );
-  const tutorial = useOptionalTutorial();
-  const tutorialIsTargetingPontos =
-    !!tutorial?.isActive &&
-    tutorial?.currentStep?.targetId === TUTORIAL_TARGETS.pessoalPontos;
 
   // Month navigation state (start with current month)
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -124,12 +87,7 @@ export default function MeusPontosScreen() {
     endDate,
   });
 
-  // In tutorial mode the page renders from in-memory mocks — release the
-  // navigation overlay immediately so a slow react-query state transition
-  // doesn't latch `overlayClaimedRef.current` and trap subsequent nav.push
-  // calls (the "infinite loading" the dev step picker was hitting).
-  const isTutorialActive = tutorial?.isActive ?? false;
-  useScreenReady(isTutorialActive || !isLoading);
+  useScreenReady(!isLoading);
 
   // Parse calculation data (same approach as web version)
   const calculations: CalculationRow[] = useMemo(() => {
@@ -224,9 +182,8 @@ export default function MeusPontosScreen() {
   const apiResponse = calculationsData?.data || calculationsData;
   const isNotRegisteredFromResponse = apiResponse && 'notRegistered' in apiResponse && apiResponse.notRegistered === true;
 
-  // Handle API errors — but during tutorial, fall through to render the
-  // header so the spotlight has a target.
-  if ((error || isNotRegisteredFromResponse) && !tutorialIsTargetingPontos) {
+  // Handle API errors
+  if (error || isNotRegisteredFromResponse) {
     const errorMessage = isNotRegisteredFromResponse && apiResponse && 'message' in apiResponse
       ? (apiResponse.message || '')
       : ((error as any)?.response?.data?.message || (error as any)?.message || 'Erro ao carregar seus pontos');
@@ -272,12 +229,9 @@ export default function MeusPontosScreen() {
     <>
       <ThemedView style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
         {/* Header: Month Navigator + Column Button */}
-        <View ref={pontosTarget.ref} onLayout={pontosTarget.onLayout} collapsable={false} style={styles.headerContainer}>
+        <View style={styles.headerContainer}>
           {/* Month Navigator */}
           <View
-            ref={monthSelectorTarget.ref as any}
-            onLayout={monthSelectorTarget.onLayout}
-            collapsable={false}
             style={[styles.monthSelector, { backgroundColor: colors.card, borderColor: colors.border }]}
           >
             <TouchableOpacity
@@ -313,56 +267,48 @@ export default function MeusPontosScreen() {
           </View>
 
           {/* Incluir Ponto shortcut */}
-          <View ref={incluirTarget.ref} onLayout={incluirTarget.onLayout} collapsable={false}>
-            <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() =>
-                nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto"))
-              }
-              accessibilityLabel="Incluir Ponto"
-            >
-              <IconMapPinPlus size={20} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() =>
+              nav.push(mobileRoute("/pessoal/meus-pontos/incluir-ponto"))
+            }
+            accessibilityLabel="Incluir Ponto"
+          >
+            <IconMapPinPlus size={20} color={colors.foreground} />
+          </TouchableOpacity>
 
           {/* Justificar Ausência shortcut */}
-          <View ref={justifyTarget.ref} onLayout={justifyTarget.onLayout} collapsable={false}>
-            <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() =>
-                nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
-              }
-              accessibilityLabel="Justificar Ausência"
-            >
-              <IconCalendarOff size={20} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() =>
+              nav.push(mobileRoute("/pessoal/meus-pontos/justificar-ausencia"))
+            }
+            accessibilityLabel="Justificar Ausência"
+          >
+            <IconCalendarOff size={20} color={colors.foreground} />
+          </TouchableOpacity>
 
           {/* Ajustar Ponto shortcut */}
-          <View ref={adjustTarget.ref} onLayout={adjustTarget.onLayout} collapsable={false}>
-            <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() =>
-                nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto"))
-              }
-              accessibilityLabel="Ajustar Ponto"
-            >
-              <IconClockEdit size={20} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() =>
+              nav.push(mobileRoute("/pessoal/meus-pontos/ajustar-ponto"))
+            }
+            accessibilityLabel="Ajustar Ponto"
+          >
+            <IconClockEdit size={20} color={colors.foreground} />
+          </TouchableOpacity>
 
           {/* Column Visibility Button - matches month selector height */}
-          <View ref={columnToggleTarget.ref} onLayout={columnToggleTarget.onLayout} collapsable={false}>
-            <TouchableOpacity
-              style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => setIsColumnPanelOpen(true)}
-            >
-              <IconList size={20} color={colors.foreground} />
-              <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
-                <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.columnButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setIsColumnPanelOpen(true)}
+          >
+            <IconList size={20} color={colors.foreground} />
+            <View style={[styles.columnBadge, { backgroundColor: colors.primary }]}>
+              <ThemedText style={styles.columnBadgeText}>{visibleColumns.size}</ThemedText>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Table */}

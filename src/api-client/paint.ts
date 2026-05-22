@@ -1,10 +1,6 @@
 // packages/api/src/paint.ts
 
 import { apiClient } from "./axiosClient";
-import {
-  getTutorialMockList,
-  getTutorialMockDetail,
-} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   PaintGetManyFormData,
@@ -159,9 +155,6 @@ export class PaintService {
   // =====================
 
   async getPaints(params: PaintGetManyFormData = {}): Promise<PaintGetManyResponse> {
-    // Tutorial bypass — return demo paints so the catalog renders during the tour.
-    const mock = getTutorialMockList("paints", params);
-    if (mock) return mock as unknown as PaintGetManyResponse;
     // Helper to validate hex color format (API requires exactly #RRGGBB format)
     const isValidHex = (hex: unknown): hex is string => {
       if (!hex || typeof hex !== 'string') return false;
@@ -225,10 +218,6 @@ export class PaintService {
   }
 
   async getPaintById(id: string, params?: Omit<PaintGetByIdFormData, "id">): Promise<PaintGetUniqueResponse> {
-    const mockDetail = getTutorialMockDetail<any>("paints", id);
-    if (mockDetail) {
-      return { success: true, message: "ok", data: mockDetail } as unknown as PaintGetUniqueResponse;
-    }
     const response = await apiClient.get<PaintGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

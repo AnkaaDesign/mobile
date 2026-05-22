@@ -13,7 +13,6 @@ import { canLeaderUpdateServiceOrder, getVisibleServiceOrderTypes, hasDetailedSe
 import { useServiceOrderMutations } from "@/hooks";
 import type { ServiceOrder } from '../../../../types';
 import { IconNote, IconUser, IconCalendar } from "@tabler/icons-react-native";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
 
 // Colors matching web badge-colors.ts for consistency
 const STATUS_COLORS = {
@@ -50,25 +49,6 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
   // Get user's sector privilege
   const userSectorPrivilege = user?.sector?.privileges;
-
-  // Tutorial: spotlight the FIRST service that has an observation. The
-  // hook is called unconditionally; the ref/onLayout are only attached to
-  // the matching service's badge below. `onAction` is what makes the
-  // interactive step work: the spotlight overlay's Pressable swallows the
-  // touch, so the underlying button never fires Alert.alert. Registering
-  // onAction here lets `invokeTargetAction` (called from the overlay) open
-  // the Alert as if the user had tapped the badge directly.
-  const observationIndicatorTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.taskServiceObservationIndicator,
-    {
-      onAction: () => {
-        const target = services.find((s) => !!s?.observation);
-        if (target?.observation) {
-          Alert.alert("Observação", target.observation);
-        }
-      },
-    },
-  );
 
   // Filter out services with missing data AND filter by visible types
   // Also handle canceled service orders visibility
@@ -201,13 +181,6 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
     return true;
   };
 
-  // ID of the first valid service that has an observation — used to mount
-  // the tutorial spotlight on exactly one badge instead of all of them.
-  const firstObservedServiceId = useMemo(
-    () => validServices.find((s) => !!s.observation)?.id ?? null,
-    [validServices],
-  );
-
   // Render a single service item - DETAILED VIEW
   const renderDetailedServiceItem = (service: ServiceOrder) => {
     const badgeVariant = service.status ? getBadgeVariant(service.status, "SERVICE_ORDER") : "default";
@@ -237,31 +210,15 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
 
                 {/* Observation indicator */}
                 {!isOutrosWithObservation && service.observation && (
-                  <View
-                    ref={
-                      service.id === firstObservedServiceId
-                        ? observationIndicatorTarget.ref
-                        : undefined
-                    }
-                    onLayout={
-                      service.id === firstObservedServiceId
-                        ? observationIndicatorTarget.onLayout
-                        : undefined
-                    }
-                    collapsable={
-                      service.id === firstObservedServiceId ? false : undefined
-                    }
+                  <TouchableOpacity
+                    style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+                    onPress={() => Alert.alert("Observação", service.observation!)}
                   >
-                    <TouchableOpacity
-                      style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-                      onPress={() => Alert.alert("Observação", service.observation!)}
-                    >
-                      <IconNote size={14} color={colors.mutedForeground} />
-                      <View style={styles.observationBadge}>
-                        <ThemedText style={styles.observationBadgeText}>!</ThemedText>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
+                    <IconNote size={14} color={colors.mutedForeground} />
+                    <View style={styles.observationBadge}>
+                      <ThemedText style={styles.observationBadgeText}>!</ThemedText>
+                    </View>
+                  </TouchableOpacity>
                 )}
               </>
             );
@@ -346,31 +303,15 @@ export const TaskServicesCard: React.FC<TaskServicesCardProps> = ({ services, ta
         {/* Observation indicator — production users (simplified view) also
             see this so they don't miss instructions from the leader/commercial. */}
         {!isOutrosWithObservation && service.observation && (
-          <View
-            ref={
-              service.id === firstObservedServiceId
-                ? observationIndicatorTarget.ref
-                : undefined
-            }
-            onLayout={
-              service.id === firstObservedServiceId
-                ? observationIndicatorTarget.onLayout
-                : undefined
-            }
-            collapsable={
-              service.id === firstObservedServiceId ? false : undefined
-            }
+          <TouchableOpacity
+            style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
+            onPress={() => Alert.alert("Observação", service.observation!)}
           >
-            <TouchableOpacity
-              style={[styles.observationButton, { borderColor: colors.border, backgroundColor: colors.card }]}
-              onPress={() => Alert.alert("Observação", service.observation!)}
-            >
-              <IconNote size={14} color={colors.mutedForeground} />
-              <View style={styles.observationBadge}>
-                <ThemedText style={styles.observationBadgeText}>!</ThemedText>
-              </View>
-            </TouchableOpacity>
-          </View>
+            <IconNote size={14} color={colors.mutedForeground} />
+            <View style={styles.observationBadge}>
+              <ThemedText style={styles.observationBadgeText}>!</ThemedText>
+            </View>
+          </TouchableOpacity>
         )}
 
         <Badge variant={badgeVariant} style={styles.statusBadgeInline}>

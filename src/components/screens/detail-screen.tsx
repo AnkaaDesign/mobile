@@ -89,9 +89,7 @@ export interface DetailScreenProps<T extends BaseEntity> {
    */
   children: (entity: T, ctx: DetailScreenChildContext) => ReactNode;
   /**
-   * Optional ref to the internal ScrollView. Use this when a tutorial step
-   * targets an element below the fold and needs to scroll it into view via
-   * `useTutorialTarget({ scrollContainer })`.
+   * Optional ref to the internal ScrollView.
    */
   scrollRef?: React.RefObject<ScrollView | null>;
 }

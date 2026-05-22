@@ -22,12 +22,15 @@ export function ItemCard({ item, onPress, showActions: _showActions = true, vari
 
   const currentPrice = item.prices?.[0]?.value || 0;
 
-  // Determine stock level using the utility
+  // Determine stock level using the utility.
+  // `hasActiveOrder` is intentionally NOT passed: pending-order state is a UI
+  // overlay only (the new util ignores it anyway).
   const stockLevel = determineStockLevel(
     item.quantity || 0,
     item.reorderPoint || null,
     item.maxQuantity || null,
-    false, // hasActiveOrder - we don't have this info in the card
+    false,
+    item.category?.type ?? null,
   );
 
   // Get badge variant based on stock level

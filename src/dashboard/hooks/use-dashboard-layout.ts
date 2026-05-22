@@ -34,7 +34,6 @@ import type {
 import { WIDGET_ROW_VALUES } from "../types";
 import { getDefaultLayoutForSector } from "../presets";
 import { logFrameworkWarning } from "../internal/logger";
-import { isTutorialRuntimeActive } from "@/components/tutorial/tutorial-runtime-state";
 
 function clampSpan(widgetId: string, requested: WidgetSpan): WidgetSpan {
   const def = widgetRegistry.get(widgetId);
@@ -257,16 +256,6 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   }, []);
 
   const saveAndExit = useCallback(async () => {
-    // Tutorial bypass — when the tutorial is active the saveAndExit step
-    // is a teaching moment, not a real persistence call. Without this
-    // guard the demo "Salvar" tap fires the real PUT, the API rejects
-    // or persists a fake dashboard layout, and a success/error toast
-    // pops over the next tutorial step. Just clear edit-mode cleanly.
-    if (isTutorialRuntimeActive()) {
-      snapshotRef.current = null;
-      setIsEditing(false);
-      return;
-    }
     const next: DashboardLayout = {
       ...working,
       version: DASHBOARD_LAYOUT_VERSION,

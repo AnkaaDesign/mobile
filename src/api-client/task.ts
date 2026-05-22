@@ -1,10 +1,6 @@
 // packages/api/src/task.ts
 
 import { apiClient } from "./axiosClient";
-import {
-  getTutorialMockList,
-  getTutorialMockDetail,
-} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   TaskGetManyFormData,
@@ -43,28 +39,11 @@ export class TaskService {
   // =====================
 
   async getTasks(params: TaskGetManyFormData = {}): Promise<TaskGetManyResponse> {
-    // Tutorial mode bypass — return demo tasks so the cronograma list shows
-    // the same fully-loaded fixtures that the detail screens use. Without
-    // this, createEntityHooks' inline queryFn skips setQueryDefaults and
-    // hits the real network, leaving the tutorial list empty.
-    const mock = getTutorialMockList("tasks", params);
-    if (mock) return mock as unknown as TaskGetManyResponse;
     const response = await apiClient.get<TaskGetManyResponse>(this.basePath, { params });
     return response.data;
   }
 
   async getTaskById(id: string, params?: Omit<TaskGetByIdFormData, "id">): Promise<TaskGetUniqueResponse> {
-    // Tutorial mode bypass — same reason as getTasks: ensures task detail
-    // (with paints, observation, cuts, files, services, etc.) renders the
-    // mock data with every section populated.
-    const mockDetail = getTutorialMockDetail<any>("tasks", id);
-    if (mockDetail) {
-      return {
-        success: true,
-        message: "ok",
-        data: mockDetail,
-      } as unknown as TaskGetUniqueResponse;
-    }
     const response = await apiClient.get<TaskGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

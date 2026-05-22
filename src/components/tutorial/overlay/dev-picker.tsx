@@ -1,3 +1,7 @@
+/**
+ * Dev step picker — adapted from v4. `goToStep(index)` is now a single
+ * synchronous setState; jumping is bulletproof.
+ */
 import { memo, useCallback, useMemo, useState } from "react";
 import {
   FlatList,
@@ -10,69 +14,40 @@ import {
   type ListRenderItem,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { IconChevronRight, IconX, IconList } from "@tabler/icons-react-native";
-import { useTutorial, useTutorialActions } from "./tutorial-context";
-import type { TutorialStep } from "./types";
+import { IconChevronRight, IconX } from "@tabler/icons-react-native";
+import { useTutorial } from "../provider";
+import type { TutorialStep } from "../engine-types";
 
-/**
- * Jump-to-step affordance. Available while a tutorial is running so users
- * (and devs) can hop to any step without walking the whole flow.
- *
- * Perf design — the previous version had three landmines:
- *   - A non-virtualized ScrollView + `.map()` over 138 step rows.
- *   - `useTutorial()` strict subscription, which re-rendered all 138 rows
- *     on every provider update (4× per step transition while the modal
- *     was open).
- *   - Inline lambdas in the row props, defeating React.memo even if it
- *     had been used.
- *
- * Fix:
- *   - FlatList with stable `keyExtractor`, `getItemLayout`, and a
- *     `React.memo`'d row component.
- *   - The picker pill at the bottom-left subscribes via `useTutorial`
- *     (it needs `currentStepIndex`), but the modal body — including the
- *     138-row list — is rendered in a separate `PickerSheet` component
- *     that subscribes only to the `actions` bag. Its props (steps array,
- *     current index, onPick) are stable across provider state churn, so
- *     the list does NOT re-render when `phase` / `rect` / `awaitingAction`
- *     flip during a step.
- *   - The list contents only mount when the modal opens (lazy render).
- */
-export function TutorialDevStepPicker() {
+const ROW_HEIGHT = 44;
+
+export function TutorialDevPicker() {
   const tutorial = useTutorial();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
 
   if (!tutorial.isActive || tutorial.steps.length === 0) return null;
+  const { steps, currentStepIndex } = tutorial;
 
-  const { steps, currentStepIndex, goToStep, bumpMeasureTick } = tutorial;
-
-  // Users discovered that opening the picker "unsticks" a missing spotlight
-  // (a real race in measureInWindow on chrome-header targets — see the
-  // extended cascade in `tutorial-context.tsx`). Even with the cascade
-  // extended to 4s, pressing the pill should kick an immediate re-measure
-  // so the user's instinctive workaround keeps working — and is faster
-  // than the 4s ceiling on the cascade.
-  const handleOpen = () => {
-    setOpen(true);
-    try {
-      bumpMeasureTick();
-    } catch {}
+  const handlePick = (index: number) => {
+    tutorial.goToStep(index);
+    setOpen(false);
+  };
+  const handleSkip = () => {
+    setOpen(false);
+    void tutorial.skip();
   };
 
   return (
     <>
       <Pressable
-        onPress={handleOpen}
+        onPress={() => setOpen(true)}
         hitSlop={8}
         style={[styles.fab, { bottom: insets.bottom + 8 }]}
       >
-        <IconList size={12} color="#F8FAFC" />
         <Text style={styles.fabText}>
           Passo {currentStepIndex + 1}/{steps.length}
         </Text>
       </Pressable>
-
       <Modal
         visible={open}
         animationType="slide"
@@ -83,11 +58,9 @@ export function TutorialDevStepPicker() {
           <PickerSheet
             steps={steps}
             currentStepIndex={currentStepIndex}
-            onPick={(index) => {
-              goToStep(index);
-              setOpen(false);
-            }}
+            onPick={handlePick}
             onClose={() => setOpen(false)}
+            onSkip={handleSkip}
           />
         ) : null}
       </Modal>
@@ -100,38 +73,30 @@ interface SheetProps {
   currentStepIndex: number;
   onPick: (index: number) => void;
   onClose: () => void;
+  onSkip: () => void;
 }
 
-const ROW_HEIGHT = 44;
-
-/**
- * Inner sheet. Subscribes only to the actions bag (stable), so updates
- * during the active step (rect re-measure, phase flips, awaitingAction
- * toggles) do NOT re-render the 138-row list. The parent re-renders the
- * pill and passes new props down — those props are stable references
- * across provider state churn because `steps` doesn't mutate during a
- * run and `currentStepIndex` only changes on next/jump.
- */
-function PickerSheet({ steps, currentStepIndex, onPick, onClose }: SheetProps) {
+function PickerSheet({
+  steps,
+  currentStepIndex,
+  onPick,
+  onClose,
+  onSkip,
+}: SheetProps) {
   const insets = useSafeAreaInsets();
-  // Subscribing to actions instead of state — the sheet doesn't need
-  // anything else.
-  useTutorialActions();
   const [query, setQuery] = useState("");
-
   const trimmed = query.trim().toLowerCase();
+
   const filtered = useMemo<TutorialStep[]>(() => {
     if (!trimmed) return steps;
     return steps.filter(
       (s) =>
         s.id.toLowerCase().includes(trimmed) ||
         s.title.toLowerCase().includes(trimmed) ||
-        (s.screen ?? "").toLowerCase().includes(trimmed),
+        s.scene.toLowerCase().includes(trimmed),
     );
   }, [steps, trimmed]);
 
-  // Index lookup so the memoized row component receives a stable `index`
-  // prop without forcing the FlatList to recompute on every render.
   const indexByStepId = useMemo(() => {
     const m = new Map<string, number>();
     steps.forEach((s, i) => m.set(s.id, i));
@@ -169,23 +134,25 @@ function PickerSheet({ steps, currentStepIndex, onPick, onClose }: SheetProps) {
       <View
         style={[
           styles.sheet,
-          {
-            paddingTop: insets.top + 12,
-            paddingBottom: insets.bottom + 12,
-          },
+          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 12 },
         ]}
       >
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>Pular para passo</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
-            <IconX size={20} color="#94A3B8" />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={onSkip} hitSlop={12} style={styles.skipBtn}>
+              <Text style={styles.skipBtnText}>Pular tutorial</Text>
+            </Pressable>
+            <Pressable onPress={onClose} hitSlop={12}>
+              <IconX size={20} color="#94A3B8" />
+            </Pressable>
+          </View>
         </View>
         <View style={styles.searchWrap}>
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Filtrar por título, id ou rota"
+            placeholder="Filtrar por título, id ou cena"
             placeholderTextColor="#475569"
             style={styles.searchInput}
             autoCorrect={false}
@@ -234,7 +201,11 @@ const PickerRow = memo(function PickerRow({
       </View>
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>
-          {step.title}
+          {step.id} — {step.title}
+        </Text>
+        <Text style={styles.rowMeta} numberOfLines={1}>
+          {step.scene}
+          {step.highlight ? ` · ${step.highlight}` : ""}
         </Text>
       </View>
       <IconChevronRight size={16} color="#64748B" />
@@ -245,30 +216,21 @@ const PickerRow = memo(function PickerRow({
 const styles = StyleSheet.create({
   fab: {
     position: "absolute",
-    left: 8,
+    right: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: "#7C2D12",
+    backgroundColor: "rgba(124, 45, 18, 0.85)",
     borderWidth: 1,
     borderColor: "#FCD34D",
     zIndex: 20000,
     elevation: 2000,
   },
-  fabText: {
-    color: "#F8FAFC",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  modalRoot: {
-    flex: 1,
-    backgroundColor: "#0008",
-    justifyContent: "flex-end",
-  },
+  fabText: { color: "#F8FAFC", fontSize: 10, fontWeight: "700", letterSpacing: 0.5 },
+  modalRoot: { flex: 1, backgroundColor: "#0008", justifyContent: "flex-end" },
   sheet: {
     backgroundColor: "#0F172A",
     borderTopLeftRadius: 20,
@@ -286,15 +248,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#1E293B",
   },
-  sheetTitle: {
-    color: "#F8FAFC",
-    fontSize: 16,
-    fontWeight: "700",
+  sheetTitle: { color: "#F8FAFC", fontSize: 16, fontWeight: "700" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  skipBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#334155",
   },
-  searchWrap: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
+  skipBtnText: { color: "#F8FAFC", fontSize: 12, fontWeight: "600" },
+  searchWrap: { paddingHorizontal: 16, paddingTop: 12 },
   searchInput: {
     backgroundColor: "#1E293B",
     color: "#F8FAFC",
@@ -303,13 +267,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
   },
-  list: {
-    flexGrow: 0,
-  },
-  listContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
+  list: { flexGrow: 0 },
+  listContent: { paddingHorizontal: 12, paddingVertical: 8 },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -319,26 +278,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     height: ROW_HEIGHT,
   },
-  rowCurrent: {
-    backgroundColor: "#1E293B",
-    borderWidth: 1,
-    borderColor: "#FCD34D",
-  },
-  rowIndex: {
-    width: 32,
-    alignItems: "flex-end",
-  },
-  rowIndexText: {
-    color: "#64748B",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  rowBody: {
-    flex: 1,
-  },
-  rowTitle: {
-    color: "#F8FAFC",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  rowCurrent: { backgroundColor: "#1E293B", borderWidth: 1, borderColor: "#FCD34D" },
+  rowIndex: { width: 32, alignItems: "flex-end" },
+  rowIndexText: { color: "#64748B", fontSize: 12, fontWeight: "700" },
+  rowBody: { flex: 1 },
+  rowTitle: { color: "#F8FAFC", fontSize: 14, fontWeight: "600" },
+  rowMeta: { color: "#94A3B8", fontSize: 11, marginTop: 2 },
 });

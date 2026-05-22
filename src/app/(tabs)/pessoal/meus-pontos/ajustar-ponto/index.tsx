@@ -26,8 +26,6 @@ import {
   useMyJustificativas,
 } from "@/hooks/secullum";
 import { useScreenReady } from "@/hooks/use-screen-ready";
-import { useTutorialTarget, TUTORIAL_TARGETS } from "@/components/tutorial";
-import { isTutorialRuntimeActive } from "@/components/tutorial/tutorial-runtime-state";
 
 type SlotKey =
   | "entrada1"
@@ -115,28 +113,6 @@ const dateFromHhmm = (hhmm: string | null): Date => {
 export default function AjustarPontoScreen() {
   const { colors, isDark } = useTheme();
   const nav = useNav();
-  const pageTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustPage);
-  const dateTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustDate);
-  const observacaoTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustObservacao);
-  const firstSlotTarget = useTutorialTarget(TUTORIAL_TARGETS.pessoalPontosAdjustFirstSlot);
-  const tutorialActive = isTutorialRuntimeActive();
-  const submitTarget = useTutorialTarget(
-    TUTORIAL_TARGETS.pessoalPontosAdjustSubmit,
-    {
-      onAction: () => {
-        if (!tutorialActive) return;
-        // Fake submit confirmation. No nav.goBack() — chaining navigation
-        // right after notifyAction would auto-skip the back-arrow step.
-        // The user navigates back manually via the tutorial's interactive
-        // back step.
-        Alert.alert(
-          "Solicitação enviada",
-          "Sua solicitação de ajuste de ponto foi enviada para aprovação. (Tutorial: nenhuma alteração real foi feita.)",
-        );
-      },
-    },
-  );
-
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -160,12 +136,8 @@ export default function AjustarPontoScreen() {
   const justificativasQuery = useMyJustificativas();
   const createMutation = useCreateMyAjustePonto();
 
-  // In tutorial mode the screen renders straight from in-memory mocks — release
-  // the navigation overlay immediately so the user doesn't wait on react-query
-  // state propagation for synchronous data.
   useScreenReady(
-    tutorialActive ||
-      !(batidasQuery.isLoading || existingQuery.isLoading),
+    !(batidasQuery.isLoading || existingQuery.isLoading),
   );
 
   // Pre-fill priority:
@@ -380,9 +352,6 @@ export default function AjustarPontoScreen() {
 
   return (
     <ThemedView
-      ref={pageTarget.ref as any}
-      onLayout={pageTarget.onLayout}
-      collapsable={false}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -452,11 +421,7 @@ export default function AjustarPontoScreen() {
         )}
 
         {/* Data */}
-        <View
-          ref={dateTarget.ref as any}
-          onLayout={dateTarget.onLayout}
-          collapsable={false}
-        >
+        <View>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={openDatePicker}
@@ -480,74 +445,57 @@ export default function AjustarPontoScreen() {
         </View>
 
         {/* Batida slots */}
-        {visibleSlots.map((slot, slotIndex) => {
+        {visibleSlots.map((slot) => {
           const value = batidas[slot.key];
           const filled = (value ?? "").length > 0;
-          const isFirstSlot = slotIndex === 0;
-          const slotNode = (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => openTimePicker(slot.key)}
-              disabled={disabled}
-              style={[
-                styles.field,
-                { backgroundColor: colors.card, borderColor: colors.border },
-                disabled ? { opacity: 0.6 } : null,
-              ]}
-            >
-              <View style={styles.fieldText}>
-                <ThemedText
-                  style={[styles.fieldLabel, { color: colors.primary }]}
-                >
-                  {slot.label}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.fieldValue,
-                    !filled ? { color: colors.mutedForeground } : null,
-                  ]}
-                >
-                  {filled ? value : "--:--"}
-                </ThemedText>
-              </View>
-              {filled ? (
-                <TouchableOpacity
-                  onPress={() => clearSlot(slot.key)}
-                  disabled={disabled}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  style={styles.iconAction}
-                >
-                  <IconX size={20} color={colors.foreground} />
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.iconAction}>
-                  <IconClock size={22} color={colors.primary} />
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-          if (!isFirstSlot) {
-            return <View key={slot.key}>{slotNode}</View>;
-          }
           return (
-            <View
-              key={slot.key}
-              ref={firstSlotTarget.ref as any}
-              onLayout={firstSlotTarget.onLayout}
-              collapsable={false}
-            >
-              {slotNode}
+            <View key={slot.key}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => openTimePicker(slot.key)}
+                disabled={disabled}
+                style={[
+                  styles.field,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  disabled ? { opacity: 0.6 } : null,
+                ]}
+              >
+                <View style={styles.fieldText}>
+                  <ThemedText
+                    style={[styles.fieldLabel, { color: colors.primary }]}
+                  >
+                    {slot.label}
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.fieldValue,
+                      !filled ? { color: colors.mutedForeground } : null,
+                    ]}
+                  >
+                    {filled ? value : "--:--"}
+                  </ThemedText>
+                </View>
+                {filled ? (
+                  <TouchableOpacity
+                    onPress={() => clearSlot(slot.key)}
+                    disabled={disabled}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.iconAction}
+                  >
+                    <IconX size={20} color={colors.foreground} />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.iconAction}>
+                    <IconClock size={22} color={colors.primary} />
+                  </View>
+                )}
+              </TouchableOpacity>
             </View>
           );
         })}
 
         {/* Observação */}
-        <View
-          ref={observacaoTarget.ref as any}
-          onLayout={observacaoTarget.onLayout}
-          collapsable={false}
-          style={styles.observationWrap}
-        >
+        <View style={styles.observationWrap}>
           <ThemedText style={[styles.fieldLabel, { color: colors.primary }]}>
             Observação
           </ThemedText>
@@ -565,11 +513,7 @@ export default function AjustarPontoScreen() {
           FormActionBar already applies `marginBottom: insets.bottom +
           cardMarginBottom` internally, so DON'T add another paddingBottom
           here or the bar floats too high. */}
-      <View
-        ref={submitTarget.ref as any}
-        onLayout={submitTarget.onLayout}
-        collapsable={false}
-      >
+      <View>
         <FormActionBar
           onCancel={() => nav.goBack()}
           onSubmit={handleSubmit}

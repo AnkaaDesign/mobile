@@ -1,10 +1,6 @@
 // packages/api-client/src/truck.ts
 
 import { apiClient } from "./axiosClient";
-import {
-  getTutorialMockList,
-  getTutorialMockDetail,
-} from "@/components/tutorial/tutorial-runtime-state";
 import type {
   // Schema types (for parameters)
   TruckGetManyFormData,
@@ -41,8 +37,6 @@ export class TruckService {
   // =====================
 
   async getTrucks(params?: TruckGetManyFormData): Promise<TruckGetManyResponse> {
-    const mock = getTutorialMockList("trucks", params ?? {});
-    if (mock) return mock as unknown as TruckGetManyResponse;
     const response = await apiClient.get<TruckGetManyResponse>(this.basePath, {
       params,
     });
@@ -50,10 +44,6 @@ export class TruckService {
   }
 
   async getTruckById(id: string, params?: Omit<TruckGetByIdFormData, "id">): Promise<TruckGetUniqueResponse> {
-    const mockDetail = getTutorialMockDetail<any>("trucks", id);
-    if (mockDetail) {
-      return { success: true, message: "ok", data: mockDetail } as unknown as TruckGetUniqueResponse;
-    }
     const response = await apiClient.get<TruckGetUniqueResponse>(`${this.basePath}/${id}`, {
       params,
     });

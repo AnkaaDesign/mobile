@@ -19,7 +19,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KeyboardAwareFormProvider, KeyboardAwareFormContextType } from "@/contexts/KeyboardAwareFormContext";
 import type { User } from "@/types";
 import { IconCamera, IconTrash } from "@tabler/icons-react-native";
-import { useTutorialTarget, TUTORIAL_TARGETS, useOptionalTutorial } from "@/components/tutorial";
 import {
   SHIRT_SIZE_LABELS,
   PANTS_SIZE_LABELS,
@@ -69,27 +68,6 @@ export default function ProfileScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [originalValues, setOriginalValues] = useState<ProfileFormData | null>(null);
-
-  const photoTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilPhoto, {
-    scrollContainer: refs.scrollViewRef,
-    scrollOffsetTop: 16,
-  });
-  const sizesTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilSizes, {
-    scrollContainer: refs.scrollViewRef,
-    scrollOffsetTop: 80,
-  });
-  const addressTarget = useTutorialTarget(TUTORIAL_TARGETS.perfilAddress, {
-    scrollContainer: refs.scrollViewRef,
-    scrollOffsetTop: 80,
-  });
-
-  // Force-render fallback for tutorial steps whose target sections are
-  // conditionally hidden (e.g. measures card hidden when user has no
-  // ppeSize). Without this, the spotlight has nothing to land on.
-  const tutorial = useOptionalTutorial();
-  const tutorialIsTargeting = (id: string) =>
-    !!tutorial?.isActive && tutorial.currentStep?.targetId === id;
-  const tutorialSizesActive = tutorialIsTargeting(TUTORIAL_TARGETS.perfilSizes);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileUpdateSchema),
@@ -353,7 +331,6 @@ export default function ProfileScreen() {
         >
         <KeyboardAwareFormProvider value={keyboardContextValue}>
         {/* Profile Photo Card */}
-        <View ref={photoTarget.ref} onLayout={photoTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Foto de Perfil</ThemedText>
 
@@ -411,7 +388,6 @@ export default function ProfileScreen() {
             </ThemedText>
           </View>
         </Card>
-        </View>
 
         {/* Basic Information Card */}
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -485,11 +461,8 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        {/* Measures Card (Read-only). Force-rendered while the tutorial
-            spotlights this section so the engine can find a target even
-            when the user has no ppeSize stored. */}
-        {(user.ppeSize || tutorialSizesActive) && (
-          <View ref={sizesTarget.ref} onLayout={sizesTarget.onLayout} collapsable={false}>
+        {/* Measures Card (Read-only). */}
+        {user.ppeSize && (
           <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <ThemedText style={styles.cardTitle}>Medidas</ThemedText>
             <ThemedText style={[styles.cardDescription, { color: colors.mutedForeground }]}>
@@ -548,11 +521,9 @@ export default function ProfileScreen() {
             </View>
             )}
           </Card>
-          </View>
         )}
 
         {/* Address Card */}
-        <View ref={addressTarget.ref} onLayout={addressTarget.onLayout} collapsable={false}>
         <Card style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ThemedText style={styles.cardTitle}>Endereço</ThemedText>
 
@@ -706,7 +677,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </Card>
-        </View>
 
         </KeyboardAwareFormProvider>
         </ScrollView>

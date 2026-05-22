@@ -120,8 +120,10 @@ export const FORECAST_DAYS_OPTIONS = Array.from({ length: 30 }, (_, i) => ({
 }));
 
 // Default service orders for new tasks
+// "Em Negociação" starts IN_PROGRESS so the commercial workflow is active
+// from creation (mirrors web/api behavior).
 export const DEFAULT_TASK_SERVICE_ORDERS = [
-  { description: "Em Negociação", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
+  { description: "Em Negociação", type: SERVICE_ORDER_TYPE.COMMERCIAL, status: SERVICE_ORDER_STATUS.IN_PROGRESS, statusOrder: 2, assignedToId: null },
   { description: "Elaborar Layout", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
   { description: "Elaborar Projeto", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },
   { description: "Preparar Arquivos para Plotagem", type: SERVICE_ORDER_TYPE.ARTWORK, status: SERVICE_ORDER_STATUS.PENDING, statusOrder: 1, assignedToId: null },

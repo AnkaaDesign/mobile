@@ -57,6 +57,7 @@ const getStatusBadgeVariant = (status: string) => {
     case SERVICE_ORDER_STATUS.PAUSED:
       return { bg: badgeColors.onHold.background, text: badgeColors.onHold.text };
     case SERVICE_ORDER_STATUS.WAITING_APPROVE:
+    case SERVICE_ORDER_STATUS.WAITING_ARTWORK:
       return { bg: badgeColors.pending.background, text: badgeColors.pending.text };
     case SERVICE_ORDER_STATUS.COMPLETED:
       return { bg: badgeColors.success.background, text: badgeColors.success.text };

@@ -1,6 +1,6 @@
 /**
  * Hook to signal that a screen is ready (has mounted)
- * Automatically ends the navigation loading overlay
+ * Automatically ends the navigation loading overlay.
  */
 import { useEffect, useLayoutEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
