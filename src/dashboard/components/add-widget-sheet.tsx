@@ -153,14 +153,17 @@ export function AddWidgetSheet({
   const { width: windowWidth } = useWindowDimensions();
   const sector =
     (user?.sector?.privileges as SECTOR_PRIVILEGES | undefined) ?? null;
+  // A user "leads" a sector when ledSector is populated — gates leader-only
+  // widgets (e.g. Ponto do Setor (Líder)) out of the gallery for everyone else.
+  const isLeader = !!user?.ledSector;
 
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
   const searchRef = useRef<TextInput>(null);
 
   const allWidgets = useMemo(
-    () => widgetRegistry.getAvailableWidgets(sector),
-    [sector],
+    () => widgetRegistry.getAvailableWidgets(sector, isLeader),
+    [sector, isLeader],
   );
 
   // Categories present in the available set, in stable display order.

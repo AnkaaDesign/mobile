@@ -47,6 +47,7 @@ import {
   type WidgetBorderColor,
 } from "../components/widget-accent";
 import type { HomeDashboardMessage } from "@/types";
+import { WIDGET_ROW_MAX_HEIGHT } from "../types";
 import type {
   WidgetConfigProps,
   WidgetDefinition,
@@ -103,9 +104,10 @@ const configSchema = z.preprocess(
     display: z
       .object({
         showHeader: z.boolean().default(true),
+        showViewAll: z.boolean().default(true),
       })
-      .default({ showHeader: true })
-      .describe("Visibilidade do cabeçalho do widget."),
+      .default({ showHeader: true, showViewAll: true })
+      .describe("Visibilidade do cabeçalho e do rodapé “Ver todos”."),
     showCount: z
       .boolean()
       .default(true)
@@ -208,18 +210,20 @@ const DENSITY_BLOCK_PX = {
 } as const;
 
 const DENSITY_CARD_PX = {
-  compact: { padding: 8, gap: 5, blockGap: 2, titleSize: 11, badgeSize: 8, footerSize: 9 },
+  // Compact is meant to be genuinely dense — small type + tight padding so
+  // several cards stay legible in a short tile. (Was 11/8 — read as too big.)
+  compact: { padding: 6, gap: 4, blockGap: 2, titleSize: 10, badgeSize: 8, footerSize: 9 },
   comfortable: {
-    padding: 10,
-    gap: 6,
+    padding: 9,
+    gap: 5,
     blockGap: 3,
-    titleSize: 13,
+    titleSize: 12,
     badgeSize: 9,
     footerSize: 10,
   },
   spacious: {
     padding: 12,
-    gap: 8,
+    gap: 7,
     blockGap: 4,
     titleSize: 14,
     badgeSize: 10,
@@ -379,6 +383,12 @@ function MessageStubCard({ message, onPress, density, cardHeight }: MessageStubC
       })
     : null;
   const sizes = DENSITY_CARD_PX[density];
+  // Title clamps to a single line on compact (and on any short card) so it
+  // can't eat the whole card; the skeleton/time below stay visible.
+  const titleLines = density === "compact" || cardHeight < 110 ? 1 : 2;
+  // Drop the time footer on very short cards — below ~92px it crowds the
+  // title + preview and reads as clutter rather than information.
+  const showTime = !!timeAgo && cardHeight >= 92;
 
   // Cardinal-rule fix: Pressable's style function on iOS does not reliably
   // apply layout props (flex:1 etc) OR visual props (border, bg, radius).
@@ -425,7 +435,7 @@ function MessageStubCard({ message, onPress, density, cardHeight }: MessageStubC
               dot was visual noise inside the already-narrow card. */}
           <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, minWidth: 0 }}>
             <Text
-              numberOfLines={2}
+              numberOfLines={titleLines}
               style={{
                 flex: 1,
                 fontSize: sizes.titleSize,
@@ -476,7 +486,7 @@ function MessageStubCard({ message, onPress, density, cardHeight }: MessageStubC
             ))}
           </View>
 
-          {timeAgo && (
+          {showTime && (
             <View
               style={{
                 flexDirection: "row",
@@ -550,11 +560,31 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
   // Cap displayed messages at perRow*perCol so the grid is fully populated.
   const visible = useMemo(() => messages.slice(0, totalCells), [messages, totalCells]);
 
-  // Approximate body budget: row token (140) * size.rows minus header/footer.
-  // The grid auto-fills via flex; estimate per-card height for stable previews.
+  // Card height is derived from the REAL body height (measured via onLayout),
+  // not a hardcoded estimate. The old `140·rows − 70` formula under-counted
+  // the chrome (stripe 6 + header 36 + footer 28 + padding ≈ 102, not 70), so
+  // cards rendered taller than the body and overflowed / clipped — exactly the
+  // "3×1 overflows even with 1 line visible" bug. We size each card so that
+  // `perCol` rows fit the measured body exactly; only when that would make
+  // cards unreadably small (large perCol on a short tile) do they hit a floor
+  // and the ScrollView takes over.
   const rowsTall = size?.rows ?? 2;
-  const bodyBudget = Math.max(140, 140 * rowsTall + 16 * (rowsTall - 1) - 70);
-  const cardHeight = Math.max(80, Math.floor((bodyBudget - 8 * (perCol - 1)) / perCol));
+  const CONTENT_PAD = density === "compact" ? 6 : 8;
+  const ROW_GAP = 6;
+  const MIN_CARD = density === "compact" ? 56 : 72;
+  const [bodyH, setBodyH] = useState(0);
+  // First-frame fallback before onLayout fires: derive body height from the
+  // row token minus the fixed chrome (stripe + header + footer).
+  const fallbackBodyH = Math.max(
+    90,
+    WIDGET_ROW_MAX_HEIGHT[rowsTall] - 6 - 36 - 28,
+  );
+  const effectiveBodyH = bodyH > 0 ? bodyH : fallbackBodyH;
+  const availH = effectiveBodyH - CONTENT_PAD * 2;
+  const cardHeight = Math.max(
+    MIN_CARD,
+    Math.floor((availH - ROW_GAP * (perCol - 1)) / perCol),
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -562,9 +592,12 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         title={config.title || "Mensagens Recentes"}
         icon={<Icon size={16} color={accent.hex} />}
         showHeader={config.display?.showHeader ?? true}
+        showFooter={config.display?.showViewAll ?? true}
         count={config.showCount && unreadCount > 0 ? unreadCount : null}
         accentColor={accent.hex}
         borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
+        density={density}
+        bodyPadded={false}
         viewAllHref={routes.administration.messages.root}
         onRefresh={refetch}
         refreshing={isRefetching}
@@ -596,46 +629,61 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
             </Text>
           </View>
         ) : (
-          <ScrollView
-            // ScrollView so very tall configs (perCol=6) still scroll inside
-            // the tile body — without it, oversized grids would clip.
-            // Padding reduced (12 → 8) so the message cards visually breathe
-            // closer to the WidgetCard chrome and the content area feels less
-            // boxed-in.
-            contentContainerStyle={{ padding: 8, gap: 8 }}
+          // flex:1 wrapper measured via onLayout — this is the TRUE body
+          // height (WidgetCard's body fills the fixed-height tile minus its
+          // header/footer), so cardHeight above can size rows to fit exactly.
+          <View
+            style={{ flex: 1, minHeight: 0 }}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (Math.abs(h - bodyH) > 1) setBodyH(h);
+            }}
           >
-            {/* Pack messages into rows of `perRow` cards each. Use flex inside
-             *  each row so cards share width; height is fixed per cardHeight
-             *  so block previews keep their proportions. */}
-            {Array.from({ length: Math.ceil(visible.length / perRow) }).map((_, rIdx) => {
-              const rowSlice = visible.slice(rIdx * perRow, (rIdx + 1) * perRow);
-              return (
-                <View
-                  key={`row-${rIdx}`}
-                  style={{
-                    flexDirection: "row",
-                    gap: 8,
-                  }}
-                >
-                  {rowSlice.map((m) => (
-                    <MessageStubCard
-                      key={m.id}
-                      message={m}
-                      onPress={() => onPress(m)}
-                      density={density}
-                      cardHeight={cardHeight}
-                    />
-                  ))}
-                  {/* Pad incomplete row with invisible flex spacers so the
-                   *  last row's cards don't stretch to fill the slot. */}
-                  {rowSlice.length < perRow &&
-                    Array.from({ length: perRow - rowSlice.length }).map((_, i) => (
-                      <View key={`spacer-${i}`} style={{ flex: 1 }} />
+            <ScrollView
+              // ScrollView is the safety valve: when perCol rows can't fit at
+              // a readable size (cardHeight hits MIN_CARD), the grid scrolls
+              // instead of clipping. When they DO fit, content == body and it
+              // doesn't scroll.
+              contentContainerStyle={{
+                paddingHorizontal: CONTENT_PAD,
+                paddingVertical: CONTENT_PAD,
+                gap: ROW_GAP,
+              }}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Pack messages into rows of `perRow` cards each. Use flex inside
+               *  each row so cards share width; height is fixed per cardHeight
+               *  so block previews keep their proportions. */}
+              {Array.from({ length: Math.ceil(visible.length / perRow) }).map((_, rIdx) => {
+                const rowSlice = visible.slice(rIdx * perRow, (rIdx + 1) * perRow);
+                return (
+                  <View
+                    key={`row-${rIdx}`}
+                    style={{
+                      flexDirection: "row",
+                      gap: ROW_GAP,
+                    }}
+                  >
+                    {rowSlice.map((m) => (
+                      <MessageStubCard
+                        key={m.id}
+                        message={m}
+                        onPress={() => onPress(m)}
+                        density={density}
+                        cardHeight={cardHeight}
+                      />
                     ))}
-                </View>
-              );
-            })}
-          </ScrollView>
+                    {/* Pad incomplete row with invisible flex spacers so the
+                     *  last row's cards don't stretch to fill the slot. */}
+                    {rowSlice.length < perRow &&
+                      Array.from({ length: perRow - rowSlice.length }).map((_, i) => (
+                        <View key={`spacer-${i}`} style={{ flex: 1 }} />
+                      ))}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
         )}
       </WidgetCard>
 
@@ -787,7 +835,10 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   ) =>
     onChange({
       ...config,
-      display: { ...(config.display ?? { showHeader: true }), [key]: value },
+      display: {
+        ...(config.display ?? { showHeader: true, showViewAll: true }),
+        [key]: value,
+      },
     });
 
   return (
@@ -811,7 +862,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
         />
       </Section>
 
-      <Section title="Cabeçalho">
+      <Section title="Cabeçalho e rodapé">
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.display?.showHeader ?? true}
@@ -821,6 +872,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           label="Exibir contagem de não lidas"
           checked={config.showCount}
           onCheckedChange={(v) => set("showCount", v)}
+        />
+        <ToggleRow
+          label="Exibir botão “Ver todos”"
+          checked={config.display?.showViewAll ?? true}
+          onCheckedChange={(v) => setDisplay("showViewAll", v)}
         />
       </Section>
 
@@ -901,7 +957,7 @@ export const recentMessagesWidget: WidgetDefinition<Config> = {
   // Stub-card grid needs at least 2/3 width to keep titles + previews readable.
   allowedSpans: [2, 3],
   defaultSpan: 2,
-  allowedHeights: [2, 3, 4],
+  allowedHeights: [1, 2, 3, 4],
   defaultRows: 2,
   configSchema,
   defaultConfig: {

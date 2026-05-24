@@ -19,6 +19,7 @@ import {
   ToggleRow,
   LabeledField,
   densityClasses,
+  computeBodyMaxHeight,
   type Density,
   TABLE_DISPLAY_DEFAULTS,
   TableDisplayConfigSection,
@@ -120,6 +121,15 @@ function isWeekendFromDateString(dateStr: string, refYear: number): {
   };
 }
 
+/** Display only the dd/MM portion of the Secullum date string. The raw value
+ *  looks like "Dom 28/02" or "28/02/2026"; the user only wants day/month, so we
+ *  pull the first dd/MM match and zero-pad it. Falls back to the raw string. */
+function formatDateDDMM(dateStr: string): string {
+  const m = dateStr.match(/(\d{1,2})\/(\d{1,2})/);
+  if (!m) return dateStr || "—";
+  return `${m[1].padStart(2, "0")}/${m[2].padStart(2, "0")}`;
+}
+
 function parseSecullumResponse(data: SecullumQueryData | undefined): ParsedEntry[] {
   const apiResponse = data?.data ?? (data as unknown as SecullumPayload);
   if (apiResponse && "success" in apiResponse && apiResponse.success === false)
@@ -164,6 +174,7 @@ const TIME_ENTRY_COLUMNS: WidgetTableColumn[] = [
 const configSchema = z.object({
   title: z.string().min(1).max(80).default("Ponto da Semana"),
   showHeader: z.boolean().default(true),
+  showViewAll: z.boolean().default(true),
   display: makeTableDisplaySchema({ density: "comfortable", showRowDot: false }),
   accent: makeAccentSchema({ color: "teal", icon: "Clock", borderColor: "none" }),
 });
@@ -171,7 +182,7 @@ type Config = z.infer<typeof configSchema>;
 
 // ---------- Render ----------
 
-function Render({ config }: WidgetRenderProps<Config>) {
+function Render({ config, size }: WidgetRenderProps<Config>) {
   const { colors } = useTheme();
   const accent = resolveAccent({
     color: config.accent?.color as WidgetAccentColor,
@@ -200,9 +211,6 @@ function Render({ config }: WidgetRenderProps<Config>) {
     [data],
   );
 
-  const isPlaceholder =
-    isLoading || notRegistered || isError || entries.length === 0;
-
   return (
     <View style={{ flex: 1 }}>
       <WidgetCard
@@ -210,19 +218,20 @@ function Render({ config }: WidgetRenderProps<Config>) {
         icon={<Icon size={16} color={accent.hex} />}
         viewAllHref="/(tabs)/pessoal/meus-pontos"
         showHeader={config.showHeader}
+        showFooter={config.showViewAll}
         bodyPadded={false}
+        // Cap the body to a scrollable budget so rows scroll INSIDE the tile
+        // instead of overflowing on top of the "Ver todos" footer (the rows
+        // were drawing over the footer because the plain table View has no
+        // height bound). Mirrors task-table / item-table.
+        bodyMaxHeight={computeBodyMaxHeight(size.rows)}
         accentColor={accent.hex}
         borderColor={borderHexFor(config.accent?.borderColor as WidgetBorderColor)}
       >
-        {/* flex:1 wrapper around the table container so empty/error states
-         *  center vertically inside oversized tiles instead of hugging the
-         *  top of the body. The container retains its own horizontal inset. */}
-        <View
-          style={{
-            flex: 1,
-            justifyContent: isPlaceholder ? "center" : "flex-start",
-          }}
-        >
+        {/* Rendered inside WidgetCard's bodyMaxHeight ScrollView, so the table
+         *  scrolls within the tile and never overlaps the footer. Content is
+         *  top-aligned (a flex:1 child would collapse to 0 height in a scroll
+         *  view). */}
           <WidgetTableContainer density={density}>
             {isLoading ? (
               <SkeletonRows count={3} density={density} />
@@ -279,7 +288,7 @@ function Render({ config }: WidgetRenderProps<Config>) {
                       color: weekendTone ? colors.mutedForeground : colors.foreground,
                     }}
                   >
-                    {e.date || "—"}
+                    {formatDateDDMM(e.date)}
                   </Text>
                   {punches.map((val, j) => (
                     <Text
@@ -309,7 +318,6 @@ function Render({ config }: WidgetRenderProps<Config>) {
           </>
         )}
           </WidgetTableContainer>
-        </View>
       </WidgetCard>
     </View>
   );
@@ -340,11 +348,16 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           onChange={(next) => set("accent", next as Config["accent"])}
         />
       </Section>
-      <Section title="Cabeçalho">
+      <Section title="Cabeçalho e rodapé">
         <ToggleRow
           label="Exibir cabeçalho"
           checked={config.showHeader}
           onCheckedChange={(v) => set("showHeader", v)}
+        />
+        <ToggleRow
+          label="Exibir botão “Ver todos”"
+          checked={config.showViewAll}
+          onCheckedChange={(v) => set("showViewAll", v)}
         />
       </Section>
       <TableDisplayConfigSection
@@ -371,12 +384,15 @@ export const timeEntriesWidget: WidgetDefinition<Config> = {
   // on most phones) and full width.
   allowedSpans: [2, 3],
   defaultSpan: 3,
-  allowedHeights: [2, 3],
+  // 1× ("Baixa") is allowed for a compact glance — the body is a scrollable
+  // table so a short tile simply shows fewer rows, then scrolls.
+  allowedHeights: [1, 2, 3],
   defaultRows: 2,
   configSchema,
   defaultConfig: {
     title: "Ponto da Semana",
     showHeader: true,
+    showViewAll: true,
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
     accent: { color: "teal", icon: "Clock", borderColor: "none" },
   },

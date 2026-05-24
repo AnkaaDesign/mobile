@@ -117,6 +117,11 @@ export interface WidgetDefinition<TConfig = unknown> {
   icon: ComponentType<{ size?: number; color?: string }>;
   category: WidgetCategory;
   allowedSectors: SECTOR_PRIVILEGES[] | "*";
+  /** When true, the widget is only available to users who lead a sector
+   *  (`user.ledSector` is set) — regardless of `allowedSectors`. Used by
+   *  leader-only widgets (e.g. "Ponto do Setor (Líder)") so non-leaders
+   *  can't add them and any saved instance is stripped on load. */
+  requiresLeader?: boolean;
   /** Spans this widget supports. Tables are typically [3] only; personal
    *  widgets often allow [1, 2, 3]. The size picker shows only these values. */
   allowedSpans: readonly WidgetSpan[];

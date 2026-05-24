@@ -340,9 +340,14 @@ export const leaderPontoWidget: WidgetDefinition<Config> = {
     "Batidas do dia para os colaboradores do setor que você lidera. Mostra um aviso quando o usuário não está cadastrado como líder de um setor.",
   icon: IconUsers,
   category: "hr",
-  // Widget is self-gating: anyone can install it; the empty state covers the
-  // "you don't lead a sector" case. Same model as `home.time-entries`.
+  // Leader-only: this widget shows the roster of the sector the user LEADS, so
+  // it's meaningless to non-leaders. `requiresLeader` hides it from the gallery
+  // for anyone without a `ledSector` and strips it from their saved layout on
+  // load. `allowedSectors: "*"` still applies on top (any sector CAN lead).
+  // (Previously "*"-only, which leaked the widget to every user — including
+  // non-leader production users — relying on the empty state alone.)
   allowedSectors: "*",
+  requiresLeader: true,
   // Inherits time-entries' span/height envelope. 4 punch columns + name need
   // at least span-2 to read; full width (3) is the comfortable target on a
   // phone.

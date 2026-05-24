@@ -24,6 +24,7 @@ import { borrowTableWidget } from "./borrow-table";
 // Production.
 import { taskTableWidget } from "./task-table";
 import { productionCalendarWidget } from "./production-calendar";
+import { productivityWidget } from "./productivity";
 // Financial.
 import { installmentTableWidget } from "./installment-table";
 // Quick-action — registered (importable for re-enable) but kept out of the
@@ -45,6 +46,7 @@ const allWidgets: any[] = [
   hrCalendarWidget,
   // Production calendars.
   productionCalendarWidget,
+  productivityWidget,
   // Quick-action.
   quickNoteWidget,
   // Personal.

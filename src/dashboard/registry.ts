@@ -33,16 +33,20 @@ class WidgetRegistry {
   /**
    * Widgets the user is allowed to add to their dashboard.
    * Rules:
-   * - ADMIN sees everything
+   * - `requiresLeader` widgets need `isLeader` (applies even to ADMIN — a
+   *   leader-scoped widget is useless without a led sector)
+   * - ADMIN sees everything else
    * - Widgets with `allowedSectors === "*"` are visible to everyone
    * - Otherwise the user's sector must appear in `allowedSectors`
    */
   getAvailableWidgets(
     userSector: SECTOR_PRIVILEGES | null | undefined,
+    isLeader = false,
   ): WidgetDefinition<any>[] {
     if (!userSector) return [];
     const isAdmin = userSector === SECTOR_PRIVILEGES.ADMIN;
     return this.all().filter((def) => {
+      if (def.requiresLeader && !isLeader) return false;
       if (def.allowedSectors === "*") return true;
       if (isAdmin) return true;
       return def.allowedSectors.includes(userSector);
@@ -51,8 +55,9 @@ class WidgetRegistry {
 
   groupByCategory(
     userSector: SECTOR_PRIVILEGES | null | undefined,
+    isLeader = false,
   ): Array<{ category: WidgetCategory; widgets: WidgetDefinition<any>[] }> {
-    const widgets = this.getAvailableWidgets(userSector);
+    const widgets = this.getAvailableWidgets(userSector, isLeader);
     const groups = new Map<WidgetCategory, WidgetDefinition<any>[]>();
     for (const w of widgets) {
       const list = groups.get(w.category) ?? [];
@@ -68,10 +73,12 @@ class WidgetRegistry {
   canUserUse(
     widgetId: string,
     userSector: SECTOR_PRIVILEGES | null | undefined,
+    isLeader = false,
   ): boolean {
     if (!userSector) return false;
     const def = this.get(widgetId);
     if (!def) return false;
+    if (def.requiresLeader && !isLeader) return false;
     if (def.allowedSectors === "*") return true;
     if (userSector === SECTOR_PRIVILEGES.ADMIN) return true;
     return def.allowedSectors.includes(userSector);

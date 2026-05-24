@@ -19,7 +19,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
-import { notify } from "@/api-client";
 import { useMyPreferences } from "./use-my-preferences";
 import { widgetRegistry } from "../registry";
 import { parseLayout, parseLegacyLayout } from "../schemas";
@@ -124,11 +123,12 @@ interface SanitizeResult {
 function sanitizeLayout(
   layout: DashboardLayout,
   userSector: SECTOR_PRIVILEGES | null | undefined,
+  isLeader = false,
 ): SanitizeResult {
   const restored = new Set<string>();
   const items = layout.items.flatMap<WidgetInstance>((item) => {
     if (!widgetRegistry.has(item.widgetId)) return [];
-    if (!widgetRegistry.canUserUse(item.widgetId, userSector)) return [];
+    if (!widgetRegistry.canUserUse(item.widgetId, userSector, isLeader)) return [];
     const def = widgetRegistry.get(item.widgetId);
     if (!def) return [];
     const parsed = def.configSchema.safeParse(item.config);
@@ -220,13 +220,15 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
   const { user } = useAuth();
   const currentPrivilege =
     (user?.sector?.privileges as SECTOR_PRIVILEGES | undefined) ?? null;
+  // Leader status gates leader-only widgets (requiresLeader) on load + add.
+  const currentIsLeader = !!user?.ledSector;
   const { preferences, isLoading, isUpdating, updateMine } = useMyPreferences();
 
   const persistedResult = useMemo<SanitizeResult>(() => {
     const raw = preferences ? (preferences as any).dashboardLayoutMobile : null;
     const base = loadLayoutFromPreferences(raw, currentPrivilege);
-    return sanitizeLayout(base, currentPrivilege);
-  }, [preferences, currentPrivilege]);
+    return sanitizeLayout(base, currentPrivilege, currentIsLeader);
+  }, [preferences, currentPrivilege, currentIsLeader]);
 
   const persisted = persistedResult.layout;
   const restoredInstanceIds = persistedResult.restoredInstanceIds;
@@ -261,24 +263,22 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
       version: DASHBOARD_LAYOUT_VERSION,
       updatedAt: new Date().toISOString(),
     };
-    try {
-      await updateMine({ dashboardLayoutMobile: next as unknown as any });
-      snapshotRef.current = null;
-      setIsEditing(false);
-      notify.success("Painel atualizado", "Suas configurações foram salvas.");
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Não foi possível salvar o painel.";
-      notify.error("Erro ao salvar", message);
-      throw err;
-    }
+    // Success/error toasts are emitted by the axios response interceptor
+    // (see api-client/axiosClient.ts) for every write request, so we don't
+    // raise our own here — doing so produced a duplicate toast on save.
+    // On failure updateMine throws, the interceptor shows the error, and we
+    // stay in edit mode (setIsEditing(false) below is never reached).
+    await updateMine({ dashboardLayoutMobile: next as unknown as any });
+    snapshotRef.current = null;
+    setIsEditing(false);
   }, [working, updateMine]);
 
   const addWidget = useCallback(
     (widgetId: string, config?: unknown) => {
       const def = widgetRegistry.get(widgetId);
       if (!def) return;
-      if (!widgetRegistry.canUserUse(widgetId, currentPrivilege)) return;
+      if (!widgetRegistry.canUserUse(widgetId, currentPrivilege, currentIsLeader))
+        return;
       setWorking((prev) => ({
         ...prev,
         items: [
@@ -292,7 +292,7 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
         ],
       }));
     },
-    [currentPrivilege],
+    [currentPrivilege, currentIsLeader],
   );
 
   const removeWidget = useCallback((instanceId: string) => {
@@ -331,8 +331,8 @@ export function useDashboardLayout(): UseDashboardLayoutReturn {
 
   const resetToPreset = useCallback(() => {
     const preset = getDefaultLayoutForSector(currentPrivilege);
-    setWorking(sanitizeLayout(preset, currentPrivilege).layout);
-  }, [currentPrivilege]);
+    setWorking(sanitizeLayout(preset, currentPrivilege, currentIsLeader).layout);
+  }, [currentPrivilege, currentIsLeader]);
 
   return {
     layout: working,
