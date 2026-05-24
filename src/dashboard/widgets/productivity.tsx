@@ -22,7 +22,7 @@ import {
 
 import { SECTOR_PRIVILEGES } from "@/constants/enums";
 import { useTheme } from "@/lib/theme";
-import { spacing, borderRadius, typography } from "@/constants/design-system";
+import { spacing, borderRadius, fontSize } from "@/constants/design-system";
 import { Input } from "@/components/ui/input";
 import { useSectors } from "@/hooks/useSector";
 import { useTaskProductionStats } from "@/hooks/use-production-analytics";
@@ -591,7 +591,7 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
         onRefresh={refetch}
       >
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.md ?? 12 }}>
-          <Text style={{ color: colors.destructive, fontSize: typography?.body?.sm ?? 13 }}>
+          <Text style={{ color: colors.destructive, fontSize: fontSize?.sm ?? 13 }}>
             Erro ao carregar dados
           </Text>
         </View>
@@ -839,7 +839,7 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           />
         </Section>
 
-        <Section id="period" title="Período" icon={<IconCalendarStats size={14} />}>
+        <Section title="Período" icon={<IconCalendarStats size={14} />}>
           <LabeledField label="Janela de tempo">
             <Combobox
               value={config.period.preset}
@@ -873,24 +873,29 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           </LabeledField>
         </Section>
 
-        <Section id="metric" title="Métrica" icon={<IconChartBar size={14} />}>
+        <Section title="Métrica" icon={<IconChartBar size={14} />}>
           <LabeledField label="Métrica do eixo Y">
             <Combobox
               value={config.metric.yAxisMode}
-              onValueChange={(v) =>
+              onValueChange={(v) => {
+                // Mobile intentionally doesn't support the "both" series mode
+                // (TaskProductionYAxisMode includes it, but the small phone
+                // chart can't fit two series). Coerce "both" → "count" so the
+                // narrowed schema type ("count" | "avgPerUser") holds.
+                const mode = (v as TaskProductionYAxisMode) ?? "count";
                 onChange({
                   ...config,
                   metric: {
-                    yAxisMode: (v as TaskProductionYAxisMode) ?? "count",
+                    yAxisMode: mode === "avgPerUser" ? "avgPerUser" : "count",
                   },
-                })
-              }
+                });
+              }}
               options={Y_AXIS_OPTIONS}
             />
           </LabeledField>
         </Section>
 
-        <Section id="chart" title="Gráfico" icon={<IconChartLine size={14} />}>
+        <Section title="Gráfico" icon={<IconChartLine size={14} />}>
           <LabeledField label="Tipo de gráfico">
             <Combobox
               value={config.chart.type}
@@ -905,14 +910,14 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           </LabeledField>
         </Section>
 
-        <Section id="goal" title="Meta" icon={<IconTarget size={14} />}>
+        <Section title="Meta" icon={<IconTarget size={14} />}>
           <HelpText>
             Defina uma meta numérica para mostrar a linha tracejada sobre o
             gráfico. Deixe em branco para ocultar.
           </HelpText>
         </Section>
 
-        <Section id="filters" title="Filtros" icon={<IconFilter size={14} />}>
+        <Section title="Filtros" icon={<IconFilter size={14} />}>
           <LabeledField label="Setores">
             <Combobox
               mode="multiple"

@@ -11,6 +11,43 @@
 
 ---
 
+## 0. Reconciliation note (2026-05-24) — READ FIRST
+
+This document was written as the **mobile rewrite contract**. It is now partly stale,
+and config vocabulary is no longer owned here.
+
+* **Config authority moved.** The cross-platform source of truth for config
+  **vocabulary, control styling, and option defaults** is now
+  `/home/kennedy/Documents/repositories/WIDGET_CONFIG_SPEC.md`. Where this file and the
+  canonical spec disagree on those, **the canonical spec wins**. This file stays
+  authoritative for mobile-only concerns: the `{span, rows}` size model (§1.1),
+  persistence keys (§1.2), native primitives (§1.4), design tokens (§2), edit-mode UX
+  (§3), and drag-to-reorder.
+* **Known-stale sections** (shipped code diverged from the original contract — the
+  canonical spec governs the resolution):
+  * **§3.4 (per-tile size pill):** the tile toolbar collapsed to a single overflow
+    (dots) button; the inline size pill + gear were removed. Size editing now lives in
+    the per-tile action sheet, not the tile toolbar.
+  * **§4.3 (config modal body):** `ConfigureWidgetModal` no longer renders the
+    "Tamanho" card (size moved to the per-tile sheet) nor the "Ações"/Remover card
+    (remove lives in the tile overflow menu). The §3.4/§4.3 line references
+    (`configure-widget-modal.tsx:208-214`) are stale.
+  * **§5.1 (ColumnPicker):** `components/column-picker.tsx` currently uses
+    drag-to-reorder (`DraggableFlatList`), which contradicts this section's
+    arrow-button mandate. Two pickers coexist (`column-picker.tsx` vs
+    `_shared.tsx` `ColumnPickerSection`). Resolution is an open decision — see
+    canonical spec §2.3 / §8.
+  * **Accent (§6 preamble):** the "accent field is identical across all widgets" claim
+    is not true in practice — `defaultConfig` stamps `borderColor:"none"` on mobile but
+    `shade:"500"` on web. Canonical spec §4 unifies this (stamp `{color, icon}` only).
+  * **task-table key (§6.1):** mobile's `task` composite column key collides
+    conceptually with web's `name`. Canonical spec §7/§8 treats this as a bug to resolve.
+  * **Refresh interval:** this file chose `display.refetchInterval` (string). Canonical
+    spec §3.4 supersedes with `display.refreshIntervalMs` (number) + a back-compat
+    migration.
+
+---
+
 ## 1. Cardinal Constraints — DO NOT CHANGE
 
 These are the rules that bound the rewrite. Violating any of them silently

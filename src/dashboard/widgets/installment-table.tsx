@@ -41,6 +41,7 @@ import {
   TableRefreshSection,
   computeBodyMaxHeight,
   densityClasses,
+  DensitySegmented,
   DENSITY_VALUES,
   type Density,
   LabeledField,
@@ -1147,69 +1148,6 @@ const LAYOUT_MODE_OPTIONS = LAYOUT_MODES.map((m) => ({
 
 const BUCKET_OPTIONS = BUCKETS.map((b) => ({ value: b, label: BUCKET_LABELS[b] }));
 
-const DENSITY_PILL_OPTIONS: { value: Density; label: string }[] = [
-  { value: "compact", label: "Compacta" },
-  { value: "comfortable", label: "Confortável" },
-  { value: "spacious", label: "Espaçosa" },
-];
-
-// Outer-View-with-chrome + inner-Pressable density pill. Matches the canonical
-// pattern established in `recent-messages.tsx` (per cardinal rule: any
-// Pressable that owns layout/visual props must be refactored to this shape).
-function DensityPill({
-  active,
-  label,
-  onPress,
-}: {
-  value: Density;
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  const { colors, isDark } = useTheme();
-  const outlineColor = isDark
-    ? "rgba(217,217,217,0.28)"
-    : "rgba(64,64,64,0.22)";
-  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
-  return (
-    <View
-      style={{
-        flex: 1,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: active ? colors.primary : outlineColor,
-        backgroundColor: active ? colors.primary : inactiveBg,
-        overflow: "hidden",
-      }}
-    >
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        accessibilityLabel={`Densidade ${label}`}
-        style={{
-          minHeight: 40,
-          paddingHorizontal: 8,
-          paddingVertical: 8,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: 12,
-            fontWeight: active ? "700" : "500",
-            color: active ? colors.primaryForeground : colors.foreground,
-          }}
-        >
-          {label}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const { colors } = useTheme();
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
@@ -1298,17 +1236,11 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
 
           <Section title="Densidade" defaultOpen>
             <LabeledField label="Densidade">
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {DENSITY_PILL_OPTIONS.map((opt) => (
-                  <DensityPill
-                    key={opt.value}
-                    value={opt.value}
-                    label={opt.label}
-                    active={display.density === opt.value}
-                    onPress={() => setDisplay("density", opt.value)}
-                  />
-                ))}
-              </View>
+              <DensitySegmented
+                label=""
+                value={display.density as Density}
+                onChange={(d) => setDisplay("density", d)}
+              />
             </LabeledField>
           </Section>
 

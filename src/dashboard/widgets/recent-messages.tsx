@@ -28,6 +28,8 @@ import {
   Section,
   ToggleRow,
   LabeledField,
+  NumberPills,
+  DensitySegmented,
   DENSITY_VALUES,
   type Density,
 } from "./_shared";
@@ -704,128 +706,6 @@ function Render({ config, size }: WidgetRenderProps<Config>) {
 
 // ---------- Config ----------
 
-// Pill button identical to the SizeSelector's Largura/Altura pills so the
-// "Mensagens por linha" + "Linhas visíveis" selectors feel like part of
-// the same form family. Outer View owns the layout flex (Pressable's
-// style function can't be trusted with flex on iOS); inner Pressable
-// owns visual chrome (border, fill, opacity).
-function NumberPill({
-  value,
-  active,
-  fill,
-  onPress,
-}: {
-  value: number;
-  active: boolean;
-  fill?: boolean;
-  onPress: () => void;
-}) {
-  const { colors, isDark } = useTheme();
-  const outlineColor = isDark
-    ? "rgba(217,217,217,0.28)"
-    : "rgba(64,64,64,0.22)";
-  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
-  // All chrome on outer View. Pressable sizes to content (no height:100%
-  // — that caused indeterminate height loops that stretched pills to
-  // hundreds of pixels tall when the parent row had alignItems:stretch).
-  return (
-    <View
-      style={{
-        ...(fill ? { flex: 1 } : { minWidth: 44 }),
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: active ? colors.primary : outlineColor,
-        backgroundColor: active ? colors.primary : inactiveBg,
-        overflow: "hidden",
-      }}
-    >
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        style={{
-          minHeight: 40,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: 13,
-            fontWeight: active ? "700" : "500",
-            color: active ? colors.primaryForeground : colors.foreground,
-          }}
-        >
-          {value}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const DENSITY_PILL_OPTIONS: { value: Density; label: string }[] = [
-  { value: "compact", label: "Compacta" },
-  { value: "comfortable", label: "Confortável" },
-  { value: "spacious", label: "Espaçosa" },
-];
-
-function DensityPill({
-  active,
-  label,
-  onPress,
-}: {
-  value: Density;
-  active: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  const { colors, isDark } = useTheme();
-  const outlineColor = isDark
-    ? "rgba(217,217,217,0.28)"
-    : "rgba(64,64,64,0.22)";
-  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
-  return (
-    <View
-      style={{
-        flex: 1,
-        borderRadius: 8,
-        borderWidth: 1.5,
-        borderColor: active ? colors.primary : outlineColor,
-        backgroundColor: active ? colors.primary : inactiveBg,
-        overflow: "hidden",
-      }}
-    >
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityState={{ selected: active }}
-        accessibilityLabel={`Densidade ${label}`}
-        style={{
-          minHeight: 40,
-          paddingHorizontal: 8,
-          paddingVertical: 8,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: 12,
-            fontWeight: active ? "700" : "500",
-            color: active ? colors.primaryForeground : colors.foreground,
-          }}
-        >
-          {label}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
 function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
   const set = <K extends keyof Config>(key: K, value: Config[K]) =>
     onChange({ ...config, [key]: value });
@@ -885,60 +765,33 @@ function ConfigComp({ config, onChange }: WidgetConfigProps<Config>) {
           label="Densidade"
           helper="Define o tamanho dos blocos de prévia em cada cartão."
         >
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {DENSITY_PILL_OPTIONS.map((opt) => (
-              <DensityPill
-                key={opt.value}
-                value={opt.value}
-                label={opt.label}
-                active={(config.density ?? "comfortable") === opt.value}
-                onPress={() => set("density", opt.value)}
-              />
-            ))}
-          </View>
+          <DensitySegmented
+            label=""
+            value={(config.density ?? "comfortable") as Density}
+            onChange={(d) => set("density", d)}
+          />
         </LabeledField>
       </Section>
 
       <Section title="Grade" defaultOpen>
-        <LabeledField label="Mensagens por linha" helper="1 a 3 — limite mobile.">
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              gap: 8,
-            }}
-          >
-            {[1, 2, 3].map((n) => (
-              <NumberPill
-                key={n}
-                value={n}
-                active={config.itemsPerRow === n}
-                fill
-                onPress={() => set("itemsPerRow", n)}
-              />
-            ))}
-          </View>
-        </LabeledField>
+        <NumberPills
+          label="Mensagens por linha"
+          hint="1 a 3 — limite mobile."
+          min={1}
+          max={3}
+          value={config.itemsPerRow ?? 2}
+          onChange={(n) => set("itemsPerRow", n)}
+        />
 
-        <LabeledField label="Linhas visíveis" helper="1 a 6.">
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <NumberPill
-                key={n}
-                value={n}
-                active={config.itemsPerColumn === n}
-                onPress={() => set("itemsPerColumn", n)}
-              />
-            ))}
-          </View>
-        </LabeledField>
+        <NumberPills
+          label="Linhas visíveis"
+          hint="1 a 6."
+          min={1}
+          max={6}
+          value={config.itemsPerColumn ?? 2}
+          onChange={(n) => set("itemsPerColumn", n)}
+          fill={false}
+        />
       </Section>
     </View>
   );
@@ -966,7 +819,7 @@ export const recentMessagesWidget: WidgetDefinition<Config> = {
     itemsPerRow: 2,
     itemsPerColumn: 2,
     density: "comfortable",
-    display: { showHeader: true },
+    display: { showHeader: true, showViewAll: true },
     showCount: true,
   },
   RenderComponent: Render,

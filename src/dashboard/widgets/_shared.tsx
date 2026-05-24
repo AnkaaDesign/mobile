@@ -358,6 +358,185 @@ export const YES_NO_OPTIONS: Array<{ value: "yes" | "no"; label: string }> = [
   { value: "no", label: "Não" },
 ];
 
+// ---------------------------------------------------------------------------
+// Segmented controls — the gold-standard "[1][2]" pill group.
+//
+// Canonical control for small enums (≤5 options) and bounded small integers.
+// See WIDGET_CONFIG_SPEC.md §2.1. Single shared primitive — widgets MUST import
+// these instead of redefining local NumberPill/DensityPill copies. Uses the
+// outer-View-owns-chrome / inner-Pressable-is-tap-surface pattern (RN Pressable
+// style-functions don't reliably apply layout props on iOS).
+// ---------------------------------------------------------------------------
+
+function SegPill({
+  label,
+  active,
+  fill,
+  onPress,
+}: {
+  label: string | number;
+  active: boolean;
+  fill?: boolean;
+  onPress: () => void;
+}) {
+  const { colors, isDark } = useTheme();
+  const outlineColor = isDark ? "rgba(217,217,217,0.28)" : "rgba(64,64,64,0.22)";
+  const inactiveBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)";
+  return (
+    <View
+      style={{
+        ...(fill ? { flex: 1 } : { minWidth: 44 }),
+        borderRadius: 8,
+        borderWidth: 1.5,
+        borderColor: active ? colors.primary : outlineColor,
+        backgroundColor: active ? colors.primary : inactiveBg,
+        overflow: "hidden",
+      }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        style={{
+          minHeight: 40,
+          paddingHorizontal: 12,
+          paddingVertical: 8,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 13,
+            fontWeight: active ? "700" : "500",
+            color: active ? colors.primaryForeground : colors.foreground,
+          }}
+        >
+          {label}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Pick one of N options, rendered as a row of segmented pills. */
+export function SegmentedControl<T extends string | number>({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+  fill = true,
+}: {
+  label?: string;
+  hint?: string;
+  options: ReadonlyArray<{ value: T; label: string }>;
+  value: T;
+  onChange: (v: T) => void;
+  /** Equal-width segments (default) vs min-width pills. */
+  fill?: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={{ gap: 4 }}>
+      {label ? (
+        <Text style={{ fontSize: 12, color: colors.foreground }}>{label}</Text>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+        {options.map((opt) => (
+          <SegPill
+            key={String(opt.value)}
+            label={opt.label}
+            active={opt.value === value}
+            fill={fill}
+            onPress={() => onChange(opt.value)}
+          />
+        ))}
+      </View>
+      {hint ? (
+        <Text
+          style={{ fontSize: 11, color: colors.mutedForeground, lineHeight: 14 }}
+        >
+          {hint}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** Pick an integer in [min, max], rendered as a row of numbered pills. */
+export function NumberPills({
+  label,
+  hint,
+  min,
+  max,
+  value,
+  onChange,
+  fill = true,
+}: {
+  label?: string;
+  hint?: string;
+  min: number;
+  max: number;
+  value: number;
+  onChange: (n: number) => void;
+  fill?: boolean;
+}) {
+  const { colors } = useTheme();
+  const nums: number[] = [];
+  for (let n = min; n <= max; n += 1) nums.push(n);
+  return (
+    <View style={{ gap: 4 }}>
+      {label ? (
+        <Text style={{ fontSize: 12, color: colors.foreground }}>{label}</Text>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+        {nums.map((n) => (
+          <SegPill
+            key={n}
+            label={n}
+            active={n === value}
+            fill={fill}
+            onPress={() => onChange(n)}
+          />
+        ))}
+      </View>
+      {hint ? (
+        <Text
+          style={{ fontSize: 11, color: colors.mutedForeground, lineHeight: 14 }}
+        >
+          {hint}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** Density picker rendered as the canonical segmented control. */
+export function DensitySegmented({
+  value,
+  onChange,
+  label = "Densidade",
+}: {
+  value: Density;
+  onChange: (d: Density) => void;
+  label?: string;
+}) {
+  return (
+    <SegmentedControl<Density>
+      label={label}
+      options={[
+        { value: "compact", label: "Compacta" },
+        { value: "comfortable", label: "Confortável" },
+        { value: "spacious", label: "Espaçosa" },
+      ]}
+      value={value}
+      onChange={onChange}
+    />
+  );
+}
+
 export function densityClasses(d: Density): {
   rowPaddingY: number;
   rowPaddingX: number;
@@ -870,16 +1049,10 @@ export function TableDisplayConfigSection({
   return (
     <Section title="Aparência da tabela" defaultOpen>
       {density && (
-        <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 12, color: colors.foreground }}>Densidade</Text>
-          <Combobox
-            value={value.density}
-            onValueChange={(v: any) =>
-              set("density", (typeof v === "string" ? v : "comfortable") as Density)
-            }
-            options={DENSITY_OPTIONS}
-          />
-        </View>
+        <DensitySegmented
+          value={value.density}
+          onChange={(d) => set("density", d)}
+        />
       )}
       <ToggleRow
         label="Listras zebra"
