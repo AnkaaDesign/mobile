@@ -1097,7 +1097,7 @@ export const ppeDeliveryTableWidget: WidgetDefinition<Config> = {
     title: "Entregas de EPI",
     showHeader: true,
     showCount: true,
-    accent: { color: "amber", icon: "ClipboardCheck", borderColor: "none" },
+    accent: { color: "amber", icon: "ClipboardCheck" },
     columns: ["itemName", "userName", "quantity", "status", "scheduledDate"],
     filters: {
       searchingFor: "",

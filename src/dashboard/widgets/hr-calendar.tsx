@@ -1080,7 +1080,7 @@ export const hrCalendarWidget: WidgetDefinition<HrCalendarConfig> = {
   configSchema: hrCalendarConfigSchema,
   defaultConfig: {
     title: "Calendário de Colaboradores",
-    accent: { color: "violet", icon: "Calendar", borderColor: "none" },
+    accent: { color: "violet", icon: "Calendar" },
     display: {
       showHeader: true,
       showFilters: true,

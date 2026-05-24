@@ -360,7 +360,7 @@ export const quickNoteWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Anotações",
-    accent: { color: "amber", icon: "FileText", borderColor: "none" },
+    accent: { color: "amber", icon: "FileText" },
     display: { showHeader: true },
     monospace: false,
     showCharacterCount: true,

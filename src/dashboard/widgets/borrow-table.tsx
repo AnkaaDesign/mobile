@@ -1039,7 +1039,7 @@ export const borrowTableWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Empréstimos",
-    accent: { color: "violet", icon: "Package", borderColor: "none" },
+    accent: { color: "violet", icon: "Package" },
     columns: ["itemUniCode", "itemName", "status", "borrowedAt"],
     filters: {
       searchingFor: "",

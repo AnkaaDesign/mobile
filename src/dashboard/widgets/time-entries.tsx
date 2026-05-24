@@ -394,7 +394,7 @@ export const timeEntriesWidget: WidgetDefinition<Config> = {
     showHeader: true,
     showViewAll: true,
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
-    accent: { color: "teal", icon: "Clock", borderColor: "none" },
+    accent: { color: "teal", icon: "Clock" },
   },
   RenderComponent: Render,
   ConfigComponent: ConfigComp,

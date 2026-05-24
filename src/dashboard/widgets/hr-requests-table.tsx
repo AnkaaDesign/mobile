@@ -1402,7 +1402,7 @@ export const hrRequestsTableWidget: WidgetDefinition<HrRequestsTableConfig> = {
   configSchema: hrRequestsTableConfigSchema,
   defaultConfig: {
     title: "Requisições de RH",
-    accent: { color: "indigo", icon: "Clock", borderColor: "none" },
+    accent: { color: "indigo", icon: "Clock" },
     display: {
       density: "comfortable",
       striping: true,

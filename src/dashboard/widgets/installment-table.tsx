@@ -1462,7 +1462,7 @@ export const installmentTableWidget: WidgetDefinition<Config> = {
     sorts: [{ key: "dueDate", direction: "asc" }],
     limit: 50,
     display: { ...INSTALLMENT_DISPLAY_DEFAULTS },
-    accent: { color: "blue", icon: "Receipt", borderColor: "none" },
+    accent: { color: "blue", icon: "Receipt" },
   } as Config,
   RenderComponent: Render,
   ConfigComponent: ConfigComp,

@@ -1161,7 +1161,7 @@ export const productionCalendarWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Calendário de Produção",
-    accent: { color: "indigo", icon: "Calendar", borderColor: "none" },
+    accent: { color: "indigo", icon: "Calendar" },
     display: {
       showHeader: true,
       showFilters: true,

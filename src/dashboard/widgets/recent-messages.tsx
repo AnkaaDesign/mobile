@@ -84,12 +84,14 @@ const configSchema = z.preprocess(
       .describe("Título exibido no cabeçalho do widget."),
     accent: makeAccentSchema({ color: "indigo", icon: "Message", borderColor: "none" }),
     /** Mobile caps perRow at 3 — anything denser is illegible on phones. Web
-     *  allows up to 8; saved configs round-trip clamped at render time. */
+     *  allows up to 8; the schema bound is intentionally WIDE (min 1, max 10,
+     *  matching favorites) so any cross-platform config parses, and the render
+     *  path clamps the effective columns to the phone span. */
     itemsPerRow: z
       .number()
       .int()
       .min(1)
-      .max(3)
+      .max(10)
       .default(2)
       .describe("Quantos cartões de mensagem por linha."),
     itemsPerColumn: z
@@ -815,7 +817,7 @@ export const recentMessagesWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Mensagens Recentes",
-    accent: { color: "indigo", icon: "Message", borderColor: "none" },
+    accent: { color: "indigo", icon: "Message" },
     itemsPerRow: 2,
     itemsPerColumn: 2,
     density: "comfortable",

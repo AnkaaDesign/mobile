@@ -936,9 +936,13 @@ export function makeAccentSchema(defaults: {
     .object({
       color: z.enum(ACCENT_COLOR_TUPLE).default(defaults.color),
       icon: z.enum(ACCENT_ICON_TUPLE).default(defaults.icon),
-      borderColor: z
-        .enum(BORDER_COLOR_TUPLE)
-        .default(defaults.borderColor ?? "none"),
+      // `.optional()` (not `.default("none")`) mirrors web's makeAccentSchema:
+      // borderColor is vestigial (the card border auto-derives from the accent
+      // color at render, and every consumer — borderHexFor / BorderInlineRow —
+      // already treats absent/"none" as "no border"). Keeping it optional makes
+      // the INFERRED config type accept `defaultConfig.accent = { color, icon }`
+      // so mobile defaults match web without a TS2741 "borderColor is missing".
+      borderColor: z.enum(BORDER_COLOR_TUPLE).optional(),
       // Optional — legacy persisted configs lack `shade`. resolveAccent()
       // falls back to "500" via DEFAULT_WIDGET_ACCENT_SHADE so the runtime
       // never sees `undefined`.

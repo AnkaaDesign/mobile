@@ -1133,7 +1133,7 @@ export const dailyPontoWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Ponto do Dia",
-    accent: { color: "teal", icon: "Clock24", borderColor: "none" },
+    accent: { color: "teal", icon: "Clock24" },
     display: {
       density: "comfortable",
       striping: true,

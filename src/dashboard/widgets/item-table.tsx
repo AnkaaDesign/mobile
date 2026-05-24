@@ -1203,7 +1203,7 @@ export const itemTableWidget: WidgetDefinition<Config> = {
     columnLabels: {},
     limit: 20,
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
-    accent: { color: "yellow", icon: "Package", borderColor: "none" },
+    accent: { color: "yellow", icon: "Package" },
   },
   RenderComponent: Render,
   ConfigComponent: ConfigComp,

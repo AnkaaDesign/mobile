@@ -523,7 +523,7 @@ export const favoritesWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Favoritos",
-    accent: { color: "yellow", icon: "Star", borderColor: "none" },
+    accent: { color: "yellow", icon: "Star" },
     itemsPerRow: 4,
     itemsPerColumn: 1,
     density: "comfortable",

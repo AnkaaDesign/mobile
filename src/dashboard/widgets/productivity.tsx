@@ -217,7 +217,7 @@ type Config = z.infer<typeof configSchema>;
 
 const DEFAULT_CONFIG: Config = {
   title: "Produtividade",
-  accent: { color: "blue", icon: "ChartBar", borderColor: "none" },
+  accent: { color: "blue", icon: "ChartBar" },
   display: { showHeader: true, showSummary: true },
   period: { preset: "last-6-months", xAxisMode: "month" },
   metric: { yAxisMode: "count" },

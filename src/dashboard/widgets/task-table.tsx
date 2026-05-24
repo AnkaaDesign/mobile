@@ -2740,7 +2740,7 @@ export const taskTableWidget: WidgetDefinition<Config> = {
     sorts: [{ key: "term", direction: "asc" }],
     limit: 20,
     behavior: { viewAllRouteOverride: "" },
-    accent: { color: "teal", icon: "ClipboardText", borderColor: "none" },
+    accent: { color: "teal", icon: "ClipboardText" },
   } as any,
   RenderComponent: Render,
   ConfigComponent: ConfigComp,

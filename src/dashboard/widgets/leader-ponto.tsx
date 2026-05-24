@@ -360,7 +360,7 @@ export const leaderPontoWidget: WidgetDefinition<Config> = {
     title: "Ponto do Setor",
     showHeader: true,
     display: { ...TABLE_DISPLAY_DEFAULTS, density: "comfortable" },
-    accent: { color: "teal", icon: "Users", borderColor: "none" },
+    accent: { color: "teal", icon: "Users" },
     limit: 50,
   },
   RenderComponent: Render,

@@ -749,7 +749,7 @@ export const quickBudgetWidget: WidgetDefinition<Config> = {
   configSchema,
   defaultConfig: {
     title: "Novo Orçamento",
-    accent: { color: "emerald", icon: "Receipt", borderColor: "none" },
+    accent: { color: "emerald", icon: "Receipt" },
     display: { showHeader: true },
   },
   RenderComponent: Render,
